@@ -1,0 +1,9 @@
+node_modules
+dist
+examples/streamed/epubs
+material.css
+material.css.map
+reader.css
+reader.css.map
+reader.js
+reader.js.map

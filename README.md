@@ -1,5 +1,4 @@
-[![DepShield Badge](https://depshield.sonatype.org/badges/Bokbasen/r2-reader/depshield.svg)](https://depshield.github.io)
-
+[![DepShield Badge](https://depshield.sonatype.org/badges/d-i-t-a/R2D2BC/depshield.svg)](https://depshield.github.io)
 
 ## Quickstart
 

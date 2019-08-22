@@ -1,0 +1,121 @@
+//////////////////////////////
+// Bookmarks Styles         //
+//////////////////////////////
+
+.bookmarks-view{
+  background-color: $ui-white;
+  overflow: scroll;
+  top: 3.5rem;
+
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+  ol li, 
+  ul li {
+    margin-top: 0;
+
+    a {
+      color: $ui-dark-gray;
+      border-bottom: 1px solid darken($ui-white, 20%);
+      display: block;
+      padding: 1rem;
+      text-decoration: none;
+      width: 100%;
+
+      @media screen and (min-width: 60rem) {
+        &:hover {
+          background: $ui-dark-gray;
+          color: $ui-black;
+        }
+      }
+
+      &.active {
+        background: $ui-light-gray;
+        color: $ui-black;
+      }
+
+      &.active:hover {
+        background: $ui-black;
+        color: $ui-light-gray;
+      }
+    }
+
+  }
+}
+
+[data-viewer-theme="sepia"] {
+    .bookmarks-view {
+        background-color: $sepia-bg;
+
+    ol li, 
+    ul li {
+        a {
+        color: $ui-dark-gray;
+        border-bottom: 1px solid darken($sepia-bg, 20%);
+
+        @media screen and (min-width: 60rem) {
+          &:hover {
+            background: $ui-dark-gray;
+            color: $sepia-bg;
+          }
+        }
+
+        &.active {
+          background: $ui-light-gray;
+          color: $ui-black;
+        }
+
+        &.active:hover {
+          background: $ui-black;
+          color: $ui-light-gray;
+        }
+      }
+
+      span {
+        color: $ui-dark-gray;
+        border-bottom: 1px solid darken($sepia-bg, 20%);
+      }
+    }
+  }
+}
+
+[data-viewer-theme="night"] {
+    .bookmarks-view {
+        background-color: $night-bg;
+
+    ol li, 
+    ul li {
+        a {
+        color: $ui-dark-gray;
+        border-bottom: 1px solid darken($ui-white, 20%);
+
+        @media screen and (min-width: 60rem) {
+          &:hover {
+            background: $ui-dark-gray;
+            color: $ui-white;
+          }
+        }
+
+        &.active {
+          background: $ui-light-gray;
+          color: $night-bg;
+        }
+
+        &.active:hover {
+          background: $night-bg;
+          color: $ui-light-gray;
+        }
+      }
+
+      span {
+        color: $ui-light-gray;
+        border-bottom: 1px solid lighten($night-bg, 20%);
+      }
+    }
+  }
+}
+//////////////////////////////
+// BOOKMARKS Styles //
+//////////////////////////////

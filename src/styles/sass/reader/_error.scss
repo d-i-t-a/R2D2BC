@@ -1,0 +1,69 @@
+
+.error {
+  z-index: 20;
+  background-color: transparentize($ui-white, 0.125);
+  color: $error-red;
+  height: 100%;
+  top: 0;
+  padding-top: 40vh;
+  position: fixed;
+  text-align: center;
+  width: 100%;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: default;
+
+  .reader-icon {
+    display: block;
+    width: 3rem;
+    height: 3rem;
+    fill: $error-red;
+    margin: 0 auto;
+  }
+
+  span {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+  }
+
+  button {
+    color: $error-red;
+    border: 1px solid $error-red;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+
+    + button {
+      margin-left: 1rem;
+    }
+  }
+}
+
+
+[data-viewer-theme="sepia"] {
+  .error {
+    background-color: transparentize($sepia-bg, 0.125);
+  
+    button {
+      background-color: $ui-white;
+      color: $error-red;
+      border: 1px solid $error-red;
+    }
+  }
+}
+
+[data-viewer-theme="night"] {
+  .error {
+    background-color: transparentize($night-bg, 0.125);
+  
+    button {
+      background-color: lighten($night-bg, 10%);
+      color: $error-red;
+      border: 1px solid $error-red;
+    }
+  }
+}

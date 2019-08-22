@@ -1,0 +1,256 @@
+
+:root {
+    -webkit-text-size-adjust: 100%;
+    zoom: reset;
+  }
+  
+  body {
+    margin: 0 auto;
+  }
+  
+  ul li,
+  ol li {
+    list-style: none;
+  }
+  
+  button {
+    background: $ui-white;
+    border: 0;
+    color: $ui-dark-gray;
+    // font-size: 4vw;
+    padding: 0.35rem 0.35rem 0.2rem;
+    margin: 0;
+    -webkit-appearance: none;
+  }
+  
+  a {
+    color: $ui-dark-gray;
+    text-decoration: none;
+  }
+  
+  .inactive {
+    opacity: 0;
+    z-index: -3000;
+  }
+  
+  .active {
+    opacity: 1;
+    z-index: 3000;
+  }
+  
+  #viewer {
+    padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
+    box-sizing: border-box;
+  }
+  
+  //////////////////////////////
+  //   Navigation Control     //
+  //////////////////////////////
+  .svgIcon.use { // this hides the X icon used for closing menus
+    display: none;
+    height: 0;
+    position: absolute;
+    width: 0;
+  }
+  
+  .controls-view {
+    height: calc(100% - 2rem);
+    left: 0;
+    position: fixed;
+    top: 3rem;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+    text-align: left;
+  
+    .disabled {
+      background-color: darken($ui-light-gray, 20%);
+      }
+  
+    &.inactive {
+      transition: opacity 300ms cubic-bezier(0, 0.03, 0.63, 0.99);
+      height: 0;
+    }
+  
+    &.active {
+      transition: opacity 300ms cubic-bezier(0, 0.03, 0.63, 0.99);
+    }
+  
+    > ul {
+      padding-bottom: 1rem;
+    }
+  }
+  // /controls-view
+  
+  .info {
+    color: $ui-dark-gray;
+    margin: 0;
+    padding: 0 1.5rem;
+    overflow: hidden;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: default;
+  
+    &.top {
+      line-height: 3;
+      padding-top: env(safe-area-inset-top);
+      min-height: 3.6rem;
+    }
+  
+    &.bottom {
+      line-height: 2;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  
+    .chapter-position,
+    .chapter-title {
+      font-size: 0.85rem;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+  }
+   #iframe-wrapper iframe {
+      border: none;
+      overflow: hidden;
+      opacity: 0; 
+  } 
+  
+  .scrolling-suggestion {
+    position: absolute;
+    left: -10000px;
+    top: auto;
+    width: 0.0625rem;
+    height: 0.0625rem;
+    overflow: hidden;
+    background-color: $ui-white;
+    margin: 0.3125rem;
+    padding: 0.3125rem 0.625rem;
+    z-index: 4000;
+  
+    &:focus {
+      left: auto;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      top: 0.3125rem;
+    }
+  }
+  
+  [data-viewer-theme="day"] {
+    background-color: $ui-white;
+  }  
+
+  [data-viewer-theme="sepia"] {
+    background-color: $sepia-bg;
+  
+    button {
+      background: $sepia-bg;
+      color: $ui-dark-gray;
+    }
+  
+    a {
+      color: $ui-dark-gray;
+    }
+  
+    .controls-trigger {
+      background: $sepia-bg;
+      color: $ui-dark-gray;
+  
+      .icon {
+        color: $ui-dark-gray;
+        fill: $ui-dark-gray;
+      }
+    }
+  
+    .controls {
+      color: $ui-dark-gray;
+    
+      .links {
+        background-color: $sepia-bg;
+    
+        .icon {
+          color: $ui-dark-gray;
+          fill: $ui-dark-gray;
+        }
+      }
+  
+      &.top {
+        background-color: $sepia-bg;
+        border-bottom: 0.0625rem solid $ui-light-gray;
+      }
+  
+      &.bottom {
+        background-color: darken($sepia-bg, 2.5%);
+        border-top: 0.16rem solid $ui-light-gray;
+      }
+    }
+  
+    .scrolling-suggestion {
+      background-color: $sepia-bg;
+    }
+  
+    .info {
+      color: $ui-dark-gray;
+    }
+  
+  }
+  
+  [data-viewer-theme="night"] {
+    background-color: $night-bg;
+    color: $ui-white;
+  
+    button {
+      background: $night-bg;
+      color: $ui-light-gray;
+    }
+  
+    a {
+      color: $ui-light-gray;
+    }
+  
+    .controls-trigger {
+      background: $night-bg;
+      color: $ui-light-gray;
+  
+      .icon {
+        color: $ui-light-gray;
+        fill: $ui-light-gray;
+      }
+    }
+  
+    .controls {
+      color: $ui-light-gray;
+    
+      .links {
+        background-color: $night-bg;
+    
+        .icon {
+          color: $ui-light-gray;
+          fill: $ui-light-gray;
+        }
+      }
+  
+      &.top {
+        background-color: $night-bg;
+        border-bottom: 0.0625rem solid $ui-dark-gray;
+      }
+  
+      &.bottom {
+        background-color: lighten($night-bg, 2.5%);
+        border-top: 0.16rem solid $ui-dark-gray;
+      }
+    }
+  
+    .scrolling-suggestion {
+      background-color: $night-bg;
+    }
+  
+    .info {
+      color: $ui-light-gray;
+    }
+  
+  }

@@ -1,0 +1,57 @@
+{
+  "name": "@dita/reader",
+  "version": "1.0.0",
+  "description": "A viewer application for EPUB files.",
+  "repository": "https://github.com/Bokbasen/r2-reader",
+  "main": "src/index.js",
+  "typings": "src/index.ts",
+  "engines": {
+    "node": ">8.0.0"
+  },
+  "publishConfig": {
+    "registry": "http://ci2.bokskya.webbe.no/nexus/repository/npm-private/"
+  },
+  "scripts": {
+    "prepare": "npm run build",
+    "build": "webpack --mode=production && npm run sass && cpx 'dist/*.{css,js,map}' viewer/",
+    "dev": "webpack --mode=development && npm run sass && cpx 'dist/*.{css,js,map,woff,woff2}' viewer/",
+    "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
+    "test": "rimraf lib && tsc --p tsconfig-test.json && mocha --require jsdom-global/register --recursive lib/test",
+    "examples": "rimraf examples/streamed/readers/viewer && cpx 'viewer/*.{html,css,js,map,woff,woff2}' examples/streamed/readers/viewer && cpx 'viewer/readium-css/*.{html,css,js}' examples/streamed/readers/viewer/readium-css && cpx 'viewer/fonts/*/*.{html,css,js,woff,woff2}' examples/streamed/readers/viewer/fonts",
+    "streamed": "node \"./examples/streamed/server/server-cli.inlinesourcemap.js\" ./examples/streamed/epubs/",
+    "clean": "rimraf node_modules lib dist",
+    "about": "echo 'Do not update @types/parse5 to version 5 or else it will break jsdom typings!'"
+  },
+  "dependencies": {
+    "cssesc": "^3.0.0",
+    "promise-polyfill": "^8.1.3",
+    "whatwg-fetch": "^2.0.4"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/cssesc": "^3.0.0",
+    "@types/jquery": "^3.3.30",
+    "@types/jsdom": "^2.0.32",
+    "@types/materialize-css": "^1.0.6",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^10.14.10",
+    "@types/pako": "^1.0.1",
+    "@types/parse5": "^4.0.0",
+    "@types/promise-polyfill": "^6.0.3",
+    "chai": "^4.1.2",
+    "cpx": "^1.5.0",
+    "express": "^4.17.1",
+    "jsdom": "^9.12.0",
+    "jsdom-global": "^2.1.1",
+    "materialize-css": "^1.0.0",
+    "mocha": "^5.2.0",
+    "node-sass": "^4.12.0",
+    "rangy": "^1.3.0",
+    "rimraf": "^2.6.3",
+    "sinon": "^6.0.1",
+    "ts-loader": "^5.4.5",
+    "typescript": "^3.5.2",
+    "webpack": "^4.35.0",
+    "webpack-cli": "^3.3.5"
+  }
+}

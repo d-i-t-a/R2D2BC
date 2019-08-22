@@ -1,0 +1,263 @@
+//////////////////////////////
+// Settings View Sytles     //
+//////////////////////////////
+.settings-view {
+
+  > .settings-menu {
+      outline: none;
+
+    button {
+      background-color: $ui-white;
+      border: 0.0625rem solid $ui-light-gray;
+      font-size: 0.75rem;
+      letter-spacing: 0.07rem;
+      padding: 0.5rem 1.5rem;
+      text-transform: uppercase;
+      margin: 0;
+      position: relative;
+
+      svg.checkedIcon {
+        // styles the icon that appears next to paginate/scrolling buttons
+        // set a default color of $ui-white, since this should always
+        // show up on a dark color background.
+        color: $ui-white;
+        display: none;
+        fill: $ui-white;
+        height: 0.9rem;
+        width: 0.9rem;
+      }
+
+      // reverse the active state
+      &.active {
+        color: $ui-white;
+        background-color: $ui-default;
+
+        svg.checkedIcon {
+          display: inline-block;
+          margin: 0;
+          position: absolute;
+          top: 50%;
+          transform: translateY(-55%);
+          right: 0.35rem;
+          vertical-align: text-bottom;
+        }
+      }
+    }
+
+    > li {
+      border: 0;
+      background-color: $ui-white;
+      color: $ui-dark-gray;
+      display: block;
+      margin: 0.5rem 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    .settings-options {
+      padding-left: 0;
+      display: flex;
+
+      li {
+        border: 0;
+        display: flex;
+        margin: 0;
+        width: auto;
+        flex: 1 1 auto;
+
+        button {
+          width: 100%;
+          text-overflow: ellipsis;
+        }
+      }
+
+      button.publisher-font {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+
+      button.serif-font {
+        border-radius: 0;
+      }
+
+      button.sans-font {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+
+      button.decrease {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-left: 0;
+      }
+
+      button.increase {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+
+      button.day-theme {
+        background-color: $ui-white;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-left: 0;
+        border-right: 0;
+
+        &.active {
+          color: $ui-black;
+
+          svg.checkedIcon {
+            fill: $ui-black;
+          }
+        }
+      }
+
+      button.sepia-theme {
+        background-color: $sepia-bg;
+        border-radius: 0;
+
+        &.active {
+          color: $ui-black;
+
+          svg.checkedIcon {
+            fill: $ui-black;
+          }
+        }
+      }
+
+      button.night-theme {
+        background-color: $ui-black;
+        color: $ui-white;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-left: 0;
+        border-right: 0;
+
+        &.active {
+          color: $ui-white;
+
+          svg.checkedIcon {
+            fill: $ui-white;
+          }
+        }
+      }
+
+      button.columns-paginated-view {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-left: 0;
+      }
+
+      button.scrolling-book-view {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+
+      .icon {
+        color: $ui-dark-gray;
+        fill: $ui-dark-gray;
+        height: 1.75rem;
+        width: 1.75rem;
+
+        @media (min-width: 30rem) {
+          height: 1.5rem;
+          width: 1.5rem;
+        }
+      }
+    } // / settings-options
+  }
+}
+
+[data-viewer-theme="night"] {
+  .settings-view {
+    > .settings-menu {
+        outline: none;
+  
+      button {
+        color: $ui-dark-gray;
+
+        svg.checkedIcon {
+          color: $night-bg;
+          fill: $night-bg;
+        }
+  
+        // reverse the active state
+        &.active {
+          color: $ui-white;
+          background-color: $ui-default;
+        }
+      }
+  
+      button.day-theme {
+        background-color: $ui-white;
+      }
+
+      button.sepia-theme {
+        background-color: $sepia-bg;
+      }
+
+      button.night-theme {
+        background-color: $ui-black;
+        color: $ui-white;
+      }
+
+      > li {
+        border: 0;
+        background-color: lighten($night-bg, 10%);
+        color: $ui-black;
+      }
+
+    }
+  }
+}
+
+[data-viewer-theme="sepia"] {
+  .settings-view {
+    > .settings-menu {
+        outline: none;
+  
+      button {
+        color: $ui-dark-gray;
+
+        svg.checkedIcon {
+          color: $sepia-bg;
+          fill: $sepia-bg;
+        }
+  
+        // reverse the active state
+        &.active {
+          color: $ui-white;
+          background-color: $ui-default;
+        }
+      }
+  
+      button.day-theme {
+        background-color: $ui-white;
+      }
+
+      button.sepia-themeon {
+        background-color: $sepia-bg;
+      }
+
+      button.night-theme {
+        background-color: $ui-black;
+        color: $ui-white;
+      }
+
+      > li {
+        border: 0;
+        background-color: lighten($sepia-bg, 10%);
+        color: $ui-black;
+      }
+  
+    }
+  }
+}

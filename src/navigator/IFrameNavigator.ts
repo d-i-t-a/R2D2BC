@@ -1,0 +1,1333 @@
+import Navigator from "./Navigator";
+import PaginatedBookView from "../views/PaginatedBookView";
+import ScrollingBookView from "../views/ScrollingBookView";
+import Annotator from "../store/Annotator";
+import Publication, { Link } from "../model/Publication";
+import BookSettings from "../model/user-settings/BookSettings";
+import EventHandler, { addEventListenerOptional, removeEventListenerOptional } from "../utils/EventHandler";
+import * as BrowserUtilities from "../utils/BrowserUtilities";
+import * as HTMLUtilities from "../utils/HTMLUtilities";
+import { defaultUpLinkTemplate, simpleUpLinkTemplate, readerLoading, readerError } from "../utils/HTMLTemplates";
+import { Locator, ReadingPosition, Locations } from "../model/Locator";
+import { Sidenav, Collapsible, Dropdown, Tabs } from "materialize-css";
+import { UserSettingsConfig } from "../model/user-settings/UserSettings";
+import BookmarkModule from "../modules/BookmarkModule";
+import { IS_DEV } from "..";
+
+export interface UpLinkConfig {
+    url?: URL;
+    label?: string;
+    ariaLabel?: string;
+}
+
+export interface IFrameNavigatorConfig {
+    mainElement: HTMLElement;
+    headerMenu: HTMLElement;
+    footerMenu: HTMLElement;
+    publication: Publication;
+    settings: BookSettings;
+    annotator?: Annotator;
+    eventHandler?: EventHandler;
+    upLink?: UpLinkConfig;
+    ui?: ReaderUI;
+    initialLastReadingPosition?: ReadingPosition;
+    rights?: ReaderRights;
+    staticBaseUrl?: any;
+    material: boolean;
+}
+
+export interface ReaderRights {
+    enableBookmarks?: boolean;
+}
+export interface ReaderUI {
+    settings?: UserSettingsConfig;
+}
+export interface ReaderConfig {
+    url: URL;
+    userSettings: any;
+    annotations: any;
+    lastReadingPosition: any;
+    upLinkUrl: any;
+    staticBaseUrl: any;
+    rights: ReaderRights;
+    ui: ReaderUI;
+    material: boolean;
+}
+
+/** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
+export default class IFrameNavigator implements Navigator {
+    iframe: HTMLIFrameElement;
+    currentTocUrl: string;
+    headerMenu: HTMLElement;
+    mainElement: HTMLElement;
+    publication: Publication;
+
+    bookmarkModule?: BookmarkModule;
+
+    sideNavExanded: boolean = false
+    material: boolean = false
+
+    mTabs: Array<any>;
+    mDropdowns: Array<any>;
+    mCollapsibles: Array<any>;
+    mSidenav: any;
+
+    currentChapterLink: Link = {};
+    private nextChapterLink: Link;
+    private previousChapterLink: Link;
+    private settings: BookSettings;
+    private annotator: Annotator | null;
+
+    private paginator: PaginatedBookView | null;
+    private scroller: ScrollingBookView | null;
+    private eventHandler: EventHandler;
+    private upLinkConfig: UpLinkConfig | null;
+    private upLink: HTMLAnchorElement | null = null;
+    
+    private nextChapterBottomAnchorElement: HTMLAnchorElement;
+    private previousChapterTopAnchorElement: HTMLAnchorElement;
+
+    private nextChapterAnchorElement: HTMLAnchorElement;
+    private previousChapterAnchorElement: HTMLAnchorElement;
+
+    private nextPageAnchorElement: HTMLAnchorElement;
+    private previousPageAnchorElement: HTMLAnchorElement;
+    private espandMenuIcon: HTMLElement;
+
+    private bookmarksControl: HTMLButtonElement;
+    private bookmarksView: HTMLDivElement;
+    private links: HTMLUListElement;
+    private linksTopLeft: HTMLUListElement;
+    private linksBottom: HTMLUListElement;
+    private linksMiddle: HTMLUListElement;
+    private tocView: HTMLDivElement;
+    private loadingMessage: HTMLDivElement;
+    private errorMessage: HTMLDivElement;
+    private tryAgainButton: HTMLButtonElement;
+    private goBackButton: HTMLButtonElement;
+    private infoTop: HTMLDivElement;
+    private infoBottom: HTMLDivElement;
+    private bookTitle: HTMLSpanElement;
+    private chapterTitle: HTMLSpanElement;
+    private chapterPosition: HTMLSpanElement;
+    private newPosition: Locator | null;
+    private newElementId: string | null;
+    private isBeingStyled: boolean;
+    private isLoading: boolean;
+    private initialLastReadingPosition: ReadingPosition;
+    private staticBaseUrl: any;
+
+    public static async create(config: IFrameNavigatorConfig) {
+        const navigator = new this(
+            config.settings,
+            config.annotator || null,
+            config.eventHandler || null,
+            config.upLink || null,
+            config.initialLastReadingPosition || null,
+            config.staticBaseUrl || null,
+            config.publication,
+            config.material
+        );
+
+        await navigator.start(config.mainElement, config.headerMenu, config.footerMenu);
+        return navigator;
+    }
+
+    protected constructor(
+        settings: BookSettings,
+        annotator: Annotator | null = null,
+        eventHandler: EventHandler | null = null,
+        upLinkConfig: UpLinkConfig | null = null,
+        initialLastReadingPosition: ReadingPosition | null = null,
+        staticBaseUrl: any | null = null,
+        publication: Publication,
+        material: boolean
+    ) {
+        this.settings = settings;
+        this.annotator = annotator;
+        this.paginator = settings.paginator;
+        this.scroller = settings.scroller;
+        this.eventHandler = eventHandler || new EventHandler();
+        this.upLinkConfig = upLinkConfig;
+        this.initialLastReadingPosition = initialLastReadingPosition;
+        this.staticBaseUrl = staticBaseUrl;
+        this.publication = publication
+        this.material = material
+    }
+
+    async stop() {
+        if (IS_DEV) { console.log("Iframe navigator stop") }
+
+        removeEventListenerOptional(this.previousChapterAnchorElement, 'click', this.handlePreviousChapterClick.bind(this));
+        removeEventListenerOptional(this.nextChapterAnchorElement, 'click', this.handleNextChapterClick.bind(this));
+
+        removeEventListenerOptional(this.previousChapterTopAnchorElement, 'click', this.handlePreviousPageClick.bind(this));
+        removeEventListenerOptional(this.nextChapterBottomAnchorElement, 'click', this.handleNextPageClick.bind(this));
+
+        removeEventListenerOptional(this.previousPageAnchorElement, 'click', this.handlePreviousPageClick.bind(this));
+        removeEventListenerOptional(this.nextPageAnchorElement, 'click', this.handleNextPageClick.bind(this));
+
+        removeEventListenerOptional(this.tryAgainButton, 'click', this.tryAgain.bind(this));
+        removeEventListenerOptional(this.goBackButton, 'click', this.goBack.bind(this));
+
+        removeEventListenerOptional(this.bookmarksControl, "keydown", this.hideBookmarksOnEscape.bind(this));
+        removeEventListenerOptional(this.espandMenuIcon, 'click', this.handleEditClick.bind(this));
+
+        removeEventListenerOptional(window, "resize", this.onResize);
+
+        if (this.material) {
+
+            if (this.mDropdowns) {
+                this.mDropdowns.forEach(element => {
+                    (element as any).destroy()
+                });
+            }
+            if (this.mCollapsibles) {
+                this.mCollapsibles.forEach(element => {
+                    (element as any).destroy()
+                });
+            }
+            if (this.mSidenav) {
+                (this.mSidenav as any).destroy()
+            }
+            if (this.mTabs) {
+                this.mTabs.forEach(element => {
+                    (element as any).destroy()
+                });
+            }
+
+        }
+
+    }
+
+    protected async start(mainElement: HTMLElement, headerMenu: HTMLElement, footerMenu: HTMLElement): Promise<void> {
+
+        this.headerMenu = headerMenu;
+        this.mainElement = mainElement;
+        try {
+
+            // Main Element
+            this.iframe = HTMLUtilities.findRequiredElement(mainElement, "main#iframe-wrapper iframe") as HTMLIFrameElement;
+
+            this.loadingMessage = HTMLUtilities.findRequiredElement(mainElement, "#reader-loading") as HTMLDivElement;
+            this.loadingMessage.innerHTML = readerLoading;
+            this.loadingMessage.style.display = "none";
+
+            this.errorMessage = HTMLUtilities.findRequiredElement(mainElement, "#reader-error") as HTMLDivElement;
+            this.errorMessage.innerHTML = readerError;
+            this.errorMessage.style.display = "none";
+
+            this.tryAgainButton = HTMLUtilities.findRequiredElement(mainElement, "button[class=try-again]") as HTMLButtonElement;
+            this.goBackButton = HTMLUtilities.findRequiredElement(mainElement, "button[class=go-back]") as HTMLButtonElement;
+            this.infoTop = HTMLUtilities.findRequiredElement(mainElement, "div[class='info top']") as HTMLDivElement;
+            this.infoBottom = HTMLUtilities.findRequiredElement(mainElement, "div[class='info bottom']") as HTMLDivElement;
+
+            this.bookTitle = HTMLUtilities.findElement(headerMenu, "#book-title") as HTMLSpanElement;
+
+            this.chapterTitle = HTMLUtilities.findRequiredElement(this.infoBottom, "span[class=chapter-title]") as HTMLSpanElement;
+            this.chapterPosition = HTMLUtilities.findRequiredElement(this.infoBottom, "span[class=chapter-position]") as HTMLSpanElement;
+
+            this.espandMenuIcon = HTMLUtilities.findElement(this.headerMenu, "#expand-menu") as HTMLElement;
+
+            // Header Menu
+
+            this.links = HTMLUtilities.findElement(headerMenu, "ul.links.top") as HTMLUListElement;
+            this.linksTopLeft = HTMLUtilities.findElement(headerMenu, "#nav-mobile-left") as HTMLUListElement;
+
+            this.tocView = HTMLUtilities.findElement(headerMenu, "#container-view-toc") as HTMLDivElement;
+
+            // Footer Menu
+            this.linksBottom = HTMLUtilities.findElement(footerMenu, "ul.links.bottom") as HTMLUListElement;
+            this.linksMiddle = HTMLUtilities.findElement(footerMenu, "ul.links.middle") as HTMLUListElement;
+
+            this.nextChapterAnchorElement = HTMLUtilities.findElement(headerMenu, "a[rel=next]") as HTMLAnchorElement;
+            this.nextChapterBottomAnchorElement = HTMLUtilities.findElement(mainElement, "#next-chapter") as HTMLAnchorElement;
+            this.nextPageAnchorElement = HTMLUtilities.findElement(footerMenu, "a[rel=next]") as HTMLAnchorElement;
+
+            this.previousChapterAnchorElement = HTMLUtilities.findElement(headerMenu, "a[rel=prev]") as HTMLAnchorElement;
+            this.previousChapterTopAnchorElement = HTMLUtilities.findElement(mainElement, "#previous-chapter") as HTMLAnchorElement;
+            this.previousPageAnchorElement = HTMLUtilities.findElement(footerMenu, "a[rel=prev]") as HTMLAnchorElement;
+
+            this.nextChapterBottomAnchorElement.style.display = "none"
+            this.previousChapterTopAnchorElement.style.display = "none"
+
+            this.newPosition = null;
+            this.newElementId = null;
+            this.isBeingStyled = true;
+            this.isLoading = true;
+
+            this.setupEvents();
+
+            this.settings.setIframe(this.iframe);
+            this.settings.onFontChange(this.updateFont.bind(this));
+            this.settings.onFontSizeChange(this.updateFontSize.bind(this));
+            this.settings.onViewChange(this.updateBookView.bind(this));
+
+            if (this.initialLastReadingPosition) {
+                this.annotator.initLastReadingPosition(this.initialLastReadingPosition);
+            }
+
+            var self = this;
+            if (this.material) {
+
+                let elements = document.querySelectorAll('.sidenav');
+                if (elements) {
+                    self.mSidenav = Sidenav.init(elements, {
+                        'edge': 'left',
+                    });
+                }
+                let collapsible = document.querySelectorAll('.collapsible');
+                if (collapsible) {
+                    self.mCollapsibles = Collapsible.init(collapsible, { accordion: true });
+                }
+                let dropdowns = document.querySelectorAll('.dropdown-trigger');
+                if (dropdowns) {
+                    self.mDropdowns = Dropdown.init(dropdowns, {
+                        alignment: 'right',
+                        constrainWidth: false,
+                        coverTrigger: false,
+                        closeOnClick: false
+
+                    });
+                }
+                let tabs = document.querySelectorAll('.tabs');
+                if (tabs) {
+                    self.mTabs = Tabs.init(tabs);
+                }
+            }
+
+            return await this.loadManifest();
+        } catch (err) {
+            // There's a mismatch between the template and the selectors above,
+            // or we weren't able to insert the template in the element.
+            console.error(err)
+            this.abortOnError();
+            return new Promise<void>((_, reject) => reject(err)).catch(() => { });
+        }
+    }
+
+    timeout: any;
+
+    onResize = () => {
+        clearTimeout(this.timeout);
+        this.timeout = setTimeout(this.handleResize.bind(this), 200);
+    }
+
+    private setupEvents(): void {
+        addEventListenerOptional(this.iframe, 'load', this.handleIFrameLoad.bind(this));
+
+        addEventListenerOptional(this.previousChapterAnchorElement, 'click', this.handlePreviousChapterClick.bind(this));
+        addEventListenerOptional(this.nextChapterAnchorElement, 'click', this.handleNextChapterClick.bind(this));
+
+        addEventListenerOptional(this.previousChapterTopAnchorElement, 'click', this.handlePreviousPageClick.bind(this));
+        addEventListenerOptional(this.nextChapterBottomAnchorElement, 'click', this.handleNextPageClick.bind(this));
+
+        addEventListenerOptional(this.previousPageAnchorElement, 'click', this.handlePreviousPageClick.bind(this));
+        addEventListenerOptional(this.nextPageAnchorElement, 'click', this.handleNextPageClick.bind(this));
+
+        addEventListenerOptional(this.tryAgainButton, 'click', this.tryAgain.bind(this));
+        addEventListenerOptional(this.goBackButton, 'click', this.goBack.bind(this));
+
+        addEventListenerOptional(this.bookmarksControl, "keydown", this.hideBookmarksOnEscape.bind(this));
+
+        addEventListenerOptional(this.espandMenuIcon, 'click', this.handleEditClick.bind(this));
+
+        addEventListenerOptional(window, 'resize', this.onResize);
+
+    }
+
+    private setupModalFocusTrap(modal: HTMLDivElement, closeButton: HTMLButtonElement, lastFocusableElement: HTMLButtonElement | HTMLAnchorElement): void {
+        // Trap keyboard focus in a modal dialog when it's displayed.
+        const TAB_KEY = 9;
+
+        // Going backwards from the close button sends you to the last focusable element.
+        closeButton.addEventListener("keydown", (event: KeyboardEvent) => {
+            if (this.isDisplayed(modal)) {
+                const tab = (event.keyCode === TAB_KEY);
+                const shift = !!event.shiftKey;
+                if (tab && shift) {
+                    lastFocusableElement.focus();
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }
+        });
+
+        // Going forward from the last focusable element sends you to the close button.
+        lastFocusableElement.addEventListener("keydown", (event: KeyboardEvent) => {
+            if (this.isDisplayed(modal)) {
+                const tab = (event.keyCode === TAB_KEY);
+                const shift = !!event.shiftKey;
+                if (tab && !shift) {
+                    closeButton.focus();
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }
+        });
+    }
+
+    private updateFont(): void {
+        this.handleResize();
+    }
+
+    private updateFontSize(): void {
+        this.handleResize();
+    }
+
+    private updateBookView(): void {
+        const doNothing = () => { };
+        if (this.settings.getSelectedView() === this.paginator) {
+            document.body.onscroll = () => { };
+            this.nextChapterBottomAnchorElement.style.display = "none"
+            this.previousChapterTopAnchorElement.style.display = "none"
+            this.nextPageAnchorElement.style.display = "unset"
+            this.previousPageAnchorElement.style.display = "unset"
+            this.chapterTitle.style.display = "inline";
+            this.chapterPosition.style.display = "inline";
+            if (this.eventHandler) {
+                this.eventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
+                this.eventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
+                this.eventHandler.onLeftTap = this.handlePreviousPageClick.bind(this);
+                this.eventHandler.onMiddleTap = doNothing;
+                this.eventHandler.onRightTap = this.handleNextPageClick.bind(this);
+                this.eventHandler.onRemoveHover = this.handleRemoveHover.bind(this);
+                this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
+                this.eventHandler.onLeftArrow = doNothing;
+                this.eventHandler.onRightArrow = doNothing;
+            }
+            if (!this.isDisplayed(this.linksBottom)) {
+                this.toggleDisplay(this.linksBottom);
+            }
+
+            if (!this.isDisplayed(this.linksMiddle)) {
+                this.toggleDisplay(this.linksMiddle);
+            }
+        } else if (this.settings.getSelectedView() === this.scroller) {
+            this.nextPageAnchorElement.style.display = "none"
+            this.previousPageAnchorElement.style.display = "none"
+            if (this.scroller.atTop() && this.scroller.atBottom()) {
+                this.nextChapterBottomAnchorElement.style.display = "unset"
+                this.previousChapterTopAnchorElement.style.display = "unset"
+            } else if (this.scroller.atBottom()) {
+                this.previousChapterTopAnchorElement.style.display = "none"
+                this.nextChapterBottomAnchorElement.style.display = "unset"
+            } else if (this.scroller.atTop()) {
+                this.nextChapterBottomAnchorElement.style.display = "none"
+                this.previousChapterTopAnchorElement.style.display = "unset"
+            } else {
+                this.nextChapterBottomAnchorElement.style.display = "none"
+                this.previousChapterTopAnchorElement.style.display = "none"
+            }
+            // document.body.style.overflow = "auto";
+            document.body.onscroll = () => {
+
+                if (this.scroller && this.settings.getSelectedView() === this.scroller) {
+                    this.scroller.setIframeHeight(this.iframe)
+                }
+
+                this.saveCurrentReadingPosition();
+                if (this.scroller && this.scroller.atBottom()) {
+                    // Bring up the bottom nav when you get to the bottom,
+                    // if it wasn't already displayed.
+                    if (!this.isDisplayed(this.linksBottom)) {
+                        this.toggleDisplay(this.linksBottom);
+                    }
+                    if (!this.isDisplayed(this.linksMiddle)) {
+                        this.toggleDisplay(this.linksMiddle);
+                    }
+                } else {
+                    // Remove the bottom nav when you scroll back up,
+                    // if it was displayed because you were at the bottom.
+                    if (this.isDisplayed(this.linksBottom) && !this.isDisplayed(this.links)) {
+                        this.toggleDisplay(this.linksBottom);
+                    }
+                }
+
+                if (this.scroller) {
+                    if (this.scroller.atTop() && this.scroller.atBottom()) {
+                        this.nextChapterBottomAnchorElement.style.display = "unset"
+                        this.previousChapterTopAnchorElement.style.display = "unset"
+                    } else if (this.scroller.atBottom()) {
+                        this.previousChapterTopAnchorElement.style.display = "none"
+                        this.nextChapterBottomAnchorElement.style.display = "unset"
+                    } else if (this.scroller.atTop()) {
+                        this.nextChapterBottomAnchorElement.style.display = "none"
+                        this.previousChapterTopAnchorElement.style.display = "unset"
+                    } else {
+                        this.nextChapterBottomAnchorElement.style.display = "none"
+                        this.previousChapterTopAnchorElement.style.display = "none"
+                    }
+                }
+
+            }
+
+            this.chapterTitle.style.display = "none";
+            this.chapterPosition.style.display = "none";
+            if (this.eventHandler) {
+                this.eventHandler.onBackwardSwipe = doNothing;
+                this.eventHandler.onForwardSwipe = doNothing;
+                this.eventHandler.onLeftTap = doNothing;
+                this.eventHandler.onMiddleTap = doNothing
+                this.eventHandler.onRightTap = doNothing;
+                this.eventHandler.onLeftHover = doNothing;
+                this.eventHandler.onRightHover = doNothing;
+                this.eventHandler.onRemoveHover = doNothing;
+                this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
+                this.eventHandler.onLeftArrow = doNothing;
+                this.eventHandler.onRightArrow = doNothing;
+                this.handleRemoveHover();
+            }
+            if (!this.isDisplayed(this.linksBottom)) {
+                this.toggleDisplay(this.linksBottom);
+            }
+
+            if (!this.isDisplayed(this.linksMiddle)) {
+                this.toggleDisplay(this.linksMiddle);
+            }
+        }
+        setTimeout(() => {
+            this.updatePositionInfo();
+        }, 100);
+    }
+
+    onScroll(): void {
+        this.saveCurrentReadingPosition();
+        if (this.scroller && this.scroller.atBottom()) {
+            // Bring up the bottom nav when you get to the bottom,
+            // if it wasn't already displayed.
+            if (!this.isDisplayed(this.linksBottom)) {
+                this.toggleDisplay(this.linksBottom);
+            }
+            if (!this.isDisplayed(this.linksMiddle)) {
+                this.toggleDisplay(this.linksMiddle);
+            }
+        } else {
+            // Remove the bottom nav when you scroll back up,
+            // if it was displayed because you were at the bottom.
+            if (this.isDisplayed(this.linksBottom) && !this.isDisplayed(this.links)) {
+                this.toggleDisplay(this.linksBottom);
+            }
+        }
+
+        if (this.scroller && this.settings.getSelectedView() === this.scroller) {
+            if (this.scroller.atTop() && this.scroller.atBottom()) {
+                this.nextChapterBottomAnchorElement.style.display = "unset"
+                this.previousChapterTopAnchorElement.style.display = "unset"
+            } else if (this.scroller.atBottom()) {
+                this.previousChapterTopAnchorElement.style.display = "none"
+                this.nextChapterBottomAnchorElement.style.display = "unset"
+            } else if (this.scroller.atTop()) {
+                this.nextChapterBottomAnchorElement.style.display = "none"
+                this.previousChapterTopAnchorElement.style.display = "unset"
+            } else {
+                this.nextChapterBottomAnchorElement.style.display = "none"
+                this.previousChapterTopAnchorElement.style.display = "none"
+            }
+        }
+
+    }
+
+    private async loadManifest(): Promise<void> {
+        try {
+            const createSubmenu = (parentElement: Element, links: Array<Link>, control?: HTMLButtonElement, ol: boolean = false) => {
+                var menuControl: HTMLButtonElement
+                var mainElement: HTMLDivElement
+                if (control) {
+                    menuControl = control
+                    if (parentElement instanceof HTMLDivElement) {
+                        mainElement = parentElement
+                    }
+                }
+                var listElement: HTMLUListElement = document.createElement("ul");
+                if (ol) {
+                    listElement = document.createElement("ol");
+                }
+                listElement.className = 'sidenav-toc';
+                let lastLink: HTMLAnchorElement | null = null;
+                for (const link of links) {
+                    const listItemElement: HTMLLIElement = document.createElement("li");
+                    const linkElement: HTMLAnchorElement = document.createElement("a");
+                    const spanElement: HTMLSpanElement = document.createElement("span");
+                    linkElement.className = "chapter-link"
+                    linkElement.tabIndex = -1;
+                    let href = "";
+                    if (link.href) {
+                        href = this.publication.getAbsoluteHref(link.href);
+                        linkElement.href = href;
+                        linkElement.innerHTML = link.title || "";
+                        listItemElement.appendChild(linkElement);
+                    } else {
+                        spanElement.innerHTML = link.title || "";
+                        spanElement.className = 'chapter-title';
+                        listItemElement.appendChild(spanElement);
+                    }
+                    if (link.children && link.children.length > 0) {
+                        createSubmenu(listItemElement, link.children, null, true);
+                    }
+
+                    listElement.appendChild(listItemElement);
+                    lastLink = linkElement;
+                }
+
+                // Trap keyboard focus inside the TOC while it's open.
+                if (lastLink && menuControl) {
+                    this.setupModalFocusTrap(mainElement, menuControl, lastLink);
+                }
+
+                addEventListenerOptional(listElement, 'click', (event: Event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (event.target && (event.target as HTMLElement).tagName.toLowerCase() === "a") {
+                        let linkElement = event.target as HTMLAnchorElement;
+
+                        if (linkElement.className.indexOf("active") !== -1) {
+                            // This TOC item is already loaded. Hide the TOC
+                            // but don't navigate.
+                            this.hideView(mainElement, menuControl);
+                        } else {
+                            // Set focus back to the contents toggle button so screen readers
+                            // don't get stuck on a hidden link.
+                            menuControl ? menuControl.focus() : null;
+
+                            let locations: Locations = {
+                                progression: 0
+                            }
+                            if (linkElement.href.indexOf("#") !== -1) {
+                                const elementId = linkElement.href.slice(linkElement.href.indexOf("#") + 1);
+                                if (elementId !== null) {
+                                    locations = {
+                                        fragment: elementId
+                                    }
+                                }
+                            }
+
+                            const position: Locator = {
+                                href: linkElement.href,
+                                locations: locations,
+                                type: linkElement.type,
+                                title: linkElement.title
+                            };
+
+                            this.hideView(mainElement, menuControl);
+                            this.navigate(position);
+                        }
+                    }
+                });
+
+                parentElement.appendChild(listElement);
+            }
+
+            const toc = this.publication.tableOfContents;
+            if (this.tocView) {
+                if (toc.length) {
+                    createSubmenu(this.tocView, toc);
+                } else {
+                    this.tocView.parentElement.parentElement.removeChild(this.tocView.parentElement);
+                }
+            }
+
+            if ((this.links || this.linksTopLeft) && this.upLinkConfig && this.upLinkConfig.url) {
+                const upUrl = this.upLinkConfig.url;
+                const upLabel = this.upLinkConfig.label || "";
+                const upAriaLabel = this.upLinkConfig.ariaLabel || upLabel;
+                var upHTML = defaultUpLinkTemplate(upUrl.href, upLabel, upAriaLabel);
+                upHTML = simpleUpLinkTemplate(upUrl.href, upLabel, upAriaLabel);
+                const upParent: HTMLLIElement = document.createElement("li");
+                upParent.classList.add("uplink-wrapper");
+                upParent.innerHTML = upHTML;
+                if (this.links) {
+                    this.links.insertBefore(upParent, this.links.firstChild);
+                    this.upLink = HTMLUtilities.findRequiredElement(this.links, "a[rel=up]") as HTMLAnchorElement;
+                } else {
+                    this.linksTopLeft.insertBefore(upParent, this.linksTopLeft.firstChild);
+                    this.upLink = HTMLUtilities.findRequiredElement(this.linksTopLeft, "a[rel=up]") as HTMLAnchorElement;
+                }
+            }
+
+
+            let lastReadingPosition: ReadingPosition | null = null;
+            if (this.annotator) {
+                lastReadingPosition = await this.annotator.getLastReadingPosition() as ReadingPosition | null;
+            }
+
+            const startLink = this.publication.getStartLink();
+            let startUrl: string | null = null;
+            if (startLink && startLink.href) {
+                startUrl = this.publication.getAbsoluteHref(startLink.href);
+
+            }
+
+            if (lastReadingPosition) {
+                this.navigate(lastReadingPosition);
+            } else if (startUrl) {
+                const position: ReadingPosition = {
+                    href: startUrl,
+                    locations: {
+                        progression: 0
+                    },
+                    created: new Date(),
+                    title: startLink.title
+                };
+
+                this.navigate(position);
+            }
+
+            return new Promise<void>(resolve => resolve());
+        } catch (err) {
+            console.error(err)
+            this.abortOnError();
+            return new Promise<void>((_, reject) => reject(err)).catch(() => { });
+        }
+    }
+
+    private async handleIFrameLoad(): Promise<void> {
+        this.errorMessage.style.display = "none";
+        this.showLoadingMessageAfterDelay();
+        try {
+            let bookViewPosition = 0;
+            if (this.newPosition) {
+                bookViewPosition = this.newPosition.locations.progression;
+                this.newPosition = null;
+            }
+            this.updateFont();
+            this.updateFontSize();
+            this.updateBookView();
+
+            this.settings.applyProperties();
+
+            setTimeout(() => {
+                this.settings.getSelectedView().goToPosition(bookViewPosition);
+                this.updatePositionInfo();
+            }, 100);
+
+            setTimeout(() => {
+                if (this.newElementId) {
+                    this.settings.getSelectedView().goToElement(this.newElementId);
+                    this.newElementId = null;
+                }
+            }, 100);
+
+            let currentLocation = this.currentChapterLink.href
+
+            this.updatePositionInfo();
+
+            const previous = this.publication.getPreviousSpineItem(currentLocation);
+            if (previous && previous.href) {
+                this.previousChapterLink = previous
+            }
+            if (this.previousChapterAnchorElement) {
+                if (this.previousChapterLink) {
+                    this.previousChapterAnchorElement.href = this.publication.getAbsoluteHref(this.previousChapterLink.href)
+                    this.previousChapterAnchorElement.className = this.previousChapterAnchorElement.className.replace(" disabled", "");
+                } else {
+                    this.previousChapterAnchorElement.removeAttribute("href");
+                    this.previousChapterAnchorElement.className += " disabled";
+                    this.handleRemoveHover();
+                }
+            }
+
+            const next = this.publication.getNextSpineItem(currentLocation);
+            if (next && next.href) {
+                this.nextChapterLink = next
+
+            }
+            if (this.nextChapterAnchorElement) {
+                if (this.nextChapterLink) {
+                    this.nextChapterAnchorElement.href = this.publication.getAbsoluteHref(this.nextChapterLink.href);
+                    this.nextChapterAnchorElement.className = this.nextChapterAnchorElement.className.replace(" disabled", "");
+                } else {
+                    this.nextChapterAnchorElement.removeAttribute("href");
+                    this.nextChapterAnchorElement.className += " disabled";
+                    this.handleRemoveHover();
+                }
+            }
+
+            if (this.currentTocUrl !== null) {
+                this.setActiveTOCItem(this.currentTocUrl);
+            } else {
+                this.setActiveTOCItem(currentLocation);
+            }
+
+            if (this.publication.metadata.title) {
+                this.bookTitle.innerHTML = this.publication.metadata.title;
+            }
+
+            const spineItem = this.publication.getSpineItem(currentLocation);
+            if (spineItem !== null) {
+                this.currentChapterLink.title = spineItem.title;
+                this.currentChapterLink.type = spineItem.type
+            }
+            let tocItem = this.publication.getTOCItem(currentLocation);
+            if (this.currentTocUrl !== null) {
+                tocItem = this.publication.getTOCItem(this.currentTocUrl);
+            }
+            if (!this.currentChapterLink.title && tocItem !== null && tocItem.title) {
+                this.currentChapterLink.title = tocItem.title;
+            }
+            if (!this.currentChapterLink.type && tocItem !== null && tocItem.type) {
+                this.currentChapterLink.title = tocItem.title;
+            }
+
+            if (this.currentChapterLink.title) {
+                this.chapterTitle.innerHTML = "(" + this.currentChapterLink.title + ")";
+            } else {
+                this.chapterTitle.innerHTML = "(Current Chapter)";
+            }
+
+            if (this.eventHandler) {
+                this.eventHandler.setupEvents(this.iframe.contentDocument);
+            }
+
+            if (this.annotator) {
+                await this.saveCurrentReadingPosition();
+            }
+            this.hideLoadingMessage();
+            this.showIframeContents();
+
+
+            // Inject Readium CSS into Iframe Head
+            const head = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "head") as HTMLHeadElement;
+            if (head) {
+                const beforeCss = HTMLUtilities.findElement(head, 'link[rel=stylesheet][href~="' + (this.staticBaseUrl ? this.staticBaseUrl : "") + '/viewer/readium-css/ReadiumCSS-before.css"]') as HTMLLinkElement;
+                const defaultCss = HTMLUtilities.findElement(head, 'link[rel=stylesheet][href~="' + (this.staticBaseUrl ? this.staticBaseUrl : "") + '/viewer/readium-css/ReadiumCSS-default.css"]') as HTMLLinkElement;
+                const afterCss = HTMLUtilities.findElement(head, 'link[rel=stylesheet][href~="' + (this.staticBaseUrl ? this.staticBaseUrl : "") + '/viewer/readium-css/ReadiumCSS-after.css"]') as HTMLLinkElement;
+                const openDyslexisCss = HTMLUtilities.findElement(head, 'link[rel=stylesheet][href~="' + (this.staticBaseUrl ? this.staticBaseUrl : "") + '/viewer/fonts/opendyslexic/opendyslexic.css"]') as HTMLLinkElement;
+
+                if (!beforeCss) {
+                    head.insertBefore(this.createCssLink('' + (this.staticBaseUrl ? this.staticBaseUrl : "") + '/viewer/readium-css/ReadiumCSS-before.css'), head.firstChild)
+                }
+                if (!defaultCss) {
+                    head.insertBefore(this.createCssLink('' + (this.staticBaseUrl ? this.staticBaseUrl : "") + '/viewer/readium-css/ReadiumCSS-default.css'), head.childNodes[1])
+                }
+                if (!afterCss) {
+                    head.appendChild(this.createCssLink('' + (this.staticBaseUrl ? this.staticBaseUrl : "") + '/viewer/readium-css/ReadiumCSS-after.css'))
+                    head.appendChild(this.createJavascriptLink('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML'))
+                }
+                if (!openDyslexisCss) {
+                    head.appendChild(this.createCssLink('' + (this.staticBaseUrl ? this.staticBaseUrl : "") + '/viewer/fonts/opendyslexic/opendyslexic.css'))
+                }
+            }
+
+            setTimeout(() => {
+
+                if (this.scroller && this.settings.getSelectedView() === this.scroller) {
+                    this.scroller.setIframeHeight(this.iframe)
+                }
+
+            }, 100);
+
+            return new Promise<void>(resolve => resolve());
+        } catch (err) {
+            console.error(err)
+            this.abortOnError();
+            return new Promise<void>((_, reject) => reject(err)).catch(() => { });
+        }
+    }
+
+    private abortOnError() {
+        this.errorMessage.style.display = "block";
+        if (this.isLoading) {
+            this.hideLoadingMessage();
+        }
+    }
+
+    private tryAgain() {
+        this.iframe.src = this.currentChapterLink.href
+    }
+
+    private goBack() {
+        window.history.back();
+    }
+
+    private isDisplayed(element: HTMLDivElement | HTMLUListElement) {
+        return element ? element.className.indexOf(" active") !== -1 : false;
+    }
+
+    private showElement(element: HTMLDivElement | HTMLUListElement, control?: HTMLAnchorElement | HTMLButtonElement) {
+        if (element) {
+            element.className = element.className.replace(" inactive", "");
+            if (element.className.indexOf(" active") === -1) {
+                element.className += " active";
+            }
+            element.setAttribute("aria-hidden", "false");
+            if (control) {
+                control.setAttribute("aria-expanded", "true");
+
+                const openIcon = control.querySelector(".icon.open");
+                if (openIcon && (openIcon.getAttribute("class") || "").indexOf(" inactive-icon") === -1) {
+                    const newIconClass = (openIcon.getAttribute("class") || "") + " inactive-icon";
+                    openIcon.setAttribute("class", newIconClass);
+                }
+                const closeIcon = control.querySelector(".icon.close");
+                if (closeIcon) {
+                    const newIconClass = (closeIcon.getAttribute("class") || "").replace(" inactive-icon", "");
+                    closeIcon.setAttribute("class", newIconClass);
+                }
+            }
+            // Add buttons and links in the element to the tab order.
+            const buttons = Array.prototype.slice.call(element.querySelectorAll("button"));
+            const links = Array.prototype.slice.call(element.querySelectorAll("a"));
+            for (const button of buttons) {
+                button.tabIndex = 0;
+            }
+            for (const link of links) {
+                link.tabIndex = 0;
+            }
+        }
+    }
+
+    private hideElement(element: HTMLDivElement | HTMLUListElement, control?: HTMLAnchorElement | HTMLButtonElement) {
+        if (element) {
+
+            element.className = element.className.replace(" active", "");
+            if (element.className.indexOf(" inactive") === -1) {
+                element.className += " inactive";
+            }
+            element.setAttribute("aria-hidden", "true");
+            if (control) {
+                control.setAttribute("aria-expanded", "false");
+
+                const openIcon = control.querySelector(".icon.open");
+                if (openIcon) {
+                    const newIconClass = (openIcon.getAttribute("class") || "").replace(" inactive-icon", "");
+                    openIcon.setAttribute("class", newIconClass);
+                }
+                const closeIcon = control.querySelector(".icon.close");
+                if (closeIcon && (closeIcon.getAttribute("class") || "").indexOf(" inactive-icon") === -1) {
+                    const newIconClass = (closeIcon.getAttribute("class") || "") + " inactive-icon";
+                    closeIcon.setAttribute("class", newIconClass);
+                }
+            }
+            // Remove buttons and links in the element from the tab order.
+            const buttons = Array.prototype.slice.call(element.querySelectorAll("button"));
+            const links = Array.prototype.slice.call(element.querySelectorAll("a"));
+            for (const button of buttons) {
+                button.tabIndex = -1;
+            }
+            for (const link of links) {
+                link.tabIndex = -1;
+            }
+        }
+    }
+
+
+    private hideModal(modal: HTMLDivElement, control?: HTMLAnchorElement | HTMLButtonElement) {
+        // Restore the page for screen readers.
+        this.iframe.setAttribute("aria-hidden", "false");
+        if (this.upLink) {
+            this.upLink.setAttribute("aria-hidden", "false");
+        }
+        if (this.linksBottom) {
+            this.linksBottom.setAttribute("aria-hidden", "false");
+        }
+        if (this.linksMiddle) {
+            this.linksMiddle.setAttribute("aria-hidden", "false");
+        }
+        this.loadingMessage.setAttribute("aria-hidden", "false");
+        this.errorMessage.setAttribute("aria-hidden", "false");
+        this.infoTop.setAttribute("aria-hidden", "false");
+        this.infoBottom.setAttribute("aria-hidden", "false");
+
+        this.hideElement(modal, control);
+    }
+
+
+    private toggleDisplay(element: HTMLDivElement | HTMLUListElement, control?: HTMLAnchorElement | HTMLButtonElement): void {
+        if (!this.isDisplayed(element)) {
+            this.showElement(element, control);
+        } else {
+            this.hideElement(element, control);
+        }
+        if (element === this.linksMiddle) {
+            if (this.settings.getSelectedView() === this.scroller) {
+                this.showElement(element, control);
+            } else {
+                this.hideElement(element, control);
+            }
+        }
+    }
+
+
+    private handleEditClick(event: MouseEvent): void {
+        var element = event.target as HTMLElement
+        var sidenav = HTMLUtilities.findElement(this.headerMenu, ".sidenav") as HTMLElement;
+
+        if (element.className.indexOf(" active") === -1) {
+            element.className += " active";
+            sidenav.className += " expanded";
+            element.innerText = "unfold_less";
+            this.sideNavExanded = true
+            this.bookmarkModule.showBookmarks()
+        } else {
+            element.className = element.className.replace(" active", "");
+            sidenav.className = sidenav.className.replace(" expanded", "");
+            element.innerText = "unfold_more";
+            this.sideNavExanded = false
+            this.bookmarkModule.showBookmarks()
+        }
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+
+    private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
+        if (this.paginator) {
+            if (this.paginator.onFirstPage()) {
+                if (this.previousChapterLink) {
+                    const position: Locator = {
+                        href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
+                        locations: {
+                            progression: 1
+                        },
+                        type: this.previousChapterLink.type,
+                        title: this.previousChapterLink.title
+                    };
+
+                    this.navigate(position);
+                    var pagi = this.paginator
+                    setTimeout(() => {
+                        pagi.goToPosition(1);
+                        this.updatePositionInfo();
+                        this.saveCurrentReadingPosition();
+                    }, 1);
+
+                }
+            } else {
+                this.paginator.goToPreviousPage();
+                this.updatePositionInfo();
+                this.saveCurrentReadingPosition();
+            }
+            event.preventDefault();
+            event.stopPropagation();
+        } else {
+            if (this.previousChapterLink) {
+                const position: Locator = {
+                    href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
+                    locations: {
+                        progression: 0
+                    },
+                    type: this.previousChapterLink.type,
+                    title: this.previousChapterLink.title
+                };
+
+                this.navigate(position);
+            }
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
+
+    private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
+        if (this.paginator) {
+            if (this.paginator.onLastPage()) {
+                if (this.nextChapterLink) {
+                    const position: Locator = {
+                        href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
+                        locations: {
+                            progression: 0
+                        },
+                        type: this.nextChapterLink.type,
+                        title: this.nextChapterLink.title
+                    };
+
+                    this.navigate(position);
+                    var pagi = this.paginator
+                    setTimeout(() => {
+                        pagi.goToPosition(0);
+                        this.updatePositionInfo();
+                        this.saveCurrentReadingPosition();
+                    }, 1);
+                }
+            } else {
+                this.paginator.goToNextPage();
+                this.updatePositionInfo();
+                this.saveCurrentReadingPosition();
+            }
+            event.preventDefault();
+            event.stopPropagation();
+        } else {
+            if (this.nextChapterLink) {
+                const position: Locator = {
+                    href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
+                    locations: {
+                        progression: 0
+                    },
+                    type: this.nextChapterLink.type,
+                    title: this.nextChapterLink.title
+                };
+
+                this.navigate(position);
+            }
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
+
+    private handleRemoveHover(): void {
+        this.iframe.className = "";
+    }
+
+    private handleInternalLink(event: MouseEvent | TouchEvent) {
+        const element = event.target;
+
+
+        let locations: Locations = {
+            progression: 0
+        }
+        const linkElement = (element as HTMLAnchorElement)
+        if (linkElement.href.indexOf("#") !== -1) {
+            const elementId = linkElement.href.slice(linkElement.href.indexOf("#") + 1);
+            if (elementId !== null) {
+                locations = {
+                    fragment: elementId
+                }
+            }
+        }
+
+        const position: Locator = {
+            href: linkElement.href,
+            locations: locations,
+            type: linkElement.type,
+            title: linkElement.title
+        };
+
+        event.preventDefault();
+        event.stopPropagation();
+        this.navigate(position);
+    }
+
+    private handleResize(): void {
+        const selectedView = this.settings.getSelectedView();
+        const oldPosition = selectedView.getCurrentPosition();
+
+        this.settings.applyProperties()
+
+        // If the links are hidden, show them temporarily
+        // to determine the top and bottom heights.
+
+        const linksHidden = !this.isDisplayed(this.links);
+
+        if (linksHidden) {
+            this.toggleDisplay(this.links);
+        }
+
+        this.infoTop.style.height = 0 + "px";
+        this.infoTop.style.minHeight = 0 + "px";
+
+        if (linksHidden) {
+            this.toggleDisplay(this.links);
+        }
+
+        const linksBottomHidden = !this.isDisplayed(this.linksBottom);
+        if (linksBottomHidden) {
+            this.toggleDisplay(this.linksBottom);
+        }
+
+        this.infoBottom.style.height = 0 + "px";
+
+        if (linksBottomHidden) {
+            this.toggleDisplay(this.linksBottom);
+        }
+
+        if (this.paginator) {
+            this.paginator.height = (BrowserUtilities.getHeight() - 70 - 10 - 40 - 10);
+        }
+        setTimeout(() => {
+            if (this.scroller && this.settings.getSelectedView() === this.scroller) {
+                this.scroller.setIframeHeight(this.iframe)
+            }
+        }, 100);
+        setTimeout(() => {
+            selectedView.goToPosition(oldPosition);
+            this.updatePositionInfo();
+        }, 100);
+    }
+
+    private updatePositionInfo() {
+        if (this.settings.getSelectedView() === this.paginator) {
+            const currentPage = Math.round(this.paginator.getCurrentPage());
+            const pageCount = Math.round(this.paginator.getPageCount());
+            this.chapterPosition.innerHTML = "Page " + currentPage + " of " + pageCount;
+        } else {
+            this.chapterPosition.innerHTML = "";
+        }
+    }
+
+    private handlePreviousChapterClick(event: MouseEvent): void {
+        if (this.previousChapterLink) {
+            const position: Locator = {
+                href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
+                locations: {
+                    progression: 0
+                },
+                type: this.previousChapterLink.type,
+                title: this.previousChapterLink.title
+            };
+
+            this.navigate(position);
+        }
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    private handleNextChapterClick(event: MouseEvent): void {
+        if (this.nextChapterLink) {
+            const position: Locator = {
+                href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
+                locations: {
+                    progression: 0
+                },
+                type: this.nextChapterLink.type,
+                title: this.nextChapterLink.title
+            };
+
+            this.navigate(position);
+        }
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+
+    private hideBookmarksOnEscape(event: KeyboardEvent) {
+        const ESCAPE_KEY = 27;
+        if (this.isDisplayed(this.bookmarksView) && event.keyCode === ESCAPE_KEY) {
+            this.hideModal(this.bookmarksView, this.bookmarksControl);
+        }
+    }
+
+    private hideView(_view: HTMLDivElement, _control: HTMLButtonElement): void {
+        if (this.settings.getSelectedView() === this.scroller) {
+            document.body.style.overflow = "auto";
+        }
+    }
+
+
+    private setActiveTOCItem(resource: string): void {
+        if (this.tocView) {
+            const allItems = Array.prototype.slice.call(this.tocView.querySelectorAll("li > a"));
+            for (const item of allItems) {
+                item.className = item.className.replace(" active", "");
+            }
+            const activeItem = this.tocView.querySelector('li > a[href^="' + resource + '"]');
+            if (activeItem) {
+                activeItem.className += " active";
+            }
+        }
+    }
+
+
+    navigate(locator: Locator): void {
+        this.hideIframeContents();
+        this.showLoadingMessageAfterDelay();
+        this.newPosition = locator;
+
+        if (locator.href.indexOf("#") !== -1) {
+            const newResource = locator.href.slice(0, locator.href.indexOf("#"))
+            this.currentChapterLink.href = newResource;
+            this.currentChapterLink.type = locator.type
+            this.currentChapterLink.title = locator.title
+        } else {
+            this.currentChapterLink.href = locator.href
+            this.currentChapterLink.type = locator.type
+            this.currentChapterLink.title = locator.title
+        }
+        this.iframe.src = this.currentChapterLink.href
+
+
+        if (locator.locations.fragment === undefined) {
+            this.currentTocUrl = null;
+        } else {
+            this.newElementId = locator.locations.fragment
+            this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
+        }
+        setTimeout(() => {
+
+            if (this.settings.getSelectedView() === this.scroller) {
+                if (this.scroller.atTop() && this.scroller.atBottom()) {
+                    this.nextChapterBottomAnchorElement.style.display = "unset"
+                    this.previousChapterTopAnchorElement.style.display = "unset"
+                } else if (this.scroller.atBottom()) {
+                    this.previousChapterTopAnchorElement.style.display = "none"
+                    this.nextChapterBottomAnchorElement.style.display = "unset"
+                } else if (this.scroller.atTop()) {
+                    this.nextChapterBottomAnchorElement.style.display = "none"
+                    this.previousChapterTopAnchorElement.style.display = "unset"
+                } else {
+                    this.nextChapterBottomAnchorElement.style.display = "none"
+                    this.previousChapterTopAnchorElement.style.display = "none"
+                }
+            }
+        }, 300);
+
+    }
+
+    private showIframeContents() {
+        this.isBeingStyled = false;
+        // We set a timeOut so that settings can be applied when opacity is still 0
+        setTimeout(() => {
+            if (!this.isBeingStyled) {
+                this.iframe.style.opacity = "1";
+            }
+        }, 150);
+    }
+
+    private showLoadingMessageAfterDelay() {
+        this.isLoading = true;
+        setTimeout(() => {
+            if (this.isLoading) {
+                this.loadingMessage.style.display = "block";
+                this.loadingMessage.classList.add("is-loading");
+            }
+        }, 200);
+    }
+
+    private hideIframeContents() {
+        this.isBeingStyled = true;
+        this.iframe.style.opacity = "0";
+    }
+
+    private hideLoadingMessage() {
+        this.isLoading = false;
+        this.loadingMessage.style.display = "none";
+        this.loadingMessage.classList.remove("is-loading");
+    }
+
+    private async saveCurrentReadingPosition(): Promise<void> {
+        if (this.annotator) {
+            let url = this.currentChapterLink.href;
+            if (this.currentTocUrl !== null) {
+                url = this.currentTocUrl
+            }
+            const position: ReadingPosition = {
+                href: url,
+                locations: {
+                    progression: this.settings.getSelectedView().getCurrentPosition()
+                },
+                created: new Date(),
+                type: this.currentChapterLink.type,
+                title: this.currentChapterLink.title
+            }
+
+            return this.annotator.saveLastReadingPosition(position);
+        } else {
+            return new Promise<void>(resolve => resolve());
+        }
+    }
+
+    private createCssLink(href: string): HTMLLinkElement {
+        const cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.type = 'text/css';
+        cssLink.href = href;
+        return cssLink;
+    }
+    private createJavascriptLink(href: string): HTMLScriptElement {
+        const cssLink = document.createElement('script');
+        cssLink.type = 'text/javascript';
+        cssLink.src = href;
+        cssLink.async
+        return cssLink;
+    }
+
+}

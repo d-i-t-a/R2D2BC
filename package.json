@@ -16,7 +16,6 @@
     "build": "webpack --mode=production && npm run sass && cpx 'dist/*.{css,js,map}' viewer/",
     "dev": "webpack --mode=development && npm run sass && cpx 'dist/*.{css,js,map,woff,woff2}' viewer/",
     "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
-    "test": "rimraf lib && tsc --p tsconfig-test.json && mocha --require jsdom-global/register --recursive lib/test",
     "examples": "rimraf examples/streamed/readers/viewer && cpx 'viewer/*.{html,css,js,map,woff,woff2}' examples/streamed/readers/viewer && cpx 'viewer/readium-css/*.{html,css,js}' examples/streamed/readers/viewer/readium-css && cpx 'viewer/fonts/*/*.{html,css,js,woff,woff2}' examples/streamed/readers/viewer/fonts",
     "streamed": "node \"./examples/streamed/server/server-cli.inlinesourcemap.js\" ./examples/streamed/epubs/",
     "clean": "rimraf node_modules lib dist",

@@ -30,7 +30,6 @@ export default class ScrollingBookView implements BookView {
         const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
 
         const width = (BrowserUtilities.getWidth() - this.sideMargin * 2) + "px";
-        
         this.setIframeHeight(this.iframe)      
 
         const images = Array.prototype.slice.call(body.querySelectorAll("img"));

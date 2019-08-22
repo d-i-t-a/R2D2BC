@@ -444,7 +444,7 @@ export default class IFrameNavigator implements Navigator {
                     }
                 }
 
-                if (this.scroller) {
+                if (this.scroller && this.settings.getSelectedView() === this.scroller) {
                     if (this.scroller.atTop() && this.scroller.atBottom()) {
                         this.nextChapterBottomAnchorElement.style.display = "unset"
                         this.previousChapterTopAnchorElement.style.display = "unset"

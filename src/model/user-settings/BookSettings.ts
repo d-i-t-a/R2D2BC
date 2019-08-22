@@ -228,7 +228,7 @@ export default class BookSettings {
             this.updateViewButtons();
         } else {
             // remove buttons
-            HTMLUtilities.findRequiredElement(element, "#container-view-scroll").remove()
+            HTMLUtilities.findElement(element, "#container-view-scroll") ? HTMLUtilities.findElement(element, "#container-view-scroll").remove() : null
         }
 
 

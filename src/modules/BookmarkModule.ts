@@ -129,6 +129,10 @@ export default class BookmarkModule implements ReaderModule {
                 tocItem = this.publication.getTOCItem(this.delegate.currentTocUrl);
             }
 
+            if (tocItem === null) {
+                tocItem = this.publication.getTOCItemAbsolute(this.delegate.currentChapterLink.href);
+            }    
+
             const url = this.publication.getAbsoluteHref(tocItem.href);
 
             const bookmarkPosition = this.settings.getSelectedView().getCurrentPosition();

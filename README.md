@@ -8,12 +8,6 @@ Clone this repo, then
 npm install
 ```
 
-You can run automated tests with
-
-```
-npm test
-```
-
 ## Examples
 
 Examples demonstrate how this webpub-viewer can be used:

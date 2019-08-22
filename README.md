@@ -1,5 +1,4 @@
-[![DepShield Badge](https://depshield.sonatype.org/badges/Bokbasen/r2-reader/depshield.svg)](https://depshield.github.io)
-
+[![DepShield Badge](https://depshield.sonatype.org/badges/d-i-t-a/R2D2BC/depshield.svg)](https://depshield.github.io)
 
 ## Quickstart
 
@@ -33,6 +32,9 @@ This example runs on `http`.
 
 - Update the web reader files if needed (`npm run examples`)
 - Start the server with `npm run streamed`
+```
+npm run build && npm run examples && npm run streamed
+```
 - Open http://localhost:4444 in the browser
 - Pick a publication
 - You can see its manifest (`json`) and open it in the webpub-viewer of your choice

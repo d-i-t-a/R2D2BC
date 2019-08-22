@@ -40,18 +40,6 @@ npm run build && npm run examples && npm run streamed
 - You can see its manifest (`json`) and open it in the webpub-viewer of your choice
 - To stop the server, type `ctrl + c`
 
-## Testing
-
-### Unit testing
-
-By running: 
-
-```
-npm test
-```
-
-You’ll launch 200+ automated tests to make sure everything is OK.
-
 
 ## Icons
 

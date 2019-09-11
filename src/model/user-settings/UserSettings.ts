@@ -105,13 +105,6 @@ export class UserSettings {
     }
 }
 
-export class UserSettingsSimple {
-    font_size: number
-    font_family: string
-    appearance: string
-}
-
-export type UpdateUserSettings = (usersettings: UserSettingsSimple) => Promise<UserSettingsSimple>
 
 export interface UserSettingsConfig {
     fontSize?: boolean;

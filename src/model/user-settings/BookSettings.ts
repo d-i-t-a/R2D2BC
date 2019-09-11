@@ -375,10 +375,29 @@ export default class BookSettings {
     }
 
     private async storeProperty(property: UserProperty): Promise<void> {
+        this.updateUserSettings()
         this.userSettings.saveProperty(property)
     }
 
     private async storeSelectedView(view: BookView): Promise<void> {
+        this.updateUserSettings()
         return this.store.set(UserSettings.SCROLL_KEY, view.name);
     }
+
+    private updateUserSettings() {
+        var userSettings = {
+            fontFamily:UserSettings.fontFamilyValues[this.fontFamilyProperty.value],
+            fontSize:this.fontSizeProperty.value,
+            appearance:UserSettings.appearanceValues[this.appearanceProperty.value],
+            textAlignment:UserSettings.textAlignmentValues[this.textAlignProperty.value],
+            columnCount:UserSettings.columnCountValues[this.colCountProperty.value],
+            wordSpacing:this.wordSpacingProperty.value,
+            letterSpacing:this.letterSpacingProperty.value,
+        }
+        this.api.updateUserSettings(userSettings).then(_ => {
+            if (IS_DEV) {console.log("api updated user settings", userSettings )}
+        })
+
+    }
+
 };

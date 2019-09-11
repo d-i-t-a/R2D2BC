@@ -6,13 +6,17 @@ import BookSettings from "../model/user-settings/BookSettings";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { icons as IconLib } from "../utils/IconLib";
-import { Bookmark, ReadingPosition, Locator } from "../model/Locator";
+import { Bookmark, Locator } from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 
 export type AddBookmark = (bookmark: Bookmark) => Promise<Bookmark>
 export type DeleteBookmark = (bookmark: Bookmark) => Promise<Bookmark>
-export type UpdateCurrentLocation = (location: ReadingPosition) => Promise<ReadingPosition>
+
+export interface BookmarkModuleAPI {
+    addBookmark: AddBookmark;
+    deleteBookmark: DeleteBookmark;
+}
 
 export interface BookmarkModuleConfig {
     annotator: Annotator;
@@ -26,7 +30,7 @@ export interface BookmarkModuleConfig {
 
 export default class BookmarkModule implements ReaderModule {
 
-
+    api: BookmarkModuleAPI;
     annotator: Annotator | null;
     rights: ReaderRights;
 
@@ -42,7 +46,7 @@ export default class BookmarkModule implements ReaderModule {
 
     delegate: IFrameNavigator
 
-    public static async create(config: BookmarkModuleConfig) {
+    public static async create(config: BookmarkModuleConfig): Promise<any> {
         const module = new this(
             config.annotator,
             config.headerMenu,
@@ -53,7 +57,7 @@ export default class BookmarkModule implements ReaderModule {
             config.initialAnnotations || null,
         );
         await module.start();
-        return module;
+        return new Promise(resolve => resolve(module));
     }
 
 
@@ -68,6 +72,7 @@ export default class BookmarkModule implements ReaderModule {
         this.headerMenu = headerMenu
         this.delegate = delegate
         this.initialAnnotations = initialAnnotations;
+        this.api = this.delegate.api
     }
 
     async stop() {
@@ -108,14 +113,27 @@ export default class BookmarkModule implements ReaderModule {
 
     private async deleteBookmark(bookmark: Bookmark): Promise<any> {
         if (this.annotator) {
-            var deleted = await this.annotator.deleteBookmark(bookmark);
+            if (this.api.deleteBookmark) {
+                this.api.deleteBookmark(bookmark).then(async _result => {
+                    var deleted = await this.annotator.deleteBookmark(bookmark);
 
-            if (IS_DEV) { console.log("Bookmark deleted " + JSON.stringify(deleted)); }
-            await this.showBookmarks();
-            if (this.delegate.material) {
-                toast({ html: 'bookmark deleted' })
+                    if (IS_DEV) { console.log("Bookmark deleted " + JSON.stringify(deleted)); }
+                    await this.showBookmarks();
+                    if (this.delegate.material) {
+                        toast({ html: 'bookmark deleted' })
+                    }
+                    return deleted
+                })
+            } else {
+                var deleted = await this.annotator.deleteBookmark(bookmark);
+
+                if (IS_DEV) { console.log("Bookmark deleted " + JSON.stringify(deleted)); }
+                await this.showBookmarks();
+                if (this.delegate.material) {
+                    toast({ html: 'bookmark deleted' })
+                }
+                return deleted
             }
-            return deleted
         } else {
             return new Promise<any>(resolve => resolve());
         }
@@ -149,14 +167,28 @@ export default class BookmarkModule implements ReaderModule {
             }
 
             if (!await this.annotator.locatorExists(bookmark, AnnotationType.Bookmark)) {
-                var saved = await this.annotator.saveBookmark(bookmark);
+                if (this.api.addBookmark) {
+                    this.api.addBookmark(bookmark).then(async bookmark => {
+                        console.log(bookmark)
+                        var saved = await this.annotator.saveBookmark(bookmark);
 
-                if (IS_DEV) { console.log("Bookmark added " + JSON.stringify(saved)); }
-                if (this.delegate.material) {
-                    toast({ html: 'bookmark added' })
+                        if (IS_DEV) { console.log("Bookmark added " + JSON.stringify(saved)); }
+                        if (this.delegate.material) {
+                            toast({ html: 'bookmark added' })
+                        }
+                        await this.showBookmarks();
+                        return saved    
+                    })
+                } else {
+                    var saved = await this.annotator.saveBookmark(bookmark);
+
+                    if (IS_DEV) { console.log("Bookmark added " + JSON.stringify(saved)); }
+                    if (this.delegate.material) {
+                        toast({ html: 'bookmark added' })
+                    }
+                    await this.showBookmarks();
+                    return saved    
                 }
-                await this.showBookmarks();
-                return saved
 
             } else {
                 if (this.delegate.material) {

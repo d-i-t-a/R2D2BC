@@ -37,6 +37,10 @@ export default class BookSettings {
     private appearanceProperty: Enumerable
     private fontFamilyProperty: Enumerable
     private fontSizeProperty: Incremental
+    private textAlignProperty: Enumerable
+    private colCountProperty: Enumerable
+    private wordSpacingProperty: Incremental
+    private letterSpacingProperty: Incremental
 
     private selectedView: BookView;
 
@@ -87,6 +91,11 @@ export default class BookSettings {
         this.appearanceProperty = new Enumerable(this.userSettings.appearance, UserSettings.appearanceValues, UserSettings.APPEARANCE_REF, UserSettings.APPEARANCE_KEY)
         this.fontFamilyProperty = new Enumerable(this.userSettings.fontFamily, UserSettings.fontFamilyValues, UserSettings.FONT_FAMILY_REF, UserSettings.FONT_FAMILY_KEY)
         this.fontSizeProperty = new Incremental(this.userSettings.fontSize, 100, 300, 25, "%", UserSettings.FONT_SIZE_REF, UserSettings.FONT_SIZE_KEY)
+       
+        this.textAlignProperty = new Enumerable(this.userSettings.textAlignment, UserSettings.textAlignmentValues, UserSettings.TEXT_ALIGNMENT_REF, UserSettings.TEXT_ALIGNMENT_KEY)
+        this.colCountProperty = new Enumerable(this.userSettings.columnCount, UserSettings.columnCountValues, UserSettings.COLUMN_COUNT_REF, UserSettings.COLUMN_COUNT_KEY)
+        this.wordSpacingProperty = new Incremental(this.userSettings.wordSpacing, 0, 0.5, 0.25, "rem", UserSettings.WORD_SPACING_REF, UserSettings.WORD_SPACING_KEY)
+        this.letterSpacingProperty = new Incremental(this.userSettings.letterSpacing,  0, 0.5, 0.0625, "em", UserSettings.LETTER_SPACING_REF, UserSettings.LETTER_SPACING_KEY)
 
     }
 

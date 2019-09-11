@@ -22,8 +22,7 @@ var R2Navigator:IFrameNavigator;
 var R2BookmarkModule:BookmarkModule;
 
 
-export async function load(config: ReaderConfig) {
-    
+export async function load(config: ReaderConfig): Promise<any> {
     var mainElement = document.getElementById("D2Reader-Container");
     var headerMenu = document.getElementById("headerMenu");
     var footerMenu = document.getElementById("footerMenu");
@@ -47,48 +46,46 @@ export async function load(config: ReaderConfig) {
 
     const publication: Publication = await Publication.getManifest(webpubManifestUrl, store);
 
-    BookSettings.create({
+    R2Settings = await BookSettings.create({
         store: settingsStore,
         headerMenu: headerMenu,
         ui: config.ui.settings,
-    }).then(function (settings) {
-        R2Settings = settings
-        IFrameNavigator.create({
-            mainElement: mainElement,
-            headerMenu: headerMenu,
-            footerMenu: footerMenu,
-            publication: publication,
-            settings: settings,
+        api: config.api
+    })
+
+    R2Navigator = await IFrameNavigator.create({
+        mainElement: mainElement,
+        headerMenu: headerMenu,
+        footerMenu: footerMenu,
+        publication: publication,
+        settings: R2Settings,
+        annotator: annotator,
+        upLink: upLink,
+        ui: config.ui,
+        initialLastReadingPosition: config.lastReadingPosition,
+        staticBaseUrl: config.staticBaseUrl,
+        material: config.material,
+        api: config.api
+    })
+    // add custom modules
+    if (config.rights.enableBookmarks) {
+        // Bookmark Module
+        R2BookmarkModule = await BookmarkModule.create({
             annotator: annotator,
-            upLink: upLink,
-            ui: config.ui,
-            initialLastReadingPosition: config.lastReadingPosition,
-            staticBaseUrl: config.staticBaseUrl,
-            material: config.material
-        }).then(function (navigator) {
-            R2Navigator = navigator
-            // add custom modules
-            if (config.rights.enableBookmarks) {
-                // Bookmark Module
-                BookmarkModule.create({
-                    annotator: annotator,
-                    headerMenu: headerMenu,
-                    rights: config.rights,
-                    publication: publication,
-                    settings: settings,
-                    delegate: navigator,
-                    initialAnnotations: config.annotations,
-                }).then(function (module) {
-                    R2BookmarkModule = module
-                })
-            }
-        });
-    });
+            headerMenu: headerMenu,
+            rights: config.rights,
+            publication: publication,
+            settings: R2Settings,
+            delegate: R2Navigator,
+            initialAnnotations: config.annotations,
+        })
+    }
+    return new Promise(resolve => resolve(R2Navigator));
 }
 
-exports.load = function (config: ReaderConfig) {
+exports.load = async function (config: ReaderConfig) {
     load(config)
 }
-exports.unload = function () {
+exports.unload = async function () {
     unload()
 }

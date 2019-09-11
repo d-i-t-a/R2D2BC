@@ -12,6 +12,7 @@ export interface BookSettingsConfig {
     store: Store,
     headerMenu: HTMLElement;
     ui: UserSettingsConfig;
+    api: any;
 }
 
 export default class BookSettings {
@@ -47,15 +48,17 @@ export default class BookSettings {
     private settingsView: HTMLDivElement;
     private headerMenu: HTMLElement;
     private ui: UserSettingsConfig;
+    private api: any;
 
     private userSettings: UserSettings
     private iframe: HTMLIFrameElement;
 
-    public static async create(config: BookSettingsConfig) {
+    public static async create(config: BookSettingsConfig): Promise<any> {
         const settings = new this(
             config.store,
             config.headerMenu,
             config.ui,
+            config.api
         );
 
         let appearance: Enumerable = await settings.userSettings.getProperty(UserSettings.APPEARANCE_KEY) as Enumerable
@@ -72,20 +75,21 @@ export default class BookSettings {
         }
 
         await settings.initializeSelections();
-        return settings;
+        return new Promise(resolve => resolve(settings));
     }
 
     async stop() {
         if (IS_DEV) { console.log("book settings stop") }
     }
 
-    protected constructor(store: Store, headerMenu: HTMLElement, ui: UserSettingsConfig) {
+    protected constructor(store: Store, headerMenu: HTMLElement, ui: UserSettingsConfig, api: any) {
         this.store = store;
 
         this.bookViews = [this.scroller, this.paginator];
 
         this.headerMenu = headerMenu;
         this.ui = ui;
+        this.api = api;
         this.userSettings = new UserSettings(store)
 
         this.appearanceProperty = new Enumerable(this.userSettings.appearance, UserSettings.appearanceValues, UserSettings.APPEARANCE_REF, UserSettings.APPEARANCE_KEY)

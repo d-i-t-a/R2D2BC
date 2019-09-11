@@ -240,27 +240,48 @@
             }
             return params;
         };
-
+        var lastReadingPosition, annotations, userSettings, baseUrl = null;
         var urlParams = getURLQueryParams();
         var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
-
-        D2Reader.load({
-            url: new URL(urlParams['url']),
-            upLinkUrl: upLink,
-            ui: {
-                settings: {
-                    fontFamily: true,
-                    fontSize: true,
-                    appearance: true,
-                    scroll: true
+            D2Reader.load({
+                url: new URL(urlParams['url']),
+                upLinkUrl: upLink,
+                ui: {
+                    settings: {
+                        fontFamily: true,
+                        fontSize: true,
+                        appearance: true,
+                        scroll: true
+                    },
                 },
-            },
-            rights: {
-                enableBookmarks: true
-            },
-            material: true
-        });
-
+                rights: {
+                    enableBookmarks: true
+                },
+                material: true,
+                userSettings: userSettings,
+                annotations: annotations,
+                lastReadingPosition: lastReadingPosition,
+                api: {
+                    addBookmark: function (bookmark) {
+                        bookmark.id = Math.random()
+                        return Promise.resolve(bookmark);
+                    },
+                    deleteBookmark: function (bookmark) {
+                        return Promise.resolve();
+                    },
+                    updateCurrentlocation: function (location) {
+                        return Promise.resolve();
+                    },
+                    updateUserSettings: function (userSettings) {
+                        return Promise.resolve();
+                    },
+                }
+            }).then(instance => {
+                console.log("D2Reader loaded ", instance);
+                console.log("instance.bookmarkModule ", instance.bookmarkModule)
+            }).catch(error => {
+                console.error("error.message ", error.message);
+            });
 
     </script>
 

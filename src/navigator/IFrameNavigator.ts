@@ -34,6 +34,7 @@ export interface IFrameNavigatorConfig {
     rights?: ReaderRights;
     staticBaseUrl?: any;
     material: boolean;
+    api: any;
 }
 
 export interface ReaderRights {
@@ -52,6 +53,7 @@ export interface ReaderConfig {
     rights: ReaderRights;
     ui: ReaderUI;
     material: boolean;
+    api: any;
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -116,8 +118,9 @@ export default class IFrameNavigator implements Navigator {
     private isLoading: boolean;
     private initialLastReadingPosition: ReadingPosition;
     private staticBaseUrl: any;
+    api: any;
 
-    public static async create(config: IFrameNavigatorConfig) {
+    public static async create(config: IFrameNavigatorConfig): Promise<any> {
         const navigator = new this(
             config.settings,
             config.annotator || null,
@@ -126,11 +129,12 @@ export default class IFrameNavigator implements Navigator {
             config.initialLastReadingPosition || null,
             config.staticBaseUrl || null,
             config.publication,
-            config.material
+            config.material,
+            config.api
         );
 
         await navigator.start(config.mainElement, config.headerMenu, config.footerMenu);
-        return navigator;
+        return new Promise(resolve => resolve(navigator));
     }
 
     protected constructor(
@@ -141,7 +145,8 @@ export default class IFrameNavigator implements Navigator {
         initialLastReadingPosition: ReadingPosition | null = null,
         staticBaseUrl: any | null = null,
         publication: Publication,
-        material: boolean
+        material: boolean,
+        api: any
     ) {
         this.settings = settings;
         this.annotator = annotator;
@@ -153,6 +158,7 @@ export default class IFrameNavigator implements Navigator {
         this.staticBaseUrl = staticBaseUrl;
         this.publication = publication
         this.material = material
+        this.api = api
     }
 
     async stop() {

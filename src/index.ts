@@ -1,25 +1,74 @@
 import LocalStorageStore from "./store/LocalStorageStore";
 import IFrameNavigator, { ReaderConfig, UpLinkConfig } from "./navigator/IFrameNavigator";
-import BookSettings from "./model/user-settings/BookSettings";
 import LocalAnnotator from "./store/LocalAnnotator";
 import Publication from "./model/Publication";
 import BookmarkModule from "./modules/BookmarkModule";
+import { UserSettings } from "./model/user-settings/UserSettings";
+
+var R2Settings: UserSettings;
+var R2Navigator: IFrameNavigator;
+var BookmarkModuleInstance: BookmarkModule;
 
 export const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 export async function unload() {
 
-    if (IS_DEV) {console.log("unload reader")}
-    document.body.onscroll = () => {}
+    if (IS_DEV) { console.log("unload reader") }
+    document.body.onscroll = () => { }
     R2Navigator.stop()
     R2Settings.stop()
-    R2BookmarkModule.stop()
+    BookmarkModuleInstance.stop()
 }
 
+export async function saveBookmark() {
+    if (IS_DEV) { console.log("saveBookmark") }
+    BookmarkModuleInstance.saveBookmark()
+}
+export async function deleteBookmark(bookmark) {
+    if (IS_DEV) { console.log("deleteBookmark") }
+    BookmarkModuleInstance.deleteBookmark(bookmark)
+}
+export async function applyUserSettings(userSettings) {
+    if (IS_DEV) { console.log("applyUserSettings") }
+    R2Settings.applyUserSettings(userSettings)
+}
+export async function increase(incremental) {
+    if (IS_DEV) { console.log("increase " + incremental) }
+    R2Settings.increase(incremental)
+}
+export async function decrease(incremental) {
+    if (IS_DEV) { console.log("decrease " + incremental) }
+    R2Settings.decrease(incremental)
+}
+export async function publisher(on) {
+    if (IS_DEV) { console.log("publisher " + on) }
+    R2Settings.publisher(on)
+}
 
-var R2Settings:BookSettings;
-var R2Navigator:IFrameNavigator;
-var R2BookmarkModule:BookmarkModule;
+export async function goTo(locator) {
+    if (IS_DEV) { console.log("goTo " + locator) }
+    R2Navigator.goTo(locator)
+}
+export async function nextResource() {
+    if (IS_DEV) { console.log("nextResource") }
+    R2Navigator.nextResource()
+}
+export async function previousResource() {
+    if (IS_DEV) { console.log("previousResource") }
+    R2Navigator.previousResource()
+}
+export async function nextPage() {
+    if (IS_DEV) { console.log("nextPage") }
+    R2Navigator.nextPage()
+}
+export async function previousPage() {
+    if (IS_DEV) { console.log("previousPage") }
+    R2Navigator.previousPage()
+}
+export async function scroll(scroll) {
+    if (IS_DEV) { console.log("scroll " + scroll) }
+    R2Settings.scroll(scroll)
+}
 
 
 export async function load(config: ReaderConfig): Promise<any> {
@@ -39,14 +88,14 @@ export async function load(config: ReaderConfig): Promise<any> {
 
     var annotator = new LocalAnnotator({ store: store });
 
-    var upLink:UpLinkConfig 
+    var upLink: UpLinkConfig
     if (config.upLinkUrl) {
         upLink = config.upLinkUrl;
     }
 
     const publication: Publication = await Publication.getManifest(webpubManifestUrl, store);
 
-    R2Settings = await BookSettings.create({
+    R2Settings = await UserSettings.create({
         store: settingsStore,
         headerMenu: headerMenu,
         ui: config.ui.settings,
@@ -63,14 +112,14 @@ export async function load(config: ReaderConfig): Promise<any> {
         upLink: upLink,
         ui: config.ui,
         initialLastReadingPosition: config.lastReadingPosition,
-        staticBaseUrl: config.staticBaseUrl,
         material: config.material,
-        api: config.api
+        api: config.api,
+        injectables: config.injectables
     })
     // add custom modules
     if (config.rights.enableBookmarks) {
         // Bookmark Module
-        R2BookmarkModule = await BookmarkModule.create({
+        BookmarkModuleInstance = await BookmarkModule.create({
             annotator: annotator,
             headerMenu: headerMenu,
             rights: config.rights,
@@ -88,4 +137,54 @@ exports.load = async function (config: ReaderConfig) {
 }
 exports.unload = async function () {
     unload()
+}
+
+// - apply user setting(s)
+exports.applyUserSettings = function (userSettings) {
+    applyUserSettings(userSettings)
+}
+exports.increase = function (incremental) {
+    increase(incremental)
+}
+exports.decrease = function (incremental) {
+    decrease(incremental)
+}
+exports.publisher = function (on) {
+    publisher(on)
+}
+
+// - add bookmark
+// - delete bookmark
+exports.saveBookmark = function () {
+    saveBookmark()
+}
+exports.deleteBookmark = function (bookmark) {
+    deleteBookmark(bookmark)
+}
+
+// - go to locator (this will be used for anything form toc, bookmark, last reading position etc.)
+exports.goTo = function (locator) {
+    goTo(locator)
+}
+
+// - next resource
+// - previous resource
+exports.nextResource = function () {
+    nextResource()
+}
+exports.previousResource = function () {
+    previousResource()
+}
+
+// - next page (only in paginated mode)
+// - previous page (only in paginated)
+exports.nextPage = function () {
+    nextPage()
+}
+exports.previousPage = function () {
+    previousPage()
+}
+
+exports.scroll = function (scroll) {
+    scroll(scroll)
 }

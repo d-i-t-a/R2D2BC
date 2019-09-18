@@ -85,19 +85,20 @@ export default class BookmarkModule implements ReaderModule {
 
         this.delegate.bookmarkModule = this
 
-        this.bookmarksView = HTMLUtilities.findElement(this.headerMenu, "#container-view-bookmarks") as HTMLDivElement;
+        if (this.headerMenu) this.bookmarksView = HTMLUtilities.findElement(this.headerMenu, "#container-view-bookmarks") as HTMLDivElement;
 
-        this.sideNavSectionBookmarks = HTMLUtilities.findElement(this.headerMenu, "#sidenav-section-bookmarks") as HTMLElement;
+        if (this.headerMenu) this.sideNavSectionBookmarks = HTMLUtilities.findElement(this.headerMenu, "#sidenav-section-bookmarks") as HTMLElement;
 
-        var menuBookmark = HTMLUtilities.findElement(this.headerMenu, "#menu-button-bookmark") as HTMLLinkElement;
-        if (this.rights.enableBookmarks) {
-            menuBookmark.parentElement.style.display = "unset";
-            addEventListenerOptional(menuBookmark, 'click', this.saveBookmark.bind(this));
-        } else {
-            menuBookmark.parentElement.style.display = "none";
-            this.sideNavSectionBookmarks.style.display = "none";
+        if (this.headerMenu) {
+            var menuBookmark = HTMLUtilities.findElement(this.headerMenu, "#menu-button-bookmark") as HTMLLinkElement;
+            if (this.rights.enableBookmarks) {
+                menuBookmark.parentElement.style.display = "unset";
+                addEventListenerOptional(menuBookmark, 'click', this.saveBookmark.bind(this));
+            } else {
+                menuBookmark.parentElement.style.display = "none";
+                this.sideNavSectionBookmarks.style.display = "none";
+            }
         }
-
 
         if (this.initialAnnotations) {
             var bookmarks = this.initialAnnotations['bookmarks'] || null;
@@ -111,7 +112,7 @@ export default class BookmarkModule implements ReaderModule {
 
     }
 
-    private async deleteBookmark(bookmark: Bookmark): Promise<any> {
+    async deleteBookmark(bookmark: Bookmark): Promise<any> {
         if (this.annotator) {
             if (this.api.deleteBookmark) {
                 this.api.deleteBookmark(bookmark).then(async _result => {
@@ -139,7 +140,7 @@ export default class BookmarkModule implements ReaderModule {
         }
     }
 
-    private async saveBookmark(): Promise<any> {
+    async saveBookmark(): Promise<any> {
         if (this.annotator) {
 
             var tocItem = this.publication.getTOCItem(this.delegate.currentChapterLink.href);
@@ -149,7 +150,7 @@ export default class BookmarkModule implements ReaderModule {
 
             if (tocItem === null) {
                 tocItem = this.publication.getTOCItemAbsolute(this.delegate.currentChapterLink.href);
-            }    
+            }
 
             const url = this.publication.getAbsoluteHref(tocItem.href);
 
@@ -177,7 +178,7 @@ export default class BookmarkModule implements ReaderModule {
                             toast({ html: 'bookmark added' })
                         }
                         await this.showBookmarks();
-                        return saved    
+                        return saved
                     })
                 } else {
                     var saved = await this.annotator.saveBookmark(bookmark);
@@ -187,7 +188,7 @@ export default class BookmarkModule implements ReaderModule {
                         toast({ html: 'bookmark added' })
                     }
                     await this.showBookmarks();
-                    return saved    
+                    return saved
                 }
 
             } else {
@@ -207,7 +208,7 @@ export default class BookmarkModule implements ReaderModule {
             bookmarks = await this.annotator.getBookmarks() as Array<any>;
         }
 
-        this.createTree(AnnotationType.Bookmark, bookmarks, this.bookmarksView)
+        if (this.bookmarksView) this.createTree(AnnotationType.Bookmark, bookmarks, this.bookmarksView)
     }
 
     private createTree(type: AnnotationType, annotations: Array<any>, view: HTMLDivElement) {

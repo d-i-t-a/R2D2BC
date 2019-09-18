@@ -95,7 +95,7 @@ export default class LocalAnnotator implements Annotator {
         let savedBookmarks = await this.store.get(LocalAnnotator.BOOKMARKS);
         if (savedBookmarks) {
             let savedBookmarksObj = JSON.parse(savedBookmarks) as Array<any>;
-            savedBookmarksObj = savedBookmarksObj.filter( (el: any) => el.created !== bookmark.created );
+            savedBookmarksObj = savedBookmarksObj.filter( (el: any) => el.id !== bookmark.id );
             await this.store.set(LocalAnnotator.BOOKMARKS, JSON.stringify(savedBookmarksObj));
         } 
         return new Promise(resolve => resolve(bookmark));

@@ -3,14 +3,13 @@ import PaginatedBookView from "../views/PaginatedBookView";
 import ScrollingBookView from "../views/ScrollingBookView";
 import Annotator from "../store/Annotator";
 import Publication, { Link } from "../model/Publication";
-import BookSettings from "../model/user-settings/BookSettings";
 import EventHandler, { addEventListenerOptional, removeEventListenerOptional } from "../utils/EventHandler";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import { defaultUpLinkTemplate, simpleUpLinkTemplate, readerLoading, readerError } from "../utils/HTMLTemplates";
 import { Locator, ReadingPosition, Locations } from "../model/Locator";
 import { Sidenav, Collapsible, Dropdown, Tabs } from "materialize-css";
-import { UserSettingsConfig } from "../model/user-settings/UserSettings";
+import { UserSettingsUIConfig, UserSettings } from "../model/user-settings/UserSettings";
 import BookmarkModule from "../modules/BookmarkModule";
 import { IS_DEV } from "..";
 
@@ -25,7 +24,7 @@ export interface IFrameNavigatorConfig {
     headerMenu: HTMLElement;
     footerMenu: HTMLElement;
     publication: Publication;
-    settings: BookSettings;
+    settings: UserSettings;
     annotator?: Annotator;
     eventHandler?: EventHandler;
     upLink?: UpLinkConfig;
@@ -50,7 +49,7 @@ export interface ReaderRights {
     enableBookmarks?: boolean;
 }
 export interface ReaderUI {
-    settings?: UserSettingsConfig;
+    settings?: UserSettingsUIConfig;
 }
 export interface ReaderConfig {
     url: URL;
@@ -86,7 +85,7 @@ export default class IFrameNavigator implements Navigator {
     currentChapterLink: Link = {};
     private nextChapterLink: Link;
     private previousChapterLink: Link;
-    private settings: BookSettings;
+    private settings: UserSettings;
     private annotator: Annotator | null;
 
     private paginator: PaginatedBookView | null;
@@ -147,7 +146,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     protected constructor(
-        settings: BookSettings,
+        settings: UserSettings,
         annotator: Annotator | null = null,
         eventHandler: EventHandler | null = null,
         upLinkConfig: UpLinkConfig | null = null,

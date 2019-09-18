@@ -1,42 +1,67 @@
 import Store from "../../store/Store";
+import { UserProperty, UserProperties, Enumerable, Switchable, Incremental } from "./UserProperties";
+import { ReadiumCSS } from "./ReadiumCSS";
+import ColumnsPaginatedBookView from "../../views/ColumnsPaginatedBookView";
+import ScrollingBookView from "../../views/ScrollingBookView";
+import BookView from "../../views/BookView";
+import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import { IS_DEV } from "../..";
+import { addEventListenerOptional } from "../../utils/EventHandler";
 
-export class UserSettings {
+export interface UserSettingsConfig {
+    /** Store to save the user's selections in. */
+    store: Store,
+    headerMenu: HTMLElement;
+    ui: UserSettingsUIConfig;
+    api: any;
+}
+export interface UserSettingsUIConfig {
+    fontSize?: boolean;
+    fontFamily?: boolean;
+    fontOverride: boolean;
+    appearance?: boolean;
+    scroll?: boolean;
+    advancedSettings: boolean;
+    textAlign?: boolean;
+    colCount?: boolean;
+    wordSpacing?: boolean;
+    letterSpacing?: boolean;
+    pageMargins: boolean;
+    lineHeight: boolean;
+}
 
-    static readonly FONT_SIZE_REF = "fontSize"
-    static readonly FONT_FAMILY_REF = "fontFamily"
-    static readonly FONT_OVERRIDE_REF = "fontOverride"
-    static readonly APPEARANCE_REF = "appearance"
-    static readonly SCROLL_REF = "scroll"
-    static readonly PUBLISHER_DEFAULT_REF = "advancedSettings"
-    static readonly TEXT_ALIGNMENT_REF = "textAlign"
-    static readonly COLUMN_COUNT_REF = "colCount"
-    static readonly WORD_SPACING_REF = "wordSpacing"
-    static readonly LETTER_SPACING_REF = "letterSpacing"
-    static readonly PAGE_MARGINS_REF = "pageMargins"
-    static readonly LINE_HEIGHT_REF = "lineHeight"
+export interface UserSettings {
+    fontSize: number
+    fontOverride: boolean
+    fontFamily: number
+    appearance: any
+    verticalScroll: boolean
 
-    static readonly FONT_SIZE_KEY = "--USER__" + UserSettings.FONT_SIZE_REF
-    static readonly FONT_FAMILY_KEY = "--USER__" + UserSettings.FONT_FAMILY_REF
-    static readonly FONT_OVERRIDE_KEY = "--USER__" + UserSettings.FONT_OVERRIDE_REF
-    static readonly APPEARANCE_KEY = "--USER__" + UserSettings.APPEARANCE_REF
-    static readonly SCROLL_KEY = "--USER__" + UserSettings.SCROLL_REF
-    static readonly PUBLISHER_DEFAULT_KEY = "--USER__" + UserSettings.PUBLISHER_DEFAULT_REF
-    static readonly TEXT_ALIGNMENT_KEY = "--USER__" + UserSettings.TEXT_ALIGNMENT_REF
-    static readonly COLUMN_COUNT_KEY = "--USER__" + UserSettings.COLUMN_COUNT_REF
-    static readonly WORD_SPACING_KEY = "--USER__" + UserSettings.WORD_SPACING_REF
-    static readonly LETTER_SPACING_KEY = "--USER__" + UserSettings.LETTER_SPACING_REF
-    static readonly PAGE_MARGINS_KEY = "--USER__" + UserSettings.PAGE_MARGINS_REF
-    static readonly LINE_HEIGHT_KEY = "--USER__" + UserSettings.LINE_HEIGHT_REF
+    //Advanced settings
+    publisherDefaults: boolean
+    textAlignment: number
+    columnCount: number
+    wordSpacing: number
+    letterSpacing: number
+    pageMargins: number
+    lineHeight: number
+}
 
-    static readonly appearanceValues = ["readium-default-on", "readium-sepia-on", "readium-night-on"]
-    static readonly fontFamilyValues = ["Original", "serif", "sans-serif", "opendyslexic"]
-    static readonly textAlignmentValues = ["justify", "start"]
-    static readonly columnCountValues = ["auto", "1", "2"]
+
+export class UserSettings implements UserSettings {
+
+    private readonly store: Store;
+    private readonly USERSETTINGS = "userSetting";
+
+    private static readonly appearanceValues = ["readium-default-on", "readium-sepia-on", "readium-night-on"]
+    private static fontFamilyValues = ["Original", "serif", "sans-serif"]
+    private static readonly textAlignmentValues = ["justify", "start"]
+    private static readonly columnCountValues = ["auto", "1", "2"]
 
     fontSize = 100.0
     fontOverride = false
     fontFamily = 0
-    appearance = 0
+    appearance: any = 0
     verticalScroll = false
 
     //Advanced settings
@@ -45,22 +70,406 @@ export class UserSettings {
     columnCount = 0
     wordSpacing = 0.0
     letterSpacing = 0.0
-    // pageMargins = 2.0
-    // lineHeight = 1.0
+    pageMargins = 2.0
+    lineHeight = 1.0
 
-    private readonly store: Store;
-    private readonly USERSETTINGS = "userSetting";
+    userProperties: UserProperties
 
-    constructor(store: Store) {
+    // TODO needs more refactor
+    paginator = new ColumnsPaginatedBookView();
+    scroller = new ScrollingBookView();
+
+    private fontButtons: { [key: string]: HTMLButtonElement };
+    private fontSizeButtons: { [key: string]: HTMLButtonElement };
+    private themeButtons: { [key: string]: HTMLButtonElement };
+    private viewButtons: { [key: string]: HTMLButtonElement };
+
+    private readonly bookViews: BookView[];
+
+    private settingsChangeCallback: () => void = () => { };
+    private viewChangeCallback: () => void = () => { };
+
+    private selectedView: BookView;
+
+    private settingsView: HTMLDivElement;
+    private headerMenu: HTMLElement;
+    private ui: UserSettingsUIConfig;
+    api: any;
+
+    private iframe: HTMLIFrameElement;
+
+    public static async create(config: UserSettingsConfig): Promise<any> {
+        const settings = new this(
+            config.store,
+            config.headerMenu,
+            config.ui,
+            config.api
+        );
+        await settings.initializeSelections();
+        return new Promise(resolve => resolve(settings));
+    }
+
+    protected constructor(store: Store, headerMenu: HTMLElement, ui: UserSettingsUIConfig, api: any) {
         this.store = store;
+
+        this.bookViews = [this.scroller, this.paginator];
+
+        this.headerMenu = headerMenu;
+        this.ui = ui;
+        this.api = api;
+        this.initialise();
     }
 
-    public async initProperties(list: string): Promise<any> {
-        let savedObj = JSON.parse(list);
-        await this.store.set(this.USERSETTINGS, JSON.stringify(savedObj));
-        return new Promise(resolve => resolve(list));
+    async stop() {
+        if (IS_DEV) { console.log("book settings stop") }
     }
-    public async saveProperty(property: any): Promise<any> {
+
+    private async initialise() {
+        this.appearance = (await this.getProperty(ReadiumCSS.APPEARANCE_KEY) != null) ? (await this.getProperty(ReadiumCSS.APPEARANCE_KEY) as Enumerable).value : this.appearance
+        this.verticalScroll = (await this.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? (await this.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : this.verticalScroll
+        this.fontFamily = (await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY) != null) ? (await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY) as Enumerable).value : this.fontFamily
+        if (this.fontFamily != 0) {
+            this.fontOverride = true
+        }
+        this.publisherDefaults = (await this.getProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY) != null) ? (await this.getProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY) as Switchable).value : this.publisherDefaults
+        this.textAlignment = (await this.getProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY) != null) ? (await this.getProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY) as Enumerable).value : this.textAlignment
+        this.columnCount = (await this.getProperty(ReadiumCSS.COLUMN_COUNT_KEY) != null) ? (await this.getProperty(ReadiumCSS.COLUMN_COUNT_KEY) as Enumerable).value : this.columnCount
+
+        this.fontSize = (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY) != null) ? (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY) as Incremental).value : this.fontSize
+        this.wordSpacing = (await this.getProperty(ReadiumCSS.WORD_SPACING_KEY) != null) ? (await this.getProperty(ReadiumCSS.WORD_SPACING_KEY) as Incremental).value : this.wordSpacing
+        this.letterSpacing = (await this.getProperty(ReadiumCSS.LETTER_SPACING_KEY) != null) ? (await this.getProperty(ReadiumCSS.LETTER_SPACING_KEY) as Incremental).value : this.letterSpacing
+        this.pageMargins = (await this.getProperty(ReadiumCSS.PAGE_MARGINS_KEY) != null) ? (await this.getProperty(ReadiumCSS.PAGE_MARGINS_KEY) as Incremental).value : this.pageMargins
+        this.lineHeight = (await this.getProperty(ReadiumCSS.LINE_HEIGHT_KEY) != null) ? (await this.getProperty(ReadiumCSS.LINE_HEIGHT_KEY) as Incremental).value : this.lineHeight
+        this.userProperties = this.getUserSettings()
+    }
+
+    private async initializeSelections(): Promise<void> {
+
+        if (this.headerMenu) this.settingsView = HTMLUtilities.findElement(this.headerMenu, "#container-view-settings") as HTMLDivElement;
+
+        if (this.ui.scroll) {
+            if (this.bookViews.length >= 1) {
+                let selectedView = this.bookViews[0];
+                const selectedViewName = await this.store.get(ReadiumCSS.SCROLL_KEY);
+                if (selectedViewName) {
+                    for (const bookView of this.bookViews) {
+                        if (bookView.name === selectedViewName) {
+                            selectedView = bookView;
+                            break;
+                        }
+                    }
+                }
+                this.selectedView = selectedView;
+            }
+        } else {
+            let selectedView = this.bookViews[0];
+            this.selectedView = selectedView;
+        }
+
+    }
+
+    applyProperties(): any {
+
+        const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
+        const rootElement = document.documentElement;
+        const body = HTMLUtilities.findRequiredElement(rootElement, "body") as HTMLBodyElement;
+
+        // Apply publishers default 
+        html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).toString());
+        // Apply font size 
+        html.style.setProperty(ReadiumCSS.FONT_SIZE_KEY, this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).toString());
+        // Apply word spacing 
+        html.style.setProperty(ReadiumCSS.WORD_SPACING_KEY, this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).toString());
+        // Apply letter spacing 
+        html.style.setProperty(ReadiumCSS.LETTER_SPACING_KEY, this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).toString());
+        // Apply column count 
+        html.style.setProperty(ReadiumCSS.COLUMN_COUNT_KEY, this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).toString());
+        // Apply text alignment 
+        html.style.setProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY, this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).toString());
+
+        // Apply appearance 
+        html.style.setProperty(ReadiumCSS.APPEARANCE_KEY, this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString());
+        if (this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 0) {
+            HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
+            HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
+        } else if (this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 1) {
+            HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "sepia");
+            HTMLUtilities.setAttr(body, "data-viewer-theme", "sepia");
+        } else if (this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 2) {
+            HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "night");
+            HTMLUtilities.setAttr(body, "data-viewer-theme", "night");
+        }
+
+        // Apply font family 
+        html.style.setProperty(ReadiumCSS.FONT_FAMILY_KEY, this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).toString());
+        if (this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 0) {
+            HTMLUtilities.setAttr(html, "data-viewer-font", "publisher");
+            html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-off");
+        } else if (this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 1) {
+            HTMLUtilities.setAttr(html, "data-viewer-font", "serif");
+            html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-on");
+        } else if (this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 2) {
+            HTMLUtilities.setAttr(html, "data-viewer-font", "sans");
+            html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-on");
+        } else { //if (this.userSettings.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 3) {
+            HTMLUtilities.setAttr(html, "data-viewer-font", this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).toString());
+            html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-on");
+        }
+
+        // Apply scroll (on/off)
+        this.getSelectedView().start();
+
+    }
+
+    setIframe(iframe: HTMLIFrameElement) {
+        this.iframe = iframe
+        this.paginator.iframe = iframe;
+        this.scroller.iframe = iframe;
+        if (this.settingsView) this.renderControls(this.settingsView);
+    }
+
+
+    private renderControls(element: HTMLElement): void {
+        if (this.ui.fontSize) {
+            this.fontSizeButtons = {};
+            for (const fontSizeName of ["decrease", "increase"]) {
+                this.fontSizeButtons[fontSizeName] = HTMLUtilities.findElement(element, "#" + fontSizeName + "-font") as HTMLButtonElement;
+            }
+        }
+        if (this.ui.fontFamily) {
+            this.fontButtons = {};
+            this.fontButtons[0] = HTMLUtilities.findElement(element, "#publisher-font") as HTMLButtonElement;
+            this.fontButtons[1] = HTMLUtilities.findElement(element, "#serif-font") as HTMLButtonElement;
+            this.fontButtons[2] = HTMLUtilities.findElement(element, "#sans-font") as HTMLButtonElement;
+            if (UserSettings.fontFamilyValues.length > 3) {
+                for (let index = 3; index < UserSettings.fontFamilyValues.length; index++) {
+                    this.fontButtons[index] = HTMLUtilities.findElement(element, "#" + UserSettings.fontFamilyValues[index] + "-font") as HTMLButtonElement;
+                }
+            }
+            this.updateFontButtons();
+        }
+        if (this.ui.appearance) {
+            this.themeButtons = {};
+            this.themeButtons[0] = HTMLUtilities.findElement(element, "#day-theme") as HTMLButtonElement;
+            this.themeButtons[1] = HTMLUtilities.findElement(element, "#sepia-theme") as HTMLButtonElement;
+            this.themeButtons[2] = HTMLUtilities.findElement(element, "#night-theme") as HTMLButtonElement;
+        } else {
+            // remove buttons
+            HTMLUtilities.findRequiredElement(element, "#container-view-appearance").remove()
+        }
+
+        if (this.ui.scroll) {
+            this.viewButtons = {};
+            this.viewButtons[0] = HTMLUtilities.findElement(element, "#view-scroll") as HTMLButtonElement;
+            this.viewButtons[1] = HTMLUtilities.findElement(element, "#view-paginated") as HTMLButtonElement;
+            this.updateViewButtons();
+        } else {
+            // remove buttons
+            HTMLUtilities.findElement(element, "#container-view-scroll") ? HTMLUtilities.findElement(element, "#container-view-scroll").remove() : null
+        }
+
+        this.setupEvents();
+
+        // Clicking the settings view outside the ul hides it, but clicking inside the ul keeps it up.
+        addEventListenerOptional(HTMLUtilities.findElement(element, "ul"), 'click', (event: Event) => {
+            event.stopPropagation();
+        });
+    }
+
+    public onSettingsChange(callback: () => void) {
+        this.settingsChangeCallback = callback;
+    }
+
+    public onViewChange(callback: () => void) {
+        this.viewChangeCallback = callback;
+    }
+
+    private async setupEvents(): Promise<void> {
+
+        if (this.ui.fontSize) {
+            addEventListenerOptional(this.fontSizeButtons["decrease"], 'click', (event: MouseEvent) => {
+                (this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental).decrement()
+                this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF))
+                this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
+                this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
+                this.applyProperties()
+                this.settingsChangeCallback();
+                event.preventDefault();
+            });
+            addEventListenerOptional(this.fontSizeButtons["increase"], 'click', (event: MouseEvent) => {
+                (this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental).increment()
+                this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF))
+                this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
+                this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
+                this.applyProperties()
+                this.settingsChangeCallback();
+                event.preventDefault();
+            });
+        }
+
+        if (this.ui.fontFamily) {
+            for (let index = 0; index < UserSettings.fontFamilyValues.length; index++) {
+                const button = this.fontButtons[index];
+                if (button) {
+                    addEventListenerOptional(button, 'click', (event: MouseEvent) => {
+                        this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value = index;
+                        this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF))
+                        this.applyProperties()
+                        this.updateFontButtons();
+                        this.settingsChangeCallback();
+                        event.preventDefault();
+                    });
+                }
+            }
+        }
+
+        if (this.ui.appearance) {
+            for (let index = 0; index < UserSettings.appearanceValues.length; index++) {
+                const button = this.themeButtons[index];
+                if (button) {
+                    addEventListenerOptional(button, 'click', (event: MouseEvent) => {
+                        this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value = index;
+                        this.storeProperty(this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF))
+                        this.applyProperties()
+                        this.settingsChangeCallback();
+                        event.preventDefault();
+                    });
+                }
+            }
+        }
+
+        if (this.ui.scroll) {
+            for (let index = 0; index < this.bookViews.length; index++) {
+                const view = this.bookViews[index];
+                const button = this.viewButtons[index];
+                if (button) {
+                    addEventListenerOptional(button, 'click', (event: MouseEvent) => {
+                        const position = this.selectedView.getCurrentPosition();
+                        this.selectedView.stop();
+                        view.start();
+                        view.goToPosition(position)
+                        this.selectedView = view;
+                        this.updateViewButtons();
+                        this.storeSelectedView(view);
+                        this.viewChangeCallback();
+                        event.preventDefault();
+                    });
+                }
+            }
+        }
+    }
+
+    private async updateFontButtons(): Promise<void> {
+        for (let index = 0; index < UserSettings.fontFamilyValues.length; index++) {
+            this.fontButtons[index].className = this.fontButtons[0].className.replace(" active", "")
+        }
+        if (this.fontButtons[await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value]) this.fontButtons[await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value].className += " active"
+    }
+
+    private updateViewButtons(): void {
+        if (this.viewButtons) {
+            this.viewButtons[0].className = this.viewButtons[0].className.replace(" active", "")
+            this.viewButtons[1].className = this.viewButtons[1].className.replace(" active", "")
+            for (let index = 0; index < this.bookViews.length; index++) {
+                const view = this.bookViews[index];
+                if (view === this.selectedView) {
+                    this.viewButtons[index].className += " active"
+                }
+            }
+        }
+    }
+
+    public getSelectedView(): BookView {
+        return this.selectedView;
+    }
+
+    private async storeProperty(property: UserProperty): Promise<void> {
+        this.updateUserSettings()
+        this.saveProperty(property)
+    }
+
+    private async storeSelectedView(view: BookView): Promise<void> {
+        this.updateUserSettings()
+        return this.store.set(ReadiumCSS.SCROLL_KEY, view.name);
+    }
+
+    addFont(fontFamily: string): any {
+        UserSettings.fontFamilyValues.push(fontFamily)
+        this.applyProperties()
+
+        if (this.settingsView) {
+            const index = UserSettings.fontFamilyValues.length - 1
+            this.fontButtons[index] = HTMLUtilities.findElement(this.settingsView, "#opendyslexic-font") as HTMLButtonElement;
+            const button = this.fontButtons[index];
+            if (button) {
+                addEventListenerOptional(button, 'click', (event: MouseEvent) => {
+                    this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value = index;
+                    this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF))
+                    this.applyProperties()
+                    this.updateFontButtons();
+                    this.settingsChangeCallback();
+                    event.preventDefault();
+                });
+            }
+            this.updateFontButtons()
+        }
+    }
+
+    private async updateUserSettings() {
+        var userSettings = {
+            fontFamily: UserSettings.fontFamilyValues[await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value],
+            fontSize: this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).value,
+            appearance: UserSettings.appearanceValues[await this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value],
+            textAlignment: UserSettings.textAlignmentValues[await this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value],
+            columnCount: UserSettings.columnCountValues[await this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value],
+            wordSpacing: this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).value,
+            letterSpacing: this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).value,
+            publisherDefault: this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value
+        }
+        this.api.updateUserSettings(userSettings).then(_ => {
+            if (IS_DEV) { console.log("api updated user settings", userSettings) }
+        })
+    }
+
+    private getUserSettings(): UserProperties {
+
+        var userProperties = new UserProperties()
+        // Publisher default system
+        userProperties.addSwitchable("readium-advanced-off", "readium-advanced-on", this.publisherDefaults, ReadiumCSS.PUBLISHER_DEFAULT_REF, ReadiumCSS.PUBLISHER_DEFAULT_KEY)
+        // Font override
+        userProperties.addSwitchable("readium-font-on", "readium-font-off", this.fontOverride, ReadiumCSS.FONT_OVERRIDE_REF, ReadiumCSS.FONT_OVERRIDE_KEY)
+        // Column count
+        userProperties.addEnumerable(this.columnCount, UserSettings.columnCountValues, ReadiumCSS.COLUMN_COUNT_REF, ReadiumCSS.COLUMN_COUNT_KEY)
+        // Appearance
+        userProperties.addEnumerable(this.appearance, UserSettings.appearanceValues, ReadiumCSS.APPEARANCE_REF, ReadiumCSS.APPEARANCE_KEY)
+        // Page margins
+        userProperties.addIncremental(this.pageMargins, 0.5, 4, 0.25, "", ReadiumCSS.PAGE_MARGINS_REF, ReadiumCSS.PAGE_MARGINS_KEY)
+        // Text alignment
+        userProperties.addEnumerable(this.textAlignment, UserSettings.textAlignmentValues, ReadiumCSS.TEXT_ALIGNMENT_REF, ReadiumCSS.TEXT_ALIGNMENT_KEY)
+        // Font family
+        userProperties.addEnumerable(this.fontFamily, UserSettings.fontFamilyValues, ReadiumCSS.FONT_FAMILY_REF, ReadiumCSS.FONT_FAMILY_KEY)
+        // Font size
+        userProperties.addIncremental(this.fontSize, 100, 300, 25, "%", ReadiumCSS.FONT_SIZE_REF, ReadiumCSS.FONT_SIZE_KEY)
+        // Line height
+        userProperties.addIncremental(this.lineHeight, 1, 2, 0.25, "", ReadiumCSS.LINE_HEIGHT_REF, ReadiumCSS.LINE_HEIGHT_KEY)
+        // Word spacing
+        userProperties.addIncremental(this.wordSpacing, 0, 0., 0.25, "rem", ReadiumCSS.WORD_SPACING_REF, ReadiumCSS.WORD_SPACING_KEY)
+        // Letter spacing
+        userProperties.addIncremental(this.letterSpacing, 0, 0.5, 0.0625, "em", ReadiumCSS.LETTER_SPACING_REF, ReadiumCSS.LETTER_SPACING_KEY)
+        // Scroll
+        userProperties.addSwitchable("readium-scroll-on", "readium-scroll-off", this.verticalScroll, ReadiumCSS.SCROLL_REF, ReadiumCSS.SCROLL_KEY)
+
+        return userProperties
+
+    }
+
+    // private async initProperties(list: string): Promise<any> {
+    //     let savedObj = JSON.parse(list);
+    //     await this.store.set(this.USERSETTINGS, JSON.stringify(savedObj));
+    //     return new Promise(resolve => resolve(list));
+    // }
+
+    private async saveProperty(property: any): Promise<any> {
         let savedProperties = await this.store.get(this.USERSETTINGS);
         if (savedProperties) {
             let array = JSON.parse(savedProperties);
@@ -74,24 +483,27 @@ export class UserSettings {
         }
         return new Promise(resolve => resolve(property));
     }
-    public async deleteProperty(property: any): Promise<any> {
-        let array = await this.store.get(this.USERSETTINGS);
-        if (array) {
-            let savedObj = JSON.parse(array) as Array<any>;
-            savedObj = savedObj.filter((el: any) => el.name !== property.name);
-            await this.store.set(this.USERSETTINGS, JSON.stringify(savedObj));
-        }
-        return new Promise(resolve => resolve(property));
-    }
-    public async getProperties(): Promise<any> {
-        let array = await this.store.get(this.USERSETTINGS);
-        if (array) {
-            const properties = JSON.parse(array);
-            return new Promise(resolve => resolve(properties));
-        }
-        return new Promise(resolve => resolve());
-    }
-    public async getProperty(name: string): Promise<UserProperty> {
+
+    // private async deleteProperty(property: any): Promise<any> {
+    //     let array = await this.store.get(this.USERSETTINGS);
+    //     if (array) {
+    //         let savedObj = JSON.parse(array) as Array<any>;
+    //         savedObj = savedObj.filter((el: any) => el.name !== property.name);
+    //         await this.store.set(this.USERSETTINGS, JSON.stringify(savedObj));
+    //     }
+    //     return new Promise(resolve => resolve(property));
+    // }
+
+    // private async getProperties(): Promise<any> {
+    //     let array = await this.store.get(this.USERSETTINGS);
+    //     if (array) {
+    //         const properties = JSON.parse(array);
+    //         return new Promise(resolve => resolve(properties));
+    //     }
+    //     return new Promise(resolve => resolve());
+    // }
+
+    private async getProperty(name: string): Promise<UserProperty> {
         let array = await this.store.get(this.USERSETTINGS);
         if (array) {
             let properties = JSON.parse(array) as Array<UserProperty>;
@@ -103,104 +515,140 @@ export class UserSettings {
         }
         return null;
     }
-}
 
+    async applyUserSettings(userSettings: UserSettings): Promise<void> {
 
-export interface UserSettingsConfig {
-    fontSize?: boolean;
-    fontFamily?: boolean;
-    // fontOverride:boolean;
-    appearance?: boolean;
-    scroll?: boolean;
-    // advancedSettings:boolean;
-    textAlign?: boolean;
-    colCount?: boolean;
-    wordSpacing?: boolean;
-    letterSpacing?: boolean;
-    // pageMargins:boolean;
-    // lineHeight:boolean;
-}
-
-export class UserProperty {
-    ref: string;
-    name: string;
-    value: any;
-    json() {
-        return JSON.stringify(this)
-    }
-}
-export class Enumerable extends UserProperty {
-
-    values: Array<any>;
-
-    constructor(value: any, values: Array<any>, ref: string, name: string) {
-        super();
-        this.value = value
-        this.values = values
-        this.ref = ref
-        this.name = name
-    }
-
-    toString(): string {
-        return this.values[this.value]
-    }
-
-}
-export class Incremental extends UserProperty {
-
-    min: number;
-    max: number;
-    step: number;
-    suffix: string;
-
-    constructor(value: any, min: number, max: number, step: number, suffix: string, ref: string, name: string) {
-        super();
-        this.value = value
-        this.min = min
-        this.max = max
-        this.step = step
-        this.suffix = suffix
-        this.ref = ref
-        this.name = name
-    }
-
-    toString(): string {
-        return this.value.toString() + this.suffix
-    }
-
-    increment() {
-        if (this.value <= this.max) {
-            this.value += this.step
+        if (userSettings.appearance) {
+            var appearance
+            if (userSettings.appearance == 'day') {
+                appearance = UserSettings.appearanceValues[0]
+            } else if (userSettings.appearance == 'sepia') {
+                appearance = UserSettings.appearanceValues[1]
+            } else if (userSettings.appearance == 'night') {
+                appearance = UserSettings.appearanceValues[2]
+            }
+            this.appearance = UserSettings.appearanceValues.findIndex((el: any) => el === appearance);
+            this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value = this.appearance;
+            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF))
+            this.applyProperties()
+            this.settingsChangeCallback();
         }
-    }
 
-    decrement() {
-        if (this.value >= this.min) {
-            this.value -= this.step
+        if (userSettings.fontSize) {
+            this.fontSize = userSettings.fontSize
+            this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).value = this.fontSize;
+            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF))
+            this.applyProperties()
+            this.settingsChangeCallback();
         }
+
+        if (userSettings.fontFamily) {
+            this.fontFamily = UserSettings.fontFamilyValues.findIndex((el: any) => el === userSettings.fontFamily);
+            this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value = this.fontFamily;
+            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF))
+            this.applyProperties()
+            this.settingsChangeCallback();
+        }
+
+        if (userSettings.letterSpacing) {
+            this.letterSpacing = userSettings.letterSpacing
+            this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).value = this.letterSpacing;
+            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF))
+            this.applyProperties()
+            this.settingsChangeCallback();
+        }
+
+        if (userSettings.wordSpacing) {
+            this.wordSpacing = userSettings.wordSpacing
+            this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).value = this.wordSpacing;
+            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF))
+            this.applyProperties()
+            this.settingsChangeCallback();
+        }
+
+        if (userSettings.columnCount) {
+            this.columnCount = UserSettings.columnCountValues.findIndex((el: any) => el === userSettings.columnCount);
+            this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value = this.columnCount;
+            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF))
+            this.applyProperties()
+            this.settingsChangeCallback();
+        }
+
+        if (userSettings.textAlignment) {
+            this.textAlignment = UserSettings.textAlignmentValues.findIndex((el: any) => el === userSettings.textAlignment);
+            this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value = this.textAlignment;
+            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF))
+            this.applyProperties()
+            this.settingsChangeCallback();
+        }
+
     }
 
-}
-export class Switchable extends UserProperty {
+    async scroll(scroll: boolean): Promise<void> {
+        const position = this.selectedView.getCurrentPosition();
+        this.selectedView.stop();
+        let selectedView = this.bookViews[0];
+        var selectedViewName = 'scrolling-book-view'
+        if (scroll) {
+            selectedViewName = 'scrolling-book-view'
+        } else {
+            selectedViewName = 'columns-paginated-view'
+        }
 
-    onValue: string;
-    offValue: string;
+        if (selectedViewName) {
+            for (const bookView of this.bookViews) {
+                if (bookView.name === selectedViewName) {
+                    selectedView = bookView;
+                    break;
+                }
+            }
+        }
 
-    constructor(onValue: string, offValue: string, value: boolean, ref: string, name: string) {
-        super();
-        this.value = value
-        this.onValue = onValue
-        this.offValue = offValue
-        this.ref = ref
-        this.name = name
+        selectedView.start();
+        selectedView.goToPosition(position)
+        this.selectedView = selectedView;
+        this.updateViewButtons();
+        this.storeSelectedView(selectedView);
+        this.viewChangeCallback();
     }
 
-    toString() {
-       return (this.value ? this.onValue : this.offValue)
+    async increase(incremental): Promise<void> {
+        if (incremental == 'fontSize') {
+            (this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental).increment()
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF))
+        } else if (incremental == 'letterSpacing') {
+            (this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF) as Incremental).increment()
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF))
+        } else if (incremental == 'wordSpacing') {
+            (this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF) as Incremental).increment()
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF))
+        }
+        this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
+        this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
+        this.applyProperties()
+        this.settingsChangeCallback();
     }
 
-    switch() {
-        this.value = !this.value
+    async decrease(incremental): Promise<void> {
+        if (incremental == 'fontSize') {
+            (this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental).decrement()
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF))
+        } else if (incremental == 'letterSpacing') {
+            (this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF) as Incremental).decrement()
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF))
+        } else if (incremental == 'wordSpacing') {
+            (this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF) as Incremental).decrement()
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF))
+        }
+        this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
+        this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
+        this.applyProperties()
+        this.settingsChangeCallback();
     }
 
+    async publisher(on): Promise<void> {
+        this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = on
+        this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
+        this.applyProperties()
+    }
 }

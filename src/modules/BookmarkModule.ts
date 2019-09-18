@@ -2,13 +2,13 @@ import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
 import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
 import Publication, { Link } from "../model/Publication";
-import BookSettings from "../model/user-settings/BookSettings";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { icons as IconLib } from "../utils/IconLib";
 import { Bookmark, Locator } from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
+import { UserSettings } from "../model/user-settings/UserSettings";
 
 export type AddBookmark = (bookmark: Bookmark) => Promise<Bookmark>
 export type DeleteBookmark = (bookmark: Bookmark) => Promise<Bookmark>
@@ -23,7 +23,7 @@ export interface BookmarkModuleConfig {
     headerMenu: HTMLElement;
     rights: ReaderRights;
     publication: Publication;
-    settings: BookSettings;
+    settings: UserSettings;
     delegate: IFrameNavigator;
     initialAnnotations?: any;
 }
@@ -35,7 +35,7 @@ export default class BookmarkModule implements ReaderModule {
     rights: ReaderRights;
 
     private publication: Publication;
-    private settings: BookSettings;
+    private settings: UserSettings;
 
     private bookmarksView: HTMLDivElement;
     private sideNavSectionBookmarks: HTMLElement;
@@ -62,7 +62,7 @@ export default class BookmarkModule implements ReaderModule {
 
 
     public constructor(annotator: Annotator, headerMenu: HTMLElement, rights: ReaderRights,
-        publication: Publication, settings: BookSettings, delegate: IFrameNavigator, initialAnnotations: any | null = null
+        publication: Publication, settings: UserSettings, delegate: IFrameNavigator, initialAnnotations: any | null = null
     ) {
 
         this.annotator = annotator

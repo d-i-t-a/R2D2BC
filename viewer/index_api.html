@@ -42,7 +42,7 @@
         <button onclick="javascript:D2Reader.applyUserSettings({fontSize:150})">font size 150</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({fontSize:200})">font size 200</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'serif'})">font family serif</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'sandome'})">font family sandome</button><br>
+        <button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'opendyslexic'})">font family opendyslexic</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({wordSpacing:0.25})">word spacing 0.25</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({letterSpacing:0.25})">letter spacing 0.25</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'1'})">column 1</button><br>
@@ -96,7 +96,6 @@
             {type:'style', url: 'http://localhost:4444/viewer/readium-css/ReadiumCSS-after.css', r2after: true},
             {type:'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest'},
             {type:'style', url: 'http://localhost:4444/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic'},
-            {type:'style', url: 'http://localhost:4444/viewer/fonts/sandome/sandome.css', fontFamily: 'sandome'},
         ]
 
         var lastReadingPosition, annotations, userSettings, baseUrl = null;

@@ -11,17 +11,16 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "moduleResolution": "node",
-    "outDir": "./dist/",
+    "outDir": "./dist/injectables",
     "sourceMap": true,
     "preserveConstEnums": true,
     "strictNullChecks": false,
     "target": "es6"
   },
   "include": [
-    "src/**/*"
+    "injectables/**/*"
   ],
   "exclude": [
-    "src/sw.ts",
-    "injectables/*"
+    "src/*"
   ]
 }

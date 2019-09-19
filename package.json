@@ -19,8 +19,7 @@
     "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
     "examples": "rimraf examples/streamed/readers/viewer && cpx 'viewer/*.{html,css,js,map,woff,woff2}' examples/streamed/readers/viewer && cpx 'viewer/readium-css/*.{css,js}' examples/streamed/readers/viewer/readium-css && cpx 'viewer/fonts/*/*.{css,woff,woff2}' examples/streamed/readers/viewer/fonts && cpx 'viewer/injectables/**/*.{css,js,map}' examples/streamed/readers/viewer/injectables && cpx 'injectables/**/*.{css,js,map}' examples/streamed/readers/viewer/injectables ",
     "streamed": "node \"./examples/streamed/server/server-cli.inlinesourcemap.js\" ./examples/streamed/epubs/",
-    "clean": "rimraf node_modules lib dist",
-    "clean-examples": "rimraf examples/streamed/readers/viewer",
+    "clean": "rimraf node_modules lib dist examples/streamed/readers/viewer",
     "about": "echo 'Do not update @types/parse5 to version 5 or else it will break jsdom typings!'"
   },
   "dependencies": {

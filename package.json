@@ -12,7 +12,7 @@
     "registry": "http://ci2.bokskya.webbe.no/nexus/repository/npm-private/"
   },
   "scripts": {
-    "injecatbles": "tsc --p tsconfig-injectables.json",
+    "injectables": "tsc --p tsconfig-injectables.json",
     "prepare": "npm run build",
     "build": "webpack --mode=production && npm run sass && cpx 'dist/*.{css,js,map}' viewer/ && cpx 'dist/injectables/*.{css,js,map}' viewer/injectables/",
     "dev": "webpack --mode=development && npm run sass && cpx 'dist/*.{css,js,map,woff,woff2}' viewer/ && cpx 'dist/injectables/**/*.{css,js,map}' viewer/injectables/",

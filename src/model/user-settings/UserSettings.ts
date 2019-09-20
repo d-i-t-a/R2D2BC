@@ -542,6 +542,8 @@ export class UserSettings implements UserSettings {
             this.fontSize = userSettings.fontSize
             this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).value = this.fontSize;
             await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF))
+            this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
             this.applyProperties()
             this.settingsChangeCallback();
         }
@@ -558,6 +560,8 @@ export class UserSettings implements UserSettings {
             this.letterSpacing = userSettings.letterSpacing
             this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).value = this.letterSpacing;
             await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF))
+            this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
             this.applyProperties()
             this.settingsChangeCallback();
         }
@@ -566,6 +570,8 @@ export class UserSettings implements UserSettings {
             this.wordSpacing = userSettings.wordSpacing
             this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).value = this.wordSpacing;
             await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF))
+            this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
             this.applyProperties()
             this.settingsChangeCallback();
         }
@@ -582,6 +588,8 @@ export class UserSettings implements UserSettings {
             this.textAlignment = UserSettings.textAlignmentValues.findIndex((el: any) => el === userSettings.textAlignment);
             this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value = this.textAlignment;
             await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF))
+            this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
             this.applyProperties()
             this.settingsChangeCallback();
         }
@@ -590,6 +598,8 @@ export class UserSettings implements UserSettings {
             this.lineHeight = userSettings.lineHeight
             this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).value = this.lineHeight;
             await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF))
+            this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
             this.applyProperties()
             this.settingsChangeCallback();
         }

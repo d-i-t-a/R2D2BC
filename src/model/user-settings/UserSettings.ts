@@ -186,6 +186,10 @@ export class UserSettings implements UserSettings {
         html.style.setProperty(ReadiumCSS.COLUMN_COUNT_KEY, this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).toString());
         // Apply text alignment 
         html.style.setProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY, this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).toString());
+        // Apply line height 
+        html.style.setProperty(ReadiumCSS.LINE_HEIGHT_REF, this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).toString());
+        // Apply page margins 
+        html.style.setProperty(ReadiumCSS.PAGE_MARGINS_REF, this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).toString());
 
         // Apply appearance 
         html.style.setProperty(ReadiumCSS.APPEARANCE_KEY, this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString());
@@ -578,6 +582,22 @@ export class UserSettings implements UserSettings {
             this.textAlignment = UserSettings.textAlignmentValues.findIndex((el: any) => el === userSettings.textAlignment);
             this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value = this.textAlignment;
             await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF))
+            this.applyProperties()
+            this.settingsChangeCallback();
+        }
+
+        if (userSettings.lineHeight) {
+            this.lineHeight = userSettings.lineHeight
+            this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).value = this.lineHeight;
+            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF))
+            this.applyProperties()
+            this.settingsChangeCallback();
+        }
+
+        if (userSettings.pageMargins) {
+            this.pageMargins = userSettings.pageMargins
+            this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).value = this.pageMargins;
+            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF))
             this.applyProperties()
             this.settingsChangeCallback();
         }

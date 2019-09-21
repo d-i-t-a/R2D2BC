@@ -187,9 +187,9 @@ export class UserSettings implements UserSettings {
         // Apply text alignment 
         html.style.setProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY, this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).toString());
         // Apply line height 
-        html.style.setProperty(ReadiumCSS.LINE_HEIGHT_REF, this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).toString());
+        html.style.setProperty(ReadiumCSS.LINE_HEIGHT_KEY, this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).toString());
         // Apply page margins 
-        html.style.setProperty(ReadiumCSS.PAGE_MARGINS_REF, this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).toString());
+        html.style.setProperty(ReadiumCSS.PAGE_MARGINS_KEY, this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).toString());
 
         // Apply appearance 
         html.style.setProperty(ReadiumCSS.APPEARANCE_KEY, this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString());

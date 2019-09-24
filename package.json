@@ -2,7 +2,7 @@
   "name": "@dita/reader",
   "version": "1.0.0",
   "description": "A viewer application for EPUB files.",
-  "repository": "https://github.com/Bokbasen/r2-reader",
+  "repository": "https://github.com/d-i-t-a/R2D2BC",
   "main": "src/index.js",
   "typings": "src/index.ts",
   "engines": {

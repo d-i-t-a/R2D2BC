@@ -38,11 +38,12 @@ export interface IFrameNavigatorConfig {
 
 export interface Injectable {
     type: string;
-    url: string;
+    url?: string;
     r2after: boolean;
     r2before: boolean;
     r2default: boolean;
     fontFamily?: string;
+    systemFont?: boolean;
     async?: boolean;
 }
 
@@ -801,8 +802,10 @@ export default class IFrameNavigator implements Navigator {
                             // UserSettings.fontFamilyValues.push(injectable.fontFamily)
                             // this.settings.setupEvents()
                             this.settings.addFont(injectable.fontFamily)
-                        }
-                        if (injectable.r2before) {
+                            if (!injectable.systemFont) {
+                                head.appendChild(this.createCssLink(injectable.url))
+                            }
+                        } else if (injectable.r2before) {
                             head.insertBefore(this.createCssLink(injectable.url), head.firstChild)
                         } else if (injectable.r2default) {
                             head.insertBefore(this.createCssLink(injectable.url), head.childNodes[1])

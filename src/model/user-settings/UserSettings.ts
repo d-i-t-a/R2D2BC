@@ -403,7 +403,7 @@ export class UserSettings implements UserSettings {
 
         if (this.settingsView) {
             const index = UserSettings.fontFamilyValues.length - 1
-            this.fontButtons[index] = HTMLUtilities.findElement(this.settingsView, "#opendyslexic-font") as HTMLButtonElement;
+            this.fontButtons[index] = HTMLUtilities.findElement(this.settingsView, "#"+fontFamily+"-font") as HTMLButtonElement;
             const button = this.fontButtons[index];
             if (button) {
                 addEventListenerOptional(button, 'click', (event: MouseEvent) => {

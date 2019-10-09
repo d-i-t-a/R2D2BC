@@ -43,6 +43,7 @@ export interface Injectable {
     r2before: boolean;
     r2default: boolean;
     fontFamily?: string;
+    async?: boolean;
 }
 
 export interface ReaderRights {
@@ -811,7 +812,7 @@ export default class IFrameNavigator implements Navigator {
                             head.appendChild(this.createCssLink(injectable.url))
                         }
                     } else if (injectable.type === "script") {
-                        head.appendChild(this.createJavascriptLink(injectable.url))
+                        head.appendChild(this.createJavascriptLink(injectable.url, injectable.async))
                     }
                 });
 
@@ -1366,12 +1367,25 @@ export default class IFrameNavigator implements Navigator {
         cssLink.href = href;
         return cssLink;
     }
-    private createJavascriptLink(href: string): HTMLScriptElement {
-        const cssLink = document.createElement('script');
-        cssLink.type = 'text/javascript';
-        cssLink.src = href;
-        cssLink.async
-        return cssLink;
+    private createJavascriptLink(href: string, isAsync: boolean): HTMLScriptElement {
+        
+        const jsLink = document.createElement('script');
+        jsLink.type = 'text/javascript';
+        jsLink.src = href;
+
+        // Enforce synchronous behaviour of injected scripts
+        // unless specifically marked async, as though they 
+        // were inserted using <script> tags
+        //
+        // See comment on differing default behaviour of 
+        // dynamically inserted script loading at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script#Attributes
+        if(isAsync) {
+            jsLink.async = true
+        } else {
+            jsLink.async = false
+        }
+        
+        return jsLink;
     }
 
 }

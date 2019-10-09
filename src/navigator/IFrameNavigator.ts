@@ -44,6 +44,7 @@ export interface Injectable {
     r2default: boolean;
     fontFamily?: string;
     systemFont?: boolean;
+    appearance?: string;
     async?: boolean;
 }
 
@@ -810,6 +811,9 @@ export default class IFrameNavigator implements Navigator {
                         } else if (injectable.r2default) {
                             head.insertBefore(this.createCssLink(injectable.url), head.childNodes[1])
                         } else if (injectable.r2after) {
+                            if (injectable.appearance) {
+                                this.settings.addAppearance(injectable.appearance)
+                            }
                             head.appendChild(this.createCssLink(injectable.url))
                         } else {
                             head.appendChild(this.createCssLink(injectable.url))

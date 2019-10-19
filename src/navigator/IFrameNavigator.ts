@@ -1,3 +1,12 @@
+/*
+ * Project: R2D2BC - Web Reader
+ * Developers: Aferdita Muriqi
+ * Copyright (c) 2019. DITA. All rights reserved.
+ * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
+ * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
+ */
+
 import Navigator from "./Navigator";
 import PaginatedBookView from "../views/PaginatedBookView";
 import ScrollingBookView from "../views/ScrollingBookView";
@@ -38,11 +47,14 @@ export interface IFrameNavigatorConfig {
 
 export interface Injectable {
     type: string;
-    url: string;
+    url?: string;
     r2after: boolean;
     r2before: boolean;
     r2default: boolean;
     fontFamily?: string;
+    systemFont?: boolean;
+    appearance?: string;
+    async?: boolean;
 }
 
 export interface ReaderRights {
@@ -800,18 +812,23 @@ export default class IFrameNavigator implements Navigator {
                             // UserSettings.fontFamilyValues.push(injectable.fontFamily)
                             // this.settings.setupEvents()
                             this.settings.addFont(injectable.fontFamily)
-                        }
-                        if (injectable.r2before) {
+                            if (!injectable.systemFont) {
+                                head.appendChild(this.createCssLink(injectable.url))
+                            }
+                        } else if (injectable.r2before) {
                             head.insertBefore(this.createCssLink(injectable.url), head.firstChild)
                         } else if (injectable.r2default) {
                             head.insertBefore(this.createCssLink(injectable.url), head.childNodes[1])
                         } else if (injectable.r2after) {
+                            if (injectable.appearance) {
+                                this.settings.addAppearance(injectable.appearance)
+                            }
                             head.appendChild(this.createCssLink(injectable.url))
                         } else {
                             head.appendChild(this.createCssLink(injectable.url))
                         }
                     } else if (injectable.type === "script") {
-                        head.appendChild(this.createJavascriptLink(injectable.url))
+                        head.appendChild(this.createJavascriptLink(injectable.url, injectable.async))
                     }
                 });
 
@@ -1366,12 +1383,25 @@ export default class IFrameNavigator implements Navigator {
         cssLink.href = href;
         return cssLink;
     }
-    private createJavascriptLink(href: string): HTMLScriptElement {
-        const cssLink = document.createElement('script');
-        cssLink.type = 'text/javascript';
-        cssLink.src = href;
-        cssLink.async
-        return cssLink;
+    private createJavascriptLink(href: string, isAsync: boolean): HTMLScriptElement {
+        
+        const jsLink = document.createElement('script');
+        jsLink.type = 'text/javascript';
+        jsLink.src = href;
+
+        // Enforce synchronous behaviour of injected scripts
+        // unless specifically marked async, as though they 
+        // were inserted using <script> tags
+        //
+        // See comment on differing default behaviour of 
+        // dynamically inserted script loading at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script#Attributes
+        if(isAsync) {
+            jsLink.async = true
+        } else {
+            jsLink.async = false
+        }
+        
+        return jsLink;
     }
 
 }

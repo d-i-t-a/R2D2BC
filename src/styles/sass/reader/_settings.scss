@@ -1,3 +1,12 @@
+/*
+ * Project: R2D2BC - Web Reader
+ * Developers: Aferdita Muriqi
+ * Copyright (c) 2019. DITA. All rights reserved.
+ * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
+ * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
+ */
+ 
 //////////////////////////////
 // Settings View Sytles     //
 //////////////////////////////
@@ -16,31 +25,11 @@
       margin: 0;
       position: relative;
 
-      svg.checkedIcon {
-        // styles the icon that appears next to paginate/scrolling buttons
-        // set a default color of $ui-white, since this should always
-        // show up on a dark color background.
-        color: $ui-white;
-        display: none;
-        fill: $ui-white;
-        height: 0.9rem;
-        width: 0.9rem;
-      }
-
       // reverse the active state
       &.active {
         color: $ui-white;
         background-color: $ui-default;
 
-        svg.checkedIcon {
-          display: inline-block;
-          margin: 0;
-          position: absolute;
-          top: 50%;
-          transform: translateY(-55%);
-          right: 0.35rem;
-          vertical-align: text-bottom;
-        }
       }
     }
 
@@ -111,10 +100,6 @@
 
         &.active {
           color: $ui-black;
-
-          svg.checkedIcon {
-            fill: $ui-black;
-          }
         }
       }
 
@@ -124,10 +109,6 @@
 
         &.active {
           color: $ui-black;
-
-          svg.checkedIcon {
-            fill: $ui-black;
-          }
         }
       }
 
@@ -141,10 +122,6 @@
 
         &.active {
           color: $ui-white;
-
-          svg.checkedIcon {
-            fill: $ui-white;
-          }
         }
       }
 
@@ -183,11 +160,6 @@
   
       button {
         color: $ui-dark-gray;
-
-        svg.checkedIcon {
-          color: $night-bg;
-          fill: $night-bg;
-        }
   
         // reverse the active state
         &.active {
@@ -226,11 +198,6 @@
   
       button {
         color: $ui-dark-gray;
-
-        svg.checkedIcon {
-          color: $sepia-bg;
-          fill: $sepia-bg;
-        }
   
         // reverse the active state
         &.active {
@@ -243,7 +210,7 @@
         background-color: $ui-white;
       }
 
-      button.sepia-themeon {
+      button.sepia-theme {
         background-color: $sepia-bg;
       }
 

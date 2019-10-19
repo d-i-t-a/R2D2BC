@@ -1,3 +1,4 @@
+
 import Store from "./Store";
 
 /** Class that stores key/value pairs in memory. */

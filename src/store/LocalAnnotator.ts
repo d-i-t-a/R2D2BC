@@ -1,3 +1,4 @@
+
 import Annotator, { AnnotationType } from "./Annotator";
 import Store from "./Store";
 import { ReadingPosition, Bookmark } from "../model/Locator";

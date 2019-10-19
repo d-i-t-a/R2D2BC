@@ -1,3 +1,4 @@
+
 /** Returns a single element matching the selector within the parentElement,
     or null if no element matches. */
 export function findElement(parentElement: Element | Document, selector: string): Element | null {

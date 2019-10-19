@@ -1,3 +1,4 @@
+
 import PaginatedBookView from "./PaginatedBookView";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import * as BrowserUtilities from "../utils/BrowserUtilities";

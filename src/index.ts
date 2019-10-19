@@ -1,3 +1,4 @@
+
 import LocalStorageStore from "./store/LocalStorageStore";
 import IFrameNavigator, { ReaderConfig, UpLinkConfig } from "./navigator/IFrameNavigator";
 import LocalAnnotator from "./store/LocalAnnotator";

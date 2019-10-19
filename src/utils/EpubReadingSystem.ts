@@ -1,3 +1,4 @@
+
 interface EpubReadingSystemObject {
   readonly name: string,
   readonly version: string

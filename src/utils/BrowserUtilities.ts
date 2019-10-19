@@ -1,3 +1,4 @@
+
 /** Returns the current width of the document. */
 export function getWidth(): number {
     return document.documentElement.clientWidth;

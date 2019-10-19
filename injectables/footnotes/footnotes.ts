@@ -1,3 +1,4 @@
+
 document.addEventListener("click", async (event) => {
 
     var htmlElement = event.target as HTMLElement

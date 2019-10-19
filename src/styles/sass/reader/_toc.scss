@@ -1,3 +1,4 @@
+ 
 //////////////////////////////
 // Table of Contents Styles //
 //////////////////////////////
@@ -17,9 +18,7 @@
 }
 
 
-.contents-view,
-.landmarks-view,
-.pageList-view {
+.contents-view {
   background-color: $ui-white;
   overflow: scroll;
   top: 3.5rem;
@@ -71,9 +70,7 @@
 }
 
 [data-viewer-theme="sepia"] {
-  .contents-view,
-  .landmarks-view,
-  .pageList-view {
+  .contents-view {
     background-color: $sepia-bg;
 
     ol li, 
@@ -109,9 +106,7 @@
 }
 
 [data-viewer-theme="night"] {
-  .contents-view,
-  .landmarks-view,
-  .pageList-view {
+  .contents-view {
     background-color: $night-bg;
 
     ol li, 

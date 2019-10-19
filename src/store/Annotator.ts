@@ -1,3 +1,4 @@
+
 import { ReadingPosition } from "../model/Locator";
 
 interface Annotator {

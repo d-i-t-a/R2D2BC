@@ -1,3 +1,4 @@
+
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
 import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
@@ -278,6 +279,8 @@ export default class BookmarkModule implements ReaderModule {
                                 let timestamp: HTMLSpanElement = document.createElement("span");
                                 timestamp.className = "timestamp"
                                 timestamp.innerHTML = self.readableTimestamp(locator.created);
+
+                                bookmarkLink.appendChild(document.createElement("br"))
                                 bookmarkLink.appendChild(timestamp)
 
                                 addEventListenerOptional(bookmarkLink, 'click', (event: MouseEvent) => {

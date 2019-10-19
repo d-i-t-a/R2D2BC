@@ -123,7 +123,7 @@ export default class BookmarkModule implements ReaderModule {
 
     async deleteBookmark(bookmark: Bookmark): Promise<any> {
         if (this.annotator) {
-            if (this.api.deleteBookmark) {
+            if (this.api && this.api.deleteBookmark) {
                 this.api.deleteBookmark(bookmark).then(async _result => {
                     var deleted = await this.annotator.deleteBookmark(bookmark);
 
@@ -177,7 +177,7 @@ export default class BookmarkModule implements ReaderModule {
             }
 
             if (!await this.annotator.locatorExists(bookmark, AnnotationType.Bookmark)) {
-                if (this.api.addBookmark) {
+                if (this.api && this.api.addBookmark) {
                     this.api.addBookmark(bookmark).then(async bookmark => {
                         console.log(bookmark)
                         var saved = await this.annotator.saveBookmark(bookmark);
@@ -287,8 +287,6 @@ export default class BookmarkModule implements ReaderModule {
                                 let timestamp: HTMLSpanElement = document.createElement("span");
                                 timestamp.className = "timestamp"
                                 timestamp.innerHTML = self.readableTimestamp(locator.created);
-
-                                bookmarkLink.appendChild(document.createElement("br"))
                                 bookmarkLink.appendChild(timestamp)
 
                                 addEventListenerOptional(bookmarkLink, 'click', (event: MouseEvent) => {

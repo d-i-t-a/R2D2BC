@@ -381,7 +381,9 @@ export class UserSettings implements UserSettings {
         for (let index = 0; index < UserSettings.fontFamilyValues.length; index++) {
             this.fontButtons[index].className = this.fontButtons[0].className.replace(" active", "")
         }
-        if (this.fontButtons[await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value]) this.fontButtons[await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value].className += " active"
+        if (this.userProperties) {
+            if (this.fontButtons[await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value]) this.fontButtons[await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value].className += " active"
+        }
     }
 
     private updateViewButtons(): void {
@@ -448,9 +450,11 @@ export class UserSettings implements UserSettings {
             letterSpacing: this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).value,
             publisherDefault: this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value
         }
-        this.api.updateUserSettings(userSettings).then(_ => {
-            if (IS_DEV) { console.log("api updated user settings", userSettings) }
-        })
+        if (this.api) {
+            this.api.updateUserSettings(userSettings).then(_ => {
+                if (IS_DEV) { console.log("api updated user settings", userSettings) }
+            })
+        }
     }
 
     private getUserSettings(): UserProperties {

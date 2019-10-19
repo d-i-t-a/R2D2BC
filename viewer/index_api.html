@@ -23,13 +23,6 @@
     <script> var exports = {}; </script>
     <script src="reader.js"></script>
 
-    <!-- Material Icons-->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
-    <!-- START Material CSS -->
-    <!-- Material header and footer CSS  - uncomment if  custom header an d footer is provided-->
-    <link rel="stylesheet" href="material.css" />
-    <!-- END Material CSS -->
 </head>
 
 <body>
@@ -47,7 +40,6 @@
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'day'})">day</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'sepia'})">sepia</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'night'})">night</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({appearance:'neon'})">neon</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({fontSize:100})">font size 100</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({fontSize:150})">font size 150</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({fontSize:200})">font size 200</button><br>
@@ -67,8 +59,10 @@
         <button onclick="javascript:D2Reader.nextPage()">next page</button><br>
         <button onclick="javascript:D2Reader.scroll(true)">scroll</button><br>
         <button onclick="javascript:D2Reader.scroll(false)">paginated</button><br>
-        <button onclick="javascript:D2Reader.goTo({href:'OEBPS/Text/front.xhtml', title:'frontpage', locations:{progression:0}})">got to frontpage</button><br>
-        <button onclick="javascript:D2Reader.goTo({href:'OEBPS/Text/chapter_01.xhtml', title:'chapter 1', locations:{progression:0}})">got to chapter 1</button><br>
+        <button onclick="javascript:D2Reader.goTo({href:'OEBPS/Text/front.xhtml', title:'frontpage', locations:{progression:0}})">go
+            to frontpage</button><br>
+        <button onclick="javascript:D2Reader.goTo({href:'OEBPS/Text/chapter_01.xhtml', title:'chapter 1', locations:{progression:0}})">go
+            to chapter 1</button><br>
         <button onclick="javascript:D2Reader.saveBookmark()">add bookmark</button><br>
         <button onclick="javascript:D2Reader.deleteBookmark({id:0.32616493991327755})">delete bookmark</button><br>
     </div>
@@ -78,8 +72,9 @@
             <main style="overflow: hidden" tabindex=-1 id="iframe-wrapper">
                 <div id="reader-loading" class="loading"></div>
                 <div id="reader-error" class="error"></div>
-                <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="border: 0px; display: block;" width="100%" height="100%"></iframe>
-            </main>        
+                <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="border: 0px; display: block;"
+                    width="100%" height="100%"></iframe>
+            </main>
         </div>
     </div>
 
@@ -102,71 +97,43 @@
 
 
         var injectables = [
-            {type:'style', url: 'http://localhost:4444/viewer/readium-css/ReadiumCSS-before.css', r2before: true},
-            {type:'style', url: 'http://localhost:4444/viewer/readium-css/ReadiumCSS-default.css', r2default: true},
-            {type:'style', url: 'http://localhost:4444/viewer/readium-css/ReadiumCSS-after.css', r2after: true},
-            {type:'style', url: 'http://localhost:4444/viewer/readium-css/neon-after.css', r2after: true, appearance: 'neon'},
-            {type:'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest'},
-            {type:'style', url: 'http://localhost:4444/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic', systemFont: false},
-            {type:'style', fontFamily: 'Courier', systemFont: true},
-            {type:'script', url: 'http://localhost:4444/viewer/injectables/footnotes/footnotes.js'},
-            {type:'style', url: 'http://localhost:4444/viewer/injectables/footnotes/footnotes.css'},
+            { type: 'style', url: 'http://localhost:4444/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
+            { type: 'style', url: 'http://localhost:4444/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
+            { type: 'style', url: 'http://localhost:4444/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            // { type: 'style', url: 'http://localhost:4444/viewer/readium-css/neon-after.css', r2after: true, appearance: 'neon' },
+            { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
+            { type: 'style', url: 'http://localhost:4444/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic', systemFont: false },
+            { type: 'style', fontFamily: 'Courier', systemFont: true },
+            { type: 'script', url: 'http://localhost:4444/viewer/injectables/footnotes/footnotes.js' },
+            { type: 'style', url: 'http://localhost:4444/viewer/injectables/footnotes/footnotes.css' },
         ]
 
-        var lastReadingPosition, annotations, userSettings, baseUrl = null;
         var urlParams = getURLQueryParams();
         var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
 
-            D2Reader.load({
-                url: new URL(urlParams['url']),
-                upLinkUrl: upLink,
-                ui: {
-                    settings: {
-                        fontFamily: true,
-                        fontSize: true,
-                        appearance: true,
-                        scroll: true
-                    },
+        D2Reader.load({
+            url: new URL(urlParams['url']),
+            upLinkUrl: upLink,
+            ui: {
+                settings: {
+                    fontFamily: true,
+                    fontSize: true,
+                    appearance: true,
+                    scroll: true
                 },
-                rights: {
-                    enableBookmarks: true
-                },
-                material: false,
-                userSettings: userSettings,
-                annotations: annotations,
-                lastReadingPosition: lastReadingPosition,
-                injectables: injectables,
-                api: {
-                    addBookmark: function (bookmark) {
-                        bookmark.id = Math.random()
-                        return Promise.resolve(bookmark);
-                    },
-                    deleteBookmark: function (bookmark) {
-                        return Promise.resolve();
-                    },
-                    updateCurrentlocation: function (location) {
-                        return Promise.resolve();
-                    },
-                    updateUserSettings: function (userSettings) {
-                        return Promise.resolve();
-                    },
-                }
-            }).then(instance => {
-                console.log("D2Reader loaded ", instance);
-                console.log("instance.bookmarkModule ", instance.bookmarkModule)
-            }).catch(error => {
-                console.error("error.message ", error.message);
-            });
-        // })();
+            },
+            rights: {
+                enableBookmarks: true
+            },
+            injectables: injectables
+        }).then(instance => {
+            console.log("D2Reader loaded ", instance);
+            console.log("instance.bookmarkModule ", instance.bookmarkModule)
+        }).catch(error => {
+            console.error("error.message ", error.message);
+        });
 
     </script>
-
-
-    <!-- START Material Scripts -->
-    <!-- the following are not needed for the default reader css, only if material (custom) header and footer are used  -->
-    <!-- Compiled and minified Materialize JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-
 
     <noscript>
         <style>

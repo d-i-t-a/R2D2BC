@@ -28,13 +28,13 @@
     "whatwg-fetch": "^2.0.4"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.0",
+    "@types/chai": "^4.2.3",
     "@types/cssesc": "^3.0.0",
     "@types/jquery": "^3.3.31",
     "@types/jsdom": "^2.0.32",
     "@types/materialize-css": "^1.0.6",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^10.14.16",
+    "@types/node": "^10.14.22",
     "@types/pako": "^1.0.1",
     "@types/parse5": "^4.0.0",
     "@types/promise-polyfill": "^6.0.3",
@@ -50,8 +50,8 @@
     "rimraf": "^2.7.1",
     "sinon": "^6.0.1",
     "ts-loader": "^5.4.5",
-    "typescript": "^3.5.3",
-    "webpack": "^4.39.2",
-    "webpack-cli": "^3.3.7"
+    "typescript": "^3.6.4",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.9"
   }
 }

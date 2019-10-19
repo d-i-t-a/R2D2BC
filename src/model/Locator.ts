@@ -1,11 +1,11 @@
 
 /*
- * Module: r2-shared-js
+ * Project: R2D2BC - Web Reader
  * Developers: Aferdita Muriqi
- *
- * Copyright (c) 2018. Readium Foundation. All rights reserved.
- * Use of this source code is governed by a BSD-style license which is detailed in the
- * LICENSE file present in the project repository where this source code is maintained.
+ * Copyright (c) 2019. Aferdita Muriqi. All rights reserved.
+ * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
+ * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
  */
 
 export interface Locator {

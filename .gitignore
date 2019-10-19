@@ -11,3 +11,4 @@ examples/streamed/readers/viewer
 viewer/injectables
 viewer/index.js
 viewer/index.js.map
+settings.json

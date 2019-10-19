@@ -1,3 +1,12 @@
+/*
+ * Project: R2D2BC - Web Reader
+ * Developers: Aferdita Muriqi
+ * Copyright (c) 2019. DITA. All rights reserved.
+ * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
+ * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
+ */
+ 
 //////////////////////////////
 // Table of Contents Styles //
 //////////////////////////////
@@ -17,9 +26,7 @@
 }
 
 
-.contents-view,
-.landmarks-view,
-.pageList-view {
+.contents-view {
   background-color: $ui-white;
   overflow: scroll;
   top: 3.5rem;
@@ -71,9 +78,7 @@
 }
 
 [data-viewer-theme="sepia"] {
-  .contents-view,
-  .landmarks-view,
-  .pageList-view {
+  .contents-view {
     background-color: $sepia-bg;
 
     ol li, 
@@ -109,9 +114,7 @@
 }
 
 [data-viewer-theme="night"] {
-  .contents-view,
-  .landmarks-view,
-  .pageList-view {
+  .contents-view {
     background-color: $night-bg;
 
     ol li, 

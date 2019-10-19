@@ -1,3 +1,12 @@
+/*
+ * Project: R2D2BC - Web Reader
+ * Developers: Aferdita Muriqi
+ * Copyright (c) 2019. DITA. All rights reserved.
+ * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
+ * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
+ */
+
 import Store from "../../store/Store";
 import { UserProperty, UserProperties, Enumerable, Switchable, Incremental } from "./UserProperties";
 import { ReadiumCSS } from "./ReadiumCSS";
@@ -53,7 +62,7 @@ export class UserSettings implements UserSettings {
     private readonly store: Store;
     private readonly USERSETTINGS = "userSetting";
 
-    private static readonly appearanceValues = ["readium-default-on", "readium-sepia-on", "readium-night-on"]
+    private static appearanceValues = ["readium-default-on", "readium-sepia-on", "readium-night-on"]
     private static fontFamilyValues = ["Original", "serif", "sans-serif"]
     private static readonly textAlignmentValues = ["justify", "start"]
     private static readonly columnCountValues = ["auto", "1", "2"]
@@ -257,6 +266,11 @@ export class UserSettings implements UserSettings {
             this.themeButtons[0] = HTMLUtilities.findElement(element, "#day-theme") as HTMLButtonElement;
             this.themeButtons[1] = HTMLUtilities.findElement(element, "#sepia-theme") as HTMLButtonElement;
             this.themeButtons[2] = HTMLUtilities.findElement(element, "#night-theme") as HTMLButtonElement;
+            if (UserSettings.appearanceValues.length > 3) {
+                for (let index = 3; index < UserSettings.appearanceValues.length; index++) {
+                    this.themeButtons[index] = HTMLUtilities.findElement(element, "#" + UserSettings.appearanceValues[index] + "-theme") as HTMLButtonElement;
+                }
+            }
         } else {
             // remove buttons
             HTMLUtilities.findRequiredElement(element, "#container-view-appearance").remove()
@@ -397,13 +411,17 @@ export class UserSettings implements UserSettings {
         return this.store.set(ReadiumCSS.SCROLL_KEY, view.name);
     }
 
+    addAppearance(appearance: string): any {
+        UserSettings.appearanceValues.push(appearance)
+        this.applyProperties()
+    }
     addFont(fontFamily: string): any {
         UserSettings.fontFamilyValues.push(fontFamily)
         this.applyProperties()
 
         if (this.settingsView) {
             const index = UserSettings.fontFamilyValues.length - 1
-            this.fontButtons[index] = HTMLUtilities.findElement(this.settingsView, "#opendyslexic-font") as HTMLButtonElement;
+            this.fontButtons[index] = HTMLUtilities.findElement(this.settingsView, "#"+fontFamily+"-font") as HTMLButtonElement;
             const button = this.fontButtons[index];
             if (button) {
                 addEventListenerOptional(button, 'click', (event: MouseEvent) => {
@@ -530,6 +548,8 @@ export class UserSettings implements UserSettings {
                 appearance = UserSettings.appearanceValues[1]
             } else if (userSettings.appearance == 'night') {
                 appearance = UserSettings.appearanceValues[2]
+            } else {
+                appearance = userSettings.appearance
             }
             this.appearance = UserSettings.appearanceValues.findIndex((el: any) => el === appearance);
             this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value = this.appearance;

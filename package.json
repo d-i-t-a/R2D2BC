@@ -8,7 +8,9 @@
   "engines": {
     "node": ">8.0.0"
   },
-  "publishConfig": { "registry": "https://npm.pkg.github.com/" },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
   "scripts": {
     "injectables": "tsc --p tsconfig-injectables.json",
     "prepare": "npm run build",

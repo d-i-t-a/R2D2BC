@@ -24,10 +24,11 @@ This example runs on `http`.
 
 #### Usage
 
+- Generate injecables (`npm run injectables`)
 - Update the web reader files if needed (`npm run examples`)
 - Start the server with `npm run streamed`
 ```
-npm run build && npm run examples && npm run streamed
+npm run build && npm run injectables && npm run examples && npm run streamed
 ```
 - Open http://localhost:4444 in the browser
 - Pick a publication

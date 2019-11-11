@@ -1173,16 +1173,21 @@ export default class IFrameNavigator implements Navigator {
         if (linksBottomHidden) {
             this.toggleDisplay(this.linksBottom);
         }
-
-        if (this.infoBottom) this.infoBottom.style.height = 0 + "px";
+        // TODO paginator page info
+        // 0 = hide , 40 = show
+        if (this.infoBottom) this.infoBottom.style.height = 40 + "px";
 
         if (linksBottomHidden) {
             this.toggleDisplay(this.linksBottom);
         }
 
+        // TODO paginator height needs to be calculated with headers and footers in mind
+        // material     - 70 - 10 - 40 - 10 (if page info needs showing, +30)
+        // api          - 10 - 10 - 10 - 10
         if (this.paginator) {
-            this.paginator.height = (BrowserUtilities.getHeight() - 70 - 10 - 40 - 10);
+            this.paginator.height = (BrowserUtilities.getHeight() - 10 - 10 - 10 - 10);
         }
+
         setTimeout(() => {
             if (this.scroller && this.settings.getSelectedView() === this.scroller) {
                 this.scroller.setIframeHeight(this.iframe)

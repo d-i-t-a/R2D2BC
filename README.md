@@ -1,41 +1,37 @@
 [![DepShield Badge](https://depshield.sonatype.org/badges/d-i-t-a/R2D2BC/depshield.svg)](https://depshield.github.io)
 
-## Quickstart
 
-Clone this repo, then
+Readium Web - goals and features
 
-```
-npm install
-```
+Here is a proposal, initiated by Aferdita: [Readium Weekly Eng Meeting - 05/22/2019](https://docs.google.com/document/d/1krNe8TUtvajpljcSS4nN_2cHfWO4_Hsag5LnJ4hj_CM/edit#)
 
-## Examples
+The Readium Web project defines a toolkit (not a full featured app) based on the Readium Architecture, 
+with an emphasis on speed, modularization and clarity of the code (= ease of maintenance).
+and with the following core features:
 
-Examples demonstrate how this webpub-viewer can be used:
+- Implements Locator
+- Implements UserSettings
+- Implements Webpub manifest
+- Implements the Readium shared models
+- Integrates Readium CSS
+- Integrates a simple Navigator for reflow publications
+- Provides a decoupled Minimal UI
+- Provides build system optimization (webpack for example)
 
-1. with assets served by r2-streamer-js (in-memory model);
+Plus three extended modules: 
+- a multi-iframe Navigator for reflow & FXL + spread publications
+- a Navigator for audiobooks
+- a Navigator for digital comics (DiViNa)
 
-### Streamed
+About modularity: any contributor or implementer can add their own functionality without refactoring the whole project.
 
-The `examples/streamed` folder contains the webpub-viewer (`readers/viewer` folder), the r2-streamer-js (ES6/ES2015 bundle in `server` folder) and example files (`epubs` folder).
+About the minimal UI: it consists on a test application which provides 
+- Navigation via the toc
+- Control of user settings
+- Bookmarks (demonstrating Locator usage)
 
-In this example, assets are served by the r2-streamer-js (in-memory model).
+The addition of a way to keep a publication in cache for offline reading (using service workers, workbox) is an open question. If added, the capability should be activable by configuration only. 
 
-This example runs on `http`.
-
-#### Usage
-
-- Generate injecables (`npm run injectables`)
-- Update the web reader files if needed (`npm run examples`)
-- Start the server with `npm run streamed`
-```
-npm run build && npm run injectables && npm run examples && npm run streamed
-```
-- Open http://localhost:4444 in the browser
-- Pick a publication
-- You can see its manifest (`json`) and open it in the webpub-viewer of your choice
-- To stop the server, type `ctrl + c`
+The addition of a way to protect content against hacking and add rights management features is open. 
 
 
-## Icons
-
-Icons used in the shared version are part of the official [Material Design Icons](https://material.io/tools/icons/?style=outline) collection (outline version).

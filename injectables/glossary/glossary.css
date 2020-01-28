@@ -1,0 +1,8 @@
+a.gloss,
+a.gloss:hover {
+    font-weight: bold;
+    color: inherit !important; 
+    text-decoration: underline;
+    text-decoration-color: turquoise;
+    text-decoration-style: wavy;  
+}

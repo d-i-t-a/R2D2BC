@@ -393,7 +393,6 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private updateBookView(): void {
-        const doNothing = () => { };
         if (this.settings.getSelectedView() === this.paginator) {
             document.body.onscroll = () => { };
             if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
@@ -403,15 +402,8 @@ export default class IFrameNavigator implements Navigator {
             if (this.chapterTitle) this.chapterTitle.style.display = "inline";
             if (this.chapterPosition) this.chapterPosition.style.display = "inline";
             if (this.eventHandler) {
-                this.eventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
-                this.eventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
-                this.eventHandler.onLeftTap = this.handlePreviousPageClick.bind(this);
-                this.eventHandler.onMiddleTap = doNothing;
-                this.eventHandler.onRightTap = this.handleNextPageClick.bind(this);
-                this.eventHandler.onRemoveHover = this.handleRemoveHover.bind(this);
                 this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
-                this.eventHandler.onLeftArrow = doNothing;
-                this.eventHandler.onRightArrow = doNothing;
+                this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
             }
             if (!this.isDisplayed(this.linksBottom)) {
                 this.toggleDisplay(this.linksBottom);
@@ -482,18 +474,8 @@ export default class IFrameNavigator implements Navigator {
             if (this.chapterTitle) this.chapterTitle.style.display = "none";
             if (this.chapterPosition) this.chapterPosition.style.display = "none";
             if (this.eventHandler) {
-                this.eventHandler.onBackwardSwipe = doNothing;
-                this.eventHandler.onForwardSwipe = doNothing;
-                this.eventHandler.onLeftTap = doNothing;
-                this.eventHandler.onMiddleTap = doNothing
-                this.eventHandler.onRightTap = doNothing;
-                this.eventHandler.onLeftHover = doNothing;
-                this.eventHandler.onRightHover = doNothing;
-                this.eventHandler.onRemoveHover = doNothing;
                 this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
-                this.eventHandler.onLeftArrow = doNothing;
-                this.eventHandler.onRightArrow = doNothing;
-                this.handleRemoveHover();
+                this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
             }
             if (!this.isDisplayed(this.linksBottom)) {
                 this.toggleDisplay(this.linksBottom);
@@ -739,7 +721,6 @@ export default class IFrameNavigator implements Navigator {
                 } else {
                     this.previousChapterAnchorElement.removeAttribute("href");
                     this.previousChapterAnchorElement.className += " disabled";
-                    this.handleRemoveHover();
                 }
             }
 
@@ -755,7 +736,6 @@ export default class IFrameNavigator implements Navigator {
                 } else {
                     this.nextChapterAnchorElement.removeAttribute("href");
                     this.nextChapterAnchorElement.className += " disabled";
-                    this.handleRemoveHover();
                 }
             }
 
@@ -791,9 +771,6 @@ export default class IFrameNavigator implements Navigator {
                 if (this.chapterTitle) this.chapterTitle.innerHTML = "(Current Chapter)";
             }
 
-            if (this.eventHandler) {
-                this.eventHandler.setupEvents(this.iframe.contentDocument);
-            }
 
             if (this.annotator) {
                 await this.saveCurrentReadingPosition();
@@ -836,6 +813,10 @@ export default class IFrameNavigator implements Navigator {
 
             setTimeout(() => {
 
+                if (this.eventHandler) {
+                    this.eventHandler.setupEvents(this.iframe.contentDocument);
+                }
+    
                 if (this.scroller && this.settings.getSelectedView() === this.scroller) {
                     this.scroller.setIframeHeight(this.iframe)
                 }
@@ -1114,14 +1095,16 @@ export default class IFrameNavigator implements Navigator {
         }
     }
 
-    private handleRemoveHover(): void {
-        this.iframe.className = "";
+    private handleClickThrough(_event: MouseEvent | TouchEvent) {
+        if (this.mDropdowns) {
+            this.mDropdowns.forEach(element => {
+                (element as any).close()
+            });
+        }
     }
 
     private handleInternalLink(event: MouseEvent | TouchEvent) {
         const element = event.target;
-
-
         let locations: Locations = {
             progression: 0
         }

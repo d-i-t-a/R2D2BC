@@ -25,6 +25,31 @@ module.exports = [{
     library: "D2Reader",
     path: path.resolve(__dirname, "dist")
   }
+},{
+    mode: 'production',
+    devtool: 'source-map',
+    entry: "./injectables/glossary/glossary.ts",
+    module: {
+      rules: [
+        {
+          test: /\.tsx?$/,
+          use: [
+            {
+              loader: "ts-loader"
+            }
+          ],
+          exclude: /node_modules/
+        }
+      ]
+    },
+    resolve: {
+      extensions: [".tsx", ".ts", ".js"]
+    },
+    output: {
+      filename: "glossary.js",
+      library: "Glossary",
+      path: path.resolve(__dirname, "dist/injectables/glossary")
+    }
   },{
     mode: 'production',
     devtool: 'source-map',

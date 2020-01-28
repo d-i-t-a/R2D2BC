@@ -37,6 +37,10 @@ export async function deleteBookmark(bookmark) {
     if (IS_DEV) { console.log("deleteBookmark") }
     BookmarkModuleInstance.deleteBookmark(bookmark)
 }
+export async function resetUserSettings() {
+    if (IS_DEV) { console.log("resetSettings") }
+    R2Settings.resetUserSettings()
+}
 export async function applyUserSettings(userSettings) {
     if (IS_DEV) { console.log("applyUserSettings") }
     R2Settings.applyUserSettings(userSettings)
@@ -146,6 +150,10 @@ exports.load = async function (config: ReaderConfig) {
 }
 exports.unload = async function () {
     unload()
+}
+
+exports.resetUserSettings = function () {
+    resetUserSettings()
 }
 
 // - apply user setting(s)

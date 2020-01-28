@@ -38,6 +38,7 @@
         <button onclick="javascript:D2Reader.decrease('fontSize')">font decrease</button><br>
 
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'day'})">day</button><br>
+        <button onclick="javascript:D2Reader.applyUserSettings({appearance:'day',fontSize:100, fontFamily:'opendyslexic', letterSpacing:0.25, textAlignment:'justify'})">apply multiple settings</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'sepia'})">sepia</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'night'})">night</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({fontSize:100})">font size 100</button><br>
@@ -108,8 +109,11 @@
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: 'http://localhost:4444/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic', systemFont: false },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
+            { type: 'script', url: 'http://localhost:4444/viewer/injectables/click/click.js' },
             { type: 'script', url: 'http://localhost:4444/viewer/injectables/footnotes/footnotes.js' },
             { type: 'style', url: 'http://localhost:4444/viewer/injectables/footnotes/footnotes.css' },
+            { type: 'script', url: 'http://localhost:4444/viewer/injectables/glossary/glossary.js' },
+            { type: 'style', url: 'http://localhost:4444/viewer/injectables/glossary/glossary.css' },
         ]
 
         var urlParams = getURLQueryParams();
@@ -117,7 +121,6 @@
 
         D2Reader.load({
             url: new URL(urlParams['url']),
-            upLinkUrl: upLink,
             ui: {
                 settings: {
                     fontFamily: true,

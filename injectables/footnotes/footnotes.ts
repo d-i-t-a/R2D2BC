@@ -8,8 +8,9 @@
  */
 
 document.addEventListener("click", async (event) => {
-
+    console.log("Footnote Click Handler");
     var htmlElement = event.target as HTMLElement
+    if(htmlElement.tagName.toLowerCase() === 'a') {
     var element = document.createElement('div');
     element.innerHTML = htmlElement.outerHTML;
 
@@ -17,14 +18,16 @@ document.addEventListener("click", async (event) => {
     if (link) {
         var attribute = link.getAttribute('epub:type') == 'noteref';
         if (attribute) {
-            event.preventDefault()
-            event.stopPropagation()
 
             var href = link.getAttribute("href")
             if (href.indexOf("#") > 0) {
+    
                 var id = href.substring(href.indexOf('#') + 1)
                 var absolute = getAbsoluteHref(href)
                 absolute = absolute.substring(0, absolute.indexOf("#"))
+
+                event.preventDefault()
+                event.stopPropagation()
 
                 await fetch(absolute)
                     .then(r => r.text())
@@ -33,6 +36,7 @@ document.addEventListener("click", async (event) => {
                         var doc = parser.parseFromString(data, "text/html");
                         var aside = doc.querySelector("aside#" + id)
                         if (aside) {
+            
                             var modal = document.createElement('div');
                             modal.className = 'modal';
                             modal.innerHTML = '<div class="modal-content"><span class="close">x</span>' + aside.innerHTML + '</div>'
@@ -59,12 +63,14 @@ document.addEventListener("click", async (event) => {
                                     modal.parentElement.removeChild(modal)
                                 }
                             }
+                        } else {
+                            link.click()
                         }
                     })
             }
         }
     }
-
+    }
     function getAbsoluteHref(href: string): string | null {
         var currentUrl = document.location.href;
         return new URL(href, currentUrl).href;

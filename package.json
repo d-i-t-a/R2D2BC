@@ -12,9 +12,8 @@
     "registry": "https://npm.pkg.github.com/"
   },
   "scripts": {
-    "injectables": "tsc --p tsconfig-injectables.json",
     "prepare": "npm run build",
-    "build": "webpack --mode=production && npm run sass && cpx 'dist/*.{css,js,map}' viewer/ && cpx 'dist/injectables/*.{css,js,map}' viewer/injectables/",
+    "build": "webpack --mode=production && npm run sass && cpx 'dist/*.{css,js,map,woff,woff2}' viewer/ && cpx 'dist/injectables/**/*.{css,js,map}' viewer/injectables/",
     "dev": "webpack --mode=development && npm run sass && cpx 'dist/*.{css,js,map,woff,woff2}' viewer/ && cpx 'dist/injectables/**/*.{css,js,map}' viewer/injectables/",
     "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
     "examples": "rimraf examples/streamed/readers/viewer && cpx 'viewer/*.{html,css,js,map,woff,woff2}' examples/streamed/readers/viewer && cpx 'viewer/readium-css/*.{css,js}' examples/streamed/readers/viewer/readium-css && cpx 'viewer/fonts/*/*.{css,woff,woff2}' examples/streamed/readers/viewer/fonts && cpx 'viewer/injectables/**/*.{css,js,map}' examples/streamed/readers/viewer/injectables && cpx 'injectables/**/*.{css,js,map}' examples/streamed/readers/viewer/injectables ",
@@ -57,5 +56,7 @@
     "webpack-cli": "^3.3.9",
     "braces": ">=2.3.1"
   },
-  "files": ["dist/*"]
+  "files": [
+    "dist/*"
+  ]
 }

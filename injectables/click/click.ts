@@ -7,10 +7,10 @@
  * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
  */
 
-document.addEventListener("click", async (event) => {
+document.addEventListener("click", async (_event) => {
 
-    var htmlElement = event.target as HTMLElement
-    console.log(htmlElement.outerHTML)
+    // var htmlElement = event.target as HTMLElement
+    console.log("Emoty Click Handler")
+    // console.log(htmlElement.outerHTML)
         
 }, true);
-

@@ -26,4 +26,10 @@ export default class MemoryStore implements Store {
         this.store[key] = value;
         return new Promise<void>(resolve => resolve());
     }
+
+    public remove(key: string): Promise<void> {
+        this.store[key] = null;
+        return new Promise<void>(resolve => resolve());
+    }
+
 }

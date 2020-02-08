@@ -18,6 +18,7 @@ import { Bookmark, Locator } from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 import { UserSettings } from "../model/user-settings/UserSettings";
+import { v4 as uuid } from 'uuid';
 
 export type AddBookmark = (bookmark: Bookmark) => Promise<Bookmark>
 export type DeleteBookmark = (bookmark: Bookmark) => Promise<Bookmark>
@@ -25,6 +26,7 @@ export type DeleteBookmark = (bookmark: Bookmark) => Promise<Bookmark>
 export interface BookmarkModuleAPI {
     addBookmark: AddBookmark;
     deleteBookmark: DeleteBookmark;
+    getBookmarks: Array<any>;
 }
 
 export interface BookmarkModuleConfig {
@@ -101,11 +103,11 @@ export default class BookmarkModule implements ReaderModule {
         if (this.headerMenu) {
             var menuBookmark = HTMLUtilities.findElement(this.headerMenu, "#menu-button-bookmark") as HTMLLinkElement;
             if (this.rights.enableBookmarks) {
-                menuBookmark.parentElement.style.display = "unset";
-                addEventListenerOptional(menuBookmark, 'click', this.saveBookmark.bind(this));
+                if (menuBookmark) menuBookmark.parentElement.style.display = "unset";
+                if (menuBookmark) addEventListenerOptional(menuBookmark, 'click', this.saveBookmark.bind(this));
             } else {
-                menuBookmark.parentElement.style.display = "none";
-                this.sideNavSectionBookmarks.style.display = "none";
+                if (menuBookmark) menuBookmark.parentElement.style.display = "none";
+                if (this.sideNavSectionBookmarks) this.sideNavSectionBookmarks.style.display = "none";
             }
         }
 
@@ -161,13 +163,14 @@ export default class BookmarkModule implements ReaderModule {
                 tocItem = this.publication.getTOCItemAbsolute(this.delegate.currentChapterLink.href);
             }
 
-            const url = this.publication.getAbsoluteHref(tocItem.href);
 
             const bookmarkPosition = this.settings.getSelectedView().getCurrentPosition();
 
+            const id: string = uuid();
 
             const bookmark: Bookmark = {
-                href: url,
+                id: id,
+                href: tocItem.href,
                 locations: {
                     progression: bookmarkPosition
                 },
@@ -211,6 +214,13 @@ export default class BookmarkModule implements ReaderModule {
         }
     }
 
+    async getBookmarks() : Promise<any>{
+        let bookmarks: Array<any> = [];
+        if (this.annotator) {
+            bookmarks = await this.annotator.getBookmarks() as Array<any>;
+        }
+        return bookmarks
+    }
     public async showBookmarks(): Promise<void> {
         let bookmarks: Array<any> = [];
         if (this.annotator) {
@@ -332,6 +342,8 @@ export default class BookmarkModule implements ReaderModule {
 
     private handleAnnotationLinkClick(event: MouseEvent, locator: Bookmark): void {
         if (locator) {
+            const linkHref = this.publication.getAbsoluteHref(locator.href);
+            locator.href = linkHref    
             this.delegate.navigate(locator);
         } else {
             if (IS_DEV) { console.log('bookmark data missing: ', event); }
@@ -339,6 +351,7 @@ export default class BookmarkModule implements ReaderModule {
     }
 
     private handleAnnotationLinkDeleteClick(type: AnnotationType, event: MouseEvent, locator: any): void {
+        if (IS_DEV) { console.log('bookmark data locator: ', locator); }
         if (locator) {
             if (type == AnnotationType.Bookmark) {
                 this.deleteBookmark(locator);

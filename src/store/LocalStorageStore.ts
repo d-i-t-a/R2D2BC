@@ -76,4 +76,18 @@ export default class LocalStorageStore implements Store {
         }
         return new Promise<void>(resolve => resolve());
     }
+
+    public async remove(key: string): Promise<void> {
+        if (!this.fallbackStore) {
+            if(this.useLocalStorage) {
+                window.localStorage.removeItem(this.getLocalStorageKey(key));
+            } else {
+                window.sessionStorage.removeItem(this.getLocalStorageKey(key));
+            }
+        } else {
+            await this.fallbackStore.remove(key);
+        }
+        return new Promise<void>(resolve => resolve());
+    }
+
 }

@@ -976,6 +976,9 @@ export default class IFrameNavigator implements Navigator {
         event.stopPropagation();
     }
 
+    tableOfContents() : any{
+        return this.publication.tableOfContents
+    }
     previousPage(): any {
         this.handlePreviousPageClick(null)
     }
@@ -1262,6 +1265,11 @@ export default class IFrameNavigator implements Navigator {
     navigate(locator: Locator): void {
         this.hideIframeContents();
         this.showLoadingMessageAfterDelay();
+        if (locator.locations === undefined) {
+            locator.locations = {
+                progression: 0
+            } 
+        }
         this.newPosition = locator;
 
         if (locator.href.indexOf("#") !== -1) {

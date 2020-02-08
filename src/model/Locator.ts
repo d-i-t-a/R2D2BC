@@ -35,7 +35,7 @@ export interface ReadingPosition extends Locator {
 }
 
 export interface Bookmark extends Locator {
-    id?: number; 
+    id?: any; 
     created: Date;
 }
 

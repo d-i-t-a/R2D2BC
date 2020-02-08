@@ -74,7 +74,7 @@ export class UserSettings implements UserSettings {
     verticalScroll = false
 
     //Advanced settings
-    publisherDefaults = false
+    publisherDefaults = true
     textAlignment = 0
     columnCount = 0
     wordSpacing = 0.0
@@ -149,6 +149,26 @@ export class UserSettings implements UserSettings {
         this.letterSpacing = (await this.getProperty(ReadiumCSS.LETTER_SPACING_KEY) != null) ? (await this.getProperty(ReadiumCSS.LETTER_SPACING_KEY) as Incremental).value : this.letterSpacing
         this.pageMargins = (await this.getProperty(ReadiumCSS.PAGE_MARGINS_KEY) != null) ? (await this.getProperty(ReadiumCSS.PAGE_MARGINS_KEY) as Incremental).value : this.pageMargins
         this.lineHeight = (await this.getProperty(ReadiumCSS.LINE_HEIGHT_KEY) != null) ? (await this.getProperty(ReadiumCSS.LINE_HEIGHT_KEY) as Incremental).value : this.lineHeight
+        this.userProperties = this.getUserSettings()
+    }
+    
+    private async reset() {
+
+        this.appearance = 0
+        this.verticalScroll = false
+        this.fontSize = 100.0
+        this.fontOverride = false
+        this.fontFamily = 0
+    
+        //Advanced settings
+        this.publisherDefaults = true
+        this.textAlignment = 0
+        this.columnCount = 0
+        this.wordSpacing = 0.0
+        this.letterSpacing = 0.0
+        this.pageMargins = 2.0
+        this.lineHeight = 1.0
+    
         this.userProperties = this.getUserSettings()
     }
 
@@ -477,7 +497,7 @@ export class UserSettings implements UserSettings {
         // Font size
         userProperties.addIncremental(this.fontSize, 100, 300, 25, "%", ReadiumCSS.FONT_SIZE_REF, ReadiumCSS.FONT_SIZE_KEY)
         // Line height
-        userProperties.addIncremental(this.lineHeight, 1, 2, 0.25, "", ReadiumCSS.LINE_HEIGHT_REF, ReadiumCSS.LINE_HEIGHT_KEY)
+        userProperties.addIncremental(this.lineHeight, 1, 2, 0.25, "em", ReadiumCSS.LINE_HEIGHT_REF, ReadiumCSS.LINE_HEIGHT_KEY)
         // Word spacing
         userProperties.addIncremental(this.wordSpacing, 0, 0., 0.25, "rem", ReadiumCSS.WORD_SPACING_REF, ReadiumCSS.WORD_SPACING_KEY)
         // Letter spacing
@@ -540,6 +560,13 @@ export class UserSettings implements UserSettings {
             return properties[0];
         }
         return null;
+    }
+
+    async resetUserSettings(): Promise<void> {
+        await this.store.remove(this.USERSETTINGS)
+        await this.reset()
+        this.applyProperties()
+        this.settingsChangeCallback();
     }
 
     async applyUserSettings(userSettings: UserSettings): Promise<void> {
@@ -676,6 +703,9 @@ export class UserSettings implements UserSettings {
         } else if (incremental == 'wordSpacing') {
             (this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF) as Incremental).increment()
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF))
+        } else if (incremental == 'lineHeight') {
+            (this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF) as Incremental).increment()
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF))
         }
         this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
         this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
@@ -693,6 +723,9 @@ export class UserSettings implements UserSettings {
         } else if (incremental == 'wordSpacing') {
             (this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF) as Incremental).decrement()
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF))
+        } else if (incremental == 'lineHeight') {
+            (this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF) as Incremental).decrement()
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF))
         }
         this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
         this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))

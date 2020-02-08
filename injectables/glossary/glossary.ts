@@ -12,11 +12,9 @@ async function markCuedWords(glossary: Array<GlossaryItem>) {
             separateWordSearch: false,
             acrossElements: true,
             exclude: ["h1", "h2", "h3", "h4", "h5", "h6", "figure"],
-            // filter: onlyFirstMatch,
             element: "a",
             className: "gloss",
             each: function (node) {
-                // alert(node);
                 node.addEventListener("click", async (event) => {
                     var htmlElement = node as HTMLElement
                     console.log("Mark Node Click Handler");

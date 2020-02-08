@@ -26,6 +26,10 @@
 </head>
 
 <body>
+    <header id="headerMenu" style="position:fixed;top:0;right:0;z-index: 2;">
+        <div id="container-toc"></div>
+        <div id="container-bookmarks"></div>
+    </header>
 
     <div style="position:fixed;top:0;left:0;z-index: 2;">
         <button onclick="javascript:D2Reader.resetUserSettings()">reset user setting</button><br>
@@ -53,6 +57,7 @@
         <button onclick="javascript:D2Reader.applyUserSettings({wordSpacing:0.25})">word spacing 0.25</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({letterSpacing:0.25})">letter spacing 0.25</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'1'})">column 1</button><br>
+        <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'2'})">column 2</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'auto'})">column auto</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'justify'})">align justify</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'start'})">align start</button><br>
@@ -69,6 +74,55 @@
             to chapter 1</button><br>
         <button onclick="javascript:D2Reader.saveBookmark()">add bookmark</button><br>
         <button onclick="javascript:D2Reader.deleteBookmark({id:0.32616493991327755})">delete bookmark</button><br>
+       
+        <button onclick="javascript:D2Reader.bookmarks().then(
+            result => { 
+                console.log(result)
+                console.log(result.length)
+                var container = document.getElementById('container-bookmarks');
+                var tocString = ''
+                result.forEach(function (item, index) {
+                    if (index == 0) {
+                        console.log('first')
+                        console.log(index)
+                        tocString += '<ul><li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + item.locations.progression + '</li>'
+                    } else if (index == result.length - 1) {
+                        console.log('last')
+                        console.log(index)
+                        tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + item.locations.progression + '</li></ul>'
+                    } else {
+                        console.log('middle')
+                        console.log(index)
+                        tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + item.locations.progression + '</li>'
+                    }
+                });
+                container.innerHTML = tocString
+            })">show bookmarks</button><br>
+
+        <button onclick="javascript:D2Reader.tableOfContents().then(
+            result => { 
+                console.log(result)
+                console.log(result.length)
+                var container = document.getElementById('container-toc');
+                var tocString = ''
+                result.forEach(function (item, index) {
+                    if (index == 0) {
+                        console.log('first')
+                        console.log(index)
+                        tocString += '<ul><li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + '</li>'
+                    } else if (index == result.length - 1) {
+                        console.log('last')
+                        console.log(index)
+                        tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + '</li></ul>'
+                    } else {
+                        console.log('middle')
+                        console.log(index)
+                        tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + '</li>'
+                    }
+                });
+                container.innerHTML = tocString
+            })">show TOC</button><br>
+
     </div>
 
     <div class="content" id="root">

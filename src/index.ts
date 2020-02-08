@@ -37,6 +37,14 @@ export async function deleteBookmark(bookmark) {
     if (IS_DEV) { console.log("deleteBookmark") }
     BookmarkModuleInstance.deleteBookmark(bookmark)
 }
+export async function bookmarks() {
+    if (IS_DEV) { console.log("bookmarks") }
+    return await BookmarkModuleInstance.getBookmarks()    
+}
+export async function tableOfContents() {
+    if (IS_DEV) { console.log("bookmarks") }
+    return await R2Navigator.tableOfContents()    
+}
 export async function resetUserSettings() {
     if (IS_DEV) { console.log("resetSettings") }
     R2Settings.resetUserSettings()
@@ -204,4 +212,11 @@ exports.previousPage = function () {
 
 exports.scroll = function (scroll) {
     scroll(scroll)
+}
+
+exports.bookmarks = function () {
+    return bookmarks()
+}
+exports.tableOfContents = function () {
+    return tableOfContents()
 }

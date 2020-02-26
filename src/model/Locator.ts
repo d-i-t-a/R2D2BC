@@ -1,3 +1,4 @@
+import { IHighlight } from "../modules/highlight/common/highlight";
 
 /*
  * Project: R2D2BC - Web Reader
@@ -39,4 +40,36 @@ export interface Bookmark extends Locator {
     created: Date;
 }
 
+export enum AnnotationMarker {
+    Highlight,
+    Underline
+}
 
+export interface Annotation extends Locator {
+    id?: any;
+    created: Date;
+    highlight?: IHighlight;
+    marker: AnnotationMarker;
+    color: string;
+}
+
+export interface ISelectionInfo {
+    rangeInfo: IRangeInfo;
+    cleanText: string;
+    rawText: string;
+    color: string;
+}
+
+export interface IRangeInfo {
+    startContainerElementCssSelector: string;
+    startContainerChildTextNodeIndex: number;
+    startOffset: number;
+    endContainerElementCssSelector: string;
+    endContainerChildTextNodeIndex: number;
+    endOffset: number;
+}
+
+export interface ChapterWeight {
+    chapterHref: string, 
+    weight: number 
+}

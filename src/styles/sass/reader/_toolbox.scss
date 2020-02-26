@@ -1,0 +1,64 @@
+/*
+ * Project: R2D2BC - Web Reader
+ * Developers: Aferdita Muriqi
+ * Copyright (c) 2019. DITA. All rights reserved.
+ * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
+ * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
+ */
+
+ .highlight-toolbox {
+  transform: translate(-50%, -100%);
+  animation: toolsAnimateIn 100ms ease-out both;
+  transform-origin: bottom;
+  z-index: 999;
+  position: absolute;
+  background: gainsboro;
+  display: none;
+  &:before {
+      $size: 0.4rem;
+      content: '';
+      position: absolute;
+      width: $size;
+      height: $size;
+      bottom: -($size / 2);
+      left: calc(50% - #{$size / 2});
+      background-color: inherit;
+      transform: rotate(45deg);
+  }
+  > div > button {
+    display: inline-block;
+  }
+}
+
+.color-option {
+  background-color: gainsboro;
+}
+
+.color-option span {
+  display: inline-block;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  background: grey;
+}
+
+.toolbox-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 998; // navbar-fixed is set to 997
+  background: rgba(255,255,255,0);
+}
+
+
+@keyframes toolsAnimateIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+}

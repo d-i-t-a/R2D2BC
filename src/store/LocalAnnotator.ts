@@ -6,10 +6,13 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
  */
-
+import * as crypto from "crypto";
 import Annotator, { AnnotationType } from "./Annotator";
 import Store from "./Store";
-import { ReadingPosition, Bookmark } from "../model/Locator";
+import { ReadingPosition, Bookmark, Annotation } from "../model/Locator";
+import { IReadiumIFrameWindow } from "../modules/highlight/renderer/iframe/state";
+import { IHighlight } from "../modules/highlight/common/highlight";
+import TextHighlighter from "../modules/highlight/TextHighlighter";
 
 export interface LocalAnnotatorConfig {
     store: Store;
@@ -20,6 +23,7 @@ export default class LocalAnnotator implements Annotator {
     private readonly store: Store;
     private static readonly LAST_READING_POSITION = "last-reading-position";
     private static readonly BOOKMARKS = "bookmarks";
+    private static readonly ANNOTATIONS = "annotations";
 
     public constructor(config: LocalAnnotatorConfig) {
         this.store = config.store;
@@ -35,27 +39,27 @@ export default class LocalAnnotator implements Annotator {
     }
 
     public async initLastReadingPosition(position: ReadingPosition): Promise<void> {
-        if(typeof position === 'string' ) {
+        if (typeof position === 'string') {
             await this.store.set(LocalAnnotator.LAST_READING_POSITION, position);
         } else {
             const positionString = JSON.stringify(position);
             await this.store.set(LocalAnnotator.LAST_READING_POSITION, positionString);
         }
         return new Promise<void>(resolve => resolve());
-    }    
+    }
 
     public async saveLastReadingPosition(position: any): Promise<void> {
-        if(typeof position === 'string' ) {
+        if (typeof position === 'string') {
             await this.store.set(LocalAnnotator.LAST_READING_POSITION, position);
         } else {
             const positionString = JSON.stringify(position);
             await this.store.set(LocalAnnotator.LAST_READING_POSITION, positionString);
         }
         return new Promise<void>(resolve => resolve());
-    }    
+    }
 
     public async initBookmarks(list: any): Promise<any> {
-        if(typeof list === 'string' ) {
+        if (typeof list === 'string') {
             let savedBookmarksObj = JSON.parse(list);
             await this.store.set(LocalAnnotator.BOOKMARKS, JSON.stringify(savedBookmarksObj));
             return new Promise(resolve => resolve(list));
@@ -83,8 +87,8 @@ export default class LocalAnnotator implements Annotator {
     }
 
     public async locatorExists(locator: any, type: AnnotationType): Promise<any> {
-        let storeType 
-        switch(type) {
+        let storeType
+        switch (type) {
             case AnnotationType.Bookmark:
                 storeType = LocalAnnotator.BOOKMARKS
                 break
@@ -92,8 +96,8 @@ export default class LocalAnnotator implements Annotator {
         const locatorsString = await this.store.get(storeType);
         if (locatorsString) {
             const locators = JSON.parse(locatorsString) as Array<any>;
-            const filteredLocators = locators.filter( (el: any) => el.href === locator.href && el.locations.progression === locator.locations.progression);
-            if(filteredLocators.length > 0) {
+            const filteredLocators = locators.filter((el: any) => el.href === locator.href && el.locations.progression === locator.locations.progression);
+            if (filteredLocators.length > 0) {
                 return new Promise(resolve => resolve(locator));
             }
         }
@@ -104,25 +108,132 @@ export default class LocalAnnotator implements Annotator {
         let savedBookmarks = await this.store.get(LocalAnnotator.BOOKMARKS);
         if (savedBookmarks) {
             let savedBookmarksObj = JSON.parse(savedBookmarks) as Array<any>;
-            savedBookmarksObj = savedBookmarksObj.filter( (el: any) => el.id !== bookmark.id );
+            savedBookmarksObj = savedBookmarksObj.filter((el: any) => el.id !== bookmark.id);
             await this.store.set(LocalAnnotator.BOOKMARKS, JSON.stringify(savedBookmarksObj));
-        } 
+        }
         return new Promise(resolve => resolve(bookmark));
     }
 
-    public async getBookmarks(href?:string): Promise<any> {
+    public async getBookmarks(href?: string): Promise<any> {
         const bookmarksString = await this.store.get(LocalAnnotator.BOOKMARKS);
         if (bookmarksString) {
             let bookmarks = JSON.parse(bookmarksString);
-            if(href) {
-                let filteredResult = bookmarks.filter( (el: any) => el.href === href);
-                filteredResult  =  filteredResult.sort((n1:Bookmark,n2:Bookmark) => n1.locations.progression - n2.locations.progression);
+            if (href) {
+                let filteredResult = bookmarks.filter((el: any) => el.href === href);
+                filteredResult = filteredResult.sort((n1: Bookmark, n2: Bookmark) => n1.locations.progression - n2.locations.progression);
                 return new Promise(resolve => resolve(filteredResult));
             }
-            bookmarks  =  bookmarks.sort((n1:Bookmark,n2:Bookmark) => n1.locations.progression - n2.locations.progression);
+            bookmarks = bookmarks.sort((n1: Bookmark, n2: Bookmark) => n1.locations.progression - n2.locations.progression);
             return new Promise(resolve => resolve(bookmarks));
         }
         return new Promise(resolve => resolve());
     }
-    
+
+    public async initAnnotations(list: any): Promise<any> {
+
+        let annotations: Array<any>
+
+        if (typeof list === 'string') {
+            annotations = JSON.parse(list);
+        } else {
+            annotations = list
+        }
+
+        let annotationsToStore: Array<any> = new Array();
+        annotations.forEach(rangeRepresentation => {
+            const uniqueStr = `${rangeRepresentation.highlight.selectionInfo.rangeInfo.startContainerElementCssSelector}${rangeRepresentation.highlight.selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${rangeRepresentation.highlight.selectionInfo.rangeInfo.startOffset}${rangeRepresentation.highlight.selectionInfo.rangeInfo.endContainerElementCssSelector}${rangeRepresentation.highlight.selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${rangeRepresentation.highlight.selectionInfo.rangeInfo.endOffset}`;
+            const checkSum = crypto.createHash("sha256");
+            checkSum.update(uniqueStr);
+            const sha256Hex = checkSum.digest("hex");
+            const id = "R2_HIGHLIGHT_" + sha256Hex;
+            rangeRepresentation.highlight.id = id
+
+            rangeRepresentation.highlight.color = TextHighlighter.hexToColor(rangeRepresentation.color)
+            rangeRepresentation.highlight.pointerInteraction = true
+
+            const cleanText = rangeRepresentation.highlight.selectionInfo.rawText.trim().replace(/\n/g, " ").replace(/\s\s+/g, " ");
+            rangeRepresentation.highlight.selectionInfo.cleanText = cleanText
+
+            annotationsToStore.push(rangeRepresentation)
+        });
+
+
+        await this.store.set(LocalAnnotator.ANNOTATIONS, JSON.stringify(annotationsToStore));
+        return new Promise(resolve => resolve(annotationsToStore));
+
+    }
+
+    public async saveAnnotation(annotation: any): Promise<any> {
+        let savedAnnotations = await this.store.get(LocalAnnotator.ANNOTATIONS);
+        if (savedAnnotations) {
+            let annotations = JSON.parse(savedAnnotations);
+            annotations.push(annotation);
+            await this.store.set(LocalAnnotator.ANNOTATIONS, JSON.stringify(annotations));
+        } else {
+            let annotations = new Array();
+            annotations.push(annotation);
+            await this.store.set(LocalAnnotator.ANNOTATIONS, JSON.stringify(annotations));
+        }
+        return new Promise(resolve => resolve(annotation));
+    }
+
+    public async deleteAnnotation(id: any): Promise<any> {
+        let savedAnnotations = await this.store.get(LocalAnnotator.ANNOTATIONS);
+        if (savedAnnotations) {
+            let annotations = JSON.parse(savedAnnotations) as Array<any>;
+            annotations = annotations.filter((el: any) => el.id !== id);
+            await this.store.set(LocalAnnotator.ANNOTATIONS, JSON.stringify(annotations));
+        }
+        return new Promise(resolve => resolve(id));
+    }
+
+    public async deleteSelectedAnnotation(annotation: any): Promise<any> {
+        let savedAnnotations = await this.store.get(LocalAnnotator.ANNOTATIONS);
+        if (savedAnnotations) {
+            let annotations = JSON.parse(savedAnnotations) as Array<any>;
+            annotations = annotations.filter((el: Annotation) => el.highlight.id != annotation.highlight.id);
+            await this.store.set(LocalAnnotator.ANNOTATIONS, JSON.stringify(annotations));
+        }
+        return new Promise(resolve => resolve(annotation));
+    }
+
+    public async getAnnotations(): Promise<any> {
+        const savedAnnotations = await this.store.get(LocalAnnotator.ANNOTATIONS);
+        if (savedAnnotations) {
+            let annotations = JSON.parse(savedAnnotations);
+            annotations = annotations.sort((n1: Annotation, n2: Annotation) => n1.locations.progression - n2.locations.progression);
+            return new Promise(resolve => resolve(annotations));
+        }
+        return new Promise(resolve => resolve());
+    }
+
+    public async getAnnotationPosition(id: any, iframeWin: IReadiumIFrameWindow): Promise<any> {
+        const savedAnnotations = await this.store.get(LocalAnnotator.ANNOTATIONS);
+        if (savedAnnotations) {
+            const annotations = JSON.parse(savedAnnotations);
+            const filtered = annotations.filter((el: Annotation) => el.id == id);
+            if (filtered.length > 0) {
+                let foundElement = iframeWin.document.getElementById(`${filtered[0].highlight.id}`);
+                if (foundElement) {
+                    var position = parseInt(((foundElement.hasChildNodes ? foundElement.childNodes[0] : foundElement) as HTMLDivElement).style.top.replace("px", ""))
+                    return new Promise(resolve => resolve(position));
+                }
+            }
+        }
+        return new Promise(resolve => resolve());
+    }
+
+
+    public async getAnnotation(highlight: IHighlight): Promise<any> {
+        const savedAnnotations = await this.store.get(LocalAnnotator.ANNOTATIONS);
+        if (savedAnnotations) {
+            const annotations = JSON.parse(savedAnnotations);
+            const filtered = annotations.filter((el: Annotation) => el.highlight.id == highlight.id);
+            if (filtered.length > 0) {
+                return new Promise(resolve => resolve(filtered[0]));
+            }
+        }
+        return new Promise(resolve => resolve());
+    }
+
 }

@@ -40,17 +40,25 @@ export async function deleteBookmark(bookmark) {
     if (IS_DEV) { console.log("deleteBookmark") }
     BookmarkModuleInstance.deleteBookmark(bookmark)
 }
+export async function tableOfContents() {
+    if (IS_DEV) { console.log("bookmarks") }
+    return await R2Navigator.tableOfContents()    
+}
 export async function bookmarks() {
     if (IS_DEV) { console.log("bookmarks") }
     return await BookmarkModuleInstance.getBookmarks()    
 }
-export async function tableOfContents() {
-    if (IS_DEV) { console.log("bookmarks") }
-    return await R2Navigator.tableOfContents()    
 export async function annotations() {
     if (IS_DEV) { console.log("annotations") }
     return await AnnotationModuleInstance.getAnnotations()    
 }
+export function currentResource() {
+    if (IS_DEV) { console.log("currentResource") }
+    return R2Navigator.currentResource()    
+}
+export function totalResources() {
+    if (IS_DEV) { console.log("totalResources") }
+    return R2Navigator.totalResources()    
 }
 export async function resetUserSettings() {
     if (IS_DEV) { console.log("resetSettings") }
@@ -235,13 +243,19 @@ exports.scroll = function (scroll) {
     scroll(scroll)
 }
 
+exports.tableOfContents = function () {
+    return tableOfContents()
+}
 exports.bookmarks = function () {
     return bookmarks()
 }
-exports.tableOfContents = function () {
-    return tableOfContents()
 exports.annotations = function () {
     return annotations()
 }
 
+exports.currentResource = function() {
+    return currentResource()
+}
+exports.totalResources = function() {
+    return totalResources()
 }

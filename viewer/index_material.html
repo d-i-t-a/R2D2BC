@@ -220,6 +220,23 @@
                 position: relative;">keyboard_arrow_down</i>
             </a>
 
+            <div id="toolbox-backdrop" class="toolbox-backdrop"></div>
+
+            <span id="highlight-toolbox" class="highlight-toolbox">
+                <div id="highlight-toolbox-mode-colors">
+                    <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons" style="color:gray">close</i></button>
+                </div>
+                <div id="highlight-toolbox-mode-add">
+                    <button style="display: unset;" id="colorIcon" class="color-option"><span></span></button><button
+                        style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;"></span></button><button
+                        style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;"></span></button>
+                </div>
+                <div id="highlight-toolbox-mode-edit">
+                    <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons"
+                            style="color:gray">delete</i></button>
+                </div>
+            </span>
+
         </div>
 
         <footer id="footerMenu">
@@ -279,7 +296,8 @@
                 },
             },
             rights: {
-                enableBookmarks: true
+                enableBookmarks: true,
+                enableAnnotations: true
             },
             material: true,
             injectables: injectables

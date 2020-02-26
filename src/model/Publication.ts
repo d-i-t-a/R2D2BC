@@ -136,7 +136,7 @@ export default class Publication {
         return null;
     }
 
-    private getSpineIndex(href: string): number | null {
+    public getSpineIndex(href: string): number | null {
         for (let index = 0; index < this.readingOrder.length; index++) {
             const item = this.readingOrder[index];
             if (item.href) {

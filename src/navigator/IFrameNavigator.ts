@@ -989,7 +989,13 @@ export default class IFrameNavigator implements Navigator {
         event.preventDefault();
         event.stopPropagation();
     }
-
+    totalResources(): number {
+        return this.publication.readingOrder.length
+    }
+    currentResource(): number {
+        let currentLocation = this.currentChapterLink.href
+        return this.publication.getSpineIndex(currentLocation)
+    }
     tableOfContents() : any{
         return this.publication.tableOfContents
     }

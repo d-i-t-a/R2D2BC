@@ -27,5 +27,10 @@ export const icons = {
   "toc": iconTemplate(`toc-icon`, `Table of Contents`, `<path d="M3 9h14V7H3v2zm0 4h14v-2H3v2zm0 4h14v-2H3v2zm16 0h2v-2h-2v2zm0-10v2h2V7h-2zm0 6h2v-2h-2v2z"/>`, `icon open`),
   "bookmarks": iconTemplate(`toc-icon`, `Bookmarks`, `<path d="M4,6H2v16h16v-2H4V6z"/><path d="M22,2H6v16h16V2z M20,12l-2.5-1.5L15,12V4h5V12z"/>`, `icon open`),
   "bookmark": iconTemplate(`toc-icon`, `Bookmark`, `<path d="M19,3H5v18l7-3l7,3V3z"/>`, `icon open`),
-  "delete" : iconTemplate(`delete-icon`, `Delete`, `<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>`, `icon open`)
+  "delete" : iconTemplate(`delete-icon`, `Delete`, `<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>`, `icon open`),
+  "close" : iconTemplate(`close-icon`, `Close`, `<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>`, `icon open`),
+  "text" : iconTemplate(`text-icon`, `Text`, `<path d="M5 4v3h5.5v12h3V7H19V4z"/>`, `icon open`),
+  "note": iconTemplate(`note-icon`, `Note`,`<polygon points="17.71 24.66 22.3 20.07 17.71 20.07 17.71 24.66" fill="none"/><path d="M22.42.07H5.58A3.28,3.28,0,0,0,2.29,3.35V24.79a3.28,3.28,0,0,0,3.29,3.28H16.71a1,1,0,0,0,.71-.29l8-8a1,1,0,0,0,.29-.71V3.35A3.28,3.28,0,0,0,22.42.07Zm-8.17,15h-7v-2h7Zm-7-6v-2h13v2ZM16.5,25.86v-6a1,1,0,0,1,1-1h6Z" />`, `icon open`),
+  "highlight": iconTemplate(`highlight-icon`, `Highlight`,`<path d="M27.71,7.78,21.12,1.19a1,1,0,0,0-1.38,0L4.32,15A1,1,0,0,0,4,15.7a1,1,0,0,0,.3.73c1.22,1.22,1.2,2.37,0,3.62a1,1,0,0,0,0,1.41l3.2,3.2a1,1,0,0,0,1.41,0c1.28-1.28,2.36-1.29,3.62,0a1,1,0,0,0,1.45,0L27.74,9.16A1,1,0,0,0,27.71,7.78Z" /><path d="M3.09,22.59l-2.8,2.8a1,1,0,0,0-.21,1.09A1,1,0,0,0,1,27.1H4.6a1,1,0,0,0,.71-.29l1-1Z" />`, `icon open`)
 }
+

@@ -21,6 +21,7 @@ import { Sidenav, Collapsible, Dropdown, Tabs } from "materialize-css";
 import { UserSettingsUIConfig, UserSettings } from "../model/user-settings/UserSettings";
 import BookmarkModule from "../modules/BookmarkModule";
 import { IS_DEV } from "..";
+import AnnotationModule from "../modules/AnnotationModule";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -59,6 +60,7 @@ export interface Injectable {
 
 export interface ReaderRights {
     enableBookmarks?: boolean;
+    enableAnnotations?: boolean;
 }
 export interface ReaderUI {
     settings?: UserSettingsUIConfig;
@@ -85,6 +87,7 @@ export default class IFrameNavigator implements Navigator {
     publication: Publication;
 
     bookmarkModule?: BookmarkModule;
+    annotationModule?: AnnotationModule;
 
     sideNavExanded: boolean = false
     material: boolean = false
@@ -320,6 +323,13 @@ export default class IFrameNavigator implements Navigator {
                     self.mTabs = Tabs.init(tabs);
                 }
             }
+            setTimeout(() => {
+                if (self.annotationModule !== undefined) {
+                    self.annotationModule.drawHighlights()
+                    // self.annotationModule.drawIndicators()
+                }
+            }, 300);
+
 
             return await this.loadManifest();
         } catch (err) {
@@ -821,6 +831,10 @@ export default class IFrameNavigator implements Navigator {
                     this.scroller.setIframeHeight(this.iframe)
                 }
 
+                if (this.annotationModule !== undefined) {
+                    this.annotationModule.initialize()
+                }
+    
             }, 100);
 
             return new Promise<void>(resolve => resolve());
@@ -975,7 +989,13 @@ export default class IFrameNavigator implements Navigator {
         event.preventDefault();
         event.stopPropagation();
     }
-
+    totalResources(): number {
+        return this.publication.readingOrder.length
+    }
+    currentResource(): number {
+        let currentLocation = this.currentChapterLink.href
+        return this.publication.getSpineIndex(currentLocation)
+    }
     tableOfContents() : any{
         return this.publication.tableOfContents
     }
@@ -1182,6 +1202,9 @@ export default class IFrameNavigator implements Navigator {
         setTimeout(() => {
             selectedView.goToPosition(oldPosition);
             this.updatePositionInfo();
+            if (this.annotationModule !== undefined) {
+                this.annotationModule.handleResize()
+            }
         }, 100);
     }
 
@@ -1292,6 +1315,9 @@ export default class IFrameNavigator implements Navigator {
             this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
         }
         setTimeout(() => {
+            if (this.annotationModule !== undefined) {
+                this.annotationModule.drawHighlights()
+            }
 
             if (this.settings.getSelectedView() === this.scroller) {
                 if (this.scroller.atTop() && this.scroller.atBottom()) {

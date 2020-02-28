@@ -13,10 +13,12 @@ import LocalAnnotator from "./store/LocalAnnotator";
 import Publication from "./model/Publication";
 import BookmarkModule from "./modules/BookmarkModule";
 import { UserSettings } from "./model/user-settings/UserSettings";
+import AnnotationModule from "./modules/AnnotationModule";
 
 var R2Settings: UserSettings;
 var R2Navigator: IFrameNavigator;
 var BookmarkModuleInstance: BookmarkModule;
+var AnnotationModuleInstance: AnnotationModule;
 
 export const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -27,6 +29,7 @@ export async function unload() {
     R2Navigator.stop()
     R2Settings.stop()
     BookmarkModuleInstance.stop()
+    AnnotationModuleInstance.stop()
 }
 
 export async function saveBookmark() {
@@ -37,13 +40,25 @@ export async function deleteBookmark(bookmark) {
     if (IS_DEV) { console.log("deleteBookmark") }
     BookmarkModuleInstance.deleteBookmark(bookmark)
 }
+export async function tableOfContents() {
+    if (IS_DEV) { console.log("bookmarks") }
+    return await R2Navigator.tableOfContents()    
+}
 export async function bookmarks() {
     if (IS_DEV) { console.log("bookmarks") }
     return await BookmarkModuleInstance.getBookmarks()    
 }
-export async function tableOfContents() {
-    if (IS_DEV) { console.log("bookmarks") }
-    return await R2Navigator.tableOfContents()    
+export async function annotations() {
+    if (IS_DEV) { console.log("annotations") }
+    return await AnnotationModuleInstance.getAnnotations()    
+}
+export function currentResource() {
+    if (IS_DEV) { console.log("currentResource") }
+    return R2Navigator.currentResource()    
+}
+export function totalResources() {
+    if (IS_DEV) { console.log("totalResources") }
+    return R2Navigator.totalResources()    
 }
 export async function resetUserSettings() {
     if (IS_DEV) { console.log("resetSettings") }
@@ -138,8 +153,8 @@ export async function load(config: ReaderConfig): Promise<any> {
         injectables: config.injectables
     })
     // add custom modules
-    if (config.rights.enableBookmarks) {
-        // Bookmark Module
+    // Bookmark Module
+        if (config.rights.enableBookmarks) {
         BookmarkModuleInstance = await BookmarkModule.create({
             annotator: annotator,
             headerMenu: headerMenu,
@@ -150,6 +165,20 @@ export async function load(config: ReaderConfig): Promise<any> {
             initialAnnotations: config.annotations,
         })
     }
+
+    // Annotation Module
+    if (config.rights.enableAnnotations) {
+        AnnotationModuleInstance = await AnnotationModule.create({
+            annotator: annotator,
+            headerMenu: headerMenu,
+            rights: config.rights,
+            publication: publication,
+            settings: R2Settings,
+            delegate: R2Navigator,
+            initialAnnotations: config.annotations
+        })
+    }
+
     return new Promise(resolve => resolve(R2Navigator));
 }
 
@@ -214,9 +243,19 @@ exports.scroll = function (scroll) {
     scroll(scroll)
 }
 
+exports.tableOfContents = function () {
+    return tableOfContents()
+}
 exports.bookmarks = function () {
     return bookmarks()
 }
-exports.tableOfContents = function () {
-    return tableOfContents()
+exports.annotations = function () {
+    return annotations()
+}
+
+exports.currentResource = function() {
+    return currentResource()
+}
+exports.totalResources = function() {
+    return totalResources()
 }

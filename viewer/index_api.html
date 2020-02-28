@@ -26,12 +26,17 @@
 </head>
 
 <body>
-    <header id="headerMenu" style="position:fixed;top:0;right:0;z-index: 2;">
+    <header id="headerMenu" style="position:fixed;top:0;right:10px;z-index: 2;">
         <div id="container-toc"></div>
         <div id="container-bookmarks"></div>
+        <div id="container-annotations"></div>
     </header>
 
     <div style="position:fixed;top:0;left:0;z-index: 2;">
+
+        <button onclick="javascript:alert(D2Reader.totalResources())">totalResources</button><br>
+        <button onclick="javascript:alert(D2Reader.currentResource())">currentResource</button><br>
+
         <button onclick="javascript:D2Reader.resetUserSettings()">reset user setting</button><br>
         <button onclick="javascript:D2Reader.publisher(true)">publisher default</button><br>
         <button onclick="javascript:D2Reader.publisher(false)">publisher default off</button><br>
@@ -45,7 +50,8 @@
         <button onclick="javascript:D2Reader.decrease('fontSize')">font decrease</button><br>
 
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'day'})">day</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({appearance:'day',fontSize:100, fontFamily:'opendyslexic', letterSpacing:0.25, textAlignment:'justify'})">apply multiple settings</button><br>
+        <button onclick="javascript:D2Reader.applyUserSettings({appearance:'day',fontSize:100, fontFamily:'opendyslexic', letterSpacing:0.25, textAlignment:'justify'})">apply
+            multiple settings</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'sepia'})">sepia</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'night'})">night</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({fontSize:100})">font size 100</button><br>
@@ -59,6 +65,7 @@
         <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'1'})">column 1</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'2'})">column 2</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'auto'})">column auto</button><br>
+        <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'auto'})">align auto</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'justify'})">align justify</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'start'})">align start</button><br>
 
@@ -74,30 +81,6 @@
             to chapter 1</button><br>
         <button onclick="javascript:D2Reader.saveBookmark()">add bookmark</button><br>
         <button onclick="javascript:D2Reader.deleteBookmark({id:0.32616493991327755})">delete bookmark</button><br>
-       
-        <button onclick="javascript:D2Reader.bookmarks().then(
-            result => { 
-                console.log(result)
-                console.log(result.length)
-                var container = document.getElementById('container-bookmarks');
-                var tocString = ''
-                result.forEach(function (item, index) {
-                    if (index == 0) {
-                        console.log('first')
-                        console.log(index)
-                        tocString += '<ul><li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + item.locations.progression + '</li>'
-                    } else if (index == result.length - 1) {
-                        console.log('last')
-                        console.log(index)
-                        tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + item.locations.progression + '</li></ul>'
-                    } else {
-                        console.log('middle')
-                        console.log(index)
-                        tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + item.locations.progression + '</li>'
-                    }
-                });
-                container.innerHTML = tocString
-            })">show bookmarks</button><br>
 
         <button onclick="javascript:D2Reader.tableOfContents().then(
             result => { 
@@ -121,7 +104,60 @@
                     }
                 });
                 container.innerHTML = tocString
-            })">show TOC</button><br>
+            })">show
+            TOC</button><br>
+
+        <button onclick="javascript:D2Reader.bookmarks().then(
+                result => { 
+                    console.log(result)
+                    console.log(result.length)
+                    var container = document.getElementById('container-bookmarks');
+                    var tocString = ''
+                    result.forEach(function (item, index) {
+                        if (index == 0) {
+                            console.log('first')
+                            console.log(index)
+                            tocString += '<ul><li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + Math.round(item.locations.progression * 100) + '%</li>'
+                        } else if (index == result.length - 1) {
+                            console.log('last')
+                            console.log(index)
+                            tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + Math.round(item.locations.progression * 100) + '%</li></ul>'
+                        } else {
+                            console.log('middle')
+                            console.log(index)
+                            tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' +  Math.round(item.locations.progression * 100) + '%</li>'
+                        }
+                    });
+                    container.innerHTML = tocString
+                })">show
+            bookmarks</button><br>
+
+        <button onclick="javascript:D2Reader.annotations().then(
+                    result => { 
+                        console.log(result)
+                        console.log(result.length)
+                        var container = document.getElementById('container-annotations');
+                        var tocString = ''
+                        result.forEach(function (item, index) {
+                            if (index == 0) {
+                                console.log('first')
+                                console.log(index)
+                                tocString += '<ul><li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + Math.round(item.locations.progression * 100) + '%</li>'
+                            } else if (index == result.length - 1) {
+                                console.log('last')
+                                console.log(index)
+                                tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + Math.round(item.locations.progression * 100) + '%</li></ul>'
+                            } else {
+                                console.log('middle')
+                                console.log(index)
+                                tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + Math.round(item.locations.progression * 100) + '%</li>'
+                            }
+                        });
+                        container.innerHTML = tocString
+                    })">show
+            annotations</button><br>
+
+
 
     </div>
 
@@ -137,6 +173,23 @@
                     <span class="chapter-title"></span>
                 </div>
             </main>
+            <div id="toolbox-backdrop" class="toolbox-backdrop"></div>
+
+            <span id="highlight-toolbox" class="highlight-toolbox">
+                <div id="highlight-toolbox-mode-colors">
+                    <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons" style="color:gray">close</i></button>
+                </div>
+                <div id="highlight-toolbox-mode-add">
+                    <button style="display: unset;" id="colorIcon" class="color-option"><span></span></button><button
+                        style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;"></span></button><button
+                        style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;"></span></button>
+                </div>
+                <div id="highlight-toolbox-mode-edit">
+                    <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons"
+                            style="color:gray">delete</i></button>
+                </div>
+            </span>
+
         </div>
     </div>
 
@@ -187,7 +240,8 @@
                 },
             },
             rights: {
-                enableBookmarks: true
+                enableBookmarks: true,
+                enableAnnotations: true
             },
             injectables: injectables
         }).then(instance => {

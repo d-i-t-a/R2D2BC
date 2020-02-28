@@ -64,7 +64,7 @@ export class UserSettings implements UserSettings {
 
     private static appearanceValues = ["readium-default-on", "readium-sepia-on", "readium-night-on"]
     private static fontFamilyValues = ["Original", "serif", "sans-serif"]
-    private static readonly textAlignmentValues = ["justify", "start"]
+    private static readonly textAlignmentValues = ["auto", "justify", "start"]
     private static readonly columnCountValues = ["auto", "1", "2"]
 
     fontSize = 100.0

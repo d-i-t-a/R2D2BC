@@ -670,10 +670,8 @@ export default class TextHighlighter {
                 
                 function speakEvent(){
                     // self.doHighlight(false, AnnotationMarker.Underline);
-                    self.speak(false);
-                    toolbox.style.display = "none";
-                    backdrop.style.display = "none";
                     speakIcon.removeEventListener("click", speakEvent);
+                    self.speak();
                 }
                 speakIcon.addEventListener("click", speakEvent);
 
@@ -734,7 +732,7 @@ export default class TextHighlighter {
         }
     };
 
-    speak(keepRange?: boolean) {
+    speak() {
         var self = this
         function getCssSelector(element: Element): string {
             const options = {
@@ -756,11 +754,17 @@ export default class TextHighlighter {
             // }
             this.ttsDelegate.speak(selectionInfo as any);
             
-            if (!keepRange) {
-                this.dom(this.el).removeAllRanges();
-            }
         }
     };
+
+    doneSpeaking() {
+        var toolbox = document.getElementById("highlight-toolbox");
+        var backdrop = document.getElementById("toolbox-backdrop");
+
+        toolbox.style.display = "none";
+        backdrop.style.display = "none";
+        this.dom(this.el).removeAllRanges();
+    }
 
     /**
      * Normalizes highlights. Ensures that highlighting is done with use of the smallest possible number of

@@ -20,6 +20,7 @@ export interface TTSModuleConfig {
 export default class TTSModule implements ReaderModule {
     
     annotationModule: AnnotationModule;
+    synth = window.speechSynthesis
 
     initialize() {
         this.annotationModule.highlighter.ttsDelegate = this
@@ -27,6 +28,13 @@ export default class TTSModule implements ReaderModule {
 
     speak(selectionInfo: ISelectionInfo | undefined ): any {        
         console.log(selectionInfo.cleanText)
+        var self = this
+        var utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
+        this.synth.speak(utterance);
+        utterance.onend = function () {      
+            console.log("utterance ended");
+            self.annotationModule.highlighter.doneSpeaking()
+        }
     }
     
     public static async create(config: TTSModuleConfig) {

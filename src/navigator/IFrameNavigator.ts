@@ -22,6 +22,7 @@ import { UserSettingsUIConfig, UserSettings } from "../model/user-settings/UserS
 import BookmarkModule from "../modules/BookmarkModule";
 import { IS_DEV } from "..";
 import AnnotationModule from "../modules/AnnotationModule";
+import TTSModule from "../modules/TTSModule";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -88,6 +89,7 @@ export default class IFrameNavigator implements Navigator {
 
     bookmarkModule?: BookmarkModule;
     annotationModule?: AnnotationModule;
+    ttsModule?: TTSModule;
 
     sideNavExanded: boolean = false
     material: boolean = false
@@ -834,7 +836,12 @@ export default class IFrameNavigator implements Navigator {
                 if (this.annotationModule !== undefined) {
                     this.annotationModule.initialize()
                 }
-    
+                setTimeout(() => {
+                    if (this.ttsModule !== undefined) {
+                        this.ttsModule.initialize()
+                    }
+                }, 200);
+
             }, 100);
 
             return new Promise<void>(resolve => resolve());

@@ -627,6 +627,7 @@ export default class TextHighlighter {
                 self.toolboxMode('add');
                 var highlightIcon = document.getElementById("highlightIcon");
                 var underlineIcon = document.getElementById("underlineIcon");
+                var speakIcon = document.getElementById("speakIcon");
                 var colorIcon = document.getElementById("colorIcon");
 
                 highlightIcon.style.display = "unset";
@@ -642,6 +643,8 @@ export default class TextHighlighter {
                 var colorIconSymbol = colorIcon.lastChild as HTMLElement;
                 colorIconSymbol.style.backgroundColor = this.getColor();
                 
+                (speakIcon.getElementsByTagName("span")[0] as HTMLSpanElement).innerHTML = icons.speak;
+
                 // speaker_notes
                 // add_comment
                 // file_copy
@@ -665,6 +668,15 @@ export default class TextHighlighter {
                 }
                 underlineIcon.addEventListener("click", commentEvent);
                 
+                function speakEvent(){
+                    // self.doHighlight(false, AnnotationMarker.Underline);
+                    self.speak(false);
+                    toolbox.style.display = "none";
+                    backdrop.style.display = "none";
+                    speakIcon.removeEventListener("click", speakEvent);
+                }
+                speakIcon.addEventListener("click", speakEvent);
+
                 var backdropButton = document.getElementById("toolbox-backdrop");
 
                 function backdropEvent(){
@@ -716,6 +728,34 @@ export default class TextHighlighter {
                 this.options.onAfterHighlight(highlight, marker);
             }
 
+            if (!keepRange) {
+                this.dom(this.el).removeAllRanges();
+            }
+        }
+    };
+
+    speak(keepRange?: boolean) {
+        var self = this
+        function getCssSelector(element: Element): string {
+            const options = {
+                className: (str: string) => {
+                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                },
+                idName: (str: string) => {
+                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                },
+            };
+            return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
+        }
+    
+        const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
+        if (selectionInfo) {
+            // if (this.options.onBeforeHighlight(selectionInfo) === true) {
+            //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToColor(this.getColor()),true, marker)
+            //     this.options.onAfterHighlight(highlight, marker);
+            // }
+            this.ttsDelegate.speak(selectionInfo as any);
+            
             if (!keepRange) {
                 this.dom(this.el).removeAllRanges();
             }

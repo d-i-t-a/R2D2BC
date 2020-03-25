@@ -30,6 +30,7 @@ export default class TTSModule implements ReaderModule {
         console.log(selectionInfo.cleanText)
         var self = this
         var utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
+        this.synth.cancel()
         this.synth.speak(utterance);
         utterance.onend = function () {      
             console.log("utterance ended");

@@ -14,11 +14,13 @@ import Publication from "./model/Publication";
 import BookmarkModule from "./modules/BookmarkModule";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
+import TTSModule from "./modules/TTSModule";
 
 var R2Settings: UserSettings;
 var R2Navigator: IFrameNavigator;
 var BookmarkModuleInstance: BookmarkModule;
 var AnnotationModuleInstance: AnnotationModule;
+var TTSModuleInstance: TTSModule;
 
 export const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -30,6 +32,7 @@ export async function unload() {
     R2Settings.stop()
     BookmarkModuleInstance.stop()
     AnnotationModuleInstance.stop()
+    TTSModuleInstance.stop()
 }
 
 export async function saveBookmark() {
@@ -177,7 +180,10 @@ export async function load(config: ReaderConfig): Promise<any> {
             delegate: R2Navigator,
             initialAnnotations: config.annotations
         })
-    }
+        TTSModuleInstance = await TTSModule.create({
+            annotationModule: AnnotationModuleInstance
+        })
+    }    
 
     return new Promise(resolve => resolve(R2Navigator));
 }

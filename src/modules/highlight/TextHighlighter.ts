@@ -31,6 +31,7 @@ import AnnotationModule from "../AnnotationModule";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { icons } from "../../utils/IconLib";
+import TTSModule from "../TTSModule";
 
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
@@ -85,6 +86,7 @@ export default class TextHighlighter {
     el: HTMLElement;
     options: any;
     delegate:AnnotationModule;
+    ttsDelegate:TTSModule;
     lastSelectedHighlight:number = undefined;
 
     public constructor(delegate: AnnotationModule, element: HTMLElement, options: any) {

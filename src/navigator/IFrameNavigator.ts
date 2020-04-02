@@ -100,6 +100,7 @@ export default class IFrameNavigator implements Navigator {
     mSidenav: any;
 
     currentChapterLink: Link = {};
+    currentTOCRawLink: string;
     private nextChapterLink: Link;
     private previousChapterLink: Link;
     private settings: UserSettings;
@@ -999,6 +1000,9 @@ export default class IFrameNavigator implements Navigator {
     totalResources(): number {
         return this.publication.readingOrder.length
     }
+    currentTocHref(): string {
+        return this.currentTOCRawLink
+    }
     currentResource(): number {
         let currentLocation = this.currentChapterLink.href
         return this.publication.getSpineIndex(currentLocation)
@@ -1320,6 +1324,7 @@ export default class IFrameNavigator implements Navigator {
             } 
         }
         this.newPosition = locator;
+        this.currentTOCRawLink = locator.href
 
         if (locator.href.indexOf("#") !== -1) {
             const newResource = locator.href.slice(0, locator.href.indexOf("#"))

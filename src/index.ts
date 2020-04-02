@@ -59,6 +59,10 @@ export function currentResource() {
     if (IS_DEV) { console.log("currentResource") }
     return R2Navigator.currentResource()    
 }
+export function currentTocHref() {
+    if (IS_DEV) { console.log("currentTocHref") }
+    return R2Navigator.currentTocHref()    
+}
 export function totalResources() {
     if (IS_DEV) { console.log("totalResources") }
     return R2Navigator.totalResources()    
@@ -261,6 +265,9 @@ exports.annotations = function () {
 
 exports.currentResource = function() {
     return currentResource()
+}
+exports.currentTocHref = function() {
+    return currentTocHref()
 }
 exports.totalResources = function() {
     return totalResources()

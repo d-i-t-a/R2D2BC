@@ -472,6 +472,7 @@ export default class TextHighlighter {
                 toolbox.style.display = "none";
                 var backdrop = document.getElementById("toolbox-backdrop");
                 backdrop.style.display = "none";
+                self.ttsDelegate.cancel()
             },
 
             /**
@@ -1321,6 +1322,8 @@ export default class TextHighlighter {
                             backdropButton.removeEventListener("click", backdropEvent);
                             backdropButton.removeEventListener("mousedown", backdropEvent);
                             backdropButton.removeEventListener("mouseup", backdropEvent);
+                            
+                            
                         }
         
                         backdropButton.addEventListener("click", backdropEvent);

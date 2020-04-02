@@ -25,6 +25,9 @@ export default class TTSModule implements ReaderModule {
     initialize() {
         this.annotationModule.highlighter.ttsDelegate = this
     }
+    cancel() {
+        this.synth.cancel()
+    }
 
     speak(selectionInfo: ISelectionInfo | undefined ): any {        
         console.log(selectionInfo.cleanText)

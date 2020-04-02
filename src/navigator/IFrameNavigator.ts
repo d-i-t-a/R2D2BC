@@ -1019,9 +1019,28 @@ export default class IFrameNavigator implements Navigator {
         this.handleNextChapterClick(null)
     }
     goTo(locator: Locator): any {
+        let locations: Locations = {
+            progression: 0
+        }
+        if (locator.href.indexOf("#") !== -1) {
+            const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
+            if (elementId !== null) {
+                locations = {
+                    fragment: elementId
+                }
+            }
+        }
+        const position: Locator = {
+            href: locator.href,
+            locations: locations,
+            type: locator.type,
+            title: locator.title
+        };
         const linkHref = this.publication.getAbsoluteHref(locator.href);
-        locator.href = linkHref
-        this.navigate(locator);
+        console.log(locator.href)
+        console.log(linkHref)
+        position.href = linkHref
+        this.navigate(position);
     }
 
     private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {

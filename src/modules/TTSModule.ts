@@ -35,7 +35,7 @@ export default class TTSModule implements ReaderModule {
         utterance.onend = function () {      
             console.log("utterance ended");
             self.annotationModule.highlighter.doneSpeaking()
-        }
+        }    
     }
     
     public static async create(config: TTSModuleConfig) {

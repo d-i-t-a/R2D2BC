@@ -47,7 +47,7 @@ export default class AnnotationModule implements ReaderModule {
     private highlightsView: HTMLDivElement;
 
     private headerMenu: HTMLElement;
-    private highlighter: TextHighlighter;
+    highlighter: TextHighlighter;
 
     private initialAnnotations: any;
 

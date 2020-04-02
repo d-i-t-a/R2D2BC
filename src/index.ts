@@ -59,9 +59,9 @@ export function currentResource() {
     if (IS_DEV) { console.log("currentResource") }
     return R2Navigator.currentResource()    
 }
-export function currentTocHref() {
-    if (IS_DEV) { console.log("currentTocHref") }
-    return R2Navigator.currentTocHref()    
+export function mostRecentNavigatedTocItem() {
+    if (IS_DEV) { console.log("mostRecentNavigatedTocItem") }
+    return R2Navigator.mostRecentNavigatedTocItem()    
 }
 export function totalResources() {
     if (IS_DEV) { console.log("totalResources") }
@@ -266,8 +266,8 @@ exports.annotations = function () {
 exports.currentResource = function() {
     return currentResource()
 }
-exports.currentTocHref = function() {
-    return currentTocHref()
+exports.mostRecentNavigatedTocItem = function() {
+    return mostRecentNavigatedTocItem()
 }
 exports.totalResources = function() {
     return totalResources()

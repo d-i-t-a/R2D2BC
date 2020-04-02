@@ -152,6 +152,11 @@ export default class Publication {
     public getAbsoluteHref(href: string): string | null {
         return new URL(href, this.manifestUrl.href).href;
     }
+    public getRelativeHref(href: string): string | null {
+        const manifest = this.manifestUrl.href.replace("/manifest.json", ""); //new URL(this.manifestUrl.href, this.manifestUrl.href).href;
+        return href.replace(manifest, "");
+    }
+
 
     public getTOCItemAbsolute(href: string): Link | null {
         const absolute = this.getAbsoluteHref(href)

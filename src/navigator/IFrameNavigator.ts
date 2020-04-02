@@ -1000,8 +1000,8 @@ export default class IFrameNavigator implements Navigator {
     totalResources(): number {
         return this.publication.readingOrder.length
     }
-    currentTocHref(): string {
-        return this.currentTOCRawLink
+    mostRecentNavigatedTocItem(): string {
+        return this.publication.getRelativeHref(this.currentTOCRawLink) 
     }
     currentResource(): number {
         let currentLocation = this.currentChapterLink.href

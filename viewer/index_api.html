@@ -36,6 +36,7 @@
 
         <button onclick="javascript:alert(D2Reader.totalResources())">totalResources</button><br>
         <button onclick="javascript:alert(D2Reader.currentResource())">currentResource</button><br>
+        <button onclick="javascript:alert(D2Reader.mostRecentNavigatedTocItem())">mostRecentNavigatedTocItem</button><br>
 
         <button onclick="javascript:D2Reader.resetUserSettings()">reset user setting</button><br>
         <button onclick="javascript:D2Reader.publisher(true)">publisher default</button><br>
@@ -180,9 +181,10 @@
                     <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons" style="color:gray">close</i></button>
                 </div>
                 <div id="highlight-toolbox-mode-add">
-                    <button style="display: unset;" id="colorIcon" class="color-option"><span></span></button><button
-                        style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;"></span></button><button
-                        style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;"></span></button>
+                    <button style="display: unset;" id="colorIcon" class="color-option"><span></span></button>
+                    <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;"></span></button>
+                    <button style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;"></span></button>
+                    <button style="background-color: gainsboro;" id="speakIcon"><span style="display: inline-block;width: 24px;height: 24px;"></span></button>
                 </div>
                 <div id="highlight-toolbox-mode-edit">
                     <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons"

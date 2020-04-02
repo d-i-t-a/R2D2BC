@@ -31,6 +31,7 @@ import AnnotationModule from "../AnnotationModule";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { icons } from "../../utils/IconLib";
+import TTSModule from "../TTSModule";
 
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
@@ -85,6 +86,7 @@ export default class TextHighlighter {
     el: HTMLElement;
     options: any;
     delegate:AnnotationModule;
+    ttsDelegate:TTSModule;
     lastSelectedHighlight:number = undefined;
 
     public constructor(delegate: AnnotationModule, element: HTMLElement, options: any) {
@@ -470,6 +472,7 @@ export default class TextHighlighter {
                 toolbox.style.display = "none";
                 var backdrop = document.getElementById("toolbox-backdrop");
                 backdrop.style.display = "none";
+                self.ttsDelegate.cancel()
             },
 
             /**
@@ -625,6 +628,7 @@ export default class TextHighlighter {
                 self.toolboxMode('add');
                 var highlightIcon = document.getElementById("highlightIcon");
                 var underlineIcon = document.getElementById("underlineIcon");
+                var speakIcon = document.getElementById("speakIcon");
                 var colorIcon = document.getElementById("colorIcon");
 
                 highlightIcon.style.display = "unset";
@@ -640,6 +644,8 @@ export default class TextHighlighter {
                 var colorIconSymbol = colorIcon.lastChild as HTMLElement;
                 colorIconSymbol.style.backgroundColor = this.getColor();
                 
+                (speakIcon.getElementsByTagName("span")[0] as HTMLSpanElement).innerHTML = icons.speak;
+
                 // speaker_notes
                 // add_comment
                 // file_copy
@@ -663,6 +669,13 @@ export default class TextHighlighter {
                 }
                 underlineIcon.addEventListener("click", commentEvent);
                 
+                function speakEvent(){
+                    // self.doHighlight(false, AnnotationMarker.Underline);
+                    speakIcon.removeEventListener("click", speakEvent);
+                    self.speak();
+                }
+                speakIcon.addEventListener("click", speakEvent);
+
                 var backdropButton = document.getElementById("toolbox-backdrop");
 
                 function backdropEvent(){
@@ -719,6 +732,40 @@ export default class TextHighlighter {
             }
         }
     };
+
+    speak() {
+        var self = this
+        function getCssSelector(element: Element): string {
+            const options = {
+                className: (str: string) => {
+                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                },
+                idName: (str: string) => {
+                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                },
+            };
+            return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
+        }
+    
+        const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
+        if (selectionInfo) {
+            // if (this.options.onBeforeHighlight(selectionInfo) === true) {
+            //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToColor(this.getColor()),true, marker)
+            //     this.options.onAfterHighlight(highlight, marker);
+            // }
+            this.ttsDelegate.speak(selectionInfo as any);
+            
+        }
+    };
+
+    doneSpeaking() {
+        var toolbox = document.getElementById("highlight-toolbox");
+        var backdrop = document.getElementById("toolbox-backdrop");
+
+        toolbox.style.display = "none";
+        backdrop.style.display = "none";
+        this.dom(this.el).removeAllRanges();
+    }
 
     /**
      * Normalizes highlights. Ensures that highlighting is done with use of the smallest possible number of
@@ -1275,6 +1322,8 @@ export default class TextHighlighter {
                             backdropButton.removeEventListener("click", backdropEvent);
                             backdropButton.removeEventListener("mousedown", backdropEvent);
                             backdropButton.removeEventListener("mouseup", backdropEvent);
+                            
+                            
                         }
         
                         backdropButton.addEventListener("click", backdropEvent);

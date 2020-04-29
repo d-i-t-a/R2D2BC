@@ -1048,7 +1048,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
-        if (this.paginator) {
+        if (this.settings.getSelectedView() === this.paginator) {
             if (this.paginator.onFirstPage()) {
                 if (this.previousChapterLink) {
                     const position: Locator = {
@@ -1079,17 +1079,23 @@ export default class IFrameNavigator implements Navigator {
                 event.stopPropagation();
             }
         } else {
-            if (this.previousChapterLink) {
-                const position: Locator = {
-                    href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
-                    locations: {
-                        progression: 0
-                    },
-                    type: this.previousChapterLink.type,
-                    title: this.previousChapterLink.title
-                };
+            if (this.scroller.atTop()) {
+                if (this.previousChapterLink) {
+                    const position: Locator = {
+                        href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
+                        locations: {
+                            progression: 0
+                        },
+                        type: this.previousChapterLink.type,
+                        title: this.previousChapterLink.title
+                    };
 
-                this.navigate(position);
+                    this.navigate(position);
+                }
+            } else {
+                this.scroller.goToPreviousPage();
+                this.updatePositionInfo();
+                this.saveCurrentReadingPosition();
             }
             if (event) {
                 event.preventDefault();
@@ -1099,7 +1105,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
-        if (this.paginator) {
+        if (this.settings.getSelectedView() === this.paginator) {
             if (this.paginator.onLastPage()) {
                 if (this.nextChapterLink) {
                     const position: Locator = {
@@ -1129,17 +1135,23 @@ export default class IFrameNavigator implements Navigator {
                 event.stopPropagation();
             }
         } else {
-            if (this.nextChapterLink) {
-                const position: Locator = {
-                    href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
-                    locations: {
-                        progression: 0
-                    },
-                    type: this.nextChapterLink.type,
-                    title: this.nextChapterLink.title
-                };
+            if (this.scroller.atBottom()) {
+                if (this.nextChapterLink) {
+                    const position: Locator = {
+                        href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
+                        locations: {
+                            progression: 0
+                        },
+                        type: this.nextChapterLink.type,
+                        title: this.nextChapterLink.title
+                    };
 
-                this.navigate(position);
+                    this.navigate(position);
+                }
+            } else {
+                this.scroller.goToNextPage();
+                this.updatePositionInfo();
+                this.saveCurrentReadingPosition();
             }
             if (event) {
                 event.preventDefault();

@@ -997,6 +997,18 @@ export default class IFrameNavigator implements Navigator {
         event.preventDefault();
         event.stopPropagation();
     }
+    startReadAloud() {
+        this.annotationModule.highlighter.speakAll()
+    }
+    stopReadAloud() {
+        this.annotationModule.highlighter.stopReadAloud()
+    }
+    pauseReadAloud() {
+        this.ttsModule.speakPause()
+    }
+    resumeReadAloud() {
+        this.ttsModule.speakResume()
+    }
     totalResources(): number {
         return this.publication.readingOrder.length
     }

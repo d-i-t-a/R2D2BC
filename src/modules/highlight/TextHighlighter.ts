@@ -32,6 +32,7 @@ import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { icons } from "../../utils/IconLib";
 import TTSModule from "../TTSModule";
+import { SelectionMenuItem } from "../../navigator/IFrameNavigator";
 
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
@@ -88,12 +89,14 @@ export default class TextHighlighter {
     delegate:AnnotationModule;
     ttsDelegate:TTSModule;
     lastSelectedHighlight:number = undefined;
+    selectionMenuItems: Array<SelectionMenuItem>;
 
-    public constructor(delegate: AnnotationModule, element: HTMLElement, options: any) {
+    public constructor(delegate: AnnotationModule, element: HTMLElement, selectionMenuItems:Array<SelectionMenuItem>, options: any) {
         if (!element) {
             throw 'Missing anchor element';
         }
         this.delegate = delegate
+        this.selectionMenuItems = selectionMenuItems;
 
         this.el = element;
         this.options = this.defaults(options, {
@@ -675,6 +678,40 @@ export default class TextHighlighter {
                     self.speak();
                 }
                 speakIcon.addEventListener("click", speakEvent);
+
+
+                this.selectionMenuItems.forEach(menuItem => {
+                
+                    var itemElement = document.getElementById(menuItem.id);
+                    if (menuItem.icon) {
+                        (itemElement.getElementsByTagName("span")[0] as HTMLSpanElement).innerHTML = menuItem.icon;
+                    }
+                    var self = this
+
+                    function itemEvent(){
+                        itemElement.removeEventListener("click", itemEvent);
+
+                        function getCssSelector(element: Element): string {
+                            const options = {
+                                className: (str: string) => {
+                                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                                },
+                                idName: (str: string) => {
+                                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                                },
+                            };
+                            return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
+                        }
+                    
+                        const selectionInfo = getCurrentSelectionInfo(self.dom(self.el).getWindow(), getCssSelector)                
+
+                        menuItem.callback(selectionInfo.cleanText);
+                    }
+                    itemElement.addEventListener("click", itemEvent);
+
+                })
+
+
 
                 var backdropButton = document.getElementById("toolbox-backdrop");
 

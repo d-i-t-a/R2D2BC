@@ -9,7 +9,7 @@
 
  import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
-import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
+import IFrameNavigator, { ReaderRights, SelectionMenuItem } from "../navigator/IFrameNavigator";
 import Publication, { Link } from "../model/Publication";
 import TextHighlighter, { _highlights } from "./highlight/TextHighlighter";
 import ReaderModule from "./ReaderModule";
@@ -52,6 +52,7 @@ export default class AnnotationModule implements ReaderModule {
     private initialAnnotations: any;
 
     delegate: IFrameNavigator
+    selectionMenuItems: SelectionMenuItem[];
 
     public static async create(config: AnnotationModuleConfig) {
         const annotations = new this(
@@ -109,7 +110,7 @@ export default class AnnotationModule implements ReaderModule {
             if (this.rights.enableAnnotations) {
                 const body = HTMLUtilities.findRequiredIframeElement(this.delegate.iframe.contentDocument, "body") as HTMLBodyElement;
                 var self = this
-                this.highlighter = new TextHighlighter(this, body, {
+                this.highlighter = new TextHighlighter(this, body, this.selectionMenuItems, {
                     onBeforeHighlight: function (selectionInfo: any) {
                         if (IS_DEV) {
                             console.log("onBeforeHighlight")

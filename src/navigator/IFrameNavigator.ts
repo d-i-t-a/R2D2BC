@@ -44,7 +44,8 @@ export interface IFrameNavigatorConfig {
     rights?: ReaderRights;
     material: boolean;
     api: any;
-    injectables: Array<Injectable>
+    injectables: Array<Injectable>;
+    selectionMenuItems: Array<SelectionMenuItem>;
 }
 
 export interface Injectable {
@@ -57,6 +58,11 @@ export interface Injectable {
     systemFont?: boolean;
     appearance?: string;
     async?: boolean;
+}
+export interface SelectionMenuItem {
+    id: string;
+    icon: string;
+    callback: any;
 }
 
 export interface ReaderRights {
@@ -77,6 +83,7 @@ export interface ReaderConfig {
     material: boolean;
     api: any;
     injectables: Array<Injectable>;
+    selectionMenuItems: Array<SelectionMenuItem>
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -145,6 +152,7 @@ export default class IFrameNavigator implements Navigator {
     private initialLastReadingPosition: ReadingPosition;
     api: any;
     injectables: Array<Injectable>
+    selectionMenuItems: Array<SelectionMenuItem>
 
     public static async create(config: IFrameNavigatorConfig): Promise<any> {
         const navigator = new this(
@@ -156,7 +164,8 @@ export default class IFrameNavigator implements Navigator {
             config.publication,
             config.material,
             config.api,
-            config.injectables
+            config.injectables,
+            config.selectionMenuItems
         );
 
         await navigator.start(config.mainElement, config.headerMenu, config.footerMenu);
@@ -172,7 +181,8 @@ export default class IFrameNavigator implements Navigator {
         publication: Publication,
         material: boolean,
         api: any,
-        injectables: Array<Injectable>
+        injectables: Array<Injectable>,
+        selectionMenuItems: Array<SelectionMenuItem>
     ) {
         this.settings = settings;
         this.annotator = annotator;
@@ -185,6 +195,7 @@ export default class IFrameNavigator implements Navigator {
         this.material = material
         this.api = api
         this.injectables = injectables
+        this.selectionMenuItems = selectionMenuItems
     }
 
     async stop() {
@@ -836,6 +847,7 @@ export default class IFrameNavigator implements Navigator {
 
                 if (this.annotationModule !== undefined) {
                     this.annotationModule.initialize()
+                    this.annotationModule.selectionMenuItems = this.selectionMenuItems
                 }
                 setTimeout(() => {
                     if (this.ttsModule !== undefined) {

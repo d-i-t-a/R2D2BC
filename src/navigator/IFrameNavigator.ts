@@ -843,6 +843,17 @@ export default class IFrameNavigator implements Navigator {
                     }
                 }, 200);
 
+                const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+                var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
+                for (var i = 0; i < pagebreaks.length; i++) {
+                    var img = pagebreaks[i];
+                    console.log(img)
+                    if (img.innerHTML.length == 0) {
+                        img.innerHTML = img.getAttribute("title");
+                    }
+                    img.className = "epubPageBreak"
+                }
+
             }, 100);
 
             return new Promise<void>(resolve => resolve());

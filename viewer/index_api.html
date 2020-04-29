@@ -185,6 +185,7 @@
                     <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;"></span></button>
                     <button style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;"></span></button>
                     <button style="background-color: gainsboro;" id="speakIcon"><span style="display: inline-block;width: 24px;height: 24px;"></span></button>
+                    <button style="background-color: gainsboro;" id="anIcon"><span style="display: inline-block;width: 24px;height: 24px;"></span></button>
                 </div>
                 <div id="highlight-toolbox-mode-edit">
                     <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons"
@@ -228,6 +229,16 @@
             { type: 'style', url: 'http://localhost:4444/viewer/injectables/glossary/glossary.css' },
         ]
 
+        var selectionMenuItems = [
+            { 
+                id: 'anIcon', 
+                icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon active-icon" aria-labelledBy="expand-icon"><title id="expand-icon">Enter fullscreen</title><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>',
+                callback: function (selection) {
+                    console.log(selection)
+                }
+            }
+        ]
+
         var urlParams = getURLQueryParams();
         var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
 
@@ -245,7 +256,8 @@
                 enableBookmarks: true,
                 enableAnnotations: true
             },
-            injectables: injectables
+            injectables: injectables,
+            selectionMenuItems: selectionMenuItems
         }).then(instance => {
             console.log("D2Reader loaded ", instance);
             console.log("instance.bookmarkModule ", instance.bookmarkModule)

@@ -32,8 +32,12 @@
         <div id="container-annotations"></div>
     </header>
 
-    <div style="position:fixed;top:0;left:0;z-index: 2;">
+    <div style="position:absolute;top:0;left:0;z-index: 2;">
 
+        <button onclick="javascript:D2Reader.startReadAloud()">read aloud from top</button><br>
+        <button onclick="javascript:D2Reader.stopReadAloud()">stop read aloud from top</button><br>
+        <button onclick="javascript:D2Reader.pauseReadAloud()">pause read aloud from top</button><br>
+        <button onclick="javascript:D2Reader.resumeReadAloud()">resume read aloud from top</button><br>
         <button onclick="javascript:alert(D2Reader.totalResources())">totalResources</button><br>
         <button onclick="javascript:alert(D2Reader.currentResource())">currentResource</button><br>
         <button onclick="javascript:alert(D2Reader.mostRecentNavigatedTocItem())">mostRecentNavigatedTocItem</button><br>

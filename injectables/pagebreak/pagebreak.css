@@ -1,0 +1,40 @@
+:root body,
+:root [style*="--USER__pageMargins"] body {
+  padding: 0 var(--RS__pageGutter) !important;
+}
+
+:root *[epub\:type="pagebreak"]:not(:empty),
+:root *[epub\:type="pagebreak"][title]:empty::after {
+  font-size: 0.75rem;
+  line-height: 1;
+  font-family: var(--RS__sansTf);
+  color: #666666;
+  font-weight: bold;
+  float: left;
+  margin-left: calc((var(--RS__pageGutter) * -1) + 5px);
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+:root *[epub\:type="pagebreak"][title]:empty::after {
+  content: attr(title);
+}
+:root *[epub\:type="pagebreak"][title]:empty::before {
+    content: attr(title) ": ";
+}
+
+.epubPageBreak {
+    font-size: 0.75rem;
+    line-height: 1;
+    font-family: var(--RS__sansTf);
+    color: #666666;
+    font-weight: bold;
+    float: left;
+    margin-left: calc((var(--RS__pageGutter) * -1) + 5px);
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;  
+}

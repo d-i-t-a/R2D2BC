@@ -122,7 +122,7 @@ export default class ScrollingBookView implements ContinuousBookView {
     }
 
     public atBottom(): boolean {
-        return (document.scrollingElement.scrollHeight - document.scrollingElement.scrollTop) === BrowserUtilities.getHeight();
+        return (Math.ceil(document.scrollingElement.scrollHeight - document.scrollingElement.scrollTop) - 1) <= BrowserUtilities.getHeight();
     }
 
     public atTop(): boolean {

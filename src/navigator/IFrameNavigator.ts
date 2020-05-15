@@ -1084,7 +1084,7 @@ export default class IFrameNavigator implements Navigator {
                     const position: Locator = {
                         href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
                         locations: {
-                            progression: 0
+                            progression: 1
                         },
                         type: this.previousChapterLink.type,
                         title: this.previousChapterLink.title

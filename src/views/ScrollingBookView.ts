@@ -40,7 +40,7 @@ export default class ScrollingBookView implements ContinuousBookView {
     private getScreenHeight(): number {
         const windowTop = window.scrollY;
         const windowBottom = windowTop + window.innerHeight;
-        return windowBottom - windowTop
+        return windowBottom - windowTop - 100
     }
 
     public readonly name = "scrolling-book-view";
@@ -122,7 +122,7 @@ export default class ScrollingBookView implements ContinuousBookView {
     }
 
     public atBottom(): boolean {
-        return (document.scrollingElement.scrollHeight - document.scrollingElement.scrollTop) === BrowserUtilities.getHeight();
+        return (Math.ceil(document.scrollingElement.scrollHeight - document.scrollingElement.scrollTop) - 1) <= BrowserUtilities.getHeight();
     }
 
     public atTop(): boolean {

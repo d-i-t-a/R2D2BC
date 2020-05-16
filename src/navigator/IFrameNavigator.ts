@@ -855,6 +855,17 @@ export default class IFrameNavigator implements Navigator {
                     }
                 }, 200);
 
+                const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+                var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
+                for (var i = 0; i < pagebreaks.length; i++) {
+                    var img = pagebreaks[i];
+                    console.log(img)
+                    if (img.innerHTML.length == 0) {
+                        img.innerHTML = img.getAttribute("title");
+                    }
+                    img.className = "epubPageBreak"
+                }
+
             }, 100);
 
             return new Promise<void>(resolve => resolve());
@@ -1096,7 +1107,7 @@ export default class IFrameNavigator implements Navigator {
                     const position: Locator = {
                         href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
                         locations: {
-                            progression: 0
+                            progression: 1
                         },
                         type: this.previousChapterLink.type,
                         title: this.previousChapterLink.title
@@ -1277,7 +1288,7 @@ export default class IFrameNavigator implements Navigator {
             const position: Locator = {
                 href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
                 locations: {
-                    progression: 0
+                    progression: 1
                 },
                 type: this.previousChapterLink.type,
                 title: this.previousChapterLink.title

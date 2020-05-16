@@ -820,6 +820,43 @@ export default class TextHighlighter {
             
         }
     };
+    stopReadAloud() {
+        this.doneSpeaking()
+    }
+    speakAll() {
+        var self = this
+        function getCssSelector(element: Element): string {
+            const options = {
+                className: (str: string) => {
+                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                },
+                idName: (str: string) => {
+                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                },
+            };
+            return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
+        }
+    
+        var node = this.dom(this.el).getWindow().document.body;
+        console.log(self.delegate.delegate.iframe.contentDocument)
+        const selection = self.dom(self.el).getSelection();
+        const range = this.dom(this.el).getWindow().document.createRange();
+        range.selectNodeContents(node);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
+
+        if (selectionInfo.cleanText) {
+            this.ttsDelegate.speakAll(selectionInfo.cleanText as any, () => {
+                var selection = self.dom(self.el).getSelection();
+                selection.removeAllRanges();
+                var toolbox = document.getElementById("highlight-toolbox");
+                toolbox.style.display = "none";
+                var backdrop = document.getElementById("toolbox-backdrop");
+                backdrop.style.display = "none";
+            })
+        }
+    };
 
     doneSpeaking() {
         var toolbox = document.getElementById("highlight-toolbox");

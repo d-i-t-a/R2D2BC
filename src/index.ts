@@ -34,6 +34,23 @@ export async function unload() {
     AnnotationModuleInstance.stop()
     TTSModuleInstance.stop()
 }
+export function startReadAloud() {
+    if (IS_DEV) { console.log("startReadAloud") }
+    return R2Navigator.startReadAloud()    
+}
+export function stopReadAloud() {
+    if (IS_DEV) { console.log("stopReadAloud") }
+    return R2Navigator.stopReadAloud()    
+}
+export function pauseReadAloud() {
+    if (IS_DEV) { console.log("pauseReadAloud") }
+    return R2Navigator.pauseReadAloud()    
+}
+export function resumeReadAloud() {
+    if (IS_DEV) { console.log("resumeReadAloud") }
+    return R2Navigator.resumeReadAloud()    
+}
+
 
 export async function saveBookmark() {
     if (IS_DEV) { console.log("saveBookmark") }
@@ -216,6 +233,19 @@ exports.decrease = function (incremental) {
 }
 exports.publisher = function (on) {
     publisher(on)
+}
+
+exports.startReadAloud = function () {
+    startReadAloud()
+}
+exports.stopReadAloud = function () {
+    stopReadAloud()
+}
+exports.pasueReadAloud = function () {
+    pauseReadAloud()
+}
+exports.resumeReadAloud = function () {
+    resumeReadAloud()
 }
 
 // - add bookmark

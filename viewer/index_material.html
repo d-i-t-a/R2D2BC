@@ -228,13 +228,18 @@
                 </div>
                 <div id="highlight-toolbox-mode-add">
                     <button style="display: unset;" id="colorIcon" class="color-option"><span></span></button>
-                    <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;"></span></button>
-                    <button style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;"></span></button>
-                    <button style="background-color: gainsboro;" id="speakIcon"><span style="display: inline-block;width: 24px;height: 24px;"></span></button>
+                    <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon"><title id="text-icon">Text</title><path d="M5 4v3h5.5v12h3V7H19V4z"></path></svg>
+                    </span></button>
+                    <button style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon"><title id="text-icon">Text</title><path d="M5 4v3h5.5v12h3V7H19V4z"></path></svg>
+                    </span></button>
+                    <button style="background-color: gainsboro;" id="speakIcon"><span style="display: inline-block;width: 24px;height: 24px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="speak-icon"><title id="speak-icon">Speak</title><circle cx="9" cy="9" r="4"></circle><path d="M9 15c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4zm7.76-9.64l-1.68 1.69c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z"></path><path d="M0 0h24v24H0z" fill="none"></path></svg>
+                    </span></button>
                 </div>
                 <div id="highlight-toolbox-mode-edit">
-                    <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons"
-                            style="color:gray">delete</i></button>
+                    <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons" style="color:gray">delete</i></button>
                 </div>
             </span>
 
@@ -277,6 +282,7 @@
             { type: 'style', url: 'http://localhost:4444/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
             { type: 'style', url: 'http://localhost:4444/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
             { type: 'style', url: 'http://localhost:4444/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            { type: 'style', url: 'http://localhost:4444/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: 'http://localhost:4444/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
             { type: 'script', url: 'http://localhost:4444/viewer/injectables/click/click.js' },
@@ -301,10 +307,12 @@
                 enableAnnotations: true
             },
             material: true,
-            injectables: injectables
+            injectables: injectables,
+            initialAnnotationColor: "#ff8500"
         }).then(instance => {
             console.log("D2Reader loaded ", instance);
             console.log("instance.bookmarkModule ", instance.bookmarkModule)
+            console.log("instance.annotationModule ", instance.annotationModule)
         }).catch(error => {
             console.error("error.message ", error.message);
         });

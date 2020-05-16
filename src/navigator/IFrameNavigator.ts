@@ -44,7 +44,9 @@ export interface IFrameNavigatorConfig {
     rights?: ReaderRights;
     material: boolean;
     api: any;
-    injectables: Array<Injectable>
+    injectables: Array<Injectable>;
+    selectionMenuItems?: Array<SelectionMenuItem>;
+    initialAnnotationColor?:string;
 }
 
 export interface Injectable {
@@ -57,6 +59,10 @@ export interface Injectable {
     systemFont?: boolean;
     appearance?: string;
     async?: boolean;
+}
+export interface SelectionMenuItem {
+    id: string;
+    callback: any;
 }
 
 export interface ReaderRights {
@@ -77,6 +83,8 @@ export interface ReaderConfig {
     material: boolean;
     api: any;
     injectables: Array<Injectable>;
+    selectionMenuItems: Array<SelectionMenuItem>
+    initialAnnotationColor: string
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -145,6 +153,8 @@ export default class IFrameNavigator implements Navigator {
     private initialLastReadingPosition: ReadingPosition;
     api: any;
     injectables: Array<Injectable>
+    selectionMenuItems: Array<SelectionMenuItem>
+    initialAnnotationColor: string
 
     public static async create(config: IFrameNavigatorConfig): Promise<any> {
         const navigator = new this(
@@ -156,7 +166,9 @@ export default class IFrameNavigator implements Navigator {
             config.publication,
             config.material,
             config.api,
-            config.injectables
+            config.injectables,
+            config.selectionMenuItems || null,
+            config.initialAnnotationColor || null
         );
 
         await navigator.start(config.mainElement, config.headerMenu, config.footerMenu);
@@ -172,7 +184,9 @@ export default class IFrameNavigator implements Navigator {
         publication: Publication,
         material: boolean,
         api: any,
-        injectables: Array<Injectable>
+        injectables: Array<Injectable>,
+        selectionMenuItems: Array<SelectionMenuItem> | null = null,
+        initialAnnotationColor: string | null = null
     ) {
         this.settings = settings;
         this.annotator = annotator;
@@ -185,6 +199,8 @@ export default class IFrameNavigator implements Navigator {
         this.material = material
         this.api = api
         this.injectables = injectables
+        this.selectionMenuItems = selectionMenuItems
+        this.initialAnnotationColor = initialAnnotationColor
     }
 
     async stop() {
@@ -835,13 +851,27 @@ export default class IFrameNavigator implements Navigator {
                 }
 
                 if (this.annotationModule !== undefined) {
-                    this.annotationModule.initialize()
+                    this.annotationModule.initialize(this.initialAnnotationColor)
+                    if (this.selectionMenuItems) {
+                        this.annotationModule.selectionMenuItems = this.selectionMenuItems
+                    }
                 }
                 setTimeout(() => {
                     if (this.ttsModule !== undefined) {
                         this.ttsModule.initialize()
                     }
                 }, 200);
+
+                const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+                var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
+                for (var i = 0; i < pagebreaks.length; i++) {
+                    var img = pagebreaks[i];
+                    console.log(img)
+                    if (img.innerHTML.length == 0) {
+                        img.innerHTML = img.getAttribute("title");
+                    }
+                    img.className = "epubPageBreak"
+                }
 
             }, 100);
 
@@ -997,6 +1027,18 @@ export default class IFrameNavigator implements Navigator {
         event.preventDefault();
         event.stopPropagation();
     }
+    startReadAloud() {
+        this.annotationModule.highlighter.speakAll()
+    }
+    stopReadAloud() {
+        this.annotationModule.highlighter.stopReadAloud()
+    }
+    pauseReadAloud() {
+        this.ttsModule.speakPause()
+    }
+    resumeReadAloud() {
+        this.ttsModule.speakResume()
+    }
     totalResources(): number {
         return this.publication.readingOrder.length
     }
@@ -1048,7 +1090,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
-        if (this.paginator) {
+        if (this.settings.getSelectedView() === this.paginator) {
             if (this.paginator.onFirstPage()) {
                 if (this.previousChapterLink) {
                     const position: Locator = {
@@ -1079,17 +1121,23 @@ export default class IFrameNavigator implements Navigator {
                 event.stopPropagation();
             }
         } else {
-            if (this.previousChapterLink) {
-                const position: Locator = {
-                    href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
-                    locations: {
-                        progression: 0
-                    },
-                    type: this.previousChapterLink.type,
-                    title: this.previousChapterLink.title
-                };
+            if (this.scroller.atTop()) {
+                if (this.previousChapterLink) {
+                    const position: Locator = {
+                        href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
+                        locations: {
+                            progression: 1
+                        },
+                        type: this.previousChapterLink.type,
+                        title: this.previousChapterLink.title
+                    };
 
-                this.navigate(position);
+                    this.navigate(position);
+                }
+            } else {
+                this.scroller.goToPreviousPage();
+                this.updatePositionInfo();
+                this.saveCurrentReadingPosition();
             }
             if (event) {
                 event.preventDefault();
@@ -1099,7 +1147,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
-        if (this.paginator) {
+        if (this.settings.getSelectedView() === this.paginator) {
             if (this.paginator.onLastPage()) {
                 if (this.nextChapterLink) {
                     const position: Locator = {
@@ -1129,17 +1177,23 @@ export default class IFrameNavigator implements Navigator {
                 event.stopPropagation();
             }
         } else {
-            if (this.nextChapterLink) {
-                const position: Locator = {
-                    href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
-                    locations: {
-                        progression: 0
-                    },
-                    type: this.nextChapterLink.type,
-                    title: this.nextChapterLink.title
-                };
+            if (this.scroller.atBottom()) {
+                if (this.nextChapterLink) {
+                    const position: Locator = {
+                        href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
+                        locations: {
+                            progression: 0
+                        },
+                        type: this.nextChapterLink.type,
+                        title: this.nextChapterLink.title
+                    };
 
-                this.navigate(position);
+                    this.navigate(position);
+                }
+            } else {
+                this.scroller.goToNextPage();
+                this.updatePositionInfo();
+                this.saveCurrentReadingPosition();
             }
             if (event) {
                 event.preventDefault();
@@ -1253,7 +1307,7 @@ export default class IFrameNavigator implements Navigator {
             const position: Locator = {
                 href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
                 locations: {
-                    progression: 0
+                    progression: 1
                 },
                 type: this.previousChapterLink.type,
                 title: this.previousChapterLink.title

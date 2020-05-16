@@ -7,11 +7,42 @@
  * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
  */
 
-import BookView from "./BookView";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
+import ContinuousBookView from "./ContinuousBookView";
 
-export default class ScrollingBookView implements BookView {
+export default class ScrollingBookView implements ContinuousBookView {
+
+    public goToPreviousPage(): void {
+        const leftHeight = document.scrollingElement.scrollTop;
+        const height = this.getScreenHeight();
+        var offset = leftHeight - height;
+        if (offset >= 0) {
+            document.scrollingElement.scrollTop = offset;
+        } else {
+            document.scrollingElement.scrollTop = 0;
+        }
+    }
+
+    public goToNextPage(): void {
+        const leftHeight = document.scrollingElement.scrollTop;
+        const height = this.getScreenHeight();
+        const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as HTMLElement;
+        const scrollHeight = html.scrollHeight;    
+        var offset = leftHeight + height;
+        if (offset < scrollHeight) {
+            document.scrollingElement.scrollTop = offset;
+        } else {
+            document.scrollingElement.scrollTop = scrollHeight;
+        }
+    }
+    
+    private getScreenHeight(): number {
+        const windowTop = window.scrollY;
+        const windowBottom = windowTop + window.innerHeight;
+        return windowBottom - windowTop - 100
+    }
+
     public readonly name = "scrolling-book-view";
     public readonly label = "Scrolling";
 
@@ -91,7 +122,7 @@ export default class ScrollingBookView implements BookView {
     }
 
     public atBottom(): boolean {
-        return (document.scrollingElement.scrollHeight - document.scrollingElement.scrollTop) === BrowserUtilities.getHeight();
+        return (Math.ceil(document.scrollingElement.scrollHeight - document.scrollingElement.scrollTop) - 1) <= BrowserUtilities.getHeight();
     }
 
     public atTop(): boolean {

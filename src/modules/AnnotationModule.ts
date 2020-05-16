@@ -104,7 +104,10 @@ export default class AnnotationModule implements ReaderModule {
         }, 10);
     }
 
-    initialize() {
+    initialAnnotationColor?: string
+
+    initialize(initialAnnotationColor?:string) {
+        this.initialAnnotationColor = initialAnnotationColor
         return new Promise(async (resolve) => {
             await (document as any).fonts.ready;
             if (this.rights.enableAnnotations) {
@@ -320,6 +323,9 @@ export default class AnnotationModule implements ReaderModule {
                         }
                     });
                 }
+            }
+            if (this.initialAnnotationColor) {
+                this.highlighter.setColor(this.initialAnnotationColor);
             }
         }
     }

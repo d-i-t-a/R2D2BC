@@ -175,7 +175,8 @@ export async function load(config: ReaderConfig): Promise<any> {
         material: config.material,
         api: config.api,
         injectables: config.injectables,
-        selectionMenuItems: config.selectionMenuItems
+        selectionMenuItems: config.selectionMenuItems,
+        initialAnnotationColor: config.initialAnnotationColor
     })
     // add custom modules
     // Bookmark Module

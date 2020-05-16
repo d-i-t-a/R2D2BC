@@ -45,7 +45,8 @@ export interface IFrameNavigatorConfig {
     material: boolean;
     api: any;
     injectables: Array<Injectable>;
-    selectionMenuItems: Array<SelectionMenuItem>;
+    selectionMenuItems?: Array<SelectionMenuItem>;
+    initialAnnotationColor?:string;
 }
 
 export interface Injectable {
@@ -61,7 +62,6 @@ export interface Injectable {
 }
 export interface SelectionMenuItem {
     id: string;
-    icon: string;
     callback: any;
 }
 
@@ -84,6 +84,7 @@ export interface ReaderConfig {
     api: any;
     injectables: Array<Injectable>;
     selectionMenuItems: Array<SelectionMenuItem>
+    initialAnnotationColor: string
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -153,6 +154,7 @@ export default class IFrameNavigator implements Navigator {
     api: any;
     injectables: Array<Injectable>
     selectionMenuItems: Array<SelectionMenuItem>
+    initialAnnotationColor: string
 
     public static async create(config: IFrameNavigatorConfig): Promise<any> {
         const navigator = new this(
@@ -165,7 +167,8 @@ export default class IFrameNavigator implements Navigator {
             config.material,
             config.api,
             config.injectables,
-            config.selectionMenuItems
+            config.selectionMenuItems || null,
+            config.initialAnnotationColor || null
         );
 
         await navigator.start(config.mainElement, config.headerMenu, config.footerMenu);
@@ -182,7 +185,8 @@ export default class IFrameNavigator implements Navigator {
         material: boolean,
         api: any,
         injectables: Array<Injectable>,
-        selectionMenuItems: Array<SelectionMenuItem>
+        selectionMenuItems: Array<SelectionMenuItem> | null = null,
+        initialAnnotationColor: string | null = null
     ) {
         this.settings = settings;
         this.annotator = annotator;
@@ -196,6 +200,7 @@ export default class IFrameNavigator implements Navigator {
         this.api = api
         this.injectables = injectables
         this.selectionMenuItems = selectionMenuItems
+        this.initialAnnotationColor = initialAnnotationColor
     }
 
     async stop() {
@@ -846,8 +851,10 @@ export default class IFrameNavigator implements Navigator {
                 }
 
                 if (this.annotationModule !== undefined) {
-                    this.annotationModule.initialize()
-                    this.annotationModule.selectionMenuItems = this.selectionMenuItems
+                    this.annotationModule.initialize(this.initialAnnotationColor)
+                    if (this.selectionMenuItems) {
+                        this.annotationModule.selectionMenuItems = this.selectionMenuItems
+                    }
                 }
                 setTimeout(() => {
                     if (this.ttsModule !== undefined) {

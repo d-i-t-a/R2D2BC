@@ -506,14 +506,27 @@ export default class TextHighlighter {
         };
     };
 
+    disableContext(e: { preventDefault: () => void; stopPropagation: () => void; }) {
+        e.preventDefault();
+        e.stopPropagation()
+        return false;
+    }
+
     bindEvents(el: any, _scope: any) {
         el.addEventListener('mouseup', this.toolboxHandler.bind(this));
         el.addEventListener('touchend', this.toolboxHandler.bind(this));
+        if(this.isIOS() ||this.isAndroid()) {
+            el.addEventListener('contextmenu', this.disableContext);
+        }
     }
+
 
     unbindEvents(el: any, _scope: any) {
         el.removeEventListener('mouseup', this.toolboxHandler.bind(this));
         el.removeEventListener('touchend', this.toolboxHandler.bind(this));
+        if(this.isIOS() ||this.isAndroid()) {
+            el.removeEventListener('contextmenu', this.disableContext);
+        }
     }
 
     /**

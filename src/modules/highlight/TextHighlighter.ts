@@ -32,6 +32,7 @@ import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { icons } from "../../utils/IconLib";
 import TTSModule from "../TTSModule";
+import { SelectionMenuItem } from "../../navigator/IFrameNavigator";
 
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
@@ -88,12 +89,14 @@ export default class TextHighlighter {
     delegate:AnnotationModule;
     ttsDelegate:TTSModule;
     lastSelectedHighlight:number = undefined;
+    selectionMenuItems: Array<SelectionMenuItem>;
 
-    public constructor(delegate: AnnotationModule, element: HTMLElement, options: any) {
+    public constructor(delegate: AnnotationModule, element: HTMLElement, selectionMenuItems:Array<SelectionMenuItem>, options: any) {
         if (!element) {
             throw 'Missing anchor element';
         }
         this.delegate = delegate
+        this.selectionMenuItems = selectionMenuItems;
 
         this.el = element;
         this.options = this.defaults(options, {
@@ -503,14 +506,27 @@ export default class TextHighlighter {
         };
     };
 
+    disableContext(e: { preventDefault: () => void; stopPropagation: () => void; }) {
+        e.preventDefault();
+        e.stopPropagation()
+        return false;
+    }
+
     bindEvents(el: any, _scope: any) {
         el.addEventListener('mouseup', this.toolboxHandler.bind(this));
         el.addEventListener('touchend', this.toolboxHandler.bind(this));
+        if(this.isIOS() ||this.isAndroid()) {
+            el.addEventListener('contextmenu', this.disableContext);
+        }
     }
+
 
     unbindEvents(el: any, _scope: any) {
         el.removeEventListener('mouseup', this.toolboxHandler.bind(this));
         el.removeEventListener('touchend', this.toolboxHandler.bind(this));
+        if(this.isIOS() ||this.isAndroid()) {
+            el.removeEventListener('contextmenu', this.disableContext);
+        }
     }
 
     /**
@@ -528,11 +544,16 @@ export default class TextHighlighter {
         var toolboxColorsOptions = document.getElementById("highlight-toolbox-mode-colors");
         var colors = ["#fce300", "#48e200", "#00bae5", "#157cf9", "#6a39b7", "#ea426a", "#ff8500"]
         var colorIcon = document.getElementById("colorIcon");
-        var colorIconSymbol = colorIcon.lastChild as HTMLElement;
         var dismissIcon = document.getElementById("dismissIcon");
         dismissIcon.innerHTML = icons.close;
         
         var self = this
+        // Close toolbox color options
+        dismissIcon.addEventListener("click", function(){ 
+            self.toolboxMode('add');
+        });
+
+        if (colorIcon) {
             colors.forEach(color => {
                 var colorButton = document.getElementById(color);
                 if (toolboxColorsOptions.contains(colorButton)) {
@@ -540,40 +561,46 @@ export default class TextHighlighter {
                 }
             })	
 
-        var colorElements: HTMLButtonElement[] = [];
+            var colorElements: HTMLButtonElement[] = [];
 
-        // Open toolbox color options
-        colorIcon.addEventListener("click", function(){ 
-            self.toolboxMode('colors');
-        });
-
-        // Close toolbox color options
-        dismissIcon.addEventListener("click", function(){ 
-            self.toolboxMode('add');
-        });
-
-        // Generate color options
-        colors.forEach(color => {
-            var colorButton = colorIcon.cloneNode(true) as HTMLButtonElement;
-            var colorButtonSymbol = colorButton.lastChild as HTMLElement;
-            colorButtonSymbol.style.backgroundColor = color;
-            colorButton.id = color;
-            colorButton.style.display = "unset";
-            colorElements.push(colorButton)
-
-            var highlightIcon = document.getElementById("highlightIcon");
-            var underlineIcon = document.getElementById("underlineIcon");
-            // Set color and close color options
-            colorButton.addEventListener("click", function () {
-                self.setColor(color);
-                colorIconSymbol.style.backgroundColor = color;
-                (highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.backgroundColor = self.getColor();
-                (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.borderBottomColor = self.getColor();
-                self.toolboxMode('add');
+            // Open toolbox color options
+            colorIcon.addEventListener("click", function(){ 
+                self.toolboxMode('colors');
             });
 
-            toolboxColorsOptions.insertBefore(colorButton, dismissIcon);
-        });
+            // Generate color options
+            colors.forEach(color => {
+                var colorButton = colorIcon.cloneNode(true) as HTMLButtonElement;
+                var colorButtonSymbol = colorButton.lastChild as HTMLElement;
+                colorButtonSymbol.style.backgroundColor = color;
+                colorButton.id = color;
+                colorButton.style.display = "unset";
+                colorElements.push(colorButton)
+
+                var highlightIcon = document.getElementById("highlightIcon");
+                var underlineIcon = document.getElementById("underlineIcon");
+                // Set color and close color options
+                if (colorIcon) {
+                    colorButton.addEventListener("click", function () {
+                        self.setColor(color);
+                        var colorIconSymbol = colorIcon.lastChild as HTMLElement;
+                        if (colorIconSymbol) {
+                            colorIconSymbol.style.backgroundColor = color;
+                        }
+                        if(highlightIcon.getElementsByTagName("span").length>0) {
+                            (highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.background = self.getColor();
+                        }
+                        if(underlineIcon.getElementsByTagName("span").length>0) {
+                            (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.background = self.getColor();
+                        }
+        
+                        self.toolboxMode('add');
+                    });
+                }
+
+                toolboxColorsOptions.insertBefore(colorButton, dismissIcon);
+            });
+        }
 
         // Hide color options by default
         self.toolboxMode('add');
@@ -613,6 +640,17 @@ export default class TextHighlighter {
                 return;
             }
 
+            if(this.isIOS() ||this.isAndroid()) {
+                var self = this
+                setTimeout(function() {
+                    var selection = self.dom(self.el).getSelection();        
+                    selection.removeAllRanges()
+                    setTimeout(function() {
+                        selection.addRange(range)
+                    }, 5);
+                }, 100);
+            }
+
             var rect = range.getBoundingClientRect();  // and convert this to useful data
             var toolbox = document.getElementById("highlight-toolbox");
             var backdrop = document.getElementById("toolbox-backdrop");
@@ -621,7 +659,9 @@ export default class TextHighlighter {
 
             if(getComputedStyle(toolbox).display === "none") {
                 toolbox.style.display = "block";
-                backdrop.style.display = "block";
+                if (!this.isIOS() && !this.isAndroid()) {
+                    backdrop.style.display = "block";
+                }
 
                 var self = this
 
@@ -632,20 +672,19 @@ export default class TextHighlighter {
                 var colorIcon = document.getElementById("colorIcon");
 
                 highlightIcon.style.display = "unset";
-                (highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.background = this.getColor();
-                (highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement).innerHTML = icons.text;
-
+                if(highlightIcon.getElementsByTagName("span").length>0) {
+                    (highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.background = this.getColor();
+                }
                 underlineIcon.style.display = "unset";
-                (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
-                (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).innerHTML = icons.text;
+                if (underlineIcon.getElementsByTagName("span").length>0) {
+                    (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+                }
+                if(colorIcon) {
+                    colorIcon.style.display = "unset";
 
-                colorIcon.style.display = "unset";
-
-                var colorIconSymbol = colorIcon.lastChild as HTMLElement;
-                colorIconSymbol.style.backgroundColor = this.getColor();
-                
-                (speakIcon.getElementsByTagName("span")[0] as HTMLSpanElement).innerHTML = icons.speak;
-
+                    var colorIconSymbol = colorIcon.lastChild as HTMLElement;
+                    colorIconSymbol.style.backgroundColor = this.getColor();
+                }
                 // speaker_notes
                 // add_comment
                 // file_copy
@@ -670,11 +709,43 @@ export default class TextHighlighter {
                 underlineIcon.addEventListener("click", commentEvent);
                 
                 function speakEvent(){
-                    // self.doHighlight(false, AnnotationMarker.Underline);
                     speakIcon.removeEventListener("click", speakEvent);
                     self.speak();
                 }
                 speakIcon.addEventListener("click", speakEvent);
+
+
+                if (this.selectionMenuItems) {
+                    this.selectionMenuItems.forEach(menuItem => {
+                    
+                        var itemElement = document.getElementById(menuItem.id);
+                        var self = this
+
+                        function itemEvent(){
+                            itemElement.removeEventListener("click", itemEvent);
+
+                            function getCssSelector(element: Element): string {
+                                const options = {
+                                    className: (str: string) => {
+                                        return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                                    },
+                                    idName: (str: string) => {
+                                        return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                                    },
+                                };
+                                return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
+                            }
+                        
+                            const selectionInfo = getCurrentSelectionInfo(self.dom(self.el).getWindow(), getCssSelector)                
+
+                            menuItem.callback(selectionInfo.cleanText);
+                            self.callbackComplete()
+                        }
+                        itemElement.addEventListener("click", itemEvent);
+
+                    })
+                }
+
 
                 var backdropButton = document.getElementById("toolbox-backdrop");
 
@@ -794,6 +865,15 @@ export default class TextHighlighter {
             })
         }
     };
+
+    callbackComplete() {
+        var toolbox = document.getElementById("highlight-toolbox");
+        var backdrop = document.getElementById("toolbox-backdrop");
+
+        toolbox.style.display = "none";
+        backdrop.style.display = "none";
+        this.dom(this.el).removeAllRanges();
+    }
 
     doneSpeaking() {
         var toolbox = document.getElementById("highlight-toolbox");
@@ -1156,6 +1236,18 @@ export default class TextHighlighter {
         throw new Error('Bad Hex');
     }
 
+    public static hexToRgbAWithOpacity(hex: string, opacity:number) {
+        var c: any;
+        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+            c = hex.substring(1).split('');
+            if (c.length == 3) {
+                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+            }
+            c = '0x' + c.join('');
+            return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ','+opacity+')';
+        }
+        throw new Error('Bad Hex');
+    }
 
     resetHighlightBoundingStyle(_win: IReadiumIFrameWindow, highlightBounding: HTMLElement) {
         highlightBounding.style.outline = "none";
@@ -1192,6 +1284,13 @@ export default class TextHighlighter {
         }
     }
     
+    isIOS() {
+        return navigator.userAgent.match(/iPhone|iPad|iPod/i) != null;
+    }
+    isAndroid() {
+        return navigator.userAgent.match(/Android/i) != null;
+    }
+      
     async processMouseEvent(win: IReadiumIFrameWindow, ev: MouseEvent) {
         const documant = win.document;
         // const scrollElement = getScrollingElement(documant);
@@ -1259,7 +1358,7 @@ export default class TextHighlighter {
         }
 
         if (foundElement.getAttribute("data-click")) {
-            if (ev.type === "mousemove") {
+            if (ev.type === "mousemove" || ev.type === "touchmove") {
                 const foundElementHighlightAreas = Array.from(foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`));
                 const allHighlightAreas = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
                 for (const highlightArea of allHighlightAreas) {
@@ -1277,7 +1376,7 @@ export default class TextHighlighter {
                     }
                 }
 
-            } else if (ev.type === "mouseup" || ev.type === "click") {
+            } else if (ev.type === "mouseup" || ev.type === "click" || ev.type === "touchup") {
 
                 const payload: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK = {
                     highlight: foundHighlight,
@@ -1299,15 +1398,18 @@ export default class TextHighlighter {
 
                     if(getComputedStyle(toolbox).display === "none") {
                         toolbox.style.display = "block";
-                        backdrop.style.display = "block";
                         
+                        if (!this.isIOS() && !this.isAndroid()) {
+                            backdrop.style.display = "block";
+                        }
                         this.toolboxMode('edit');
                         
                         var colorIcon = document.getElementById("colorIcon");
                         var highlightIcon = document.getElementById("highlightIcon");
                         // edhighlightIconitIcon.innerHTML = icons.highlight;
-
-                        colorIcon.style.display = "none";
+                        if (colorIcon) {
+                            colorIcon.style.display = "none";
+                        }
                         highlightIcon.style.display = "none";
                 
                         
@@ -1408,6 +1510,11 @@ export default class TextHighlighter {
                 documant.body.addEventListener("mousedown", mousedown, false);
                 documant.body.addEventListener("mouseup", mouseup, false);
                 documant.body.addEventListener("mousemove", mousemove, false);
+
+                documant.body.addEventListener("touchstart", mousedown, false);
+                documant.body.addEventListener("touchend", mouseup, false);
+                documant.body.addEventListener("touchmove", mousemove, false);
+                
             }
     
             _highlightsContainer = documant.createElement("div");

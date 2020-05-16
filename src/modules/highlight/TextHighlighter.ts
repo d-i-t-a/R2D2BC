@@ -616,6 +616,17 @@ export default class TextHighlighter {
                 return;
             }
 
+            if(this.isIOS() ||this.isAndroid()) {
+                var self = this
+                setTimeout(function() {
+                    var selection = self.dom(self.el).getSelection();        
+                    selection.removeAllRanges()
+                    setTimeout(function() {
+                        selection.addRange(range)
+                    }, 5);
+                }, 100);
+            }
+
             var rect = range.getBoundingClientRect();  // and convert this to useful data
             var toolbox = document.getElementById("highlight-toolbox");
             var backdrop = document.getElementById("toolbox-backdrop");
@@ -624,7 +635,9 @@ export default class TextHighlighter {
 
             if(getComputedStyle(toolbox).display === "none") {
                 toolbox.style.display = "block";
-                backdrop.style.display = "block";
+                if (!this.isIOS() && !this.isAndroid()) {
+                    backdrop.style.display = "block";
+                }
 
                 var self = this
 
@@ -1192,6 +1205,13 @@ export default class TextHighlighter {
         }
     }
     
+    isIOS() {
+        return navigator.userAgent.match(/iPhone|iPad|iPod/i) != null;
+    }
+    isAndroid() {
+        return navigator.userAgent.match(/Android/i) != null;
+    }
+      
     async processMouseEvent(win: IReadiumIFrameWindow, ev: MouseEvent) {
         const documant = win.document;
         // const scrollElement = getScrollingElement(documant);
@@ -1259,7 +1279,7 @@ export default class TextHighlighter {
         }
 
         if (foundElement.getAttribute("data-click")) {
-            if (ev.type === "mousemove") {
+            if (ev.type === "mousemove" || ev.type === "touchmove") {
                 const foundElementHighlightAreas = Array.from(foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`));
                 const allHighlightAreas = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
                 for (const highlightArea of allHighlightAreas) {
@@ -1277,7 +1297,7 @@ export default class TextHighlighter {
                     }
                 }
 
-            } else if (ev.type === "mouseup" || ev.type === "click") {
+            } else if (ev.type === "mouseup" || ev.type === "click" || ev.type === "touchup") {
 
                 const payload: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK = {
                     highlight: foundHighlight,
@@ -1299,8 +1319,10 @@ export default class TextHighlighter {
 
                     if(getComputedStyle(toolbox).display === "none") {
                         toolbox.style.display = "block";
-                        backdrop.style.display = "block";
                         
+                        if (!this.isIOS() && !this.isAndroid()) {
+                            backdrop.style.display = "block";
+                        }
                         this.toolboxMode('edit');
                         
                         var colorIcon = document.getElementById("colorIcon");
@@ -1408,6 +1430,11 @@ export default class TextHighlighter {
                 documant.body.addEventListener("mousedown", mousedown, false);
                 documant.body.addEventListener("mouseup", mouseup, false);
                 documant.body.addEventListener("mousemove", mousemove, false);
+
+                documant.body.addEventListener("touchstart", mousedown, false);
+                documant.body.addEventListener("touchend", mouseup, false);
+                documant.body.addEventListener("touchmove", mousemove, false);
+                
             }
     
             _highlightsContainer = documant.createElement("div");

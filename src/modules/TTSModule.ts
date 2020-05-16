@@ -40,6 +40,24 @@ export default class TTSModule implements ReaderModule {
             self.annotationModule.highlighter.doneSpeaking()
         }    
     }
+    speakAll(selectionInfo: string | undefined , callback: () => void): any {        
+        console.log(selectionInfo)
+        var self = this
+        var utterance = new SpeechSynthesisUtterance(selectionInfo);
+        this.synth.cancel()
+        this.synth.speak(utterance);
+        utterance.onend = function () {      
+            console.log("utterance ended");
+            self.annotationModule.highlighter.doneSpeaking()
+        }    
+        callback()
+    }
+    speakPause() {
+        this.synth.pause()
+    }
+    speakResume() {
+        this.synth.resume()
+    }
     
     public static async create(config: TTSModuleConfig) {
         const annotations = new this(

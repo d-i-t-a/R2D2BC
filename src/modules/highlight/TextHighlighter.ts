@@ -739,6 +739,7 @@ export default class TextHighlighter {
                             const selectionInfo = getCurrentSelectionInfo(self.dom(self.el).getWindow(), getCssSelector)                
 
                             menuItem.callback(selectionInfo.cleanText);
+                            self.callbackComplete()
                         }
                         itemElement.addEventListener("click", itemEvent);
 
@@ -864,6 +865,15 @@ export default class TextHighlighter {
             })
         }
     };
+
+    callbackComplete() {
+        var toolbox = document.getElementById("highlight-toolbox");
+        var backdrop = document.getElementById("toolbox-backdrop");
+
+        toolbox.style.display = "none";
+        backdrop.style.display = "none";
+        this.dom(this.el).removeAllRanges();
+    }
 
     doneSpeaking() {
         var toolbox = document.getElementById("highlight-toolbox");

@@ -366,6 +366,16 @@ export default class IFrameNavigator implements Navigator {
         clearTimeout(this.timeout);
         this.timeout = setTimeout(this.handleResize.bind(this), 200);
     }
+    reload = async () => {
+        let lastReadingPosition: ReadingPosition | null = null;
+        if (this.annotator) {
+            lastReadingPosition = await this.annotator.getLastReadingPosition() as ReadingPosition | null;
+        }
+
+        if (lastReadingPosition) {
+            this.navigate(lastReadingPosition);
+        }
+    }
 
     private setupEvents(): void {
         addEventListenerOptional(this.iframe, 'load', this.handleIFrameLoad.bind(this));

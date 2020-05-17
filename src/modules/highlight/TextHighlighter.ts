@@ -829,9 +829,11 @@ export default class TextHighlighter {
         }
     };
     stopReadAloud() {
-        this.doneSpeaking()
+        this.doneSpeaking(true)
     }
     speakAll() {
+        var backdrop = document.getElementById("toolbox-backdrop");
+        backdrop.style.display = "block";
         var self = this
         function getCssSelector(element: Element): string {
             const options = {
@@ -860,8 +862,6 @@ export default class TextHighlighter {
                 selection.removeAllRanges();
                 var toolbox = document.getElementById("highlight-toolbox");
                 toolbox.style.display = "none";
-                var backdrop = document.getElementById("toolbox-backdrop");
-                backdrop.style.display = "none";
             })
         }
     };
@@ -875,13 +875,17 @@ export default class TextHighlighter {
         this.dom(this.el).removeAllRanges();
     }
 
-    doneSpeaking() {
+    doneSpeaking(reload:boolean) {
         var toolbox = document.getElementById("highlight-toolbox");
         var backdrop = document.getElementById("toolbox-backdrop");
 
         toolbox.style.display = "none";
         backdrop.style.display = "none";
         this.dom(this.el).removeAllRanges();
+
+        if(reload) {
+            this.delegate.delegate.reload()
+        }
     }
 
     /**

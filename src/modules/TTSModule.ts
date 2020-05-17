@@ -37,7 +37,7 @@ export default class TTSModule implements ReaderModule {
         this.synth.speak(utterance);
         utterance.onend = function () {      
             console.log("utterance ended");
-            self.annotationModule.highlighter.doneSpeaking()
+            self.annotationModule.highlighter.doneSpeaking(false)
         }    
     }
     speakAll(selectionInfo: string | undefined , callback: () => void): any {        
@@ -48,7 +48,7 @@ export default class TTSModule implements ReaderModule {
         this.synth.speak(utterance);
         utterance.onend = function () {      
             console.log("utterance ended");
-            self.annotationModule.highlighter.doneSpeaking()
+            self.annotationModule.highlighter.doneSpeaking(true)
         }    
         callback()
     }

@@ -857,7 +857,7 @@ export default class TextHighlighter {
         const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
 
         if (selectionInfo.cleanText) {
-            this.ttsDelegate.speakAll(selectionInfo.cleanText as any, () => {
+            this.ttsDelegate.speakAll(selectionInfo as any, node, this.getColor(),  () => {
                 var selection = self.dom(self.el).getSelection();
                 selection.removeAllRanges();
                 var toolbox = document.getElementById("highlight-toolbox");

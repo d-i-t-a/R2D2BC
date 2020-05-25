@@ -1,5 +1,6 @@
 import * as Mark from "mark.js";
-import { IS_DEV } from "../../src";
+
+export const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 async function markCuedWords(glossary: Array<GlossaryItem>) {
     if (IS_DEV) console.log("glossary mark words " + glossary);

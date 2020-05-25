@@ -684,10 +684,13 @@ export default class IFrameNavigator implements Navigator {
             let startUrl: string | null = null;
             if (startLink && startLink.href) {
                 startUrl = this.publication.getAbsoluteHref(startLink.href);
-
             }
 
             if (lastReadingPosition) {
+                const linkHref = this.publication.getAbsoluteHref(lastReadingPosition.href);
+                console.log(lastReadingPosition.href)
+                console.log(linkHref)
+                lastReadingPosition.href = linkHref
                 this.navigate(lastReadingPosition);
             } else if (startUrl) {
                 const position: ReadingPosition = {
@@ -1459,12 +1462,16 @@ export default class IFrameNavigator implements Navigator {
 
     private async saveCurrentReadingPosition(): Promise<void> {
         if (this.annotator) {
-            let url = this.currentChapterLink.href;
+            var tocItem = this.publication.getTOCItem(this.currentChapterLink.href);
             if (this.currentTocUrl !== null) {
-                url = this.currentTocUrl
+                tocItem = this.publication.getTOCItem(this.currentTocUrl);
             }
+            if (tocItem === null) {
+                tocItem = this.publication.getTOCItemAbsolute(this.currentChapterLink.href);
+            }
+
             const position: ReadingPosition = {
-                href: url,
+                href: tocItem.href,
                 locations: {
                     progression: this.settings.getSelectedView().getCurrentPosition()
                 },

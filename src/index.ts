@@ -138,11 +138,11 @@ export async function load(config: ReaderConfig): Promise<any> {
     var webpubManifestUrl = config.url;
     var store = new LocalStorageStore({
         prefix: webpubManifestUrl.href,
-        useLocalStorage: true
+        useLocalStorage: config.useLocalStorage
     });
     var settingsStore = new LocalStorageStore({
         prefix: "r2d2bc-reader",
-        useLocalStorage: true
+        useLocalStorage: config.useLocalStorage
     });
 
 

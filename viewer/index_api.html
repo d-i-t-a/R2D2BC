@@ -268,7 +268,8 @@
             },
             injectables: injectables,
             selectionMenuItems: selectionMenuItems,
-            initialAnnotationColor: "#ff8500"
+            initialAnnotationColor: "#ff8500",
+            useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {
             console.log("D2Reader loaded ", instance);
             console.log("instance.bookmarkModule ", instance.bookmarkModule)

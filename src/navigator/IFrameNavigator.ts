@@ -83,8 +83,9 @@ export interface ReaderConfig {
     material: boolean;
     api: any;
     injectables: Array<Injectable>;
-    selectionMenuItems: Array<SelectionMenuItem>
-    initialAnnotationColor: string
+    selectionMenuItems: Array<SelectionMenuItem>;
+    initialAnnotationColor: string;
+    useLocalStorage: boolean;
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */

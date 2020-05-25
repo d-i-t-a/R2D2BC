@@ -189,7 +189,7 @@ export async function load(config: ReaderConfig): Promise<any> {
             publication: publication,
             settings: R2Settings,
             delegate: R2Navigator,
-            initialAnnotations: config.annotations,
+            initialAnnotations: config.initialAnnotations,
         })
     }
 
@@ -202,7 +202,7 @@ export async function load(config: ReaderConfig): Promise<any> {
             publication: publication,
             settings: R2Settings,
             delegate: R2Navigator,
-            initialAnnotations: config.annotations
+            initialAnnotations: config.initialAnnotations
         })
         TTSModuleInstance = await TTSModule.create({
             annotationModule: AnnotationModuleInstance

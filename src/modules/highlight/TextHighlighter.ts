@@ -1385,10 +1385,12 @@ export default class TextHighlighter {
                 var self = this
                 var anno = await this.delegate.annotator.getAnnotation(payload.highlight) as Annotation
                 // if(anno.comment) {
-                    // this.delegate.api.highlightSelected(anno).then(async () => {
-                        if (IS_DEV) { console.log("selected highlight "+anno.id)}
-                        self.lastSelectedHighlight = anno.id                       
-                    // })
+                    if(this.delegate.api) {
+                        this.delegate.api.selectedAnnotation(anno).then(async () => {
+                        })
+                    }
+                    if (IS_DEV) { console.log("selected highlight "+anno.id)}
+                    self.lastSelectedHighlight = anno.id                       
                 // } else {
                     var toolbox = document.getElementById("highlight-toolbox");
                     var backdrop = document.getElementById("toolbox-backdrop");

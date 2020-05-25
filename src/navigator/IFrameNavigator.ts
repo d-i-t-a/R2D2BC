@@ -75,7 +75,7 @@ export interface ReaderUI {
 export interface ReaderConfig {
     url: URL;
     userSettings: any;
-    annotations: any;
+    initialAnnotations: any;
     lastReadingPosition: any;
     upLinkUrl: any;
     rights: ReaderRights;

@@ -813,6 +813,8 @@ export default class IFrameNavigator implements Navigator {
             const head = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "head") as HTMLHeadElement;
             if (head) {
 
+                head.insertBefore(this.createBase(this.currentChapterLink.href), head.firstChild)
+
                 this.injectables.forEach(injectable => {
                     if (injectable.type === "style") {
                         if (injectable.fontFamily) {
@@ -1482,6 +1484,13 @@ export default class IFrameNavigator implements Navigator {
         } else {
             return new Promise<void>(resolve => resolve());
         }
+    }
+
+    private createBase(href: string): HTMLBaseElement {
+        const base = document.createElement('base');
+        base.target = '_self';
+        base.href = href;
+        return base;
     }
 
     private createCssLink(href: string): HTMLLinkElement {

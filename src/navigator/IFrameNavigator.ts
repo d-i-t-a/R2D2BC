@@ -20,9 +20,9 @@ import { Locator, ReadingPosition, Locations } from "../model/Locator";
 import { Sidenav, Collapsible, Dropdown, Tabs } from "materialize-css";
 import { UserSettingsUIConfig, UserSettings } from "../model/user-settings/UserSettings";
 import BookmarkModule from "../modules/BookmarkModule";
-import { IS_DEV } from "..";
 import AnnotationModule from "../modules/AnnotationModule";
 import TTSModule from "../modules/TTSModule";
+import { IS_DEV } from "..";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -70,7 +70,7 @@ export interface ReaderRights {
     enableAnnotations?: boolean;
 }
 export interface ReaderUI {
-    settings?: UserSettingsUIConfig;
+    settings: UserSettingsUIConfig;
 }
 export interface ReaderConfig {
     url: URL;

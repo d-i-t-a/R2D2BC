@@ -157,8 +157,9 @@ export async function load(config: ReaderConfig): Promise<any> {
 
     R2Settings = await UserSettings.create({
         store: settingsStore,
+        initialUserSettings: config.userSettings,
         headerMenu: headerMenu,
-        ui: config.ui.settings,
+        ui: config.ui,
         api: config.api
     })
 

@@ -173,10 +173,6 @@
                 <div id="reader-error" class="error"></div>
                 <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="border: 0px; display: block;"
                     width="100%" height="100%"></iframe>
-                <div id="reader-info-bottom" class="info bottom">
-                    <span class="chapter-position"></span>
-                    <span class="chapter-title"></span>
-                </div>
             </main>
             <div id="toolbox-backdrop" class="toolbox-backdrop"></div>
 
@@ -240,6 +236,19 @@
             { type: 'style', url: 'http://localhost:4444/viewer/injectables/glossary/glossary.css' },
         ]
 
+        var userSettings = {
+            // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
+            // fontFamily: "serif", //Original, serif, sans-serif
+            // textAlignment: "justify", //"auto", "justify", "start"
+            // columnCount: "auto", // "auto", "1", "2"
+            // verticalScroll: false,
+            // fontSize: 100.0,
+            // wordSpacing: 0.0,
+            // letterSpacing: 0.0,
+            // pageMargins: 2.0,
+            // lineHeight: 1.0
+        }
+
         var selectionMenuItems = [
             { 
                 id: 'anIcon', 
@@ -254,14 +263,6 @@
 
         D2Reader.load({
             url: new URL(urlParams['url']),
-            ui: {
-                settings: {
-                    fontFamily: true,
-                    fontSize: true,
-                    appearance: true,
-                    scroll: true
-                },
-            },
             rights: {
                 enableBookmarks: true,
                 enableAnnotations: true
@@ -269,6 +270,7 @@
             injectables: injectables,
             selectionMenuItems: selectionMenuItems,
             initialAnnotationColor: "#ff8500",
+            userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {
             console.log("D2Reader loaded ", instance);

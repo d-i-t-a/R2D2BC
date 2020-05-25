@@ -16,12 +16,15 @@ import BookView from "../../views/BookView";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { IS_DEV } from "../..";
 import { addEventListenerOptional } from "../../utils/EventHandler";
+import { ReaderUI}  from "../../navigator/IFrameNavigator"
+import {oc} from "ts-optchain"
 
 export interface UserSettingsConfig {
     /** Store to save the user's selections in. */
     store: Store,
+    initialUserSettings: UserSettings;
     headerMenu: HTMLElement;
-    ui: UserSettingsUIConfig;
+    ui: ReaderUI;
     api: any;
 }
 export interface UserSettingsUIConfig {
@@ -102,7 +105,7 @@ export class UserSettings implements UserSettings {
 
     private settingsView: HTMLDivElement;
     private headerMenu: HTMLElement;
-    private ui: UserSettingsUIConfig;
+    private ui: ReaderUI | null = null;
     api: any;
 
     private iframe: HTMLIFrameElement;
@@ -114,11 +117,59 @@ export class UserSettings implements UserSettings {
             config.ui,
             config.api
         );
+
+        if (config.initialUserSettings) {
+            var initialUserSettings:UserSettings= config.initialUserSettings
+            if(initialUserSettings.appearance) {
+                settings.appearance = UserSettings.appearanceValues.findIndex((el: any) => el === initialUserSettings.appearance);
+                console.log(settings.appearance)
+            }
+            if(initialUserSettings.fontSize) {
+                settings.fontSize = initialUserSettings.fontSize
+                console.log(settings.fontSize)
+            }
+            if(initialUserSettings.fontFamily) {
+                settings.fontFamily = UserSettings.fontFamilyValues.findIndex((el: any) => el === initialUserSettings.fontFamily);
+                console.log(settings.fontFamily)
+                if (settings.fontFamily != 0) {
+                    settings.fontOverride = true
+                }
+            }
+            if(initialUserSettings.verticalScroll) {
+                settings.verticalScroll = initialUserSettings.verticalScroll;
+                console.log(settings.verticalScroll)
+            }
+            if(initialUserSettings.textAlignment) {
+                settings.textAlignment = UserSettings.textAlignmentValues.findIndex((el: any) => el === initialUserSettings.textAlignment);
+                console.log(settings.textAlignment)
+            }
+            if(initialUserSettings.columnCount) {
+                settings.columnCount = UserSettings.columnCountValues.findIndex((el: any) => el === initialUserSettings.columnCount);
+                console.log(settings.columnCount)
+            }
+            if(initialUserSettings.wordSpacing) {
+                settings.wordSpacing = initialUserSettings.wordSpacing;
+                console.log(settings.wordSpacing)
+            }
+            if(initialUserSettings.letterSpacing) {
+                settings.letterSpacing = initialUserSettings.letterSpacing;
+                console.log(settings.letterSpacing)
+            }
+            if(initialUserSettings.pageMargins) {
+                settings.pageMargins = initialUserSettings.pageMargins;
+                console.log(settings.pageMargins)
+            }
+            if(initialUserSettings.lineHeight) {
+                settings.lineHeight = initialUserSettings.lineHeight;
+                console.log(settings.lineHeight)
+            }
+        }
+
         await settings.initializeSelections();
         return new Promise(resolve => resolve(settings));
     }
 
-    protected constructor(store: Store, headerMenu: HTMLElement, ui: UserSettingsUIConfig, api: any) {
+    protected constructor(store: Store, headerMenu: HTMLElement, ui: ReaderUI, api: any) {
         this.store = store;
 
         this.bookViews = [this.scroller, this.paginator];
@@ -176,7 +227,7 @@ export class UserSettings implements UserSettings {
 
         if (this.headerMenu) this.settingsView = HTMLUtilities.findElement(this.headerMenu, "#container-view-settings") as HTMLDivElement;
 
-        if (this.ui.scroll) {
+        if (oc(this.ui).settings.scroll) {
             if (this.bookViews.length >= 1) {
                 let selectedView = this.bookViews[0];
                 const selectedViewName = await this.store.get(ReadiumCSS.SCROLL_KEY);
@@ -263,13 +314,13 @@ export class UserSettings implements UserSettings {
 
 
     private renderControls(element: HTMLElement): void {
-        if (this.ui.fontSize) {
+        if (oc(this.ui).settings.fontSize) {
             this.fontSizeButtons = {};
             for (const fontSizeName of ["decrease", "increase"]) {
                 this.fontSizeButtons[fontSizeName] = HTMLUtilities.findElement(element, "#" + fontSizeName + "-font") as HTMLButtonElement;
             }
         }
-        if (this.ui.fontFamily) {
+        if (oc(this.ui).settings.fontFamily) {
             this.fontButtons = {};
             this.fontButtons[0] = HTMLUtilities.findElement(element, "#publisher-font") as HTMLButtonElement;
             this.fontButtons[1] = HTMLUtilities.findElement(element, "#serif-font") as HTMLButtonElement;
@@ -281,7 +332,7 @@ export class UserSettings implements UserSettings {
             }
             this.updateFontButtons();
         }
-        if (this.ui.appearance) {
+        if (oc(this.ui).settings.appearance) {
             this.themeButtons = {};
             this.themeButtons[0] = HTMLUtilities.findElement(element, "#day-theme") as HTMLButtonElement;
             this.themeButtons[1] = HTMLUtilities.findElement(element, "#sepia-theme") as HTMLButtonElement;
@@ -296,7 +347,7 @@ export class UserSettings implements UserSettings {
             HTMLUtilities.findRequiredElement(element, "#container-view-appearance").remove()
         }
 
-        if (this.ui.scroll) {
+        if (oc(this.ui).settings.scroll) {
             this.viewButtons = {};
             this.viewButtons[0] = HTMLUtilities.findElement(element, "#view-scroll") as HTMLButtonElement;
             this.viewButtons[1] = HTMLUtilities.findElement(element, "#view-paginated") as HTMLButtonElement;
@@ -324,7 +375,7 @@ export class UserSettings implements UserSettings {
 
     private async setupEvents(): Promise<void> {
 
-        if (this.ui.fontSize) {
+        if (oc(this.ui).settings.fontSize) {
             addEventListenerOptional(this.fontSizeButtons["decrease"], 'click', (event: MouseEvent) => {
                 (this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental).decrement()
                 this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF))
@@ -345,7 +396,7 @@ export class UserSettings implements UserSettings {
             });
         }
 
-        if (this.ui.fontFamily) {
+        if (oc(this.ui).settings.fontFamily) {
             for (let index = 0; index < UserSettings.fontFamilyValues.length; index++) {
                 const button = this.fontButtons[index];
                 if (button) {
@@ -361,7 +412,7 @@ export class UserSettings implements UserSettings {
             }
         }
 
-        if (this.ui.appearance) {
+        if (oc(this.ui).settings.appearance) {
             for (let index = 0; index < UserSettings.appearanceValues.length; index++) {
                 const button = this.themeButtons[index];
                 if (button) {
@@ -376,7 +427,7 @@ export class UserSettings implements UserSettings {
             }
         }
 
-        if (this.ui.scroll) {
+        if (oc(this.ui).settings.scroll) {
             for (let index = 0; index < this.bookViews.length; index++) {
                 const view = this.bookViews[index];
                 const button = this.viewButtons[index];

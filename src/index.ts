@@ -15,6 +15,7 @@ import BookmarkModule from "./modules/BookmarkModule";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
 import TTSModule from "./modules/TTSModule";
+import {oc} from "ts-optchain"
 
 var R2Settings: UserSettings;
 var R2Navigator: IFrameNavigator;
@@ -181,7 +182,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     })
     // add custom modules
     // Bookmark Module
-        if (config.rights.enableBookmarks) {
+        if (oc(config.rights).enableBookmarks) {
         BookmarkModuleInstance = await BookmarkModule.create({
             annotator: annotator,
             headerMenu: headerMenu,
@@ -194,7 +195,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
 
     // Annotation Module
-    if (config.rights.enableAnnotations) {
+    if (oc(config.rights).enableAnnotations) {
         AnnotationModuleInstance = await AnnotationModule.create({
             annotator: annotator,
             headerMenu: headerMenu,

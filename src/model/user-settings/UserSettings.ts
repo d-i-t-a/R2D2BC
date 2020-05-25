@@ -122,46 +122,46 @@ export class UserSettings implements UserSettings {
             var initialUserSettings:UserSettings= config.initialUserSettings
             if(initialUserSettings.appearance) {
                 settings.appearance = UserSettings.appearanceValues.findIndex((el: any) => el === initialUserSettings.appearance);
-                console.log(settings.appearance)
+                if (IS_DEV) console.log(settings.appearance)
             }
             if(initialUserSettings.fontSize) {
                 settings.fontSize = initialUserSettings.fontSize
-                console.log(settings.fontSize)
+                if (IS_DEV) console.log(settings.fontSize)
             }
             if(initialUserSettings.fontFamily) {
                 settings.fontFamily = UserSettings.fontFamilyValues.findIndex((el: any) => el === initialUserSettings.fontFamily);
-                console.log(settings.fontFamily)
+                if (IS_DEV) console.log(settings.fontFamily)
                 if (settings.fontFamily != 0) {
                     settings.fontOverride = true
                 }
             }
             if(initialUserSettings.verticalScroll) {
                 settings.verticalScroll = initialUserSettings.verticalScroll;
-                console.log(settings.verticalScroll)
+                if (IS_DEV) console.log(settings.verticalScroll)
             }
             if(initialUserSettings.textAlignment) {
                 settings.textAlignment = UserSettings.textAlignmentValues.findIndex((el: any) => el === initialUserSettings.textAlignment);
-                console.log(settings.textAlignment)
+                if (IS_DEV) console.log(settings.textAlignment)
             }
             if(initialUserSettings.columnCount) {
                 settings.columnCount = UserSettings.columnCountValues.findIndex((el: any) => el === initialUserSettings.columnCount);
-                console.log(settings.columnCount)
+                if (IS_DEV) console.log(settings.columnCount)
             }
             if(initialUserSettings.wordSpacing) {
                 settings.wordSpacing = initialUserSettings.wordSpacing;
-                console.log(settings.wordSpacing)
+                if (IS_DEV) console.log(settings.wordSpacing)
             }
             if(initialUserSettings.letterSpacing) {
                 settings.letterSpacing = initialUserSettings.letterSpacing;
-                console.log(settings.letterSpacing)
+                if (IS_DEV) console.log(settings.letterSpacing)
             }
             if(initialUserSettings.pageMargins) {
                 settings.pageMargins = initialUserSettings.pageMargins;
-                console.log(settings.pageMargins)
+                if (IS_DEV) console.log(settings.pageMargins)
             }
             if(initialUserSettings.lineHeight) {
                 settings.lineHeight = initialUserSettings.lineHeight;
-                console.log(settings.lineHeight)
+                if (IS_DEV) console.log(settings.lineHeight)
             }
         }
 

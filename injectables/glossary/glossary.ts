@@ -1,11 +1,12 @@
 import * as Mark from "mark.js";
+import { IS_DEV } from "../../src";
 
 async function markCuedWords(glossary: Array<GlossaryItem>) {
-    console.log("glossary mark words " + glossary);
+    if (IS_DEV) console.log("glossary mark words " + glossary);
 
     glossary.forEach(async function (glossaryitem: GlossaryItem) {
 
-        console.log(glossaryitem);
+        if (IS_DEV) console.log(glossaryitem);
         var instance = new Mark(document.body);
         await instance.mark(glossaryitem.word, {
             accuracy: { value: "exactly", limiters: [".", ",", ";", ":", ")"] },
@@ -17,7 +18,7 @@ async function markCuedWords(glossary: Array<GlossaryItem>) {
             each: function (node) {
                 node.addEventListener("click", async (event) => {
                     var htmlElement = node as HTMLElement
-                    console.log("Mark Node Click Handler");
+                    if (IS_DEV) console.log("Mark Node Click Handler");
 
                     event.preventDefault()
                     event.stopPropagation()

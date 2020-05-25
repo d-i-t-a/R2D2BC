@@ -688,8 +688,8 @@ export default class IFrameNavigator implements Navigator {
 
             if (lastReadingPosition) {
                 const linkHref = this.publication.getAbsoluteHref(lastReadingPosition.href);
-                console.log(lastReadingPosition.href)
-                console.log(linkHref)
+                if (IS_DEV)console.log(lastReadingPosition.href)
+                if (IS_DEV)console.log(linkHref)
                 lastReadingPosition.href = linkHref
                 this.navigate(lastReadingPosition);
             } else if (startUrl) {
@@ -872,7 +872,7 @@ export default class IFrameNavigator implements Navigator {
                 var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
                 for (var i = 0; i < pagebreaks.length; i++) {
                     var img = pagebreaks[i];
-                    console.log(img)
+                    if (IS_DEV) (img)
                     if (img.innerHTML.length == 0) {
                         img.innerHTML = img.getAttribute("title");
                     }
@@ -1089,8 +1089,8 @@ export default class IFrameNavigator implements Navigator {
             title: locator.title
         };
         const linkHref = this.publication.getAbsoluteHref(locator.href);
-        console.log(locator.href)
-        console.log(linkHref)
+        if (IS_DEV) console.log(locator.href)
+        if (IS_DEV) console.log(linkHref)
         position.href = linkHref
         this.navigate(position);
     }

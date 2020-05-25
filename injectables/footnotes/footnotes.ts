@@ -6,9 +6,10 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
  */
+import { IS_DEV } from "../../src";
 
 document.addEventListener("click", async (event) => {
-    console.log("Footnote Click Handler");
+    if (IS_DEV) console.log("Footnote Click Handler");
     var htmlElement = event.target as HTMLElement
     if(htmlElement.tagName.toLowerCase() === 'a') {
     var element = document.createElement('div');

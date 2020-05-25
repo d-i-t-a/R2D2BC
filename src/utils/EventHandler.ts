@@ -7,6 +7,8 @@
  * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
  */
 
+import { IS_DEV } from "..";
+
 
 export function addEventListenerOptional(element: any, eventType: string, eventListener: any) {
     if (element) {
@@ -51,7 +53,7 @@ export default class EventHandler {
 
 
     private handleLinks = (event: MouseEvent | TouchEvent): void => {
-        console.log("R2 Click Handler")
+        if (IS_DEV) console.log("R2 Click Handler")
 
         const link = this.checkForLink(event);
         if (link) {

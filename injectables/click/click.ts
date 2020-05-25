@@ -6,11 +6,12 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
  */
+import { IS_DEV } from "../../src";
 
 document.addEventListener("click", async (_event) => {
 
     // var htmlElement = event.target as HTMLElement
-    console.log("Emoty Click Handler")
+    if (IS_DEV) console.log("Empty Click Handler")
     // console.log(htmlElement.outerHTML)
         
 }, true);

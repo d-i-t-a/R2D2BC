@@ -299,7 +299,13 @@
                     fontFamily: true,
                     fontSize: true,
                     appearance: true,
-                    scroll: true
+                    scroll: true,
+                    // textAlign: true,
+                    // colCount: true,
+                    // wordSpacing: true,
+                    // letterSpacing: true,
+                    // pageMargins: true,
+                    // lineHeight: true
                 },
             },
             rights: {
@@ -307,8 +313,7 @@
                 enableAnnotations: true
             },
             material: true,
-            injectables: injectables,
-            initialAnnotationColor: "#ff8500"
+            injectables: injectables
         }).then(instance => {
             console.log("D2Reader loaded ", instance);
             console.log("instance.bookmarkModule ", instance.bookmarkModule)

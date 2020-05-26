@@ -872,7 +872,7 @@ export default class IFrameNavigator implements Navigator {
                 var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
                 for (var i = 0; i < pagebreaks.length; i++) {
                     var img = pagebreaks[i];
-                    if (IS_DEV) (img)
+                    if (IS_DEV) console.log(img)
                     if (img.innerHTML.length == 0) {
                         img.innerHTML = img.getAttribute("title");
                     }

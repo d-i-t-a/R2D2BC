@@ -31,7 +31,7 @@ export default class TTSModule implements ReaderModule {
     }
 
     speak(selectionInfo: ISelectionInfo | undefined ): any {        
-        console.log(selectionInfo.cleanText)
+        if (IS_DEV) console.log(selectionInfo.cleanText)
         var self = this
         var utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
         this.synth.cancel()
@@ -81,7 +81,7 @@ export default class TTSModule implements ReaderModule {
         }
             
         utterance.onend = function () {      
-            console.log("utterance ended");
+            if (IS_DEV) console.log("utterance ended");
             splittingResult[0].words[splittingResult[0].words.length-1].style.background = "none"
             self.annotationModule.highlighter.doneSpeaking(true)
         }    

@@ -20,9 +20,9 @@ import { Locator, ReadingPosition, Locations } from "../model/Locator";
 import { Sidenav, Collapsible, Dropdown, Tabs } from "materialize-css";
 import { UserSettingsUIConfig, UserSettings } from "../model/user-settings/UserSettings";
 import BookmarkModule from "../modules/BookmarkModule";
-import { IS_DEV } from "..";
 import AnnotationModule from "../modules/AnnotationModule";
 import TTSModule from "../modules/TTSModule";
+import { IS_DEV } from "..";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -70,12 +70,12 @@ export interface ReaderRights {
     enableAnnotations?: boolean;
 }
 export interface ReaderUI {
-    settings?: UserSettingsUIConfig;
+    settings: UserSettingsUIConfig;
 }
 export interface ReaderConfig {
     url: URL;
     userSettings: any;
-    annotations: any;
+    initialAnnotations: any;
     lastReadingPosition: any;
     upLinkUrl: any;
     rights: ReaderRights;
@@ -83,8 +83,9 @@ export interface ReaderConfig {
     material: boolean;
     api: any;
     injectables: Array<Injectable>;
-    selectionMenuItems: Array<SelectionMenuItem>
-    initialAnnotationColor: string
+    selectionMenuItems: Array<SelectionMenuItem>;
+    initialAnnotationColor: string;
+    useLocalStorage: boolean;
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -693,10 +694,13 @@ export default class IFrameNavigator implements Navigator {
             let startUrl: string | null = null;
             if (startLink && startLink.href) {
                 startUrl = this.publication.getAbsoluteHref(startLink.href);
-
             }
 
             if (lastReadingPosition) {
+                const linkHref = this.publication.getAbsoluteHref(lastReadingPosition.href);
+                if (IS_DEV)console.log(lastReadingPosition.href)
+                if (IS_DEV)console.log(linkHref)
+                lastReadingPosition.href = linkHref
                 this.navigate(lastReadingPosition);
             } else if (startUrl) {
                 const position: ReadingPosition = {
@@ -822,6 +826,8 @@ export default class IFrameNavigator implements Navigator {
             const head = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "head") as HTMLHeadElement;
             if (head) {
 
+                head.insertBefore(this.createBase(this.currentChapterLink.href), head.firstChild)
+
                 this.injectables.forEach(injectable => {
                     if (injectable.type === "style") {
                         if (injectable.fontFamily) {
@@ -876,7 +882,7 @@ export default class IFrameNavigator implements Navigator {
                 var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
                 for (var i = 0; i < pagebreaks.length; i++) {
                     var img = pagebreaks[i];
-                    console.log(img)
+                    if (IS_DEV) (img)
                     if (img.innerHTML.length == 0) {
                         img.innerHTML = img.getAttribute("title");
                     }
@@ -1093,8 +1099,8 @@ export default class IFrameNavigator implements Navigator {
             title: locator.title
         };
         const linkHref = this.publication.getAbsoluteHref(locator.href);
-        console.log(locator.href)
-        console.log(linkHref)
+        if (IS_DEV) console.log(locator.href)
+        if (IS_DEV) console.log(linkHref)
         position.href = linkHref
         this.navigate(position);
     }
@@ -1466,12 +1472,16 @@ export default class IFrameNavigator implements Navigator {
 
     private async saveCurrentReadingPosition(): Promise<void> {
         if (this.annotator) {
-            let url = this.currentChapterLink.href;
+            var tocItem = this.publication.getTOCItem(this.currentChapterLink.href);
             if (this.currentTocUrl !== null) {
-                url = this.currentTocUrl
+                tocItem = this.publication.getTOCItem(this.currentTocUrl);
             }
+            if (tocItem === null) {
+                tocItem = this.publication.getTOCItemAbsolute(this.currentChapterLink.href);
+            }
+
             const position: ReadingPosition = {
-                href: url,
+                href: tocItem.href,
                 locations: {
                     progression: this.settings.getSelectedView().getCurrentPosition()
                 },
@@ -1491,6 +1501,13 @@ export default class IFrameNavigator implements Navigator {
         } else {
             return new Promise<void>(resolve => resolve());
         }
+    }
+
+    private createBase(href: string): HTMLBaseElement {
+        const base = document.createElement('base');
+        base.target = '_self';
+        base.href = href;
+        return base;
     }
 
     private createCssLink(href: string): HTMLLinkElement {

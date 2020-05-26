@@ -22,7 +22,12 @@ import { UserSettings } from "../model/user-settings/UserSettings";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from 'uuid';
 
+export type Highlight = (highlight: Annotation) => Promise<Annotation>
+
 export interface AnnotationModuleAPI {
+    addAnnotation: Highlight;
+    deleteAnnotation: Highlight;
+    selectedAnnotation: Highlight;
 }
 
 export interface AnnotationModuleConfig {
@@ -94,7 +99,10 @@ export default class AnnotationModule implements ReaderModule {
         this.highlightsView = HTMLUtilities.findElement(this.headerMenu, "#container-view-highlights") as HTMLDivElement;
 
         if (this.initialAnnotations) {
-
+            var highlights = this.initialAnnotations['highlights'] || null;
+            if (highlights) {
+                this.annotator.initAnnotations(highlights)
+            }
         }
     }
 
@@ -157,11 +165,23 @@ export default class AnnotationModule implements ReaderModule {
 
 
     private async deleteHighlight(highlight: Annotation): Promise<any> {
-        this.deleteLocalHighlight(highlight.id);
+        if (this.api) {
+            this.api.deleteAnnotation(highlight).then(async () => {
+                this.deleteLocalHighlight(highlight.id);
+            })
+        } else {
+            this.deleteLocalHighlight(highlight.id);
+        }
     }
 
     public async deleteSelectedHighlight(highlight: Annotation): Promise<any> {
-        this.deleteLocalHighlight(highlight.id); 
+        if (this.api) {
+            this.api.deleteAnnotation(highlight).then(async () => {
+                this.deleteLocalHighlight(highlight.id);
+            })
+        } else {
+            this.deleteLocalHighlight(highlight.id); 
+        }
     }
 
     public async saveAnnotation(highlight: IHighlight, marker: AnnotationMarker): Promise<any> {
@@ -201,9 +221,12 @@ export default class AnnotationModule implements ReaderModule {
                 }
             }
             if (this.api) {
+                this.api.addAnnotation(annotation).then(async result => {
+                    annotation.id = result.id
                     var saved = await this.annotator.saveAnnotation(annotation);
                     await this.drawHighlights();
                     return saved
+                }) 
             } else {
                 var saved = await this.annotator.saveAnnotation(annotation);
                 await this.drawHighlights();

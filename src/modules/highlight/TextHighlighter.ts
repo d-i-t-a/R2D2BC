@@ -848,7 +848,7 @@ export default class TextHighlighter {
         }
     
         var node = this.dom(this.el).getWindow().document.body;
-        console.log(self.delegate.delegate.iframe.contentDocument)
+        if (IS_DEV) console.log(self.delegate.delegate.iframe.contentDocument)
         const selection = self.dom(self.el).getSelection();
         const range = this.dom(this.el).getWindow().document.createRange();
         range.selectNodeContents(node);
@@ -1389,10 +1389,12 @@ export default class TextHighlighter {
                 var self = this
                 var anno = await this.delegate.annotator.getAnnotation(payload.highlight) as Annotation
                 // if(anno.comment) {
-                    // this.delegate.api.highlightSelected(anno).then(async () => {
-                        if (IS_DEV) { console.log("selected highlight "+anno.id)}
-                        self.lastSelectedHighlight = anno.id                       
-                    // })
+                    if(this.delegate.api) {
+                        this.delegate.api.selectedAnnotation(anno).then(async () => {
+                        })
+                    }
+                    if (IS_DEV) { console.log("selected highlight "+anno.id)}
+                    self.lastSelectedHighlight = anno.id                       
                 // } else {
                     var toolbox = document.getElementById("highlight-toolbox");
                     var backdrop = document.getElementById("toolbox-backdrop");
@@ -1494,20 +1496,20 @@ export default class TextHighlighter {
                 bodyEventListenersSet = true;
     
                 async function mousedown(ev: MouseEvent){
-                    console.log('mousedown')
+                    if (IS_DEV) console.log('mousedown')
                     lastMouseDownX = ev.clientX;
                     lastMouseDownY = ev.clientY;
                 }
 
                 async function mouseup(ev: MouseEvent){
-                    console.log('mouseup')
+                    if (IS_DEV) console.log('mouseup')
                     if ((Math.abs(lastMouseDownX - ev.clientX) < 3) &&
                         (Math.abs(lastMouseDownY - ev.clientY) < 3)) {
                         self.processMouseEvent(win, ev);
                     }
                 }
                 async function mousemove(ev: MouseEvent){
-                    console.log('mousemove')
+                    if (IS_DEV) console.log('mousemove')
                     self.processMouseEvent(win, ev);
                 }
 

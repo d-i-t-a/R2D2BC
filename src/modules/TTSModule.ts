@@ -30,6 +30,7 @@ export default class TTSModule implements ReaderModule {
         this.synth.cancel()
     }        
 
+    // TODO: refactor in comparison with speakAll to extract common functionality
     speak(selectionInfo: ISelectionInfo | undefined , color:any): any {                
     
         var self = this;
@@ -103,6 +104,7 @@ export default class TTSModule implements ReaderModule {
 
     }
 
+    // TODO: refactor in comparison with speak to extract common functionality
     speakAll(selectionInfo:any, node:any, color:any, callback: () => void): any {        
         var self = this
 
@@ -143,7 +145,7 @@ export default class TTSModule implements ReaderModule {
         }
             
         utterance.onend = function () {      
-            console.log("utterance ended");
+            if (IS_DEV) console.log("utterance ended");
             splittingResult[0].words[splittingResult[0].words.length-1].style.background = "none"
             self.annotationModule.highlighter.doneSpeaking(true)
         }    

@@ -28,19 +28,81 @@ export default class TTSModule implements ReaderModule {
     }
     cancel() {
         this.synth.cancel()
-    }
+    }        
 
-    speak(selectionInfo: ISelectionInfo | undefined ): any {        
-        console.log(selectionInfo.cleanText)
-        var self = this
+    speak(selectionInfo: ISelectionInfo | undefined , color:any): any {                
+    
+        var self = this;
         var utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
         this.synth.cancel()
         this.synth.speak(utterance);
+
+        let speechEndCallback = function () { return null };
+  
+        // Handle single paragraph excerpt case
+        const selectionWithinOneParagraph = selectionInfo.rangeInfo.endContainerElementCssSelector === selectionInfo.rangeInfo.startContainerElementCssSelector;
+
+        if(selectionWithinOneParagraph) {
+
+            const wrapperElement = document.createElement("span");  
+            const selectedRange = selectionInfo.range;
+            const rawText = selectionInfo.rawText;
+
+            const originalRangeContent = selectedRange.cloneContents();
+            
+            wrapperElement.className = "current-tts-target";      
+            
+            selectedRange.surroundContents(wrapperElement);     
+          
+            const splittingResult = Splitting.html({
+                content: rawText,
+                by: "words"
+            });        
+            
+            wrapperElement.innerHTML = splittingResult;
+            
+            speechEndCallback = function () {
+                if (IS_DEV) {console.log("restoring original text")};
+                wrapperElement.innerHTML = originalRangeContent.textContent;
+                if (IS_DEV){console.log("removing wrapper")};
+                const wrapperParent = wrapperElement.parentNode;
+                while(wrapperElement.firstChild) wrapperParent.insertBefore(wrapperElement.firstChild, wrapperElement);
+                wrapperParent.removeChild(wrapperElement);
+            }
+
+            let progressIndex = 0;
+            
+            const splitWords = wrapperElement.querySelector(".words.splitting");
+            
+            const currentWords = splitWords.querySelectorAll('.word');
+
+            utterance.onboundary = function (e:any) {
+                if(e.name === "sentence") {
+                    if (IS_DEV){console.log("sentence boundary", e.charIndex, e.charLength, rawText.slice(e.charIndex, e.charIndex + e.charLength))};                                                
+                }
+                if(e.name === "word") {
+                    if (IS_DEV){console.log("word boundary", e.charIndex, e.charLength, rawText.slice(e.charIndex, e.charIndex + e.charLength))};   
+                    const previousWord = (progressIndex > 0) ? <HTMLElement>currentWords[progressIndex-1] : null;
+                    const currentWord = <HTMLElement>currentWords[progressIndex];                                        
+                    currentWord.style.background = color;
+                    if(previousWord) { previousWord.style.background = "none" }
+                    if (IS_DEV){console.log("currentWord: " + currentWord, "previousWord: " + previousWord)};                    
+                    
+                    progressIndex = progressIndex+1;                    
+                }
+            }
+                        
+
+        }
+        
         utterance.onend = function () {      
             console.log("utterance ended");
             self.annotationModule.highlighter.doneSpeaking(false)
+            speechEndCallback();
         }    
+
     }
+
     speakAll(selectionInfo:any, node:any, color:any, callback: () => void): any {        
         var self = this
 

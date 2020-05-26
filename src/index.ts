@@ -15,6 +15,7 @@ import BookmarkModule from "./modules/BookmarkModule";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
 import TTSModule from "./modules/TTSModule";
+import {oc} from "ts-optchain"
 
 var R2Settings: UserSettings;
 var R2Navigator: IFrameNavigator;
@@ -138,11 +139,11 @@ export async function load(config: ReaderConfig): Promise<any> {
     var webpubManifestUrl = config.url;
     var store = new LocalStorageStore({
         prefix: webpubManifestUrl.href,
-        useLocalStorage: true
+        useLocalStorage: config.useLocalStorage
     });
     var settingsStore = new LocalStorageStore({
         prefix: "r2d2bc-reader",
-        useLocalStorage: true
+        useLocalStorage: config.useLocalStorage
     });
 
 
@@ -157,8 +158,9 @@ export async function load(config: ReaderConfig): Promise<any> {
 
     R2Settings = await UserSettings.create({
         store: settingsStore,
+        initialUserSettings: config.userSettings,
         headerMenu: headerMenu,
-        ui: config.ui.settings,
+        ui: config.ui,
         api: config.api
     })
 
@@ -180,7 +182,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     })
     // add custom modules
     // Bookmark Module
-        if (config.rights.enableBookmarks) {
+        if (oc(config.rights).enableBookmarks) {
         BookmarkModuleInstance = await BookmarkModule.create({
             annotator: annotator,
             headerMenu: headerMenu,
@@ -188,12 +190,12 @@ export async function load(config: ReaderConfig): Promise<any> {
             publication: publication,
             settings: R2Settings,
             delegate: R2Navigator,
-            initialAnnotations: config.annotations,
+            initialAnnotations: config.initialAnnotations,
         })
     }
 
     // Annotation Module
-    if (config.rights.enableAnnotations) {
+    if (oc(config.rights).enableAnnotations) {
         AnnotationModuleInstance = await AnnotationModule.create({
             annotator: annotator,
             headerMenu: headerMenu,
@@ -201,7 +203,7 @@ export async function load(config: ReaderConfig): Promise<any> {
             publication: publication,
             settings: R2Settings,
             delegate: R2Navigator,
-            initialAnnotations: config.annotations
+            initialAnnotations: config.initialAnnotations
         })
         TTSModuleInstance = await TTSModule.create({
             annotationModule: AnnotationModuleInstance

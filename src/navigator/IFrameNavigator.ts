@@ -374,6 +374,10 @@ export default class IFrameNavigator implements Navigator {
         }
 
         if (lastReadingPosition) {
+            const linkHref = this.publication.getAbsoluteHref(lastReadingPosition.href);
+            if (IS_DEV)console.log(lastReadingPosition.href)
+            if (IS_DEV)console.log(linkHref)
+            lastReadingPosition.href = linkHref
             this.navigate(lastReadingPosition);
         }
     }

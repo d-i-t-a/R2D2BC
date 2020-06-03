@@ -61,6 +61,14 @@ export async function deleteBookmark(bookmark) {
     if (IS_DEV) { console.log("deleteBookmark") }
     BookmarkModuleInstance.deleteBookmark(bookmark)
 }
+export async function deleteAnnotation(highlight) {
+    if (IS_DEV) { console.log("deleteAnnotation") }
+    AnnotationModuleInstance.deleteAnnotation(highlight)
+}
+export async function addAnnotation(highlight) {
+    if (IS_DEV) { console.log("addAnnotation") }
+    AnnotationModuleInstance.addAnnotation(highlight)
+}
 export async function tableOfContents() {
     if (IS_DEV) { console.log("bookmarks") }
     return await R2Navigator.tableOfContents()    
@@ -258,6 +266,14 @@ exports.saveBookmark = function () {
 }
 exports.deleteBookmark = function (bookmark) {
     deleteBookmark(bookmark)
+}
+
+exports.deleteAnnotation = function (highlight) {
+    deleteAnnotation(highlight)
+}
+
+exports.addAnnotation = function (highlight) {
+    addAnnotation(highlight)
 }
 
 // - go to locator (this will be used for anything form toc, bookmark, last reading position etc.)

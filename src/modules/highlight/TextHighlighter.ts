@@ -545,14 +545,16 @@ export default class TextHighlighter {
         var colors = ["#fce300", "#48e200", "#00bae5", "#157cf9", "#6a39b7", "#ea426a", "#ff8500"]
         var colorIcon = document.getElementById("colorIcon");
         var dismissIcon = document.getElementById("dismissIcon");
-        dismissIcon.innerHTML = icons.close;
-        
-        var self = this
-        // Close toolbox color options
-        dismissIcon.addEventListener("click", function(){ 
-            self.toolboxMode('add');
-        });
 
+        var self = this
+
+        if (dismissIcon) {
+            dismissIcon.innerHTML = icons.close;
+            // Close toolbox color options
+            dismissIcon.addEventListener("click", function(){ 
+                self.toolboxMode('add');
+            });
+        }
         if (colorIcon) {
             colors.forEach(color => {
                 var colorButton = document.getElementById(color);
@@ -613,19 +615,19 @@ export default class TextHighlighter {
 
       switch(mode) {
         case 'colors':
-          toolboxColorsOptions.style.display = "unset"
+          if (toolboxColorsOptions) toolboxColorsOptions.style.display = "unset"
           toolboxAddOptions.style.display = "none"
-          toolboxEditOptions.style.display = "none"
+          if (toolboxEditOptions) toolboxEditOptions.style.display = "none"
           break;
         case 'edit':
-          toolboxColorsOptions.style.display = "none"
+          if (toolboxColorsOptions) toolboxColorsOptions.style.display = "none"
           toolboxAddOptions.style.display = "none"
-          toolboxEditOptions.style.display = "unset"
+          if (toolboxEditOptions) toolboxEditOptions.style.display = "unset"
           break;
         default:
-          toolboxColorsOptions.style.display = "none"
+          if (toolboxColorsOptions) toolboxColorsOptions.style.display = "none"
           toolboxAddOptions.style.display = "unset"
-          toolboxEditOptions.style.display = "none"
+          if (toolboxEditOptions) toolboxEditOptions.style.display = "none"
           break;
       }
     }
@@ -670,50 +672,52 @@ export default class TextHighlighter {
                 var underlineIcon = document.getElementById("underlineIcon");
                 var speakIcon = document.getElementById("speakIcon");
                 var colorIcon = document.getElementById("colorIcon");
-
-                highlightIcon.style.display = "unset";
-                if(highlightIcon.getElementsByTagName("span").length>0) {
-                    (highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.background = this.getColor();
+                if (highlightIcon) {
+                    highlightIcon.style.display = "unset";
+                    if(colorIcon) {
+                        if(highlightIcon.getElementsByTagName("span").length>0) {
+                            (highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.background = this.getColor();
+                        }
+                    }
                 }
-                underlineIcon.style.display = "unset";
-                if (underlineIcon.getElementsByTagName("span").length>0) {
-                    (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+                if (underlineIcon) {
+                    underlineIcon.style.display = "unset";
+                    if(colorIcon) {
+                        if (underlineIcon.getElementsByTagName("span").length>0) {
+                            (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+                        }
+                    }
                 }
                 if(colorIcon) {
                     colorIcon.style.display = "unset";
-
                     var colorIconSymbol = colorIcon.lastChild as HTMLElement;
                     colorIconSymbol.style.backgroundColor = this.getColor();
                 }
-                // speaker_notes
-                // add_comment
-                // file_copy
-                // delete
-                // share
-                // edit
-
-                function highlightEvent(){
-                    self.doHighlight(false, AnnotationMarker.Highlight);
-                    toolbox.style.display = "none";
-                    backdrop.style.display = "none";
-                    highlightIcon.removeEventListener("click", highlightEvent);
+                if (highlightIcon) {
+                    function highlightEvent(){
+                        self.doHighlight(false, AnnotationMarker.Highlight);
+                        toolbox.style.display = "none";
+                        backdrop.style.display = "none";
+                        highlightIcon.removeEventListener("click", highlightEvent);
+                    }
+                    highlightIcon.addEventListener("click", highlightEvent);
                 }
-                highlightIcon.addEventListener("click", highlightEvent);
-
-                function commentEvent(){
-                    self.doHighlight(false, AnnotationMarker.Underline);
-                    toolbox.style.display = "none";
-                    backdrop.style.display = "none";
-                    underlineIcon.removeEventListener("click", commentEvent);
+                if (underlineIcon) {
+                    function commentEvent(){
+                        self.doHighlight(false, AnnotationMarker.Underline);
+                        toolbox.style.display = "none";
+                        backdrop.style.display = "none";
+                        underlineIcon.removeEventListener("click", commentEvent);
+                    }
+                    underlineIcon.addEventListener("click", commentEvent);
                 }
-                underlineIcon.addEventListener("click", commentEvent);
-                
-                function speakEvent(){
-                    speakIcon.removeEventListener("click", speakEvent);
-                    self.speak();
+                if (speakIcon) {
+                    function speakEvent(){
+                        speakIcon.removeEventListener("click", speakEvent);
+                        self.speak();
+                    }
+                    speakIcon.addEventListener("click", speakEvent);
                 }
-                speakIcon.addEventListener("click", speakEvent);
-
 
                 if (this.selectionMenuItems) {
                     this.selectionMenuItems.forEach(menuItem => {
@@ -1385,7 +1389,7 @@ export default class TextHighlighter {
                 var self = this
                 var anno = await this.delegate.annotator.getAnnotation(payload.highlight) as Annotation
                 // if(anno.comment) {
-                    if(this.delegate.api) {
+                    if(this.delegate.api && this.delegate.api.selectedAnnotation) {
                         this.delegate.api.selectedAnnotation(anno).then(async () => {
                         })
                     }
@@ -1430,10 +1434,6 @@ export default class TextHighlighter {
                         //     commentIcon.removeEventListener("click", addCommenH);
                         // }
                         // commentIcon.addEventListener("click", addCommenH);
-                            
-                        var deleteIcon = document.getElementById("deleteIcon");
-                        deleteIcon.style.display = "unset";
-                        deleteIcon.innerHTML = icons.delete;
                         function deleteH(){
                             self.delegate.deleteSelectedHighlight(anno).then(async () => {
                                 if (IS_DEV) {console.log("delete highlight "+anno.id)}
@@ -1442,7 +1442,13 @@ export default class TextHighlighter {
                             })
                             deleteIcon.removeEventListener("click", deleteH);
                         };
-                        deleteIcon.addEventListener("click", deleteH);
+
+                        var deleteIcon = document.getElementById("deleteIcon");
+                        if (deleteIcon) {
+                            deleteIcon.style.display = "unset";
+                            deleteIcon.innerHTML = icons.delete;
+                            deleteIcon.addEventListener("click", deleteH);
+                        }
 
                         var backdropButton = document.getElementById("toolbox-backdrop");
 
@@ -1457,7 +1463,9 @@ export default class TextHighlighter {
                             // self.delegate.api.highlightUnSelected().then(async () => {
                             //     if (IS_DEV) {console.log("highlightUnSelected,  click on backdrop (click, mousedown,mouseup )")}
                             // })
-                            deleteIcon.removeEventListener("click", deleteH);
+                            if (deleteIcon) {
+                                deleteIcon.removeEventListener("click", deleteH);
+                            }
                             // commentIcon.removeEventListener("click", addCommenH);
 
                             backdropButton.removeEventListener("click", backdropEvent);

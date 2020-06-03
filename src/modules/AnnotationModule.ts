@@ -163,6 +163,13 @@ export default class AnnotationModule implements ReaderModule {
         }
     }
 
+    public async deleteAnnotation(highlight: Annotation): Promise<any> {
+        this.deleteLocalHighlight(highlight.id);
+    }
+    public async addAnnotation(highlight: Annotation): Promise<any> {
+        await this.annotator.saveAnnotation(highlight);
+        await this.drawHighlights();
+    }
 
     public async deleteHighlight(highlight: Annotation): Promise<any> {
         if (this.api && this.api.deleteAnnotation) {

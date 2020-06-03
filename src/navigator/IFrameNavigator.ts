@@ -271,7 +271,7 @@ export default class IFrameNavigator implements Navigator {
             this.infoTop = HTMLUtilities.findElement(mainElement, "div[class='info top']") as HTMLDivElement;
             this.infoBottom = HTMLUtilities.findElement(mainElement, "div[class='info bottom']") as HTMLDivElement;
 
-            if (this.headerMenu) this.bookTitle = HTMLUtilities.findElement(headerMenu, "#book-title") as HTMLSpanElement;
+            if (this.headerMenu) this.bookTitle = HTMLUtilities.findElement(this.headerMenu, "#book-title") as HTMLSpanElement;
 
             if (this.infoBottom) this.chapterTitle = HTMLUtilities.findRequiredElement(this.infoBottom, "span[class=chapter-title]") as HTMLSpanElement;
             if (this.infoBottom) this.chapterPosition = HTMLUtilities.findRequiredElement(this.infoBottom, "span[class=chapter-position]") as HTMLSpanElement;
@@ -280,20 +280,20 @@ export default class IFrameNavigator implements Navigator {
 
             // Header Menu
 
-            if (this.headerMenu) this.links = HTMLUtilities.findElement(headerMenu, "ul.links.top") as HTMLUListElement;
-            if (this.headerMenu) this.linksTopLeft = HTMLUtilities.findElement(headerMenu, "#nav-mobile-left") as HTMLUListElement;
+            if (this.headerMenu) this.links = HTMLUtilities.findElement(this.headerMenu, "ul.links.top") as HTMLUListElement;
+            if (this.headerMenu) this.linksTopLeft = HTMLUtilities.findElement(this.headerMenu, "#nav-mobile-left") as HTMLUListElement;
 
-            if (this.headerMenu) this.tocView = HTMLUtilities.findElement(headerMenu, "#container-view-toc") as HTMLDivElement;
+            if (this.headerMenu) this.tocView = HTMLUtilities.findElement(this.headerMenu, "#container-view-toc") as HTMLDivElement;
 
             // Footer Menu
             if (footerMenu) this.linksBottom = HTMLUtilities.findElement(footerMenu, "ul.links.bottom") as HTMLUListElement;
             if (footerMenu) this.linksMiddle = HTMLUtilities.findElement(footerMenu, "ul.links.middle") as HTMLUListElement;
 
-            if (this.headerMenu) this.nextChapterAnchorElement = HTMLUtilities.findElement(headerMenu, "a[rel=next]") as HTMLAnchorElement;
+            if (this.headerMenu) this.nextChapterAnchorElement = HTMLUtilities.findElement(this.headerMenu, "a[rel=next]") as HTMLAnchorElement;
             if (this.headerMenu) this.nextChapterBottomAnchorElement = HTMLUtilities.findElement(mainElement, "#next-chapter") as HTMLAnchorElement;
             if (footerMenu) this.nextPageAnchorElement = HTMLUtilities.findElement(footerMenu, "a[rel=next]") as HTMLAnchorElement;
 
-            if (this.headerMenu) this.previousChapterAnchorElement = HTMLUtilities.findElement(headerMenu, "a[rel=prev]") as HTMLAnchorElement;
+            if (this.headerMenu) this.previousChapterAnchorElement = HTMLUtilities.findElement(this.headerMenu, "a[rel=prev]") as HTMLAnchorElement;
             if (this.headerMenu) this.previousChapterTopAnchorElement = HTMLUtilities.findElement(mainElement, "#previous-chapter") as HTMLAnchorElement;
             if (footerMenu) this.previousPageAnchorElement = HTMLUtilities.findElement(footerMenu, "a[rel=prev]") as HTMLAnchorElement;
 
@@ -872,7 +872,7 @@ export default class IFrameNavigator implements Navigator {
                 var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
                 for (var i = 0; i < pagebreaks.length; i++) {
                     var img = pagebreaks[i];
-                    if (IS_DEV) (img)
+                    if (IS_DEV) console.log(img)
                     if (img.innerHTML.length == 0) {
                         img.innerHTML = img.getAttribute("title");
                     }

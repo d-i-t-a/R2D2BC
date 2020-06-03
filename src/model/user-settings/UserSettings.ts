@@ -521,7 +521,7 @@ export class UserSettings implements UserSettings {
             letterSpacing: this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).value,
             publisherDefault: this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value
         }
-        if (this.api) {
+        if (this.api && this.api.updateUserSettings) {
             this.api.updateUserSettings(userSettings).then(_ => {
                 if (IS_DEV) { console.log("api updated user settings", userSettings) }
             })

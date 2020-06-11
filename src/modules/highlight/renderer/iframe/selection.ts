@@ -92,7 +92,7 @@ export function getCurrentSelectionInfo(
     // selection.removeAllRanges();
     //     // selection.addRange(range);
 
-    return { rangeInfo, cleanText, rawText };
+    return { rangeInfo, cleanText, rawText, range };
 }
 
 export function createOrderedRange(startNode: Node, startOffset: number, endNode: Node, endOffset: number):

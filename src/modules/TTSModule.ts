@@ -23,7 +23,9 @@ export default class TTSModule implements ReaderModule {
     synth = window.speechSynthesis
 
     initialize() {
-        this.annotationModule.highlighter.ttsDelegate = this
+        if (this.annotationModule.highlighter !== undefined) {
+            this.annotationModule.highlighter.ttsDelegate = this
+        }
     }
     cancel() {
         this.synth.cancel()

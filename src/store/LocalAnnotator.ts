@@ -148,7 +148,7 @@ export default class LocalAnnotator implements Annotator {
             const id = "R2_HIGHLIGHT_" + sha256Hex;
             rangeRepresentation.highlight.id = id
 
-            rangeRepresentation.highlight.color = TextHighlighter.hexToColor(rangeRepresentation.color)
+            rangeRepresentation.highlight.color = TextHighlighter.hexToRgbString(rangeRepresentation.color)
             rangeRepresentation.highlight.pointerInteraction = true
 
             const cleanText = rangeRepresentation.highlight.selectionInfo.rawText.trim().replace(/\n/g, " ").replace(/\s\s+/g, " ");

@@ -856,9 +856,7 @@ export default class TextHighlighter {
         if (selectionInfo) {
             if (this.options.onBeforeHighlight(selectionInfo) === true) {
 
-// TODO: color gets set here on creation - passed into `createHighlight()`
-console.log(this.getColor());
-
+                // Highlight color as string passthrough
                 var createColor: any;
                 createColor = this.getColor();
                 if (TextHighlighter.isHexColor(createColor)) {
@@ -1327,6 +1325,7 @@ console.log(this.getColor());
                     highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0})`, "important");
                     highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
                 } else {
+                    // Highlight color as string check
                     if (typeof highlight.color === 'object') {
                         highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
                     } else {
@@ -1344,6 +1343,7 @@ console.log(this.getColor());
                 highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0.1})`, "important");
                 highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
             } else {
+                // Highlight color as string check
                 if (typeof highlight.color === 'object') {
                     highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
                 } else {
@@ -1675,8 +1675,6 @@ console.log(this.getColor());
             };
             _highlights.push(highlight);
 
-console.log(color);
-
             let highlightDom = this.createHighlightDom(win, highlight);
             var position = parseInt(((highlightDom.hasChildNodes ? highlightDom.childNodes[0] : highlightDom) as HTMLDivElement).style.top.replace("px",""))
             highlight.position = position
@@ -1739,13 +1737,17 @@ console.log(color);
             if (drawUnderline) {
                 extra += `border-bottom: ${underlineThickness * scale}px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important`;
             }
+
             if(highlight.marker == AnnotationMarker.Underline) {
                 highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0}) !important; ${extra}`);
                 highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
             } else {
-
-console.log(highlight.color);
-                highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important; ${extra}`);
+                // Highlight color as string check
+                if (typeof highlight.color === 'object') {
+                    highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important; ${extra}`);
+                } else {
+                    highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; ${extra}`);
+                }
             }
             highlightArea.style.setProperty("pointer-events", "none");
             highlightArea.style.position =  "absolute";

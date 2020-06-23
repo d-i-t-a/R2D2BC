@@ -148,6 +148,7 @@ export default class LocalAnnotator implements Annotator {
             const id = "R2_HIGHLIGHT_" + sha256Hex;
             rangeRepresentation.highlight.id = id
 
+            // Highlight color as string passthrough
             var rangeColor: any;
             rangeColor = rangeRepresentation.color;
             if (TextHighlighter.isHexColor(rangeColor)) {

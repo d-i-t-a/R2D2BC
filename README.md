@@ -43,6 +43,9 @@ Subsequent development of R2D2BC has been supported by [DITA](https://github.com
 
 The R2D2BC reader has been used in:
 - The [Clusive](https://github.com/cast-org/clusive) learning environment
+- Bokbasen's [Allbok.no](https://www.allbok.no) and [Allvit.no](https://www.allvit.no)
+- The UNODC [Fieldguides](https://fieldguides.github.io/library/)
+- The DITA Gateway [D2G](https://d2g.dita.digital)
 
 
 [![DepShield Badge](https://depshield.sonatype.org/badges/d-i-t-a/R2D2BC/depshield.svg)](https://depshield.github.io)

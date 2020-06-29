@@ -3,6 +3,7 @@
   "version": "1.1.7",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
+  "license": "Apache-2.0",
   "main": "src/index.js",
   "typings": "src/index.ts",
   "engines": {

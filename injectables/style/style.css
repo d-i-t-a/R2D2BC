@@ -1,0 +1,15 @@
+:root {
+    --RS__highlightColor: rgba(255, 255, 0, 0.5);
+    --RS__highlightMix: multiply;
+    --RS__highlightHover: rgba(255, 255, 0, 0.75);
+}
+
+.R2_CLASS_HIGHLIGHT_AREA {
+    background-color: var(--RS__highlightColor) !important;
+    mix-blend-mode: var(--RS__highlightMix) !important;
+}
+.R2_CLASS_HIGHLIGHT_AREA:hover,
+.R2_CLASS_HIGHLIGHT_AREA.hover {
+    background-color: var(--RS__highlightHover) !important;
+}
+

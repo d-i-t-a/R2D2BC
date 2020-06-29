@@ -865,7 +865,15 @@ export default class TextHighlighter {
         const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
         if (selectionInfo) {
             if (this.options.onBeforeHighlight(selectionInfo) === true) {
-                var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToColor(this.getColor()),true, marker)
+
+                // Highlight color as string passthrough
+                var createColor: any;
+                createColor = this.getColor();
+                if (TextHighlighter.isHexColor(createColor)) {
+                    createColor = TextHighlighter.hexToRgbChannels(this.getColor());
+                }
+
+                var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  createColor, true, marker);
                 this.options.onAfterHighlight(highlight, marker);
             }
 
@@ -892,7 +900,7 @@ export default class TextHighlighter {
         const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
         if (selectionInfo) {
             // if (this.options.onBeforeHighlight(selectionInfo) === true) {
-            //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToColor(this.getColor()),true, marker)
+            //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToRgbString(this.getColor()),true, marker)
             //     this.options.onAfterHighlight(highlight, marker);
             // }
             this.ttsDelegate.speak(selectionInfo as any);
@@ -1265,46 +1273,47 @@ export default class TextHighlighter {
     };
 
 
-    public static hexToColor(hex: string) {
+    public static isHexColor(hex: string) {
+        return (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex));
+    }
+
+    public static hexToRgbString(hex: string) {
         var c: any;
-        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-            c = hex.substring(1).split('');
-            if (c.length == 3) {
-                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-            }
-            c = '0x' + c.join('');
+        c = hex.substring(1).split('');
+        if (c.length == 3) {
+            c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c = '0x' + c.join('');
+        return c;
+    }
+
+    public static hexToRgbChannels(hex: string) {
+        var c: any;
+        if (this.isHexColor(hex)) {
+            c = this.hexToRgbString(hex);
             return {
                 red: (c >> 16) & 255,
                 green: (c >> 8) & 255,
                 blue: c & 255
             }
-            // return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',.5)';
         }
         throw new Error('Bad Hex');
     }
 
     public static hexToRgbA(hex: string) {
         var c: any;
-        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-            c = hex.substring(1).split('');
-            if (c.length == 3) {
-                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-            }
-            c = '0x' + c.join('');
-            return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',.5)';
+        if (this.isHexColor(hex)) {
+            c = this.hexToRgbChannels(hex);
+            return 'rgba(' + [c.red, c.green, c.blue].join(',') + ',.5)';
         }
         throw new Error('Bad Hex');
     }
 
     public static hexToRgbAWithOpacity(hex: string, opacity:number) {
         var c: any;
-        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-            c = hex.substring(1).split('');
-            if (c.length == 3) {
-                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-            }
-            c = '0x' + c.join('');
-            return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ','+opacity+')';
+        if (this.isHexColor(hex)) {
+            c = this.hexToRgbChannels(hex);
+            return 'rgba(' + [c.red, c.green, c.blue].join(',') + ',' + opacity + ')';
         }
         throw new Error('Bad Hex');
     }
@@ -1326,7 +1335,12 @@ export default class TextHighlighter {
                     highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0})`, "important");
                     highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
                 } else {
-                    highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
+                    // Highlight color as string check
+                    if (typeof highlight.color === 'object') {
+                        highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
+                    } else {
+                        highlightArea.classList.remove('hover');
+                    }
                 }
             }
         }
@@ -1339,7 +1353,12 @@ export default class TextHighlighter {
                 highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0.1})`, "important");
                 highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
             } else {
-                highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
+                // Highlight color as string check
+                if (typeof highlight.color === 'object') {
+                    highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
+                } else {
+                    highlightArea.classList.add('hover');
+                }
             }
         }
     }
@@ -1728,11 +1747,17 @@ export default class TextHighlighter {
             if (drawUnderline) {
                 extra += `border-bottom: ${underlineThickness * scale}px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important`;
             }
+
             if(highlight.marker == AnnotationMarker.Underline) {
                 highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0}) !important; ${extra}`);
                 highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
             } else {
-                highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important; ${extra}`);
+                // Highlight color as string check
+                if (typeof highlight.color === 'object') {
+                    highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important; ${extra}`);
+                } else {
+                    highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; ${extra}`);
+                }
             }
             highlightArea.style.setProperty("pointer-events", "none");
             highlightArea.style.position =  "absolute";

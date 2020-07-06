@@ -48,10 +48,17 @@ export default class TTSModule implements ReaderModule {
 
         // --word-index
         var startNode = (selectionInfo as ISelectionInfo).range.startContainer.parentElement
+        if (startNode.tagName.toLowerCase() === "a") {
+            startNode = startNode.parentElement as HTMLSpanElement
+        }
         if (startNode.classList.contains('whitespace')) {
             startNode = startNode.nextElementSibling as HTMLSpanElement
         }
+        
         var endNode = (selectionInfo as ISelectionInfo).range.endContainer.parentElement
+        if (endNode.tagName.toLowerCase() === "a") {
+            endNode = endNode.parentElement as HTMLSpanElement
+        }
         if (endNode.classList.contains('whitespace')) {
             endNode = endNode.previousElementSibling as HTMLSpanElement
         }

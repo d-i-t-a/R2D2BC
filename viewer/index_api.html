@@ -239,6 +239,7 @@
             { type: 'style', url: 'http://localhost:4444/viewer/injectables/footnotes/footnotes.css' },
             { type: 'script', url: 'http://localhost:4444/viewer/injectables/glossary/glossary.js' },
             { type: 'style', url: 'http://localhost:4444/viewer/injectables/glossary/glossary.css' },
+            { type: 'style', url: 'http://localhost:4444/viewer/injectables/style/style.css' },
         ]
 
         // Injectable {
@@ -286,7 +287,8 @@
             },
             injectables: injectables,
             selectionMenuItems: selectionMenuItems,
-            initialAnnotationColor: "#ff8500",
+            // initialAnnotationColor: "#ff8500",
+            initialAnnotationColor: "var(--RS__highlightColor)",
             userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {

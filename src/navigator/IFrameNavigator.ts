@@ -1,7 +1,18 @@
 /*
- * Project: R2D2BC - Web Reader
- * Developers: Aferdita Muriqi
- * Copyright (c) 2019. DITA. All rights reserved.
+ * Copyright 2018-2020 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
@@ -271,7 +282,7 @@ export default class IFrameNavigator implements Navigator {
             this.infoTop = HTMLUtilities.findElement(mainElement, "div[class='info top']") as HTMLDivElement;
             this.infoBottom = HTMLUtilities.findElement(mainElement, "div[class='info bottom']") as HTMLDivElement;
 
-            if (this.headerMenu) this.bookTitle = HTMLUtilities.findElement(headerMenu, "#book-title") as HTMLSpanElement;
+            if (this.headerMenu) this.bookTitle = HTMLUtilities.findElement(this.headerMenu, "#book-title") as HTMLSpanElement;
 
             if (this.infoBottom) this.chapterTitle = HTMLUtilities.findRequiredElement(this.infoBottom, "span[class=chapter-title]") as HTMLSpanElement;
             if (this.infoBottom) this.chapterPosition = HTMLUtilities.findRequiredElement(this.infoBottom, "span[class=chapter-position]") as HTMLSpanElement;
@@ -280,20 +291,20 @@ export default class IFrameNavigator implements Navigator {
 
             // Header Menu
 
-            if (this.headerMenu) this.links = HTMLUtilities.findElement(headerMenu, "ul.links.top") as HTMLUListElement;
-            if (this.headerMenu) this.linksTopLeft = HTMLUtilities.findElement(headerMenu, "#nav-mobile-left") as HTMLUListElement;
+            if (this.headerMenu) this.links = HTMLUtilities.findElement(this.headerMenu, "ul.links.top") as HTMLUListElement;
+            if (this.headerMenu) this.linksTopLeft = HTMLUtilities.findElement(this.headerMenu, "#nav-mobile-left") as HTMLUListElement;
 
-            if (this.headerMenu) this.tocView = HTMLUtilities.findElement(headerMenu, "#container-view-toc") as HTMLDivElement;
+            if (this.headerMenu) this.tocView = HTMLUtilities.findElement(this.headerMenu, "#container-view-toc") as HTMLDivElement;
 
             // Footer Menu
             if (footerMenu) this.linksBottom = HTMLUtilities.findElement(footerMenu, "ul.links.bottom") as HTMLUListElement;
             if (footerMenu) this.linksMiddle = HTMLUtilities.findElement(footerMenu, "ul.links.middle") as HTMLUListElement;
 
-            if (this.headerMenu) this.nextChapterAnchorElement = HTMLUtilities.findElement(headerMenu, "a[rel=next]") as HTMLAnchorElement;
+            if (this.headerMenu) this.nextChapterAnchorElement = HTMLUtilities.findElement(this.headerMenu, "a[rel=next]") as HTMLAnchorElement;
             if (this.headerMenu) this.nextChapterBottomAnchorElement = HTMLUtilities.findElement(mainElement, "#next-chapter") as HTMLAnchorElement;
             if (footerMenu) this.nextPageAnchorElement = HTMLUtilities.findElement(footerMenu, "a[rel=next]") as HTMLAnchorElement;
 
-            if (this.headerMenu) this.previousChapterAnchorElement = HTMLUtilities.findElement(headerMenu, "a[rel=prev]") as HTMLAnchorElement;
+            if (this.headerMenu) this.previousChapterAnchorElement = HTMLUtilities.findElement(this.headerMenu, "a[rel=prev]") as HTMLAnchorElement;
             if (this.headerMenu) this.previousChapterTopAnchorElement = HTMLUtilities.findElement(mainElement, "#previous-chapter") as HTMLAnchorElement;
             if (footerMenu) this.previousPageAnchorElement = HTMLUtilities.findElement(footerMenu, "a[rel=prev]") as HTMLAnchorElement;
 
@@ -886,7 +897,7 @@ export default class IFrameNavigator implements Navigator {
                 var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
                 for (var i = 0; i < pagebreaks.length; i++) {
                     var img = pagebreaks[i];
-                    if (IS_DEV) (img)
+                    if (IS_DEV) console.log(img)
                     if (img.innerHTML.length == 0) {
                         img.innerHTML = img.getAttribute("title");
                     }

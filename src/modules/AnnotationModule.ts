@@ -1,13 +1,24 @@
 /*
- * Project: R2D2BC - Web Reader
- * Developers: Aferdita Muriqi
- * Copyright (c) 2019. DITA. All rights reserved.
+ * Copyright 2018-2020 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
  */
 
- import * as HTMLUtilities from "../utils/HTMLUtilities";
+import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
 import IFrameNavigator, { ReaderRights, SelectionMenuItem } from "../navigator/IFrameNavigator";
 import Publication, { Link } from "../model/Publication";
@@ -96,7 +107,7 @@ export default class AnnotationModule implements ReaderModule {
 
         this.delegate.annotationModule = this
 
-        this.highlightsView = HTMLUtilities.findElement(this.headerMenu, "#container-view-highlights") as HTMLDivElement;
+        if (this.headerMenu) this.highlightsView = HTMLUtilities.findElement(this.headerMenu, "#container-view-highlights") as HTMLDivElement;
 
         if (this.initialAnnotations) {
             var highlights = this.initialAnnotations['highlights'] || null;
@@ -163,9 +174,16 @@ export default class AnnotationModule implements ReaderModule {
         }
     }
 
+    public async deleteAnnotation(highlight: Annotation): Promise<any> {
+        this.deleteLocalHighlight(highlight.id);
+    }
+    public async addAnnotation(highlight: Annotation): Promise<any> {
+        await this.annotator.saveAnnotation(highlight);
+        await this.drawHighlights();
+    }
 
-    private async deleteHighlight(highlight: Annotation): Promise<any> {
-        if (this.api) {
+    public async deleteHighlight(highlight: Annotation): Promise<any> {
+        if (this.api && this.api.deleteAnnotation) {
             this.api.deleteAnnotation(highlight).then(async () => {
                 this.deleteLocalHighlight(highlight.id);
             })
@@ -175,7 +193,7 @@ export default class AnnotationModule implements ReaderModule {
     }
 
     public async deleteSelectedHighlight(highlight: Annotation): Promise<any> {
-        if (this.api) {
+        if (this.api && this.api.deleteAnnotation) {
             this.api.deleteAnnotation(highlight).then(async () => {
                 this.deleteLocalHighlight(highlight.id);
             })
@@ -220,7 +238,7 @@ export default class AnnotationModule implements ReaderModule {
                     hightlight: highlight.selectionInfo.cleanText
                 }
             }
-            if (this.api) {
+            if (this.api && this.api.addAnnotation) {
                 this.api.addAnnotation(annotation).then(async result => {
                     annotation.id = result.id
                     var saved = await this.annotator.saveAnnotation(annotation);

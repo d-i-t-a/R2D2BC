@@ -1,0 +1,20 @@
+R2D2BC
+Copyright 2018-2020 DITA (AM Consulting LLC)
+
+This project bundles the following dependencies under the MIT license.
+See bundled license files for details.
+
+- Materialize | Copyright (c) 2014-2018 Materialize
+	-> in "styles/sass/materialize"
+
+This project bundles the following dependencies under the SIL Open Font License.
+See bundled license files for details.
+
+- OpenDyxslexic Font | Copyright (c) 12/2012 - 2019
+    -> in "viewer/fonts/opendyslexic"
+
+This project bundles the following dependencies under the BSD license.
+See bundled license files for details.
+
+- Readium-CSS | Copyright (c) 2017, Readium
+    -> in "viewer/readium-css"

@@ -1,7 +1,18 @@
 <!--
- * Project: R2D2BC - Web Reader
- * Developers: Aferdita Muriqi
- * Copyright (c) 2019. DITA. All rights reserved.
+ * Copyright 2018-2020 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  * Developed on behalf of: CAST (http://www.cast.org)
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
@@ -26,7 +37,7 @@
 </head>
 
 <body>
-    <header id="headerMenu" style="position:fixed;top:0;right:10px;z-index: 2;">
+    <header id="sideMenu" style="position:fixed;top:0;right:10px;z-index: 2;">
         <div id="container-toc"></div>
         <div id="container-bookmarks"></div>
         <div id="container-annotations"></div>
@@ -177,14 +188,8 @@
             <div id="toolbox-backdrop" class="toolbox-backdrop"></div>
 
             <span id="highlight-toolbox" class="highlight-toolbox">
-                <div id="highlight-toolbox-mode-colors">
-                    <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons" style="color:gray">close</i></button>
-                </div>
                 <div id="highlight-toolbox-mode-add">
                     <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon"><title id="text-icon">Text</title><path d="M5 4v3h5.5v12h3V7H19V4z"></path></svg>
-                    </span></button>
-                    <button style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon"><title id="text-icon">Text</title><path d="M5 4v3h5.5v12h3V7H19V4z"></path></svg>
                     </span></button>
                     <button style="background-color: gainsboro;" id="speakIcon"><span style="display: inline-block;width: 24px;height: 24px;">
@@ -234,6 +239,7 @@
             { type: 'style', url: 'http://localhost:4444/viewer/injectables/footnotes/footnotes.css' },
             { type: 'script', url: 'http://localhost:4444/viewer/injectables/glossary/glossary.js' },
             { type: 'style', url: 'http://localhost:4444/viewer/injectables/glossary/glossary.css' },
+            { type: 'style', url: 'http://localhost:4444/viewer/injectables/style/style.css' },
         ]
 
         // Injectable {
@@ -281,7 +287,8 @@
             },
             injectables: injectables,
             selectionMenuItems: selectionMenuItems,
-            initialAnnotationColor: "#ff8500",
+            // initialAnnotationColor: "#ff8500",
+            initialAnnotationColor: "var(--RS__highlightColor)",
             userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {

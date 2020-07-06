@@ -1,37 +1,51 @@
-[![DepShield Badge](https://depshield.sonatype.org/badges/d-i-t-a/R2D2BC/depshield.svg)](https://depshield.github.io)
+**R2D2BC** is an implementation of the [Readium v2](https://github.com/readium/architecture) EPUB reader for the web.
+It is built as a modular toolkit (rather than a full-featured app) so that applications can use it to 
+handle the EPUB-related functions while customizing the own design, user interface, and extensions.
 
+# Goals
 
-Readium Web - goals and features
+- Follow the Readium architecture specification for best interoperability
+- Allow maximum configurability via API methods, callbacks, code and style injection, and clear separation of functions.
+- Modularity 
+- Clarity of code and ease of maintenance
+- Speed
+- Accessibility
+- Free and open source
 
-Here is a proposal, initiated by Aferdita: [Readium Weekly Eng Meeting - 05/22/2019](https://docs.google.com/document/d/1krNe8TUtvajpljcSS4nN_2cHfWO4_Hsag5LnJ4hj_CM/edit#)
+The R2D2BC project intentionally includes only a base-bones demonstration user interface, and no sample content.
+Any implementer can add their own functionality and design without refactoring the whole project.
 
-The Readium Web project defines a toolkit (not a full featured app) based on the Readium Architecture, 
-with an emphasis on speed, modularization and clarity of the code (= ease of maintenance).
-and with the following core features:
+See below for projects that provide the necessary other elements to try it out and see it in action.
+
+# Architecture
+
+This project implements most components of the [Readium Architecture](https://github.com/readium/architecture):
 
 - Implements Locator
 - Implements UserSettings
-- Implements Webpub manifest
+- Implements Webpub Manifest
 - Implements the Readium shared models
 - Integrates Readium CSS
-- Integrates a simple Navigator for reflow publications
+- Integrates a simple Navigator for reflowable publications
+
+Additionally it:
 - Provides a decoupled Minimal UI
-- Provides build system optimization (webpack for example)
+- Provides build system optimization (Webpack)
 
-Plus three extended modules: 
-- a multi-iframe Navigator for reflow & FXL + spread publications
-- a Navigator for audiobooks
-- a Navigator for digital comics (DiViNa)
+# Origins
 
-About modularity: any contributor or implementer can add their own functionality without refactoring the whole project.
+Here is the original proposal, initiated by Aferdita Muriqi to the
+[Readium Weekly Eng Meeting - 05/22/2019](https://docs.google.com/document/d/1krNe8TUtvajpljcSS4nN_2cHfWO4_Hsag5LnJ4hj_CM/edit#)
 
-About the minimal UI: it consists on a test application which provides 
-- Navigation via the toc
-- Control of user settings
-- Bookmarks (demonstrating Locator usage)
+Subsequent development of R2D2BC has been supported by [DITA](https://github.com/d-i-t-a), [Bokbasen](https://www.bokbasen.no/), and [CAST](http://www.cast.org) - which explains the D2, B, and C in the name.
 
-The addition of a way to keep a publication in cache for offline reading (using service workers, workbox) is an open question. If added, the capability should be activable by configuration only. 
+# Extensions and Implementations
 
-The addition of a way to protect content against hacking and add rights management features is open. 
+The R2D2BC reader has been used in:
+- The [Clusive](https://github.com/cast-org/clusive) learning environment
+- Bokbasen's [Allbok.no](https://www.allbok.no) and [Allvit.no](https://www.allvit.no)
+- The UNODC [Fieldguides](https://fieldguides.github.io/library/)
+- The DITA Gateway [D2G](https://d2g.dita.digital)
 
 
+[![DepShield Badge](https://depshield.sonatype.org/badges/d-i-t-a/R2D2BC/depshield.svg)](https://depshield.github.io)

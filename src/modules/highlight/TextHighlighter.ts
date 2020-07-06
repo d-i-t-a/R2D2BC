@@ -1,13 +1,24 @@
 /*
- * Project: R2D2BC - Web Reader
- * Developers: Aferdita Muriqi
- * Copyright (c) 2019. DITA. All rights reserved.
+ * Copyright 2018-2020 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  * Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
  */
 
- import * as crypto from "crypto";
+import * as crypto from "crypto";
 import { debounce } from "debounce";
 
 import { POPUP_DIALOG_CLASS,
@@ -33,7 +44,6 @@ import { IS_DEV } from "../..";
 import { icons } from "../../utils/IconLib";
 import TTSModule from "../TTSModule";
 import { SelectionMenuItem } from "../../navigator/IFrameNavigator";
-
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
@@ -80,7 +90,7 @@ let lastMouseDownX = -1;
 let lastMouseDownY = -1;
 let bodyEventListenersSet = false;
 
-// TODO this needs to refelct layer name 
+// TODO this needs to reflect layer name
 let _highlightsContainer: HTMLElement | null;
 
 export default class TextHighlighter {
@@ -109,7 +119,7 @@ export default class TextHighlighter {
 
         this.dom(this.el).addClass(this.options.contextClass);
         this.bindEvents(this.el, this);
-        
+
         this.initializeToolbox();
 
         lastMouseDownX = -1;
@@ -471,10 +481,7 @@ export default class TextHighlighter {
             removeAllRanges: function () {
                 var selection = self.dom(el).getSelection();
                 selection.removeAllRanges();
-                var toolbox = document.getElementById("highlight-toolbox");
-                toolbox.style.display = "none";
-                var backdrop = document.getElementById("toolbox-backdrop");
-                backdrop.style.display = "none";
+                self.toolboxHide();
                 self.ttsDelegate.cancel()
             },
 
@@ -513,18 +520,39 @@ export default class TextHighlighter {
     }
 
     bindEvents(el: any, _scope: any) {
-        el.addEventListener('mouseup', this.toolboxHandler.bind(this));
-        el.addEventListener('touchend', this.toolboxHandler.bind(this));
-        if(this.isIOS() ||this.isAndroid()) {
+        var documant = el.ownerDocument;
+
+        documant.addEventListener('keyup', this.toolboxShowDelayed.bind(this));
+        el.addEventListener('mouseup', this.toolboxShowDelayed.bind(this));
+        el.addEventListener('touchend', this.toolboxShowDelayed.bind(this));
+        documant.addEventListener('selectstart', this.toolboxShowDelayed.bind(this));
+
+        window.addEventListener('resize', this.toolboxPlacement.bind(this));
+        documant.addEventListener('selectionchange', this.toolboxPlacement.bind(this));
+
+        el.addEventListener('mousedown', this.toolboxHide.bind(this));
+        el.addEventListener('touchstart', this.toolboxHide.bind(this));
+
+        if(this.isAndroid()) {
             el.addEventListener('contextmenu', this.disableContext);
         }
     }
 
-
     unbindEvents(el: any, _scope: any) {
-        el.removeEventListener('mouseup', this.toolboxHandler.bind(this));
-        el.removeEventListener('touchend', this.toolboxHandler.bind(this));
-        if(this.isIOS() ||this.isAndroid()) {
+        var documant = el.ownerDocument;
+
+        documant.removeEventListener('keyup', this.toolboxShowDelayed.bind(this));
+        el.removeEventListener('mouseup', this.toolboxShowDelayed.bind(this));
+        el.removeEventListener('touchend', this.toolboxShowDelayed.bind(this));
+        documant.removeEventListener('selectstart', this.toolboxShowDelayed.bind(this));
+
+        window.removeEventListener('resize', this.toolboxPlacement.bind(this));
+        documant.removeEventListener('selectionchange', this.toolboxPlacement.bind(this));
+
+        el.removeEventListener('mousedown', this.toolboxHide.bind(this));
+        el.removeEventListener('touchstart', this.toolboxHide.bind(this));
+
+        if(this.isAndroid()) {
             el.removeEventListener('contextmenu', this.disableContext);
         }
     }
@@ -535,8 +563,9 @@ export default class TextHighlighter {
      * @memberof TextHighlighter
      */
     destroy() {
+        this.toolboxHide();
         this.unbindEvents(this.el, this);
-        this.dom(this.el).removeClass(this.options.contextClass);        
+        this.dom(this.el).removeClass(this.options.contextClass);
     };
 
 
@@ -545,26 +574,28 @@ export default class TextHighlighter {
         var colors = ["#fce300", "#48e200", "#00bae5", "#157cf9", "#6a39b7", "#ea426a", "#ff8500"]
         var colorIcon = document.getElementById("colorIcon");
         var dismissIcon = document.getElementById("dismissIcon");
-        dismissIcon.innerHTML = icons.close;
-        
-        var self = this
-        // Close toolbox color options
-        dismissIcon.addEventListener("click", function(){ 
-            self.toolboxMode('add');
-        });
 
+        var self = this
+
+        if (dismissIcon) {
+            dismissIcon.innerHTML = icons.close;
+            // Close toolbox color options
+            dismissIcon.addEventListener("click", function(){
+                self.toolboxMode('add');
+            });
+        }
         if (colorIcon) {
             colors.forEach(color => {
                 var colorButton = document.getElementById(color);
                 if (toolboxColorsOptions.contains(colorButton)) {
                     toolboxColorsOptions.removeChild(colorButton)
                 }
-            })	
+            })
 
             var colorElements: HTMLButtonElement[] = [];
 
             // Open toolbox color options
-            colorIcon.addEventListener("click", function(){ 
+            colorIcon.addEventListener("click", function(){
                 self.toolboxMode('colors');
             });
 
@@ -593,7 +624,7 @@ export default class TextHighlighter {
                         if(underlineIcon.getElementsByTagName("span").length>0) {
                             (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.background = self.getColor();
                         }
-        
+
                         self.toolboxMode('add');
                     });
                 }
@@ -607,55 +638,95 @@ export default class TextHighlighter {
     }
 
     toolboxMode( mode: 'colors' | 'edit' | 'add' ) {
-      var toolboxColorsOptions = document.getElementById("highlight-toolbox-mode-colors");
-      var toolboxAddOptions = document.getElementById("highlight-toolbox-mode-add");
-      var toolboxEditOptions = document.getElementById("highlight-toolbox-mode-edit");
+        var toolboxColorsOptions = document.getElementById("highlight-toolbox-mode-colors");
+        var toolboxAddOptions = document.getElementById("highlight-toolbox-mode-add");
+        var toolboxEditOptions = document.getElementById("highlight-toolbox-mode-edit");
 
-      switch(mode) {
-        case 'colors':
-          toolboxColorsOptions.style.display = "unset"
-          toolboxAddOptions.style.display = "none"
-          toolboxEditOptions.style.display = "none"
-          break;
-        case 'edit':
-          toolboxColorsOptions.style.display = "none"
-          toolboxAddOptions.style.display = "none"
-          toolboxEditOptions.style.display = "unset"
-          break;
-        default:
-          toolboxColorsOptions.style.display = "none"
-          toolboxAddOptions.style.display = "unset"
-          toolboxEditOptions.style.display = "none"
-          break;
-      }
+        switch(mode) {
+            case 'colors':
+                if (toolboxColorsOptions) toolboxColorsOptions.style.display = "unset"
+                toolboxAddOptions.style.display = "none"
+                if (toolboxEditOptions) toolboxEditOptions.style.display = "none"
+                break;
+            case 'edit':
+                if (toolboxColorsOptions) toolboxColorsOptions.style.display = "none"
+                toolboxAddOptions.style.display = "none"
+                if (toolboxEditOptions) toolboxEditOptions.style.display = "unset"
+                break;
+            default:
+                if (toolboxColorsOptions) toolboxColorsOptions.style.display = "none"
+                toolboxAddOptions.style.display = "unset"
+                if (toolboxEditOptions) toolboxEditOptions.style.display = "none"
+                break;
+        }
     }
 
-    toolboxHandler(_event:MouseEvent) {
+    toolboxHide() {
+        var toolbox = document.getElementById("highlight-toolbox");
+        var backdrop = document.getElementById("toolbox-backdrop");
 
+        toolbox.style.display = "none";
+        backdrop.style.display = "none";
+    }
+
+    // Use short timeout to let the selection updated to 'finish', otherwise some
+    // browsers can get wrong or incomplete selection data.
+    toolboxShowDelayed() {
+        var self = this;
+        setTimeout(function() {
+            self.toolboxShow();
+        }, 100);
+    }
+
+    toolboxShow() {
+        var self = this;
+        var toolboxAddOptions = document.getElementById("highlight-toolbox-mode-add");
+        var range = this.dom(this.el).getRange();
+
+        if (!range || range.collapsed) {
+            // Only force hide for `toolboxMode('add')`
+            if (getComputedStyle(toolboxAddOptions).display !== "none") {
+                self.toolboxHide();
+            }
+            return;
+        }
+
+        // Hide the iOS Safari context menu
+        // Reference: https://stackoverflow.com/a/30046936
+        if(this.isIOS()) {
+            this.el.removeEventListener('selectionchange', this.toolboxPlacement.bind(this));
+            var self = this;
+            setTimeout(function() {
+                var selection = self.dom(self.el).getSelection();
+                selection.removeAllRanges();
+                setTimeout(function() {
+                    selection.addRange(range);
+                }, 5);
+            }, 100);
+        }
+
+        this.toolboxPlacement();
+        this.toolboxHandler();
+    }
+
+    toolboxPlacement() {
+        var range = this.dom(this.el).getRange();
+        if (!range || range.collapsed) {
+            return;
+        }
+
+        var rect = range.getBoundingClientRect();
+        var toolbox = document.getElementById("highlight-toolbox");
+
+        toolbox.style.top = rect.top + 'px';
+        toolbox.style.left = (rect.right - rect.left)/2 + rect.left + "px";
+    }
+
+    toolboxHandler() {
         if(this.delegate.rights.enableAnnotations) {
 
-        
-            var range = this.dom(this.el).getRange();        
-            if (!range || range.collapsed) {
-                return;
-            }
-
-            if(this.isIOS() ||this.isAndroid()) {
-                var self = this
-                setTimeout(function() {
-                    var selection = self.dom(self.el).getSelection();        
-                    selection.removeAllRanges()
-                    setTimeout(function() {
-                        selection.addRange(range)
-                    }, 5);
-                }, 100);
-            }
-
-            var rect = range.getBoundingClientRect();  // and convert this to useful data
             var toolbox = document.getElementById("highlight-toolbox");
             var backdrop = document.getElementById("toolbox-backdrop");
-            toolbox.style.top = rect.top + 'px'; 
-            toolbox.style.left = (rect.right - rect.left)/2 + rect.left + "px"; 
 
             if(getComputedStyle(toolbox).display === "none") {
                 toolbox.style.display = "block";
@@ -663,61 +734,61 @@ export default class TextHighlighter {
                     backdrop.style.display = "block";
                 }
 
-                var self = this
+                var self = this;
 
                 self.toolboxMode('add');
                 var highlightIcon = document.getElementById("highlightIcon");
                 var underlineIcon = document.getElementById("underlineIcon");
                 var speakIcon = document.getElementById("speakIcon");
                 var colorIcon = document.getElementById("colorIcon");
-
-                highlightIcon.style.display = "unset";
-                if(highlightIcon.getElementsByTagName("span").length>0) {
-                    (highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.background = this.getColor();
+                if (highlightIcon) {
+                    highlightIcon.style.display = "unset";
+                    if(colorIcon) {
+                        if(highlightIcon.getElementsByTagName("span").length>0) {
+                            (highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.background = this.getColor();
+                        }
+                    }
                 }
-                underlineIcon.style.display = "unset";
-                if (underlineIcon.getElementsByTagName("span").length>0) {
-                    (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+                if (underlineIcon) {
+                    underlineIcon.style.display = "unset";
+                    if(colorIcon) {
+                        if (underlineIcon.getElementsByTagName("span").length>0) {
+                            (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+                        }
+                    }
                 }
                 if(colorIcon) {
                     colorIcon.style.display = "unset";
-
                     var colorIconSymbol = colorIcon.lastChild as HTMLElement;
                     colorIconSymbol.style.backgroundColor = this.getColor();
                 }
-                // speaker_notes
-                // add_comment
-                // file_copy
-                // delete
-                // share
-                // edit
-
-                function highlightEvent(){
-                    self.doHighlight(false, AnnotationMarker.Highlight);
-                    toolbox.style.display = "none";
-                    backdrop.style.display = "none";
-                    highlightIcon.removeEventListener("click", highlightEvent);
+                if (highlightIcon) {
+                    function highlightEvent(){
+                        self.doHighlight(false, AnnotationMarker.Highlight);
+                        self.toolboxHide();
+                        highlightIcon.removeEventListener("click", highlightEvent);
+                    }
+                    highlightIcon.addEventListener("click", highlightEvent);
                 }
-                highlightIcon.addEventListener("click", highlightEvent);
-
-                function commentEvent(){
-                    self.doHighlight(false, AnnotationMarker.Underline);
-                    toolbox.style.display = "none";
-                    backdrop.style.display = "none";
-                    underlineIcon.removeEventListener("click", commentEvent);
+                if (underlineIcon) {
+                    function commentEvent(){
+                        self.doHighlight(false, AnnotationMarker.Underline);
+                        self.toolboxHide();
+                        underlineIcon.removeEventListener("click", commentEvent);
+                    }
+                    underlineIcon.addEventListener("click", commentEvent);
                 }
-                underlineIcon.addEventListener("click", commentEvent);
-                
-                function speakEvent(){
-                    speakIcon.removeEventListener("click", speakEvent);
-                    self.speak();
+                if (speakIcon) {
+                    function speakEvent(){
+                        speakIcon.removeEventListener("click", speakEvent);
+                        self.speak();
+                    }
+                    speakIcon.addEventListener("click", speakEvent);
                 }
-                speakIcon.addEventListener("click", speakEvent);
-
 
                 if (this.selectionMenuItems) {
                     this.selectionMenuItems.forEach(menuItem => {
-                    
+
                         var itemElement = document.getElementById(menuItem.id);
                         var self = this
 
@@ -735,8 +806,8 @@ export default class TextHighlighter {
                                 };
                                 return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
                             }
-                        
-                            const selectionInfo = getCurrentSelectionInfo(self.dom(self.el).getWindow(), getCssSelector)                
+
+                            const selectionInfo = getCurrentSelectionInfo(self.dom(self.el).getWindow(), getCssSelector)
 
                             menuItem.callback(selectionInfo.cleanText);
                             self.callbackComplete()
@@ -790,11 +861,19 @@ export default class TextHighlighter {
             };
             return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
         }
-    
+
         const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
         if (selectionInfo) {
             if (this.options.onBeforeHighlight(selectionInfo) === true) {
-                var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToColor(this.getColor()),true, marker)
+
+                // Highlight color as string passthrough
+                var createColor: any;
+                createColor = this.getColor();
+                if (TextHighlighter.isHexColor(createColor)) {
+                    createColor = TextHighlighter.hexToRgbChannels(this.getColor());
+                }
+
+                var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  createColor, true, marker);
                 this.options.onAfterHighlight(highlight, marker);
             }
 
@@ -817,11 +896,11 @@ export default class TextHighlighter {
             };
             return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
         }
-    
+
         const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
         if (selectionInfo) {
             // if (this.options.onBeforeHighlight(selectionInfo) === true) {
-            //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToColor(this.getColor()),true, marker)
+            //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToRgbString(this.getColor()),true, marker)
             //     this.options.onAfterHighlight(highlight, marker);
             // }
             this.ttsDelegate.speak(selectionInfo as any, this.getColor());
@@ -846,7 +925,7 @@ export default class TextHighlighter {
             };
             return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
         }
-    
+
         var node = this.dom(this.el).getWindow().document.body;
         if (IS_DEV) console.log(self.delegate.delegate.iframe.contentDocument)
         const selection = self.dom(self.el).getSelection();
@@ -860,27 +939,18 @@ export default class TextHighlighter {
             this.ttsDelegate.speakAll(selectionInfo as any, node, this.getColor(),  () => {
                 var selection = self.dom(self.el).getSelection();
                 selection.removeAllRanges();
-                var toolbox = document.getElementById("highlight-toolbox");
-                toolbox.style.display = "none";
+                self.toolboxHide();
             })
         }
     };
 
     callbackComplete() {
-        var toolbox = document.getElementById("highlight-toolbox");
-        var backdrop = document.getElementById("toolbox-backdrop");
-
-        toolbox.style.display = "none";
-        backdrop.style.display = "none";
+        this.toolboxHide();
         this.dom(this.el).removeAllRanges();
     }
 
     doneSpeaking(reload:boolean) {
-        var toolbox = document.getElementById("highlight-toolbox");
-        var backdrop = document.getElementById("toolbox-backdrop");
-
-        toolbox.style.display = "none";
-        backdrop.style.display = "none";
+        this.toolboxHide();
         this.dom(this.el).removeAllRanges();
 
         if(reload) {
@@ -1207,48 +1277,49 @@ export default class TextHighlighter {
         span.className = this.options.highlightedClass;
         return span;
     };
-    
 
-    public static hexToColor(hex: string) {
+
+    public static isHexColor(hex: string) {
+        return (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex));
+    }
+
+    public static hexToRgbString(hex: string) {
         var c: any;
-        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-            c = hex.substring(1).split('');
-            if (c.length == 3) {
-                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-            }
-            c = '0x' + c.join('');
+        c = hex.substring(1).split('');
+        if (c.length == 3) {
+            c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c = '0x' + c.join('');
+        return c;
+    }
+
+    public static hexToRgbChannels(hex: string) {
+        var c: any;
+        if (this.isHexColor(hex)) {
+            c = this.hexToRgbString(hex);
             return {
                 red: (c >> 16) & 255,
                 green: (c >> 8) & 255,
                 blue: c & 255
             }
-            // return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',.5)';
         }
         throw new Error('Bad Hex');
     }
-    
+
     public static hexToRgbA(hex: string) {
         var c: any;
-        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-            c = hex.substring(1).split('');
-            if (c.length == 3) {
-                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-            }
-            c = '0x' + c.join('');
-            return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',.5)';
+        if (this.isHexColor(hex)) {
+            c = this.hexToRgbChannels(hex);
+            return 'rgba(' + [c.red, c.green, c.blue].join(',') + ',.5)';
         }
         throw new Error('Bad Hex');
     }
 
     public static hexToRgbAWithOpacity(hex: string, opacity:number) {
         var c: any;
-        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-            c = hex.substring(1).split('');
-            if (c.length == 3) {
-                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-            }
-            c = '0x' + c.join('');
-            return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ','+opacity+')';
+        if (this.isHexColor(hex)) {
+            c = this.hexToRgbChannels(hex);
+            return 'rgba(' + [c.red, c.green, c.blue].join(',') + ',' + opacity + ')';
         }
         throw new Error('Bad Hex');
     }
@@ -1257,7 +1328,7 @@ export default class TextHighlighter {
         highlightBounding.style.outline = "none";
         highlightBounding.style.setProperty("background-color", "transparent", "important");
     }
-    
+
     resetHighlightAreaStyle(_win: IReadiumIFrameWindow, highlightArea: HTMLElement) {
         const id = ((highlightArea.parentNode && highlightArea.parentNode.nodeType === Node.ELEMENT_NODE && (highlightArea.parentNode as Element).getAttribute) ? (highlightArea.parentNode as Element).getAttribute("id") : undefined);
         if (id) {
@@ -1270,12 +1341,17 @@ export default class TextHighlighter {
                     highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0})`, "important");
                     highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
                 } else {
-                    highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
+                    // Highlight color as string check
+                    if (typeof highlight.color === 'object') {
+                        highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
+                    } else {
+                        highlightArea.classList.remove('hover');
+                    }
                 }
             }
         }
     }
-    
+
     setHighlightAreaStyle(_win: IReadiumIFrameWindow, highlightAreas: Array<HTMLElement>, highlight: IHighlight) {
         for (const highlightArea of highlightAreas) {
             const opacity = ALT_BACKGROUND_COLOR_OPACITY;
@@ -1283,18 +1359,25 @@ export default class TextHighlighter {
                 highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0.1})`, "important");
                 highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
             } else {
-                highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
+                // Highlight color as string check
+                if (typeof highlight.color === 'object') {
+                    highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
+                } else {
+                    highlightArea.classList.add('hover');
+                }
             }
         }
     }
-    
+
     isIOS() {
-        return navigator.userAgent.match(/iPhone|iPad|iPod/i) != null;
+        // Second test is needed for iOS 13+
+        return navigator.userAgent.match(/iPhone|iPad|iPod/i) != null ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     }
     isAndroid() {
         return navigator.userAgent.match(/Android/i) != null;
     }
-      
+
     async processMouseEvent(win: IReadiumIFrameWindow, ev: MouseEvent) {
         const documant = win.document;
         // const scrollElement = getScrollingElement(documant);
@@ -1302,23 +1385,23 @@ export default class TextHighlighter {
         // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
         const x = ev.clientX;
         const y = ev.clientY;
-    
+
         // const highlightsContainer = documant.getElementById(`${ID_HIGHLIGHTS_CONTAINER}`);
         if (!_highlightsContainer) {
             return;
         }
-    
+
         // const paginated = isPaginated(documant);
         const bodyRect = documant.body.getBoundingClientRect();
         const xOffset = bodyRect.left;
         const yOffset = bodyRect.top;
-    
+
         let foundHighlight: IHighlight | undefined;
         let foundElement: IHTMLDivElementWithRect | undefined;
         // for (const highlight of _highlights) {
         for (let i = _highlights.length - 1; i >= 0; i--) {
             const highlight = _highlights[i];
-    
+
             let highlightParent = documant.getElementById(`${highlight.id}`);
             if (!highlightParent) { // ??!!
                 highlightParent = _highlightsContainer.querySelector(`#${highlight.id}`); // .${CLASS_HIGHLIGHT_CONTAINER}
@@ -1326,11 +1409,11 @@ export default class TextHighlighter {
             if (!highlightParent) { // what?
                 continue;
             }
-    
+
             let hit = false;
             const highlightFragments = highlightParent.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
             for (const highlightFragment of highlightFragments) {
-                const withRect = (highlightFragment as unknown) as IWithRect;    
+                const withRect = (highlightFragment as unknown) as IWithRect;
                 const left = withRect.rect.left + xOffset; // (paginated ? withRect.xOffset : xOffset);
                 const top = withRect.rect.top + yOffset; // (paginated ? withRect.yOffset : yOffset);
                 if (x >= left &&
@@ -1338,7 +1421,7 @@ export default class TextHighlighter {
                     y >= top &&
                     y < (top + withRect.rect.height)
                     ) {
-    
+
                     hit = true;
                     break;
                 }
@@ -1356,7 +1439,7 @@ export default class TextHighlighter {
             }
             const allHighlightAreas = Array.from(_highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`));
             for (const highlightArea of allHighlightAreas) {
-                this.resetHighlightAreaStyle(win, highlightArea as HTMLElement); 
+                this.resetHighlightAreaStyle(win, highlightArea as HTMLElement);
             }
             return;
         }
@@ -1367,11 +1450,11 @@ export default class TextHighlighter {
                 const allHighlightAreas = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
                 for (const highlightArea of allHighlightAreas) {
                     if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
-                        this.resetHighlightAreaStyle(win, highlightArea as HTMLElement); 
+                        this.resetHighlightAreaStyle(win, highlightArea as HTMLElement);
                     }
                 }
-                this.setHighlightAreaStyle(win, foundElementHighlightAreas as HTMLElement[], foundHighlight); 
-    
+                this.setHighlightAreaStyle(win, foundElementHighlightAreas as HTMLElement[], foundHighlight);
+
                 const foundElementHighlightBounding = foundElement.querySelector(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
                 const allHighlightBoundings = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
                 for (const highlightBounding of allHighlightBoundings) {
@@ -1389,27 +1472,27 @@ export default class TextHighlighter {
                 var self = this
                 var anno = await this.delegate.annotator.getAnnotation(payload.highlight) as Annotation
                 // if(anno.comment) {
-                    if(this.delegate.api) {
+                    if(this.delegate.api && this.delegate.api.selectedAnnotation) {
                         this.delegate.api.selectedAnnotation(anno).then(async () => {
                         })
                     }
                     if (IS_DEV) { console.log("selected highlight "+anno.id)}
-                    self.lastSelectedHighlight = anno.id                       
+                    self.lastSelectedHighlight = anno.id
                 // } else {
                     var toolbox = document.getElementById("highlight-toolbox");
                     var backdrop = document.getElementById("toolbox-backdrop");
-                    // toolbox.style.top = ev.clientY + 74 + 'px'; 
-                    toolbox.style.top = ev.clientY  + 'px'; 
-                    toolbox.style.left = ev.clientX + "px"; 
+                    // toolbox.style.top = ev.clientY + 74 + 'px';
+                    toolbox.style.top = ev.clientY  + 'px';
+                    toolbox.style.left = ev.clientX + "px";
 
                     if(getComputedStyle(toolbox).display === "none") {
                         toolbox.style.display = "block";
-                        
+
                         if (!this.isIOS() && !this.isAndroid()) {
                             backdrop.style.display = "block";
                         }
                         this.toolboxMode('edit');
-                        
+
                         var colorIcon = document.getElementById("colorIcon");
                         var highlightIcon = document.getElementById("highlightIcon");
                         // edhighlightIconitIcon.innerHTML = icons.highlight;
@@ -1417,8 +1500,8 @@ export default class TextHighlighter {
                             colorIcon.style.display = "none";
                         }
                         highlightIcon.style.display = "none";
-                
-                        
+
+
                         // var commentIcon = document.getElementById("addCommentIcon");
                         // // commentIcon.innerHTML = icons.note;
 
@@ -1434,10 +1517,6 @@ export default class TextHighlighter {
                         //     commentIcon.removeEventListener("click", addCommenH);
                         // }
                         // commentIcon.addEventListener("click", addCommenH);
-                            
-                        var deleteIcon = document.getElementById("deleteIcon");
-                        deleteIcon.style.display = "unset";
-                        deleteIcon.innerHTML = icons.delete;
                         function deleteH(){
                             self.delegate.deleteSelectedHighlight(anno).then(async () => {
                                 if (IS_DEV) {console.log("delete highlight "+anno.id)}
@@ -1446,7 +1525,13 @@ export default class TextHighlighter {
                             })
                             deleteIcon.removeEventListener("click", deleteH);
                         };
-                        deleteIcon.addEventListener("click", deleteH);
+
+                        var deleteIcon = document.getElementById("deleteIcon");
+                        if (deleteIcon) {
+                            deleteIcon.style.display = "unset";
+                            deleteIcon.innerHTML = icons.delete;
+                            deleteIcon.addEventListener("click", deleteH);
+                        }
 
                         var backdropButton = document.getElementById("toolbox-backdrop");
 
@@ -1461,20 +1546,22 @@ export default class TextHighlighter {
                             // self.delegate.api.highlightUnSelected().then(async () => {
                             //     if (IS_DEV) {console.log("highlightUnSelected,  click on backdrop (click, mousedown,mouseup )")}
                             // })
-                            deleteIcon.removeEventListener("click", deleteH);
+                            if (deleteIcon) {
+                                deleteIcon.removeEventListener("click", deleteH);
+                            }
                             // commentIcon.removeEventListener("click", addCommenH);
 
                             backdropButton.removeEventListener("click", backdropEvent);
                             backdropButton.removeEventListener("mousedown", backdropEvent);
                             backdropButton.removeEventListener("mouseup", backdropEvent);
-                            
-                            
+
+
                         }
-        
+
                         backdropButton.addEventListener("click", backdropEvent);
                         backdropButton.addEventListener("mousedown", backdropEvent);
                         backdropButton.addEventListener("mouseup", backdropEvent);
-            
+
                     } else {
                         toolbox.style.display = "none";
                         void toolbox.offsetWidth;
@@ -1486,15 +1573,15 @@ export default class TextHighlighter {
             }
         }
     }
-    
+
     ensureHighlightsContainer(win: IReadiumIFrameWindow): HTMLElement {
         const documant = win.document;
         var self = this
         if (!_highlightsContainer) {
-    
+
             if (!bodyEventListenersSet) {
                 bodyEventListenersSet = true;
-    
+
                 async function mousedown(ev: MouseEvent){
                     if (IS_DEV) console.log('mousedown')
                     lastMouseDownX = ev.clientX;
@@ -1520,9 +1607,9 @@ export default class TextHighlighter {
                 documant.body.addEventListener("touchstart", mousedown, false);
                 documant.body.addEventListener("touchend", mouseup, false);
                 documant.body.addEventListener("touchmove", mousemove, false);
-                
+
             }
-    
+
             _highlightsContainer = documant.createElement("div");
             _highlightsContainer.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
             _highlightsContainer.style.setProperty("pointer-events", "none");
@@ -1530,19 +1617,19 @@ export default class TextHighlighter {
         }
         return _highlightsContainer;
     }
-    
+
     hideAllhighlights(_documant: Document) {
         if (_highlightsContainer) {
             _highlightsContainer.remove();
             _highlightsContainer = null;
         }
     }
-    
+
     destroyAllhighlights(documant: Document) {
         this.hideAllhighlights(documant);
         _highlights.splice(0, _highlights.length);
     }
-    
+
     destroyHighlight(documant: Document, id: string) {
         let i = -1;
         const highlight = _highlights.find((h, j) => {
@@ -1552,37 +1639,37 @@ export default class TextHighlighter {
         if (highlight && i >= 0 && i < _highlights.length) {
             _highlights.splice(i, 1);
         }
-    
+
         const highlightContainer = documant.getElementById(id);
         if (highlightContainer) {
             highlightContainer.remove();
-        }   
+        }
     }
-    
+
     recreateAllHighlightsRaw(win: IReadiumIFrameWindow) {
         this.hideAllhighlights(win.document);
         for (const highlight of _highlights) {
             this.createHighlightDom(win, highlight);
         }
     }
-    
+
     recreateAllHighlightsDebounced = debounce((win: IReadiumIFrameWindow) => {
         this.recreateAllHighlightsRaw(win);
     }, 500);
-    
+
     recreateAllHighlights(win: IReadiumIFrameWindow) {
         this.hideAllhighlights(win.document);
         this.recreateAllHighlightsDebounced(win);
     }
-    
-    
+
+
     createHighlight(
         win: IReadiumIFrameWindow,
         selectionInfo: ISelectionInfo,
         color: IColor | undefined,
         pointerInteraction: boolean,
         marker: AnnotationMarker): IHighlight {
-    
+
         try {
             const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
             // const unique = new Buffer(JSON.stringify(selectionInfo.rangeInfo, null, "")).toString("base64");
@@ -1592,9 +1679,9 @@ export default class TextHighlighter {
             checkSum.update(uniqueStr);
             const sha256Hex = checkSum.digest("hex");
             const id = "R2_HIGHLIGHT_" + sha256Hex;
-        
+
             this.destroyHighlight(win.document, id);
-        
+
             const highlight: IHighlight = {
                 color: color ? color : DEFAULT_BACKGROUND_COLOR,
                 id,
@@ -1603,26 +1690,26 @@ export default class TextHighlighter {
                 marker: marker
             };
             _highlights.push(highlight);
-        
+
             let highlightDom = this.createHighlightDom(win, highlight);
             var position = parseInt(((highlightDom.hasChildNodes ? highlightDom.childNodes[0] : highlightDom) as HTMLDivElement).style.top.replace("px",""))
-            highlight.position = position    
+            highlight.position = position
 
             return highlight;
         } catch (e) {
             throw "Can't create highlight: " + e;
         }
     }
-    
+
     createHighlightDom(win: IReadiumIFrameWindow, highlight: IHighlight): HTMLDivElement | undefined {
-    
+
         const documant = win.document;
-    
+
         const range = convertRangeInfo(documant, highlight.selectionInfo.rangeInfo);
         if (!range) {
             return undefined;
         }
-    
+
         const highlightsContainer = this.ensureHighlightsContainer(win);
 
         const highlightParent = documant.createElement("div") as IHTMLDivElementWithRect;
@@ -1632,33 +1719,33 @@ export default class TextHighlighter {
         if (highlight.pointerInteraction) {
             highlightParent.setAttribute("data-click", "1");
         }
-    
+
         // Resize Sensor sets body position to "relative" (default static),
         // which may breaks things!
         // (e.g. highlights CSS absolute/fixed positioning)
         // Also note that ReadiumCSS default to (via stylesheet :root):
         documant.body.style.position = "relative";
-    
+
         const bodyRect = documant.body.getBoundingClientRect();
-    
+
         const xOffset = bodyRect.left;
         const yOffset = bodyRect.top;
-    
+
         const scale = 1 / (1);
-     
+
         const drawUnderline = false;
         const drawStrikeThrough = false;
-    
+
         const doNotMergeHorizontallyAlignedRects = drawUnderline || drawStrikeThrough;
         const clientRects =  getClientRectsNoOverlap(range, doNotMergeHorizontallyAlignedRects);
-        
+
         const roundedCorner = 3;
         const underlineThickness = 2;
         const strikeThroughLineThickness = 3;
-    
+
         for (const clientRect of clientRects) {
             const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
-    
+
             const highlightArea = documant.createElement("div") as IHTMLDivElementWithRect;
             highlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
 
@@ -1666,11 +1753,17 @@ export default class TextHighlighter {
             if (drawUnderline) {
                 extra += `border-bottom: ${underlineThickness * scale}px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important`;
             }
+
             if(highlight.marker == AnnotationMarker.Underline) {
                 highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0}) !important; ${extra}`);
                 highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
             } else {
-                highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important; ${extra}`);
+                // Highlight color as string check
+                if (typeof highlight.color === 'object') {
+                    highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important; ${extra}`);
+                } else {
+                    highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; ${extra}`);
+                }
             }
             highlightArea.style.setProperty("pointer-events", "none");
             highlightArea.style.position =  "absolute";
@@ -1710,9 +1803,9 @@ export default class TextHighlighter {
 
                 highlightParent.append(highlightAreaLine);
             }
-            
+
         }
-        
+
         const rangeBoundingClientRect = range.getBoundingClientRect();
         const highlightBounding = documant.createElement("div") as IHTMLDivElementWithRect;
         highlightBounding.setAttribute("class", CLASS_HIGHLIGHT_BOUNDING_AREA);
@@ -1730,9 +1823,9 @@ export default class TextHighlighter {
         highlightBounding.style.left = `${highlightBounding.rect.left * scale}px`;
         highlightBounding.style.top = `${highlightBounding.rect.top * scale}px`;
         highlightParent.append(highlightBounding);
-    
+
         highlightsContainer.append(highlightParent);
         return highlightParent;
     }
-    
+
 }

@@ -91,7 +91,7 @@ export default class TTSModule implements ReaderModule {
                     console.log(splittingWord);
                     var splittingWordCleaned = splittingWord.innerText.replace(/[^a-zA-Z0-9 ]/g, "")
                 
-                    if (splittingWordCleaned.startsWith(spokenWordCleaned)) {
+                    if (splittingWordCleaned.startsWith(spokenWordCleaned) || splittingWordCleaned.endsWith(spokenWordCleaned)) {
                         if (index > 0) {
                             var lastSplittingWord = splittingResult[index-1] as HTMLSpanElement
                             lastSplittingWord.style.background = "none"

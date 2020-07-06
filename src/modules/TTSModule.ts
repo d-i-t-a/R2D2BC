@@ -48,7 +48,13 @@ export default class TTSModule implements ReaderModule {
 
         // --word-index
         var startNode = (selectionInfo as ISelectionInfo).range.startContainer.parentElement
+        if (startNode.classList.contains('whitespace')) {
+            startNode = startNode.nextElementSibling as HTMLSpanElement
+        }
         var endNode = (selectionInfo as ISelectionInfo).range.endContainer.parentElement
+        if (endNode.classList.contains('whitespace')) {
+            endNode = endNode.previousElementSibling as HTMLSpanElement
+        }
 
         var startWordIndex = parseInt(startNode.style.getPropertyValue("--word-index"))
 

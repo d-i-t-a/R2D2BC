@@ -22,7 +22,6 @@ import ReaderModule from "./ReaderModule";
 import AnnotationModule from "./AnnotationModule";
 import { IS_DEV } from "..";
 import { ISelectionInfo } from "../model/Locator";
-import Splitting from "splitting";
 
 export interface TTSModuleConfig {
     annotationModule: AnnotationModule;
@@ -42,76 +41,64 @@ export default class TTSModule implements ReaderModule {
         this.synth.cancel()
     }        
 
-    // TODO: refactor in comparison with speakAll to extract common functionality
-    speak(selectionInfo: ISelectionInfo | undefined , color:any): any {                
+    speak(selectionInfo: ISelectionInfo | undefined, node:any, color:any): any {                
     
-        var self = this;
+        var self = this
+        var allWords = node.querySelectorAll('.word');
+
+        // --word-index
+        var startNode = (selectionInfo as ISelectionInfo).range.startContainer.parentElement
+        var endNode = (selectionInfo as ISelectionInfo).range.endContainer.parentElement
+
+        var startWordIndex = parseInt(startNode.style.getPropertyValue("--word-index"))
+
+        // TODO if endWord is a whitespace ????
+        var endWordIndex = parseInt(endNode.style.getPropertyValue("--word-index")) + 1
+
+        let array = Array.from(allWords)
+        let splittingResult = array.slice(startWordIndex,endWordIndex)
+
         var utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
         this.synth.cancel()
         this.synth.speak(utterance);
+        var contentText = selectionInfo.cleanText.slice(0);    
+        var index = 0 
 
-        let speechEndCallback = function () { return null };
-  
-        // Handle single paragraph excerpt case
-        const selectionWithinOneParagraph = selectionInfo.rangeInfo.endContainerElementCssSelector === selectionInfo.rangeInfo.startContainerElementCssSelector;
-
-        if(selectionWithinOneParagraph) {
-
-            const wrapperElement = document.createElement("span");  
-            const selectedRange = selectionInfo.range;
-            const rawText = selectionInfo.rawText;
-
-            const originalRangeContent = selectedRange.cloneContents();
-            
-            wrapperElement.className = "current-tts-target";      
-            
-            selectedRange.surroundContents(wrapperElement);     
-          
-            const splittingResult = Splitting.html({
-                content: rawText,
-                by: "words"
-            });        
-            
-            wrapperElement.innerHTML = splittingResult;
-            
-            speechEndCallback = function () {
-                if (IS_DEV) {console.log("restoring original text")};
-                wrapperElement.innerHTML = originalRangeContent.textContent;
-                if (IS_DEV){console.log("removing wrapper")};
-                const wrapperParent = wrapperElement.parentNode;
-                while(wrapperElement.firstChild) wrapperParent.insertBefore(wrapperElement.firstChild, wrapperElement);
-                wrapperParent.removeChild(wrapperElement);
+        utterance.onboundary = function (e:any) {
+            if(e.name === "sentence") {
+                console.log("sentence boundary", e.charIndex, e.charLength, contentText.slice(e.charIndex, e.charIndex + e.charLength));                                                
             }
+            if(e.name === "word") {
+                console.log("word boundary", e.charIndex, e.charLength, contentText.slice(e.charIndex, e.charIndex + e.charLength));
 
-            let progressIndex = 0;
-            
-            const splitWords = wrapperElement.querySelector(".words.splitting");
-            
-            const currentWords = splitWords.querySelectorAll('.word');
-
-            utterance.onboundary = function (e:any) {
-                if(e.name === "sentence") {
-                    if (IS_DEV){console.log("sentence boundary", e.charIndex, e.charLength, rawText.slice(e.charIndex, e.charIndex + e.charLength))};                                                
-                }
-                if(e.name === "word") {
-                    if (IS_DEV){console.log("word boundary", e.charIndex, e.charLength, rawText.slice(e.charIndex, e.charIndex + e.charLength))};   
-                    const previousWord = (progressIndex > 0) ? <HTMLElement>currentWords[progressIndex-1] : null;
-                    const currentWord = <HTMLElement>currentWords[progressIndex];                                        
-                    currentWord.style.background = color;
-                    if(previousWord) { previousWord.style.background = "none" }
-                    if (IS_DEV){console.log("currentWord: " + currentWord, "previousWord: " + previousWord)};                    
-                    
-                    progressIndex = progressIndex+1;                    
+                var spokenWordCleaned = contentText.slice(e.charIndex, e.charIndex + e.charLength).replace(/[^a-zA-Z0-9 ]/g, "")
+                console.log (spokenWordCleaned)
+                if (spokenWordCleaned.length > 0) {
+                    var splittingWord = splittingResult[index] as HTMLSpanElement
+                    console.log(splittingWord);
+                    var splittingWordCleaned = splittingWord.innerText.replace(/[^a-zA-Z0-9 ]/g, "")
+                
+                    if (splittingWordCleaned.startsWith(spokenWordCleaned)) {
+                        if (index > 0) {
+                            var lastSplittingWord = splittingResult[index-1] as HTMLSpanElement
+                            lastSplittingWord.style.background = "none"
+                        }
+                        splittingWord.style.background = color
+                        splittingWord.scrollIntoView({
+                            block: "center",
+                            behavior: "smooth",
+                        })
+                        index++    
+                    }
                 }
             }
-                        
-
         }
-        
+            
         utterance.onend = function () {      
-            console.log("utterance ended");
-            self.annotationModule.highlighter.doneSpeaking(false)
-            speechEndCallback();
+            if (IS_DEV) console.log("utterance ended");
+            self.annotationModule.highlighter.doneSpeaking(true)
+            var splittingWord = splittingResult[splittingResult.length-1] as HTMLSpanElement
+            splittingWord.style.background = "none"
         }    
 
     }

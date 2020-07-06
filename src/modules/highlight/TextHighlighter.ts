@@ -903,7 +903,8 @@ export default class TextHighlighter {
             //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToRgbString(this.getColor()),true, marker)
             //     this.options.onAfterHighlight(highlight, marker);
             // }
-            this.ttsDelegate.speak(selectionInfo as any, this.getColor());
+            var node = this.dom(this.el).getWindow().document.body;
+            this.ttsDelegate.speak(selectionInfo as any, node, this.getColor());
             
         }
     };

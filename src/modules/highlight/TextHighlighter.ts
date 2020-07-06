@@ -906,6 +906,11 @@ export default class TextHighlighter {
             var node = this.dom(this.el).getWindow().document.body;
             this.ttsDelegate.speak(selectionInfo as any, node, this.getColor());
             
+            const selection = self.dom(self.el).getSelection();
+            selection.removeAllRanges();
+            var toolbox = document.getElementById("highlight-toolbox");
+            toolbox.style.display = "none";
+
         }
     };
     stopReadAloud() {

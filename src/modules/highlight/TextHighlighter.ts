@@ -954,7 +954,12 @@ export default class TextHighlighter {
         this.dom(this.el).removeAllRanges();
 
         if(reload) {
-            this.delegate.delegate.reload()
+            // this.delegate.delegate.reload()
+            var node = this.dom(this.el).getWindow().document.body;
+            const splittingResult = node.querySelectorAll('.word');
+            splittingResult.forEach((element: { style: { removeProperty: (arg0: string) => void; }; }) => {
+                element.style.removeProperty("background");
+            });
         }
     }
 

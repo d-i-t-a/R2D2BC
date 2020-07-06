@@ -120,10 +120,7 @@ export default class TTSModule implements ReaderModule {
     speakAll(selectionInfo:any, node:any, color:any, callback: () => void): any {        
         var self = this
 
-        const splittingResult =  Splitting({
-            target: node,
-            by: "words"
-        });
+        const splittingResult = node.querySelectorAll('.word');
 
         var utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
         this.synth.cancel()
@@ -139,12 +136,12 @@ export default class TTSModule implements ReaderModule {
                 console.log("word boundary", e.charIndex, e.charLength, contentText.slice(e.charIndex, e.charIndex + e.charLength));
 
                 var spokenWordCleaned = contentText.slice(e.charIndex, e.charIndex + e.charLength).replace(/[^a-zA-Z0-9 ]/g, "")
-                var splittingWord = splittingResult[0].words[index]
+                var splittingWord = splittingResult[index]
                 var splittingWordCleaned = splittingWord.innerText.replace(/[^a-zA-Z0-9 ]/g, "")
             
                 if (splittingWordCleaned.startsWith(spokenWordCleaned)) {
                     if (index > 0) {
-                        splittingResult[0].words[index-1].style.background = "none"
+                        splittingResult[index-1].style.background = "none"
                     }
                     splittingWord.style.background = color
                     splittingWord.scrollIntoView({
@@ -158,7 +155,7 @@ export default class TTSModule implements ReaderModule {
             
         utterance.onend = function () {      
             if (IS_DEV) console.log("utterance ended");
-            splittingResult[0].words[splittingResult[0].words.length-1].style.background = "none"
+            splittingResult[splittingResult.length-1].style.background = "none"
             self.annotationModule.highlighter.doneSpeaking(true)
         }    
         callback()

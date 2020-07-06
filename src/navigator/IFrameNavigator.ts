@@ -34,6 +34,7 @@ import BookmarkModule from "../modules/BookmarkModule";
 import AnnotationModule from "../modules/AnnotationModule";
 import TTSModule from "../modules/TTSModule";
 import { IS_DEV } from "..";
+import Splitting from "splitting";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -905,6 +906,14 @@ export default class IFrameNavigator implements Navigator {
                 }
 
             }, 100);
+
+
+            const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+
+            Splitting({
+                target: body,
+                by: "words"
+            });
 
             return new Promise<void>(resolve => resolve());
         } catch (err) {

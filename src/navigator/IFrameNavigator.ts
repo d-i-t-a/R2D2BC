@@ -31,7 +31,7 @@ import { Sidenav, Collapsible, Dropdown, Tabs } from "materialize-css";
 import { UserSettingsUIConfig, UserSettings } from "../model/user-settings/UserSettings";
 import BookmarkModule from "../modules/BookmarkModule";
 import AnnotationModule from "../modules/AnnotationModule";
-import TTSModule from "../modules/TTSModule";
+import TTSModule, { TTSSpeechConfig } from "../modules/TTS/TTSModule";
 import { IS_DEV } from "..";
 import Splitting from "splitting";
 
@@ -55,6 +55,7 @@ export interface IFrameNavigatorConfig {
     rights?: ReaderRights;
     material: boolean;
     api: any;
+    tts: any;
     injectables: Array<Injectable>;
     selectionMenuItems?: Array<SelectionMenuItem>;
     initialAnnotationColor?:string;
@@ -79,7 +80,9 @@ export interface SelectionMenuItem {
 export interface ReaderRights {
     enableBookmarks?: boolean;
     enableAnnotations?: boolean;
+    enableTTS?: boolean;
 }
+
 export interface ReaderUI {
     settings: UserSettingsUIConfig;
 }
@@ -93,6 +96,7 @@ export interface ReaderConfig {
     ui: ReaderUI;
     material: boolean;
     api: any;
+    tts: any;
     injectables: Array<Injectable>;
     selectionMenuItems: Array<SelectionMenuItem>;
     initialAnnotationColor: string;
@@ -123,7 +127,7 @@ export default class IFrameNavigator implements Navigator {
     currentTOCRawLink: string;
     private nextChapterLink: Link;
     private previousChapterLink: Link;
-    private settings: UserSettings;
+    settings: UserSettings;
     private annotator: Annotator | null;
 
     private paginator: PaginatedBookView | null;
@@ -164,6 +168,8 @@ export default class IFrameNavigator implements Navigator {
     private isLoading: boolean;
     private initialLastReadingPosition: ReadingPosition;
     api: any;
+    rights: ReaderRights;
+    tts: TTSSpeechConfig;
     injectables: Array<Injectable>
     selectionMenuItems: Array<SelectionMenuItem>
     initialAnnotationColor: string
@@ -178,6 +184,8 @@ export default class IFrameNavigator implements Navigator {
             config.publication,
             config.material,
             config.api,
+            config.rights,
+            config.tts,
             config.injectables,
             config.selectionMenuItems || null,
             config.initialAnnotationColor || null
@@ -196,6 +204,8 @@ export default class IFrameNavigator implements Navigator {
         publication: Publication,
         material: boolean,
         api: any,
+        rights: ReaderRights,
+        tts: any,
         injectables: Array<Injectable>,
         selectionMenuItems: Array<SelectionMenuItem> | null = null,
         initialAnnotationColor: string | null = null
@@ -210,6 +220,8 @@ export default class IFrameNavigator implements Navigator {
         this.publication = publication
         this.material = material
         this.api = api
+        this.rights = rights
+        this.tts = tts
         this.injectables = injectables
         this.selectionMenuItems = selectionMenuItems
         this.initialAnnotationColor = initialAnnotationColor
@@ -1067,16 +1079,24 @@ export default class IFrameNavigator implements Navigator {
         event.stopPropagation();
     }
     startReadAloud() {
-        this.annotationModule.highlighter.speakAll()
+        if (this.rights.enableTTS) {
+            this.annotationModule.highlighter.speakAll()
+        }
     }
     stopReadAloud() {
-        this.annotationModule.highlighter.stopReadAloud()
+        if (this.rights.enableTTS) {
+            this.annotationModule.highlighter.stopReadAloud()
+        }
     }
     pauseReadAloud() {
-        this.ttsModule.speakPause()
+        if (this.rights.enableTTS) {
+            this.ttsModule.speakPause()
+        }
     }
     resumeReadAloud() {
-        this.ttsModule.speakResume()
+        if (this.rights.enableTTS) {
+            this.ttsModule.speakResume()
+        }
     }
     totalResources(): number {
         return this.publication.readingOrder.length

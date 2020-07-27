@@ -882,6 +882,17 @@ export default class IFrameNavigator implements Navigator {
                 });
 
             }
+            setTimeout(() => {
+
+                const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+
+                if (this.rights.enableTTS && this.tts.enableSplitter) {
+                    Splitting({
+                        target: body,
+                        by: "lines"
+                    });
+                }
+            }, 50);
 
             setTimeout(() => {
 
@@ -899,12 +910,13 @@ export default class IFrameNavigator implements Navigator {
                         this.annotationModule.selectionMenuItems = this.selectionMenuItems
                     }
                 }
-                setTimeout(() => {
-                    if (this.ttsModule !== undefined) {
-                        this.ttsModule.initialize()
-                    }
-                }, 200);
-
+                if (this.rights.enableTTS) {
+                    setTimeout(() => {
+                        if (this.ttsModule !== undefined) {
+                            this.ttsModule.initialize()
+                        }
+                    }, 200);
+                }
                 const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
                 var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
                 for (var i = 0; i < pagebreaks.length; i++) {
@@ -919,12 +931,6 @@ export default class IFrameNavigator implements Navigator {
             }, 100);
 
 
-            const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
-
-            Splitting({
-                target: body,
-                by: "words"
-            });
 
             return new Promise<void>(resolve => resolve());
         } catch (err) {

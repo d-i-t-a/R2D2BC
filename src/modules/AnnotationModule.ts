@@ -73,7 +73,7 @@ export default class AnnotationModule implements ReaderModule {
         const annotations = new this(
             config.annotator,
             config.headerMenu,
-            config.rights || { enableAnnotations: false },
+            config.rights || { enableAnnotations: false , enableTTS: false},
             config.publication,
             config.settings,
             config.delegate,

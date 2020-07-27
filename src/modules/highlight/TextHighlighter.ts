@@ -489,7 +489,39 @@ export default class TextHighlighter {
              * @returns {Selection}
              */
             getSelection: function (): Selection {
-                return self.dom(el).getWindow().getSelection();
+
+                function snapSelectionToWord() {
+                    var selection = self.dom(el).getWindow().getSelection();
+                    if (!selection.isCollapsed) {
+            
+                        // Detect if selection is backwards
+                        var range = document.createRange();
+                        range.setStart(selection.anchorNode, selection.anchorOffset);
+                        range.setEnd(selection.focusNode, selection.focusOffset);
+                        var backwards = range.collapsed;
+                        range.detach();
+            
+                        // modify() works on the focus of the selection
+                        var endNode = selection.focusNode, endOffset = selection.focusOffset;
+                        selection.collapse(selection.anchorNode, selection.anchorOffset);
+                        if (backwards) {
+                            selection.modify("move", "backward", "character");
+                            selection.modify("move", "forward", "word");
+                            selection.extend(endNode, endOffset);
+                            selection.modify("extend", "forward", "character");
+                            selection.modify("extend", "backward", "word");
+            
+                        } else {
+                            selection.modify("move", "forward", "character");
+                            selection.modify("move", "backward", "word");
+                            selection.extend(endNode, endOffset);
+                            selection.modify("extend", "backward", "character");
+                            selection.modify("extend", "forward", "word");
+                        }
+                    }
+                    return selection
+                }
+                return snapSelectionToWord()
             },
 
             /**

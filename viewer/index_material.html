@@ -51,6 +51,8 @@
                     <div class="nav-wrapper"><span class="brand-logo  hide-on-med-and-down " id="book-title"></span>
                         <ul id="nav-mobile-right" class="right">
                             <li style="display:none"><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons ">bookmark</i></a></li>
+                            <li><a data-target="container-view-tts-settings" class="dropdown-trigger " id="menu-button-tts"><i
+                                class="material-icons ">volume_up</i></a></li>
                             <li><a data-target="container-view-settings" class="dropdown-trigger " id="menu-button-settings"><i
                                         class="material-icons ">settings</i></a></li>
                         </ul>
@@ -81,7 +83,44 @@
                     </ul>
                 </li>
             </ul>
+            <div id="container-view-tts-settings" class="dropdown-content settings-view notifications">
+                <ul class="settings-menu" role="menu" tabindex="0">
 
+                    <li id="container-view-rate">
+                        <ul class="settings-options">
+
+                            <li class="rate-setting"><button id="decrease-rate" class="decrease" role="menuitem"
+                                    tabindex="-1">Rate decrease</button></li>
+
+                            <li class="rate-setting"><button id="increase-rate" class="increase" role="menuitem"
+                                    tabindex="-1">Rate increase</button></li>
+
+                        </ul>
+                    </li>
+                    <li id="container-view-pitch">
+                        <ul class="settings-options">
+
+                            <li class="pitch-setting"><button id="decrease-pitch" class="decrease" role="menuitem"
+                                    tabindex="-1">Pitch decrease</button></li>
+
+                            <li class="pitch-setting"><button id="increase-pitch" class="increase" role="menuitem"
+                                    tabindex="-1">Pitch increase</button></li>
+
+                        </ul>
+                    </li>
+                    <li id="container-view-volume">
+                        <ul class="settings-options">
+
+                            <li class="volume-setting"><button id="decrease-volume" class="decrease" role="menuitem"
+                                    tabindex="-1">Volume decrease</button></li>
+
+                            <li class="volume-setting"><button id="increase-volume" class="increase" role="menuitem"
+                                    tabindex="-1">Volume increase</button></li>
+
+                        </ul>
+                    </li>
+                </ul>
+            </div>
             <div id="container-view-settings" class="dropdown-content settings-view notifications">
                 <ul class="settings-menu" role="menu" tabindex="0">
 
@@ -295,11 +334,9 @@
             { type: 'style', url: 'http://localhost:4444/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: 'http://localhost:4444/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
-            { type: 'script', url: 'http://localhost:4444/viewer/injectables/click/click.js' },
             { type: 'script', url: 'http://localhost:4444/viewer/injectables/footnotes/footnotes.js' },
             { type: 'style', url: 'http://localhost:4444/viewer/injectables/footnotes/footnotes.css' },
-            { type: 'script', url: 'http://localhost:4444/viewer/injectables/glossary/glossary.js' },
-            { type: 'style', url: 'http://localhost:4444/viewer/injectables/glossary/glossary.css' },
+            { type: 'style', url: 'http://localhost:4444/viewer/injectables/style/style.css' },
         ]
 
         D2Reader.load({
@@ -320,7 +357,15 @@
             },
             rights: {
                 enableBookmarks: true,
-                enableAnnotations: true
+                enableAnnotations: true,
+                enableTTS: true
+            },
+            tts: {
+                enableSplitter: true,
+                splitterWordClass: ".word",
+                highlight: "lines",
+                color: "var(--RS__ttsColor)",
+                autoScroll: true
             },
             material: true,
             injectables: injectables

@@ -84,6 +84,20 @@
         <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'justify'})">align justify</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'start'})">align start</button><br>
 
+
+
+        <button onclick="javascript:D2Reader.decrease('pitch')">pitch decrease</button><br>
+        <button onclick="javascript:D2Reader.increase('pitch')">pitch increase</button><br>
+        <button onclick="javascript:D2Reader.decrease('rate')">rate decrease</button><br>
+        <button onclick="javascript:D2Reader.increase('rate')">rate increase</button><br>
+        <button onclick="javascript:D2Reader.decrease('volume')">volume decrease</button><br>
+        <button onclick="javascript:D2Reader.increase('volume')">volume increase</button><br>
+        <button onclick="javascript:D2Reader.ttsSet('color', '#ff66c4')">change tts color</button><br>
+        <button onclick="javascript:D2Reader.ttsSet('voice', {usePublication: true,  name : 'Karen', lang : 'en-AU' })">change voice to Karen AU</button><br>
+        <button onclick="javascript:D2Reader.applyTTSSettings({ pitch:1.2, rate: 1.5, volume: 0.6, color: '#eb344c', voice: {usePublication: false}})">apply multiple tts settings</button><br>
+        <button onclick="javascript:D2Reader.resetTTSSettings()">reset TTS setting</button><br>
+
+
         <button onclick="javascript:D2Reader.previousResource()">previous resource</button><br>
         <button onclick="javascript:D2Reader.nextResource()">next resource</button><br>
         <button onclick="javascript:D2Reader.previousPage()">previous page</button><br>
@@ -282,7 +296,23 @@
             url: new URL(urlParams['url']),
             rights: {
                 enableBookmarks: true,
-                enableAnnotations: true
+                enableAnnotations: true,
+                enableTTS: true
+            },
+            tts: {
+                enableSplitter: true,
+                splitterWordClass: ".word",
+                highlight: "lines",
+                color: "var(--RS__ttsColor)",
+                autoScroll: false,
+                rate: 1.2,
+                pitch: 1.0,
+                volume: 0.5,
+                voice: {
+                    usePublication: true,
+                    name : "Daniel",
+                    lang : "en-GB",
+                }
             },
             injectables: injectables,
             selectionMenuItems: selectionMenuItems,

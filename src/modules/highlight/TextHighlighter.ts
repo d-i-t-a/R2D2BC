@@ -41,7 +41,7 @@ import AnnotationModule from "../AnnotationModule";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { icons } from "../../utils/IconLib";
-import TTSModule from "../TTSModule";
+import TTSModule from "../TTS/TTSModule";
 import { SelectionMenuItem } from "../../navigator/IFrameNavigator";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
@@ -481,7 +481,7 @@ export default class TextHighlighter {
                 var selection = self.dom(el).getSelection();
                 selection.removeAllRanges();
                 self.toolboxHide();
-                self.ttsDelegate.cancel()
+                // self.ttsDelegate.cancel()
             },
 
             /**
@@ -883,69 +883,77 @@ export default class TextHighlighter {
     };
 
     speak() {
-        var self = this
-        function getCssSelector(element: Element): string {
-            const options = {
-                className: (str: string) => {
-                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-                },
-                idName: (str: string) => {
-                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-                },
-            };
-            return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
-        }
+        if (this.delegate.rights.enableTTS) {
+            var self = this
+            function getCssSelector(element: Element): string {
+                const options = {
+                    className: (str: string) => {
+                        return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                    },
+                    idName: (str: string) => {
+                        return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                    },
+                };
+                return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
+            }
 
-        const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
-        if (selectionInfo) {
-            // if (this.options.onBeforeHighlight(selectionInfo) === true) {
-            //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToRgbString(this.getColor()),true, marker)
-            //     this.options.onAfterHighlight(highlight, marker);
-            // }
-            var node = this.dom(this.el).getWindow().document.body;
-            this.ttsDelegate.speak(selectionInfo as any, node, this.getColor());
-            
-            const selection = self.dom(self.el).getSelection();
-            selection.removeAllRanges();
-            var toolbox = document.getElementById("highlight-toolbox");
-            toolbox.style.display = "none";
-
+            const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
+            if (selectionInfo) {
+                // if (this.options.onBeforeHighlight(selectionInfo) === true) {
+                //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToRgbString(this.getColor()),true, marker)
+                //     this.options.onAfterHighlight(highlight, marker);
+                // }
+                var node = this.dom(this.el).getWindow().document.body;
+                this.ttsDelegate.speak(selectionInfo as any, node, true,  () => {
+                })
+                
+                if (this.delegate.delegate.tts.enableSplitter) {
+                    const selection = self.dom(self.el).getSelection();
+                    selection.removeAllRanges();
+                    var toolbox = document.getElementById("highlight-toolbox");
+                    toolbox.style.display = "none";
+                }
+            }
         }
     };
     stopReadAloud() {
-        this.doneSpeaking(true)
+        if (this.delegate.rights.enableTTS) {
+            this.doneSpeaking(true)
+        }
     }
     speakAll() {
-        var backdrop = document.getElementById("toolbox-backdrop");
-        backdrop.style.display = "block";
-        var self = this
-        function getCssSelector(element: Element): string {
-            const options = {
-                className: (str: string) => {
-                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-                },
-                idName: (str: string) => {
-                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-                },
-            };
-            return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
-        }
+        if (this.delegate.rights.enableTTS) {
+            var backdrop = document.getElementById("toolbox-backdrop");
+            backdrop.style.display = "block";
+            var self = this
+            function getCssSelector(element: Element): string {
+                const options = {
+                    className: (str: string) => {
+                        return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                    },
+                    idName: (str: string) => {
+                        return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                    },
+                };
+                return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
+            }
 
-        var node = this.dom(this.el).getWindow().document.body;
-        if (IS_DEV) console.log(self.delegate.delegate.iframe.contentDocument)
-        const selection = self.dom(self.el).getSelection();
-        const range = this.dom(this.el).getWindow().document.createRange();
-        range.selectNodeContents(node);
-        selection.removeAllRanges();
-        selection.addRange(range);
-        const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
+            var node = this.dom(this.el).getWindow().document.body;
+            if (IS_DEV) console.log(self.delegate.delegate.iframe.contentDocument)
+            const selection = self.dom(self.el).getSelection();
+            const range = this.dom(this.el).getWindow().document.createRange();
+            range.selectNodeContents(node);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
 
-        if (selectionInfo.cleanText) {
-            this.ttsDelegate.speakAll(selectionInfo as any, node, this.getColor(),  () => {
-                var selection = self.dom(self.el).getSelection();
-                selection.removeAllRanges();
-                self.toolboxHide();
-            })
+            if (selectionInfo.cleanText) {
+                this.ttsDelegate.speak(selectionInfo as any, node, false,  () => {
+                    var selection = self.dom(self.el).getSelection();
+                    selection.removeAllRanges();
+                    self.toolboxHide();
+                })
+            }
         }
     };
 
@@ -955,16 +963,25 @@ export default class TextHighlighter {
     }
 
     doneSpeaking(reload:boolean) {
-        this.toolboxHide();
-        this.dom(this.el).removeAllRanges();
+        if (this.delegate.rights.enableTTS) {
+            this.toolboxHide();
+            this.dom(this.el).removeAllRanges();
 
-        if(reload) {
-            // this.delegate.delegate.reload()
-            var node = this.dom(this.el).getWindow().document.body;
-            const splittingResult = node.querySelectorAll('.word');
-            splittingResult.forEach((element: { style: { removeProperty: (arg0: string) => void; }; }) => {
-                element.style.removeProperty("background");
-            });
+            if(reload) {
+                if (this.delegate.delegate.tts.enableSplitter) {
+                    var node = this.dom(this.el).getWindow().document.body;
+                    const splittingResult = node.querySelectorAll(this.delegate.delegate.tts.splitterWordClass);
+                    const whitespaceResult = node.querySelectorAll(".whitespace");
+                    splittingResult.forEach((element: { style: { removeProperty: (arg0: string) => void; }; }) => {
+                        element.style.removeProperty("background");
+                    });
+                    whitespaceResult.forEach((element: { style: { removeProperty: (arg0: string) => void; }; }) => {
+                        element.style.removeProperty("background");
+                    });
+                } else {
+                    this.delegate.delegate.reload()
+                }
+            }
         }
     }
 

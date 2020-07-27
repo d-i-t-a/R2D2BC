@@ -610,7 +610,7 @@ export class UserSettings implements UserSettings {
     //     return new Promise(resolve => resolve());
     // }
 
-    private async getProperty(name: string): Promise<UserProperty> {
+    async getProperty(name: string): Promise<UserProperty> {
         let array = await this.store.get(this.USERSETTINGS);
         if (array) {
             let properties = JSON.parse(array) as Array<UserProperty>;

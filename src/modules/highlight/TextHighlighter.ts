@@ -998,6 +998,7 @@ export default class TextHighlighter {
         if (this.delegate.rights.enableTTS) {
             this.toolboxHide();
             this.dom(this.el).removeAllRanges();
+            this.ttsDelegate.cancel()
 
             if(reload) {
                 if (this.delegate.delegate.tts.enableSplitter) {

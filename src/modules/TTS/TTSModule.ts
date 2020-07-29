@@ -192,7 +192,7 @@ export default class TTSModule implements ReaderModule {
                                         }
 
 
-                                    } else if (self.annotationModule.delegate.tts.highlight == "word") {
+                                    } else if (self.annotationModule.delegate.tts.highlight == "words") {
                                         
                                         if (index > 0) {
                                             var lastSplittingWord = splittingResult[index-1] as HTMLElement
@@ -231,7 +231,7 @@ export default class TTSModule implements ReaderModule {
                                         element.style.background = self.tts.color
                                     });
 
-                                } else if (self.annotationModule.delegate.tts.highlight == "word") {
+                                } else if (self.annotationModule.delegate.tts.highlight == "words") {
                                     if (index > 0) {
                                         var lastSplittingWord = splittingResult[index-1] as HTMLElement
                                         lastSplittingWord.style.removeProperty("background")

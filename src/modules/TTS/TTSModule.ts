@@ -154,8 +154,7 @@ export default class TTSModule implements ReaderModule {
                                         var startLineIndex = parseInt(splittingWord.style.getPropertyValue("--line-index"))
 
                                         if (prevLineIndex >= 0 && prevLineIndex != startLineIndex) {
-                                            var prevLine = ".--line-index_" + prevLineIndex
-                                            let prevElements = node.querySelectorAll(prevLine);
+                                            let prevElements = node.querySelectorAll("span[data-line-index='"+prevLineIndex+"']");
                                             var whitespaces: HTMLElement[] = []
 
                                             prevElements.forEach(element => {
@@ -175,8 +174,7 @@ export default class TTSModule implements ReaderModule {
                                         }
                                         
                                         prevLineIndex = startLineIndex
-                                        var startLine = ".--line-index_" + startLineIndex
-                                        let elements = node.querySelectorAll(startLine);
+                                        let elements = node.querySelectorAll("span[data-line-index='"+startLineIndex+"']");
                                         var whitespaces1: HTMLElement[] = []
                                         elements.forEach(element => {
                                             element.style.background = self.tts.color
@@ -216,8 +214,7 @@ export default class TTSModule implements ReaderModule {
                                     var startLineIndex = parseInt(splittingWord.style.getPropertyValue("--line-index"))
 
                                     if (prevLineIndex >= 0 && prevLineIndex != startLineIndex) {
-                                        var prevLine = ".--line-index_" + prevLineIndex
-                                        let prevElements = node.querySelectorAll(prevLine);
+                                        let prevElements = node.querySelectorAll("span[data-line-index='"+prevLineIndex+"']");
                                         prevElements.forEach(element => {
                                             element.style.removeProperty("background")
                                         });
@@ -225,8 +222,7 @@ export default class TTSModule implements ReaderModule {
                                     }
                                     
                                     prevLineIndex = startLineIndex
-                                    var startLine = ".--line-index_" + startLineIndex
-                                    let elements = node.querySelectorAll(startLine);
+                                    let elements = node.querySelectorAll("span[data-line-index='"+startLineIndex+"']");
                                     elements.forEach(element => {
                                         element.style.background = self.tts.color
                                     });

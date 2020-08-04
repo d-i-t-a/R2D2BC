@@ -481,7 +481,6 @@ export default class TextHighlighter {
                 var selection = self.dom(el).getSelection();
                 selection.removeAllRanges();
                 self.toolboxHide();
-                // self.ttsDelegate.cancel()
             },
 
             /**
@@ -491,35 +490,37 @@ export default class TextHighlighter {
             getSelection: function (): Selection {
 
                 function snapSelectionToWord() {
-                    var selection = self.dom(el).getWindow().getSelection();
-                    if (!selection.isCollapsed) {
-            
-                        // Detect if selection is backwards
-                        var range = document.createRange();
-                        range.setStart(selection.anchorNode, selection.anchorOffset);
-                        range.setEnd(selection.focusNode, selection.focusOffset);
-                        var backwards = range.collapsed;
-                        range.detach();
-            
-                        // modify() works on the focus of the selection
-                        var endNode = selection.focusNode, endOffset = selection.focusOffset;
-                        selection.collapse(selection.anchorNode, selection.anchorOffset);
-                        if (backwards) {
-                            selection.modify("move", "backward", "character");
-                            selection.modify("move", "forward", "word");
-                            selection.extend(endNode, endOffset);
-                            selection.modify("extend", "forward", "character");
-                            selection.modify("extend", "backward", "word");
-            
-                        } else {
-                            selection.modify("move", "forward", "character");
-                            selection.modify("move", "backward", "word");
-                            selection.extend(endNode, endOffset);
-                            selection.modify("extend", "backward", "character");
-                            selection.modify("extend", "forward", "word");
+                    if (self.dom(el)) {
+                        var selection = self.dom(el).getWindow().getSelection();
+                        if (!selection.isCollapsed) {
+                
+                            // Detect if selection is backwards
+                            var range = document.createRange();
+                            range.setStart(selection.anchorNode, selection.anchorOffset);
+                            range.setEnd(selection.focusNode, selection.focusOffset);
+                            var backwards = range.collapsed;
+                            range.detach();
+                
+                            // modify() works on the focus of the selection
+                            var endNode = selection.focusNode, endOffset = selection.focusOffset;
+                            selection.collapse(selection.anchorNode, selection.anchorOffset);
+                            if (backwards) {
+                                selection.modify("move", "backward", "character");
+                                selection.modify("move", "forward", "word");
+                                selection.extend(endNode, endOffset);
+                                selection.modify("extend", "forward", "character");
+                                selection.modify("extend", "backward", "word");
+                
+                            } else {
+                                selection.modify("move", "forward", "character");
+                                selection.modify("move", "backward", "word");
+                                selection.extend(endNode, endOffset);
+                                selection.modify("extend", "backward", "character");
+                                selection.modify("extend", "forward", "word");
+                            }
                         }
+                        return selection
                     }
-                    return selection
                 }
                 return snapSelectionToWord()
             },
@@ -653,7 +654,7 @@ export default class TextHighlighter {
                             (highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.background = self.getColor();
                         }
                         if(underlineIcon.getElementsByTagName("span").length>0) {
-                            (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.background = self.getColor();
+                            (underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement).style.borderBottomColor = self.getColor();
                         }
 
                         self.toolboxMode('add');
@@ -839,8 +840,9 @@ export default class TextHighlighter {
                             }
 
                             const selectionInfo = getCurrentSelectionInfo(self.dom(self.el).getWindow(), getCssSelector)
-
-                            menuItem.callback(selectionInfo.cleanText);
+                            if (selectionInfo != undefined) {
+                                menuItem.callback(selectionInfo.cleanText);
+                            }
                             self.callbackComplete()
                         }
                         itemElement.addEventListener("click", itemEvent);
@@ -911,6 +913,10 @@ export default class TextHighlighter {
             if (!keepRange) {
                 this.dom(this.el).removeAllRanges();
             }
+        } else {
+            if (!keepRange) {
+                this.dom(this.el).removeAllRanges();
+            } 
         }
     };
 
@@ -930,7 +936,7 @@ export default class TextHighlighter {
             }
 
             const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
-            if (selectionInfo) {
+            if (selectionInfo != undefined) {
                 // if (this.options.onBeforeHighlight(selectionInfo) === true) {
                 //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToRgbString(this.getColor()),true, marker)
                 //     this.options.onAfterHighlight(highlight, marker);
@@ -938,19 +944,18 @@ export default class TextHighlighter {
                 var node = this.dom(this.el).getWindow().document.body;
                 this.ttsDelegate.speak(selectionInfo as any, node, true,  () => {
                 })
-                
-                if (this.delegate.delegate.tts.enableSplitter) {
-                    const selection = self.dom(self.el).getSelection();
-                    selection.removeAllRanges();
-                    var toolbox = document.getElementById("highlight-toolbox");
-                    toolbox.style.display = "none";
-                }
+            }
+            if (this.delegate.delegate.tts.enableSplitter) {
+                const selection = self.dom(self.el).getSelection();
+                selection.removeAllRanges();
+                var toolbox = document.getElementById("highlight-toolbox");
+                toolbox.style.display = "none";
             }
         }
     };
     stopReadAloud() {
         if (this.delegate.rights.enableTTS) {
-            this.doneSpeaking(true)
+            this.doneSpeaking()
         }
     }
     speakAll() {
@@ -979,12 +984,15 @@ export default class TextHighlighter {
             selection.addRange(range);
             const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
 
-            if (selectionInfo.cleanText) {
+            if (selectionInfo != undefined && selectionInfo.cleanText) {
                 this.ttsDelegate.speak(selectionInfo as any, node, false,  () => {
                     var selection = self.dom(self.el).getSelection();
                     selection.removeAllRanges();
                     self.toolboxHide();
                 })
+            } else {
+                self.dom(self.el).getSelection().removeAllRanges();
+                self.toolboxHide();
             }
         }
     };
@@ -994,26 +1002,14 @@ export default class TextHighlighter {
         this.dom(this.el).removeAllRanges();
     }
 
-    doneSpeaking(reload:boolean) {
+    doneSpeaking(reload:boolean = false) {
         if (this.delegate.rights.enableTTS) {
             this.toolboxHide();
             this.dom(this.el).removeAllRanges();
             this.ttsDelegate.cancel()
 
             if(reload) {
-                if (this.delegate.delegate.tts.enableSplitter) {
-                    var node = this.dom(this.el).getWindow().document.body;
-                    const splittingResult = node.querySelectorAll(this.delegate.delegate.tts.splitterWordClass);
-                    const whitespaceResult = node.querySelectorAll(".whitespace");
-                    splittingResult.forEach((element: { style: { removeProperty: (arg0: string) => void; }; }) => {
-                        element.style.removeProperty("background");
-                    });
-                    whitespaceResult.forEach((element: { style: { removeProperty: (arg0: string) => void; }; }) => {
-                        element.style.removeProperty("background");
-                    });
-                } else {
                     this.delegate.delegate.reload()
-                }
             }
         }
     }
@@ -1398,8 +1394,13 @@ export default class TextHighlighter {
             if (highlight) {
                 const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
                 if(highlight.marker == AnnotationMarker.Underline) {
-                    highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0})`, "important");
-                    highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
+                    // Highlight color as string check
+                    if (typeof highlight.color === 'object') {
+                        highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0})`, "important");
+                        highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
+                    } else {
+                        highlightArea.classList.remove('hover');  
+                    }
                 } else {
                     // Highlight color as string check
                     if (typeof highlight.color === 'object') {
@@ -1416,8 +1417,13 @@ export default class TextHighlighter {
         for (const highlightArea of highlightAreas) {
             const opacity = ALT_BACKGROUND_COLOR_OPACITY;
             if(highlight.marker == AnnotationMarker.Underline) {
-                highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0.1})`, "important");
-                highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
+                    // Highlight color as string check
+                if (typeof highlight.color === 'object') {
+                    highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0.1})`, "important");
+                    highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
+                } else {
+                    highlightArea.classList.add('hover'); 
+                }
             } else {
                 // Highlight color as string check
                 if (typeof highlight.color === 'object') {
@@ -1808,6 +1814,7 @@ export default class TextHighlighter {
 
             const highlightArea = documant.createElement("div") as IHTMLDivElementWithRect;
             highlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
+            highlightArea.dataset.marker = "" + highlight.marker
 
             let extra = "";
             if (drawUnderline) {
@@ -1815,14 +1822,19 @@ export default class TextHighlighter {
             }
 
             if(highlight.marker == AnnotationMarker.Underline) {
-                highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0}) !important; ${extra}`);
-                highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
+                // Highlight color as string check
+                if (typeof highlight.color === 'object') {
+                    highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${0}) !important; ${extra}`);
+                    highlightArea.style.setProperty("border-bottom", `2px solid rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${1})`, "important");
+                } else {
+                    highlightArea.setAttribute("style", `border-radius: ${roundedCorner}px !important; ${extra}`);
+                }
             } else {
                 // Highlight color as string check
                 if (typeof highlight.color === 'object') {
                     highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important; ${extra}`);
                 } else {
-                    highlightArea.setAttribute("style", `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; ${extra}`);
+                    highlightArea.setAttribute("style", `border-radius: ${roundedCorner}px !important; ${extra}`);
                 }
             }
             highlightArea.style.setProperty("pointer-events", "none");

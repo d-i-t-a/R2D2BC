@@ -60,7 +60,7 @@ export class TTSSettings implements TTSSpeechConfig {
     private readonly store: Store;
     private readonly TTSSETTINGS = "ttsSetting";
 
-    color = "var(--RS__ttsColor)"
+    color = "orange"
     autoScroll = true
     rate = 1.0
     pitch = 1.0
@@ -80,6 +80,9 @@ export class TTSSettings implements TTSSpeechConfig {
 
     private settingsView: HTMLDivElement;
     private headerMenu: HTMLElement;
+    private speechRate: HTMLInputElement;
+    private speechPitch: HTMLInputElement;
+    private speechVolume: HTMLInputElement;
 
     api: any;
 
@@ -151,7 +154,7 @@ export class TTSSettings implements TTSSpeechConfig {
     
     private async reset() {
 
-        this.color = "var(--RS__ttsColor)"
+        this.color = "orange"
         this.autoScroll = true
         this.rate = 1.0
         this.pitch = 1.0
@@ -189,7 +192,15 @@ export class TTSSettings implements TTSSpeechConfig {
             this.volumeButtons[volumeName] = HTMLUtilities.findElement(element, "#" + volumeName + "-volume") as HTMLButtonElement;
         }
 
+        if (this.headerMenu) this.speechRate = HTMLUtilities.findElement(this.headerMenu, "#speechRate") as HTMLInputElement;
+        if (this.headerMenu) this.speechPitch = HTMLUtilities.findElement(this.headerMenu, "#speechPitch") as HTMLInputElement;
+        if (this.headerMenu) this.speechVolume = HTMLUtilities.findElement(this.headerMenu, "#speechVolume") as HTMLInputElement;
+
         this.setupEvents();
+
+        if (this.speechRate) this.speechRate.value = this.rate.toString()
+        if (this.speechPitch) this.speechPitch.value = this.pitch.toString()
+        if (this.speechVolume) this.speechVolume.value = this.volume.toString()
 
         // Clicking the settings view outside the ul hides it, but clicking inside the ul keeps it up.
         addEventListenerOptional(HTMLUtilities.findElement(element, "ul"), 'click', (event: Event) => {
@@ -349,13 +360,15 @@ export class TTSSettings implements TTSSpeechConfig {
             await this.saveProperty(this.userProperties.getByRef(TTSREFS.COLOR_REF))
             this.settingsChangeCallback();
         }
-        if (ttsSettings.autoScroll) {
+        if (ttsSettings.autoScroll != undefined) {
+            console.log("autoScroll " + this.autoScroll)
             this.autoScroll = ttsSettings.autoScroll
             this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF).value = this.autoScroll;
             await this.saveProperty(this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF))
             this.settingsChangeCallback();
         }
         if (ttsSettings.voice) {
+            console.log("voice " + this.voice)
             this.voice = ttsSettings.voice
             this.userProperties.getByRef(TTSREFS.VOICE_REF).value = this.voice;
             await this.saveProperty(this.userProperties.getByRef(TTSREFS.VOICE_REF))

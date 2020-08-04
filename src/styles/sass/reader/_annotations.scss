@@ -16,7 +16,9 @@
  * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
- 
+ :root {
+    --RS__highlightColor: rgba(255, 255, 0, 0.5);
+ }
  .sidenav-annotations {
     .chapter-link {
         display: block;

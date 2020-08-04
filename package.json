@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "1.1.8",
+  "version": "1.2.0-alpha3",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -26,7 +26,6 @@
     "cssesc": "^3.0.0",
     "debounce": "^1.2.0",
     "mark.js": "^8.11.1",
-    "splitting": "^1.0.6",
     "promise-polyfill": "^8.1.3",
     "ts-optchain": "^0.1.8",
     "whatwg-fetch": "^2.0.4"

@@ -432,9 +432,17 @@ export default class AnnotationModule implements ReaderModule {
                                     marker.innerHTML = locator.highlight.selectionInfo.cleanText
 
                                     if ((locator as Annotation).marker == AnnotationMarker.Underline) {
-                                        marker.style.setProperty("border-bottom", `2px solid ${TextHighlighter.hexToRgbA((locator as Annotation).color)}`, "important");
+                                        if (typeof (locator as Annotation).color === 'object') {
+                                            marker.style.setProperty("border-bottom", `2px solid ${TextHighlighter.hexToRgbA((locator as Annotation).color)}`, "important");
+                                        } else {
+                                            marker.style.setProperty("border-bottom", `2px solid ${(locator as Annotation).color}`, "important");
+                                        }
                                     } else {
-                                        marker.style.backgroundColor = TextHighlighter.hexToRgbA((locator as Annotation).color);
+                                        if (typeof (locator as Annotation).color === 'object') {
+                                            marker.style.backgroundColor = TextHighlighter.hexToRgbA((locator as Annotation).color);
+                                        } else {
+                                            marker.style.backgroundColor = (locator as Annotation).color;
+                                        }
                                     }
                                     title.appendChild(marker)
                                     bookmarkLink.appendChild(title)

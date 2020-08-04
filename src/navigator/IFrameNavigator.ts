@@ -33,7 +33,7 @@ import BookmarkModule from "../modules/BookmarkModule";
 import AnnotationModule from "../modules/AnnotationModule";
 import TTSModule, { TTSSpeechConfig } from "../modules/TTS/TTSModule";
 import { IS_DEV } from "..";
-import Splitting from "splitting";
+import Splitting from "../modules/TTS/splitting";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -889,7 +889,7 @@ export default class IFrameNavigator implements Navigator {
                 if (this.rights.enableTTS && this.tts.enableSplitter) {
                     Splitting({
                         target: body,
-                        by: "lines"
+                        by: this.tts.highlight
                     });
                 }
             }, 50);
@@ -912,8 +912,9 @@ export default class IFrameNavigator implements Navigator {
                 }
                 if (this.rights.enableTTS) {
                     setTimeout(() => {
+                        const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
                         if (this.ttsModule !== undefined) {
-                            this.ttsModule.initialize()
+                            this.ttsModule.initialize(body)
                         }
                     }, 200);
                 }

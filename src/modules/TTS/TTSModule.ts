@@ -32,7 +32,6 @@ export interface TTSModuleConfig {
 
 export interface TTSSpeechConfig { 
     enableSplitter?: boolean;
-    splitterWordClass?: string;
     highlight?: string;
     color?: string;
     autoScroll?: boolean;
@@ -49,30 +48,61 @@ export default class TTSModule implements ReaderModule {
 
     synth = window.speechSynthesis
 
-    initialize() {
+    body: any
+    splittingResult: any[]
+
+    initialize(body:any) {
         if (this.annotationModule.highlighter !== undefined) {
             this.annotationModule.highlighter.ttsDelegate = this
             this.tts.setControls();
+            this.tts.onSettingsChange(this.handleResize.bind(this));
+            this.body = body
+            let splittingResult = body.querySelectorAll("[data-word]");
+            splittingResult.forEach(splittingWord => {
+                splittingWord.dataset.ttsColor = this.tts.color 
+            });
+            let whitespace = body.querySelectorAll("[data-whitespace]");
+            whitespace.forEach(splittingWord => {
+                splittingWord.dataset.ttsColor = this.tts.color 
+            });
+
         }
     }
     cancel() {
         this.synth.cancel()
+        if (this.splittingResult && this.annotationModule.delegate.tts.enableSplitter) {
+            this.splittingResult.forEach(splittingWord => {
+                splittingWord.dataset.ttsCurrentWord = "false" 
+                splittingWord.dataset.ttsCurrentLine = "false" 
+            });
+        }
     }        
+    private handleResize(): void {
+        let splittingResult = this.body.querySelectorAll("[data-word]");
+        splittingResult.forEach(splittingWord => {
+            splittingWord.dataset.ttsColor = this.tts.color 
+        });
+        let whitespace = this.body.querySelectorAll("[data-whitespace]");
+        whitespace.forEach(splittingWord => {
+            splittingWord.dataset.ttsColor = this.tts.color 
+        });
+    }
 
     async speak(selectionInfo: ISelectionInfo | undefined, node:any, partial:boolean, callback: () => void): Promise<any> {                
     
         var self = this
-        var splittingResult: string | any[]
-        if (this.annotationModule.delegate.tts.enableSplitter) {
+        
+        this.cancel()
 
+        if (this.annotationModule.delegate.tts.enableSplitter) {
             if (partial) {
-                var allWords = node.querySelectorAll(this.annotationModule.delegate.tts.splitterWordClass);
+                var allWords = node.querySelectorAll("[data-word]");
 
                 var startNode = (selectionInfo as ISelectionInfo).range.startContainer.parentElement
                 if (startNode.tagName.toLowerCase() === "a") {
                     startNode = startNode.parentElement as HTMLElement
                 }
-                if (startNode.classList.contains('whitespace')) {
+                if (startNode.dataset == undefined) {
                     startNode = startNode.nextElementSibling as HTMLElement
                 }
                 
@@ -80,17 +110,17 @@ export default class TTSModule implements ReaderModule {
                 if (endNode.tagName.toLowerCase() === "a") {
                     endNode = endNode.parentElement as HTMLElement
                 }
-                if (endNode.classList.contains('whitespace')) {
+                if (endNode.dataset == undefined) {
                     endNode = endNode.previousElementSibling as HTMLElement
                 }
 
-                var startWordIndex = parseInt(startNode.style.getPropertyValue("--word-index"))
-                var endWordIndex = parseInt(endNode.style.getPropertyValue("--word-index")) + 1
+                var startWordIndex = parseInt(startNode.dataset.wordIndex)
+                var endWordIndex = parseInt(endNode.dataset.wordIndex) + 1
 
                 let array = Array.from(allWords)
-                splittingResult = array.slice(startWordIndex,endWordIndex)
+                this.splittingResult = array.slice(startWordIndex,endWordIndex)
             } else {
-                splittingResult = node.querySelectorAll(this.annotationModule.delegate.tts.splitterWordClass);
+                this.splittingResult = node.querySelectorAll("[data-word]");
             }
         }
         var utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
@@ -122,9 +152,8 @@ export default class TTSModule implements ReaderModule {
         if (utterance.voice == undefined || utterance.voice == null) {
             utterance.voice = voices.filter((el: any) => el.default == true)[0]
         }
-        utterance.voice =  voices.filter((el: any) => el.lang == this.tts.voice.lang && el.name == this.tts.voice.name)[0] 
+        // utterance.voice =  voices.filter((el: any) => el.lang == this.tts.voice.lang && el.name == this.tts.voice.name)[0] 
 
-        this.synth.cancel()
         this.synth.speak(utterance);
         var contentText = selectionInfo.cleanText.slice(0);    
         var index = 0 
@@ -140,7 +169,7 @@ export default class TTSModule implements ReaderModule {
                 if (self.annotationModule.delegate.tts.enableSplitter) {
 
                     var spokenWordCleaned = contentText.slice(e.charIndex, e.charIndex + e.charLength).replace(/[^a-zA-Z0-9 ]/g, "")
-                    var splittingWord = splittingResult[index] as HTMLElement
+                    var splittingWord = self.splittingResult[index] as HTMLElement
                     if (splittingWord) {
                         var isAnchorParent = splittingWord.parentElement.tagName.toLowerCase() === "a"
                         if (!isAnchorParent) {
@@ -151,57 +180,51 @@ export default class TTSModule implements ReaderModule {
                                     
                                     if (self.annotationModule.delegate.tts.highlight == "lines") {
 
-                                        var startLineIndex = parseInt(splittingWord.style.getPropertyValue("--line-index"))
+                                        var startLineIndex = parseInt(splittingWord.dataset.lineIndex)
 
                                         if (prevLineIndex >= 0 && prevLineIndex != startLineIndex) {
                                             let prevElements = node.querySelectorAll("span[data-line-index='"+prevLineIndex+"']");
-                                            var whitespaces: HTMLElement[] = []
-
                                             prevElements.forEach(element => {
-                                                element.style.removeProperty("background")
+                                                element.dataset.ttsCurrentWord = "false" 
+                                                element.dataset.ttsCurrentLine = "false" 
                                                 var nextElement = element.nextElementSibling as HTMLElement
-                                                if (nextElement != null && nextElement.className.startsWith("whitespace")) {
-                                                    whitespaces.push(nextElement)
+                                                if (nextElement != null && !nextElement.hasAttribute("data-word")) {
+                                                    nextElement.dataset.ttsCurrentWord = "false" 
+                                                    nextElement.dataset.ttsCurrentLine = "false" 
                                                 }
                                             });
-
-
-                                            if (prevElements.length > 1) {                                                
-                                                whitespaces.forEach(element => {
-                                                    element.style.removeProperty("background")
-                                                });
-                                            }
                                         }
                                         
+                                        if (index > 0) {
+                                            var lastSplittingWord = self.splittingResult[index-1] as HTMLElement
+                                            lastSplittingWord.dataset.ttsCurrentWord = "false" 
+                                        }
+                                        splittingWord.dataset.ttsCurrentWord = "true" 
+
                                         prevLineIndex = startLineIndex
                                         let elements = node.querySelectorAll("span[data-line-index='"+startLineIndex+"']");
-                                        var whitespaces1: HTMLElement[] = []
                                         elements.forEach(element => {
-                                            element.style.background = self.tts.color
+                                            element.dataset.ttsCurrentLine = "true" 
                                             var nextElement = element.nextElementSibling as HTMLElement
-                                            if (nextElement != null && nextElement.className.startsWith("whitespace")) {
-                                                whitespaces1.push(nextElement)
+                                            if (nextElement != null && !nextElement.hasAttribute("data-word")) {
+                                                nextElement.dataset.ttsCurrentLine = "true" 
                                             }
                                         });
-                                        if (elements.length > 1) {                                            
-                                            whitespaces1.forEach(element => {
-                                                element.style.background = self.tts.color
-                                            });
-                                        }
 
 
                                     } else if (self.annotationModule.delegate.tts.highlight == "words") {
                                         
                                         if (index > 0) {
-                                            var lastSplittingWord = splittingResult[index-1] as HTMLElement
-                                            lastSplittingWord.style.removeProperty("background")
+                                            var lastSplittingWord = self.splittingResult[index-1] as HTMLElement
+                                            lastSplittingWord.dataset.ttsCurrentWord = "false" 
                                         }
-                                        splittingWord.style.background = self.tts.color    
+                                        splittingWord.dataset.ttsCurrentWord = "true" 
 
                                     }
 
-                                    if (!verticalScroll && self.annotationModule.delegate.tts.autoScroll) {
-                                        splittingWord.scrollIntoView({
+                                    // if (!verticalScroll && self.annotationModule.delegate.tts.autoScroll) {
+                                    if (!verticalScroll && self.tts.autoScroll) {
+                                            splittingWord.scrollIntoView({
                                             block: "center",
                                             behavior: "smooth",
                                         })
@@ -211,26 +234,38 @@ export default class TTSModule implements ReaderModule {
                                 }
                             } else if (splittingWordCleaned.length == 0) {
                                 if (self.annotationModule.delegate.tts.highlight == "lines") {
-                                    var startLineIndex = parseInt(splittingWord.style.getPropertyValue("--line-index"))
+                                    var startLineIndex = parseInt(splittingWord.dataset.lineIndex)
 
                                     if (prevLineIndex >= 0 && prevLineIndex != startLineIndex) {
                                         let prevElements = node.querySelectorAll("span[data-line-index='"+prevLineIndex+"']");
                                         prevElements.forEach(element => {
-                                            element.style.removeProperty("background")
+                                            lastSplittingWord.dataset.ttsCurrentWord = "false"
+                                            lastSplittingWord.dataset.ttsCurrentLine = "false"
+                                            var nextElement = element.nextElementSibling as HTMLElement
+                                            if (nextElement != null && !nextElement.hasAttribute("data-word")) {
+                                                nextElement.dataset.ttsCurrentWord = "false"
+                                                nextElement.dataset.ttsCurrentLine = "false"    
+                                            }                        
                                         });
-
                                     }
-                                    
+
+                                    if (index > 0) {
+                                        var lastSplittingWord = self.splittingResult[index-1] as HTMLElement
+                                        lastSplittingWord.dataset.ttsCurrentWord = "false" 
+                                    }
+                                    splittingWord.dataset.ttsCurrentWord = "true" 
+
                                     prevLineIndex = startLineIndex
                                     let elements = node.querySelectorAll("span[data-line-index='"+startLineIndex+"']");
                                     elements.forEach(element => {
-                                        element.style.background = self.tts.color
+                                        element.dataset.ttsCurrentLine = "true"
                                     });
 
                                 } else if (self.annotationModule.delegate.tts.highlight == "words") {
                                     if (index > 0) {
-                                        var lastSplittingWord = splittingResult[index-1] as HTMLElement
-                                        lastSplittingWord.style.removeProperty("background")
+                                        var lastSplittingWord = self.splittingResult[index-1] as HTMLElement
+                                        lastSplittingWord.dataset.ttsCurrentWord = "false"
+                                        lastSplittingWord.dataset.ttsCurrentLine = "false"    
                                     }
                                 }
                                 index++    
@@ -245,10 +280,18 @@ export default class TTSModule implements ReaderModule {
             
         utterance.onend = function () {      
             if (IS_DEV) console.log("utterance ended");
-            self.annotationModule.highlighter.doneSpeaking(true)
+            self.annotationModule.highlighter.doneSpeaking()
             if (self.annotationModule.delegate.tts.enableSplitter) {
-                var splittingWord = splittingResult[splittingResult.length-1] as HTMLElement
-                splittingWord.style.removeProperty("background")
+                let prevElements = node.querySelectorAll("span[data-line-index='"+prevLineIndex+"']");
+                prevElements.forEach(element => {
+                    element.dataset.ttsCurrentWord = "false"
+                    element.dataset.ttsCurrentLine = "false"    
+                    var nextElement = element.nextElementSibling as HTMLElement
+                    if (nextElement != null && !nextElement.hasAttribute("data-word")) {
+                        nextElement.dataset.ttsCurrentWord = "false"
+                        nextElement.dataset.ttsCurrentLine = "false"    
+                    }
+                });
             }
         }    
         callback()

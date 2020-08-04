@@ -45,3 +45,51 @@
     background-color: var(--RS__underlineHoverColor) !important;
 }
 
+[data-tts-current-word="true"][data-tts-color="orange"] {
+    background: rgb(255, 165, 0, 0.5) !important;
+    border-bottom: solid 2px rgb(255, 165, 0) !important;
+}
+[data-tts-current-line="true"][data-tts-color="orange"] {
+    background: rgb(255, 165, 0, 0.5) !important;
+}
+
+
+[data-tts-current-word="true"][data-tts-color="red"] {
+    background: rgba(255,0,0,0.5) !important;
+    border-bottom: solid 2px rgba(255,0,0) !important;
+}
+[data-tts-current-line="true"][data-tts-color="red"] {
+    background: rgba(255,0,0,0.5) !important;
+}
+
+[data-tts-current-word="true"][data-tts-color="blue"] {
+    background: rgba(0,0,255,0.5) !important;
+    border-bottom: solid 2px rgba(0,0,255) !important;
+}
+[data-tts-current-line="true"][data-tts-color="blue"] {
+    background: rgba(0,0,255,0.5) !important;
+}
+
+[data-tts-current-word="true"][data-tts-color="purple"] {
+    background: rgba(102,0,153,0.5) !important;
+    border-bottom: solid 2px rgba(102,0,153) !important;
+}
+[data-tts-current-line="true"][data-tts-color="purple"] {
+    background: rgba(102,0,153,0.5) !important;
+}
+
+[data-tts-current-word="true"][data-tts-color="green"] {
+    background: rgba(0,102,0,0.5) !important;
+    border-bottom: solid 2px rgba(0,102,0) !important;
+}
+[data-tts-current-line="true"][data-tts-color="green"] {
+    background: rgba(0,102,0,0.5) !important;
+}
+
+[data-tts-current-word="true"][data-tts-color="gray"] {
+    background: rgba(85,85,85,0.5) !important;
+    border-bottom: solid 2px rgba(85,85,85) !important;
+}
+[data-tts-current-line="true"][data-tts-color="gray"] {
+    background: rgba(85,85,85,0.5) !important;
+}

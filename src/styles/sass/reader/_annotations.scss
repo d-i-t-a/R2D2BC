@@ -42,12 +42,11 @@
             top: 50%;
             transform: translate(0,-50%);
         }
-        .bookmark-link {
+        .bookmark-link, .highlight-link {
             display: block;
             position: relative;
             padding-top: 8px !important;
             padding-bottom: 8px !important;
-            padding-left: 34px !important;
             line-height: 1.25;
             svg, i {
                 left: 4px;

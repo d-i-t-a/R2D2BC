@@ -36,7 +36,7 @@
 }
 
 
-.contents-view {
+.contents-view, .pageList-view, .landmarks-view {
   background-color: $ui-white;
   overflow: scroll;
   top: 3.5rem;
@@ -88,7 +88,7 @@
 }
 
 [data-viewer-theme="sepia"] {
-  .contents-view {
+  .contents-view, .pageList-view, .landmarks-view {
     background-color: $sepia-bg;
 
     ol li, 
@@ -124,7 +124,7 @@
 }
 
 [data-viewer-theme="night"] {
-  .contents-view {
+  .contents-view, .pageList-view, .landmarks-view {
     background-color: $night-bg;
 
     ol li, 

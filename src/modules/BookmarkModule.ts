@@ -295,7 +295,6 @@ export default class BookmarkModule implements ReaderModule {
 
                                 if (type == AnnotationType.Bookmark) {
                                     bookmarkLink.className = "bookmark-link"
-                                    bookmarkLink.innerHTML = IconLib.bookmark
 
                                     let title: HTMLSpanElement = document.createElement("span");
                                     let formattedProgression = Math.round(locator.locations.progression!! * 100) + "% " + "through resource"

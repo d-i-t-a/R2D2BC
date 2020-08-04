@@ -146,6 +146,13 @@ export default class IFrameNavigator implements Navigator {
     private previousPageAnchorElement: HTMLAnchorElement;
     private espandMenuIcon: HTMLElement;
 
+    private landmarksView: HTMLDivElement;
+    private landmarksSection: HTMLDivElement;
+    private pageListView: HTMLDivElement;
+    private goToPageView: HTMLLIElement;
+    private goToPageNumberInput: HTMLInputElement;
+    private goToPageNumberButton: HTMLButtonElement;
+
     private bookmarksControl: HTMLButtonElement;
     private bookmarksView: HTMLDivElement;
     private links: HTMLUListElement;
@@ -308,6 +315,14 @@ export default class IFrameNavigator implements Navigator {
 
             if (this.headerMenu) this.tocView = HTMLUtilities.findElement(this.headerMenu, "#container-view-toc") as HTMLDivElement;
 
+            if (this.headerMenu) this.landmarksView = HTMLUtilities.findElement(headerMenu, "#container-view-landmarks") as HTMLDivElement;
+            if (this.headerMenu) this.landmarksSection = HTMLUtilities.findElement(headerMenu, "#sidenav-section-landmarks") as HTMLDivElement;
+            if (this.headerMenu) this.pageListView = HTMLUtilities.findElement(headerMenu, "#container-view-pagelist") as HTMLDivElement;
+            if (this.headerMenu) this.goToPageView = HTMLUtilities.findElement(headerMenu, "#sidenav-section-gotopage") as HTMLLIElement;
+            if (this.headerMenu) this.goToPageNumberInput = HTMLUtilities.findElement(headerMenu, "#goToPageNumberInput") as HTMLInputElement;
+            if (this.headerMenu) this.goToPageNumberButton = HTMLUtilities.findElement(headerMenu, "#goToPageNumberButton") as HTMLButtonElement;
+
+
             // Footer Menu
             if (footerMenu) this.linksBottom = HTMLUtilities.findElement(footerMenu, "ul.links.bottom") as HTMLUListElement;
             if (footerMenu) this.linksMiddle = HTMLUtilities.findElement(footerMenu, "ul.links.middle") as HTMLUListElement;
@@ -424,6 +439,9 @@ export default class IFrameNavigator implements Navigator {
 
         addEventListenerOptional(this.espandMenuIcon, 'click', this.handleEditClick.bind(this));
 
+        addEventListenerOptional(this.goToPageNumberInput, 'keypress', this.goToPageNumber.bind(this));
+        addEventListenerOptional(this.goToPageNumberButton, 'click', this.goToPageNumber.bind(this));
+
         addEventListenerOptional(window, 'resize', this.onResize);
 
     }
@@ -457,6 +475,34 @@ export default class IFrameNavigator implements Navigator {
                 }
             }
         });
+    }
+
+    private async goToPageNumber(event: any): Promise<any> {
+        if (this.goToPageNumberInput.value &&  (event.key === 'Enter' || event.type === "click")) {
+            var filteredPages = this.publication.pageList.filter((el: any) => el.href.slice(el.href.indexOf("#") + 1).replace(/[^0-9]/g, '') === this.goToPageNumberInput.value);
+            if (filteredPages && filteredPages.length > 0) {
+                var firstPage = filteredPages[0]
+                let locations: Locations = {
+                    progression: 0
+                }
+                if (firstPage.href.indexOf("#") !== -1) {
+                    const elementId = firstPage.href.slice(firstPage.href.indexOf("#") + 1);
+                    if (elementId !== null) {
+                        locations = {
+                            fragment: elementId
+                        }
+                    }
+                }
+                const position: Locator = {
+                    href: this.publication.getAbsoluteHref(firstPage.href),
+                    locations: locations,
+                    type: firstPage.type,
+                    title: firstPage.title
+                };
+
+                this.navigate(position);
+            }
+        }
     }
 
     private updateBookView(): void {
@@ -685,11 +731,39 @@ export default class IFrameNavigator implements Navigator {
             }
 
             const toc = this.publication.tableOfContents;
+            const landmarks = this.publication.landmarks;
+            const pageList = this.publication.pageList;
+
+
             if (this.tocView) {
                 if (toc.length) {
                     createSubmenu(this.tocView, toc);
                 } else {
                     this.tocView.parentElement.parentElement.removeChild(this.tocView.parentElement);
+                }
+            }
+
+            if (this.pageListView) {
+                if (pageList.length) {
+                    createSubmenu(this.pageListView, pageList);
+                } else {
+                    this.pageListView.parentElement.parentElement.removeChild(this.pageListView.parentElement);
+                }
+            }
+
+            if (this.goToPageView) {
+                if (pageList.length) {
+                    //
+                } else {
+                    this.goToPageView.parentElement.removeChild(this.goToPageView);
+                }
+            }
+
+            if (this.landmarksView) {
+                if (landmarks.length) {
+                    createSubmenu(this.landmarksView, landmarks);
+                } else {
+                    this.landmarksSection.parentElement.removeChild(this.landmarksSection);
                 }
             }
 
@@ -1075,12 +1149,14 @@ export default class IFrameNavigator implements Navigator {
             element.innerText = "unfold_less";
             this.sideNavExanded = true
             this.bookmarkModule.showBookmarks()
+            this.annotationModule.showHighlights()
         } else {
             element.className = element.className.replace(" active", "");
             sidenav.className = sidenav.className.replace(" expanded", "");
             element.innerText = "unfold_more";
             this.sideNavExanded = false
             this.bookmarkModule.showBookmarks()
+            this.annotationModule.showHighlights()
         }
         event.preventDefault();
         event.stopPropagation();
@@ -1468,6 +1544,7 @@ export default class IFrameNavigator implements Navigator {
         setTimeout(() => {
             if (this.annotationModule !== undefined) {
                 this.annotationModule.drawHighlights()
+                this.annotationModule.showHighlights();
             }
 
             if (this.settings.getSelectedView() === this.scroller) {

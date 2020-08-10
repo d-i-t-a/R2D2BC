@@ -81,10 +81,15 @@ export default class TTSModule implements ReaderModule {
         let splittingResult = this.body.querySelectorAll("[data-word]");
         splittingResult.forEach(splittingWord => {
             splittingWord.dataset.ttsColor = this.tts.color 
+            splittingWord.dataset.ttsCurrentWord = "false" 
+            splittingWord.dataset.ttsCurrentLine = "false" 
+        
         });
         let whitespace = this.body.querySelectorAll("[data-whitespace]");
         whitespace.forEach(splittingWord => {
             splittingWord.dataset.ttsColor = this.tts.color 
+            splittingWord.dataset.ttsCurrentWord = "false" 
+            splittingWord.dataset.ttsCurrentLine = "false" 
         });
     }
 
@@ -178,7 +183,7 @@ export default class TTSModule implements ReaderModule {
                             
                                 if (splittingWordCleaned.startsWith(spokenWordCleaned) || splittingWordCleaned.endsWith(spokenWordCleaned)) {
                                     
-                                    if (self.annotationModule.delegate.tts.highlight == "lines") {
+                                    if (self.tts.highlight == "lines") {
 
                                         var startLineIndex = parseInt(splittingWord.dataset.lineIndex)
 
@@ -212,7 +217,7 @@ export default class TTSModule implements ReaderModule {
                                         });
 
 
-                                    } else if (self.annotationModule.delegate.tts.highlight == "words") {
+                                    } else if (self.tts.highlight == "words") {
                                         
                                         if (index > 0) {
                                             var lastSplittingWord = self.splittingResult[index-1] as HTMLElement
@@ -233,7 +238,7 @@ export default class TTSModule implements ReaderModule {
 
                                 }
                             } else if (splittingWordCleaned.length == 0) {
-                                if (self.annotationModule.delegate.tts.highlight == "lines") {
+                                if (self.tts.highlight == "lines") {
                                     var startLineIndex = parseInt(splittingWord.dataset.lineIndex)
 
                                     if (prevLineIndex >= 0 && prevLineIndex != startLineIndex) {
@@ -261,7 +266,7 @@ export default class TTSModule implements ReaderModule {
                                         element.dataset.ttsCurrentLine = "true"
                                     });
 
-                                } else if (self.annotationModule.delegate.tts.highlight == "words") {
+                                } else if (self.tts.highlight == "words") {
                                     if (index > 0) {
                                         var lastSplittingWord = self.splittingResult[index-1] as HTMLElement
                                         lastSplittingWord.dataset.ttsCurrentWord = "false"

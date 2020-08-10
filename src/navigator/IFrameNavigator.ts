@@ -963,7 +963,7 @@ export default class IFrameNavigator implements Navigator {
                 if (this.rights.enableTTS && this.tts.enableSplitter) {
                     Splitting({
                         target: body,
-                        by: this.tts.highlight
+                        by: "lines"
                     });
                 }
             }, 50);

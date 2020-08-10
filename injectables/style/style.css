@@ -46,11 +46,11 @@
 }
 
 [data-tts-current-word="true"][data-tts-color="orange"] {
-    background: rgb(255, 165, 0, 0.5) !important;
+    background: rgba(255, 165, 0, 0.5) !important;
     border-bottom: solid 2px rgb(255, 165, 0) !important;
 }
 [data-tts-current-line="true"][data-tts-color="orange"] {
-    background: rgb(255, 165, 0, 0.5) !important;
+    background: rgba(255, 165, 0, 0.5) !important;
 }
 
 

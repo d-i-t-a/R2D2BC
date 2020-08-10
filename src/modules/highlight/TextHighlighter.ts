@@ -488,41 +488,7 @@ export default class TextHighlighter {
              * @returns {Selection}
              */
             getSelection: function (): Selection {
-
-                function snapSelectionToWord() {
-                    if (self.dom(el)) {
-                        var selection = self.dom(el).getWindow().getSelection();
-                        if (!selection.isCollapsed) {
-                
-                            // Detect if selection is backwards
-                            var range = document.createRange();
-                            range.setStart(selection.anchorNode, selection.anchorOffset);
-                            range.setEnd(selection.focusNode, selection.focusOffset);
-                            var backwards = range.collapsed;
-                            range.detach();
-                
-                            // modify() works on the focus of the selection
-                            var endNode = selection.focusNode, endOffset = selection.focusOffset;
-                            selection.collapse(selection.anchorNode, selection.anchorOffset);
-                            if (backwards) {
-                                selection.modify("move", "backward", "character");
-                                selection.modify("move", "forward", "word");
-                                selection.extend(endNode, endOffset);
-                                selection.modify("extend", "forward", "character");
-                                selection.modify("extend", "backward", "word");
-                
-                            } else {
-                                selection.modify("move", "forward", "character");
-                                selection.modify("move", "backward", "word");
-                                selection.extend(endNode, endOffset);
-                                selection.modify("extend", "backward", "character");
-                                selection.modify("extend", "forward", "word");
-                            }
-                        }
-                        return selection
-                    }
-                }
-                return snapSelectionToWord()
+                return self.dom(el).getWindow().getSelection(); 
             },
 
             /**
@@ -706,8 +672,45 @@ export default class TextHighlighter {
     toolboxShowDelayed() {
         var self = this;
         setTimeout(function() {
+            self.snapSelectionToWord()
             self.toolboxShow();
         }, 100);
+    }
+    
+    snapSelectionToWord() {  
+        var self = this;      
+        // Check for existence of window.getSelection() and that it has a
+        // modify() method. IE 9 has both selection APIs but no modify() method.
+        if (self.dom(self.el)) {
+            var selection = self.dom(self.el).getWindow().getSelection();
+            if (!selection.isCollapsed) {
+    
+                // Detect if selection is backwards
+                var range = document.createRange();
+                range.setStart(selection.anchorNode, selection.anchorOffset);
+                range.setEnd(selection.focusNode, selection.focusOffset);
+                var backwards = range.collapsed;
+                range.detach();
+    
+                // modify() works on the focus of the selection
+                var endNode = selection.focusNode, endOffset = selection.focusOffset;
+                selection.collapse(selection.anchorNode, selection.anchorOffset);
+                
+                var direction = [];
+                if (backwards) {
+                    direction = ['backward', 'forward'];
+                } else {
+                    direction = ['forward', 'backward'];
+                }
+    
+                selection.modify("move", direction[0], "character");
+                selection.modify("move", direction[1], "word");
+                selection.extend(endNode, endOffset);
+                selection.modify("extend", direction[1], "character");
+                selection.modify("extend", direction[0], "word");
+            }
+        }
+        return selection
     }
 
     toolboxShow() {

@@ -1,6 +1,6 @@
 # R2D2BC
 
-[<img src="https://img.shields.io/badge/slack-r2d2bc-red/?logo=slack&style=plastic&color=red">](https://join.slack.com/t/r2d2bc/shared_invite/zt-gisndbu8-ecMkJ3Z1tZL8QU7_x5eLRA)
+[<img src="https://img.shields.io/badge/slack-R2D2BC-red/?logo=slack&style=plastic&color=red">](https://join.slack.com/t/r2d2bc/shared_invite/zt-gisndbu8-ecMkJ3Z1tZL8QU7_x5eLRA)
 
 # Introduction
 **R2D2BC** is an implementation of the [Readium v2](https://github.com/readium/architecture) EPUB reader for the web.

@@ -661,10 +661,7 @@ export default class TextHighlighter {
 
     toolboxHide() {
         var toolbox = document.getElementById("highlight-toolbox");
-        var backdrop = document.getElementById("toolbox-backdrop");
-
         toolbox.style.display = "none";
-        backdrop.style.display = "none";
     }
 
     // Use short timeout to let the selection updated to 'finish', otherwise some
@@ -761,13 +758,9 @@ export default class TextHighlighter {
         if(this.delegate.rights.enableAnnotations) {
 
             var toolbox = document.getElementById("highlight-toolbox");
-            var backdrop = document.getElementById("toolbox-backdrop");
 
             if(getComputedStyle(toolbox).display === "none") {
                 toolbox.style.display = "block";
-                if (!this.isIOS() && !this.isAndroid()) {
-                    backdrop.style.display = "block";
-                }
 
                 var self = this;
 
@@ -852,29 +845,6 @@ export default class TextHighlighter {
 
                     })
                 }
-
-
-                var backdropButton = document.getElementById("toolbox-backdrop");
-
-                function backdropEvent(){
-                    try {
-                        self.dom(self.el).removeAllRanges();
-                    } catch (err) {
-                        console.error(err)
-                    }
-                    toolbox.style.display = "none";
-                    // self.delegate.api.highlightUnSelected().then(async () => {
-                    //     if (IS_DEV) {console.log("highlightUnSelected,  click on backdrop (click, mousedown,mouseup )")}
-                    // })
-                    backdropButton.removeEventListener("click", backdropEvent);
-                    backdropButton.removeEventListener("mousedown", backdropEvent);
-                    backdropButton.removeEventListener("mouseup", backdropEvent);
-                }
-
-                backdropButton.addEventListener("click", backdropEvent);
-                backdropButton.addEventListener("mousedown", backdropEvent);
-                backdropButton.addEventListener("mouseup", backdropEvent);
-
             }
         }
     };
@@ -963,8 +933,6 @@ export default class TextHighlighter {
     }
     speakAll() {
         if (this.delegate.rights.enableTTS) {
-            var backdrop = document.getElementById("toolbox-backdrop");
-            backdrop.style.display = "block";
             var self = this
             function getCssSelector(element: Element): string {
                 const options = {
@@ -1012,7 +980,7 @@ export default class TextHighlighter {
             this.ttsDelegate.cancel()
 
             if(reload) {
-                    this.delegate.delegate.reload()
+                this.delegate.delegate.reload()
             }
         }
     }
@@ -1549,7 +1517,6 @@ export default class TextHighlighter {
                     self.lastSelectedHighlight = anno.id
                 // } else {
                     var toolbox = document.getElementById("highlight-toolbox");
-                    var backdrop = document.getElementById("toolbox-backdrop");
                     // toolbox.style.top = ev.clientY + 74 + 'px';
                     toolbox.style.top = ev.clientY  + 'px';
                     toolbox.style.left = ev.clientX + "px";
@@ -1557,9 +1524,6 @@ export default class TextHighlighter {
                     if(getComputedStyle(toolbox).display === "none") {
                         toolbox.style.display = "block";
 
-                        if (!this.isIOS() && !this.isAndroid()) {
-                            backdrop.style.display = "block";
-                        }
                         this.toolboxMode('edit');
 
                         var colorIcon = document.getElementById("colorIcon");
@@ -1590,7 +1554,6 @@ export default class TextHighlighter {
                             self.delegate.deleteSelectedHighlight(anno).then(async () => {
                                 if (IS_DEV) {console.log("delete highlight "+anno.id)}
                                 toolbox.style.display = "none";
-                                backdrop.style.display = "none";
                             })
                             deleteIcon.removeEventListener("click", deleteH);
                         };
@@ -1601,35 +1564,6 @@ export default class TextHighlighter {
                             deleteIcon.innerHTML = icons.delete;
                             deleteIcon.addEventListener("click", deleteH);
                         }
-
-                        var backdropButton = document.getElementById("toolbox-backdrop");
-
-                        function backdropEvent(){
-                            try {
-                                self.dom(self.el).removeAllRanges();
-                            } catch (err) {
-                                console.error(err)
-                            }
-
-                            toolbox.style.display = "none";
-                            // self.delegate.api.highlightUnSelected().then(async () => {
-                            //     if (IS_DEV) {console.log("highlightUnSelected,  click on backdrop (click, mousedown,mouseup )")}
-                            // })
-                            if (deleteIcon) {
-                                deleteIcon.removeEventListener("click", deleteH);
-                            }
-                            // commentIcon.removeEventListener("click", addCommenH);
-
-                            backdropButton.removeEventListener("click", backdropEvent);
-                            backdropButton.removeEventListener("mousedown", backdropEvent);
-                            backdropButton.removeEventListener("mouseup", backdropEvent);
-
-
-                        }
-
-                        backdropButton.addEventListener("click", backdropEvent);
-                        backdropButton.addEventListener("mousedown", backdropEvent);
-                        backdropButton.addEventListener("mouseup", backdropEvent);
 
                     } else {
                         toolbox.style.display = "none";

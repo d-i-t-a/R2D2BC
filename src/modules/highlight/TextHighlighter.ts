@@ -669,7 +669,9 @@ export default class TextHighlighter {
     toolboxShowDelayed() {
         var self = this;
         setTimeout(function() {
-            self.snapSelectionToWord()
+            if (!self.isAndroid()) {
+                self.snapSelectionToWord()
+            }
             self.toolboxShow();
         }, 100);
     }

@@ -36,10 +36,14 @@ function createElement(parent, key, text, whitespace) {
 //   key;// && (el.className = "orange"); 
   if (text) { 
       if (!whitespace) {
-        el.setAttribute("data-" + key, text.replace(/[^a-zA-Z0-9 ]/g, ""));
-      } else {
+        if (text.replace(/[^a-zA-Z0-9 ]/g, "").length > 0) {
+            el.setAttribute("data-" + key, text.replace(/[^a-zA-Z0-9 ]/g, ""));
+        } else {
+            el.setAttribute("data-" + key, "");
+        }
+    } else {
         el.setAttribute("data-" + key, "");
-      }
+    }
       el.textContent = text; 
   }
   return (parent && appendChild(parent, el)) || el;

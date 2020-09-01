@@ -30,7 +30,7 @@ export interface TTSModuleConfig {
     tts: TTSSettings
 }
 
-export interface TTSSpeechConfig { 
+export interface TTSSpeechConfig {
     enableSplitter?: boolean;
     highlight?: string;
     color?: string;
@@ -42,16 +42,14 @@ export interface TTSSpeechConfig {
 }
 
 export default class TTSModule implements ReaderModule {
-    
+
     annotationModule: AnnotationModule;
     tts: TTSSettings;
-
-    synth = window.speechSynthesis
-
     body: any
     splittingResult: any[]
+    voices: SpeechSynthesisVoice[]
 
-    initialize(body:any) {
+    initialize(body: any) {
         if (this.annotationModule.highlighter !== undefined) {
             this.annotationModule.highlighter.ttsDelegate = this
             this.tts.setControls();
@@ -59,44 +57,68 @@ export default class TTSModule implements ReaderModule {
             this.body = body
             let splittingResult = body.querySelectorAll("[data-word]");
             splittingResult.forEach(splittingWord => {
-                splittingWord.dataset.ttsColor = this.tts.color 
+                splittingWord.dataset.ttsColor = this.tts.color
             });
             let whitespace = body.querySelectorAll("[data-whitespace]");
             whitespace.forEach(splittingWord => {
-                splittingWord.dataset.ttsColor = this.tts.color 
+                splittingWord.dataset.ttsColor = this.tts.color
+            });
+
+            function setSpeech() {
+                return new Promise(
+                    function (resolve, _reject) {
+                        let synth = window.speechSynthesis;
+                        let id;
+
+                        id = setInterval(() => {
+                            if (synth.getVoices().length !== 0) {
+                                resolve(synth.getVoices());
+                                clearInterval(id);
+                            }
+                        }, 10);
+                    }
+                )
+            }
+
+            let s = setSpeech();
+            s.then(async (voices: SpeechSynthesisVoice[]) => {
+                console.log(voices)
+                this.voices = voices
             });
 
         }
     }
+
     cancel() {
-        this.synth.cancel()
+        window.speechSynthesis.cancel()
         if (this.splittingResult && this.annotationModule.delegate.tts.enableSplitter) {
             this.splittingResult.forEach(splittingWord => {
-                splittingWord.dataset.ttsCurrentWord = "false" 
-                splittingWord.dataset.ttsCurrentLine = "false" 
+                splittingWord.dataset.ttsCurrentWord = "false"
+                splittingWord.dataset.ttsCurrentLine = "false"
             });
         }
-    }        
+    }
+
     private handleResize(): void {
         let splittingResult = this.body.querySelectorAll("[data-word]");
         splittingResult.forEach(splittingWord => {
-            splittingWord.dataset.ttsColor = this.tts.color 
-            splittingWord.dataset.ttsCurrentWord = "false" 
-            splittingWord.dataset.ttsCurrentLine = "false" 
-        
+            splittingWord.dataset.ttsColor = this.tts.color
+            splittingWord.dataset.ttsCurrentWord = "false"
+            splittingWord.dataset.ttsCurrentLine = "false"
+
         });
         let whitespace = this.body.querySelectorAll("[data-whitespace]");
         whitespace.forEach(splittingWord => {
-            splittingWord.dataset.ttsColor = this.tts.color 
-            splittingWord.dataset.ttsCurrentWord = "false" 
-            splittingWord.dataset.ttsCurrentLine = "false" 
+            splittingWord.dataset.ttsColor = this.tts.color
+            splittingWord.dataset.ttsCurrentWord = "false"
+            splittingWord.dataset.ttsCurrentLine = "false"
         });
     }
 
-    async speak(selectionInfo: ISelectionInfo | undefined, node:any, partial:boolean, callback: () => void): Promise<any> {                
-    
+    async speak(selectionInfo: ISelectionInfo | undefined, node: any, partial: boolean, callback: () => void): Promise<any> {
+
         var self = this
-        
+
         this.cancel()
 
         if (this.annotationModule.delegate.tts.enableSplitter) {
@@ -110,7 +132,7 @@ export default class TTSModule implements ReaderModule {
                 if (startNode.dataset == undefined) {
                     startNode = startNode.nextElementSibling as HTMLElement
                 }
-                
+
                 var endNode = (selectionInfo as ISelectionInfo).range.endContainer.parentElement
                 if (endNode.tagName.toLowerCase() === "a") {
                     endNode = endNode.parentElement as HTMLElement
@@ -123,7 +145,7 @@ export default class TTSModule implements ReaderModule {
                 var endWordIndex = parseInt(endNode.dataset.wordIndex) + 1
 
                 let array = Array.from(allWords)
-                this.splittingResult = array.slice(startWordIndex,endWordIndex)
+                this.splittingResult = array.slice(startWordIndex, endWordIndex)
             } else {
                 this.splittingResult = node.querySelectorAll("[data-word]");
             }
@@ -135,181 +157,165 @@ export default class TTSModule implements ReaderModule {
         utterance.rate = this.tts.rate
         utterance.pitch = this.tts.pitch
         utterance.volume = this.tts.volume
-        
 
         console.log(this.tts.rate)
         console.log(this.tts.pitch)
         console.log(this.tts.volume)
         console.log(this.tts.color)
-        
-        var voices = this.synth.getVoices();
-        console.log(voices)
 
         // use publication language
         if ((self.annotationModule.delegate.tts.voice && self.annotationModule.delegate.tts.voice.usePublication) || self.annotationModule.delegate.tts.voice == undefined) {
-            utterance.voice = voices.filter((el: any) => el.lang.startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || el.lang.endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()))[0]
+            utterance.voice = this.voices.filter((el: any) => el.lang.startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || el.lang.endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()))[0]
         }
         // if no voice, then use configured language
         if (self.annotationModule.delegate.tts.voice && (utterance.voice == undefined || utterance.voice == null)) {
-            utterance.voice = voices.filter((el: any) => el.lang == self.annotationModule.delegate.tts.voice.lang && el.name == self.annotationModule.delegate.tts.voice.name)[0]
+            utterance.voice = this.voices.filter((el: any) => el.lang == self.annotationModule.delegate.tts.voice.lang && el.name == self.annotationModule.delegate.tts.voice.name)[0]
         }
         // if no voice still, use default language 
         if (utterance.voice == undefined || utterance.voice == null) {
-            utterance.voice = voices.filter((el: any) => el.default == true)[0]
+            utterance.voice = this.voices.filter((el: any) => el.default == true)[0]
         }
         // utterance.voice =  voices.filter((el: any) => el.lang == this.tts.voice.lang && el.name == this.tts.voice.name)[0] 
+        utterance.lang = utterance.voice.lang
 
-        this.synth.speak(utterance);
-        var contentText = selectionInfo.cleanText.slice(0);    
-        var index = 0 
-        var prevLineIndex = -1
+        window.speechSynthesis.speak(utterance);
+
+        var index = 0
+        var lastword = undefined
         var verticalScroll = (await self.annotationModule.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? (await self.annotationModule.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : false
 
-        utterance.onboundary = function (e:any) {
-            if(e.name === "sentence") {
-                console.log("sentence boundary", e.charIndex, e.charLength, contentText.slice(e.charIndex, e.charIndex + e.charLength));                                                
+        utterance.onboundary = function (e: any) {
+            // console.log(utterance.text)
+            if (e.name === "sentence") {
+                console.log("sentence boundary", e.charIndex, e.charLength, utterance.text.slice(e.charIndex, e.charIndex + e.charLength));
             }
-            if(e.name === "word") {
-                console.log("word boundary", e.charIndex, e.charLength, contentText.slice(e.charIndex, e.charIndex + e.charLength));
+            if (e.name === "word") {
+
+                function getWordAt(str, pos) {
+                    // Perform type conversions.
+                    str = String(str);
+                    pos = Number(pos) >>> 0;
+
+                    // Search for the word's beginning and end.
+                    var left = str.slice(0, pos + 1).search(/\S+$/),
+                        right = str.slice(pos).search(/\s/);
+
+                    // The last word in the string is a special case.
+                    if (right < 0) {
+                        return str.slice(left);
+                    }
+
+                    // Return the word, using the located bounds to extract it from the string.
+                    return str.slice(left, right + pos);
+                }
+                const word = getWordAt(utterance.text, e.charIndex)
+                if (lastword == word) {
+                    index--
+                }
+                lastword = word
+
                 if (self.annotationModule.delegate.tts.enableSplitter) {
 
-                    var spokenWordCleaned = contentText.slice(e.charIndex, e.charIndex + e.charLength).replace(/[^a-zA-Z0-9 ]/g, "")
-                    var splittingWord = self.splittingResult[index] as HTMLElement
-                    if (splittingWord) {
-                        var isAnchorParent = splittingWord.parentElement.tagName.toLowerCase() === "a"
-                        if (!isAnchorParent) {
-                            var splittingWordCleaned = splittingWord.innerText.replace(/[^a-zA-Z0-9 ]/g, "")
-                            if (spokenWordCleaned.length > 0 && splittingWordCleaned.length > 0) {
-                            
-                                if (splittingWordCleaned.startsWith(spokenWordCleaned) || splittingWordCleaned.endsWith(spokenWordCleaned)) {
-                                    
-                                    if (self.tts.highlight == "lines") {
 
-                                        var startLineIndex = parseInt(splittingWord.dataset.lineIndex)
+                    processWord(word, verticalScroll)
 
-                                        if (prevLineIndex >= 0 && prevLineIndex != startLineIndex) {
-                                            let prevElements = node.querySelectorAll("span[data-line-index='"+prevLineIndex+"']");
-                                            prevElements.forEach(element => {
-                                                element.dataset.ttsCurrentWord = "false" 
-                                                element.dataset.ttsCurrentLine = "false" 
-                                                var nextElement = element.nextElementSibling as HTMLElement
-                                                if (nextElement != null && !nextElement.hasAttribute("data-word")) {
-                                                    nextElement.dataset.ttsCurrentWord = "false" 
-                                                    nextElement.dataset.ttsCurrentLine = "false" 
-                                                }
-                                            });
-                                        }
-                                        
-                                        if (index > 0) {
-                                            var lastSplittingWord = self.splittingResult[index-1] as HTMLElement
-                                            lastSplittingWord.dataset.ttsCurrentWord = "false" 
-                                        }
-                                        splittingWord.dataset.ttsCurrentWord = "true" 
-
-                                        prevLineIndex = startLineIndex
-                                        let elements = node.querySelectorAll("span[data-line-index='"+startLineIndex+"']");
-                                        elements.forEach(element => {
-                                            element.dataset.ttsCurrentLine = "true" 
-                                            var nextElement = element.nextElementSibling as HTMLElement
-                                            if (nextElement != null && !nextElement.hasAttribute("data-word")) {
-                                                nextElement.dataset.ttsCurrentLine = "true" 
-                                            }
-                                        });
-
-
-                                    } else if (self.tts.highlight == "words") {
-                                        
-                                        if (index > 0) {
-                                            var lastSplittingWord = self.splittingResult[index-1] as HTMLElement
-                                            lastSplittingWord.dataset.ttsCurrentWord = "false" 
-                                        }
-                                        splittingWord.dataset.ttsCurrentWord = "true" 
-
-                                    }
-
-                                    // if (!verticalScroll && self.annotationModule.delegate.tts.autoScroll) {
-                                    if (!verticalScroll && self.tts.autoScroll) {
-                                            splittingWord.scrollIntoView({
-                                            block: "center",
-                                            behavior: "smooth",
-                                        })
-                                    }
-                                    index++    
-
-                                }
-                            } else if (splittingWordCleaned.length == 0) {
-                                if (self.tts.highlight == "lines") {
-                                    var startLineIndex = parseInt(splittingWord.dataset.lineIndex)
-
-                                    if (prevLineIndex >= 0 && prevLineIndex != startLineIndex) {
-                                        let prevElements = node.querySelectorAll("span[data-line-index='"+prevLineIndex+"']");
-                                        prevElements.forEach(element => {
-                                            lastSplittingWord.dataset.ttsCurrentWord = "false"
-                                            lastSplittingWord.dataset.ttsCurrentLine = "false"
-                                            var nextElement = element.nextElementSibling as HTMLElement
-                                            if (nextElement != null && !nextElement.hasAttribute("data-word")) {
-                                                nextElement.dataset.ttsCurrentWord = "false"
-                                                nextElement.dataset.ttsCurrentLine = "false"    
-                                            }                        
-                                        });
-                                    }
-
-                                    if (index > 0) {
-                                        var lastSplittingWord = self.splittingResult[index-1] as HTMLElement
-                                        lastSplittingWord.dataset.ttsCurrentWord = "false" 
-                                    }
-                                    splittingWord.dataset.ttsCurrentWord = "true" 
-
-                                    prevLineIndex = startLineIndex
-                                    let elements = node.querySelectorAll("span[data-line-index='"+startLineIndex+"']");
-                                    elements.forEach(element => {
-                                        element.dataset.ttsCurrentLine = "true"
-                                    });
-
-                                } else if (self.tts.highlight == "words") {
-                                    if (index > 0) {
-                                        var lastSplittingWord = self.splittingResult[index-1] as HTMLElement
-                                        lastSplittingWord.dataset.ttsCurrentWord = "false"
-                                        lastSplittingWord.dataset.ttsCurrentLine = "false"    
-                                    }
-                                }
-                                index++    
-                            }
-                        } else {
-                            index++    
-                        }
-                    }
                 }
             }
         }
-            
-        utterance.onend = function () {      
+
+        function processWord(word, verticalScroll) {
+
+            var spokenWordCleaned = word.replace(/[^a-zA-Z0-9 ]/g, "")
+            console.log("spokenWordCleaned", spokenWordCleaned);
+
+            var splittingWord = self.splittingResult[index] as HTMLElement
+            var splittingWordCleaned = splittingWord.innerText.replace(/[^a-zA-Z0-9 ]/g, "")
+            console.log("splittingWordCleaned", splittingWordCleaned);
+
+            if (splittingWordCleaned.length == 0) {
+                index++
+                splittingWord = self.splittingResult[index] as HTMLElement
+                splittingWordCleaned = splittingWord.innerText.replace(/[^a-zA-Z0-9 ]/g, "")
+                console.log("splittingWordCleaned", splittingWordCleaned);
+            }
+
+            if (splittingWord) {
+
+                var isAnchorParent = splittingWord.parentElement.tagName.toLowerCase() === "a"
+                if (!isAnchorParent) {
+
+                    if (spokenWordCleaned.length > 0 && splittingWordCleaned.length > 0) {
+
+                        if (splittingWordCleaned.startsWith(spokenWordCleaned) || splittingWordCleaned.endsWith(spokenWordCleaned)
+                            || spokenWordCleaned.startsWith(splittingWordCleaned) || spokenWordCleaned.endsWith(splittingWordCleaned)) {
+
+                            if (index > 0) {
+                                let splittingResult = self.body.querySelectorAll("[data-word]");
+                                splittingResult.forEach(splittingWord => {
+                                    splittingWord.dataset.ttsColor = self.tts.color
+                                    splittingWord.dataset.ttsCurrentWord = "false"
+                                    splittingWord.dataset.ttsCurrentLine = "false"
+
+                                });
+                                let whitespace = self.body.querySelectorAll("[data-whitespace]");
+                                whitespace.forEach(splittingWord => {
+                                    splittingWord.dataset.ttsColor = self.tts.color
+                                    splittingWord.dataset.ttsCurrentWord = "false"
+                                    splittingWord.dataset.ttsCurrentLine = "false"
+                                });
+
+                            }
+                            splittingWord.dataset.ttsCurrentWord = "true"
+
+                            if (!verticalScroll && self.tts.autoScroll) {
+                                splittingWord.scrollIntoView({
+                                    block: "center",
+                                    behavior: "smooth",
+                                })
+                            }
+                        } else {
+                            index++
+                        }
+                    }
+                }
+                index++
+            }
+
+        }
+
+        utterance.onend = function () {
             if (IS_DEV) console.log("utterance ended");
             self.annotationModule.highlighter.doneSpeaking()
             if (self.annotationModule.delegate.tts.enableSplitter) {
-                let prevElements = node.querySelectorAll("span[data-line-index='"+prevLineIndex+"']");
-                prevElements.forEach(element => {
-                    element.dataset.ttsCurrentWord = "false"
-                    element.dataset.ttsCurrentLine = "false"    
-                    var nextElement = element.nextElementSibling as HTMLElement
-                    if (nextElement != null && !nextElement.hasAttribute("data-word")) {
-                        nextElement.dataset.ttsCurrentWord = "false"
-                        nextElement.dataset.ttsCurrentLine = "false"    
-                    }
+
+                let splittingResult = self.body.querySelectorAll("[data-word]");
+                splittingResult.forEach(splittingWord => {
+                    splittingWord.dataset.ttsColor = self.tts.color
+                    splittingWord.dataset.ttsCurrentWord = "false"
+                    splittingWord.dataset.ttsCurrentLine = "false"
+
                 });
+                let whitespace = self.body.querySelectorAll("[data-whitespace]");
+                whitespace.forEach(splittingWord => {
+                    splittingWord.dataset.ttsColor = self.tts.color
+                    splittingWord.dataset.ttsCurrentWord = "false"
+                    splittingWord.dataset.ttsCurrentLine = "false"
+                });
+
             }
-        }    
+        }
         callback()
 
     }
 
     speakPause() {
-        this.synth.pause()
-    }
-    speakResume() {
-        this.synth.resume()
+        window.speechSynthesis.pause()
     }
     
+    speakResume() {
+        window.speechSynthesis.resume()
+    }
+
     public static async create(config: TTSModuleConfig) {
         const annotations = new this(
             config.annotationModule,
@@ -319,9 +325,9 @@ export default class TTSModule implements ReaderModule {
         return annotations;
     }
 
-    public constructor(annotationModule: AnnotationModule, tts:TTSSettings) {
+    public constructor(annotationModule: AnnotationModule, tts: TTSSettings) {
         this.annotationModule = annotationModule
-        this.tts =  tts
+        this.tts = tts
     }
 
     protected async start(): Promise<void> {
@@ -329,7 +335,7 @@ export default class TTSModule implements ReaderModule {
     }
 
     async stop() {
-        if (IS_DEV) { console.log("TTS module stop")}
+        if (IS_DEV) { console.log("TTS module stop") }
     }
 
 }

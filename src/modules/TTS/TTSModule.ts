@@ -149,33 +149,25 @@ export default class TTSModule implements ReaderModule {
                 this.splittingResult = node.querySelectorAll("[data-word]");
             }
         }
-        var utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
-        utterance.rate = self.annotationModule.delegate.tts.rate ? self.annotationModule.delegate.tts.rate : 1.0
-        utterance.pitch = self.annotationModule.delegate.tts.pitch ? self.annotationModule.delegate.tts.pitch : 1.0
-        utterance.volume = self.annotationModule.delegate.tts.volume ? self.annotationModule.delegate.tts.volume : 1.0
+        const utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
         utterance.rate = this.tts.rate
         utterance.pitch = this.tts.pitch
         utterance.volume = this.tts.volume
 
-        console.log(this.tts.rate)
-        console.log(this.tts.pitch)
-        console.log(this.tts.volume)
-        console.log(this.tts.color)
 
-        // use publication language
-        if ((self.annotationModule.delegate.tts.voice && self.annotationModule.delegate.tts.voice.usePublication) || self.annotationModule.delegate.tts.voice == undefined) {
-            utterance.voice = this.voices.filter((el: any) => el.lang.startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || el.lang.endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()))[0]
-        }
-        // if no voice, then use configured language
-        if (self.annotationModule.delegate.tts.voice && (utterance.voice == undefined || utterance.voice == null)) {
-            utterance.voice = this.voices.filter((el: any) => el.lang == self.annotationModule.delegate.tts.voice.lang && el.name == self.annotationModule.delegate.tts.voice.name)[0]
-        }
-        // if no voice still, use default language 
-        if (utterance.voice == undefined || utterance.voice == null) {
-            utterance.voice = this.voices.filter((el: any) => el.default == true)[0]
+
+        const initialVoice = self.annotationModule.delegate.tts.voice ? this.voices.filter((el: any) => el.lang == self.annotationModule.delegate.tts.voice.lang && el.name == self.annotationModule.delegate.tts.voice.name)[0] : undefined
+        const publicationVoice = (self.annotationModule.delegate.tts.voice && self.annotationModule.delegate.tts.voice.usePublication) ? this.voices.filter((el: any) => el.lang.startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || el.lang.endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()))[0] : undefined
+        const defaultVoice = this.voices.filter((el: any) => el.default == true)[0]
+
+        if (initialVoice) {
+            utterance.voice = initialVoice
+        } else if (publicationVoice) {
+            utterance.voice = publicationVoice
+        } else if (defaultVoice) {
+            utterance.voice = defaultVoice
         }
         // utterance.voice =  voices.filter((el: any) => el.lang == this.tts.voice.lang && el.name == this.tts.voice.name)[0] 
-        utterance.lang = utterance.voice.lang
 
         window.speechSynthesis.speak(utterance);
 

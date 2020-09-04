@@ -24,6 +24,7 @@ import { ISelectionInfo } from "../../model/Locator";
 import { ReadiumCSS } from "../../model/user-settings/ReadiumCSS";
 import { Switchable } from "../../model/user-settings/UserProperties";
 import { TTSSettings, TTSVoice } from "./TTSSettings";
+import * as HTMLUtilities from "../../utils/HTMLUtilities";
 
 export interface TTSModuleConfig {
     annotationModule: AnnotationModule;
@@ -46,7 +47,7 @@ export default class TTSModule implements ReaderModule {
     tts: TTSSettings;
     body: any
     splittingResult: any[]
-    voices: SpeechSynthesisVoice[]
+    voices: SpeechSynthesisVoice[] = []
 
     initialize(body: any) {
         if (this.annotationModule.highlighter !== undefined) {
@@ -63,29 +64,51 @@ export default class TTSModule implements ReaderModule {
                 splittingWord.dataset.ttsColor = this.tts.color
             });
 
-            function setSpeech() {
-                return new Promise(
-                    function (resolve, _reject) {
-                        let synth = window.speechSynthesis;
-                        let id;
-
-                        id = setInterval(() => {
-                            if (synth.getVoices().length !== 0) {
-                                resolve(synth.getVoices());
-                                clearInterval(id);
-                            }
-                        }, 10);
-                    }
-                )
-            }
-
-            let s = setSpeech();
-            s.then(async (voices: SpeechSynthesisVoice[]) => {
-                console.log(voices)
-                this.voices = voices
-            });
+            this.initVoices(true);
 
         }
+    }
+
+    private initVoices(first:boolean) {
+        function setSpeech() {
+            return new Promise(
+                function (resolve, _reject) {
+                    let synth = window.speechSynthesis;
+                    let id;
+
+                    id = setInterval(() => {
+                        if (synth.getVoices().length !== 0) {
+                            resolve(synth.getVoices());
+                            clearInterval(id);
+                        }
+                    }, 10);
+                }
+            );
+        }
+
+        let s = setSpeech();
+        s.then(async (voices: SpeechSynthesisVoice[]) => {
+            if (IS_DEV) console.log(voices);
+            this.voices = []
+            voices.forEach(voice => {
+                if (voice.localService == true) {
+                    this.voices.push(voice);
+                }
+            });
+            if (IS_DEV) console.log(this.voices);
+            if (first) {
+                // preferred-languages
+                var preferredLanguageSelector = HTMLUtilities.findElement(this.annotationModule.delegate.headerMenu, "#preferred-languages") as HTMLSelectElement;
+                if (preferredLanguageSelector) {
+                    this.voices.forEach(voice => {
+                        var v = document.createElement("option") as HTMLOptionElement;
+                        v.value = voice.name + ":" + voice.lang;
+                        v.innerHTML = voice.name + " (" + voice.lang + ")";
+                        preferredLanguageSelector.add(v);
+                    });
+                }
+            }
+        });
     }
 
     cancel() {
@@ -153,21 +176,64 @@ export default class TTSModule implements ReaderModule {
         utterance.rate = this.tts.rate
         utterance.pitch = this.tts.pitch
         utterance.volume = this.tts.volume
+        
+        if (IS_DEV) console.log("this.tts.voice.lang", this.tts.voice.lang)
 
+        var initialVoiceHasHyphen = (this.tts.voice.lang.indexOf("-") !== -1)
+        if (initialVoiceHasHyphen == false) {
+            this.tts.voice.lang = this.tts.voice.lang.replace("_", "-")
+            initialVoiceHasHyphen = true
+        }
+        if (IS_DEV) console.log("initialVoiceHasHyphen", initialVoiceHasHyphen)
+        if (IS_DEV) console.log("voices", this.voices)
+        var initialVoice = undefined
+        if (initialVoiceHasHyphen == true) {
+            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => v.lang.replace("_", "-") == this.tts.voice.lang && v.name.localeCompare(this.tts.voice.name))[0] : undefined
+            if (initialVoice == undefined) {
+                initialVoice = (this.tts.voice && this.tts.voice.lang) ? this.voices.filter((v: any) => v.lang.replace("_", "-") == this.tts.voice.lang)[0] : undefined    
+            }
+        } else {
+            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => v.lang == this.tts.voice.lang && v.name.localeCompare(this.tts.voice.name))[0] : undefined
+            if (initialVoice == undefined) {
+                initialVoice = (this.tts.voice && this.tts.voice.lang) ? this.voices.filter((v: any) => v.lang == this.tts.voice.lang)[0] : undefined    
+            }
+        }
+        if (IS_DEV) console.log("initialVoice", initialVoice)
 
+        var publicationVoiceHasHyphen = (self.annotationModule.delegate.publication.metadata.language[0].indexOf("-") !== -1)
+        if (IS_DEV) console.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen)
+        var publicationVoice = undefined
+        if (publicationVoiceHasHyphen == true) {
+            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) => v.lang.replace("_", "-").startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || v.lang.replace("_", "-").endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()) )[0] : undefined
+        } else {
+            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) => v.lang.startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || v.lang.endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()) )[0] : undefined
+        }
+        if (IS_DEV) console.log("publicationVoice", publicationVoice)
 
-        const initialVoice = self.annotationModule.delegate.tts.voice ? this.voices.filter((el: any) => el.lang == self.annotationModule.delegate.tts.voice.lang && el.name == self.annotationModule.delegate.tts.voice.name)[0] : undefined
-        const publicationVoice = (self.annotationModule.delegate.tts.voice && self.annotationModule.delegate.tts.voice.usePublication) ? this.voices.filter((el: any) => el.lang.startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || el.lang.endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()))[0] : undefined
-        const defaultVoice = this.voices.filter((el: any) => el.default == true)[0]
+        var defaultVoiceHasHyphen = (navigator.language.indexOf("-") !== -1)
+        if (IS_DEV) console.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen)
+        var defaultVoice = undefined
+        if (defaultVoiceHasHyphen == true) {
+            defaultVoice = this.voices.filter((v: any) => v.lang.replace("_", "-") == navigator.language && v.localService == true)[0]
+        } else {
+            defaultVoice = this.voices.filter((v: any) => v.lang == navigator.language && v.localService == true)[0]
+        }
+        if (IS_DEV) console.log("defaultVoice", defaultVoice)
 
         if (initialVoice) {
+            if (IS_DEV) console.log("initialVoice")
             utterance.voice = initialVoice
         } else if (publicationVoice) {
+            if (IS_DEV) console.log("publicationVoice")
             utterance.voice = publicationVoice
         } else if (defaultVoice) {
+            if (IS_DEV) console.log("defaultVoice")
             utterance.voice = defaultVoice
         }
-        // utterance.voice =  voices.filter((el: any) => el.lang == this.tts.voice.lang && el.name == this.tts.voice.name)[0] 
+        utterance.lang = utterance.voice.lang
+        if (IS_DEV)  console.log("utterance.voice.lang", utterance.voice.lang)
+        if (IS_DEV)  console.log("utterance.lang", utterance.lang)
+        if (IS_DEV)  console.log("navigator.language", navigator.language)
 
         window.speechSynthesis.speak(utterance);
 
@@ -176,9 +242,8 @@ export default class TTSModule implements ReaderModule {
         var verticalScroll = (await self.annotationModule.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? (await self.annotationModule.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : false
 
         utterance.onboundary = function (e: any) {
-            // console.log(utterance.text)
             if (e.name === "sentence") {
-                console.log("sentence boundary", e.charIndex, e.charLength, utterance.text.slice(e.charIndex, e.charIndex + e.charLength));
+                if (IS_DEV) console.log("sentence boundary", e.charIndex, e.charLength, utterance.text.slice(e.charIndex, e.charIndex + e.charLength));
             }
             if (e.name === "word") {
 
@@ -217,17 +282,17 @@ export default class TTSModule implements ReaderModule {
         function processWord(word, verticalScroll) {
 
             var spokenWordCleaned = word.replace(/[^a-zA-Z0-9 ]/g, "")
-            console.log("spokenWordCleaned", spokenWordCleaned);
+            if (IS_DEV) console.log("spokenWordCleaned", spokenWordCleaned);
 
             var splittingWord = self.splittingResult[index] as HTMLElement
             var splittingWordCleaned = splittingWord.innerText.replace(/[^a-zA-Z0-9 ]/g, "")
-            console.log("splittingWordCleaned", splittingWordCleaned);
+            if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
 
             if (splittingWordCleaned.length == 0) {
                 index++
                 splittingWord = self.splittingResult[index] as HTMLElement
                 splittingWordCleaned = splittingWord.innerText.replace(/[^a-zA-Z0-9 ]/g, "")
-                console.log("splittingWordCleaned", splittingWordCleaned);
+                if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
             }
 
             if (splittingWord) {

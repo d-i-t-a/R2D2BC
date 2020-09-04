@@ -148,7 +148,7 @@ export class TTSSettings implements TTSSpeechConfig {
         this.volume = (await this.getProperty(TTSREFS.VOLUME_KEY) != null) ? (await this.getProperty(TTSREFS.VOLUME_KEY) as Incremental).value : this.volume
 
         this.color = (await this.getProperty(TTSREFS.COLOR_KEY) != null) ? (await this.getProperty(TTSREFS.COLOR_KEY) as Stringable).value : this.color
-        this.voice = (await this.getProperty(TTSREFS.VOLUME_KEY) != null) ? (await this.getProperty(TTSREFS.VOLUME_KEY) as JSONable).value : this.volume
+        this.voice = (await this.getProperty(TTSREFS.VOICE_REF) != null) ? (await this.getProperty(TTSREFS.VOICE_REF) as JSONable).value : this.voice
 
         this.userProperties = this.getTTSSettings()
     }
@@ -378,12 +378,19 @@ export class TTSSettings implements TTSSpeechConfig {
             await this.saveProperty(this.userProperties.getByRef(TTSREFS.VOICE_REF))
             this.settingsChangeCallback();
         }
+    }
 
-
+    async preferredVoice(value:any) {
+        var name = (value.indexOf(":") !== -1) ? value.slice(0, value.indexOf(':')) : undefined
+        var lang = (value.indexOf(":") !== -1) ? value.slice(value.indexOf(':') + 1) : value
+        if (name != undefined && lang != undefined) {
+            this.ttsSet('voice', { usePublication: true,  name : name, lang : lang })
+        } else if (lang != undefined && name == undefined) {
+            this.ttsSet('voice', { usePublication: true,  lang : lang })
+        }
     }
 
     async ttsSet(key: any, value: any) {
-
         if (key == TTSREFS.COLOR_REF) {
             this.color = value
             this.userProperties.getByRef(TTSREFS.COLOR_REF).value = this.color;
@@ -400,7 +407,6 @@ export class TTSSettings implements TTSSpeechConfig {
             await this.saveProperty(this.userProperties.getByRef(TTSREFS.VOICE_REF))
             this.settingsChangeCallback();
         } 
-
     }
 
 

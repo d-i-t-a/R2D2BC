@@ -151,7 +151,9 @@ export async function ttsSet(key, value) {
     if (IS_DEV) { console.log("set " + key + " value " + value) }
     R2TTSSettings.ttsSet(key, value)
 }
-
+export async function preferredVoice(value) {
+    R2TTSSettings.preferredVoice(value)
+}
 export async function goTo(locator) {
     if (IS_DEV) { console.log("goTo " + locator) }
     R2Navigator.goTo(locator)
@@ -314,6 +316,9 @@ exports.applyTTSSettings = function (ttsSettings) {
 }
 exports.ttsSet = function (key, value) {
     ttsSet(key, value)
+}
+exports.preferredVoice = function (value) {
+    preferredVoice(value)
 }
 exports.resetTTSSettings = function () {
     resetTTSSettings()

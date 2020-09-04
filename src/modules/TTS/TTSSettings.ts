@@ -32,7 +32,6 @@ export class TTSREFS {
     static readonly PITCH_REF = "pitch"
     static readonly VOLUME_REF = "volume"
     static readonly VOICE_REF = "voice"
-    static readonly HIGHLIGHT_REF = "highlight"
 
     static readonly COLOR_KEY = "tts-" + TTSREFS.COLOR_REF
     static readonly AUTO_SCROLL_KEY = "tts-" + TTSREFS.AUTO_SCROLL_REF
@@ -40,7 +39,6 @@ export class TTSREFS {
     static readonly PITCH_KEY = "tts-" + TTSREFS.PITCH_REF
     static readonly VOLUME_KEY = "tts-" + TTSREFS.VOLUME_REF
     static readonly VOICE_KEY = "tts-" + TTSREFS.VOICE_REF
-    static readonly HIGHLIGHT_KEY = "tts-" + TTSREFS.HIGHLIGHT_REF
 
 }
 
@@ -62,7 +60,6 @@ export class TTSSettings implements TTSSpeechConfig {
     private readonly store: Store;
     private readonly TTSSETTINGS = "ttsSetting";
 
-    highlight = "lines"
     color = "orange"
     autoScroll = true
     rate = 1.0
@@ -87,7 +84,6 @@ export class TTSSettings implements TTSSpeechConfig {
     private speechPitch: HTMLInputElement;
     private speechVolume: HTMLInputElement;
     private speechAutoScroll: HTMLInputElement;
-    private speechHighlight: HTMLInputElement;
 
     api: any;
 
@@ -125,10 +121,6 @@ export class TTSSettings implements TTSSpeechConfig {
                 settings.voice = initialTTSSettings.voice
                 if (IS_DEV) console.log(settings.voice)
             }
-            if(initialTTSSettings.highlight) {
-                settings.highlight = initialTTSSettings.highlight
-                if (IS_DEV) console.log(settings.highlight)
-            }
 
         }
 
@@ -158,14 +150,11 @@ export class TTSSettings implements TTSSpeechConfig {
         this.color = (await this.getProperty(TTSREFS.COLOR_KEY) != null) ? (await this.getProperty(TTSREFS.COLOR_KEY) as Stringable).value : this.color
         this.voice = (await this.getProperty(TTSREFS.VOLUME_KEY) != null) ? (await this.getProperty(TTSREFS.VOLUME_KEY) as JSONable).value : this.volume
 
-        this.highlight = (await this.getProperty(TTSREFS.HIGHLIGHT_KEY) != null) ? (await this.getProperty(TTSREFS.HIGHLIGHT_KEY) as Stringable).value : this.highlight
-
         this.userProperties = this.getTTSSettings()
     }
     
     private async reset() {
 
-        this.highlight = "lines"
         this.color = "orange"
         this.autoScroll = true
         this.rate = 1.0
@@ -208,9 +197,7 @@ export class TTSSettings implements TTSSpeechConfig {
         if (this.headerMenu) this.speechPitch = HTMLUtilities.findElement(this.headerMenu, "#speechPitch") as HTMLInputElement;
         if (this.headerMenu) this.speechVolume = HTMLUtilities.findElement(this.headerMenu, "#speechVolume") as HTMLInputElement;
 
-
         if (this.headerMenu) this.speechAutoScroll = HTMLUtilities.findElement(this.headerMenu, "#autoScroll") as HTMLInputElement;
-        if (this.headerMenu) this.speechHighlight = HTMLUtilities.findElement(this.headerMenu, "#highlight") as HTMLInputElement;
 
         this.setupEvents();
 
@@ -218,7 +205,6 @@ export class TTSSettings implements TTSSpeechConfig {
         if (this.speechPitch) this.speechPitch.value = this.pitch.toString()
         if (this.speechVolume) this.speechVolume.value = this.volume.toString()
         if (this.speechAutoScroll) this.speechAutoScroll.checked = this.autoScroll
-        if (this.speechHighlight) this.speechHighlight.checked = this.highlight == "lines" ? true : false
 
         // Clicking the settings view outside the ul hides it, but clicking inside the ul keeps it up.
         addEventListenerOptional(HTMLUtilities.findElement(element, "ul"), 'click', (event: Event) => {
@@ -308,7 +294,6 @@ export class TTSSettings implements TTSSpeechConfig {
         userProperties.addIncremental(this.pitch, 0.1, 2, 0.1, "", TTSREFS.PITCH_REF, TTSREFS.PITCH_KEY)
         userProperties.addIncremental(this.volume, 0.1, 1, 0.1, "", TTSREFS.VOLUME_REF, TTSREFS.VOLUME_KEY)
         userProperties.addStringable(this.color, TTSREFS.COLOR_REF, TTSREFS.COLOR_KEY)
-        userProperties.addStringable(this.highlight, TTSREFS.HIGHLIGHT_REF, TTSREFS.HIGHLIGHT_KEY)
         userProperties.addJSONable(JSON.stringify(this.voice), TTSREFS.VOICE_REF, TTSREFS.VOICE_KEY)
 
         return userProperties
@@ -394,15 +379,6 @@ export class TTSSettings implements TTSSpeechConfig {
             this.settingsChangeCallback();
         }
 
-        if (ttsSettings.highlight) {
-            console.log("highlight " + this.highlight)
-            this.highlight = ttsSettings.highlight
-            this.userProperties.getByRef(TTSREFS.HIGHLIGHT_REF).value = this.highlight;
-            await this.saveProperty(this.userProperties.getByRef(TTSREFS.HIGHLIGHT_REF))
-            this.settingsChangeCallback();
-        }
-
-
 
     }
 
@@ -422,11 +398,6 @@ export class TTSSettings implements TTSSpeechConfig {
             this.voice = value
             this.userProperties.getByRef(TTSREFS.VOICE_REF).value = this.voice;
             await this.saveProperty(this.userProperties.getByRef(TTSREFS.VOICE_REF))
-            this.settingsChangeCallback();
-        } else if (key == TTSREFS.HIGHLIGHT_REF) {
-            this.highlight = value
-            this.userProperties.getByRef(TTSREFS.HIGHLIGHT_REF).value = this.highlight;
-            await this.saveProperty(this.userProperties.getByRef(TTSREFS.HIGHLIGHT_REF))
             this.settingsChangeCallback();
         } 
 

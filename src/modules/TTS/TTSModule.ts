@@ -32,7 +32,6 @@ export interface TTSModuleConfig {
 
 export interface TTSSpeechConfig {
     enableSplitter?: boolean;
-    highlight?: string;
     color?: string;
     autoScroll?: boolean;
     rate?: number;

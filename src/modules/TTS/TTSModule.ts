@@ -179,10 +179,13 @@ export default class TTSModule implements ReaderModule {
         
         if (IS_DEV) console.log("this.tts.voice.lang", this.tts.voice.lang)
 
-        var initialVoiceHasHyphen = (this.tts.voice.lang.indexOf("-") !== -1)
-        if (initialVoiceHasHyphen == false) {
-            this.tts.voice.lang = this.tts.voice.lang.replace("_", "-")
-            initialVoiceHasHyphen = true
+        var initialVoiceHasHyphen = true
+        if (this.tts.voice && this.tts.voice.lang) {
+            initialVoiceHasHyphen = (this.tts.voice.lang.indexOf("-") !== -1)
+            if (initialVoiceHasHyphen == false) {
+                this.tts.voice.lang = this.tts.voice.lang.replace("_", "-")
+                initialVoiceHasHyphen = true
+            }
         }
         if (IS_DEV) console.log("initialVoiceHasHyphen", initialVoiceHasHyphen)
         if (IS_DEV) console.log("voices", this.voices)

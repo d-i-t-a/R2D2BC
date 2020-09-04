@@ -106,6 +106,10 @@ export function totalResources() {
     if (IS_DEV) { console.log("totalResources") }
     return R2Navigator.totalResources()    
 }
+export function publicationLanguage() {
+    if (IS_DEV) { console.log("publicationLanguage") }
+    return R2Navigator.publication.metadata.language
+}
 export async function resetUserSettings() {
     if (IS_DEV) { console.log("resetSettings") }
     R2Settings.resetUserSettings()
@@ -377,4 +381,7 @@ exports.mostRecentNavigatedTocItem = function() {
 }
 exports.totalResources = function() {
     return totalResources()
+}
+exports.publicationLanguage = function() {
+    return publicationLanguage()
 }

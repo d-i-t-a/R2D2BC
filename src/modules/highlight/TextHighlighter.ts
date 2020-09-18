@@ -948,24 +948,29 @@ export default class TextHighlighter {
                 return uniqueCssSelector(element, self.dom(self.el).getDocument(), options);
             }
 
-            var node = this.dom(this.el).getWindow().document.body;
-            if (IS_DEV) console.log(self.delegate.delegate.iframe.contentDocument)
-            const selection = self.dom(self.el).getSelection();
-            const range = this.dom(this.el).getWindow().document.createRange();
-            range.selectNodeContents(node);
-            selection.removeAllRanges();
-            selection.addRange(range);
             const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
-
-            if (selectionInfo != undefined && selectionInfo.cleanText) {
-                this.ttsDelegate.speak(selectionInfo as any, node, false,  () => {
-                    var selection = self.dom(self.el).getSelection();
-                    selection.removeAllRanges();
-                    self.toolboxHide();
-                })
+            if (selectionInfo != undefined) {
+                self.speak()
             } else {
-                self.dom(self.el).getSelection().removeAllRanges();
-                self.toolboxHide();
+                var node = this.dom(this.el).getWindow().document.body;
+                if (IS_DEV) console.log(self.delegate.delegate.iframe.contentDocument)
+                const selection = self.dom(self.el).getSelection();
+                const range = this.dom(this.el).getWindow().document.createRange();
+                range.selectNodeContents(node);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
+
+                if (selectionInfo != undefined && selectionInfo.cleanText) {
+                    this.ttsDelegate.speak(selectionInfo as any, node, false,  () => {
+                        var selection = self.dom(self.el).getSelection();
+                        selection.removeAllRanges();
+                        self.toolboxHide();
+                    })
+                } else {
+                    self.dom(self.el).getSelection().removeAllRanges();
+                    self.toolboxHide();
+                }
             }
         }
     };

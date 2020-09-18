@@ -216,6 +216,10 @@ function splitText(el, key, splitOn, includePrevious, preserveWhitespace) {
             allElements.push(next);
             return;
         }
+        if (next.tagName == "select" || next.tagName == "input" || next.tagName == "option" || next.tagName == "textarea" || next.tagName == "script") {
+            allElements.push(next);
+            return;
+        }
         // Recursively run through child nodes
         if (next.childNodes && next.childNodes.length) {
             allElements.push(next);
@@ -226,7 +230,7 @@ function splitText(el, key, splitOn, includePrevious, preserveWhitespace) {
         // Get the text to split, trimming out the whitespace
         /** @type {string} */
         var wholeText = next.wholeText || '';
-        var contents = wholeText.trim();
+        var contents = wholeText;
 
         // If there's no text left after trimming whitespace, continue the loop
         if (contents.length) {

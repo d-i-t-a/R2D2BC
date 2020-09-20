@@ -216,7 +216,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         store: settingsStore,
         initialTTSSettings: config.tts,
         headerMenu: headerMenu,
-        api:config.api
+        api:config.tts.api
     })
 
     R2Navigator = await IFrameNavigator.create({

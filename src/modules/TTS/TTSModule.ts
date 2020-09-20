@@ -116,13 +116,16 @@ export default class TTSModule implements ReaderModule {
     }
 
     cancel() {
-        this.userScrolled = false 
-        window.speechSynthesis.cancel()
-        if (this.splittingResult && this.annotationModule.delegate.tts.enableSplitter) {
-            this.splittingResult.forEach(splittingWord => {
-                splittingWord.dataset.ttsCurrentWord = "false"
-                splittingWord.dataset.ttsCurrentLine = "false"
-            });
+        if (window.speechSynthesis.speaking) {
+            if (this.tts.api) this.tts.api.stopped()
+            this.userScrolled = false 
+            window.speechSynthesis.cancel()
+            if (this.splittingResult && this.annotationModule.delegate.tts.enableSplitter) {
+                this.splittingResult.forEach(splittingWord => {
+                    splittingWord.dataset.ttsCurrentWord = "false"
+                    splittingWord.dataset.ttsCurrentLine = "false"
+                });
+            }
         }
     }
 
@@ -143,6 +146,8 @@ export default class TTSModule implements ReaderModule {
     }
 
     async speak(selectionInfo: ISelectionInfo | undefined, node: any, partial: boolean, callback: () => void): Promise<any> {
+
+        if (this.tts.api) this.tts.api.started()
 
         this.userScrolled = false 
         var self = this
@@ -368,19 +373,26 @@ export default class TTSModule implements ReaderModule {
                 });
 
             }
+            if (self.tts.api) self.tts.api.finished()
         }
         callback()
 
     }
 
     speakPause() {
-        this.userScrolled = false 
-        window.speechSynthesis.pause()
+        if (window.speechSynthesis.speaking) {
+            if (this.tts.api) this.tts.api.paused()
+            this.userScrolled = false 
+            window.speechSynthesis.pause()
+        }
     }
     
     speakResume() {
-        this.userScrolled = false 
-        window.speechSynthesis.resume()
+        if (window.speechSynthesis.speaking) {
+            if (this.tts.api) this.tts.api.resumed()
+            this.userScrolled = false 
+            window.speechSynthesis.resume()
+        }
     }
 
     public static async create(config: TTSModuleConfig) {

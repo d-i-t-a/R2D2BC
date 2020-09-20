@@ -35,7 +35,7 @@ function createElement(parent, key, text, whitespace) {
   var el = root.createElement('span');
 //   key;// && (el.className = "orange"); 
   if (text) { 
-      if (!whitespace) {
+    if (!whitespace) {
         if (text.replace(/[^a-zA-Z0-9 ]/g, "").length > 0) {
             el.setAttribute("data-" + key, text.replace(/[^a-zA-Z0-9 ]/g, ""));
         } else {
@@ -44,7 +44,7 @@ function createElement(parent, key, text, whitespace) {
     } else {
         el.setAttribute("data-" + key, "");
     }
-      el.textContent = text; 
+    el.textContent = text; 
   }
   return (parent && appendChild(parent, el)) || el;
 }
@@ -230,7 +230,8 @@ function splitText(el, key, splitOn, includePrevious, preserveWhitespace) {
         // Get the text to split, trimming out the whitespace
         /** @type {string} */
         var wholeText = next.wholeText || '';
-        var contents = wholeText;
+        var contents = wholeText.trim();
+        // var contents = wholeText;
 
         // If there's no text left after trimming whitespace, continue the loop
         if (contents.length) {

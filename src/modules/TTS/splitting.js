@@ -230,17 +230,17 @@ function splitText(el, key, splitOn, includePrevious, preserveWhitespace) {
         // Get the text to split, trimming out the whitespace
         /** @type {string} */
         var wholeText = next.wholeText || '';
-        var contents = wholeText.trim();
+        var contentsTrimmed = wholeText.trim();
         // var contents = wholeText;
 
         // If there's no text left after trimming whitespace, continue the loop
-        if (contents.length) {
+        if (contentsTrimmed.length) {
             // insert leading space if there was one
             if (wholeText[0] === ' ') {
                 allElements.push(createText(' '));
             }
             // Concatenate the split text children back into the full array
-            each(contents.split(splitOn), function(splitText, i) {
+            each(contentsTrimmed.split(splitOn), function(splitText, i) {
                 if (i && preserveWhitespace) {
                     allElements.push(createElement(F, "whitespace", " ", preserveWhitespace));
                 }
@@ -252,6 +252,8 @@ function splitText(el, key, splitOn, includePrevious, preserveWhitespace) {
             if (wholeText[wholeText.length - 1] === ' ') {
                 allElements.push(createText(' '));
             }
+        } else {
+            allElements.push(createElement(F, "whitespace", " ", preserveWhitespace)); 
         }
     });
 

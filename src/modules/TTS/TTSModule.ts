@@ -25,6 +25,7 @@ import { ReadiumCSS } from "../../model/user-settings/ReadiumCSS";
 import { Switchable } from "../../model/user-settings/UserProperties";
 import { TTSSettings, TTSVoice } from "./TTSSettings";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import { addEventListenerOptional, removeEventListenerOptional } from "../../utils/EventHandler";
 
 export interface TTSModuleConfig {
     annotationModule: AnnotationModule;
@@ -66,6 +67,9 @@ export default class TTSModule implements ReaderModule {
 
             this.initVoices(true);
 
+            addEventListenerOptional(this.body, 'wheel', this.wheel.bind(this));
+            addEventListenerOptional(document, 'keydown', this.wheel.bind(this));
+            addEventListenerOptional(this.annotationModule.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));
         }
     }
 
@@ -112,6 +116,7 @@ export default class TTSModule implements ReaderModule {
     }
 
     cancel() {
+        this.userScrolled = false 
         window.speechSynthesis.cancel()
         if (this.splittingResult && this.annotationModule.delegate.tts.enableSplitter) {
             this.splittingResult.forEach(splittingWord => {
@@ -139,6 +144,7 @@ export default class TTSModule implements ReaderModule {
 
     async speak(selectionInfo: ISelectionInfo | undefined, node: any, partial: boolean, callback: () => void): Promise<any> {
 
+        this.userScrolled = false 
         var self = this
 
         this.cancel()
@@ -326,7 +332,7 @@ export default class TTSModule implements ReaderModule {
                             }
                             splittingWord.dataset.ttsCurrentWord = "true"
 
-                            if (!verticalScroll && self.tts.autoScroll) {
+                            if (!verticalScroll && self.tts.autoScroll && !self.userScrolled) {
                                 splittingWord.scrollIntoView({
                                     block: "center",
                                     behavior: "smooth",
@@ -368,20 +374,22 @@ export default class TTSModule implements ReaderModule {
     }
 
     speakPause() {
+        this.userScrolled = false 
         window.speechSynthesis.pause()
     }
     
     speakResume() {
+        this.userScrolled = false 
         window.speechSynthesis.resume()
     }
 
     public static async create(config: TTSModuleConfig) {
-        const annotations = new this(
+        const tts = new this(
             config.annotationModule,
             config.tts
         );
-        await annotations.start();
-        return annotations;
+        await tts.start();
+        return tts;
     }
 
     public constructor(annotationModule: AnnotationModule, tts: TTSSettings) {
@@ -393,8 +401,29 @@ export default class TTSModule implements ReaderModule {
         this.annotationModule.delegate.ttsModule = this
     }
 
+    userScrolled = false
+    private wheel(event: KeyboardEvent | MouseEvent): void {
+        if (IS_DEV) console.log(event)
+        if (event instanceof KeyboardEvent) {
+            const key = event.key;
+            switch (key) { 
+                case "ArrowUp":
+                  this.userScrolled = true
+                  break;
+                case "ArrowDown":
+                  this.userScrolled = true
+                  break;
+              } 
+        } else {
+            this.userScrolled = true
+        }
+    }
+
     async stop() {
         if (IS_DEV) { console.log("TTS module stop") }
+        removeEventListenerOptional(this.body, 'wheel', this.wheel.bind(this));
+        removeEventListenerOptional(document, 'keydown', this.wheel.bind(this));
+        removeEventListenerOptional(this.annotationModule.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));
     }
 
 }

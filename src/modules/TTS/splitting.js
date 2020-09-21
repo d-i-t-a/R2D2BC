@@ -236,6 +236,7 @@ function splitText(el, key, splitOn, includePrevious, preserveWhitespace) {
         // If there's no text left after trimming whitespace, continue the loop
         if (contentsTrimmed.length) {
             // insert leading space if there was one
+            allElements.push(createElement(F, "whitespace", " ", preserveWhitespace)); 
             if (wholeText[0] === ' ') {
                 allElements.push(createText(' '));
             }
@@ -252,6 +253,7 @@ function splitText(el, key, splitOn, includePrevious, preserveWhitespace) {
             if (wholeText[wholeText.length - 1] === ' ') {
                 allElements.push(createText(' '));
             }
+            allElements.push(createElement(F, "whitespace", " ", preserveWhitespace)); 
         } else {
             allElements.push(createElement(F, "whitespace", " ", preserveWhitespace)); 
         }

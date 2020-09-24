@@ -117,8 +117,8 @@ export default class TTSModule implements ReaderModule {
 
     cancel() {
         if (window.speechSynthesis.speaking) {
-            if (this.tts.api) this.tts.api.stopped()
-            this.userScrolled = false 
+            if (this.tts.api && typeof this.tts.api.stopped === "function") this.tts.api.stopped()
+            this.userScrolled = false
             window.speechSynthesis.cancel()
             if (this.splittingResult && this.annotationModule.delegate.tts.enableSplitter) {
                 this.splittingResult.forEach(splittingWord => {
@@ -147,9 +147,9 @@ export default class TTSModule implements ReaderModule {
 
     async speak(selectionInfo: ISelectionInfo | undefined, node: any, partial: boolean, callback: () => void): Promise<any> {
 
-        if (this.tts.api) this.tts.api.started()
+        if (this.tts.api && typeof this.tts.api.started === "function") this.tts.api.started()
 
-        this.userScrolled = false 
+        this.userScrolled = false
         var self = this
 
         this.cancel()
@@ -187,7 +187,7 @@ export default class TTSModule implements ReaderModule {
         utterance.rate = this.tts.rate
         utterance.pitch = this.tts.pitch
         utterance.volume = this.tts.volume
-        
+
         if (IS_DEV) console.log("this.tts.voice.lang", this.tts.voice.lang)
 
         var initialVoiceHasHyphen = true
@@ -204,12 +204,12 @@ export default class TTSModule implements ReaderModule {
         if (initialVoiceHasHyphen == true) {
             initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => v.lang.replace("_", "-") == this.tts.voice.lang && v.name.localeCompare(this.tts.voice.name))[0] : undefined
             if (initialVoice == undefined) {
-                initialVoice = (this.tts.voice && this.tts.voice.lang) ? this.voices.filter((v: any) => v.lang.replace("_", "-") == this.tts.voice.lang)[0] : undefined    
+                initialVoice = (this.tts.voice && this.tts.voice.lang) ? this.voices.filter((v: any) => v.lang.replace("_", "-") == this.tts.voice.lang)[0] : undefined
             }
         } else {
             initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => v.lang == this.tts.voice.lang && v.name.localeCompare(this.tts.voice.name))[0] : undefined
             if (initialVoice == undefined) {
-                initialVoice = (this.tts.voice && this.tts.voice.lang) ? this.voices.filter((v: any) => v.lang == this.tts.voice.lang)[0] : undefined    
+                initialVoice = (this.tts.voice && this.tts.voice.lang) ? this.voices.filter((v: any) => v.lang == this.tts.voice.lang)[0] : undefined
             }
         }
         if (IS_DEV) console.log("initialVoice", initialVoice)
@@ -373,7 +373,7 @@ export default class TTSModule implements ReaderModule {
                 });
 
             }
-            if (self.tts.api) self.tts.api.finished()
+            if (self.tts.api && typeof self.tts.api.finished === "function") self.tts.api.finished()
         }
         callback()
 
@@ -381,16 +381,16 @@ export default class TTSModule implements ReaderModule {
 
     speakPause() {
         if (window.speechSynthesis.speaking) {
-            if (this.tts.api) this.tts.api.paused()
-            this.userScrolled = false 
+            if (this.tts.api && typeof this.tts.api.paused === "function") this.tts.api.paused()
+            this.userScrolled = false
             window.speechSynthesis.pause()
         }
     }
-    
+
     speakResume() {
         if (window.speechSynthesis.speaking) {
-            if (this.tts.api) this.tts.api.resumed()
-            this.userScrolled = false 
+            if (this.tts.api && typeof this.tts.api.resumed === "function") this.tts.api.resumed()
+            this.userScrolled = false
             window.speechSynthesis.resume()
         }
     }
@@ -418,14 +418,14 @@ export default class TTSModule implements ReaderModule {
         if (IS_DEV) console.log(event)
         if (event instanceof KeyboardEvent) {
             const key = event.key;
-            switch (key) { 
+            switch (key) {
                 case "ArrowUp":
                   this.userScrolled = true
                   break;
                 case "ArrowDown":
                   this.userScrolled = true
                   break;
-              } 
+              }
         } else {
             this.userScrolled = true
         }

@@ -61,4 +61,4 @@ Contributions are always welcomed! Please see [CONTRIBUTING](CONTRIBUTING.md) fo
 
 
 ## Supporters
-[<img src="https://dita.digital/jetbrains.png">](https://www.jetbrains.com/?from=R2D2BC)
+[<img src="https://dita.digital/jetbrains.png" width="60">](https://www.jetbrains.com/?from=R2D2BC)

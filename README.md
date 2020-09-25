@@ -1,3 +1,10 @@
+![](r2d2bc-logo.png)
+
+[<img src="https://img.shields.io/badge/slack-R2D2BC-red/?logo=slack&style=plastic&color=red">](https://join.slack.com/t/r2d2bc/shared_invite/zt-gisndbu8-ecMkJ3Z1tZL8QU7_x5eLRA)
+
+# R2D2BC
+
+# Introduction
 **R2D2BC** is an implementation of the [Readium v2](https://github.com/readium/architecture) EPUB reader for the web.
 It is built as a modular toolkit (rather than a full-featured app) so that applications can use it to 
 handle the EPUB-related functions while customizing the own design, user interface, and extensions.
@@ -47,5 +54,7 @@ The R2D2BC reader has been used in:
 - The UNODC [Fieldguides](https://fieldguides.github.io/library/)
 - The DITA Gateway [D2G](https://d2g.dita.digital)
 
+# Contributing
+Contributions are always welcomed! Please see [CONTRIBUTING](CONTRIBUTING.md) for detailed guidelines.
 
 [![DepShield Badge](https://depshield.sonatype.org/badges/d-i-t-a/R2D2BC/depshield.svg)](https://depshield.github.io)

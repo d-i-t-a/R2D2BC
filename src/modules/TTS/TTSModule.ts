@@ -202,12 +202,17 @@ export default class TTSModule implements ReaderModule {
         if (IS_DEV) console.log("voices", this.voices)
         var initialVoice = undefined
         if (initialVoiceHasHyphen == true) {
-            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => v.lang.replace("_", "-") == this.tts.voice.lang && v.name.localeCompare(this.tts.voice.name))[0] : undefined
+            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => { 
+                var lang = v.lang.replace("_", "-")
+                return lang == this.tts.voice.lang && v.name == this.tts.voice.name
+            })[0] : undefined
             if (initialVoice == undefined) {
                 initialVoice = (this.tts.voice && this.tts.voice.lang) ? this.voices.filter((v: any) => v.lang.replace("_", "-") == this.tts.voice.lang)[0] : undefined    
             }
         } else {
-            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => v.lang == this.tts.voice.lang && v.name.localeCompare(this.tts.voice.name))[0] : undefined
+            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) =>  { 
+                return v.lang == this.tts.voice.lang && v.name == this.tts.voice.name
+            })[0] : undefined
             if (initialVoice == undefined) {
                 initialVoice = (this.tts.voice && this.tts.voice.lang) ? this.voices.filter((v: any) => v.lang == this.tts.voice.lang)[0] : undefined    
             }
@@ -218,9 +223,14 @@ export default class TTSModule implements ReaderModule {
         if (IS_DEV) console.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen)
         var publicationVoice = undefined
         if (publicationVoiceHasHyphen == true) {
-            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) => v.lang.replace("_", "-").startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || v.lang.replace("_", "-").endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()) )[0] : undefined
+            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) =>  {
+                var lang = v.lang.replace("_", "-")
+                return lang.startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || lang.endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()) 
+            })[0] : undefined
         } else {
-            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) => v.lang.startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || v.lang.endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()) )[0] : undefined
+            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) =>  {
+                return v.lang.startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || v.lang.endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()) 
+            })[0] : undefined
         }
         if (IS_DEV) console.log("publicationVoice", publicationVoice)
 
@@ -228,9 +238,14 @@ export default class TTSModule implements ReaderModule {
         if (IS_DEV) console.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen)
         var defaultVoice = undefined
         if (defaultVoiceHasHyphen == true) {
-            defaultVoice = this.voices.filter((v: any) => v.lang.replace("_", "-") == navigator.language && v.localService == true)[0]
+            defaultVoice = this.voices.filter((v: any) => {
+                var lang = v.lang.replace("_", "-")
+                return lang == navigator.language && v.localService == true
+            })[0]
         } else {
-            defaultVoice = this.voices.filter((v: any) => v.lang == navigator.language && v.localService == true)[0]
+            defaultVoice = this.voices.filter((v: any) => {
+                return v.lang == navigator.language && v.localService == true
+            })[0]
         }
         if (IS_DEV) console.log("defaultVoice", defaultVoice)
 

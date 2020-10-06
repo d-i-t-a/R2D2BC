@@ -67,6 +67,7 @@ export default class TTSModule implements ReaderModule {
 
             this.initVoices(true);
 
+            addEventListenerOptional(document, 'wheel', this.wheel.bind(this));
             addEventListenerOptional(this.body, 'wheel', this.wheel.bind(this));
             addEventListenerOptional(document, 'keydown', this.wheel.bind(this));
             addEventListenerOptional(this.annotationModule.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));
@@ -431,7 +432,7 @@ export default class TTSModule implements ReaderModule {
     }
 
     userScrolled = false
-    private wheel(event: KeyboardEvent | MouseEvent): void {
+    private wheel(event: KeyboardEvent | MouseEvent | TrackEvent): void {
         if (IS_DEV) console.log(event)
         if (event instanceof KeyboardEvent) {
             const key = event.key;
@@ -450,6 +451,7 @@ export default class TTSModule implements ReaderModule {
 
     async stop() {
         if (IS_DEV) { console.log("TTS module stop") }
+        removeEventListenerOptional(document, 'wheel', this.wheel.bind(this));
         removeEventListenerOptional(this.body, 'wheel', this.wheel.bind(this));
         removeEventListenerOptional(document, 'keydown', this.wheel.bind(this));
         removeEventListenerOptional(this.annotationModule.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));

@@ -601,7 +601,11 @@ export default class IFrameNavigator implements Navigator {
         }
         setTimeout(() => {
             this.updatePositionInfo();
+            if (this.annotationModule !== undefined) {
+                this.annotationModule.drawHighlights()
+            }
         }, 100);
+
     }
 
     onScroll(): void {

@@ -43,6 +43,8 @@ import { IS_DEV } from "../..";
 import { icons } from "../../utils/IconLib";
 import TTSModule from "../TTS/TTSModule";
 import { SelectionMenuItem } from "../../navigator/IFrameNavigator";
+import { ReadiumCSS } from "../../model/user-settings/ReadiumCSS";
+import { Switchable } from "../../model/user-settings/UserProperties";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
@@ -1421,7 +1423,10 @@ export default class TextHighlighter {
     isAndroid() {
         return navigator.userAgent.match(/Android/i) != null;
     }
-
+    getScrollingElement = (_documant: Document): Element => {
+        return document.scrollingElement;
+    };
+    
     async processMouseEvent(win: IReadiumIFrameWindow, ev: MouseEvent) {
         const documant = win.document;
         // const scrollElement = getScrollingElement(documant);
@@ -1435,10 +1440,12 @@ export default class TextHighlighter {
             return;
         }
 
-        // const paginated = isPaginated(documant);
+        const paginated = this.isPaginated();
         const bodyRect = documant.body.getBoundingClientRect();
-        const xOffset = bodyRect.left;
-        const yOffset = bodyRect.top;
+        const scrollElement = this.getScrollingElement(documant);
+
+        const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
+        const yOffset = paginated ? (-scrollElement.scrollTop) : bodyRect.top;
 
         let foundHighlight: IHighlight | undefined;
         let foundElement: IHTMLDivElementWithRect | undefined;
@@ -1711,6 +1718,12 @@ export default class TextHighlighter {
         }
     }
 
+    async isPaginated() {
+        var verticalScroll = ( await this.delegate.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? ( await this.delegate.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : false
+        console.log("ispaginated ", !verticalScroll)
+        return !verticalScroll
+    }
+
     createHighlightDom(win: IReadiumIFrameWindow, highlight: IHighlight): HTMLDivElement | undefined {
 
         const documant = win.document;
@@ -1730,18 +1743,18 @@ export default class TextHighlighter {
             highlightParent.setAttribute("data-click", "1");
         }
 
-        // Resize Sensor sets body position to "relative" (default static),
-        // which may breaks things!
-        // (e.g. highlights CSS absolute/fixed positioning)
-        // Also note that ReadiumCSS default to (via stylesheet :root):
-        documant.body.style.position = "relative";
+        const paginated = this.isPaginated();
+        const bodyRect = document.documentElement.getBoundingClientRect();
 
-        const bodyRect = documant.body.getBoundingClientRect();
+        const scrollElement = this.getScrollingElement(documant);
 
-        const xOffset = bodyRect.left;
-        const yOffset = bodyRect.top;
+        const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
+        const yOffset = paginated ? (-scrollElement.scrollTop) : bodyRect.top;
+        console.log("xOffset ", xOffset)
+        console.log("yOffset ", yOffset)
 
-        const scale = 1 / (1);
+
+        const scale = 1 / 1;
 
         const drawUnderline = false;
         const drawStrikeThrough = false;

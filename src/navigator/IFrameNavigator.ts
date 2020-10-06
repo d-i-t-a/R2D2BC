@@ -1587,7 +1587,6 @@ export default class IFrameNavigator implements Navigator {
                     created: new Date(),
                     title: startLink.title
                 };
-                this.stopReadAloud();
                 this.navigate(position);
             }
         }

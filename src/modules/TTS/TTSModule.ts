@@ -102,14 +102,16 @@ export default class TTSModule implements ReaderModule {
             if (IS_DEV) console.log(this.voices);
             if (first) {
                 // preferred-languages
-                var preferredLanguageSelector = HTMLUtilities.findElement(this.annotationModule.delegate.headerMenu, "#preferred-languages") as HTMLSelectElement;
-                if (preferredLanguageSelector) {
-                    this.voices.forEach(voice => {
-                        var v = document.createElement("option") as HTMLOptionElement;
-                        v.value = voice.name + ":" + voice.lang;
-                        v.innerHTML = voice.name + " (" + voice.lang + ")";
-                        preferredLanguageSelector.add(v);
-                    });
+                if (this.annotationModule.delegate.headerMenu) {
+                    var preferredLanguageSelector = HTMLUtilities.findElement(this.annotationModule.delegate.headerMenu, "#preferred-languages") as HTMLSelectElement;
+                    if (preferredLanguageSelector) {
+                        this.voices.forEach(voice => {
+                            var v = document.createElement("option") as HTMLOptionElement;
+                            v.value = voice.name + ":" + voice.lang;
+                            v.innerHTML = voice.name + " (" + voice.lang + ")";
+                            preferredLanguageSelector.add(v);
+                        });
+                    }
                 }
             }
         });

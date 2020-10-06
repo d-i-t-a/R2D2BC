@@ -1519,57 +1519,78 @@ export default class IFrameNavigator implements Navigator {
 
 
     navigate(locator: Locator): void {
-        this.hideIframeContents();
-        this.showLoadingMessageAfterDelay();
-        if (locator.locations === undefined) {
-            locator.locations = {
-                progression: 0
-            } 
-        }
-        this.newPosition = locator;
-        this.currentTOCRawLink = locator.href
-
-        if (locator.href.indexOf("#") !== -1) {
-            const newResource = locator.href.slice(0, locator.href.indexOf("#"))
-            this.currentChapterLink.href = newResource;
-            this.currentChapterLink.type = locator.type
-            this.currentChapterLink.title = locator.title
-        } else {
-            this.currentChapterLink.href = locator.href
-            this.currentChapterLink.type = locator.type
-            this.currentChapterLink.title = locator.title
-        }
-        this.iframe.src = this.currentChapterLink.href
-
-
-        if (locator.locations.fragment === undefined) {
-            this.currentTocUrl = null;
-        } else {
-            this.newElementId = locator.locations.fragment
-            this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
-        }
-        setTimeout(() => {
-            if (this.annotationModule !== undefined) {
-                this.annotationModule.drawHighlights()
-                this.annotationModule.showHighlights();
+        const exists = this.publication.getTOCItem(locator.href)
+        if (exists) {
+            this.hideIframeContents();
+            this.showLoadingMessageAfterDelay();
+            if (locator.locations === undefined) {
+                locator.locations = {
+                    progression: 0
+                } 
             }
+            this.newPosition = locator;
+            this.currentTOCRawLink = locator.href
 
-            if (this.settings.getSelectedView() === this.scroller) {
-                if (this.scroller.atTop() && this.scroller.atBottom()) {
-                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                } else if (this.scroller.atBottom()) {
-                    if (this.nextChapterBottomAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                } else if (this.scroller.atTop()) {
-                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                } else {
-                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+            if (locator.href.indexOf("#") !== -1) {
+                const newResource = locator.href.slice(0, locator.href.indexOf("#"))
+                this.currentChapterLink.href = newResource;
+                this.currentChapterLink.type = locator.type
+                this.currentChapterLink.title = locator.title
+            } else {
+                this.currentChapterLink.href = locator.href
+                this.currentChapterLink.type = locator.type
+                this.currentChapterLink.title = locator.title
+            }
+            this.iframe.src = this.currentChapterLink.href
+
+
+            if (locator.locations.fragment === undefined) {
+                this.currentTocUrl = null;
+            } else {
+                this.newElementId = locator.locations.fragment
+                this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
+            }
+            setTimeout(() => {
+                if (this.annotationModule !== undefined) {
+                    this.annotationModule.drawHighlights()
+                    this.annotationModule.showHighlights();
                 }
+
+                if (this.settings.getSelectedView() === this.scroller) {
+                    if (this.scroller.atTop() && this.scroller.atBottom()) {
+                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                    } else if (this.scroller.atBottom()) {
+                        if (this.nextChapterBottomAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                    } else if (this.scroller.atTop()) {
+                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                    } else {
+                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                    }
+                }
+            }, 300);
+        } else {
+            const startLink = this.publication.getStartLink();
+            let startUrl: string | null = null;
+            if (startLink && startLink.href) {
+                startUrl = this.publication.getAbsoluteHref(startLink.href);
             }
-        }, 300);
+            if (startUrl) {
+                const position: ReadingPosition = {
+                    href: startUrl,
+                    locations: {
+                        progression: 0
+                    },
+                    created: new Date(),
+                    title: startLink.title
+                };
+                this.stopReadAloud();
+                this.navigate(position);
+            }
+        }
 
     }
 

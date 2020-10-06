@@ -236,7 +236,7 @@ export default class AnnotationModule implements ReaderModule {
                 color: this.highlighter.getColor(),
                 marker: marker,
                 text: {
-                    hightlight: highlight.selectionInfo.cleanText
+                    highlight: highlight.selectionInfo.cleanText
                 }
             }
             if (this.api && this.api.addAnnotation) {

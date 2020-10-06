@@ -145,12 +145,31 @@ export class UserSettings implements UserSettings {
                     settings.fontOverride = true
                 }
             }
-            if(initialUserSettings.verticalScroll) {
+            if(oc(initialUserSettings.verticalScroll)) {
                 settings.verticalScroll = initialUserSettings.verticalScroll;
                 if (IS_DEV) console.log(settings.verticalScroll)
+                let selectedView = settings.bookViews[0];
+                var selectedViewName = 'scrolling-book-view'
+                if (settings.verticalScroll) {
+                    selectedViewName = 'scrolling-book-view'
+                } else {
+                    selectedViewName = 'columns-paginated-view'
+                }
+        
+                if (selectedViewName) {
+                    for (const bookView of settings.bookViews) {
+                        if (bookView.name === selectedViewName) {
+                            selectedView = bookView;
+                            break;
+                        }
+                    }
+                }
+                settings.selectedView = selectedView;
+                settings.store.set(ReadiumCSS.SCROLL_KEY, selectedView.name);
             }
             if(initialUserSettings.textAlignment) {
                 settings.textAlignment = UserSettings.textAlignmentValues.findIndex((el: any) => el === initialUserSettings.textAlignment);
+                settings.publisherDefaults = false
                 if (IS_DEV) console.log(settings.textAlignment)
             }
             if(initialUserSettings.columnCount) {
@@ -159,18 +178,22 @@ export class UserSettings implements UserSettings {
             }
             if(initialUserSettings.wordSpacing) {
                 settings.wordSpacing = initialUserSettings.wordSpacing;
+                settings.publisherDefaults = false
                 if (IS_DEV) console.log(settings.wordSpacing)
             }
             if(initialUserSettings.letterSpacing) {
                 settings.letterSpacing = initialUserSettings.letterSpacing;
+                settings.publisherDefaults = false
                 if (IS_DEV) console.log(settings.letterSpacing)
             }
             if(initialUserSettings.pageMargins) {
                 settings.pageMargins = initialUserSettings.pageMargins;
+                settings.publisherDefaults = false
                 if (IS_DEV) console.log(settings.pageMargins)
             }
             if(initialUserSettings.lineHeight) {
                 settings.lineHeight = initialUserSettings.lineHeight;
+                settings.publisherDefaults = false
                 if (IS_DEV) console.log(settings.lineHeight)
             }
         }

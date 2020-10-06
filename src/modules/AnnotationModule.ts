@@ -413,6 +413,7 @@ export default class AnnotationModule implements ReaderModule {
                                 title: linkElement.title
                             };
 
+                            this.delegate.stopReadAloud();
                             this.delegate.navigate(position);
                         });
 
@@ -507,6 +508,7 @@ export default class AnnotationModule implements ReaderModule {
         if (locator) {
             const linkHref = this.publication.getAbsoluteHref(locator.href);
             locator.href = linkHref    
+            this.delegate.stopReadAloud();
             this.delegate.navigate(locator);
         } else {
             if (IS_DEV) {console.log('annotation data missing: ', event);}

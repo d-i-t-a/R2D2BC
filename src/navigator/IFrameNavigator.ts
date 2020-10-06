@@ -500,6 +500,7 @@ export default class IFrameNavigator implements Navigator {
                     title: firstPage.title
                 };
 
+                this.stopReadAloud();
                 this.navigate(position);
             }
         }
@@ -1226,6 +1227,7 @@ export default class IFrameNavigator implements Navigator {
         if (IS_DEV) console.log(locator.href)
         if (IS_DEV) console.log(linkHref)
         position.href = linkHref
+        this.stopReadAloud();
         this.navigate(position);
     }
 
@@ -1242,6 +1244,7 @@ export default class IFrameNavigator implements Navigator {
                         title: this.previousChapterLink.title
                     };
 
+                    this.stopReadAloud();
                     this.navigate(position);
                     var pagi = this.paginator
                     setTimeout(() => {
@@ -1272,6 +1275,7 @@ export default class IFrameNavigator implements Navigator {
                         title: this.previousChapterLink.title
                     };
 
+                    this.stopReadAloud();
                     this.navigate(position);
                 }
             } else {
@@ -1299,6 +1303,7 @@ export default class IFrameNavigator implements Navigator {
                         title: this.nextChapterLink.title
                     };
 
+                    this.stopReadAloud();
                     this.navigate(position);
                     var pagi = this.paginator
                     setTimeout(() => {
@@ -1328,6 +1333,7 @@ export default class IFrameNavigator implements Navigator {
                         title: this.nextChapterLink.title
                     };
 
+                    this.stopReadAloud();
                     this.navigate(position);
                 }
             } else {
@@ -1374,6 +1380,7 @@ export default class IFrameNavigator implements Navigator {
 
         event.preventDefault();
         event.stopPropagation();
+        this.stopReadAloud();
         this.navigate(position);
     }
 
@@ -1453,6 +1460,7 @@ export default class IFrameNavigator implements Navigator {
                 title: this.previousChapterLink.title
             };
 
+            this.stopReadAloud();
             this.navigate(position);
         }
         if (event) {
@@ -1472,6 +1480,7 @@ export default class IFrameNavigator implements Navigator {
                 title: this.nextChapterLink.title
             };
 
+            this.stopReadAloud();
             this.navigate(position);
         }
         if (event) {

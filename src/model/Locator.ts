@@ -31,7 +31,7 @@ export interface Locator {
 export interface LocatorText {
     after?: string;
     before?: string;
-    hightlight?: string;
+    highlight?: string;
 }
 
 export interface Locations {

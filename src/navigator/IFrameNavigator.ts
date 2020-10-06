@@ -1081,9 +1081,7 @@ export default class IFrameNavigator implements Navigator {
         this.handleNextChapterClick(null)
     }
     goTo(locator: Locator): any {
-        let locations: Locations = {
-            progression: 0
-        }
+        let locations: Locations = locator.locations
         if (locator.href.indexOf("#") !== -1) {
             const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
             if (elementId !== null) {

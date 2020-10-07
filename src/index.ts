@@ -144,9 +144,9 @@ export async function previousPage() {
     if (IS_DEV) { console.log("previousPage") }
     R2Navigator.previousPage()
 }
-export async function scroll(scroll) {
-    if (IS_DEV) { console.log("scroll " + scroll) }
-    R2Settings.scroll(scroll)
+export async function scroll(value) {
+    if (IS_DEV) { console.log("scroll " + value) }
+    R2Settings.scroll(value)
 }
 
 
@@ -309,8 +309,8 @@ exports.previousPage = function () {
     previousPage()
 }
 
-exports.scroll = function (scroll) {
-    scroll(scroll)
+exports.scroll = function (value) {
+    scroll(value)
 }
 
 exports.tableOfContents = function () {

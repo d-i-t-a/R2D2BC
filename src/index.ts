@@ -45,10 +45,14 @@ export async function unload() {
     R2Settings.stop()
     if (oc(R2Navigator.rights).enableTTS(false)) {
         R2TTSSettings.stop()
+        TTSModuleInstance.stop()
     }
-    BookmarkModuleInstance.stop()
-    AnnotationModuleInstance.stop()
-    TTSModuleInstance.stop()
+    if (oc(R2Navigator.rights).enableBookmarks(false)) {
+        BookmarkModuleInstance.stop()
+    }
+    if (oc(R2Navigator.rights).enableAnnotations(false)) {
+        AnnotationModuleInstance.stop()
+    }
 }
 export function startReadAloud() {
     if (IS_DEV) { console.log("startReadAloud") }

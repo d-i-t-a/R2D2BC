@@ -73,7 +73,7 @@ export default class AnnotationModule implements ReaderModule {
         const annotations = new this(
             config.annotator,
             config.headerMenu,
-            config.rights || { enableAnnotations: false },
+            config.rights || { enableAnnotations: false , enableTTS: false},
             config.publication,
             config.settings,
             config.delegate,
@@ -162,6 +162,7 @@ export default class AnnotationModule implements ReaderModule {
             var deleted = await this.annotator.deleteAnnotation(id);
 
             if (IS_DEV) {console.log("Highlight deleted " + JSON.stringify(deleted));}
+            await this.showHighlights();
             await this.drawHighlights();
             if (this.delegate.material) {
                 toast({ html: 'highlight deleted' })
@@ -178,6 +179,7 @@ export default class AnnotationModule implements ReaderModule {
     }
     public async addAnnotation(highlight: Annotation): Promise<any> {
         await this.annotator.saveAnnotation(highlight);
+        await this.showHighlights();
         await this.drawHighlights();
     }
 
@@ -241,11 +243,13 @@ export default class AnnotationModule implements ReaderModule {
                 this.api.addAnnotation(annotation).then(async result => {
                     annotation.id = result.id
                     var saved = await this.annotator.saveAnnotation(annotation);
+                    await this.showHighlights();
                     await this.drawHighlights();
                     return saved
                 }) 
             } else {
                 var saved = await this.annotator.saveAnnotation(annotation);
+                await this.showHighlights();
                 await this.drawHighlights();
                 return saved
             }
@@ -274,7 +278,7 @@ export default class AnnotationModule implements ReaderModule {
                 })
             }
         }
-        this.createTree(AnnotationType.Annotation, highlights, this.highlightsView)
+        if (this.highlightsView)  this.createTree(AnnotationType.Annotation, highlights, this.highlightsView)
     }
 
     async drawHighlights(): Promise<void> {
@@ -409,6 +413,7 @@ export default class AnnotationModule implements ReaderModule {
                                 title: linkElement.title
                             };
 
+                            this.delegate.stopReadAloud();
                             this.delegate.navigate(position);
                         });
 
@@ -425,16 +430,23 @@ export default class AnnotationModule implements ReaderModule {
 
                                 if (type == AnnotationType.Annotation) {
                                     bookmarkLink.className = "highlight-link"
-                                    bookmarkLink.innerHTML = IconLib.highlight
                                     let title: HTMLSpanElement = document.createElement("span");
                                     let marker: HTMLSpanElement = document.createElement("span");
                                     title.className = "title"
                                     marker.innerHTML = locator.highlight.selectionInfo.cleanText
 
                                     if ((locator as Annotation).marker == AnnotationMarker.Underline) {
-                                        marker.style.setProperty("border-bottom", `2px solid ${TextHighlighter.hexToRgbA((locator as Annotation).color)}`, "important");
+                                        if (typeof (locator as Annotation).color === 'object') {
+                                            marker.style.setProperty("border-bottom", `2px solid ${TextHighlighter.hexToRgbA((locator as Annotation).color)}`, "important");
+                                        } else {
+                                            marker.style.setProperty("border-bottom", `2px solid ${(locator as Annotation).color}`, "important");
+                                        }
                                     } else {
-                                        marker.style.backgroundColor = TextHighlighter.hexToRgbA((locator as Annotation).color);
+                                        if (typeof (locator as Annotation).color === 'object') {
+                                            marker.style.backgroundColor = TextHighlighter.hexToRgbA((locator as Annotation).color);
+                                        } else {
+                                            marker.style.backgroundColor = (locator as Annotation).color;
+                                        }
                                     }
                                     title.appendChild(marker)
                                     bookmarkLink.appendChild(title)
@@ -496,6 +508,7 @@ export default class AnnotationModule implements ReaderModule {
         if (locator) {
             const linkHref = this.publication.getAbsoluteHref(locator.href);
             locator.href = linkHref    
+            this.delegate.stopReadAloud();
             this.delegate.navigate(locator);
         } else {
             if (IS_DEV) {console.log('annotation data missing: ', event);}

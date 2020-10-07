@@ -31,8 +31,10 @@ import { Sidenav, Collapsible, Dropdown, Tabs } from "materialize-css";
 import { UserSettingsUIConfig, UserSettings } from "../model/user-settings/UserSettings";
 import BookmarkModule from "../modules/BookmarkModule";
 import AnnotationModule from "../modules/AnnotationModule";
-import TTSModule from "../modules/TTSModule";
+import TTSModule, { TTSSpeechConfig } from "../modules/TTS/TTSModule";
 import { IS_DEV } from "..";
+import Splitting from "../modules/TTS/splitting";
+import { oc } from "ts-optchain";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -54,6 +56,7 @@ export interface IFrameNavigatorConfig {
     rights?: ReaderRights;
     material: boolean;
     api: any;
+    tts: any;
     injectables: Array<Injectable>;
     selectionMenuItems?: Array<SelectionMenuItem>;
     initialAnnotationColor?:string;
@@ -78,7 +81,9 @@ export interface SelectionMenuItem {
 export interface ReaderRights {
     enableBookmarks?: boolean;
     enableAnnotations?: boolean;
+    enableTTS?: boolean;
 }
+
 export interface ReaderUI {
     settings: UserSettingsUIConfig;
 }
@@ -92,6 +97,7 @@ export interface ReaderConfig {
     ui: ReaderUI;
     material: boolean;
     api: any;
+    tts: any;
     injectables: Array<Injectable>;
     selectionMenuItems: Array<SelectionMenuItem>;
     initialAnnotationColor: string;
@@ -122,7 +128,7 @@ export default class IFrameNavigator implements Navigator {
     currentTOCRawLink: string;
     private nextChapterLink: Link;
     private previousChapterLink: Link;
-    private settings: UserSettings;
+    settings: UserSettings;
     private annotator: Annotator | null;
 
     private paginator: PaginatedBookView | null;
@@ -140,6 +146,13 @@ export default class IFrameNavigator implements Navigator {
     private nextPageAnchorElement: HTMLAnchorElement;
     private previousPageAnchorElement: HTMLAnchorElement;
     private espandMenuIcon: HTMLElement;
+
+    private landmarksView: HTMLDivElement;
+    private landmarksSection: HTMLDivElement;
+    private pageListView: HTMLDivElement;
+    private goToPageView: HTMLLIElement;
+    private goToPageNumberInput: HTMLInputElement;
+    private goToPageNumberButton: HTMLButtonElement;
 
     private bookmarksControl: HTMLButtonElement;
     private bookmarksView: HTMLDivElement;
@@ -163,6 +176,8 @@ export default class IFrameNavigator implements Navigator {
     private isLoading: boolean;
     private initialLastReadingPosition: ReadingPosition;
     api: any;
+    rights: ReaderRights;
+    tts: TTSSpeechConfig;
     injectables: Array<Injectable>
     selectionMenuItems: Array<SelectionMenuItem>
     initialAnnotationColor: string
@@ -177,6 +192,8 @@ export default class IFrameNavigator implements Navigator {
             config.publication,
             config.material,
             config.api,
+            config.rights,
+            config.tts,
             config.injectables,
             config.selectionMenuItems || null,
             config.initialAnnotationColor || null
@@ -195,6 +212,8 @@ export default class IFrameNavigator implements Navigator {
         publication: Publication,
         material: boolean,
         api: any,
+        rights: ReaderRights,
+        tts: any,
         injectables: Array<Injectable>,
         selectionMenuItems: Array<SelectionMenuItem> | null = null,
         initialAnnotationColor: string | null = null
@@ -209,6 +228,8 @@ export default class IFrameNavigator implements Navigator {
         this.publication = publication
         this.material = material
         this.api = api
+        this.rights = rights
+        this.tts = tts
         this.injectables = injectables
         this.selectionMenuItems = selectionMenuItems
         this.initialAnnotationColor = initialAnnotationColor
@@ -295,6 +316,14 @@ export default class IFrameNavigator implements Navigator {
 
             if (this.headerMenu) this.tocView = HTMLUtilities.findElement(this.headerMenu, "#container-view-toc") as HTMLDivElement;
 
+            if (this.headerMenu) this.landmarksView = HTMLUtilities.findElement(headerMenu, "#container-view-landmarks") as HTMLDivElement;
+            if (this.headerMenu) this.landmarksSection = HTMLUtilities.findElement(headerMenu, "#sidenav-section-landmarks") as HTMLDivElement;
+            if (this.headerMenu) this.pageListView = HTMLUtilities.findElement(headerMenu, "#container-view-pagelist") as HTMLDivElement;
+            if (this.headerMenu) this.goToPageView = HTMLUtilities.findElement(headerMenu, "#sidenav-section-gotopage") as HTMLLIElement;
+            if (this.headerMenu) this.goToPageNumberInput = HTMLUtilities.findElement(headerMenu, "#goToPageNumberInput") as HTMLInputElement;
+            if (this.headerMenu) this.goToPageNumberButton = HTMLUtilities.findElement(headerMenu, "#goToPageNumberButton") as HTMLButtonElement;
+
+
             // Footer Menu
             if (footerMenu) this.linksBottom = HTMLUtilities.findElement(footerMenu, "ul.links.bottom") as HTMLUListElement;
             if (footerMenu) this.linksMiddle = HTMLUtilities.findElement(footerMenu, "ul.links.middle") as HTMLUListElement;
@@ -377,6 +406,20 @@ export default class IFrameNavigator implements Navigator {
         clearTimeout(this.timeout);
         this.timeout = setTimeout(this.handleResize.bind(this), 200);
     }
+    reload = async () => {
+        let lastReadingPosition: ReadingPosition | null = null;
+        if (this.annotator) {
+            lastReadingPosition = await this.annotator.getLastReadingPosition() as ReadingPosition | null;
+        }
+
+        if (lastReadingPosition) {
+            const linkHref = this.publication.getAbsoluteHref(lastReadingPosition.href);
+            if (IS_DEV)console.log(lastReadingPosition.href)
+            if (IS_DEV)console.log(linkHref)
+            lastReadingPosition.href = linkHref
+            this.navigate(lastReadingPosition);
+        }
+    }
 
     private setupEvents(): void {
         addEventListenerOptional(this.iframe, 'load', this.handleIFrameLoad.bind(this));
@@ -396,6 +439,9 @@ export default class IFrameNavigator implements Navigator {
         addEventListenerOptional(this.bookmarksControl, "keydown", this.hideBookmarksOnEscape.bind(this));
 
         addEventListenerOptional(this.espandMenuIcon, 'click', this.handleEditClick.bind(this));
+
+        addEventListenerOptional(this.goToPageNumberInput, 'keypress', this.goToPageNumber.bind(this));
+        addEventListenerOptional(this.goToPageNumberButton, 'click', this.goToPageNumber.bind(this));
 
         addEventListenerOptional(window, 'resize', this.onResize);
 
@@ -430,6 +476,35 @@ export default class IFrameNavigator implements Navigator {
                 }
             }
         });
+    }
+
+    private async goToPageNumber(event: any): Promise<any> {
+        if (this.goToPageNumberInput.value &&  (event.key === 'Enter' || event.type === "click")) {
+            var filteredPages = this.publication.pageList.filter((el: any) => el.href.slice(el.href.indexOf("#") + 1).replace(/[^0-9]/g, '') === this.goToPageNumberInput.value);
+            if (filteredPages && filteredPages.length > 0) {
+                var firstPage = filteredPages[0]
+                let locations: Locations = {
+                    progression: 0
+                }
+                if (firstPage.href.indexOf("#") !== -1) {
+                    const elementId = firstPage.href.slice(firstPage.href.indexOf("#") + 1);
+                    if (elementId !== null) {
+                        locations = {
+                            fragment: elementId
+                        }
+                    }
+                }
+                const position: Locator = {
+                    href: this.publication.getAbsoluteHref(firstPage.href),
+                    locations: locations,
+                    type: firstPage.type,
+                    title: firstPage.title
+                };
+
+                this.stopReadAloud();
+                this.navigate(position);
+            }
+        }
     }
 
     private updateBookView(): void {
@@ -527,7 +602,11 @@ export default class IFrameNavigator implements Navigator {
         }
         setTimeout(() => {
             this.updatePositionInfo();
+            if (this.annotationModule !== undefined) {
+                this.annotationModule.drawHighlights()
+            }
         }, 100);
+
     }
 
     onScroll(): void {
@@ -658,11 +737,39 @@ export default class IFrameNavigator implements Navigator {
             }
 
             const toc = this.publication.tableOfContents;
+            const landmarks = this.publication.landmarks;
+            const pageList = this.publication.pageList;
+
+
             if (this.tocView) {
                 if (toc.length) {
                     createSubmenu(this.tocView, toc);
                 } else {
                     this.tocView.parentElement.parentElement.removeChild(this.tocView.parentElement);
+                }
+            }
+
+            if (this.pageListView) {
+                if (pageList.length) {
+                    createSubmenu(this.pageListView, pageList);
+                } else {
+                    this.pageListView.parentElement.parentElement.removeChild(this.pageListView.parentElement);
+                }
+            }
+
+            if (this.goToPageView) {
+                if (pageList.length) {
+                    //
+                } else {
+                    this.goToPageView.parentElement.removeChild(this.goToPageView);
+                }
+            }
+
+            if (this.landmarksView) {
+                if (landmarks.length) {
+                    createSubmenu(this.landmarksView, landmarks);
+                } else {
+                    this.landmarksSection.parentElement.removeChild(this.landmarksSection);
                 }
             }
 
@@ -855,6 +962,17 @@ export default class IFrameNavigator implements Navigator {
                 });
 
             }
+            setTimeout(() => {
+
+                const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+
+                if (oc(this.rights).enableTTS(false) && oc(this.tts).enableSplitter(false)) {
+                    Splitting({
+                        target: body,
+                        by: "lines"
+                    });
+                }
+            }, 50);
 
             setTimeout(() => {
 
@@ -872,12 +990,14 @@ export default class IFrameNavigator implements Navigator {
                         this.annotationModule.selectionMenuItems = this.selectionMenuItems
                     }
                 }
-                setTimeout(() => {
-                    if (this.ttsModule !== undefined) {
-                        this.ttsModule.initialize()
-                    }
-                }, 200);
-
+                if (oc(this.rights).enableTTS(false)) {
+                    setTimeout(() => {
+                        const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+                        if (this.ttsModule !== undefined) {
+                            this.ttsModule.initialize(body)
+                        }
+                    }, 200);
+                }
                 const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
                 var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
                 for (var i = 0; i < pagebreaks.length; i++) {
@@ -890,6 +1010,8 @@ export default class IFrameNavigator implements Navigator {
                 }
 
             }, 100);
+
+
 
             return new Promise<void>(resolve => resolve());
         } catch (err) {
@@ -1033,27 +1155,37 @@ export default class IFrameNavigator implements Navigator {
             element.innerText = "unfold_less";
             this.sideNavExanded = true
             this.bookmarkModule.showBookmarks()
+            this.annotationModule.showHighlights()
         } else {
             element.className = element.className.replace(" active", "");
             sidenav.className = sidenav.className.replace(" expanded", "");
             element.innerText = "unfold_more";
             this.sideNavExanded = false
             this.bookmarkModule.showBookmarks()
+            this.annotationModule.showHighlights()
         }
         event.preventDefault();
         event.stopPropagation();
     }
     startReadAloud() {
-        this.annotationModule.highlighter.speakAll()
+        if (oc(this.rights).enableTTS(false)) {
+            this.annotationModule.highlighter.speakAll()
+        }
     }
     stopReadAloud() {
-        this.annotationModule.highlighter.stopReadAloud()
+        if (oc(this.rights).enableTTS(false)) {
+            this.annotationModule.highlighter.stopReadAloud()
+        }
     }
     pauseReadAloud() {
-        this.ttsModule.speakPause()
+        if (oc(this.rights).enableTTS(false)) {
+            this.ttsModule.speakPause()
+        }
     }
     resumeReadAloud() {
-        this.ttsModule.speakResume()
+        if (oc(this.rights).enableTTS(false)) {
+            this.ttsModule.speakResume()
+        }
     }
     totalResources(): number {
         return this.publication.readingOrder.length
@@ -1100,6 +1232,7 @@ export default class IFrameNavigator implements Navigator {
         if (IS_DEV) console.log(locator.href)
         if (IS_DEV) console.log(linkHref)
         position.href = linkHref
+        this.stopReadAloud();
         this.navigate(position);
     }
 
@@ -1116,6 +1249,7 @@ export default class IFrameNavigator implements Navigator {
                         title: this.previousChapterLink.title
                     };
 
+                    this.stopReadAloud();
                     this.navigate(position);
                     var pagi = this.paginator
                     setTimeout(() => {
@@ -1146,6 +1280,7 @@ export default class IFrameNavigator implements Navigator {
                         title: this.previousChapterLink.title
                     };
 
+                    this.stopReadAloud();
                     this.navigate(position);
                 }
             } else {
@@ -1173,6 +1308,7 @@ export default class IFrameNavigator implements Navigator {
                         title: this.nextChapterLink.title
                     };
 
+                    this.stopReadAloud();
                     this.navigate(position);
                     var pagi = this.paginator
                     setTimeout(() => {
@@ -1202,6 +1338,7 @@ export default class IFrameNavigator implements Navigator {
                         title: this.nextChapterLink.title
                     };
 
+                    this.stopReadAloud();
                     this.navigate(position);
                 }
             } else {
@@ -1248,6 +1385,7 @@ export default class IFrameNavigator implements Navigator {
 
         event.preventDefault();
         event.stopPropagation();
+        this.stopReadAloud();
         this.navigate(position);
     }
 
@@ -1327,6 +1465,7 @@ export default class IFrameNavigator implements Navigator {
                 title: this.previousChapterLink.title
             };
 
+            this.stopReadAloud();
             this.navigate(position);
         }
         if (event) {
@@ -1346,6 +1485,7 @@ export default class IFrameNavigator implements Navigator {
                 title: this.nextChapterLink.title
             };
 
+            this.stopReadAloud();
             this.navigate(position);
         }
         if (event) {
@@ -1384,56 +1524,77 @@ export default class IFrameNavigator implements Navigator {
 
 
     navigate(locator: Locator): void {
-        this.hideIframeContents();
-        this.showLoadingMessageAfterDelay();
-        if (locator.locations === undefined) {
-            locator.locations = {
-                progression: 0
-            } 
-        }
-        this.newPosition = locator;
-        this.currentTOCRawLink = locator.href
-
-        if (locator.href.indexOf("#") !== -1) {
-            const newResource = locator.href.slice(0, locator.href.indexOf("#"))
-            this.currentChapterLink.href = newResource;
-            this.currentChapterLink.type = locator.type
-            this.currentChapterLink.title = locator.title
-        } else {
-            this.currentChapterLink.href = locator.href
-            this.currentChapterLink.type = locator.type
-            this.currentChapterLink.title = locator.title
-        }
-        this.iframe.src = this.currentChapterLink.href
-
-
-        if (locator.locations.fragment === undefined) {
-            this.currentTocUrl = null;
-        } else {
-            this.newElementId = locator.locations.fragment
-            this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
-        }
-        setTimeout(() => {
-            if (this.annotationModule !== undefined) {
-                this.annotationModule.drawHighlights()
+        const exists = this.publication.getTOCItem(locator.href)
+        if (exists) {
+            this.hideIframeContents();
+            this.showLoadingMessageAfterDelay();
+            if (locator.locations === undefined) {
+                locator.locations = {
+                    progression: 0
+                } 
             }
+            this.newPosition = locator;
+            this.currentTOCRawLink = locator.href
 
-            if (this.settings.getSelectedView() === this.scroller) {
-                if (this.scroller.atTop() && this.scroller.atBottom()) {
-                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                } else if (this.scroller.atBottom()) {
-                    if (this.nextChapterBottomAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                } else if (this.scroller.atTop()) {
-                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                } else {
-                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+            if (locator.href.indexOf("#") !== -1) {
+                const newResource = locator.href.slice(0, locator.href.indexOf("#"))
+                this.currentChapterLink.href = newResource;
+                this.currentChapterLink.type = locator.type
+                this.currentChapterLink.title = locator.title
+            } else {
+                this.currentChapterLink.href = locator.href
+                this.currentChapterLink.type = locator.type
+                this.currentChapterLink.title = locator.title
+            }
+            this.iframe.src = this.currentChapterLink.href
+
+
+            if (locator.locations.fragment === undefined) {
+                this.currentTocUrl = null;
+            } else {
+                this.newElementId = locator.locations.fragment
+                this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
+            }
+            setTimeout(() => {
+                if (this.annotationModule !== undefined) {
+                    this.annotationModule.drawHighlights()
+                    this.annotationModule.showHighlights();
                 }
+
+                if (this.settings.getSelectedView() === this.scroller) {
+                    if (this.scroller.atTop() && this.scroller.atBottom()) {
+                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                    } else if (this.scroller.atBottom()) {
+                        if (this.nextChapterBottomAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                    } else if (this.scroller.atTop()) {
+                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                    } else {
+                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                    }
+                }
+            }, 300);
+        } else {
+            const startLink = this.publication.getStartLink();
+            let startUrl: string | null = null;
+            if (startLink && startLink.href) {
+                startUrl = this.publication.getAbsoluteHref(startLink.href);
             }
-        }, 300);
+            if (startUrl) {
+                const position: ReadingPosition = {
+                    href: startUrl,
+                    locations: {
+                        progression: 0
+                    },
+                    created: new Date(),
+                    title: startLink.title
+                };
+                this.navigate(position);
+            }
+        }
 
     }
 

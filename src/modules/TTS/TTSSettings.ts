@@ -219,42 +219,42 @@ export class TTSSettings implements TTSSpeechConfig {
     private async setupEvents(): Promise<void> {
 
         addEventListenerOptional(this.rateButtons["decrease"], 'click', (event: MouseEvent) => {
-            console.log(TTSREFS.RATE_REF);
+            if (IS_DEV) console.log(TTSREFS.RATE_REF);
             (this.userProperties.getByRef(TTSREFS.RATE_REF) as Incremental).decrement()
             this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF))
             this.settingsChangeCallback();
             event.preventDefault();
         });
         addEventListenerOptional(this.rateButtons["increase"], 'click', (event: MouseEvent) => {
-            console.log(TTSREFS.RATE_REF);
+            if (IS_DEV) console.log(TTSREFS.RATE_REF);
             (this.userProperties.getByRef(TTSREFS.RATE_REF) as Incremental).increment()
             this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF))
             this.settingsChangeCallback();
             event.preventDefault();
         });
         addEventListenerOptional(this.pitchButtons["decrease"], 'click', (event: MouseEvent) => {
-            console.log(TTSREFS.PITCH_REF);
+            if (IS_DEV) console.log(TTSREFS.PITCH_REF);
             (this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental).decrement()
             this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF))
             this.settingsChangeCallback();
             event.preventDefault();
         });
         addEventListenerOptional(this.pitchButtons["increase"], 'click', (event: MouseEvent) => {
-            console.log(TTSREFS.PITCH_REF);
+            if (IS_DEV) console.log(TTSREFS.PITCH_REF);
             (this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental).increment()
             this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF))
             this.settingsChangeCallback();
             event.preventDefault();
         });
         addEventListenerOptional(this.volumeButtons["decrease"], 'click', (event: MouseEvent) => {
-            console.log(TTSREFS.VOLUME_REF);
+            if (IS_DEV) console.log(TTSREFS.VOLUME_REF);
             (this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental).decrement()
             this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF))
             this.settingsChangeCallback();
             event.preventDefault();
         });
         addEventListenerOptional(this.volumeButtons["increase"], 'click', (event: MouseEvent) => {
-            console.log(TTSREFS.VOLUME_REF);
+            if (IS_DEV) console.log(TTSREFS.VOLUME_REF);
             (this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental).increment()
             this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF))
             this.settingsChangeCallback();
@@ -337,21 +337,21 @@ export class TTSSettings implements TTSSpeechConfig {
     async applyTTSSettings(ttsSettings: TTSSpeechConfig): Promise<void> {
 
         if (ttsSettings.rate) {
-            console.log("rate " + this.rate)
+            if (IS_DEV) console.log("rate " + this.rate)
             this.rate = ttsSettings.rate
             this.userProperties.getByRef(TTSREFS.RATE_REF).value = this.rate;
             await this.saveProperty(this.userProperties.getByRef(TTSREFS.RATE_REF))
             this.settingsChangeCallback();
         }
         if (ttsSettings.pitch) {
-            console.log("pitch " + this.pitch)
+            if (IS_DEV) console.log("pitch " + this.pitch)
             this.pitch = ttsSettings.pitch
             this.userProperties.getByRef(TTSREFS.PITCH_REF).value = this.pitch;
             await this.saveProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF))
             this.settingsChangeCallback();
         }
         if (ttsSettings.volume) {
-            console.log("volume " + this.volume)
+            if (IS_DEV) console.log("volume " + this.volume)
             this.volume = ttsSettings.volume
             this.userProperties.getByRef(TTSREFS.VOLUME_REF).value = this.volume;
             await this.saveProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF))
@@ -365,14 +365,14 @@ export class TTSSettings implements TTSSpeechConfig {
             this.settingsChangeCallback();
         }
         if (ttsSettings.autoScroll != undefined) {
-            console.log("autoScroll " + this.autoScroll)
+            if (IS_DEV) console.log("autoScroll " + this.autoScroll)
             this.autoScroll = ttsSettings.autoScroll
             this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF).value = this.autoScroll;
             await this.saveProperty(this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF))
             this.settingsChangeCallback();
         }
         if (ttsSettings.voice) {
-            console.log("voice " + this.voice)
+            if (IS_DEV) console.log("voice " + this.voice)
             this.voice = ttsSettings.voice
             this.userProperties.getByRef(TTSREFS.VOICE_REF).value = this.voice;
             await this.saveProperty(this.userProperties.getByRef(TTSREFS.VOICE_REF))

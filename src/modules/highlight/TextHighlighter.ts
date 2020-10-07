@@ -43,8 +43,6 @@ import { IS_DEV } from "../..";
 import { icons } from "../../utils/IconLib";
 import TTSModule from "../TTS/TTSModule";
 import { SelectionMenuItem } from "../../navigator/IFrameNavigator";
-import { ReadiumCSS } from "../../model/user-settings/ReadiumCSS";
-import { Switchable } from "../../model/user-settings/UserProperties";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
@@ -1423,8 +1421,11 @@ export default class TextHighlighter {
     isAndroid() {
         return navigator.userAgent.match(/Android/i) != null;
     }
-    getScrollingElement = (_documant: Document): Element => {
-        return document.scrollingElement;
+    getScrollingElement = (documant: Document): Element => {
+        if (documant.scrollingElement) {
+            return documant.scrollingElement;
+        }
+        return documant.body;
     };
     
     async processMouseEvent(win: IReadiumIFrameWindow, ev: MouseEvent) {
@@ -1440,7 +1441,7 @@ export default class TextHighlighter {
             return;
         }
 
-        const paginated = await this.isPaginated();
+        const paginated = this.isPaginated();
         const bodyRect = documant.body.getBoundingClientRect();
         const scrollElement = this.getScrollingElement(documant);
 
@@ -1716,8 +1717,8 @@ export default class TextHighlighter {
     }
 
     async isPaginated() {
-        var verticalScroll = ( await this.delegate.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? ( await this.delegate.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : 0
-        return verticalScroll === 1
+        var verticalScroll = await this.delegate.delegate.settings.isPaginated()
+        return verticalScroll
     }
 
     createHighlightDom(win: IReadiumIFrameWindow, highlight: IHighlight): HTMLDivElement | undefined {
@@ -1740,15 +1741,22 @@ export default class TextHighlighter {
         }
 
         const paginated = this.isPaginated();
-        const bodyRect = document.documentElement.getBoundingClientRect();
 
+        // Resize Sensor sets body position to "relative" (default static),
+        // which may breaks things!
+        // (e.g. highlights CSS absolute/fixed positioning)
+        // Also note that ReadiumCSS default to (via stylesheet :root):
+
+        if (paginated) {
+            documant.body.style.position = "revert";
+        } else {
+            documant.body.style.position = "relative";
+        }
+        const bodyRect = documant.body.getBoundingClientRect();
         const scrollElement = this.getScrollingElement(documant);
 
         const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
         const yOffset = paginated ? (-scrollElement.scrollTop) : bodyRect.top;
-        console.log("xOffset ", xOffset)
-        console.log("yOffset ", yOffset)
-
 
         const scale = 1 / 1;
 

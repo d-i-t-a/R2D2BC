@@ -71,6 +71,14 @@ export interface UserSettings {
 
 
 export class UserSettings implements UserSettings {
+    async isPaginated() {
+        let scroll = ( await this.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? ( await this.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : 0
+        return scroll === 1
+    }
+    async isScrollmode() {
+        let scroll = ( await this.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? ( await this.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : 0
+        return scroll === 0
+    }
 
     private readonly store: Store;
     private readonly USERSETTINGS = "userSetting";
@@ -134,19 +142,6 @@ export class UserSettings implements UserSettings {
             if(initialUserSettings.verticalScroll) {
                 settings.verticalScroll = UserSettings.scrollValues.findIndex((el: any) => el === initialUserSettings.verticalScroll);
                 if (IS_DEV) console.log(settings.verticalScroll)
-                let selectedView = settings.bookViews[settings.verticalScroll];
-                let scroll = UserSettings.scrollValues[settings.verticalScroll];
-                var selectedViewName = scroll
-    
-                if (selectedViewName) {
-                    for (const bookView of settings.bookViews) {
-                        if (bookView.name === selectedViewName) {
-                            selectedView = bookView;
-                            break;
-                        }
-                    }
-                }
-                settings.selectedView = selectedView;
             }
             if(initialUserSettings.appearance) {
                 settings.appearance = UserSettings.appearanceValues.findIndex((el: any) => el === initialUserSettings.appearance);
@@ -256,20 +251,21 @@ export class UserSettings implements UserSettings {
 
         if (this.headerMenu) this.settingsView = HTMLUtilities.findElement(this.headerMenu, "#container-view-settings") as HTMLDivElement;
 
-        if (this.bookViews.length >= 1) {
-            let selectedView = this.bookViews[this.verticalScroll];
-            let scroll = UserSettings.scrollValues[this.verticalScroll];
-            var selectedViewName = scroll
-            if (selectedViewName) {
-                for (const bookView of this.bookViews) {
-                    if (bookView.name === selectedViewName) {
-                        selectedView = bookView;
-                        break;
-                    }
+
+
+        let selectedView = this.bookViews[this.verticalScroll];
+        let scroll = UserSettings.scrollValues[this.verticalScroll];
+        var selectedViewName = scroll
+
+        if (selectedViewName) {
+            for (const bookView of this.bookViews) {
+                if (bookView.name === selectedViewName) {
+                    selectedView = bookView;
+                    break;
                 }
             }
-            this.selectedView = selectedView;
         }
+        this.selectedView = selectedView;
     }
 
     applyProperties(): any {
@@ -502,6 +498,8 @@ export class UserSettings implements UserSettings {
     }
 
     public getSelectedView(): BookView {
+        this.initializeSelections()
+        this.updateViewButtons()
         return this.selectedView;
     }
 

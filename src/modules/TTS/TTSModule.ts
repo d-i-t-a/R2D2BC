@@ -25,8 +25,6 @@ import { TTSSettings, TTSVoice } from "./TTSSettings";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional, removeEventListenerOptional } from "../../utils/EventHandler";
 import { oc } from "ts-optchain";
-import { ReadiumCSS } from "../../model/user-settings/ReadiumCSS";
-import { Switchable } from "../../model/user-settings/UserProperties";
 
 export interface TTSModuleConfig {
     annotationModule: AnnotationModule;
@@ -403,8 +401,8 @@ export default class TTSModule implements ReaderModule {
     }
 
     async isScrollmode() {
-        var verticalScroll = ( await this.annotationModule.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? ( await this.annotationModule.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : 0
-        return verticalScroll === 0
+        var verticalScroll = await this.annotationModule.delegate.settings.isScrollmode()
+        return verticalScroll
     }
 
     speakPause() {

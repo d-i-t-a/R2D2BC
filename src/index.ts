@@ -43,7 +43,9 @@ export async function unload() {
     document.body.onscroll = () => { }
     R2Navigator.stop()
     R2Settings.stop()
-    R2TTSSettings.stop()
+    if (oc(R2Navigator.rights).enableTTS(false)) {
+        R2TTSSettings.stop()
+    }
     BookmarkModuleInstance.stop()
     AnnotationModuleInstance.stop()
     TTSModuleInstance.stop()
@@ -65,34 +67,49 @@ export function resumeReadAloud() {
     return R2Navigator.resumeReadAloud()    
 }
 
-
 export async function saveBookmark() {
-    if (IS_DEV) { console.log("saveBookmark") }
-    BookmarkModuleInstance.saveBookmark()
+    if (oc(R2Navigator.rights).enableBookmarks(false)) {
+        if (IS_DEV) { console.log("saveBookmark") }
+        BookmarkModuleInstance.saveBookmark()
+    }
 }
 export async function deleteBookmark(bookmark) {
-    if (IS_DEV) { console.log("deleteBookmark") }
-    BookmarkModuleInstance.deleteBookmark(bookmark)
+    if (oc(R2Navigator.rights).enableBookmarks(false)) {
+        if (IS_DEV) { console.log("deleteBookmark") }
+        BookmarkModuleInstance.deleteBookmark(bookmark)
+    }
 }
 export async function deleteAnnotation(highlight) {
-    if (IS_DEV) { console.log("deleteAnnotation") }
-    AnnotationModuleInstance.deleteAnnotation(highlight)
+    if (oc(R2Navigator.rights).enableAnnotations(false)) {
+        if (IS_DEV) { console.log("deleteAnnotation") }
+        AnnotationModuleInstance.deleteAnnotation(highlight)
+    }
 }
 export async function addAnnotation(highlight) {
-    if (IS_DEV) { console.log("addAnnotation") }
-    AnnotationModuleInstance.addAnnotation(highlight)
+    if (oc(R2Navigator.rights).enableAnnotations(false)) {
+        if (IS_DEV) { console.log("addAnnotation") }
+        AnnotationModuleInstance.addAnnotation(highlight)
+    }
 }
 export async function tableOfContents() {
     if (IS_DEV) { console.log("bookmarks") }
     return await R2Navigator.tableOfContents()    
 }
 export async function bookmarks() {
-    if (IS_DEV) { console.log("bookmarks") }
-    return await BookmarkModuleInstance.getBookmarks()    
+    if (oc(R2Navigator.rights).enableBookmarks(false)) {
+        if (IS_DEV) { console.log("bookmarks") }
+        return await BookmarkModuleInstance.getBookmarks()    
+    } else {
+        return []
+    }
 }
 export async function annotations() {
-    if (IS_DEV) { console.log("annotations") }
-    return await AnnotationModuleInstance.getAnnotations()    
+    if (oc(R2Navigator.rights).enableAnnotations(false)) {
+        if (IS_DEV) { console.log("annotations") }
+        return await AnnotationModuleInstance.getAnnotations()   
+    } else {
+        return []
+    }
 }
 export function currentResource() {
     if (IS_DEV) { console.log("currentResource") }
@@ -119,18 +136,20 @@ export async function applyUserSettings(userSettings) {
     R2Settings.applyUserSettings(userSettings)
 }
 export async function increase(incremental) {
-    if (IS_DEV) { console.log("increase " + incremental) }
-    if (incremental == "pitch" || incremental == "rate" || incremental == "volume") {
+    if ((incremental == "pitch" || incremental == "rate" || incremental == "volume") && oc(R2Navigator.rights).enableTTS(false) ) {
+        if (IS_DEV) { console.log("increase " + incremental) }
         R2TTSSettings.increase(incremental)
     } else {
+        if (IS_DEV) { console.log("increase " + incremental) }
         R2Settings.increase(incremental)
     }
 }
 export async function decrease(incremental) {
-    if (IS_DEV) { console.log("decrease " + incremental) }
-    if (incremental == "pitch" || incremental == "rate" || incremental == "volume") {
+    if ((incremental == "pitch" || incremental == "rate" || incremental == "volume") && oc(R2Navigator.rights).enableTTS(false) ) {
+        if (IS_DEV) { console.log("decrease " + incremental) }
         R2TTSSettings.decrease(incremental)
     } else {
+        if (IS_DEV) { console.log("decrease " + incremental) }
         R2Settings.decrease(incremental)
     }
 }
@@ -139,21 +158,31 @@ export async function publisher(on) {
     R2Settings.publisher(on)
 }
 export async function resetTTSSettings() {
-    if (IS_DEV) { console.log("resetSettings") }
-    R2TTSSettings.resetTTSSettings()
+    if (oc(R2Navigator.rights).enableTTS(false)) {
+        if (IS_DEV) { console.log("resetSettings") }
+        R2TTSSettings.resetTTSSettings()
+    }
 }
 export async function applyTTSSettings(ttsSettings) {
-    if (IS_DEV) { console.log("applyTTSSettings") }
-    R2TTSSettings.applyTTSSettings(ttsSettings)
+    if (oc(R2Navigator.rights).enableTTS(false)) {
+        if (IS_DEV) { console.log("applyTTSSettings") }
+        R2TTSSettings.applyTTSSettings(ttsSettings)
+    }
 }
 
 export async function ttsSet(key, value) {
-    if (IS_DEV) { console.log("set " + key + " value " + value) }
-    R2TTSSettings.ttsSet(key, value)
+    if (oc(R2Navigator.rights).enableTTS(false)) {
+        if (IS_DEV) { console.log("set " + key + " value " + value) }
+        R2TTSSettings.ttsSet(key, value)
+    }
 }
 export async function preferredVoice(value) {
-    R2TTSSettings.preferredVoice(value)
+    if (oc(R2Navigator.rights).enableTTS(false)) {
+        R2TTSSettings.preferredVoice(value)
+    }
 }
+
+
 export async function goTo(locator) {
     if (IS_DEV) { console.log("goTo " + locator) }
     R2Navigator.goTo(locator)
@@ -194,7 +223,6 @@ export async function load(config: ReaderConfig): Promise<any> {
         useLocalStorage: config.useLocalStorage
     });
 
-
     var annotator = new LocalAnnotator({ store: store });
 
     var upLink: UpLinkConfig
@@ -204,6 +232,7 @@ export async function load(config: ReaderConfig): Promise<any> {
 
     const publication: Publication = await Publication.getManifest(webpubManifestUrl, store);
 
+    // Settings
     R2Settings = await UserSettings.create({
         store: settingsStore,
         initialUserSettings: config.userSettings,
@@ -212,13 +241,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         api: config.api
     })
 
-    R2TTSSettings = await TTSSettings.create({
-        store: settingsStore,
-        initialTTSSettings: config.tts,
-        headerMenu: headerMenu,
-        api:config.tts.api
-    })
-
+    // Navigator 
     R2Navigator = await IFrameNavigator.create({
         mainElement: mainElement,
         headerMenu: headerMenu,
@@ -237,9 +260,9 @@ export async function load(config: ReaderConfig): Promise<any> {
         selectionMenuItems: config.selectionMenuItems,
         initialAnnotationColor: config.initialAnnotationColor
     })
-    // add custom modules
+
     // Bookmark Module
-        if (oc(config.rights).enableBookmarks) {
+    if (oc(config.rights).enableBookmarks(false)) {
         BookmarkModuleInstance = await BookmarkModule.create({
             annotator: annotator,
             headerMenu: headerMenu,
@@ -252,7 +275,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
 
     // Annotation Module
-    if (oc(config.rights).enableAnnotations) {
+    if (oc(config.rights).enableAnnotations(false)) {
         AnnotationModuleInstance = await AnnotationModule.create({
             annotator: annotator,
             headerMenu: headerMenu,
@@ -262,7 +285,14 @@ export async function load(config: ReaderConfig): Promise<any> {
             delegate: R2Navigator,
             initialAnnotations: config.initialAnnotations
         })
-        if (oc(config.rights).enableTTS) {
+        // TTS Module
+        if (oc(config.rights).enableTTS(false)) {
+            R2TTSSettings = await TTSSettings.create({
+                store: settingsStore,
+                initialTTSSettings: config.tts,
+                headerMenu: headerMenu,
+                api:config.tts.api
+            })
             TTSModuleInstance = await TTSModule.create({
                 annotationModule: AnnotationModuleInstance,
                 tts: R2TTSSettings

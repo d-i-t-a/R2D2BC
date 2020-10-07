@@ -34,6 +34,7 @@ import AnnotationModule from "../modules/AnnotationModule";
 import TTSModule, { TTSSpeechConfig } from "../modules/TTS/TTSModule";
 import { IS_DEV } from "..";
 import Splitting from "../modules/TTS/splitting";
+import { oc } from "ts-optchain";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -965,7 +966,7 @@ export default class IFrameNavigator implements Navigator {
 
                 const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
 
-                if (this.rights.enableTTS && this.tts.enableSplitter) {
+                if (oc(this.rights).enableTTS(false) && oc(this.tts).enableSplitter(false)) {
                     Splitting({
                         target: body,
                         by: "lines"
@@ -989,7 +990,7 @@ export default class IFrameNavigator implements Navigator {
                         this.annotationModule.selectionMenuItems = this.selectionMenuItems
                     }
                 }
-                if (this.rights.enableTTS) {
+                if (oc(this.rights).enableTTS(false)) {
                     setTimeout(() => {
                         const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
                         if (this.ttsModule !== undefined) {
@@ -1167,22 +1168,22 @@ export default class IFrameNavigator implements Navigator {
         event.stopPropagation();
     }
     startReadAloud() {
-        if (this.rights.enableTTS) {
+        if (oc(this.rights).enableTTS(false)) {
             this.annotationModule.highlighter.speakAll()
         }
     }
     stopReadAloud() {
-        if (this.rights.enableTTS) {
+        if (oc(this.rights).enableTTS(false)) {
             this.annotationModule.highlighter.stopReadAloud()
         }
     }
     pauseReadAloud() {
-        if (this.rights.enableTTS) {
+        if (oc(this.rights).enableTTS(false)) {
             this.ttsModule.speakPause()
         }
     }
     resumeReadAloud() {
-        if (this.rights.enableTTS) {
+        if (oc(this.rights).enableTTS(false)) {
             this.ttsModule.speakResume()
         }
     }

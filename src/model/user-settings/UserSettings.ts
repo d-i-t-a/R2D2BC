@@ -260,7 +260,7 @@ export class UserSettings implements UserSettings {
 
         if (this.headerMenu) this.settingsView = HTMLUtilities.findElement(this.headerMenu, "#container-view-settings") as HTMLDivElement;
 
-        if (oc(this.ui).settings.scroll) {
+        if (oc(this.ui).settings.scroll(false)) {
             if (this.bookViews.length >= 1) {
                 let selectedView = this.bookViews[0];
                 const selectedViewName = await this.store.get(ReadiumCSS.SCROLL_KEY);
@@ -347,13 +347,13 @@ export class UserSettings implements UserSettings {
 
 
     private renderControls(element: HTMLElement): void {
-        if (oc(this.ui).settings.fontSize) {
+        if (oc(this.ui).settings.fontSize(false)) {
             this.fontSizeButtons = {};
             for (const fontSizeName of ["decrease", "increase"]) {
                 this.fontSizeButtons[fontSizeName] = HTMLUtilities.findElement(element, "#" + fontSizeName + "-font") as HTMLButtonElement;
             }
         }
-        if (oc(this.ui).settings.fontFamily) {
+        if (oc(this.ui).settings.fontFamily(false)) {
             this.fontButtons = {};
             this.fontButtons[0] = HTMLUtilities.findElement(element, "#publisher-font") as HTMLButtonElement;
             this.fontButtons[1] = HTMLUtilities.findElement(element, "#serif-font") as HTMLButtonElement;
@@ -365,7 +365,7 @@ export class UserSettings implements UserSettings {
             }
             this.updateFontButtons();
         }
-        if (oc(this.ui).settings.appearance) {
+        if (oc(this.ui).settings.appearance(false)) {
             this.themeButtons = {};
             this.themeButtons[0] = HTMLUtilities.findElement(element, "#day-theme") as HTMLButtonElement;
             this.themeButtons[1] = HTMLUtilities.findElement(element, "#sepia-theme") as HTMLButtonElement;
@@ -380,7 +380,7 @@ export class UserSettings implements UserSettings {
             HTMLUtilities.findRequiredElement(element, "#container-view-appearance").remove()
         }
 
-        if (oc(this.ui).settings.scroll) {
+        if (oc(this.ui).settings.scroll(false)) {
             this.viewButtons = {};
             this.viewButtons[0] = HTMLUtilities.findElement(element, "#view-scroll") as HTMLButtonElement;
             this.viewButtons[1] = HTMLUtilities.findElement(element, "#view-paginated") as HTMLButtonElement;
@@ -408,7 +408,7 @@ export class UserSettings implements UserSettings {
 
     private async setupEvents(): Promise<void> {
 
-        if (oc(this.ui).settings.fontSize) {
+        if (oc(this.ui).settings.fontSize(false)) {
             addEventListenerOptional(this.fontSizeButtons["decrease"], 'click', (event: MouseEvent) => {
                 (this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental).decrement()
                 this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF))
@@ -429,7 +429,7 @@ export class UserSettings implements UserSettings {
             });
         }
 
-        if (oc(this.ui).settings.fontFamily) {
+        if (oc(this.ui).settings.fontFamily(false)) {
             for (let index = 0; index < UserSettings.fontFamilyValues.length; index++) {
                 const button = this.fontButtons[index];
                 if (button) {
@@ -445,7 +445,7 @@ export class UserSettings implements UserSettings {
             }
         }
 
-        if (oc(this.ui).settings.appearance) {
+        if (oc(this.ui).settings.appearance(false)) {
             for (let index = 0; index < UserSettings.appearanceValues.length; index++) {
                 const button = this.themeButtons[index];
                 if (button) {
@@ -460,7 +460,7 @@ export class UserSettings implements UserSettings {
             }
         }
 
-        if (oc(this.ui).settings.scroll) {
+        if (oc(this.ui).settings.scroll(false)) {
             for (let index = 0; index < this.bookViews.length; index++) {
                 const view = this.bookViews[index];
                 const button = this.viewButtons[index];

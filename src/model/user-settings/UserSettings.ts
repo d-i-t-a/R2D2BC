@@ -257,6 +257,9 @@ export class UserSettings implements UserSettings {
     }
 
     private async initializeSelections(): Promise<void> {
+
+        if (this.headerMenu) this.settingsView = HTMLUtilities.findElement(this.headerMenu, "#container-view-settings") as HTMLDivElement;
+
         if (this.bookViews.length >= 1) {
             let selectedView = this.bookViews[0];
             const selectedViewName = await this.store.get(ReadiumCSS.SCROLL_KEY);

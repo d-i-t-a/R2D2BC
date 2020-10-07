@@ -628,6 +628,22 @@ export class UserSettings implements UserSettings {
         this.settingsChangeCallback();
     }
 
+    async currentSettings() {
+        var userSettings = {
+            appearance: UserSettings.appearanceValues[this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value], //readium-default-on, readium-night-on, readium-sepia-on
+            fontFamily: UserSettings.fontFamilyValues[this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value], //Original, serif, sans-serif
+            textAlignment: UserSettings.textAlignmentValues[this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value], //"auto", "justify", "start"
+            columnCount: UserSettings.columnCountValues[this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value], // "auto", "1", "2"
+            verticalScroll: UserSettings.scrollValues[this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value], //readium-scroll-on, readium-scroll-off,
+            fontSize: this.fontSize,
+            wordSpacing: this.wordSpacing,
+            letterSpacing: this.letterSpacing,
+            pageMargins: this.pageMargins,
+            lineHeight: this.lineHeight
+        }
+        return userSettings
+    }
+
     async applyUserSettings(userSettings: UserSettings): Promise<void> {
 
         if (userSettings.verticalScroll) {

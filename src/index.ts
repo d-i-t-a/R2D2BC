@@ -135,6 +135,10 @@ export async function applyUserSettings(userSettings) {
     if (IS_DEV) { console.log("applyUserSettings") }
     R2Settings.applyUserSettings(userSettings)
 }
+export async function currentSettings() {
+    if (IS_DEV) { console.log("currentSettings") }
+    return R2Settings.currentSettings()
+}
 export async function increase(incremental) {
     if ((incremental == "pitch" || incremental == "rate" || incremental == "volume") && oc(R2Navigator.rights).enableTTS(false) ) {
         if (IS_DEV) { console.log("increase " + incremental) }
@@ -317,6 +321,9 @@ exports.resetUserSettings = function () {
 // - apply user setting(s)
 exports.applyUserSettings = function (userSettings) {
     applyUserSettings(userSettings)
+}
+exports.currentSettings = function () {
+    return currentSettings()
 }
 exports.increase = function (incremental) {
     increase(incremental)

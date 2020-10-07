@@ -22,7 +22,7 @@ import * as HTMLUtilities from "../utils/HTMLUtilities";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 
 export default class ColumnsPaginatedBookView implements PaginatedBookView {
-    public readonly name = "columns-paginated-view";
+    public readonly name = "readium-scroll-off";
     public readonly label = "Paginated";
 
     public iframe: HTMLIFrameElement;

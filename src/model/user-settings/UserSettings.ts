@@ -57,7 +57,7 @@ export interface UserSettings {
     fontOverride: boolean
     fontFamily: number
     appearance: any
-    verticalScroll: boolean
+    verticalScroll: any
 
     //Advanced settings
     publisherDefaults: boolean
@@ -75,6 +75,7 @@ export class UserSettings implements UserSettings {
     private readonly store: Store;
     private readonly USERSETTINGS = "userSetting";
 
+    private static scrollValues = ["readium-scroll-on", "readium-scroll-off"]
     private static appearanceValues = ["readium-default-on", "readium-sepia-on", "readium-night-on"]
     private static fontFamilyValues = ["Original", "serif", "sans-serif"]
     private static readonly textAlignmentValues = ["auto", "justify", "start"]
@@ -84,7 +85,7 @@ export class UserSettings implements UserSettings {
     fontOverride = false
     fontFamily = 0
     appearance: any = 0
-    verticalScroll = false
+    verticalScroll: any = 0
 
     //Advanced settings
     publisherDefaults = true
@@ -130,6 +131,23 @@ export class UserSettings implements UserSettings {
 
         if (config.initialUserSettings) {
             var initialUserSettings:UserSettings= config.initialUserSettings
+            if(initialUserSettings.verticalScroll) {
+                settings.verticalScroll = UserSettings.scrollValues.findIndex((el: any) => el === initialUserSettings.verticalScroll);
+                if (IS_DEV) console.log(settings.verticalScroll)
+                let selectedView = settings.bookViews[settings.verticalScroll];
+                let scroll = UserSettings.scrollValues[settings.verticalScroll];
+                var selectedViewName = scroll
+    
+                if (selectedViewName) {
+                    for (const bookView of settings.bookViews) {
+                        if (bookView.name === selectedViewName) {
+                            selectedView = bookView;
+                            break;
+                        }
+                    }
+                }
+                settings.selectedView = selectedView;
+            }
             if(initialUserSettings.appearance) {
                 settings.appearance = UserSettings.appearanceValues.findIndex((el: any) => el === initialUserSettings.appearance);
                 if (IS_DEV) console.log(settings.appearance)
@@ -144,28 +162,6 @@ export class UserSettings implements UserSettings {
                 if (settings.fontFamily != 0) {
                     settings.fontOverride = true
                 }
-            }
-            if(oc(initialUserSettings.verticalScroll)) {
-                settings.verticalScroll = initialUserSettings.verticalScroll;
-                if (IS_DEV) console.log(settings.verticalScroll)
-                let selectedView = settings.bookViews[0];
-                var selectedViewName = 'scrolling-book-view'
-                if (settings.verticalScroll) {
-                    selectedViewName = 'scrolling-book-view'
-                } else {
-                    selectedViewName = 'columns-paginated-view'
-                }
-        
-                if (selectedViewName) {
-                    for (const bookView of settings.bookViews) {
-                        if (bookView.name === selectedViewName) {
-                            selectedView = bookView;
-                            break;
-                        }
-                    }
-                }
-                settings.selectedView = selectedView;
-                settings.store.set(ReadiumCSS.SCROLL_KEY, selectedView.name);
             }
             if(initialUserSettings.textAlignment) {
                 settings.textAlignment = UserSettings.textAlignmentValues.findIndex((el: any) => el === initialUserSettings.textAlignment);
@@ -239,7 +235,7 @@ export class UserSettings implements UserSettings {
     private async reset() {
 
         this.appearance = 0
-        this.verticalScroll = false
+        this.verticalScroll = 0
         this.fontSize = 100.0
         this.fontOverride = false
         this.fontFamily = 0
@@ -261,8 +257,9 @@ export class UserSettings implements UserSettings {
         if (this.headerMenu) this.settingsView = HTMLUtilities.findElement(this.headerMenu, "#container-view-settings") as HTMLDivElement;
 
         if (this.bookViews.length >= 1) {
-            let selectedView = this.bookViews[0];
-            const selectedViewName = await this.store.get(ReadiumCSS.SCROLL_KEY);
+            let selectedView = this.bookViews[this.verticalScroll];
+            let scroll = UserSettings.scrollValues[this.verticalScroll];
+            var selectedViewName = scroll
             if (selectedViewName) {
                 for (const bookView of this.bookViews) {
                     if (bookView.name === selectedViewName) {
@@ -378,6 +375,11 @@ export class UserSettings implements UserSettings {
             this.viewButtons = {};
             this.viewButtons[0] = HTMLUtilities.findElement(element, "#view-scroll") as HTMLButtonElement;
             this.viewButtons[1] = HTMLUtilities.findElement(element, "#view-paginated") as HTMLButtonElement;
+            // if (UserSettings.scrollValues.length > 3) {
+            //     for (let index = 2; index < UserSettings.scrollValues.length; index++) {
+            //         this.viewButtons[index] = HTMLUtilities.findElement(element, "#" + UserSettings.scrollValues[index] + "-theme") as HTMLButtonElement;
+            //     }
+            // }
             this.updateViewButtons();
         } else {
             // remove buttons
@@ -455,8 +457,8 @@ export class UserSettings implements UserSettings {
         }
 
         if (oc(this.ui).settings.scroll(false)) {
-            for (let index = 0; index < this.bookViews.length; index++) {
-                const view = this.bookViews[index];
+            for (let index = 0; index < UserSettings.scrollValues.length; index++) {
+                const view = this.bookViews[this.bookViews.findIndex((el: any) => el.name === UserSettings.scrollValues[index])];
                 const button = this.viewButtons[index];
                 if (button) {
                     addEventListenerOptional(button, 'click', (event: MouseEvent) => {
@@ -466,7 +468,9 @@ export class UserSettings implements UserSettings {
                         view.goToPosition(position)
                         this.selectedView = view;
                         this.updateViewButtons();
-                        this.storeSelectedView(view);
+                        this.verticalScroll = UserSettings.scrollValues.findIndex((el: any) => el === view.name);
+                        this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = this.verticalScroll;
+                        this.storeProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF))
                         this.viewChangeCallback();
                         event.preventDefault();
                     });
@@ -504,11 +508,6 @@ export class UserSettings implements UserSettings {
     private async storeProperty(property: UserProperty): Promise<void> {
         this.updateUserSettings()
         this.saveProperty(property)
-    }
-
-    private async storeSelectedView(view: BookView): Promise<void> {
-        this.updateUserSettings()
-        return this.store.set(ReadiumCSS.SCROLL_KEY, view.name);
     }
 
     addAppearance(appearance: string): any {
@@ -587,12 +586,6 @@ export class UserSettings implements UserSettings {
 
     }
 
-    // private async initProperties(list: string): Promise<any> {
-    //     let savedObj = JSON.parse(list);
-    //     await this.store.set(this.USERSETTINGS, JSON.stringify(savedObj));
-    //     return new Promise(resolve => resolve(list));
-    // }
-
     private async saveProperty(property: any): Promise<any> {
         let savedProperties = await this.store.get(this.USERSETTINGS);
         if (savedProperties) {
@@ -608,24 +601,14 @@ export class UserSettings implements UserSettings {
         return new Promise(resolve => resolve(property));
     }
 
-    // private async deleteProperty(property: any): Promise<any> {
-    //     let array = await this.store.get(this.USERSETTINGS);
-    //     if (array) {
-    //         let savedObj = JSON.parse(array) as Array<any>;
-    //         savedObj = savedObj.filter((el: any) => el.name !== property.name);
-    //         await this.store.set(this.USERSETTINGS, JSON.stringify(savedObj));
-    //     }
-    //     return new Promise(resolve => resolve(property));
-    // }
-
-    // private async getProperties(): Promise<any> {
-    //     let array = await this.store.get(this.USERSETTINGS);
-    //     if (array) {
-    //         const properties = JSON.parse(array);
-    //         return new Promise(resolve => resolve(properties));
-    //     }
-    //     return new Promise(resolve => resolve());
-    // }
+    private async getProperties(): Promise<any> {
+        let array = await this.store.get(this.USERSETTINGS);
+        if (array) {
+            const properties = JSON.parse(array);
+            return new Promise(resolve => resolve(properties));
+        }
+        return new Promise(resolve => resolve());
+    }
 
     async getProperty(name: string): Promise<UserProperty> {
         let array = await this.store.get(this.USERSETTINGS);
@@ -649,6 +632,22 @@ export class UserSettings implements UserSettings {
 
     async applyUserSettings(userSettings: UserSettings): Promise<void> {
 
+        if (userSettings.verticalScroll) {
+            var verticalScroll
+            if (userSettings.verticalScroll == 'scroll') {
+                verticalScroll = UserSettings.scrollValues[0]
+            } else if (userSettings.verticalScroll == 'paginated') {
+                verticalScroll = UserSettings.scrollValues[1]
+            } else {
+                verticalScroll = userSettings.verticalScroll
+            }
+            this.verticalScroll = UserSettings.scrollValues.findIndex((el: any) => el === verticalScroll);
+            this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = this.verticalScroll;
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF))
+            this.applyProperties()
+            this.viewChangeCallback();
+        }
+
         if (userSettings.appearance) {
             var appearance
             if (userSettings.appearance == 'day') {
@@ -662,7 +661,7 @@ export class UserSettings implements UserSettings {
             }
             this.appearance = UserSettings.appearanceValues.findIndex((el: any) => el === appearance);
             this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value = this.appearance;
-            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF))
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF))
             this.applyProperties()
             this.settingsChangeCallback();
         }
@@ -670,7 +669,7 @@ export class UserSettings implements UserSettings {
         if (userSettings.fontSize) {
             this.fontSize = userSettings.fontSize
             this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).value = this.fontSize;
-            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF))
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF))
             this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
             this.applyProperties()
@@ -680,7 +679,7 @@ export class UserSettings implements UserSettings {
         if (userSettings.fontFamily) {
             this.fontFamily = UserSettings.fontFamilyValues.findIndex((el: any) => el === userSettings.fontFamily);
             this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value = this.fontFamily;
-            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF))
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF))
             this.applyProperties()
             this.settingsChangeCallback();
         }
@@ -688,7 +687,7 @@ export class UserSettings implements UserSettings {
         if (userSettings.letterSpacing) {
             this.letterSpacing = userSettings.letterSpacing
             this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).value = this.letterSpacing;
-            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF))
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF))
             this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
             this.applyProperties()
@@ -698,7 +697,7 @@ export class UserSettings implements UserSettings {
         if (userSettings.wordSpacing) {
             this.wordSpacing = userSettings.wordSpacing
             this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).value = this.wordSpacing;
-            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF))
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF))
             this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
             this.applyProperties()
@@ -708,7 +707,7 @@ export class UserSettings implements UserSettings {
         if (userSettings.columnCount) {
             this.columnCount = UserSettings.columnCountValues.findIndex((el: any) => el === userSettings.columnCount);
             this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value = this.columnCount;
-            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF))
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF))
             this.applyProperties()
             this.settingsChangeCallback();
         }
@@ -716,7 +715,7 @@ export class UserSettings implements UserSettings {
         if (userSettings.textAlignment) {
             this.textAlignment = UserSettings.textAlignmentValues.findIndex((el: any) => el === userSettings.textAlignment);
             this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value = this.textAlignment;
-            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF))
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF))
             this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
             this.applyProperties()
@@ -726,7 +725,7 @@ export class UserSettings implements UserSettings {
         if (userSettings.lineHeight) {
             this.lineHeight = userSettings.lineHeight
             this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).value = this.lineHeight;
-            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF))
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF))
             this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = false
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF))
             this.applyProperties()
@@ -736,7 +735,7 @@ export class UserSettings implements UserSettings {
         if (userSettings.pageMargins) {
             this.pageMargins = userSettings.pageMargins
             this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).value = this.pageMargins;
-            await this.saveProperty(this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF))
+            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF))
             this.applyProperties()
             this.settingsChangeCallback();
         }
@@ -747,11 +746,14 @@ export class UserSettings implements UserSettings {
         const position = this.selectedView.getCurrentPosition();
         this.selectedView.stop();
         let selectedView = this.bookViews[0];
-        var selectedViewName = 'scrolling-book-view'
+        var verticalScroll
+        var selectedViewName = 'readium-scroll-on'
         if (scroll) {
-            selectedViewName = 'scrolling-book-view'
+            selectedViewName = 'readium-scroll-on'
+            verticalScroll = UserSettings.scrollValues[0]
         } else {
-            selectedViewName = 'columns-paginated-view'
+            selectedViewName = 'readium-scroll-off'
+            verticalScroll = UserSettings.scrollValues[1]
         }
 
         if (selectedViewName) {
@@ -767,7 +769,10 @@ export class UserSettings implements UserSettings {
         selectedView.goToPosition(position)
         this.selectedView = selectedView;
         this.updateViewButtons();
-        this.storeSelectedView(selectedView);
+        this.verticalScroll = UserSettings.scrollValues.findIndex((el: any) => el === verticalScroll);
+        this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = this.verticalScroll;
+        this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF))
+        this.applyProperties()
         this.viewChangeCallback();
     }
 

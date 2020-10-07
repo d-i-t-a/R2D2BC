@@ -21,11 +21,12 @@ import ReaderModule from "../ReaderModule";
 import AnnotationModule from "../AnnotationModule";
 import { IS_DEV } from "../..";
 import { ISelectionInfo } from "../../model/Locator";
-import { ReadiumCSS } from "../../model/user-settings/ReadiumCSS";
-import { Switchable } from "../../model/user-settings/UserProperties";
 import { TTSSettings, TTSVoice } from "./TTSSettings";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional, removeEventListenerOptional } from "../../utils/EventHandler";
+import { oc } from "ts-optchain";
+import { ReadiumCSS } from "../../model/user-settings/ReadiumCSS";
+import { Switchable } from "../../model/user-settings/UserProperties";
 
 export interface TTSModuleConfig {
     annotationModule: AnnotationModule;
@@ -271,7 +272,6 @@ export default class TTSModule implements ReaderModule {
 
         var index = 0
         var lastword = undefined
-        var verticalScroll = (await self.annotationModule.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? (await self.annotationModule.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : false
 
         utterance.onboundary = function (e: any) {
             if (e.name === "sentence") {
@@ -305,25 +305,27 @@ export default class TTSModule implements ReaderModule {
                 if (self.annotationModule.delegate.tts.enableSplitter) {
 
 
-                    processWord(word, verticalScroll)
+                    processWord(word)
 
                 }
             }
         }
 
-        function processWord(word, verticalScroll) {
+    
+
+        async function processWord(word) {
 
             var spokenWordCleaned = word.replace(/[^a-zA-Z0-9 ]/g, "")
             if (IS_DEV) console.log("spokenWordCleaned", spokenWordCleaned);
 
             var splittingWord = self.splittingResult[index] as HTMLElement
-            var splittingWordCleaned = splittingWord.innerText.replace(/[^a-zA-Z0-9 ]/g, "")
+            var splittingWordCleaned = oc(splittingWord).innerText("").replace(/[^a-zA-Z0-9 ]/g, "")
             if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
 
             if (splittingWordCleaned.length == 0) {
                 index++
                 splittingWord = self.splittingResult[index] as HTMLElement
-                splittingWordCleaned = splittingWord.innerText.replace(/[^a-zA-Z0-9 ]/g, "")
+                splittingWordCleaned = oc(splittingWord).innerText("").replace(/[^a-zA-Z0-9 ]/g, "")
                 if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
             }
 
@@ -355,7 +357,8 @@ export default class TTSModule implements ReaderModule {
                             }
                             splittingWord.dataset.ttsCurrentWord = "true"
 
-                            if (!verticalScroll && self.tts.autoScroll && !self.userScrolled) {
+                            const scroll = await self.isScrollmode()
+                            if (scroll && self.tts.autoScroll && !self.userScrolled) {
                                 splittingWord.scrollIntoView({
                                     block: "center",
                                     behavior: "smooth",
@@ -364,6 +367,8 @@ export default class TTSModule implements ReaderModule {
                         } else {
                             index++
                         }
+                    } else if (spokenWordCleaned.length == 0) {
+                        index--
                     }
                 }
                 index++
@@ -395,6 +400,11 @@ export default class TTSModule implements ReaderModule {
         }
         callback()
 
+    }
+
+    async isScrollmode() {
+        var verticalScroll = ( await this.annotationModule.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? ( await this.annotationModule.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : 0
+        return verticalScroll === 0
     }
 
     speakPause() {
@@ -433,7 +443,6 @@ export default class TTSModule implements ReaderModule {
 
     userScrolled = false
     private wheel(event: KeyboardEvent | MouseEvent | TrackEvent): void {
-        if (IS_DEV) console.log(event)
         if (event instanceof KeyboardEvent) {
             const key = event.key;
             switch (key) {

@@ -1440,7 +1440,7 @@ export default class TextHighlighter {
             return;
         }
 
-        const paginated = this.isPaginated();
+        const paginated = await this.isPaginated();
         const bodyRect = documant.body.getBoundingClientRect();
         const scrollElement = this.getScrollingElement(documant);
 
@@ -1600,20 +1600,17 @@ export default class TextHighlighter {
                 bodyEventListenersSet = true;
 
                 async function mousedown(ev: MouseEvent){
-                    if (IS_DEV) console.log('mousedown')
                     lastMouseDownX = ev.clientX;
                     lastMouseDownY = ev.clientY;
                 }
 
                 async function mouseup(ev: MouseEvent){
-                    if (IS_DEV) console.log('mouseup')
                     if ((Math.abs(lastMouseDownX - ev.clientX) < 3) &&
                         (Math.abs(lastMouseDownY - ev.clientY) < 3)) {
                         self.processMouseEvent(win, ev);
                     }
                 }
                 async function mousemove(ev: MouseEvent){
-                    if (IS_DEV) console.log('mousemove')
                     self.processMouseEvent(win, ev);
                 }
 
@@ -1719,9 +1716,8 @@ export default class TextHighlighter {
     }
 
     async isPaginated() {
-        var verticalScroll = ( await this.delegate.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? ( await this.delegate.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : false
-        console.log("ispaginated ", !verticalScroll)
-        return !verticalScroll
+        var verticalScroll = ( await this.delegate.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? ( await this.delegate.delegate.settings.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : 0
+        return verticalScroll === 1
     }
 
     createHighlightDom(win: IReadiumIFrameWindow, highlight: IHighlight): HTMLDivElement | undefined {

@@ -273,10 +273,10 @@
 
         var userSettings = {
             // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
-            // fontFamily: "serif", //Original, serif, sans-serif
+            // fontFamily: "sans-serif", //Original, serif, sans-serif
             // textAlignment: "justify", //"auto", "justify", "start"
             // columnCount: "auto", // "auto", "1", "2"
-            // verticalScroll: false,
+            // verticalScroll: "readium-scroll-off", //readium-scroll-on, readium-scroll-off,
             // fontSize: 100.0,
             // wordSpacing: 0.0,
             // letterSpacing: 0.0,
@@ -295,6 +295,7 @@
 
         var urlParams = getURLQueryParams();
         var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
+        // var lastReadingPosition = '{"href":"http://localhost:4444/pub/L1ZvbHVtZXMvRGF0YS9Cb2tiYXNlbi9yMi1uYXZpZ2F0b3ItcG9jL2V4YW1wbGVzL3N0cmVhbWVkL2VwdWJzL0ZyYW5rZW5zdGVpbi5lcHVi/OEBPS/Text/cover.xhtml","locations":{"progression":0},"created":"2019-05-21T12:53:08.145Z","type":"application/xhtml+xml","title":"Cover"}';
 
         D2Reader.load({
             url: new URL(urlParams['url']),
@@ -305,17 +306,18 @@
             },
             tts: {
                 enableSplitter: true,
-                highlight: "lines",
-                autoScroll: false,
-                rate: 1.2,
-                pitch: 1.0,
-                volume: 0.5,
-                voice: {
-                    usePublication: true,
-                    name : "Daniel",
-                    lang : "en-GB",
-                }
+            //     highlight: "lines",
+            //     autoScroll: false,
+            //     rate: 1.2,
+            //     pitch: 1.0,
+            //     volume: 0.5,
+            //     voice: {
+            //         usePublication: true,
+            //         name : "Daniel",
+            //         lang : "en-GB",
+            //     }
             },
+            // lastReadingPosition: lastReadingPosition,
             injectables: injectables,
             selectionMenuItems: selectionMenuItems,
             // initialAnnotationColor: "#ff8500",
@@ -324,7 +326,6 @@
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {
             console.log("D2Reader loaded ", instance);
-            console.log("instance.bookmarkModule ", instance.bookmarkModule)
         }).catch(error => {
             console.error("error.message ", error.message);
         });

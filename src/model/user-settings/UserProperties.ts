@@ -29,6 +29,39 @@ export class UserProperty {
 
 }
 
+export class Stringable extends UserProperty {
+        
+    constructor(value: any, ref: string, name: string) {
+        super();
+        this.value = value
+        this.ref = ref
+        this.name = name
+    }
+    
+    toString(): string {
+        return this.value
+    }
+
+}
+
+export class JSONable extends UserProperty {
+
+    constructor(value: string, ref: string, name: string) {
+        super();
+        this.value = value
+        this.ref = ref
+        this.name = name
+    }
+    
+    toString(): string {
+        return this.value
+    }
+    toJson(): any {
+        return JSON.parse(this.value)
+    }
+
+}
+
 export class Enumerable extends UserProperty {
     
     values: Array<any>;
@@ -112,6 +145,13 @@ export class UserProperties {
 
     addIncremental(nValue: number, min: number, max: number, step: number, suffix: string, ref: string, key: string) {
         this.properties.push(new Incremental(nValue, min, max, step, suffix, ref, key))
+    }
+
+    addStringable(nValue: string, ref: string, key: string) {
+        this.properties.push(new Stringable(nValue, ref, key))
+    }
+    addJSONable(nValue: string, ref: string, key: string) {
+        this.properties.push(new JSONable(nValue, ref, key))
     }
 
     addSwitchable(onValue: string, offValue: string, on: boolean, ref: string, key: string) {

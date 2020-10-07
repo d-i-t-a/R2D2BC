@@ -53,7 +53,7 @@ export default class ScrollingBookView implements ContinuousBookView {
         return windowBottom - windowTop - 100
     }
 
-    public readonly name = "scrolling-book-view";
+    public readonly name = "readium-scroll-on";
     public readonly label = "Scrolling";
 
     public iframe: HTMLIFrameElement;

@@ -279,6 +279,7 @@ export default class BookmarkModule implements ReaderModule {
                                 title: linkElement.title
                             };
 
+                            this.delegate.stopReadAloud();
                             this.delegate.navigate(position);
                         });
 
@@ -295,7 +296,6 @@ export default class BookmarkModule implements ReaderModule {
 
                                 if (type == AnnotationType.Bookmark) {
                                     bookmarkLink.className = "bookmark-link"
-                                    bookmarkLink.innerHTML = IconLib.bookmark
 
                                     let title: HTMLSpanElement = document.createElement("span");
                                     let formattedProgression = Math.round(locator.locations.progression!! * 100) + "% " + "through resource"
@@ -354,6 +354,7 @@ export default class BookmarkModule implements ReaderModule {
         if (locator) {
             const linkHref = this.publication.getAbsoluteHref(locator.href);
             locator.href = linkHref    
+            this.delegate.stopReadAloud();
             this.delegate.navigate(locator);
         } else {
             if (IS_DEV) { console.log('bookmark data missing: ', event); }

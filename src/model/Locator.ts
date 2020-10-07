@@ -68,6 +68,7 @@ export interface ISelectionInfo {
     cleanText: string;
     rawText: string;
     color: string;
+    range: Range;
 }
 
 export interface IRangeInfo {

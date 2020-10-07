@@ -257,28 +257,19 @@ export class UserSettings implements UserSettings {
     }
 
     private async initializeSelections(): Promise<void> {
-
-        if (this.headerMenu) this.settingsView = HTMLUtilities.findElement(this.headerMenu, "#container-view-settings") as HTMLDivElement;
-
-        if (oc(this.ui).settings.scroll(false)) {
-            if (this.bookViews.length >= 1) {
-                let selectedView = this.bookViews[0];
-                const selectedViewName = await this.store.get(ReadiumCSS.SCROLL_KEY);
-                if (selectedViewName) {
-                    for (const bookView of this.bookViews) {
-                        if (bookView.name === selectedViewName) {
-                            selectedView = bookView;
-                            break;
-                        }
+        if (this.bookViews.length >= 1) {
+            let selectedView = this.bookViews[0];
+            const selectedViewName = await this.store.get(ReadiumCSS.SCROLL_KEY);
+            if (selectedViewName) {
+                for (const bookView of this.bookViews) {
+                    if (bookView.name === selectedViewName) {
+                        selectedView = bookView;
+                        break;
                     }
                 }
-                this.selectedView = selectedView;
             }
-        } else {
-            let selectedView = this.bookViews[0];
             this.selectedView = selectedView;
         }
-
     }
 
     applyProperties(): any {

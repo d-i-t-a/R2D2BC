@@ -148,9 +148,9 @@ export default class Publication {
 
     public getSpineIndex(href: string): number | null {
         const index = this.readingOrder
-            .findIndex(item => item.href && new URL((item.href, this.manifestUrl.href)).href === href);
+            .findIndex(item => item.href && new URL(item.href, this.manifestUrl.href).href === href);
 
-        return index >= 0 ? index : null;
+        return index
     }
 
     public getAbsoluteHref(href: string): string | null {

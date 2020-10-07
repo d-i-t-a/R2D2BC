@@ -12,3 +12,5 @@ viewer/injectables
 viewer/index.js
 viewer/index.js.map
 settings.json
+.DS_Store
+yarn.lock

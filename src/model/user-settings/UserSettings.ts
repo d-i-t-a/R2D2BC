@@ -599,14 +599,14 @@ export class UserSettings implements UserSettings {
         return new Promise(resolve => resolve(property));
     }
 
-    private async getProperties(): Promise<any> {
-        let array = await this.store.get(this.USERSETTINGS);
-        if (array) {
-            const properties = JSON.parse(array);
-            return new Promise(resolve => resolve(properties));
-        }
-        return new Promise(resolve => resolve());
-    }
+    // private async getProperties(): Promise<any> {
+    //     let array = await this.store.get(this.USERSETTINGS);
+    //     if (array) {
+    //         const properties = JSON.parse(array);
+    //         return new Promise(resolve => resolve(properties));
+    //     }
+    //     return new Promise(resolve => resolve());
+    // }
 
     async getProperty(name: string): Promise<UserProperty> {
         let array = await this.store.get(this.USERSETTINGS);

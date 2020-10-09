@@ -134,13 +134,6 @@ export class UserSettings implements UserSettings {
             if(initialUserSettings.verticalScroll) {
                 settings.verticalScroll = UserSettings.scrollValues.findIndex((el: any) => el === initialUserSettings.verticalScroll);
                 if (IS_DEV) console.log(settings.verticalScroll);
-                let v =await settings.getProperty(ReadiumCSS.SCROLL_KEY)
-                if (v != null) {
-                    (await settings.getProperty(ReadiumCSS.SCROLL_KEY)).value = settings.verticalScroll;
-                    await settings.saveProperty(settings.getProperty(ReadiumCSS.SCROLL_KEY))
-                } else {
-                    await settings.saveProperty(new Switchable("readium-scroll-on", "readium-scroll-off", settings.verticalScroll, ReadiumCSS.SCROLL_REF, ReadiumCSS.SCROLL_KEY))
-                }
             }
             if(initialUserSettings.appearance) {
                 settings.appearance = UserSettings.appearanceValues.findIndex((el: any) => el === initialUserSettings.appearance);
@@ -228,7 +221,7 @@ export class UserSettings implements UserSettings {
     private async reset() {
 
         this.appearance = 0
-        this.verticalScroll = 1
+        this.verticalScroll = 0
         this.fontSize = 100.0
         this.fontOverride = false
         this.fontFamily = 0
@@ -248,6 +241,12 @@ export class UserSettings implements UserSettings {
     private async initializeSelections(): Promise<void> {
 
         if (this.headerMenu) this.settingsView = HTMLUtilities.findElement(this.headerMenu, "#container-view-settings") as HTMLDivElement;
+        if (await this.getProperty(ReadiumCSS.SCROLL_KEY) != null) {
+            (await this.getProperty(ReadiumCSS.SCROLL_KEY)).value = this.verticalScroll;
+            await this.saveProperty(this.getProperty(ReadiumCSS.SCROLL_KEY))
+        } else {
+            await this.saveProperty(new Switchable("readium-scroll-on", "readium-scroll-off", this.verticalScroll, ReadiumCSS.SCROLL_REF, ReadiumCSS.SCROLL_KEY))
+        }
 
     }
 

@@ -18,8 +18,6 @@
  */
 
 import Navigator from "./Navigator";
-import PaginatedBookView from "../views/PaginatedBookView";
-import ScrollingBookView from "../views/ScrollingBookView";
 import Annotator from "../store/Annotator";
 import Publication, { Link } from "../model/Publication";
 import EventHandler, { addEventListenerOptional, removeEventListenerOptional } from "../utils/EventHandler";
@@ -35,6 +33,7 @@ import TTSModule, { TTSSpeechConfig } from "../modules/TTS/TTSModule";
 import { IS_DEV } from "..";
 import Splitting from "../modules/TTS/splitting";
 import { oc } from "ts-optchain";
+import ReflowableBookView from "../views/ReflowableBookView";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -131,8 +130,7 @@ export default class IFrameNavigator implements Navigator {
     settings: UserSettings;
     private annotator: Annotator | null;
 
-    private paginator: PaginatedBookView | null;
-    private scroller: ScrollingBookView | null;
+    reflowable: ReflowableBookView | null
     private eventHandler: EventHandler;
     private upLinkConfig: UpLinkConfig | null;
     private upLink: HTMLAnchorElement | null = null;
@@ -220,8 +218,7 @@ export default class IFrameNavigator implements Navigator {
     ) {
         this.settings = settings;
         this.annotator = annotator;
-        this.paginator = settings.paginator;
-        this.scroller = settings.scroller;
+        this.reflowable = settings.reflowable
         this.eventHandler = eventHandler || new EventHandler();
         this.upLinkConfig = upLinkConfig;
         this.initialLastReadingPosition = initialLastReadingPosition;
@@ -508,7 +505,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private updateBookView(): void {
-        if (this.settings.getSelectedView() === this.paginator) {
+        if(this.settings.isPaginated()) {
             document.body.onscroll = () => { };
             if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
             if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
@@ -527,16 +524,16 @@ export default class IFrameNavigator implements Navigator {
             if (!this.isDisplayed(this.linksMiddle)) {
                 this.toggleDisplay(this.linksMiddle);
             }
-        } else if (this.settings.getSelectedView() === this.scroller) {
+        } else if (this.settings.isScrollmode()) {
             if (this.nextPageAnchorElement) this.nextPageAnchorElement.style.display = "none"
             if (this.previousPageAnchorElement) this.previousPageAnchorElement.style.display = "none"
-            if (this.scroller.atTop() && this.scroller.atBottom()) {
+            if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                 if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                 if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-            } else if (this.scroller.atBottom()) {
+            } else if (this.reflowable.atEnd()) {
                 if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                 if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-            } else if (this.scroller.atTop()) {
+            } else if (this.reflowable.atStart()) {
                 if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                 if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
             } else {
@@ -545,13 +542,12 @@ export default class IFrameNavigator implements Navigator {
             }
             // document.body.style.overflow = "auto";
             document.body.onscroll = () => {
-
-                if (this.scroller && this.settings.getSelectedView() === this.scroller) {
-                    this.scroller.setIframeHeight(this.iframe)
+                if(this.settings.isScrollmode()) {
+                    this.reflowable.setIframeHeight(this.iframe)
                 }
 
                 this.saveCurrentReadingPosition();
-                if (this.scroller && this.scroller.atBottom()) {
+                if (this.reflowable && this.reflowable.atEnd()) {
                     // Bring up the bottom nav when you get to the bottom,
                     // if it wasn't already displayed.
                     if (!this.isDisplayed(this.linksBottom)) {
@@ -567,15 +563,14 @@ export default class IFrameNavigator implements Navigator {
                         this.toggleDisplay(this.linksBottom);
                     }
                 }
-
-                if (this.scroller && this.settings.getSelectedView() === this.scroller) {
-                    if (this.scroller.atTop() && this.scroller.atBottom()) {
+                if(this.settings.isPaginated()) {
+                    if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                    } else if (this.scroller.atBottom()) {
+                    } else if (this.reflowable.atEnd()) {
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                    } else if (this.scroller.atTop()) {
+                    } else if (this.reflowable.atStart()) {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
                     } else {
@@ -611,7 +606,7 @@ export default class IFrameNavigator implements Navigator {
 
     onScroll(): void {
         this.saveCurrentReadingPosition();
-        if (this.scroller && this.scroller.atBottom()) {
+        if (this.reflowable && this.reflowable.atEnd()) {
             // Bring up the bottom nav when you get to the bottom,
             // if it wasn't already displayed.
             if (!this.isDisplayed(this.linksBottom)) {
@@ -627,15 +622,14 @@ export default class IFrameNavigator implements Navigator {
                 this.toggleDisplay(this.linksBottom);
             }
         }
-
-        if (this.scroller && this.settings.getSelectedView() === this.scroller) {
-            if (this.scroller.atTop() && this.scroller.atBottom()) {
+        if(this.settings.isScrollmode()) {
+            if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                 this.nextChapterBottomAnchorElement.style.display = "unset"
                 this.previousChapterTopAnchorElement.style.display = "unset"
-            } else if (this.scroller.atBottom()) {
+            } else if (this.reflowable.atEnd()) {
                 this.previousChapterTopAnchorElement.style.display = "none"
                 this.nextChapterBottomAnchorElement.style.display = "unset"
-            } else if (this.scroller.atTop()) {
+            } else if (this.reflowable.atStart()) {
                 this.nextChapterBottomAnchorElement.style.display = "none"
                 this.previousChapterTopAnchorElement.style.display = "unset"
             } else {
@@ -845,13 +839,13 @@ export default class IFrameNavigator implements Navigator {
             this.settings.applyProperties();
 
             setTimeout(() => {
-                this.settings.getSelectedView().goToPosition(bookViewPosition);
+                this.reflowable.goToPosition(bookViewPosition);
                 this.updatePositionInfo();
             }, 100);
 
             setTimeout(() => {
                 if (this.newElementId) {
-                    this.settings.getSelectedView().goToElement(this.newElementId);
+                    this.reflowable.goToElement(this.newElementId);
                     this.newElementId = null;
                 }
             }, 100);
@@ -980,8 +974,8 @@ export default class IFrameNavigator implements Navigator {
                     this.eventHandler.setupEvents(this.iframe.contentDocument);
                 }
     
-                if (this.scroller && this.settings.getSelectedView() === this.scroller) {
-                    this.scroller.setIframeHeight(this.iframe)
+                if(this.settings.isScrollmode()) {
+                    this.reflowable.setIframeHeight(this.iframe)
                 }
 
                 if (this.annotationModule !== undefined) {
@@ -1136,7 +1130,7 @@ export default class IFrameNavigator implements Navigator {
             this.hideElement(element, control);
         }
         if (element === this.linksMiddle) {
-            if (this.settings.getSelectedView() === this.scroller) {
+            if(this.settings.isScrollmode()) {
                 this.showElement(element, control);
             } else {
                 this.hideElement(element, control);
@@ -1237,8 +1231,8 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
-        if (this.settings.getSelectedView() === this.paginator) {
-            if (this.paginator.onFirstPage()) {
+        if(this.settings.isPaginated()) {
+            if (this.reflowable.atStart()) {
                 if (this.previousChapterLink) {
                     const position: Locator = {
                         href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
@@ -1251,16 +1245,15 @@ export default class IFrameNavigator implements Navigator {
 
                     this.stopReadAloud();
                     this.navigate(position);
-                    var pagi = this.paginator
                     setTimeout(() => {
-                        pagi.goToPosition(1);
+                        this.reflowable.goToPosition(1);
                         this.updatePositionInfo();
                         this.saveCurrentReadingPosition();
                     }, 1);
 
                 }
             } else {
-                this.paginator.goToPreviousPage();
+                this.reflowable.goToPreviousPage();
                 this.updatePositionInfo();
                 this.saveCurrentReadingPosition();
             }
@@ -1269,7 +1262,7 @@ export default class IFrameNavigator implements Navigator {
                 event.stopPropagation();
             }
         } else {
-            if (this.scroller.atTop()) {
+            if (this.reflowable.atStart()) {
                 if (this.previousChapterLink) {
                     const position: Locator = {
                         href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
@@ -1284,7 +1277,7 @@ export default class IFrameNavigator implements Navigator {
                     this.navigate(position);
                 }
             } else {
-                this.scroller.goToPreviousPage();
+                this.reflowable.goToPreviousPage();
                 this.updatePositionInfo();
                 this.saveCurrentReadingPosition();
             }
@@ -1296,8 +1289,8 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
-        if (this.settings.getSelectedView() === this.paginator) {
-            if (this.paginator.onLastPage()) {
+        if(this.settings.isPaginated()) {
+            if (this.reflowable.atEnd()) {
                 if (this.nextChapterLink) {
                     const position: Locator = {
                         href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
@@ -1310,15 +1303,14 @@ export default class IFrameNavigator implements Navigator {
 
                     this.stopReadAloud();
                     this.navigate(position);
-                    var pagi = this.paginator
                     setTimeout(() => {
-                        pagi.goToPosition(0);
+                        this.reflowable.goToPosition(0);
                         this.updatePositionInfo();
                         this.saveCurrentReadingPosition();
                     }, 1);
                 }
             } else {
-                this.paginator.goToNextPage();
+                this.reflowable.goToNextPage();
                 this.updatePositionInfo();
                 this.saveCurrentReadingPosition();
             }
@@ -1327,7 +1319,7 @@ export default class IFrameNavigator implements Navigator {
                 event.stopPropagation();
             }
         } else {
-            if (this.scroller.atBottom()) {
+            if (this.reflowable.atEnd()) {
                 if (this.nextChapterLink) {
                     const position: Locator = {
                         href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
@@ -1342,7 +1334,7 @@ export default class IFrameNavigator implements Navigator {
                     this.navigate(position);
                 }
             } else {
-                this.scroller.goToNextPage();
+                this.reflowable.goToNextPage();
                 this.updatePositionInfo();
                 this.saveCurrentReadingPosition();
             }
@@ -1390,7 +1382,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handleResize(): void {
-        const selectedView = this.settings.getSelectedView();
+        const selectedView = this.reflowable;
         const oldPosition = selectedView.getCurrentPosition();
 
         this.settings.applyProperties()
@@ -1426,13 +1418,13 @@ export default class IFrameNavigator implements Navigator {
         // TODO paginator height needs to be calculated with headers and footers in mind
         // material     - 70 - 10 - 40 - 10 (if page info needs showing, +30)
         // api          - 10 - 10 - 10 - 10
-        if (this.paginator) {
-            this.paginator.height = (BrowserUtilities.getHeight() - 10 - 10 - 10 - 10);
+        if(this.settings.isPaginated()) {
+            this.reflowable.height = (BrowserUtilities.getHeight() - 10 - 10 - 10 - 10);
         }
 
         setTimeout(() => {
-            if (this.scroller && this.settings.getSelectedView() === this.scroller) {
-                this.scroller.setIframeHeight(this.iframe)
+            if(this.settings.isScrollmode()) {
+                this.reflowable.setIframeHeight(this.iframe)
             }
         }, 100);
         setTimeout(() => {
@@ -1445,9 +1437,9 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private updatePositionInfo() {
-        if (this.settings.getSelectedView() === this.paginator) {
-            const currentPage = Math.round(this.paginator.getCurrentPage());
-            const pageCount = Math.round(this.paginator.getPageCount());
+        if(this.settings.isPaginated()) {
+            const currentPage = Math.round(this.reflowable.getCurrentPage());
+            const pageCount = Math.round(this.reflowable.getPageCount());
             if (this.chapterPosition) this.chapterPosition.innerHTML = "Page " + currentPage + " of " + pageCount;
         } else {
             if (this.chapterPosition) this.chapterPosition.innerHTML = "";
@@ -1503,7 +1495,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private hideView(_view: HTMLDivElement, _control: HTMLButtonElement): void {
-        if (this.settings.getSelectedView() === this.scroller) {
+        if(this.settings.isScrollmode()) {
             document.body.style.overflow = "auto";
         }
     }
@@ -1561,14 +1553,14 @@ export default class IFrameNavigator implements Navigator {
                     this.annotationModule.showHighlights();
                 }
 
-                if (this.settings.getSelectedView() === this.scroller) {
-                    if (this.scroller.atTop() && this.scroller.atBottom()) {
+                if(this.settings.isScrollmode()) {
+                    if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                    } else if (this.scroller.atBottom()) {
+                    } else if (this.reflowable.atEnd()) {
                         if (this.nextChapterBottomAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                    } else if (this.scroller.atTop()) {
+                    } else if (this.reflowable.atStart()) {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
                     } else {
@@ -1642,7 +1634,7 @@ export default class IFrameNavigator implements Navigator {
             const position: ReadingPosition = {
                 href: tocItem.href,
                 locations: {
-                    progression: this.settings.getSelectedView().getCurrentPosition()
+                    progression: this.reflowable.getCurrentPosition()
                 },
                 created: new Date(),
                 type: this.currentChapterLink.type,

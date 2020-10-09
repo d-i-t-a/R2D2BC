@@ -28,7 +28,6 @@ import { IHighlight } from "./highlight/common/highlight";
 import { Bookmark,  Locator, Annotation, AnnotationMarker } from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
-import { UserSettings } from "../model/user-settings/UserSettings";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from 'uuid';
 
@@ -45,7 +44,6 @@ export interface AnnotationModuleConfig {
     headerMenu: HTMLElement;
     rights: ReaderRights;
     publication: Publication;
-    settings: UserSettings;
     delegate: IFrameNavigator;
     initialAnnotations?: any;
 }
@@ -57,7 +55,6 @@ export default class AnnotationModule implements ReaderModule {
     rights: ReaderRights;
 
     private publication: Publication;
-    private settings: UserSettings;
 
     private highlightsView: HTMLDivElement;
 
@@ -75,7 +72,6 @@ export default class AnnotationModule implements ReaderModule {
             config.headerMenu,
             config.rights || { enableAnnotations: false , enableTTS: false},
             config.publication,
-            config.settings,
             config.delegate,
             config.initialAnnotations || null
         );
@@ -85,11 +81,10 @@ export default class AnnotationModule implements ReaderModule {
 
 
     public constructor(annotator: Annotator, headerMenu: HTMLElement, rights: ReaderRights,
-        publication: Publication, settings: UserSettings, delegate: IFrameNavigator, initialAnnotations: any | null = null) {
+        publication: Publication, delegate: IFrameNavigator, initialAnnotations: any | null = null) {
         this.annotator = annotator
         this.rights = rights
         this.publication = publication
-        this.settings = settings
         this.headerMenu = headerMenu
         this.delegate = delegate
         this.initialAnnotations = initialAnnotations;
@@ -217,7 +212,7 @@ export default class AnnotationModule implements ReaderModule {
     
             const url = this.publication.getAbsoluteHref(tocItem.href);
 
-            const bookmarkPosition = this.settings.getSelectedView().getCurrentPosition();
+            const bookmarkPosition = this.delegate.reflowable.getCurrentPosition();
 
             const body = HTMLUtilities.findRequiredIframeElement(this.delegate.iframe.contentDocument, "body") as HTMLBodyElement;
             const progression = highlight.position ? (highlight.position / body.scrollHeight) : bookmarkPosition

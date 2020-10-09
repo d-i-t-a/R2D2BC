@@ -85,6 +85,7 @@ export interface ISelectionInfo {
     rangeInfo: IRangeInfo;
     cleanText: string;
     rawText: string;
+    range: Range;
 }
 
 export function sameSelections(sel1: ISelectionInfo, sel2: ISelectionInfo): boolean {

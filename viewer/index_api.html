@@ -42,12 +42,13 @@
         <div id="container-annotations"></div>
     </header>
 
-    <div style="position:absolute;top:0;left:0;z-index: 2;">
+    <div style="position:absolute;top:0;left:0;z-index: 1000;">
 
         <button onclick="javascript:D2Reader.startReadAloud()">read aloud from top</button><br>
         <button onclick="javascript:D2Reader.stopReadAloud()">stop read aloud from top</button><br>
         <button onclick="javascript:D2Reader.pauseReadAloud()">pause read aloud from top</button><br>
         <button onclick="javascript:D2Reader.resumeReadAloud()">resume read aloud from top</button><br>
+        <button onclick="javascript:alert(D2Reader.publicationLanguage())">publicationLanguage</button><br>
         <button onclick="javascript:alert(D2Reader.totalResources())">totalResources</button><br>
         <button onclick="javascript:alert(D2Reader.currentResource())">currentResource</button><br>
         <button onclick="javascript:alert(D2Reader.mostRecentNavigatedTocItem())">mostRecentNavigatedTocItem</button><br>
@@ -83,6 +84,20 @@
         <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'auto'})">align auto</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'justify'})">align justify</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'start'})">align start</button><br>
+
+
+
+        <button onclick="javascript:D2Reader.decrease('pitch')">pitch decrease</button><br>
+        <button onclick="javascript:D2Reader.increase('pitch')">pitch increase</button><br>
+        <button onclick="javascript:D2Reader.decrease('rate')">rate decrease</button><br>
+        <button onclick="javascript:D2Reader.increase('rate')">rate increase</button><br>
+        <button onclick="javascript:D2Reader.decrease('volume')">volume decrease</button><br>
+        <button onclick="javascript:D2Reader.increase('volume')">volume increase</button><br>
+        <button onclick="javascript:D2Reader.ttsSet('color', '#ff66c4')">change tts color</button><br>
+        <button onclick="javascript:D2Reader.ttsSet('voice', {usePublication: true,  name : 'Karen', lang : 'en-AU' })">change voice to Karen AU</button><br>
+        <button onclick="javascript:D2Reader.applyTTSSettings({ pitch:1.2, rate: 1.5, volume: 0.6, color: '#eb344c', voice: {usePublication: false}})">apply multiple tts settings</button><br>
+        <button onclick="javascript:D2Reader.resetTTSSettings()">reset TTS setting</button><br>
+
 
         <button onclick="javascript:D2Reader.previousResource()">previous resource</button><br>
         <button onclick="javascript:D2Reader.nextResource()">next resource</button><br>
@@ -172,6 +187,11 @@
                     })">show
             annotations</button><br>
 
+        <button onclick="javascript:D2Reader.currentSettings().then(
+            result => { 
+                console.log(result)
+            })">current usersettings</button><br>
+
 
 
     </div>
@@ -189,6 +209,9 @@
             <span id="highlight-toolbox" class="highlight-toolbox">
                 <div id="highlight-toolbox-mode-add">
                     <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon"><title id="text-icon">Text</title><path d="M5 4v3h5.5v12h3V7H19V4z"></path></svg>
+                    </span></button>
+                    <button style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon"><title id="text-icon">Text</title><path d="M5 4v3h5.5v12h3V7H19V4z"></path></svg>
                     </span></button>
                     <button style="background-color: gainsboro;" id="speakIcon"><span style="display: inline-block;width: 24px;height: 24px;">
@@ -255,10 +278,10 @@
 
         var userSettings = {
             // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
-            // fontFamily: "serif", //Original, serif, sans-serif
+            // fontFamily: "sans-serif", //Original, serif, sans-serif
             // textAlignment: "justify", //"auto", "justify", "start"
             // columnCount: "auto", // "auto", "1", "2"
-            // verticalScroll: false,
+            // verticalScroll: "readium-scroll-off", //readium-scroll-on, readium-scroll-off,
             // fontSize: 100.0,
             // wordSpacing: 0.0,
             // letterSpacing: 0.0,
@@ -277,13 +300,29 @@
 
         var urlParams = getURLQueryParams();
         var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
+        // var lastReadingPosition = '{"href":"http://localhost:4444/pub/L1ZvbHVtZXMvRGF0YS9Cb2tiYXNlbi9yMi1uYXZpZ2F0b3ItcG9jL2V4YW1wbGVzL3N0cmVhbWVkL2VwdWJzL0ZyYW5rZW5zdGVpbi5lcHVi/OEBPS/Text/cover.xhtml","locations":{"progression":0},"created":"2019-05-21T12:53:08.145Z","type":"application/xhtml+xml","title":"Cover"}';
 
         D2Reader.load({
             url: new URL(urlParams['url']),
             rights: {
                 enableBookmarks: true,
-                enableAnnotations: true
+                enableAnnotations: true,
+                enableTTS: true
             },
+            tts: {
+                enableSplitter: true,
+            //     highlight: "lines",
+            //     autoScroll: false,
+            //     rate: 1.2,
+            //     pitch: 1.0,
+            //     volume: 0.5,
+            //     voice: {
+            //         usePublication: true,
+            //         name : "Daniel",
+            //         lang : "en-GB",
+            //     }
+            },
+            // lastReadingPosition: lastReadingPosition,
             injectables: injectables,
             selectionMenuItems: selectionMenuItems,
             // initialAnnotationColor: "#ff8500",
@@ -292,7 +331,6 @@
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {
             console.log("D2Reader loaded ", instance);
-            console.log("instance.bookmarkModule ", instance.bookmarkModule)
         }).catch(error => {
             console.error("error.message ", error.message);
         });

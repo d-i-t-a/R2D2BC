@@ -1,7 +1,3 @@
-import { UserProperty } from "../model/user-settings/UserProperties";
-import * as HTMLUtilities from "../utils/HTMLUtilities";
-import * as BrowserUtilities from "../utils/BrowserUtilities";
-import Store from "../store/Store";
 /*
  * Copyright 2018-2020 DITA (AM Consulting LLC)
  *
@@ -22,6 +18,10 @@ import Store from "../store/Store";
  */
 
 
+import { UserProperty } from "../model/user-settings/UserProperties";
+import * as HTMLUtilities from "../utils/HTMLUtilities";
+import * as BrowserUtilities from "../utils/BrowserUtilities";
+import Store from "../store/Store";
 import BookView from "./BookView";
 import { UserSettings } from "../model/user-settings/UserSettings";
 

@@ -1,5 +1,4 @@
-import { ReadiumCSS } from "../model/user-settings/ReadiumCSS";
-import { Switchable, UserProperty } from "../model/user-settings/UserProperties";
+import { UserProperty } from "../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import Store from "../store/Store";
@@ -24,13 +23,14 @@ import Store from "../store/Store";
 
 
 import BookView from "./BookView";
+import { UserSettings } from "../model/user-settings/UserSettings";
 
 
 export default class ReflowableBookView implements BookView {
 
     private readonly USERSETTINGS = "userSetting";
     private readonly store: Store;
-    // private scrollMode: boolean
+    private scrollMode: boolean
     constructor(store: Store) {
         this.store = store;
 
@@ -54,8 +54,7 @@ export default class ReflowableBookView implements BookView {
         // for (const image of images) {
         //     image.style.maxWidth = "";
         // }    
-
-        // this.scrollMode = scroll
+        this.scrollMode = scroll
 
         if (scroll) {
             this.name = "readium-scroll-on";
@@ -308,13 +307,21 @@ export default class ReflowableBookView implements BookView {
 
 
 
-    async isPaginated() {
-        let scroll = ( await this.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? ( await this.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : 0
-        return scroll === 1
+    isPaginated() {
+        if (this.iframe) {
+            const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
+            const scroll = UserSettings.scrollValues.findIndex((el: any) => el === html.style.getPropertyValue("--USER__scroll"))
+            return scroll === 1
+        }
+        return this.scrollMode === false
     }
-    async isScrollmode() {
-        let scroll = ( await this.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? ( await this.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : 0
-        return scroll === 0
+    isScrollmode() {
+        if (this.iframe) {
+            const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
+            const scroll = UserSettings.scrollValues.findIndex((el: any) => el === html.style.getPropertyValue("--USER__scroll"))
+            return scroll === 0
+        }
+        return this.scrollMode === true
     }
     async getProperty(name: string): Promise<UserProperty> {
         let array = await this.store.get(this.USERSETTINGS);

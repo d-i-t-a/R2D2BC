@@ -867,12 +867,9 @@ export default class IFrameNavigator implements Navigator {
                     this.previousChapterAnchorElement.className += " disabled";
                 }
             }
-
             const next = this.publication.getNextSpineItem(currentLocation);
-            if (next && next.href) {
-                this.nextChapterLink = next
+            this.nextChapterLink = next
 
-            }
             if (this.nextChapterAnchorElement) {
                 if (this.nextChapterLink) {
                     this.nextChapterAnchorElement.href = this.publication.getAbsoluteHref(this.nextChapterLink.href);

@@ -788,7 +788,9 @@ export class UserSettings implements UserSettings {
         this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = this.verticalScroll;
         this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF))
         this.applyProperties()
-        this.updateViewButtons();
+        if (oc(this.ui).settings.scroll(false)) {
+            this.updateViewButtons();
+        }
         this.reflowable.setMode(scroll)
         this.reflowable.goToPosition(position)
         this.viewChangeCallback();

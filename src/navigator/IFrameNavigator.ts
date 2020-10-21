@@ -505,7 +505,10 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private updateBookView(): void {
-        if(this.settings.isPaginated()) {
+
+        if (this.reflowable.isPaginated()) {
+            this.reflowable.height = (BrowserUtilities.getHeight() - 10 - 10 - 10 - 10);
+            if (this.infoBottom) this.infoBottom.style.display = "block"
             document.body.onscroll = () => { };
             if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
             if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
@@ -523,8 +526,9 @@ export default class IFrameNavigator implements Navigator {
 
             if (!this.isDisplayed(this.linksMiddle)) {
                 this.toggleDisplay(this.linksMiddle);
-            }
-        } else if (this.settings.isScrollmode()) {
+            }    
+        } else {
+            if (this.infoBottom) this.infoBottom.style.display = "none"
             if (this.nextPageAnchorElement) this.nextPageAnchorElement.style.display = "none"
             if (this.previousPageAnchorElement) this.previousPageAnchorElement.style.display = "none"
             if (this.reflowable.atStart() && this.reflowable.atEnd()) {
@@ -542,7 +546,7 @@ export default class IFrameNavigator implements Navigator {
             }
             // document.body.style.overflow = "auto";
             document.body.onscroll = () => {
-                if(this.settings.isScrollmode()) {
+                if(this.reflowable.isScrollmode()) {
                     this.reflowable.setIframeHeight(this.iframe)
                 }
 
@@ -563,7 +567,7 @@ export default class IFrameNavigator implements Navigator {
                         this.toggleDisplay(this.linksBottom);
                     }
                 }
-                if(this.settings.isPaginated()) {
+                if(this.reflowable.isPaginated()) {
                     if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
@@ -622,7 +626,7 @@ export default class IFrameNavigator implements Navigator {
                 this.toggleDisplay(this.linksBottom);
             }
         }
-        if(this.settings.isScrollmode()) {
+        if(this.reflowable.isScrollmode()) {
             if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                 this.nextChapterBottomAnchorElement.style.display = "unset"
                 this.previousChapterTopAnchorElement.style.display = "unset"
@@ -971,7 +975,7 @@ export default class IFrameNavigator implements Navigator {
                     this.eventHandler.setupEvents(this.iframe.contentDocument);
                 }
     
-                if(this.settings.isScrollmode()) {
+                if(this.reflowable.isScrollmode()) {
                     this.reflowable.setIframeHeight(this.iframe)
                 }
 
@@ -1127,7 +1131,7 @@ export default class IFrameNavigator implements Navigator {
             this.hideElement(element, control);
         }
         if (element === this.linksMiddle) {
-            if(this.settings.isScrollmode()) {
+            if(this.reflowable.isScrollmode()) {
                 this.showElement(element, control);
             } else {
                 this.hideElement(element, control);
@@ -1228,7 +1232,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
-        if(this.settings.isPaginated()) {
+        if(this.reflowable.isPaginated()) {
             if (this.reflowable.atStart()) {
                 if (this.previousChapterLink) {
                     const position: Locator = {
@@ -1286,7 +1290,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
-        if(this.settings.isPaginated()) {
+        if(this.reflowable.isPaginated()) {
             if (this.reflowable.atEnd()) {
                 if (this.nextChapterLink) {
                     const position: Locator = {
@@ -1415,12 +1419,19 @@ export default class IFrameNavigator implements Navigator {
         // TODO paginator height needs to be calculated with headers and footers in mind
         // material     - 70 - 10 - 40 - 10 (if page info needs showing, +30)
         // api          - 10 - 10 - 10 - 10
-        if(this.settings.isPaginated()) {
-            this.reflowable.height = (BrowserUtilities.getHeight() - 10 - 10 - 10 - 10);
-        }
+
+        this.settings.isPaginated().then(paginated => {
+            if (paginated) {
+                this.reflowable.height = (BrowserUtilities.getHeight() - 10 - 10 - 10 - 10);
+                if (this.infoBottom) this.infoBottom.style.display = "block"
+            } else {
+                if (this.infoBottom) this.infoBottom.style.display = "none"
+            }
+        })
+
 
         setTimeout(() => {
-            if(this.settings.isScrollmode()) {
+            if(this.reflowable.isScrollmode()) {
                 this.reflowable.setIframeHeight(this.iframe)
             }
         }, 100);
@@ -1434,7 +1445,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private updatePositionInfo() {
-        if(this.settings.isPaginated()) {
+        if(this.reflowable.isPaginated()) {
             const currentPage = Math.round(this.reflowable.getCurrentPage());
             const pageCount = Math.round(this.reflowable.getPageCount());
             if (this.chapterPosition) this.chapterPosition.innerHTML = "Page " + currentPage + " of " + pageCount;
@@ -1492,7 +1503,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private hideView(_view: HTMLDivElement, _control: HTMLButtonElement): void {
-        if(this.settings.isScrollmode()) {
+        if(this.reflowable.isScrollmode()) {
             document.body.style.overflow = "auto";
         }
     }
@@ -1550,7 +1561,7 @@ export default class IFrameNavigator implements Navigator {
                     this.annotationModule.showHighlights();
                 }
 
-                if(this.settings.isScrollmode()) {
+                if(this.reflowable.isScrollmode()) {
                     if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"

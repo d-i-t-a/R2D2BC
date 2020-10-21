@@ -70,7 +70,7 @@ export default class ReflowableBookView implements BookView {
     
             const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
             html.style.setProperty("--USER__scroll", "readium-scroll-on");
-            this.setIFrameSize();    
+            this.setSize();    
         } else {
             this.name = "readium-scroll-off";
             this.label = "Paginated";        
@@ -105,7 +105,7 @@ export default class ReflowableBookView implements BookView {
                     viewport.remove();
                 }
             }
-            this.setIFrameSize();    
+            this.setSize();    
         } else {
             this.iframe.height = "0";
             this.iframe.width = "0";
@@ -155,7 +155,7 @@ export default class ReflowableBookView implements BookView {
     }
     goToPosition(position: number): void {
         if (this.isScrollmode()) {
-            this.setIFrameSize();
+            this.setSize();
             document.scrollingElement.scrollTop = document.scrollingElement.scrollHeight * position;    
         } else {
             this.setSize();
@@ -181,7 +181,7 @@ export default class ReflowableBookView implements BookView {
     }
     goToElement(elementId: string, relative?: boolean): void {
         if (this.isScrollmode()) {
-            this.setIFrameSize();
+            this.setSize();
             const element = (this.iframe.contentDocument as any).getElementById(elementId);
             if (element) {
                 // Put the element as close to the top as possible.
@@ -304,9 +304,6 @@ export default class ReflowableBookView implements BookView {
     }
 
 
-
-
-
     isPaginated() {
         if (this.iframe) {
             const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
@@ -344,32 +341,6 @@ export default class ReflowableBookView implements BookView {
         const windowBottom = windowTop + window.innerHeight;
         return windowBottom - windowTop - 100
     }
-    private setIFrameSize(): void {
-        // Remove previous iframe height so body scroll height will be accurate.
-        this.iframe.height = "0";
-        this.iframe.width = BrowserUtilities.getWidth() + "px";
-
-        const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
-
-        const width = (BrowserUtilities.getWidth() - this.sideMargin * 2) + "px";
-        this.setIframeHeight(this.iframe)      
-
-        const images = Array.prototype.slice.call(body.querySelectorAll("img"));
-        for (const image of images) {
-            if (image.hasAttribute("width")) {
-                image.style.width = image.width + "px";
-            }
-            if (image.hasAttribute("height")) {
-                image.style.height = image.height + "px";
-            }
-            if (image.width > width) {
-               image.style.maxWidth = width;
-            }
-
-            this.setIframeHeight(this.iframe)      
-
-        }
-    }
     setIframeHeight(iframe:any) {
         if (iframe) {
             var iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
@@ -398,19 +369,52 @@ export default class ReflowableBookView implements BookView {
     }
 
     private setSize(): void {
-        // any is necessary because CSSStyleDeclaration type does not include
-        // all the vendor-prefixed attributes.
-        const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as any;
+        if (this.isPaginated()) {
+            // any is necessary because CSSStyleDeclaration type does not include
+            // all the vendor-prefixed attributes.
+            const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as any;
 
-        (this.iframe.contentDocument as any).documentElement.style.height = (this.height) + "px";
-        this.iframe.height = (this.height) + "px";
-        this.iframe.width = BrowserUtilities.getWidth() + "px";
+            (this.iframe.contentDocument as any).documentElement.style.height = (this.height) + "px";
+            this.iframe.height = (this.height) + "px";
+            this.iframe.width = BrowserUtilities.getWidth() + "px";
 
-        const images = body.querySelectorAll("img");
-        for (const image of images) {
-            image.style.width = image.width + "px";
+            const images = body.querySelectorAll("img");
+            for (const image of images) {
+                image.style.width = image.width + "px";
+            }
+        } else {
+            // Remove previous iframe height so body scroll height will be accurate.
+            this.iframe.height = "0";
+            this.iframe.width = BrowserUtilities.getWidth() + "px";
+    
+            const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+    
+            const width = (BrowserUtilities.getWidth() - this.sideMargin * 2) + "px";
+            this.setIframeHeight(this.iframe)      
+    
+            const images = Array.prototype.slice.call(body.querySelectorAll("img"));
+            for (const image of images) {
+                if (image.hasAttribute("width")) {
+                    image.style.width = image.width + "px";
+                }
+                if (image.hasAttribute("height")) {
+                    image.style.height = image.height + "px";
+                }
+                if (image.width > width) {
+                    image.style.maxWidth = width;
+                }
+    
+                this.setIframeHeight(this.iframe)      
+    
+            }
         }
     }
+
+
+    // TODO: if we cahnged the following functions to handle screen size (height and wdith) we can use it for both paginated and reflowable. 
+    // For example: getColumnWidth would be renamed to something that gives us either the offsetWidth when in paginated mode and the offsetHeight when in scrollmode. etc. 
+    // Since theses are the only 4 functions right now that are specifically used for paginated mode buyt give us nothing for scrollmode, it would make sense to make them more universal
+
 
     /** Returns the total width of the columns that are currently
     positioned to the left of the iframe viewport. */

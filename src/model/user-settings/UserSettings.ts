@@ -549,25 +549,29 @@ export class UserSettings implements UserSettings {
         this.applyProperties()
     }
     addFont(fontFamily: string): any {
-        UserSettings.fontFamilyValues.push(fontFamily)
-        this.applyProperties()
+        if (UserSettings.fontFamilyValues.includes(fontFamily)) {
+            // ignore
+        } else {
+            UserSettings.fontFamilyValues.push(fontFamily)
+            this.applyProperties()
 
-        if (this.settingsView) {
-            const index = UserSettings.fontFamilyValues.length - 1
-            this.fontButtons[index] = HTMLUtilities.findElement(this.settingsView, "#"+fontFamily+"-font") as HTMLButtonElement;
-            const button = this.fontButtons[index];
-            if (button) {
-                addEventListenerOptional(button, 'click', (event: MouseEvent) => {
-                    this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value = index;
-                    this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF))
-                    this.applyProperties()
-                    this.updateFontButtons();
-                    this.settingsChangeCallback();
-                    event.preventDefault();
-                });
+            if (this.settingsView) {
+                const index = UserSettings.fontFamilyValues.length - 1
+                this.fontButtons[index] = HTMLUtilities.findElement(this.settingsView, "#"+fontFamily+"-font") as HTMLButtonElement;
+                const button = this.fontButtons[index];
+                if (button) {
+                    addEventListenerOptional(button, 'click', (event: MouseEvent) => {
+                        this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value = index;
+                        this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF))
+                        this.applyProperties()
+                        this.updateFontButtons();
+                        this.settingsChangeCallback();
+                        event.preventDefault();
+                    });
+                }
+                this.updateFontButtons()
+                this.updateViewButtons()
             }
-            this.updateFontButtons()
-            this.updateViewButtons()
         }
     }
 

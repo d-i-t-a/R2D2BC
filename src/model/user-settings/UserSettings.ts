@@ -511,10 +511,10 @@ export class UserSettings implements UserSettings {
                         this.storeProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF))
                         this.applyProperties()
                         this.updateViewButtons();
-                        this.viewChangeCallback();
+                        this.reflowable.setMode(index === 0);
                         this.reflowable.goToPosition(position)
-                        this.reflowable.setMode(index == 0);
                         event.preventDefault();
+                        this.viewChangeCallback();
                     });
                 }
             }

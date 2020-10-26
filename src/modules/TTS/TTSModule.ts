@@ -354,9 +354,7 @@ export default class TTSModule implements ReaderModule {
 
                             }
                             splittingWord.dataset.ttsCurrentWord = "true"
-
-                            const scroll = await self.isScrollmode()
-                            if (scroll && self.tts.autoScroll && !self.userScrolled) {
+                            if (self.annotationModule.delegate.reflowable.isScrollmode() && self.tts.autoScroll && !self.userScrolled) {
                                 splittingWord.scrollIntoView({
                                     block: "center",
                                     behavior: "smooth",
@@ -400,10 +398,6 @@ export default class TTSModule implements ReaderModule {
 
     }
 
-    async isScrollmode() {
-        var verticalScroll = await this.annotationModule.delegate.settings.isScrollmode()
-        return verticalScroll
-    }
 
     speakPause() {
         if (window.speechSynthesis.speaking) {

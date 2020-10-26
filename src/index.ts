@@ -276,7 +276,6 @@ export async function load(config: ReaderConfig): Promise<any> {
             headerMenu: headerMenu,
             rights: config.rights,
             publication: publication,
-            settings: R2Settings,
             delegate: R2Navigator,
             initialAnnotations: config.initialAnnotations,
         })
@@ -289,7 +288,6 @@ export async function load(config: ReaderConfig): Promise<any> {
             headerMenu: headerMenu,
             rights: config.rights,
             publication: publication,
-            settings: R2Settings,
             delegate: R2Navigator,
             initialAnnotations: config.initialAnnotations
         })

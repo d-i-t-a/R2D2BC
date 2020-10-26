@@ -38,7 +38,7 @@ export interface Link {
     height?: number;
         /// Indicates the width of the linked resource in pixels.
     width?: number;
-    
+
     title?: string;
         /// Properties associated to the linked resource.
     // properties: Properties;
@@ -48,8 +48,8 @@ export interface Link {
     templated?: boolean;
         /// Indicate the bitrate for the link resource.
     bitrate?: number;
-    
-        //  The underlying nodes in a tree structure of Links    
+
+        //  The underlying nodes in a tree structure of Links
     children?: Array<Link>;
         //  The MediaOverlays associated to the resource of the Link
     // mediaOverlays?: MediaOverlays;
@@ -65,7 +65,7 @@ export default class Publication {
     public readonly landmarks: Array<Link>;
     public readonly pageList: Array<Link>;
     public readonly images: Array<Link>;
-    
+
     private readonly manifestUrl: URL;
 
     public static async getManifest(manifestUrl: URL, store?: Store): Promise<Publication> {
@@ -110,7 +110,7 @@ export default class Publication {
         this.tableOfContents = manifestJSON.toc || [];
         this.landmarks = manifestJSON.landmarks || [];
         // this.pageList = manifestJSON.parse("page-list") || [];
-        this.pageList = manifestJSON['page-list'] || [];
+        this.pageList = (manifestJSON['page-list'] || manifestJSON.pageList) || [];
 
         this.manifestUrl = manifestUrl;
     }
@@ -147,16 +147,10 @@ export default class Publication {
     }
 
     public getSpineIndex(href: string): number | null {
-        for (let index = 0; index < this.readingOrder.length; index++) {
-            const item = this.readingOrder[index];
-            if (item.href) {
-                const itemUrl = new URL(item.href, this.manifestUrl.href).href;
-                if (itemUrl === href) {
-                    return index;
-                }
-            }
-        }
-        return null;
+        const index = this.readingOrder
+            .findIndex(item => item.href && new URL(item.href, this.manifestUrl.href).href === href);
+
+        return index
     }
 
     public getAbsoluteHref(href: string): string | null {

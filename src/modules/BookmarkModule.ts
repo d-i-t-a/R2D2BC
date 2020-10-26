@@ -27,7 +27,6 @@ import { icons as IconLib } from "../utils/IconLib";
 import { Bookmark, Locator } from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
-import { UserSettings } from "../model/user-settings/UserSettings";
 import { v4 as uuid } from 'uuid';
 
 export type AddBookmark = (bookmark: Bookmark) => Promise<Bookmark>
@@ -44,7 +43,6 @@ export interface BookmarkModuleConfig {
     headerMenu: HTMLElement;
     rights: ReaderRights;
     publication: Publication;
-    settings: UserSettings;
     delegate: IFrameNavigator;
     initialAnnotations?: any;
 }
@@ -56,7 +54,6 @@ export default class BookmarkModule implements ReaderModule {
     rights: ReaderRights;
 
     private publication: Publication;
-    private settings: UserSettings;
 
     private bookmarksView: HTMLDivElement;
     private sideNavSectionBookmarks: HTMLElement;
@@ -73,7 +70,6 @@ export default class BookmarkModule implements ReaderModule {
             config.headerMenu,
             config.rights || { enableBookmarks: false },
             config.publication,
-            config.settings,
             config.delegate,
             config.initialAnnotations || null,
         );
@@ -83,13 +79,12 @@ export default class BookmarkModule implements ReaderModule {
 
 
     public constructor(annotator: Annotator, headerMenu: HTMLElement, rights: ReaderRights,
-        publication: Publication, settings: UserSettings, delegate: IFrameNavigator, initialAnnotations: any | null = null
+        publication: Publication, delegate: IFrameNavigator, initialAnnotations: any | null = null
     ) {
 
         this.annotator = annotator
         this.rights = rights
         this.publication = publication
-        this.settings = settings
         this.headerMenu = headerMenu
         this.delegate = delegate
         this.initialAnnotations = initialAnnotations;
@@ -174,7 +169,7 @@ export default class BookmarkModule implements ReaderModule {
             }
 
 
-            const bookmarkPosition = this.settings.getSelectedView().getCurrentPosition();
+            const bookmarkPosition = this.delegate.reflowable.getCurrentPosition();
 
             const id: string = uuid();
 

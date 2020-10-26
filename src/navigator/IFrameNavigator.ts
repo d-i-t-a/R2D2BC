@@ -551,7 +551,7 @@ export default class IFrameNavigator implements Navigator {
                 }
 
                 this.saveCurrentReadingPosition();
-                if (this.reflowable && this.reflowable.atEnd()) {
+                if (this.reflowable.atEnd()) {
                     // Bring up the bottom nav when you get to the bottom,
                     // if it wasn't already displayed.
                     if (!this.isDisplayed(this.linksBottom)) {
@@ -567,7 +567,7 @@ export default class IFrameNavigator implements Navigator {
                         this.toggleDisplay(this.linksBottom);
                     }
                 }
-                if(this.reflowable.isPaginated()) {
+                if(this.reflowable.isScrollmode()) {
                     if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"

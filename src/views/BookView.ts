@@ -34,5 +34,13 @@ interface BookView {
     getCurrentPosition(): number;
     goToPosition(position: number): void;
     goToElement(elementId: string, relative?: boolean): void;
+
+    atStart(): boolean;
+    atEnd(): boolean;
+    goToPreviousPage(): void;
+    goToNextPage(): void;
+    getCurrentPage(): number;
+    getPageCount(): number;
+
 }
 export default BookView;

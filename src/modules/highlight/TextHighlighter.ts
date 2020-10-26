@@ -1441,7 +1441,7 @@ export default class TextHighlighter {
             return;
         }
 
-        const paginated = this.isPaginated();
+        const paginated = this.delegate.delegate.reflowable.isPaginated();
         const bodyRect = documant.body.getBoundingClientRect();
         const scrollElement = this.getScrollingElement(documant);
 
@@ -1716,10 +1716,6 @@ export default class TextHighlighter {
         }
     }
 
-    async isPaginated() {
-        var verticalScroll = await this.delegate.delegate.settings.isPaginated()
-        return verticalScroll
-    }
 
     createHighlightDom(win: IReadiumIFrameWindow, highlight: IHighlight): HTMLDivElement | undefined {
 
@@ -1740,7 +1736,7 @@ export default class TextHighlighter {
             highlightParent.setAttribute("data-click", "1");
         }
 
-        const paginated = this.isPaginated();
+        const paginated = this.delegate.delegate.reflowable.isPaginated();
 
         // Resize Sensor sets body position to "relative" (default static),
         // which may breaks things!

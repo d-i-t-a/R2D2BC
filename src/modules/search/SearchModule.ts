@@ -206,10 +206,10 @@ export default class SearchModule implements ReaderModule {
             }
         }
 
-        
+
     }
     // Search Current Resource 
-    async searchChapter(term:string, index: number = 0, callback: (result: any) => (any)) {
+    async searchChapter(term: string, index: number = 0, callback: (result: any) => (any)) {
 
         const linkHref = this.publication.getAbsoluteHref(this.publication.readingOrder[this.delegate.currentResource()].href);
         let tocItem = this.publication.getTOCItem(linkHref);
@@ -234,7 +234,6 @@ export default class SearchModule implements ReaderModule {
                 // var doc = parser.parseFromString(data, "text/html");
                 searchDocDomSeek(term, this.delegate.iframe.contentDocument, tocItem.href, tocItem.title).then(result => {
                     // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
-                    console.log(result)
                     result.forEach(searchItem => {
                         var selectionInfo = {
                             rangeInfo: searchItem.rangeInfo,
@@ -264,11 +263,16 @@ export default class SearchModule implements ReaderModule {
                 })
             })
     }
-    async search(term: any, current:boolean): Promise<any> {
+    clearSearch() {
+        this.currentChapterSearchResult = [];
+        this.currentHighlights = []
+    }
+    async search(term: any, current: boolean): Promise<any> {
+        this.currentChapterSearchResult = [];
+        this.currentHighlights = []
+        this.searchChapter(term, 0, async () => { })
         if (current) {
-            this.searchChapter(term,0, async (result) => {
-                return result
-            })
+            return this.searchC(term)
         } else {
             return this.searchBook(term)
         }
@@ -448,7 +452,7 @@ export default class SearchModule implements ReaderModule {
 
     }
     // Search Entire Book  
-    async searchBook(term:string): Promise<any> {
+    async searchBook(term: string): Promise<any> {
         var localSearchResultBook: any = [];
         for (let index = 0; index < this.publication.readingOrder.length; index++) {
             const linkHref = this.publication.getAbsoluteHref(this.publication.readingOrder[index].href);
@@ -475,22 +479,48 @@ export default class SearchModule implements ReaderModule {
             }
         }
     }
+    async searchC(term: string): Promise<any> {
+        var localSearchResultBook: any = [];
+        const linkHref = this.publication.getAbsoluteHref(this.publication.readingOrder[this.delegate.currentResource()].href);
+        let tocItem = this.publication.getTOCItem(linkHref);
+        if (tocItem === null) {
+            tocItem = this.publication.readingOrder[this.delegate.currentResource()]
+        }
+        var href = this.publication.getAbsoluteHref(tocItem.href);
+        await fetch(href)
+            .then(r => r.text())
+            .then(async data => {
+                ({ data, tocItem })
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(data, "text/html");
+                searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(result => {
+                    result.forEach(searchItem => {
+                        localSearchResultBook.push(searchItem)
+                    })
+                })
+            })
+
+        return localSearchResultBook
+    }
 
     drawSearch() {
-        this.currentHighlights = []
-        this.currentChapterSearchResult.forEach(searchItem => {
-            var selectionInfo = {
-                rangeInfo: searchItem.rangeInfo,
-                cleanText: null,
-                rawText: null,
-                range: null
-            }
-            setTimeout(() => {
+        setTimeout(() => {
+            this.currentHighlights = []
+            this.currentChapterSearchResult.forEach(searchItem => {
+                var selectionInfo = {
+                    rangeInfo: searchItem.rangeInfo,
+                    cleanText: null,
+                    rawText: null,
+                    range: null
+                }
+                // setTimeout(() => {
                 var highlight = this.delegate.annotationModule.highlighter.createSearchHighlight(selectionInfo, this.config.color)
                 searchItem.highlight = highlight
                 this.currentHighlights.push(highlight);
-            }, 500);
-        })
+                // }, 500);
+            })
+        }, 100);
+
     }
 
     handleResize() {

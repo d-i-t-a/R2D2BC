@@ -1528,6 +1528,9 @@ export default class IFrameNavigator implements Navigator {
 
 
     navigate(locator: Locator): void {
+        if (this.searchModule != undefined) {
+            this.searchModule.clearSearch()
+        }
         const exists = this.publication.getTOCItem(locator.href)
         if (exists) {
             this.hideIframeContents();

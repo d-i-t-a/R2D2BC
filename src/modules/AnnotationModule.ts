@@ -148,7 +148,7 @@ export default class AnnotationModule implements ReaderModule {
 
     async scrollToHighlight(id: any): Promise<any> {
         if (IS_DEV) {console.log("still need to scroll to " + id)}
-        var position = await this.annotator.getAnnotationPosition(id, this.highlighter.dom(this.highlighter.el).getWindow())
+        var position = await this.annotator.getAnnotationPosition(id, this.delegate.iframe.contentWindow as any)
         window.scrollTo(0, position - (window.innerHeight / 3));
     }
 
@@ -285,11 +285,7 @@ export default class AnnotationModule implements ReaderModule {
                     }
                     if (this.highlighter && highlights && this.delegate.iframe.contentDocument.readyState === 'complete') {
 
-                        try {
-                            await this.highlighter.destroyAllhighlights(this.highlighter.dom(this.highlighter.el).getWindow().document)
-                        } catch (_err) {
-                            // console.error(err)
-                        }    
+                        await this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument)
 
                         highlights.forEach(async rangeRepresentation => {
 
@@ -316,11 +312,7 @@ export default class AnnotationModule implements ReaderModule {
 
                                 this.highlighter.setColor(annotation.color);
 
-                                try {
-                                    await this.highlighter.createHighlightDom(this.highlighter.dom(this.highlighter.el).getWindow(), rangeRepresentation.highlight)
-                                } catch (_err) {
-                                    // console.error(err)
-                                }
+                                await this.highlighter.createHighlightDom(this.delegate.iframe.contentWindow as any, rangeRepresentation.highlight)
                             }
                         });
                     }
@@ -331,7 +323,7 @@ export default class AnnotationModule implements ReaderModule {
                 }
                 if (this.highlighter && highlights && this.delegate.iframe.contentDocument.readyState === 'complete') {
 
-                    await this.highlighter.destroyAllhighlights(this.highlighter.dom(this.highlighter.el).getWindow().document)
+                    await this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument)
 
                     highlights.forEach(async rangeRepresentation => {
 
@@ -358,11 +350,7 @@ export default class AnnotationModule implements ReaderModule {
 
                             this.highlighter.setColor(annotation.color);
 
-                            try {
-                                await this.highlighter.createHighlightDom(this.highlighter.dom(this.highlighter.el).getWindow(), rangeRepresentation.highlight)
-                            } catch (_err) {
-                                // console.error(err)
-                            }
+                            await this.highlighter.createHighlightDom(this.delegate.iframe.contentWindow as any, rangeRepresentation.highlight)
                         }
                     });
                 }

@@ -24,7 +24,7 @@ import ReaderModule from "../ReaderModule";
 import { addEventListenerOptional, removeEventListenerOptional } from "../../utils/EventHandler";
 import { Locator, Locations } from "../../model/Locator";
 import { IS_DEV } from "../..";
-import { searchDocDomSeek } from "./searchWithDomSeek";
+import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import TextHighlighter from "../highlight/TextHighlighter";
 
 export interface SearchConfig {
@@ -49,6 +49,7 @@ export default class SearchModule implements ReaderModule {
     private searchInput: HTMLInputElement;
     private searchGo: HTMLElement;
     private currentChapterSearchResult: any = [];
+    private bookSearchResult: any = [];
     private currentHighlights: any = []
 
     public static async create(config: SearchModuleConfig) {
@@ -104,7 +105,6 @@ export default class SearchModule implements ReaderModule {
         var searchVal = this.searchInput.value;
         let currentLocation = this.delegate.currentChapterLink.href;
         const spineItem = this.publication.getSpineItem(currentLocation);
-        var searchResult = undefined
         var searchResultDiv = HTMLUtilities.findElement(this.headerMenu, "#searchResult") as HTMLDivElement;
 
         self.currentChapterSearchResult = [];
@@ -112,15 +112,7 @@ export default class SearchModule implements ReaderModule {
         var localSearchResultChapter: any = []
         await this.searchChapter(searchVal, index, async (result) => {
             localSearchResultChapter = result
-            if (!searchResult || searchResult.length > 0) {
-                goToResultPage(1)
-            } else {
-                searchResultDiv.innerHTML = null;
-                const linkElement: HTMLAnchorElement = document.createElement("a");
-                linkElement.className = "collection-item";
-                linkElement.innerHTML = "nothing found"//self.delegate.translateModule.reader_search_nothing_found
-                searchResultDiv.appendChild(linkElement);
-            }
+            goToResultPage(1)
         })
 
         async function goToResultPage(page: number) {
@@ -270,41 +262,72 @@ export default class SearchModule implements ReaderModule {
     async search(term: any, current: boolean): Promise<any> {
         this.currentChapterSearchResult = [];
         this.currentHighlights = []
+        this.bookSearchResult = [];
+        reset()
+
         this.searchChapter(term, 0, async () => { })
+
+        var chapter = this.searchC(term)
+        var book = this.searchBook(term)
+
         if (current) {
-            return this.searchC(term)
+            return chapter
         } else {
-            return this.searchBook(term)
+            return book
         }
     }
+    async goToSearchIndex(href: any, index: number) {
+
+        var filteredIndex = index
+        var item
+        let currentLocation = this.delegate.currentChapterLink.href;
+        var absolutehref = this.publication.getAbsoluteHref(href);
+        let filteredIndexes = this.bookSearchResult.filter((el: any) => el.href === href);
+
+        if (currentLocation === absolutehref) {
+            item = this.currentChapterSearchResult[filteredIndex]
+        } else {
+            item = filteredIndexes[filteredIndex]
+        }
+
+        if (currentLocation === absolutehref) {
+            this.jumpToMark(filteredIndex);
+        } else {
+            let locations: Locations = {
+                progression: 0
+            }
+
+            const position: Locator = {
+                href: absolutehref,
+                // type: link.type,
+                locations: locations,
+                title: "title"
+            };
+            // TODO search index and total progression.
+            // position.locations.totalProgression = self.delegate.calculateTotalProgresion(position) 
+            // position.locations.index = filteredIndex
+
+            this.delegate.navigate(position);
+            // Navigate to new chapter and search only in new current chapter, 
+            // this should refresh thesearch result of current chapter and highlight the selected index
+            setTimeout(() => {
+                this.searchChapter(item.textMatch, filteredIndex, async () => { })
+            }, 300);
+        }
+    }
+
     private async handleSearchBook() {
         var self = this
         var searchVal = this.searchInput.value;
-        var searchResult = undefined
+        // var searchResult = undefined
         var searchResultBook = HTMLUtilities.findElement(self.headerMenu, "#searchResultBook") as HTMLDivElement;
-        if (!searchResult || searchResult.length > 0) {
-            goToResultPage(1)
-        } else {
-            searchResultBook.innerHTML = null;
-            const linkElement: HTMLAnchorElement = document.createElement("a");
-            linkElement.className = "collection-item";
-            linkElement.innerHTML = "nothing found"//self.delegate.translateModule.reader_search_nothing_found
-            searchResultBook.appendChild(linkElement);
-        }
+        goToResultPage(1)
 
         async function goToResultPage(page: number) {
             searchResultBook.innerHTML = null;
             var paginated: { page: number; per_page: number; pre_page: number; next_page: number; total: number; total_pages: number; data: any[]; }
-            if (searchResult === undefined) {
-                var localSearchResultBook = await self.searchBook(searchVal);
-                paginated = self.paginate(localSearchResultBook, page, 5)
-            } else {
-                if (searchResult.length > 0) {
-                    // paginated = self.paginate(searchResult.items[0].content, page, 5)
-                } else {
-                    paginated.total = 0
-                }
-            }
+            var localSearchResultBook = await self.searchBook(searchVal);
+            paginated = self.paginate(localSearchResultBook, page, 5)
 
             if (paginated.total === 0) {
                 const linkElement: HTMLAnchorElement = document.createElement("a");
@@ -339,12 +362,7 @@ export default class SearchModule implements ReaderModule {
                             event.preventDefault();
                             event.stopPropagation();
 
-                            let filteredIndexes: any
-                            if (searchResult === undefined) {
-                                filteredIndexes = localSearchResultBook.filter((el: any) => el.href === searchItem.href);
-                            } else {
-                                // filteredIndexes = searchResult.items[0].content.filter((el: any) => el.href === searchItem.href);
-                            }
+                            let filteredIndexes = localSearchResultBook.filter((el: any) => el.href === searchItem.href);
                             const filteredIndex = filteredIndexes.findIndex((el: any) => el === searchItem);
 
                             let currentLocation = self.delegate.currentChapterLink.href;
@@ -453,6 +471,8 @@ export default class SearchModule implements ReaderModule {
     }
     // Search Entire Book  
     async searchBook(term: string): Promise<any> {
+        this.bookSearchResult = [];
+
         var localSearchResultBook: any = [];
         for (let index = 0; index < this.publication.readingOrder.length; index++) {
             const linkHref = this.publication.getAbsoluteHref(this.publication.readingOrder[index].href);
@@ -470,6 +490,7 @@ export default class SearchModule implements ReaderModule {
                     searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(result => {
                         result.forEach(searchItem => {
                             localSearchResultBook.push(searchItem)
+                            this.bookSearchResult.push(searchItem)
                         })
                     })
                 })
@@ -513,11 +534,9 @@ export default class SearchModule implements ReaderModule {
                     rawText: null,
                     range: null
                 }
-                // setTimeout(() => {
                 var highlight = this.delegate.annotationModule.highlighter.createSearchHighlight(selectionInfo, this.config.color)
                 searchItem.highlight = highlight
                 this.currentHighlights.push(highlight);
-                // }, 500);
             })
         }, 100);
 

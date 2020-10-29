@@ -46,13 +46,17 @@
 
         <button onclick="javascript:D2Reader.search('frankenstein', true).then(
             result => { 
-                console.log(result)
+                console.log(JSON.stringify(result))
             })">search in chapter</button><br>
 
         <button onclick="javascript:D2Reader.search('frankenstein', false).then(
             result => { 
-                console.log(result)
+                console.log(JSON.stringify(result))
             })">search in book</button><br>
+        
+        <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 2)">go to index 2 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 3)">go to index 3 in chapter OEBPS/Text/intro.xhtml</button><br>
+
         <button onclick="javascript:D2Reader.startReadAloud()">read aloud from top</button><br>
         <button onclick="javascript:D2Reader.stopReadAloud()">stop read aloud from top</button><br>
         <button onclick="javascript:D2Reader.pauseReadAloud()">pause read aloud from top</button><br>

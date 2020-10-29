@@ -46,13 +46,16 @@ export function escapeRegExp(str: string) {
         ? str.replace(reRegExpChar, "\\$&")
         : (str || "");
 }
-
+var _counter = 0;
 const counter = () => {
-    let _counter = 0;
+    // let _counter = 0;
     return () => {
         return Number.isSafeInteger(++_counter) ? _counter : _counter = 1;
     };
 };
+export const reset = () => {
+    _counter = 0;
+}
 const getCount = counter();
 
 const _getCssSelectorOptions = {

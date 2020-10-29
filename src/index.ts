@@ -464,6 +464,7 @@ exports.publicationLanguage = function() {
 }
 exports.search = function (term, current) {
     return search(term, current)
-}exports.goToSearchIndex = function (searchItem, current) {
+}
+exports.goToSearchIndex = function (searchItem, current) {
     goToSearchIndex(searchItem, current)
 }

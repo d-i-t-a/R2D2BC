@@ -374,8 +374,13 @@ export default class IFrameNavigator implements Navigator {
                         alignment: 'right',
                         constrainWidth: false,
                         coverTrigger: false,
-                        closeOnClick: false
-
+                        closeOnClick: false,
+                        autoTrigger: false,
+                        onOpenEnd: function () {
+                            self.mTabs.forEach(element => {
+                                (element as any).updateTabIndicator()
+                            });
+                        }
                     });
                 }
                 let tabs = document.querySelectorAll('.tabs');

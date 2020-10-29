@@ -1413,6 +1413,40 @@ export default class TextHighlighter {
         }
     }
 
+    setAndResetSearchHighlight(highlight, highlights) {
+        const allHighlightAreas = Array.from(_highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`));
+        for (const highlighta of allHighlightAreas) {
+
+            var highlightArea = highlighta as HTMLElement
+            const id = ((highlightArea.parentNode && highlightArea.parentNode.nodeType === Node.ELEMENT_NODE && (highlightArea.parentNode as Element).getAttribute) ? (highlightArea.parentNode as Element).getAttribute("id") : undefined);
+
+            highlights.forEach(highlight => {
+                if (id === highlight.id) {
+                    if (highlight) {
+                        const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
+                        // Highlight color as string check
+                        if (typeof highlight.color === 'object') {
+                            highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
+                        } else {
+                            highlightArea.classList.remove('hover');
+                        }
+                    }
+                }    
+            });
+            if (id === highlight.id) {
+                if (highlight) {
+                    const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
+                    // Highlight color as string check
+                    if (typeof highlight.color === 'object') {
+                        highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
+                    } else {
+                        highlightArea.classList.remove('hover');
+                    }
+                }
+            }                    
+        }
+    }
+
     isIOS() {
         // Second test is needed for iOS 13+
         return navigator.userAgent.match(/iPhone|iPad|iPod/i) != null ||
@@ -1677,6 +1711,39 @@ export default class TextHighlighter {
         this.recreateAllHighlightsDebounced(win);
     }
 
+    createSearchHighlight(selectionInfo: ISelectionInfo, color:string) {
+        try {
+            var createColor:any = color;
+            if (TextHighlighter.isHexColor(createColor)) {
+                createColor = TextHighlighter.hexToRgbChannels(createColor);
+            }
+
+            const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
+            const checkSum = crypto.createHash("sha256");
+            checkSum.update(uniqueStr);
+            const sha256Hex = checkSum.digest("hex");
+            const id = "R2_HIGHLIGHT_" + sha256Hex;
+
+            this.destroyHighlight(this.dom(this.el).getDocument(), id);
+            var pointerInteraction = false
+            const highlight: IHighlight = {
+                color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
+                id,
+                pointerInteraction,
+                selectionInfo,
+                marker: AnnotationMarker.Highlight
+            };
+            _highlights.push(highlight);
+
+            let highlightDom = this.createHighlightDom(this.dom(this.el).getWindow(), highlight);
+            var position = parseInt(((highlightDom.hasChildNodes ? highlightDom.childNodes[0] : highlightDom) as HTMLDivElement).style.top.replace("px",""))
+            highlight.position = position
+            return highlight;
+        } catch (e) {
+            throw "Can't create highlight: " + e;
+        }
+    }
+    
 
     createHighlight(
         win: IReadiumIFrameWindow,

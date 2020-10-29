@@ -27,6 +27,7 @@ import AnnotationModule from "./modules/AnnotationModule";
 import TTSModule from "./modules/TTS/TTSModule";
 import {oc} from "ts-optchain"
 import { TTSSettings } from "./modules/TTS/TTSSettings";
+import SearchModule from "./modules/search/SearchModule";
 
 var R2Settings: UserSettings;
 var R2TTSSettings: TTSSettings;
@@ -34,6 +35,7 @@ var R2Navigator: IFrameNavigator;
 var BookmarkModuleInstance: BookmarkModule;
 var AnnotationModuleInstance: AnnotationModule;
 var TTSModuleInstance: TTSModule;
+var SearchModuleInstance:SearchModule;
 
 export const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -52,6 +54,9 @@ export async function unload() {
     }
     if (oc(R2Navigator.rights).enableAnnotations(false)) {
         AnnotationModuleInstance.stop()
+    }
+    if (oc(R2Navigator.rights).enableSearch(false)) {
+        SearchModuleInstance.stop()
     }
 }
 export function startReadAloud() {
@@ -115,6 +120,16 @@ export async function annotations() {
         return []
     }
 }
+
+export async function search(term, current) {
+    if (oc(R2Navigator.rights).enableSearch(false)) {
+        if (IS_DEV) { console.log("search") }
+        return await SearchModuleInstance.search(term, current)   
+    } else {
+        return []
+    }
+}
+
 export function currentResource() {
     if (IS_DEV) { console.log("currentResource") }
     return R2Navigator.currentResource()    
@@ -305,6 +320,19 @@ export async function load(config: ReaderConfig): Promise<any> {
             })
         }
     }    
+        if (oc(config.rights).enableSearch(false)) {
+            // Search Module
+            SearchModule.create({
+                headerMenu: headerMenu,
+                delegate: R2Navigator,
+                publication: publication,
+                // api: config.api,
+                config: config.search
+            }).then(function (searchModule) {
+                SearchModuleInstance = searchModule
+            });
+        }
+
 
     return new Promise(resolve => resolve(R2Navigator));
 }
@@ -428,4 +456,7 @@ exports.totalResources = function() {
 }
 exports.publicationLanguage = function() {
     return publicationLanguage()
+}
+exports.search = function (term, current) {
+    return search(term, current)
 }

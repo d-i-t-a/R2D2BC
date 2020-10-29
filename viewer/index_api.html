@@ -44,6 +44,15 @@
 
     <div style="position:absolute;top:0;left:0;z-index: 1000;">
 
+        <button onclick="javascript:D2Reader.search('frankenstein', true).then(
+            result => { 
+                console.log(result)
+            })">search in chapter</button><br>
+
+        <button onclick="javascript:D2Reader.search('frankenstein', false).then(
+            result => { 
+                console.log(result)
+            })">search in book</button><br>
         <button onclick="javascript:D2Reader.startReadAloud()">read aloud from top</button><br>
         <button onclick="javascript:D2Reader.stopReadAloud()">stop read aloud from top</button><br>
         <button onclick="javascript:D2Reader.pauseReadAloud()">pause read aloud from top</button><br>
@@ -307,7 +316,8 @@
             rights: {
                 enableBookmarks: true,
                 enableAnnotations: true,
-                enableTTS: true
+                enableTTS: true,
+                enableSearch: true
             },
             tts: {
                 enableSplitter: true,
@@ -321,6 +331,10 @@
             //         name : "Daniel",
             //         lang : "en-GB",
             //     }
+            },
+            search: {
+                color: "#fce300",
+                current: "#ed7138"
             },
             // lastReadingPosition: lastReadingPosition,
             injectables: injectables,

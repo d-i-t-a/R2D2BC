@@ -34,6 +34,7 @@ import { IS_DEV } from "..";
 import Splitting from "../modules/TTS/splitting";
 import { oc } from "ts-optchain";
 import ReflowableBookView from "../views/ReflowableBookView";
+import SearchModule from "../modules/search/SearchModule";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -81,6 +82,7 @@ export interface ReaderRights {
     enableBookmarks?: boolean;
     enableAnnotations?: boolean;
     enableTTS?: boolean;
+    enableSearch?: boolean;
 }
 
 export interface ReaderUI {
@@ -97,6 +99,7 @@ export interface ReaderConfig {
     material: boolean;
     api: any;
     tts: any;
+    search: any;
     injectables: Array<Injectable>;
     selectionMenuItems: Array<SelectionMenuItem>;
     initialAnnotationColor: string;
@@ -114,6 +117,7 @@ export default class IFrameNavigator implements Navigator {
     bookmarkModule?: BookmarkModule;
     annotationModule?: AnnotationModule;
     ttsModule?: TTSModule;
+    searchModule?: SearchModule;
 
     sideNavExanded: boolean = false
     material: boolean = false

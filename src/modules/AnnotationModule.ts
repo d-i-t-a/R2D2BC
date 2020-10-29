@@ -285,7 +285,11 @@ export default class AnnotationModule implements ReaderModule {
                     }
                     if (this.highlighter && highlights && this.delegate.iframe.contentDocument.readyState === 'complete') {
 
-                        await this.highlighter.destroyAllhighlights(this.highlighter.dom(this.highlighter.el).getWindow().document)
+                        try {
+                            await this.highlighter.destroyAllhighlights(this.highlighter.dom(this.highlighter.el).getWindow().document)
+                        } catch (_err) {
+                            // console.error(err)
+                        }    
 
                         highlights.forEach(async rangeRepresentation => {
 
@@ -314,8 +318,8 @@ export default class AnnotationModule implements ReaderModule {
 
                                 try {
                                     await this.highlighter.createHighlightDom(this.highlighter.dom(this.highlighter.el).getWindow(), rangeRepresentation.highlight)
-                                } catch (err) {
-                                    console.error(err)
+                                } catch (_err) {
+                                    // console.error(err)
                                 }
                             }
                         });
@@ -356,8 +360,8 @@ export default class AnnotationModule implements ReaderModule {
 
                             try {
                                 await this.highlighter.createHighlightDom(this.highlighter.dom(this.highlighter.el).getWindow(), rangeRepresentation.highlight)
-                            } catch (err) {
-                                console.error(err)
+                            } catch (_err) {
+                                // console.error(err)
                             }
                         }
                     });
@@ -367,6 +371,7 @@ export default class AnnotationModule implements ReaderModule {
                 this.highlighter.setColor(this.initialAnnotationColor);
             }
         }
+        this.delegate.searchModule.drawSearch()
     }
 
     private createTree(type: AnnotationType, annotations: Array<any>, view: HTMLDivElement) {

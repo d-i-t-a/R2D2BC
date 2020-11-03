@@ -179,16 +179,24 @@ export default class ReflowableBookView implements BookView {
             this.setLeftColumnsWidth(roundedLeftWidth);    
         }
     }
-    goToElement(elementId: string, relative?: boolean): void {
+    goToCssSelector(cssSelector: string, relative?: boolean): void {
+        var element = (this.iframe.contentDocument as any).querySelector(cssSelector)
+        this.goToElement(element, relative);
+    }
+
+    goToFragment(fragment: string, relative?: boolean): void {
+        const element = (this.iframe.contentDocument as any).getElementById(fragment);
+        this.goToElement(element, relative);
+    }
+    
+    goToElement(element: HTMLElement | null, relative?: boolean): void {
         if (this.isScrollmode()) {
             this.setSize();
-            const element = (this.iframe.contentDocument as any).getElementById(elementId);
             if (element) {
                 // Put the element as close to the top as possible.
                 document.scrollingElement.scrollTop = element.offsetTop;
             }    
         } else {
-            const element = (this.iframe.contentDocument as any).getElementById(elementId);
             if (element) {
                 // Get the element's position in the iframe, and
                 // round that to figure out the column it's in.

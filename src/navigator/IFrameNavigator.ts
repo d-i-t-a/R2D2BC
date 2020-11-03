@@ -860,7 +860,8 @@ export default class IFrameNavigator implements Navigator {
 
             setTimeout(() => {
                 if (this.newElementId) {
-                    this.reflowable.goToElement(this.newElementId);
+                    const element = (this.iframe.contentDocument as any).getElementById(this.newElementId);
+                    this.reflowable.goToElement(element);
                     this.newElementId = null;
                 }
             }, 100);
@@ -1453,7 +1454,7 @@ export default class IFrameNavigator implements Navigator {
         }, 100);
     }
 
-    private updatePositionInfo() {
+    updatePositionInfo() {
         if(this.reflowable.isPaginated()) {
             const currentPage = Math.round(this.reflowable.getCurrentPage());
             const pageCount = Math.round(this.reflowable.getPageCount());

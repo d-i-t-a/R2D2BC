@@ -33,7 +33,8 @@ interface BookView {
 
     getCurrentPosition(): number;
     goToPosition(position: number): void;
-    goToElement(elementId: string, relative?: boolean): void;
+    goToFragment(fragment: string): void;
+    goToCssSelector(cssSelector: string): void;
 
     atStart(): boolean;
     atEnd(): boolean;

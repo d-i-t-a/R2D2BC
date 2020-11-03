@@ -566,12 +566,8 @@ export default class SearchModule implements ReaderModule {
                 current.highlight.color = currentColor
                 this.delegate.annotationModule.highlighter.setAndResetSearchHighlight(current.highlight, this.currentHighlights)
 
-                setTimeout(() => {
-                    window.scrollTo({
-                        top: current.highlight.position,
-                        behavior: 'smooth',
-                    })
-                }, 50);
+                this.delegate.reflowable.goToCssSelector(current.rangeInfo.startContainerElementCssSelector)
+                this.delegate.updatePositionInfo()
             }
         }, 200);
 

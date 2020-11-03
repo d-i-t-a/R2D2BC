@@ -25,6 +25,7 @@ import { TTSSettings, TTSVoice } from "./TTSSettings";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional, removeEventListenerOptional } from "../../utils/EventHandler";
 import { oc } from "ts-optchain";
+import * as sanitize from 'sanitize-html';
 
 export interface TTSModuleConfig {
     annotationModule: AnnotationModule;
@@ -45,9 +46,11 @@ export default class TTSModule implements ReaderModule {
 
     annotationModule: AnnotationModule;
     tts: TTSSettings;
-    body: any
+    private body: any
     splittingResult: any[]
     voices: SpeechSynthesisVoice[] = []
+    clean:any
+    private hasEventListener: boolean = false
 
     initialize(body: any) {
         if (this.annotationModule.highlighter !== undefined) {
@@ -55,6 +58,11 @@ export default class TTSModule implements ReaderModule {
             this.tts.setControls();
             this.tts.onSettingsChange(this.handleResize.bind(this));
             this.body = body
+            this.clean = sanitize(this.body.innerHTML, {
+                allowedTags: [],
+                allowedAttributes: {}
+            })
+    
             let splittingResult = body.querySelectorAll("[data-word]");
             splittingResult.forEach(splittingWord => {
                 splittingWord.dataset.ttsColor = this.tts.color
@@ -66,10 +74,13 @@ export default class TTSModule implements ReaderModule {
 
             this.initVoices(true);
 
-            addEventListenerOptional(document, 'wheel', this.wheel.bind(this));
-            addEventListenerOptional(this.body, 'wheel', this.wheel.bind(this));
-            addEventListenerOptional(document, 'keydown', this.wheel.bind(this));
-            addEventListenerOptional(this.annotationModule.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));
+            if (!this.hasEventListener) {
+                this.hasEventListener = true
+                addEventListenerOptional(document, 'wheel', this.wheel.bind(this));
+                addEventListenerOptional(this.body, 'wheel', this.wheel.bind(this));
+                addEventListenerOptional(document, 'keydown', this.wheel.bind(this));
+                addEventListenerOptional(this.annotationModule.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));    
+            }
         }
     }
 
@@ -146,19 +157,20 @@ export default class TTSModule implements ReaderModule {
             splittingWord.dataset.ttsCurrentLine = "false"
         });
     }
+    index = 0
 
-    async speak(selectionInfo: ISelectionInfo | undefined, node: any, partial: boolean, callback: () => void): Promise<any> {
+    async speak(selectionInfo: ISelectionInfo | undefined, partial: boolean, callback: () => void): Promise<any> {
 
         if (this.tts.api && typeof this.tts.api.started === "function") this.tts.api.started()
 
-        this.userScrolled = false
         var self = this
+        this.userScrolled = false
 
         this.cancel()
 
         if (this.annotationModule.delegate.tts.enableSplitter) {
             if (partial) {
-                var allWords = node.querySelectorAll("[data-word]");
+                var allWords = self.body.querySelectorAll("[data-word]");
 
                 var startNode = (selectionInfo as ISelectionInfo).range.startContainer.parentElement
                 if (startNode.tagName.toLowerCase() === "a") {
@@ -182,10 +194,11 @@ export default class TTSModule implements ReaderModule {
                 let array = Array.from(allWords)
                 this.splittingResult = array.slice(startWordIndex, endWordIndex)
             } else {
-                this.splittingResult = node.querySelectorAll("[data-word]");
+                document.scrollingElement.scrollTop = 0
+                this.splittingResult = self.body.querySelectorAll("[data-word]");
             }
         }
-        const utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
+        const utterance = partial ? new SpeechSynthesisUtterance(selectionInfo.cleanText) : new SpeechSynthesisUtterance(this.clean)
         utterance.rate = this.tts.rate
         utterance.pitch = this.tts.pitch
         utterance.volume = this.tts.volume
@@ -268,7 +281,8 @@ export default class TTSModule implements ReaderModule {
 
         window.speechSynthesis.speak(utterance);
 
-        var index = 0
+        this.index = 0
+
         var lastword = undefined
 
         utterance.onboundary = function (e: any) {
@@ -296,7 +310,7 @@ export default class TTSModule implements ReaderModule {
                 }
                 const word = getWordAt(utterance.text, e.charIndex)
                 if (lastword == word) {
-                    index--
+                    self.index--
                 }
                 lastword = word
 
@@ -316,14 +330,14 @@ export default class TTSModule implements ReaderModule {
             var spokenWordCleaned = word.replace(/[^a-zA-Z0-9 ]/g, "")
             if (IS_DEV) console.log("spokenWordCleaned", spokenWordCleaned);
 
-            var splittingWord = self.splittingResult[index] as HTMLElement
-            var splittingWordCleaned = oc(splittingWord).innerText("").replace(/[^a-zA-Z0-9 ]/g, "")
+            var splittingWord = self.splittingResult[self.index] as HTMLElement
+            var splittingWordCleaned = oc(splittingWord).dataset.word("").replace(/[^a-zA-Z0-9 ]/g, "")
             if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
 
             if (splittingWordCleaned.length == 0) {
-                index++
-                splittingWord = self.splittingResult[index] as HTMLElement
-                splittingWordCleaned = oc(splittingWord).innerText("").replace(/[^a-zA-Z0-9 ]/g, "")
+                self.index++
+                splittingWord = self.splittingResult[self.index] as HTMLElement
+                splittingWordCleaned = oc(splittingWord).dataset.word("").replace(/[^a-zA-Z0-9 ]/g, "")
                 if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
             }
 
@@ -337,7 +351,7 @@ export default class TTSModule implements ReaderModule {
                         if (splittingWordCleaned.startsWith(spokenWordCleaned) || splittingWordCleaned.endsWith(spokenWordCleaned)
                             || spokenWordCleaned.startsWith(splittingWordCleaned) || spokenWordCleaned.endsWith(splittingWordCleaned)) {
 
-                            if (index > 0) {
+                            if (self.index > 0) {
                                 let splittingResult = self.body.querySelectorAll("[data-word]");
                                 splittingResult.forEach(splittingWord => {
                                     splittingWord.dataset.ttsColor = self.tts.color
@@ -361,13 +375,13 @@ export default class TTSModule implements ReaderModule {
                                 })
                             }
                         } else {
-                            index++
+                            self.index++
                         }
                     } else if (spokenWordCleaned.length == 0) {
-                        index--
+                        self.index--
                     }
                 }
-                index++
+                self.index++
             }
 
         }

@@ -105,12 +105,12 @@ export default class SearchModule implements ReaderModule {
         var searchVal = this.searchInput.value;
         let currentLocation = this.delegate.currentChapterLink.href;
         const spineItem = this.publication.getSpineItem(currentLocation);
-        var searchResultDiv = HTMLUtilities.findElement(this.headerMenu, "#searchResult") as HTMLDivElement;
+        var searchResultDiv = HTMLUtilities.findElement(this.headerMenu, "#searchResultChapter") as HTMLDivElement;
 
         self.currentChapterSearchResult = [];
         self.currentHighlights = []
         var localSearchResultChapter: any = []
-        await this.searchChapter(searchVal, index, async (result) => {
+        await this.searchAndPaintChapter(searchVal, index, async (result) => {
             localSearchResultChapter = result
             goToResultPage(1)
         })
@@ -201,7 +201,7 @@ export default class SearchModule implements ReaderModule {
 
     }
     // Search Current Resource 
-    async searchChapter(term: string, index: number = 0, callback: (result: any) => (any)) {
+    async searchAndPaintChapter(term: string, index: number = 0, callback: (result: any) => (any)) {
 
         const linkHref = this.publication.getAbsoluteHref(this.publication.readingOrder[this.delegate.currentResource()].href);
         let tocItem = this.publication.getTOCItem(linkHref);
@@ -265,9 +265,9 @@ export default class SearchModule implements ReaderModule {
         this.bookSearchResult = [];
         reset()
 
-        this.searchChapter(term, 0, async () => { })
+        this.searchAndPaintChapter(term, 0, async () => { })
 
-        var chapter = this.searchC(term)
+        var chapter = this.searchChapter(term)
         var book = this.searchBook(term)
 
         if (current) {
@@ -289,30 +289,31 @@ export default class SearchModule implements ReaderModule {
         } else {
             item = filteredIndexes[filteredIndex]
         }
+        if (item != undefined) {
+            if (currentLocation === absolutehref) {
+                this.jumpToMark(filteredIndex);
+            } else {
+                let locations: Locations = {
+                    progression: 0
+                }
 
-        if (currentLocation === absolutehref) {
-            this.jumpToMark(filteredIndex);
-        } else {
-            let locations: Locations = {
-                progression: 0
+                const position: Locator = {
+                    href: absolutehref,
+                    // type: link.type,
+                    locations: locations,
+                    title: "title"
+                };
+                // TODO search index and total progression.
+                // position.locations.totalProgression = self.delegate.calculateTotalProgresion(position) 
+                // position.locations.index = filteredIndex
+
+                this.delegate.navigate(position);
+                // Navigate to new chapter and search only in new current chapter, 
+                // this should refresh thesearch result of current chapter and highlight the selected index
+                setTimeout(() => {
+                    this.searchAndPaintChapter(item.textMatch, filteredIndex, async () => { })
+                }, 300);
             }
-
-            const position: Locator = {
-                href: absolutehref,
-                // type: link.type,
-                locations: locations,
-                title: "title"
-            };
-            // TODO search index and total progression.
-            // position.locations.totalProgression = self.delegate.calculateTotalProgresion(position) 
-            // position.locations.index = filteredIndex
-
-            this.delegate.navigate(position);
-            // Navigate to new chapter and search only in new current chapter, 
-            // this should refresh thesearch result of current chapter and highlight the selected index
-            setTimeout(() => {
-                this.searchChapter(item.textMatch, filteredIndex, async () => { })
-            }, 300);
         }
     }
 
@@ -398,6 +399,7 @@ export default class SearchModule implements ReaderModule {
 
                 let div: HTMLDivElement = document.createElement("div");
                 div.style.textAlign = "center";
+                div.style.marginTop = "10px";
 
                 let pagination: HTMLUListElement = document.createElement("ul");
                 pagination.className = "pagination";
@@ -500,7 +502,7 @@ export default class SearchModule implements ReaderModule {
             }
         }
     }
-    async searchC(term: string): Promise<any> {
+    async searchChapter(term: string): Promise<any> {
         var localSearchResultBook: any = [];
         const linkHref = this.publication.getAbsoluteHref(this.publication.readingOrder[this.delegate.currentResource()].href);
         let tocItem = this.publication.getTOCItem(linkHref);

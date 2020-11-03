@@ -324,19 +324,19 @@ export async function load(config: ReaderConfig): Promise<any> {
                 tts: R2TTSSettings
             })
         }
-    }    
-        if (oc(config.rights).enableSearch(false)) {
-            // Search Module
-            SearchModule.create({
-                headerMenu: headerMenu,
-                delegate: R2Navigator,
-                publication: publication,
-                // api: config.api,
-                config: config.search
-            }).then(function (searchModule) {
-                SearchModuleInstance = searchModule
-            });
-        }
+    }  
+    if (oc(config.rights).enableSearch(false)) {
+        // Search Module
+        SearchModule.create({
+            headerMenu: headerMenu,
+            delegate: R2Navigator,
+            publication: publication,
+            // api: config.api,
+            config: config.search
+        }).then(function (searchModule) {
+            SearchModuleInstance = searchModule
+        });
+    }
 
 
     return new Promise(resolve => resolve(R2Navigator));

@@ -100,7 +100,7 @@ export default class TextHighlighter {
     lastSelectedHighlight:number = undefined;
     selectionMenuItems: Array<SelectionMenuItem>;
 
-    public constructor(delegate: AnnotationModule, element: HTMLElement, selectionMenuItems:Array<SelectionMenuItem>, options: any) {
+    public constructor(delegate: AnnotationModule, element: HTMLElement, selectionMenuItems:Array<SelectionMenuItem>, hasEventListener:boolean, options: any) {
         if (!element) {
             throw 'Missing anchor element';
         }
@@ -117,7 +117,7 @@ export default class TextHighlighter {
         });
 
         this.dom(this.el).addClass(this.options.contextClass);
-        this.bindEvents(this.el, this);
+        this.bindEvents(this.el, this, hasEventListener);
 
         this.initializeToolbox();
 
@@ -517,7 +517,7 @@ export default class TextHighlighter {
         return false;
     }
 
-    bindEvents(el: any, _scope: any) {
+    bindEvents(el: any, _scope: any, hasEventListener:boolean) {
         var documant = el.ownerDocument;
 
         documant.addEventListener('keyup', this.toolboxShowDelayed.bind(this));
@@ -525,7 +525,9 @@ export default class TextHighlighter {
         el.addEventListener('touchend', this.toolboxShowDelayed.bind(this));
         documant.addEventListener('selectstart', this.toolboxShowDelayed.bind(this));
 
-        window.addEventListener('resize', this.toolboxPlacement.bind(this));
+        if (!hasEventListener) {
+            window.addEventListener('resize', this.toolboxPlacement.bind(this));
+        }
         documant.addEventListener('selectionchange', this.toolboxPlacement.bind(this));
 
         el.addEventListener('mousedown', this.toolboxHide.bind(this));
@@ -916,8 +918,7 @@ export default class TextHighlighter {
                 //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToRgbString(this.getColor()),true, marker)
                 //     this.options.onAfterHighlight(highlight, marker);
                 // }
-                var node = this.dom(this.el).getWindow().document.body;
-                this.ttsDelegate.speak(selectionInfo as any, node, true,  () => {
+                this.ttsDelegate.speak(selectionInfo as any, true,  () => {
                 })
             }
             if (this.delegate.delegate.tts.enableSplitter) {
@@ -962,7 +963,7 @@ export default class TextHighlighter {
                 const selectionInfo = getCurrentSelectionInfo(this.dom(this.el).getWindow(), getCssSelector)
 
                 if (selectionInfo != undefined && selectionInfo.cleanText) {
-                    this.ttsDelegate.speak(selectionInfo as any, node, false,  () => {
+                    this.ttsDelegate.speak(selectionInfo as any, false,  () => {
                         var selection = self.dom(self.el).getSelection();
                         selection.removeAllRanges();
                         self.toolboxHide();

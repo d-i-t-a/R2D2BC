@@ -251,6 +251,7 @@ export default class IFrameNavigator implements Navigator {
         removeEventListenerOptional(this.espandMenuIcon, 'click', this.handleEditClick.bind(this));
 
         removeEventListenerOptional(window, "resize", this.onResize);
+        removeEventListenerOptional(this.iframe, "resize", this.onResize);
 
         if (this.material) {
 
@@ -441,6 +442,7 @@ export default class IFrameNavigator implements Navigator {
         addEventListenerOptional(this.goToPageNumberButton, 'click', this.goToPageNumber.bind(this));
 
         addEventListenerOptional(window, 'resize', this.onResize);
+        addEventListenerOptional(this.iframe, 'resize', this.onResize);
 
     }
 

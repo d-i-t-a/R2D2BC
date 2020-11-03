@@ -1735,7 +1735,7 @@ export default class TextHighlighter {
             };
             _highlights.push(highlight);
 
-            let highlightDom = this.createHighlightDom(this.dom(this.el).getWindow(), highlight);
+            let highlightDom = this.createHighlightDom(this.delegate.delegate.iframe.contentWindow as any, highlight);
             var position = parseInt(((highlightDom.hasChildNodes ? highlightDom.childNodes[0] : highlightDom) as HTMLDivElement).style.top.replace("px",""))
             highlight.position = position
             return highlight;

@@ -276,7 +276,7 @@ export default class AnnotationModule implements ReaderModule {
         if (this.highlightsView)  this.createTree(AnnotationType.Annotation, highlights, this.highlightsView)
     }
 
-    async drawHighlights(): Promise<void> {
+    async drawHighlights(search:boolean = true): Promise<void> {
         if (this.rights.enableAnnotations && this.highlighter) {
             if (this.api) {
                     let highlights: Array<any> = [];
@@ -359,7 +359,9 @@ export default class AnnotationModule implements ReaderModule {
                 this.highlighter.setColor(this.initialAnnotationColor);
             }
         }
-        this.delegate.searchModule.drawSearch()
+        if (search && this.rights.enableSearch){
+            this.delegate.searchModule.drawSearch()
+        }
     }
 
     private createTree(type: AnnotationType, annotations: Array<any>, view: HTMLDivElement) {

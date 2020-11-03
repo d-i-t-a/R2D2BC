@@ -1234,6 +1234,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
+        this.stopReadAloud();
         if(this.reflowable.isPaginated()) {
             if (this.reflowable.atStart()) {
                 if (this.previousChapterLink) {
@@ -1246,7 +1247,6 @@ export default class IFrameNavigator implements Navigator {
                         title: this.previousChapterLink.title
                     };
 
-                    this.stopReadAloud();
                     this.navigate(position);
                     setTimeout(() => {
                         this.reflowable.goToPosition(1);
@@ -1276,7 +1276,6 @@ export default class IFrameNavigator implements Navigator {
                         title: this.previousChapterLink.title
                     };
 
-                    this.stopReadAloud();
                     this.navigate(position);
                 }
             } else {
@@ -1292,6 +1291,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
+        this.stopReadAloud();
         if(this.reflowable.isPaginated()) {
             if (this.reflowable.atEnd()) {
                 if (this.nextChapterLink) {
@@ -1304,7 +1304,6 @@ export default class IFrameNavigator implements Navigator {
                         title: this.nextChapterLink.title
                     };
 
-                    this.stopReadAloud();
                     this.navigate(position);
                     setTimeout(() => {
                         this.reflowable.goToPosition(0);
@@ -1333,7 +1332,6 @@ export default class IFrameNavigator implements Navigator {
                         title: this.nextChapterLink.title
                     };
 
-                    this.stopReadAloud();
                     this.navigate(position);
                 }
             } else {

@@ -118,6 +118,7 @@ export default class AnnotationModule implements ReaderModule {
     }
 
     initialAnnotationColor?: string
+    private hasEventListener: boolean = false
 
     initialize(initialAnnotationColor?:string) {
         this.initialAnnotationColor = initialAnnotationColor
@@ -126,7 +127,7 @@ export default class AnnotationModule implements ReaderModule {
             if (this.rights.enableAnnotations) {
                 const body = HTMLUtilities.findRequiredIframeElement(this.delegate.iframe.contentDocument, "body") as HTMLBodyElement;
                 var self = this
-                this.highlighter = new TextHighlighter(this, body, this.selectionMenuItems, {
+                this.highlighter = new TextHighlighter(this, body, this.selectionMenuItems, this.hasEventListener, {
                     onBeforeHighlight: function (selectionInfo: any) {
                         if (IS_DEV) {
                             console.log("onBeforeHighlight")
@@ -138,6 +139,7 @@ export default class AnnotationModule implements ReaderModule {
                         await self.saveAnnotation(highlight, marker)
                     }
                 });
+                this.hasEventListener = true
                 setTimeout(() => {
                     this.drawHighlights()
                 }, 300);

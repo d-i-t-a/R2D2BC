@@ -218,6 +218,8 @@ export default class SearchModule implements ReaderModule {
         this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument)
         if(oc(this.delegate.rights).enableAnnotations(false)){
             this.delegate.annotationModule.drawHighlights()
+        } else {
+            this.drawSearch()
         }
         var i = 0
 
@@ -550,7 +552,8 @@ export default class SearchModule implements ReaderModule {
 
     }
 
-    handleResize() {
+    async handleResize() {
+        await this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument)
         this.drawSearch()
     }
 

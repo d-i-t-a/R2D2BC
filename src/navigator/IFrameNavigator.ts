@@ -409,10 +409,13 @@ export default class IFrameNavigator implements Navigator {
                 }
             }
 
-            setTimeout(() => {
+            setTimeout(async () => {
                 if (self.annotationModule !== undefined) {
                     self.annotationModule.drawHighlights()
                     // self.annotationModule.drawIndicators()
+                } else {
+                    await this.highlighter.destroyAllhighlights(this.iframe.contentDocument)
+                    self.searchModule.drawSearch()
                 }
             }, 300);
 
@@ -631,10 +634,13 @@ export default class IFrameNavigator implements Navigator {
                 }
             }
         })
-        setTimeout(() => {
+        setTimeout(async () => {
             this.updatePositionInfo();
             if (this.annotationModule !== undefined) {
                 this.annotationModule.drawHighlights()
+            } else {
+                await this.highlighter.destroyAllhighlights(this.iframe.contentDocument)
+                this.searchModule.drawSearch()
             }
         }, 100);
 
@@ -1471,6 +1477,8 @@ export default class IFrameNavigator implements Navigator {
             this.updatePositionInfo();
             if (this.annotationModule !== undefined) {
                 this.annotationModule.handleResize()
+            } else {
+                this.searchModule.handleResize()
             }
         }, 100);
     }
@@ -1589,10 +1597,13 @@ export default class IFrameNavigator implements Navigator {
                 this.newElementId = locator.locations.fragment
                 this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
             }
-            setTimeout(() => {
+            setTimeout(async () => {
                 if (this.annotationModule !== undefined) {
                     this.annotationModule.drawHighlights()
                     this.annotationModule.showHighlights();
+                } else {
+                    await this.highlighter.destroyAllhighlights(this.iframe.contentDocument)
+                    this.searchModule.drawSearch()
                 }
 
                 if(this.reflowable.isScrollmode()) {

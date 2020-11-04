@@ -212,8 +212,6 @@ export default class AnnotationModule implements ReaderModule {
                 tocItem = this.publication.getTOCItemAbsolute(this.delegate.currentChapterLink.href);
             }
     
-            const url = this.publication.getAbsoluteHref(tocItem.href);
-
             const bookmarkPosition = this.delegate.reflowable.getCurrentPosition();
 
             const body = HTMLUtilities.findRequiredIframeElement(this.delegate.iframe.contentDocument, "body") as HTMLBodyElement;
@@ -222,7 +220,7 @@ export default class AnnotationModule implements ReaderModule {
 
             const annotation: Annotation = {
                 id: id,
-                href: url,
+                href: tocItem.href,
                 locations: {
                     progression: progression
                 },
@@ -308,9 +306,7 @@ export default class AnnotationModule implements ReaderModule {
                                 tocItem = this.publication.getTOCItemAbsolute(this.delegate.currentChapterLink.href);
                             }
                     
-                            const url = this.publication.getAbsoluteHref(tocItem.href);
-
-                            if (annotation.href === url) {
+                            if (annotation.href === tocItem.href) {
 
                                 this.highlighter.setColor(annotation.color);
 
@@ -350,9 +346,7 @@ export default class AnnotationModule implements ReaderModule {
                             tocItem = this.publication.getTOCItemAbsolute(this.delegate.currentChapterLink.href);
                         }
                 
-                        const url = this.publication.getAbsoluteHref(tocItem.href);
-
-                        if (annotation.href === url) {
+                        if (annotation.href === tocItem.href) {
 
                             this.highlighter.setColor(annotation.color);
 

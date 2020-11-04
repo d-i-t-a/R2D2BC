@@ -26,6 +26,7 @@ import { Locator, Locations } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import TextHighlighter from "../highlight/TextHighlighter";
+import { oc } from "ts-optchain";
 
 export interface SearchConfig {
     color: string;
@@ -215,7 +216,9 @@ export default class SearchModule implements ReaderModule {
 
         // clear search results // needs more works
         this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument)
-        this.delegate.annotationModule.drawHighlights()
+        if(oc(this.delegate.rights).enableAnnotations(false)){
+            this.delegate.annotationModule.drawHighlights()
+        }
         var i = 0
 
 

@@ -25,13 +25,15 @@ import BookmarkModule from "./modules/BookmarkModule";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
 import TTSModule from "./modules/TTS/TTSModule";
-import {oc} from "ts-optchain"
+import { oc } from "ts-optchain"
 import { TTSSettings } from "./modules/TTS/TTSSettings";
 import SearchModule from "./modules/search/SearchModule";
+import TextHighlighter from "./modules/highlight/TextHighlighter";
 
 var R2Settings: UserSettings;
 var R2TTSSettings: TTSSettings;
 var R2Navigator: IFrameNavigator;
+var D2Highlighter:TextHighlighter;
 var BookmarkModuleInstance: BookmarkModule;
 var AnnotationModuleInstance: AnnotationModule;
 var TTSModuleInstance: TTSModule;
@@ -61,19 +63,19 @@ export async function unload() {
 }
 export function startReadAloud() {
     if (IS_DEV) { console.log("startReadAloud") }
-    return R2Navigator.startReadAloud()    
+    return R2Navigator.startReadAloud()
 }
 export function stopReadAloud() {
     if (IS_DEV) { console.log("stopReadAloud") }
-    return R2Navigator.stopReadAloud()    
+    return R2Navigator.stopReadAloud()
 }
 export function pauseReadAloud() {
     if (IS_DEV) { console.log("pauseReadAloud") }
-    return R2Navigator.pauseReadAloud()    
+    return R2Navigator.pauseReadAloud()
 }
 export function resumeReadAloud() {
     if (IS_DEV) { console.log("resumeReadAloud") }
-    return R2Navigator.resumeReadAloud()    
+    return R2Navigator.resumeReadAloud()
 }
 
 export async function saveBookmark() {
@@ -102,12 +104,12 @@ export async function addAnnotation(highlight) {
 }
 export async function tableOfContents() {
     if (IS_DEV) { console.log("bookmarks") }
-    return await R2Navigator.tableOfContents()    
+    return await R2Navigator.tableOfContents()
 }
 export async function bookmarks() {
     if (oc(R2Navigator.rights).enableBookmarks(false)) {
         if (IS_DEV) { console.log("bookmarks") }
-        return await BookmarkModuleInstance.getBookmarks()    
+        return await BookmarkModuleInstance.getBookmarks()
     } else {
         return []
     }
@@ -115,7 +117,7 @@ export async function bookmarks() {
 export async function annotations() {
     if (oc(R2Navigator.rights).enableAnnotations(false)) {
         if (IS_DEV) { console.log("annotations") }
-        return await AnnotationModuleInstance.getAnnotations()   
+        return await AnnotationModuleInstance.getAnnotations()
     } else {
         return []
     }
@@ -137,15 +139,15 @@ export async function goToSearchIndex(href, index) {
 }
 export function currentResource() {
     if (IS_DEV) { console.log("currentResource") }
-    return R2Navigator.currentResource()    
+    return R2Navigator.currentResource()
 }
 export function mostRecentNavigatedTocItem() {
     if (IS_DEV) { console.log("mostRecentNavigatedTocItem") }
-    return R2Navigator.mostRecentNavigatedTocItem()    
+    return R2Navigator.mostRecentNavigatedTocItem()
 }
 export function totalResources() {
     if (IS_DEV) { console.log("totalResources") }
-    return R2Navigator.totalResources()    
+    return R2Navigator.totalResources()
 }
 export function publicationLanguage() {
     if (IS_DEV) { console.log("publicationLanguage") }
@@ -164,7 +166,7 @@ export async function currentSettings() {
     return R2Settings.currentSettings()
 }
 export async function increase(incremental) {
-    if ((incremental == "pitch" || incremental == "rate" || incremental == "volume") && oc(R2Navigator.rights).enableTTS(false) ) {
+    if ((incremental == "pitch" || incremental == "rate" || incremental == "volume") && oc(R2Navigator.rights).enableTTS(false)) {
         if (IS_DEV) { console.log("increase " + incremental) }
         R2TTSSettings.increase(incremental)
     } else {
@@ -173,7 +175,7 @@ export async function increase(incremental) {
     }
 }
 export async function decrease(incremental) {
-    if ((incremental == "pitch" || incremental == "rate" || incremental == "volume") && oc(R2Navigator.rights).enableTTS(false) ) {
+    if ((incremental == "pitch" || incremental == "rate" || incremental == "volume") && oc(R2Navigator.rights).enableTTS(false)) {
         if (IS_DEV) { console.log("decrease " + incremental) }
         R2TTSSettings.decrease(incremental)
     } else {
@@ -265,7 +267,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         store: settingsStore,
         initialUserSettings: config.userSettings,
         headerMenu: headerMenu,
-        ui: config.ui,
+        material: config.material,
         api: config.api
     })
 
@@ -278,15 +280,17 @@ export async function load(config: ReaderConfig): Promise<any> {
         settings: R2Settings,
         annotator: annotator,
         upLink: upLink,
-        ui: config.ui,
         initialLastReadingPosition: config.lastReadingPosition,
         material: config.material,
         api: config.api,
         rights: config.rights,
         tts: config.tts,
-        injectables: config.injectables,
-        selectionMenuItems: config.selectionMenuItems,
-        initialAnnotationColor: config.initialAnnotationColor
+        injectables: config.injectables
+    })
+
+    D2Highlighter = await TextHighlighter.create({ 
+        delegate: R2Navigator,
+        config: config.highlighter
     })
 
     // Bookmark Module
@@ -309,35 +313,42 @@ export async function load(config: ReaderConfig): Promise<any> {
             rights: config.rights,
             publication: publication,
             delegate: R2Navigator,
-            initialAnnotations: config.initialAnnotations
+            initialAnnotations: config.initialAnnotations,
+            config: config.annotations,
+            highlighter: D2Highlighter
         })
-        // TTS Module
-        if (oc(config.rights).enableTTS(false)) {
-            R2TTSSettings = await TTSSettings.create({
-                store: settingsStore,
-                initialTTSSettings: config.tts,
-                headerMenu: headerMenu,
-                api:config.tts.api
-            })
-            TTSModuleInstance = await TTSModule.create({
-                annotationModule: AnnotationModuleInstance,
-                tts: R2TTSSettings
-            })
-        }
     }  
+
+    // TTS Module
+    if (oc(config.rights).enableTTS(false)) {
+        R2TTSSettings = await TTSSettings.create({
+            store: settingsStore,
+            initialTTSSettings: config.tts,
+            headerMenu: headerMenu,
+            api: config.tts.api
+        })
+        TTSModuleInstance = await TTSModule.create({
+            delegate: R2Navigator,
+            tts: R2TTSSettings,
+            headerMenu: headerMenu,
+            rights: config.rights,
+            highlighter: D2Highlighter
+        })
+    }
+
+    // Search Module
     if (oc(config.rights).enableSearch(false)) {
-        // Search Module
         SearchModule.create({
             headerMenu: headerMenu,
             delegate: R2Navigator,
             publication: publication,
             // api: config.api,
-            config: config.search
+            config: config.search,
+            highlighter: D2Highlighter
         }).then(function (searchModule) {
             SearchModuleInstance = searchModule
         });
     }
-
 
     return new Promise(resolve => resolve(R2Navigator));
 }
@@ -450,16 +461,16 @@ exports.annotations = function () {
     return annotations()
 }
 
-exports.currentResource = function() {
+exports.currentResource = function () {
     return currentResource()
 }
-exports.mostRecentNavigatedTocItem = function() {
+exports.mostRecentNavigatedTocItem = function () {
     return mostRecentNavigatedTocItem()
 }
-exports.totalResources = function() {
+exports.totalResources = function () {
     return totalResources()
 }
-exports.publicationLanguage = function() {
+exports.publicationLanguage = function () {
     return publicationLanguage()
 }
 exports.search = function (term, current) {

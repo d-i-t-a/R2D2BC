@@ -26,6 +26,7 @@ import { Locator, Locations } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import TextHighlighter from "../highlight/TextHighlighter";
+import { oc } from "ts-optchain";
 
 export interface SearchConfig {
     color: string;
@@ -37,6 +38,7 @@ export interface SearchModuleConfig {
     publication: Publication;
     headerMenu: HTMLElement;
     delegate: IFrameNavigator;
+    highlighter: TextHighlighter
 }
 
 export default class SearchModule implements ReaderModule {
@@ -44,31 +46,33 @@ export default class SearchModule implements ReaderModule {
     private config: SearchConfig;
     private publication: Publication;
     private headerMenu: HTMLElement;
-
     private delegate: IFrameNavigator;
     private searchInput: HTMLInputElement;
     private searchGo: HTMLElement;
     private currentChapterSearchResult: any = [];
     private bookSearchResult: any = [];
     private currentHighlights: any = []
+    private highlighter: TextHighlighter;
 
     public static async create(config: SearchModuleConfig) {
         const search = new this(
             config.headerMenu,
             config.delegate,
             config.publication,
-            config.config
+            config.config,
+            config.highlighter
         );
 
         await search.start();
         return search;
     }
 
-    private constructor(headerMenu: HTMLElement, delegate: IFrameNavigator, publication: Publication, config: any) {
+    private constructor(headerMenu: HTMLElement, delegate: IFrameNavigator, publication: Publication, config: any, highlighter: TextHighlighter) {
         this.delegate = delegate
         this.headerMenu = headerMenu
         this.publication = publication
         this.config = config
+        this.highlighter = highlighter
     }
 
     async stop() {
@@ -211,8 +215,12 @@ export default class SearchModule implements ReaderModule {
         var localSearchResultChapter: any = [];
 
         // clear search results // needs more works
-        this.delegate.annotationModule.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument)
-        this.delegate.annotationModule.drawHighlights()
+        this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument)
+        if(oc(this.delegate.rights).enableAnnotations(false)){
+            this.delegate.annotationModule.drawHighlights()
+        } else {
+            this.drawSearch()
+        }
         var i = 0
 
 
@@ -236,10 +244,10 @@ export default class SearchModule implements ReaderModule {
                         setTimeout(() => {
                             var highlight
                             if (i == index) {
-                                highlight = this.delegate.annotationModule.highlighter.createSearchHighlight(selectionInfo, this.config.current)
+                                highlight = this.highlighter.createSearchHighlight(selectionInfo, this.config.current)
                                 this.jumpToMark(index)
                             } else {
-                                highlight = this.delegate.annotationModule.highlighter.createSearchHighlight(selectionInfo, this.config.color)
+                                highlight = this.highlighter.createSearchHighlight(selectionInfo, this.config.color)
                             }
                             searchItem.highlight = highlight
                             localSearchResultChapter.push(searchItem)
@@ -536,7 +544,7 @@ export default class SearchModule implements ReaderModule {
                     rawText: null,
                     range: null
                 }
-                var highlight = this.delegate.annotationModule.highlighter.createSearchHighlight(selectionInfo, this.config.color)
+                var highlight = this.highlighter.createSearchHighlight(selectionInfo, this.config.color)
                 searchItem.highlight = highlight
                 this.currentHighlights.push(highlight);
             })
@@ -544,7 +552,8 @@ export default class SearchModule implements ReaderModule {
 
     }
 
-    handleResize() {
+    async handleResize() {
+        await this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument)
         this.drawSearch()
     }
 
@@ -564,7 +573,7 @@ export default class SearchModule implements ReaderModule {
                     currentColor = TextHighlighter.hexToRgbChannels(currentColor);
                 }
                 current.highlight.color = currentColor
-                this.delegate.annotationModule.highlighter.setAndResetSearchHighlight(current.highlight, this.currentHighlights)
+                this.highlighter.setAndResetSearchHighlight(current.highlight, this.currentHighlights)
 
                 this.delegate.reflowable.goToCssSelector(current.rangeInfo.startContainerElementCssSelector)
                 this.delegate.updatePositionInfo()

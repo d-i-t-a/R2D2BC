@@ -35,6 +35,7 @@ import Splitting from "../modules/TTS/splitting";
 import { oc } from "ts-optchain";
 import ReflowableBookView from "../views/ReflowableBookView";
 import SearchModule from "../modules/search/SearchModule";
+import TextHighlighter from "../modules/highlight/TextHighlighter";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -51,15 +52,12 @@ export interface IFrameNavigatorConfig {
     annotator?: Annotator;
     eventHandler?: EventHandler;
     upLink?: UpLinkConfig;
-    ui?: ReaderUI;
     initialLastReadingPosition?: ReadingPosition;
     rights?: ReaderRights;
-    material: boolean;
+    material?: ReaderUI;
     api: any;
     tts: any;
     injectables: Array<Injectable>;
-    selectionMenuItems?: Array<SelectionMenuItem>;
-    initialAnnotationColor?:string;
 }
 
 export interface Injectable {
@@ -83,6 +81,7 @@ export interface ReaderRights {
     enableAnnotations?: boolean;
     enableTTS?: boolean;
     enableSearch?: boolean;
+    enableMaterial?: boolean;
 }
 
 export interface ReaderUI {
@@ -95,14 +94,13 @@ export interface ReaderConfig {
     lastReadingPosition: any;
     upLinkUrl: any;
     rights: ReaderRights;
-    ui: ReaderUI;
-    material: boolean;
+    material: ReaderUI;
     api: any;
     tts: any;
-    search: any;
+    search: {color:string; current:string};
+    annotations: {initialAnnotationColor: string};
+    highlighter: {selectionMenuItems: Array<SelectionMenuItem>};
     injectables: Array<Injectable>;
-    selectionMenuItems: Array<SelectionMenuItem>;
-    initialAnnotationColor: string;
     useLocalStorage: boolean;
 }
 
@@ -118,8 +116,9 @@ export default class IFrameNavigator implements Navigator {
     annotationModule?: AnnotationModule;
     ttsModule?: TTSModule;
     searchModule?: SearchModule;
+    highlighter?: TextHighlighter;
 
-    sideNavExanded: boolean = false
+    sideNavExpanded: boolean = false
     material: boolean = false
 
     mTabs: Array<any>;
@@ -181,8 +180,6 @@ export default class IFrameNavigator implements Navigator {
     rights: ReaderRights;
     tts: TTSSpeechConfig;
     injectables: Array<Injectable>
-    selectionMenuItems: Array<SelectionMenuItem>
-    initialAnnotationColor: string
 
     public static async create(config: IFrameNavigatorConfig): Promise<any> {
         const navigator = new this(
@@ -196,9 +193,7 @@ export default class IFrameNavigator implements Navigator {
             config.api,
             config.rights,
             config.tts,
-            config.injectables,
-            config.selectionMenuItems || null,
-            config.initialAnnotationColor || null
+            config.injectables
         );
 
         await navigator.start(config.mainElement, config.headerMenu, config.footerMenu);
@@ -212,13 +207,11 @@ export default class IFrameNavigator implements Navigator {
         upLinkConfig: UpLinkConfig | null = null,
         initialLastReadingPosition: ReadingPosition | null = null,
         publication: Publication,
-        material: boolean,
+        material: any,
         api: any,
         rights: ReaderRights,
         tts: any,
-        injectables: Array<Injectable>,
-        selectionMenuItems: Array<SelectionMenuItem> | null = null,
-        initialAnnotationColor: string | null = null
+        injectables: Array<Injectable>
     ) {
         this.settings = settings;
         this.annotator = annotator;
@@ -232,8 +225,6 @@ export default class IFrameNavigator implements Navigator {
         this.rights = rights
         this.tts = tts
         this.injectables = injectables
-        this.selectionMenuItems = selectionMenuItems
-        this.initialAnnotationColor = initialAnnotationColor
     }
 
     async stop() {
@@ -257,7 +248,7 @@ export default class IFrameNavigator implements Navigator {
         removeEventListenerOptional(window, "resize", this.onResize);
         removeEventListenerOptional(this.iframe, "resize", this.onResize);
 
-        if (this.material) {
+        if (oc(this.rights).enableMaterial(false)) {
 
             if (this.mDropdowns) {
                 this.mDropdowns.forEach(element => {
@@ -357,7 +348,12 @@ export default class IFrameNavigator implements Navigator {
             }
 
             var self = this;
-            if (this.material) {
+            if (this.headerMenu) {
+                var menuSearch = HTMLUtilities.findElement(this.headerMenu, "#menu-button-settings") as HTMLLinkElement;
+                var menuTTS = HTMLUtilities.findElement(this.headerMenu, "#menu-button-tts") as HTMLLinkElement;
+                var menuBookmark = HTMLUtilities.findElement(this.headerMenu, "#menu-button-bookmark") as HTMLLinkElement;
+            }
+            if (oc(this.rights).enableMaterial(false)) {
 
                 let elements = document.querySelectorAll('.sidenav');
                 if (elements) {
@@ -388,7 +384,31 @@ export default class IFrameNavigator implements Navigator {
                 if (tabs) {
                     self.mTabs = Tabs.init(tabs);
                 }
+                if (this.headerMenu) {
+                    if (!oc(this.rights).enableBookmarks(false)) {
+                        if (menuBookmark) menuBookmark.parentElement.style.setProperty("display", "none")
+                        var sideNavSectionBookmarks = HTMLUtilities.findElement(this.headerMenu, "#sidenav-section-bookmarks") as HTMLElement;
+                        if (sideNavSectionBookmarks) sideNavSectionBookmarks.style.setProperty("display", "none")
+                    }
+                    if (!oc(this.rights).enableAnnotations(false)) {
+                        var sideNavSectionHighlights = HTMLUtilities.findElement(this.headerMenu, "#sidenav-section-highlights") as HTMLElement;
+                        if (sideNavSectionHighlights) sideNavSectionHighlights.style.setProperty("display", "none")
+                    }
+                    if (!oc(this.rights).enableTTS(false)) {
+                        if (menuTTS) menuTTS.parentElement.style.setProperty("display", "none")
+                    }
+                    if (!oc(this.rights).enableSearch(false)) {
+                        menuSearch.parentElement.style.removeProperty("display")
+                    }
+                }
+            } else {
+                if (this.headerMenu) {
+                    if (menuSearch) menuSearch.parentElement.style.setProperty("display", "none")
+                    if (menuTTS) menuTTS.parentElement.style.setProperty("display", "none")
+                    if (menuBookmark) menuBookmark.parentElement.style.setProperty("display", "none")
+                }
             }
+
             setTimeout(() => {
                 if (self.annotationModule !== undefined) {
                     self.annotationModule.drawHighlights()
@@ -970,6 +990,9 @@ export default class IFrameNavigator implements Navigator {
                 });
 
             }
+            if (this.highlighter !== undefined) {
+                await this.highlighter.initialize()
+            }
             setTimeout(() => {
 
                 const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
@@ -993,10 +1016,7 @@ export default class IFrameNavigator implements Navigator {
                 }
 
                 if (this.annotationModule !== undefined) {
-                    this.annotationModule.initialize(this.initialAnnotationColor)
-                    if (this.selectionMenuItems) {
-                        this.annotationModule.selectionMenuItems = this.selectionMenuItems
-                    }
+                    this.annotationModule.initialize()
                 }
                 if (oc(this.rights).enableTTS(false)) {
                     setTimeout(() => {
@@ -1161,14 +1181,14 @@ export default class IFrameNavigator implements Navigator {
             element.className += " active";
             sidenav.className += " expanded";
             element.innerText = "unfold_less";
-            this.sideNavExanded = true
+            this.sideNavExpanded = true
             this.bookmarkModule.showBookmarks()
             this.annotationModule.showHighlights()
         } else {
             element.className = element.className.replace(" active", "");
             sidenav.className = sidenav.className.replace(" expanded", "");
             element.innerText = "unfold_more";
-            this.sideNavExanded = false
+            this.sideNavExpanded = false
             this.bookmarkModule.showBookmarks()
             this.annotationModule.showHighlights()
         }
@@ -1177,12 +1197,12 @@ export default class IFrameNavigator implements Navigator {
     }
     startReadAloud() {
         if (oc(this.rights).enableTTS(false)) {
-            this.annotationModule.highlighter.speakAll()
+            this.highlighter.speakAll()
         }
     }
     stopReadAloud() {
         if (oc(this.rights).enableTTS(false)) {
-            this.annotationModule.highlighter.stopReadAloud()
+            this.highlighter.stopReadAloud()
         }
     }
     pauseReadAloud() {

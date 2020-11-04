@@ -19,17 +19,18 @@
 
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
-import IFrameNavigator, { ReaderRights, SelectionMenuItem } from "../navigator/IFrameNavigator";
+import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
 import Publication, { Link } from "../model/Publication";
 import TextHighlighter, { _highlights } from "./highlight/TextHighlighter";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { IHighlight } from "./highlight/common/highlight";
-import { Bookmark,  Locator, Annotation, AnnotationMarker } from "../model/Locator";
+import { Bookmark, Locator, Annotation, AnnotationMarker } from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from 'uuid';
+import { oc } from "ts-optchain";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>
 
@@ -46,34 +47,33 @@ export interface AnnotationModuleConfig {
     publication: Publication;
     delegate: IFrameNavigator;
     initialAnnotations?: any;
+    config: {initialAnnotationColor: string};
+    highlighter: TextHighlighter;
 }
 
 export default class AnnotationModule implements ReaderModule {
 
-    api: AnnotationModuleAPI;
-    annotator: Annotator | null;
-    rights: ReaderRights;
-
+    private api: AnnotationModuleAPI;
+    private annotator: Annotator | null;
+    private rights: ReaderRights;
     private publication: Publication;
-
     private highlightsView: HTMLDivElement;
-
     private headerMenu: HTMLElement;
-    highlighter: TextHighlighter;
-
+    private highlighter: TextHighlighter;
     private initialAnnotations: any;
-
-    delegate: IFrameNavigator
-    selectionMenuItems: SelectionMenuItem[];
+    private delegate: IFrameNavigator
+    private config: {initialAnnotationColor: string}
 
     public static async create(config: AnnotationModuleConfig) {
         const annotations = new this(
             config.annotator,
             config.headerMenu,
-            config.rights || { enableAnnotations: false , enableTTS: false},
+            config.rights || { enableAnnotations: false, enableTTS: false },
             config.publication,
             config.delegate,
-            config.initialAnnotations || null
+            config.initialAnnotations || null,
+            config.config,
+            config.highlighter
         );
         await annotations.start();
         return annotations;
@@ -81,7 +81,7 @@ export default class AnnotationModule implements ReaderModule {
 
 
     public constructor(annotator: Annotator, headerMenu: HTMLElement, rights: ReaderRights,
-        publication: Publication, delegate: IFrameNavigator, initialAnnotations: any | null = null) {
+        publication: Publication, delegate: IFrameNavigator, initialAnnotations: any | null = null, config: any | null = null, highlighter: TextHighlighter) {
         this.annotator = annotator
         this.rights = rights
         this.publication = publication
@@ -89,11 +89,13 @@ export default class AnnotationModule implements ReaderModule {
         this.delegate = delegate
         this.initialAnnotations = initialAnnotations;
         this.api = this.delegate.api
+        this.highlighter = highlighter
+        this.config = config
     }
 
     async stop() {
 
-        if (IS_DEV) { console.log("Annotation module stop")}
+        if (IS_DEV) { console.log("Annotation module stop") }
 
     }
 
@@ -117,29 +119,11 @@ export default class AnnotationModule implements ReaderModule {
         }, 10);
     }
 
-    initialAnnotationColor?: string
-    private hasEventListener: boolean = false
 
-    initialize(initialAnnotationColor?:string) {
-        this.initialAnnotationColor = initialAnnotationColor
+    initialize() {
         return new Promise(async (resolve) => {
             await (document as any).fonts.ready;
             if (this.rights.enableAnnotations) {
-                const body = HTMLUtilities.findRequiredIframeElement(this.delegate.iframe.contentDocument, "body") as HTMLBodyElement;
-                var self = this
-                this.highlighter = new TextHighlighter(this, body, this.selectionMenuItems, this.hasEventListener, {
-                    onBeforeHighlight: function (selectionInfo: any) {
-                        if (IS_DEV) {
-                            console.log("onBeforeHighlight")
-                            console.log("selectionInfo: " + selectionInfo);
-                        }
-                        return true
-                    },
-                    onAfterHighlight: async function (highlight: any, marker: AnnotationMarker) {
-                        await self.saveAnnotation(highlight, marker)
-                    }
-                });
-                this.hasEventListener = true
                 setTimeout(() => {
                     this.drawHighlights()
                 }, 300);
@@ -149,7 +133,7 @@ export default class AnnotationModule implements ReaderModule {
     }
 
     async scrollToHighlight(id: any): Promise<any> {
-        if (IS_DEV) {console.log("still need to scroll to " + id)}
+        if (IS_DEV) { console.log("still need to scroll to " + id) }
         var position = await this.annotator.getAnnotationPosition(id, this.delegate.iframe.contentWindow as any)
         window.scrollTo(0, position - (window.innerHeight / 3));
     }
@@ -158,10 +142,10 @@ export default class AnnotationModule implements ReaderModule {
         if (this.annotator) {
             var deleted = await this.annotator.deleteAnnotation(id);
 
-            if (IS_DEV) {console.log("Highlight deleted " + JSON.stringify(deleted));}
+            if (IS_DEV) { console.log("Highlight deleted " + JSON.stringify(deleted)); }
             await this.showHighlights();
             await this.drawHighlights();
-            if (this.delegate.material) {
+            if (oc(this.delegate.rights).enableMaterial(false)) {
                 toast({ html: 'highlight deleted' })
             }
             return deleted
@@ -196,7 +180,7 @@ export default class AnnotationModule implements ReaderModule {
                 this.deleteLocalHighlight(highlight.id);
             })
         } else {
-            this.deleteLocalHighlight(highlight.id); 
+            this.deleteLocalHighlight(highlight.id);
         }
     }
 
@@ -211,7 +195,7 @@ export default class AnnotationModule implements ReaderModule {
             if (tocItem === null) {
                 tocItem = this.publication.getTOCItemAbsolute(this.delegate.currentChapterLink.href);
             }
-    
+
             const url = this.publication.getAbsoluteHref(tocItem.href);
 
             const bookmarkPosition = this.delegate.reflowable.getCurrentPosition();
@@ -243,7 +227,7 @@ export default class AnnotationModule implements ReaderModule {
                     await this.showHighlights();
                     await this.drawHighlights();
                     return saved
-                }) 
+                })
             } else {
                 var saved = await this.annotator.saveAnnotation(annotation);
                 await this.showHighlights();
@@ -256,7 +240,7 @@ export default class AnnotationModule implements ReaderModule {
         }
     }
 
-    async getAnnotations() : Promise<any>{
+    async getAnnotations(): Promise<any> {
         let highlights: Array<any> = [];
         if (this.annotator) {
             highlights = await this.annotator.getAnnotations() as Array<any>;
@@ -275,49 +259,49 @@ export default class AnnotationModule implements ReaderModule {
                 })
             }
         }
-        if (this.highlightsView)  this.createTree(AnnotationType.Annotation, highlights, this.highlightsView)
+        if (this.highlightsView) this.createTree(AnnotationType.Annotation, highlights, this.highlightsView)
     }
 
-    async drawHighlights(search:boolean = true): Promise<void> {
+    async drawHighlights(search: boolean = true): Promise<void> {
         if (this.rights.enableAnnotations && this.highlighter) {
             if (this.api) {
-                    let highlights: Array<any> = [];
-                    if (this.annotator) {
-                        highlights = await this.annotator.getAnnotations() as Array<any>;
-                    }
-                    if (this.highlighter && highlights && this.delegate.iframe.contentDocument.readyState === 'complete') {
+                let highlights: Array<any> = [];
+                if (this.annotator) {
+                    highlights = await this.annotator.getAnnotations() as Array<any>;
+                }
+                if (this.highlighter && highlights && this.delegate.iframe.contentDocument.readyState === 'complete') {
 
-                        await this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument)
+                    await this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument)
 
-                        highlights.forEach(async rangeRepresentation => {
+                    highlights.forEach(async rangeRepresentation => {
 
-                            rangeRepresentation.highlight.marker = rangeRepresentation.marker
+                        rangeRepresentation.highlight.marker = rangeRepresentation.marker
 
-                            _highlights.push(rangeRepresentation.highlight)
+                        _highlights.push(rangeRepresentation.highlight)
 
-                            const annotation: Annotation = rangeRepresentation
+                        const annotation: Annotation = rangeRepresentation
 
-                            let currentLocation = this.delegate.currentChapterLink.href;
+                        let currentLocation = this.delegate.currentChapterLink.href;
 
-                            var tocItem = this.publication.getTOCItem(currentLocation);
-                            if (this.delegate.currentTocUrl !== null) {
-                                tocItem = this.publication.getTOCItem(this.delegate.currentTocUrl);
-                            }
+                        var tocItem = this.publication.getTOCItem(currentLocation);
+                        if (this.delegate.currentTocUrl !== null) {
+                            tocItem = this.publication.getTOCItem(this.delegate.currentTocUrl);
+                        }
 
-                            if (tocItem === null) {
-                                tocItem = this.publication.getTOCItemAbsolute(this.delegate.currentChapterLink.href);
-                            }
-                    
-                            const url = this.publication.getAbsoluteHref(tocItem.href);
+                        if (tocItem === null) {
+                            tocItem = this.publication.getTOCItemAbsolute(this.delegate.currentChapterLink.href);
+                        }
 
-                            if (annotation.href === url) {
+                        const url = this.publication.getAbsoluteHref(tocItem.href);
 
-                                this.highlighter.setColor(annotation.color);
+                        if (annotation.href === url) {
 
-                                await this.highlighter.createHighlightDom(this.delegate.iframe.contentWindow as any, rangeRepresentation.highlight)
-                            }
-                        });
-                    }
+                            this.highlighter.setColor(annotation.color);
+
+                            await this.highlighter.createHighlightDom(this.delegate.iframe.contentWindow as any, rangeRepresentation.highlight)
+                        }
+                    });
+                }
             } else {
                 let highlights: Array<any> = [];
                 if (this.annotator) {
@@ -345,7 +329,7 @@ export default class AnnotationModule implements ReaderModule {
                         if (tocItem === null) {
                             tocItem = this.publication.getTOCItemAbsolute(this.delegate.currentChapterLink.href);
                         }
-                
+
                         const url = this.publication.getAbsoluteHref(tocItem.href);
 
                         if (annotation.href === url) {
@@ -357,11 +341,11 @@ export default class AnnotationModule implements ReaderModule {
                     });
                 }
             }
-            if (this.initialAnnotationColor) {
-                this.highlighter.setColor(this.initialAnnotationColor);
+            if (this.config && oc(this.config).initialAnnotationColor != undefined) {
+                this.highlighter.setColor(this.config.initialAnnotationColor);
             }
         }
-        if (search && this.rights.enableSearch){
+        if (search && this.rights.enableSearch) {
             this.delegate.searchModule.drawSearch()
         }
     }
@@ -392,7 +376,7 @@ export default class AnnotationModule implements ReaderModule {
                             chapterHeader.appendChild(spanElement);
                         }
 
-                        addEventListenerOptional(linkElement, 'click',  (event: MouseEvent) => {
+                        addEventListenerOptional(linkElement, 'click', (event: MouseEvent) => {
                             event.preventDefault();
                             event.stopPropagation();
 
@@ -412,7 +396,7 @@ export default class AnnotationModule implements ReaderModule {
                         const bookmarkList: HTMLUListElement = document.createElement("ol");
                         annotations.forEach(function (locator: any) {
 
-                            const href = (link.href.indexOf("#") !== -1)  ?  link.href.slice(0, link.href.indexOf("#")) : link.href
+                            const href = (link.href.indexOf("#") !== -1) ? link.href.slice(0, link.href.indexOf("#")) : link.href
 
                             if (link.href && locator.href.endsWith(href)) {
                                 let bookmarkItem: HTMLLIElement = document.createElement("li");
@@ -444,7 +428,7 @@ export default class AnnotationModule implements ReaderModule {
                                     bookmarkLink.appendChild(title)
 
                                     let subtitle: HTMLSpanElement = document.createElement("span");
-                                    let formattedProgression = Math.round(locator.locations.progression!! * 100) + "% " +  "through resource"
+                                    let formattedProgression = Math.round(locator.locations.progression!! * 100) + "% " + "through resource"
                                     subtitle.className = "subtitle"
                                     subtitle.innerHTML = formattedProgression;
                                     bookmarkLink.appendChild(subtitle)
@@ -455,19 +439,19 @@ export default class AnnotationModule implements ReaderModule {
                                 timestamp.innerHTML = self.readableTimestamp(locator.created);
                                 bookmarkLink.appendChild(timestamp)
 
-                                addEventListenerOptional(bookmarkLink, 'click',  (event: MouseEvent) => {
+                                addEventListenerOptional(bookmarkLink, 'click', (event: MouseEvent) => {
                                     event.preventDefault();
                                     event.stopPropagation();
                                     self.handleAnnotationLinkClick(event, locator);
                                 });
 
                                 bookmarkItem.appendChild(bookmarkLink);
-                                if ((self.delegate.sideNavExanded && self.delegate.material) || !self.delegate.material) {
+                                if ((self.delegate.sideNavExpanded && oc(self.delegate.rights).enableMaterial(false)) || !oc(self.delegate.rights).enableMaterial(false)) {
                                     let bookmarkDeleteLink: HTMLElement = document.createElement("button");
                                     bookmarkDeleteLink.className = "delete";
                                     bookmarkDeleteLink.innerHTML = IconLib.delete;
 
-                                    addEventListenerOptional(bookmarkDeleteLink, 'click',  (event: MouseEvent) => {
+                                    addEventListenerOptional(bookmarkDeleteLink, 'click', (event: MouseEvent) => {
                                         event.preventDefault();
                                         event.stopPropagation();
                                         self.handleAnnotationLinkDeleteClick(type, event, locator);
@@ -499,11 +483,11 @@ export default class AnnotationModule implements ReaderModule {
     private handleAnnotationLinkClick(event: MouseEvent, locator: Bookmark): void {
         if (locator) {
             const linkHref = this.publication.getAbsoluteHref(locator.href);
-            locator.href = linkHref    
+            locator.href = linkHref
             this.delegate.stopReadAloud();
             this.delegate.navigate(locator);
         } else {
-            if (IS_DEV) {console.log('annotation data missing: ', event);}
+            if (IS_DEV) { console.log('annotation data missing: ', event); }
         }
     }
 
@@ -514,7 +498,7 @@ export default class AnnotationModule implements ReaderModule {
                 this.deleteHighlight(locator);
             }
         } else {
-            if (IS_DEV) {console.log('annotation data missing: ', event);}
+            if (IS_DEV) { console.log('annotation data missing: ', event); }
         }
     }
 
@@ -523,4 +507,7 @@ export default class AnnotationModule implements ReaderModule {
         return date.toDateString() + " " + date.toLocaleTimeString()
     }
 
+    public async getAnnotation(highlight: IHighlight): Promise<any> {
+        return this.annotator.getAnnotation(highlight)
+    }
 }

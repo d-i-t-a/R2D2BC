@@ -18,7 +18,6 @@
  */
 
 import ReaderModule from "../ReaderModule";
-import AnnotationModule from "../AnnotationModule";
 import { IS_DEV } from "../..";
 import { ISelectionInfo } from "../../model/Locator";
 import { TTSSettings, TTSVoice } from "./TTSSettings";
@@ -26,10 +25,15 @@ import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional, removeEventListenerOptional } from "../../utils/EventHandler";
 import { oc } from "ts-optchain";
 import * as sanitize from 'sanitize-html';
+import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
+import TextHighlighter from "../highlight/TextHighlighter";
 
 export interface TTSModuleConfig {
-    annotationModule: AnnotationModule;
-    tts: TTSSettings
+    delegate: IFrameNavigator;
+    headerMenu: HTMLElement;
+    rights: ReaderRights;
+    tts: TTSSettings;
+    highlighter: TextHighlighter;
 }
 
 export interface TTSSpeechConfig {
@@ -44,17 +48,19 @@ export interface TTSSpeechConfig {
 
 export default class TTSModule implements ReaderModule {
 
-    annotationModule: AnnotationModule;
-    tts: TTSSettings;
+    private tts: TTSSettings;
+    private splittingResult: any[]
+    private voices: SpeechSynthesisVoice[] = []
+    private clean: any
+    private rights: ReaderRights;
+    private highlighter: TextHighlighter;
+    private delegate: IFrameNavigator
     private body: any
-    splittingResult: any[]
-    voices: SpeechSynthesisVoice[] = []
-    clean:any
     private hasEventListener: boolean = false
+    private headerMenu: HTMLElement;
 
     initialize(body: any) {
-        if (this.annotationModule.highlighter !== undefined) {
-            this.annotationModule.highlighter.ttsDelegate = this
+        if (this.highlighter !== undefined) {
             this.tts.setControls();
             this.tts.onSettingsChange(this.handleResize.bind(this));
             this.body = body
@@ -62,7 +68,7 @@ export default class TTSModule implements ReaderModule {
                 allowedTags: [],
                 allowedAttributes: {}
             })
-    
+
             let splittingResult = body.querySelectorAll("[data-word]");
             splittingResult.forEach(splittingWord => {
                 splittingWord.dataset.ttsColor = this.tts.color
@@ -79,12 +85,12 @@ export default class TTSModule implements ReaderModule {
                 addEventListenerOptional(document, 'wheel', this.wheel.bind(this));
                 addEventListenerOptional(this.body, 'wheel', this.wheel.bind(this));
                 addEventListenerOptional(document, 'keydown', this.wheel.bind(this));
-                addEventListenerOptional(this.annotationModule.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));    
+                addEventListenerOptional(this.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));
             }
         }
     }
 
-    private initVoices(first:boolean) {
+    private initVoices(first: boolean) {
         function setSpeech() {
             return new Promise(
                 function (resolve, _reject) {
@@ -113,8 +119,8 @@ export default class TTSModule implements ReaderModule {
             if (IS_DEV) console.log(this.voices);
             if (first) {
                 // preferred-languages
-                if (this.annotationModule.delegate.headerMenu) {
-                    var preferredLanguageSelector = HTMLUtilities.findElement(this.annotationModule.delegate.headerMenu, "#preferred-languages") as HTMLSelectElement;
+                if (this.headerMenu) {
+                    var preferredLanguageSelector = HTMLUtilities.findElement(this.headerMenu, "#preferred-languages") as HTMLSelectElement;
                     if (preferredLanguageSelector) {
                         this.voices.forEach(voice => {
                             var v = document.createElement("option") as HTMLOptionElement;
@@ -133,7 +139,7 @@ export default class TTSModule implements ReaderModule {
             if (this.tts.api && typeof this.tts.api.stopped === "function") this.tts.api.stopped()
             this.userScrolled = false
             window.speechSynthesis.cancel()
-            if (this.splittingResult && this.annotationModule.delegate.tts.enableSplitter) {
+            if (this.splittingResult && this.delegate.tts.enableSplitter) {
                 this.splittingResult.forEach(splittingWord => {
                     splittingWord.dataset.ttsCurrentWord = "false"
                     splittingWord.dataset.ttsCurrentLine = "false"
@@ -168,7 +174,7 @@ export default class TTSModule implements ReaderModule {
 
         this.cancel()
 
-        if (this.annotationModule.delegate.tts.enableSplitter) {
+        if (this.delegate.tts.enableSplitter) {
             if (partial) {
                 var allWords = self.body.querySelectorAll("[data-word]");
 
@@ -217,7 +223,7 @@ export default class TTSModule implements ReaderModule {
         if (IS_DEV) console.log("voices", this.voices)
         var initialVoice = undefined
         if (initialVoiceHasHyphen == true) {
-            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => { 
+            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => {
                 var lang = v.lang.replace("_", "-")
                 return lang == this.tts.voice.lang && v.name == this.tts.voice.name
             })[0] : undefined
@@ -225,7 +231,7 @@ export default class TTSModule implements ReaderModule {
                 initialVoice = (this.tts.voice && this.tts.voice.lang) ? this.voices.filter((v: any) => v.lang.replace("_", "-") == this.tts.voice.lang)[0] : undefined
             }
         } else {
-            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) =>  { 
+            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => {
                 return v.lang == this.tts.voice.lang && v.name == this.tts.voice.name
             })[0] : undefined
             if (initialVoice == undefined) {
@@ -234,17 +240,17 @@ export default class TTSModule implements ReaderModule {
         }
         if (IS_DEV) console.log("initialVoice", initialVoice)
 
-        var publicationVoiceHasHyphen = (self.annotationModule.delegate.publication.metadata.language[0].indexOf("-") !== -1)
+        var publicationVoiceHasHyphen = (self.delegate.publication.metadata.language[0].indexOf("-") !== -1)
         if (IS_DEV) console.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen)
         var publicationVoice = undefined
         if (publicationVoiceHasHyphen == true) {
-            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) =>  {
+            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) => {
                 var lang = v.lang.replace("_", "-")
-                return lang.startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || lang.endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()) 
+                return lang.startsWith(self.delegate.publication.metadata.language[0]) || lang.endsWith(self.delegate.publication.metadata.language[0].toUpperCase())
             })[0] : undefined
         } else {
-            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) =>  {
-                return v.lang.startsWith(self.annotationModule.delegate.publication.metadata.language[0]) || v.lang.endsWith(self.annotationModule.delegate.publication.metadata.language[0].toUpperCase()) 
+            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) => {
+                return v.lang.startsWith(self.delegate.publication.metadata.language[0]) || v.lang.endsWith(self.delegate.publication.metadata.language[0].toUpperCase())
             })[0] : undefined
         }
         if (IS_DEV) console.log("publicationVoice", publicationVoice)
@@ -275,9 +281,9 @@ export default class TTSModule implements ReaderModule {
             utterance.voice = defaultVoice
         }
         utterance.lang = utterance.voice.lang
-        if (IS_DEV)  console.log("utterance.voice.lang", utterance.voice.lang)
-        if (IS_DEV)  console.log("utterance.lang", utterance.lang)
-        if (IS_DEV)  console.log("navigator.language", navigator.language)
+        if (IS_DEV) console.log("utterance.voice.lang", utterance.voice.lang)
+        if (IS_DEV) console.log("utterance.lang", utterance.lang)
+        if (IS_DEV) console.log("navigator.language", navigator.language)
 
         window.speechSynthesis.speak(utterance);
 
@@ -314,7 +320,7 @@ export default class TTSModule implements ReaderModule {
                 }
                 lastword = word
 
-                if (self.annotationModule.delegate.tts.enableSplitter) {
+                if (self.delegate.tts.enableSplitter) {
 
 
                     processWord(word)
@@ -323,7 +329,7 @@ export default class TTSModule implements ReaderModule {
             }
         }
 
-    
+
 
         async function processWord(word) {
 
@@ -368,7 +374,7 @@ export default class TTSModule implements ReaderModule {
 
                             }
                             splittingWord.dataset.ttsCurrentWord = "true"
-                            if (self.annotationModule.delegate.reflowable.isScrollmode() && self.tts.autoScroll && !self.userScrolled) {
+                            if (self.delegate.reflowable.isScrollmode() && self.tts.autoScroll && !self.userScrolled) {
                                 splittingWord.scrollIntoView({
                                     block: "center",
                                     behavior: "smooth",
@@ -388,8 +394,8 @@ export default class TTSModule implements ReaderModule {
 
         utterance.onend = function () {
             if (IS_DEV) console.log("utterance ended");
-            self.annotationModule.highlighter.doneSpeaking()
-            if (self.annotationModule.delegate.tts.enableSplitter) {
+            self.highlighter.doneSpeaking()
+            if (self.delegate.tts.enableSplitter) {
 
                 let splittingResult = self.body.querySelectorAll("[data-word]");
                 splittingResult.forEach(splittingWord => {
@@ -431,20 +437,36 @@ export default class TTSModule implements ReaderModule {
 
     public static async create(config: TTSModuleConfig) {
         const tts = new this(
-            config.annotationModule,
-            config.tts
+            config.delegate,
+            config.tts,
+            config.headerMenu,
+            config.rights,
+            config.highlighter
         );
         await tts.start();
         return tts;
     }
 
-    public constructor(annotationModule: AnnotationModule, tts: TTSSettings) {
-        this.annotationModule = annotationModule
+    public constructor(delegate: IFrameNavigator, tts: TTSSettings, headerMenu: HTMLElement, rights: ReaderRights, highlighter: TextHighlighter) {
+        this.delegate = delegate
         this.tts = tts
+        this.headerMenu = headerMenu
+        this.rights = rights
+        this.highlighter = highlighter
     }
 
     protected async start(): Promise<void> {
-        this.annotationModule.delegate.ttsModule = this
+        this.delegate.ttsModule = this
+
+        if (this.headerMenu) {
+            var menuTTS = HTMLUtilities.findElement(this.headerMenu, "#menu-button-tts") as HTMLLinkElement;
+            if (this.rights.enableMaterial) {
+                if (menuTTS) menuTTS.parentElement.style.removeProperty("display")
+            } else {
+                if (menuTTS) menuTTS.parentElement.style.setProperty("display", "none")
+            }
+        }
+
     }
 
     userScrolled = false
@@ -453,12 +475,12 @@ export default class TTSModule implements ReaderModule {
             const key = event.key;
             switch (key) {
                 case "ArrowUp":
-                  this.userScrolled = true
-                  break;
+                    this.userScrolled = true
+                    break;
                 case "ArrowDown":
-                  this.userScrolled = true
-                  break;
-              }
+                    this.userScrolled = true
+                    break;
+            }
         } else {
             this.userScrolled = true
         }
@@ -469,7 +491,7 @@ export default class TTSModule implements ReaderModule {
         removeEventListenerOptional(document, 'wheel', this.wheel.bind(this));
         removeEventListenerOptional(this.body, 'wheel', this.wheel.bind(this));
         removeEventListenerOptional(document, 'keydown', this.wheel.bind(this));
-        removeEventListenerOptional(this.annotationModule.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));
+        removeEventListenerOptional(this.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));
     }
 
 }

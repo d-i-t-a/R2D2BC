@@ -248,20 +248,20 @@
 
 
         var injectables = [
-            { type: 'style', url: 'http://' + window.location.host + '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: 'http://' + window.location.host + '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: 'http://' + window.location.host + '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
-            { type: 'style', url: 'http://' + window.location.host + '/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            { type: 'style', url: '/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
             // { type: 'style', url: http://' + window.location.host + '/viewer/readium-css/neon-after.css', r2after: true, appearance: 'neon' },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
-            { type: 'style', url: 'http://' + window.location.host + '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic', systemFont: false },
+            { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic', systemFont: false },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
-            { type: 'script', url: 'http://' + window.location.host + '/viewer/injectables/click/click.js' },
-            { type: 'script', url: 'http://' + window.location.host + '/viewer/injectables/footnotes/footnotes.js' },
-            { type: 'style', url: 'http://' + window.location.host + '/viewer/injectables/footnotes/footnotes.css' },
-            { type: 'script', url: 'http://' + window.location.host + '/viewer/injectables/glossary/glossary.js' },
-            { type: 'style', url: 'http://' + window.location.host + '/viewer/injectables/glossary/glossary.css' },
-            { type: 'style', url: 'http://' + window.location.host + '/viewer/injectables/style/style.css' },
+            { type: 'script', url: '/viewer/injectables/click/click.js' },
+            { type: 'script', url: '/viewer/injectables/footnotes/footnotes.js' },
+            { type: 'style', url: '/viewer/injectables/footnotes/footnotes.css' },
+            { type: 'script', url: '/viewer/injectables/glossary/glossary.js' },
+            { type: 'style', url: '/viewer/injectables/glossary/glossary.css' },
+            { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
 
         // Injectable {
@@ -300,7 +300,7 @@
 
         var urlParams = getURLQueryParams();
         var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
-        // var lastReadingPosition = '{"href":"http://localhost:4444/pub/L1ZvbHVtZXMvRGF0YS9Cb2tiYXNlbi9yMi1uYXZpZ2F0b3ItcG9jL2V4YW1wbGVzL3N0cmVhbWVkL2VwdWJzL0ZyYW5rZW5zdGVpbi5lcHVi/OEBPS/Text/cover.xhtml","locations":{"progression":0},"created":"2019-05-21T12:53:08.145Z","type":"application/xhtml+xml","title":"Cover"}';
+        // var lastReadingPosition = '{"href":"OEBPS/Text/cover.xhtml","locations":{"progression":0},"created":"2019-05-21T12:53:08.145Z","type":"application/xhtml+xml","title":"Cover"}';
 
         D2Reader.load({
             url: new URL(urlParams['url']),

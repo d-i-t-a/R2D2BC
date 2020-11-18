@@ -54,8 +54,12 @@
                 console.log(JSON.stringify(result))
             })">search in book</button><br>
         
-        <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 2)">go to index 2 in chapter OEBPS/Text/intro.xhtml</button><br>
-        <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 3)">go to index 3 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 2, false)">go to index 2 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 3, false)">go to index 3 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 10, false)">go to uuid 10 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 11, false)">go to uuid 11 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 2, false)">go to uuid 2 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 3, false)">go to uuid 3 in chapter OEBPS/Text/intro.xhtml</button><br>
 
         <button onclick="javascript:D2Reader.startReadAloud()">read aloud from top</button><br>
         <button onclick="javascript:D2Reader.stopReadAloud()">stop read aloud from top</button><br>

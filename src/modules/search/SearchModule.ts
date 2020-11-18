@@ -284,7 +284,49 @@ export default class SearchModule implements ReaderModule {
             return book
         }
     }
-    async goToSearchIndex(href: any, index: number) {
+    async goToSearchID(href: any, index: number, current: boolean) {
+        var filteredIndex = index
+        var item
+        let currentLocation = this.delegate.currentChapterLink.href;
+        var absolutehref = this.publication.getAbsoluteHref(href);
+        let filteredIndexes = this.bookSearchResult.filter((el: any) => el.href === href);
+
+        if (current) {
+            item = this.currentChapterSearchResult.filter((el:any) => el.uuid == index)[0];
+            filteredIndex = this.currentChapterSearchResult.findIndex((el: any) => el.uuid == index);
+        } else {
+            item = filteredIndexes.filter((el:any) => el.uuid == index)[0];
+            filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid == index);
+        }
+        if (item != undefined) {
+            if (currentLocation === absolutehref) {
+                this.jumpToMark(filteredIndex);
+            } else {
+                let locations: Locations = {
+                    progression: 0
+                }
+
+                const position: Locator = {
+                    href: absolutehref,
+                    // type: link.type,
+                    locations: locations,
+                    title: "title"
+                };
+                // TODO search index and total progression.
+                // position.locations.totalProgression = self.delegate.calculateTotalProgresion(position) 
+                // position.locations.index = filteredIndex
+
+                this.delegate.navigate(position);
+                // Navigate to new chapter and search only in new current chapter, 
+                // this should refresh thesearch result of current chapter and highlight the selected index
+                setTimeout(() => {
+                    this.searchAndPaintChapter(item.textMatch, filteredIndex, async () => { })
+                }, 300);
+            }
+        }
+    }
+
+    async goToSearchIndex(href: any, index: number, current: boolean) {
 
         var filteredIndex = index
         var item
@@ -292,22 +334,10 @@ export default class SearchModule implements ReaderModule {
         var absolutehref = this.publication.getAbsoluteHref(href);
         let filteredIndexes = this.bookSearchResult.filter((el: any) => el.href === href);
 
-        if (currentLocation === absolutehref) {
+        if (current) {
             item = this.currentChapterSearchResult[filteredIndex]
-            if (item == undefined) {
-                item = this.currentChapterSearchResult.filter((el:any) => el.uuid == index)[0];
-                filteredIndex = this.currentChapterSearchResult.findIndex((el: any) => el.uuid == index);
-            }
-            if (item == undefined) {
-                item = filteredIndexes.filter((el:any) => el.uuid == index)[0];
-                filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid == index);
-            }
         } else {
             item = filteredIndexes[filteredIndex]
-            if (item == undefined) {
-                item = filteredIndexes.filter((el:any) => el.uuid == index)[0];
-                filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid == index);
-            }
         }
         if (item != undefined) {
             if (currentLocation === absolutehref) {

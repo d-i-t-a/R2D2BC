@@ -131,12 +131,19 @@ export async function search(term, current) {
         return []
     }
 }
-export async function goToSearchIndex(href, index) {
+export async function goToSearchIndex(href, index, current) {
     if (oc(R2Navigator.rights).enableSearch(false)) {
         if (IS_DEV) { console.log("goToSearchIndex") }
-        await SearchModuleInstance.goToSearchIndex(href, index)   
+        await SearchModuleInstance.goToSearchIndex(href, index, current)   
     }
 }
+export async function goToSearchID(href, index, current) {
+    if (oc(R2Navigator.rights).enableSearch(false)) {
+        if (IS_DEV) { console.log("goToSearchID") }
+        await SearchModuleInstance.goToSearchID(href, index, current)   
+    }
+}
+
 export function currentResource() {
     if (IS_DEV) { console.log("currentResource") }
     return R2Navigator.currentResource()
@@ -476,6 +483,9 @@ exports.publicationLanguage = function () {
 exports.search = function (term, current) {
     return search(term, current)
 }
-exports.goToSearchIndex = function (searchItem, current) {
-    goToSearchIndex(searchItem, current)
+exports.goToSearchIndex = function (href, index, current) {
+    goToSearchIndex(href, index, current)
+}
+exports.goToSearchID = function (href, index, current) {
+    goToSearchID(href, index, current)
 }

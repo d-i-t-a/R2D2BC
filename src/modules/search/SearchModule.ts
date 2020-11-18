@@ -294,13 +294,25 @@ export default class SearchModule implements ReaderModule {
 
         if (currentLocation === absolutehref) {
             item = this.currentChapterSearchResult[filteredIndex]
+            if (item == undefined) {
+                item = this.currentChapterSearchResult.filter((el:any) => el.uuid == index)[0];
+                filteredIndex = this.currentChapterSearchResult.findIndex((el: any) => el.uuid == index);
+            }
+            if (item == undefined) {
+                item = filteredIndexes.filter((el:any) => el.uuid == index)[0];
+                filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid == index);
+            }
         } else {
             item = filteredIndexes[filteredIndex]
+            if (item == undefined) {
+                item = filteredIndexes.filter((el:any) => el.uuid == index)[0];
+                filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid == index);
+            }
         }
         if (item != undefined) {
-            if (currentLocation === absolutehref) {
-                this.jumpToMark(filteredIndex);
-            } else {
+            // if (currentLocation === absolutehref) {
+                // this.jumpToMark(filteredIndex);
+            // } else {
                 let locations: Locations = {
                     progression: 0
                 }
@@ -321,7 +333,7 @@ export default class SearchModule implements ReaderModule {
                 setTimeout(() => {
                     this.searchAndPaintChapter(item.textMatch, filteredIndex, async () => { })
                 }, 300);
-            }
+            // }
         }
     }
 
@@ -579,7 +591,6 @@ export default class SearchModule implements ReaderModule {
                 this.delegate.updatePositionInfo()
             }
         }, 200);
-
     }
 
     paginate(items: Array<any>, page: number, per_page: number) {

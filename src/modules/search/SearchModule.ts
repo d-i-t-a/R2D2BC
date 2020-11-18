@@ -310,9 +310,9 @@ export default class SearchModule implements ReaderModule {
             }
         }
         if (item != undefined) {
-            // if (currentLocation === absolutehref) {
-                // this.jumpToMark(filteredIndex);
-            // } else {
+            if (currentLocation === absolutehref) {
+                this.jumpToMark(filteredIndex);
+            } else {
                 let locations: Locations = {
                     progression: 0
                 }
@@ -333,7 +333,7 @@ export default class SearchModule implements ReaderModule {
                 setTimeout(() => {
                     this.searchAndPaintChapter(item.textMatch, filteredIndex, async () => { })
                 }, 300);
-            // }
+            }
         }
     }
 

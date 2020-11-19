@@ -517,99 +517,97 @@ export default class IFrameNavigator implements Navigator {
 
     private updateBookView(): void {
 
-        if (this.reflowable.isPaginated()) {
-            this.reflowable.height = (BrowserUtilities.getHeight() - 10 - 10 - 10 - 10);
-            if (this.infoBottom) this.infoBottom.style.display = "block"
-            document.body.onscroll = () => { };
-            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-            if (this.nextPageAnchorElement) this.nextPageAnchorElement.style.display = "unset"
-            if (this.previousPageAnchorElement) this.previousPageAnchorElement.style.display = "unset"
-            if (this.chapterTitle) this.chapterTitle.style.display = "inline";
-            if (this.chapterPosition) this.chapterPosition.style.display = "inline";
-            if (this.eventHandler) {
-                this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
-                this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
-            }
-            if (!this.isDisplayed(this.linksBottom)) {
-                this.toggleDisplay(this.linksBottom);
-            }
-
-            if (!this.isDisplayed(this.linksMiddle)) {
-                this.toggleDisplay(this.linksMiddle);
-            }    
-        } else {
-            if (this.infoBottom) this.infoBottom.style.display = "none"
-            if (this.nextPageAnchorElement) this.nextPageAnchorElement.style.display = "none"
-            if (this.previousPageAnchorElement) this.previousPageAnchorElement.style.display = "none"
-            if (this.reflowable.atStart() && this.reflowable.atEnd()) {
-                if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-            } else if (this.reflowable.atEnd()) {
-                if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-                if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-            } else if (this.reflowable.atStart()) {
+        this.settings.isPaginated().then(paginated => {
+            if (paginated) {
+                this.reflowable.height = (BrowserUtilities.getHeight() - 40 - this.attributes.margin);
+                if (this.infoBottom) this.infoBottom.style.display = "block"
+                document.body.onscroll = () => { };
                 if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                if (this.nextPageAnchorElement) this.nextPageAnchorElement.style.display = "unset"
+                if (this.previousPageAnchorElement) this.previousPageAnchorElement.style.display = "unset"
+                if (this.chapterTitle) this.chapterTitle.style.display = "inline";
+                if (this.chapterPosition) this.chapterPosition.style.display = "inline";
+                if (this.eventHandler) {
+                    this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
+                    this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
+                }
+                if (!this.isDisplayed(this.linksBottom)) {
+                    this.toggleDisplay(this.linksBottom);
+                }
+
+                if (!this.isDisplayed(this.linksMiddle)) {
+                    this.toggleDisplay(this.linksMiddle);
+                }    
             } else {
-                if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-            }
-            // document.body.style.overflow = "auto";
-            document.body.onscroll = () => {
-                if(this.reflowable.isScrollmode()) {
-                    this.reflowable.setIframeHeight(this.iframe)
-                }
-
-                this.saveCurrentReadingPosition();
-                if (this.reflowable.atEnd()) {
-                    // Bring up the bottom nav when you get to the bottom,
-                    // if it wasn't already displayed.
-                    if (!this.isDisplayed(this.linksBottom)) {
-                        this.toggleDisplay(this.linksBottom);
-                    }
-                    if (!this.isDisplayed(this.linksMiddle)) {
-                        this.toggleDisplay(this.linksMiddle);
-                    }
+                if (this.infoBottom) this.infoBottom.style.display = "none"
+                if (this.nextPageAnchorElement) this.nextPageAnchorElement.style.display = "none"
+                if (this.previousPageAnchorElement) this.previousPageAnchorElement.style.display = "none"
+                if (this.reflowable.atStart() && this.reflowable.atEnd()) {
+                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                } else if (this.reflowable.atEnd()) {
+                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                } else if (this.reflowable.atStart()) {
+                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
                 } else {
-                    // Remove the bottom nav when you scroll back up,
-                    // if it was displayed because you were at the bottom.
-                    if (this.isDisplayed(this.linksBottom) && !this.isDisplayed(this.links)) {
-                        this.toggleDisplay(this.linksBottom);
-                    }
+                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                 }
-                if(this.reflowable.isScrollmode()) {
-                    if (this.reflowable.atStart() && this.reflowable.atEnd()) {
-                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                    } else if (this.reflowable.atEnd()) {
-                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                    } else if (this.reflowable.atStart()) {
-                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                // document.body.style.overflow = "auto";
+                document.body.onscroll = () => {
+                    this.saveCurrentReadingPosition();
+                    if (this.reflowable.atEnd()) {
+                        // Bring up the bottom nav when you get to the bottom,
+                        // if it wasn't already displayed.
+                        if (!this.isDisplayed(this.linksBottom)) {
+                            this.toggleDisplay(this.linksBottom);
+                        }
+                        if (!this.isDisplayed(this.linksMiddle)) {
+                            this.toggleDisplay(this.linksMiddle);
+                        }
                     } else {
-                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                        // Remove the bottom nav when you scroll back up,
+                        // if it was displayed because you were at the bottom.
+                        if (this.isDisplayed(this.linksBottom) && !this.isDisplayed(this.links)) {
+                            this.toggleDisplay(this.linksBottom);
+                        }
                     }
+                    if(this.reflowable.isScrollmode()) {
+                        if (this.reflowable.atStart() && this.reflowable.atEnd()) {
+                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                        } else if (this.reflowable.atEnd()) {
+                            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                        } else if (this.reflowable.atStart()) {
+                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                        } else {
+                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                        }
+                    }
+
                 }
 
-            }
+                if (this.chapterTitle) this.chapterTitle.style.display = "none";
+                if (this.chapterPosition) this.chapterPosition.style.display = "none";
+                if (this.eventHandler) {
+                    this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
+                    this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
+                }
+                if (!this.isDisplayed(this.linksBottom)) {
+                    this.toggleDisplay(this.linksBottom);
+                }
 
-            if (this.chapterTitle) this.chapterTitle.style.display = "none";
-            if (this.chapterPosition) this.chapterPosition.style.display = "none";
-            if (this.eventHandler) {
-                this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
-                this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
+                if (!this.isDisplayed(this.linksMiddle)) {
+                    this.toggleDisplay(this.linksMiddle);
+                }
             }
-            if (!this.isDisplayed(this.linksBottom)) {
-                this.toggleDisplay(this.linksBottom);
-            }
-
-            if (!this.isDisplayed(this.linksMiddle)) {
-                this.toggleDisplay(this.linksMiddle);
-            }
-        }
+        })
         setTimeout(() => {
             this.updatePositionInfo();
             if (this.annotationModule !== undefined) {

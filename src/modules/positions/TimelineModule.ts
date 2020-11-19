@@ -132,12 +132,6 @@ export default class TimelineModule implements ReaderModule {
 
                 this.timelineContainer.appendChild(chapter)
 
-                // if (oc(this.delegate.rights).enableMaterial(false)) {
-                //     this.timelineContainer.style.height = window.innerHeight - 240 + "px";
-                // } else {
-                //     this.timelineContainer.style.height = window.innerHeight - 170 + "px";
-                // }
-
             });
 
             resolve()

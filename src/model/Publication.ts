@@ -18,6 +18,7 @@
  */
 
 import Store from "../store/Store";
+import { Locator } from "./Locator";
 
 export interface Metadata {
     title?: string;
@@ -54,6 +55,8 @@ export interface Link {
         //  The MediaOverlays associated to the resource of the Link
     // mediaOverlays?: MediaOverlays;
 
+    contentLength?: number;
+    contentWeight?: number;
 }
 
 export default class Publication {
@@ -65,6 +68,7 @@ export default class Publication {
     public readonly landmarks: Array<Link>;
     public readonly pageList: Array<Link>;
     public readonly images: Array<Link>;
+    public positions: Array<Locator>;
 
     private readonly manifestUrl: URL;
 
@@ -158,7 +162,11 @@ export default class Publication {
     }
     public getRelativeHref(href: string): string | null {
         const manifest = this.manifestUrl.href.replace("/manifest.json", ""); //new URL(this.manifestUrl.href, this.manifestUrl.href).href;
-        return href.replace(manifest, "");
+        var href = href.replace(manifest, "");
+        if(href.charAt(0) === '/') {
+            href = href.substring(1);
+        }
+        return href;
     }
 
 
@@ -215,4 +223,12 @@ export default class Publication {
         }
         return link
     }
+
+    /**
+     * positionsByHref
+     */
+    public positionsByHref(href:string) {
+        return this.positions.filter((el: Locator) => el.href === href)
+    }
+
 }

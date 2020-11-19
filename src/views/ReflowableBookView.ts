@@ -159,10 +159,8 @@ export default class ReflowableBookView implements BookView {
     }
     goToPosition(position: number): void {
         if (this.isScrollmode()) {
-            this.setSize();
             document.scrollingElement.scrollTop = document.scrollingElement.scrollHeight * position;    
         } else {
-            this.setSize();
             // If the window has changed size since the columns were set up,
             // we need to reset position so we can determine the new total width.
     
@@ -195,7 +193,6 @@ export default class ReflowableBookView implements BookView {
     
     goToElement(element: HTMLElement | null, relative?: boolean): void {
         if (this.isScrollmode()) {
-            this.setSize();
             if (element) {
                 // Put the element as close to the top as possible.
                 document.scrollingElement.scrollTop = element.offsetTop;

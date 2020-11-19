@@ -200,7 +200,7 @@ export default class IFrameNavigator implements Navigator {
             config.injectables,
             config.selectionMenuItems || null,
             config.initialAnnotationColor || null,
-            config.attributes
+            config.attributes || { margin: 0 },
         );
 
         await navigator.start(config.mainElement, config.headerMenu, config.footerMenu);

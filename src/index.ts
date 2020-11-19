@@ -143,6 +143,12 @@ export async function goToSearchID(href, index, current) {
         await SearchModuleInstance.goToSearchID(href, index, current)   
     }
 }
+export async function clearSearch() {
+    if (oc(R2Navigator.rights).enableSearch(false)) {
+        if (IS_DEV) { console.log("clearSearch") }
+        await SearchModuleInstance.clearSearch()   
+    }
+}
 
 export function currentResource() {
     if (IS_DEV) { console.log("currentResource") }
@@ -489,4 +495,7 @@ exports.goToSearchIndex = function (href, index, current) {
 }
 exports.goToSearchID = function (href, index, current) {
     goToSearchID(href, index, current)
+}
+exports.clearSearch = function () {
+    clearSearch()
 }

@@ -266,7 +266,8 @@ export async function load(config: ReaderConfig): Promise<any> {
         tts: config.tts,
         injectables: config.injectables,
         selectionMenuItems: config.selectionMenuItems,
-        initialAnnotationColor: config.initialAnnotationColor
+        initialAnnotationColor: config.initialAnnotationColor,
+        attributes: config.attributes
     })
 
     // Bookmark Module

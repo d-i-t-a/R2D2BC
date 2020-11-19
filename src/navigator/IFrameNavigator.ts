@@ -104,7 +104,7 @@ export interface ReaderConfig {
     selectionMenuItems: Array<SelectionMenuItem>;
     initialAnnotationColor: string;
     useLocalStorage: boolean;
-    attributes: {margin:number};
+    attributes: IFrameAttributes;
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -183,7 +183,7 @@ export default class IFrameNavigator implements Navigator {
     injectables: Array<Injectable>
     selectionMenuItems: Array<SelectionMenuItem>
     initialAnnotationColor: string
-    attributes: {margin:number}
+    attributes: IFrameAttributes
 
     public static async create(config: IFrameNavigatorConfig): Promise<any> {
         const navigator = new this(

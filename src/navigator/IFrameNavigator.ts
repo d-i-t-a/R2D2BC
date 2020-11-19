@@ -40,7 +40,9 @@ export interface UpLinkConfig {
     label?: string;
     ariaLabel?: string;
 }
-
+export interface IFrameAttributes {
+    margin: number
+}
 export interface IFrameNavigatorConfig {
     mainElement: HTMLElement;
     headerMenu: HTMLElement;
@@ -59,6 +61,7 @@ export interface IFrameNavigatorConfig {
     injectables: Array<Injectable>;
     selectionMenuItems?: Array<SelectionMenuItem>;
     initialAnnotationColor?:string;
+    attributes: IFrameAttributes;
 }
 
 export interface Injectable {
@@ -101,6 +104,7 @@ export interface ReaderConfig {
     selectionMenuItems: Array<SelectionMenuItem>;
     initialAnnotationColor: string;
     useLocalStorage: boolean;
+    attributes: {margin:number};
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -179,6 +183,7 @@ export default class IFrameNavigator implements Navigator {
     injectables: Array<Injectable>
     selectionMenuItems: Array<SelectionMenuItem>
     initialAnnotationColor: string
+    attributes: {margin:number}
 
     public static async create(config: IFrameNavigatorConfig): Promise<any> {
         const navigator = new this(
@@ -194,7 +199,8 @@ export default class IFrameNavigator implements Navigator {
             config.tts,
             config.injectables,
             config.selectionMenuItems || null,
-            config.initialAnnotationColor || null
+            config.initialAnnotationColor || null,
+            config.attributes
         );
 
         await navigator.start(config.mainElement, config.headerMenu, config.footerMenu);
@@ -214,11 +220,13 @@ export default class IFrameNavigator implements Navigator {
         tts: any,
         injectables: Array<Injectable>,
         selectionMenuItems: Array<SelectionMenuItem> | null = null,
-        initialAnnotationColor: string | null = null
+        initialAnnotationColor: string | null = null,
+        attributes: IFrameAttributes,
     ) {
         this.settings = settings;
         this.annotator = annotator;
         this.reflowable = settings.reflowable
+        this.reflowable.attributes = attributes
         this.eventHandler = eventHandler || new EventHandler();
         this.upLinkConfig = upLinkConfig;
         this.initialLastReadingPosition = initialLastReadingPosition;
@@ -230,6 +238,7 @@ export default class IFrameNavigator implements Navigator {
         this.injectables = injectables
         this.selectionMenuItems = selectionMenuItems
         this.initialAnnotationColor = initialAnnotationColor
+        this.attributes = attributes || {margin: 0}
     }
 
     async stop() {
@@ -1416,13 +1425,9 @@ export default class IFrameNavigator implements Navigator {
             this.toggleDisplay(this.linksBottom);
         }
 
-        // TODO paginator height needs to be calculated with headers and footers in mind
-        // material     - 70 - 10 - 40 - 10 (if page info needs showing, +30)
-        // api          - 10 - 10 - 10 - 10
-
         this.settings.isPaginated().then(paginated => {
             if (paginated) {
-                this.reflowable.height = (BrowserUtilities.getHeight() - 10 - 10 - 10 - 10);
+                this.reflowable.height = (BrowserUtilities.getHeight() - 40 - this.attributes.margin);
                 if (this.infoBottom) this.infoBottom.style.display = "block"
             } else {
                 if (this.infoBottom) this.infoBottom.style.display = "none"

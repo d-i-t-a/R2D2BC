@@ -95,6 +95,7 @@ export default class ReflowableBookView implements BookView {
     iframe: HTMLIFrameElement;
     sideMargin: number = 20;
     height: number = 0;
+    attributes: IFrameAttributes = {margin:0}
     
     start(): void {
         if (this.isScrollmode()) {
@@ -339,7 +340,7 @@ export default class ReflowableBookView implements BookView {
     private getScreenHeight(): number {
         const windowTop = window.scrollY;
         const windowBottom = windowTop + window.innerHeight;
-        return windowBottom - windowTop - 100
+        return windowBottom - windowTop - 40 - this.attributes.margin
     }
     setIframeHeight(iframe:any) {
         if (iframe) {

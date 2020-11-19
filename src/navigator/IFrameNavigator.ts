@@ -35,8 +35,14 @@ import Splitting from "../modules/TTS/splitting";
 import { oc } from "ts-optchain";
 import ReflowableBookView from "../views/ReflowableBookView";
 import SearchModule from "../modules/search/SearchModule";
+import ContentProtectionModule from "../modules/protection/ContentProtectionModule";
 import TextHighlighter from "../modules/highlight/TextHighlighter";
 import TimelineModule from "../modules/positions/TimelineModule";
+
+export type GetContent = (href: string) => Promise<string>
+export interface ContentAPI {
+    getContent: GetContent;
+}
 
 export interface UpLinkConfig {
     url?: URL;
@@ -85,6 +91,7 @@ export interface ReaderRights {
     enableAnnotations?: boolean;
     enableTTS?: boolean;
     enableSearch?: boolean;
+    enableContentProtection?: boolean;
     enableMaterial?: boolean;
     enableTimeline?: boolean;
 }
@@ -103,6 +110,7 @@ export interface ReaderConfig {
     api: any;
     tts: any;
     search: {color:string; current:string};
+    protection?: any;
     annotations: {initialAnnotationColor: string};
     highlighter: {selectionMenuItems: Array<SelectionMenuItem>};
     injectables: Array<Injectable>;
@@ -122,6 +130,7 @@ export default class IFrameNavigator implements Navigator {
     annotationModule?: AnnotationModule;
     ttsModule?: TTSModule;
     searchModule?: SearchModule;
+    contentProtectionModule?: ContentProtectionModule;
     highlighter?: TextHighlighter;
     timelineModule?: TimelineModule;
 
@@ -1028,6 +1037,14 @@ export default class IFrameNavigator implements Navigator {
                         by: "lines"
                     });
                 }
+                if (oc(this.rights).enableContentProtection(false)) {
+                    setTimeout(async () => {
+                        if (this.contentProtectionModule !== undefined) {
+                            await this.contentProtectionModule.initialize()
+                        }  
+                    }, 50);
+                }
+
             }, 50);
 
             setTimeout(() => {
@@ -1089,7 +1106,19 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private tryAgain() {
-        this.iframe.src = this.currentChapterLink.href
+        if (this.api && this.api.getContent) {
+            this.api.getContent(this.currentChapterLink.href).then(content => {
+                if (content === undefined) {
+                    this.iframe.src = this.currentChapterLink.href
+                } else {
+                    var doc = this.iframe.contentWindow.document;
+                    doc.write(content);
+                    doc.close();
+                }
+            })
+        } else {
+            this.iframe.src = this.currentChapterLink.href
+        }
     }
 
     private goBack() {
@@ -1515,6 +1544,11 @@ export default class IFrameNavigator implements Navigator {
                     this.searchModule.handleResize()
                 }
             }
+            if (oc(this.rights).enableContentProtection(false)) {
+                if (this.contentProtectionModule !== undefined) {
+                    this.contentProtectionModule.handleResize()
+                }
+            }
         }, 100);
     }
 
@@ -1627,8 +1661,20 @@ export default class IFrameNavigator implements Navigator {
                 this.currentChapterLink.type = locator.type
                 this.currentChapterLink.title = locator.title
             }
-            this.iframe.src = this.currentChapterLink.href
-
+            
+            if (this.api && this.api.getContent) {
+                this.api.getContent(this.currentChapterLink.href).then(content => {
+                    if (content === undefined) {
+                        this.iframe.src = this.currentChapterLink.href
+                    } else {
+                        var doc = this.iframe.contentWindow.document;
+                        doc.write(content);
+                        doc.close();
+                    }
+                })
+            } else {
+                this.iframe.src = this.currentChapterLink.href
+            }    
 
             if (locator.locations.fragment === undefined) {
                 this.currentTocUrl = null;
@@ -1636,6 +1682,12 @@ export default class IFrameNavigator implements Navigator {
                 this.newElementId = locator.locations.fragment
                 this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
             }
+            setTimeout(async () => {
+                if (oc(this.rights).enableContentProtection(false)) {
+                    this.contentProtectionModule.initializeResource()
+                }
+            }, 100);
+
             setTimeout(async () => {
                 if (this.annotationModule !== undefined) {
                     this.annotationModule.drawHighlights()

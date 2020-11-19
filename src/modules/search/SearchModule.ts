@@ -219,7 +219,9 @@ export default class SearchModule implements ReaderModule {
         if(oc(this.delegate.rights).enableAnnotations(false)){
             this.delegate.annotationModule.drawHighlights()
         } else {
-            this.drawSearch()
+            if(oc(this.delegate.rights).enableSearch(false)){
+                this.drawSearch()
+            }
         }
         var i = 0
 

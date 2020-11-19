@@ -28,6 +28,7 @@ import TTSModule from "./modules/TTS/TTSModule";
 import { oc } from "ts-optchain"
 import { TTSSettings } from "./modules/TTS/TTSSettings";
 import SearchModule from "./modules/search/SearchModule";
+import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
 import TextHighlighter from "./modules/highlight/TextHighlighter";
 import { Locator } from "./model/Locator";
 import TimelineModule from "./modules/positions/TimelineModule";
@@ -40,6 +41,7 @@ var BookmarkModuleInstance: BookmarkModule;
 var AnnotationModuleInstance: AnnotationModule;
 var TTSModuleInstance: TTSModule;
 var SearchModuleInstance:SearchModule;
+var ContentProtectionModuleInstance:ContentProtectionModule;
 var TimelineModuleInstance: TimelineModule;
 
 export const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
@@ -62,6 +64,9 @@ export async function unload() {
     }
     if (oc(R2Navigator.rights).enableSearch(false)) {
         SearchModuleInstance.stop()
+    }
+    if (oc(R2Navigator.rights).enableContentProtection(false)) {
+        ContentProtectionModuleInstance.stop()
     }
     if (oc(R2Navigator.rights).enableTimeline(false)) {
         TimelineModuleInstance.stop()
@@ -265,175 +270,193 @@ export async function goToPosition(value) {
 }
 
 export async function load(config: ReaderConfig): Promise<any> {
-    var mainElement = document.getElementById("D2Reader-Container");
-    var headerMenu = document.getElementById("headerMenu");
-    var footerMenu = document.getElementById("footerMenu");
-    var webpubManifestUrl = config.url;
-    var store = new LocalStorageStore({
-        prefix: webpubManifestUrl.href,
-        useLocalStorage: config.useLocalStorage
-    });
-    var settingsStore = new LocalStorageStore({
-        prefix: "r2d2bc-reader",
-        useLocalStorage: config.useLocalStorage
-    });
 
-    var annotator = new LocalAnnotator({ store: store });
+    const supportedBrowsers = /(Edge\/(86(?:\.0)?|86(?:\.([1-9]|\d{2,}))?|(8[7-9]|9\d|\d{3,})(?:\.\d+)?))|((Chromium|Chrome)\/(86\.0|86\.([1-9]|\d{2,})|(8[7-9]|9\d|\d{3,})\.\d+)(?:\.\d+)?)|(Version\/(14\.0|14\.([1-9]|\d{2,})|(1[5-9]|[2-9]\d|\d{3,})\.\d+)(?:\.\d+)? Safari\/)/
 
-    var upLink: UpLinkConfig
-    if (config.upLinkUrl) {
-        upLink = config.upLinkUrl;
-    }
+    if ((oc(config.protection).enforceSupportedBrowsers(false) && supportedBrowsers.test(navigator.userAgent)) || oc(config.protection).enforceSupportedBrowsers(false) == false) {
 
-    const publication: Publication = await Publication.getManifest(webpubManifestUrl, store);
+        var mainElement = document.getElementById("D2Reader-Container");
+        var headerMenu = document.getElementById("headerMenu");
+        var footerMenu = document.getElementById("footerMenu");
+        var webpubManifestUrl = config.url;
+        var store = new LocalStorageStore({
+            prefix: webpubManifestUrl.href,
+            useLocalStorage: config.useLocalStorage
+        });
+        var settingsStore = new LocalStorageStore({
+            prefix: "r2d2bc-reader",
+            useLocalStorage: config.useLocalStorage
+        });
 
-    var startPosition = 0
-    var totalContentLength = 0
-    var positions = []
-    publication.readingOrder.map(async (link, index) => {
-        var href = publication.getAbsoluteHref(link.href);
-        await fetch(href)
-            .then(async r => {
-                let length = (await r.blob()).size
-                link.contentLength = length
-                totalContentLength += length
-                let positionLength = 1024
-                let positionCount = Math.max(1, Math.ceil(length / positionLength))
-                console.log(length + " Bytes")
-                console.log(positionCount + " Positions")
-                Array.from(Array(positionCount).keys()).map((_, position) => {
-                    const locator: Locator = {
-                        href: link.href,
-                        locations: {
-                            progression: (position) / (positionCount),
-                            position: startPosition + (position + 1),
-                        },
-                        type: link.type
-                    };
-                    console.log(locator)
-                    positions.push(locator)
-                });
-                startPosition = startPosition + positionCount
-            })
-        if (index + 1 == publication.readingOrder.length) {
-            publication.readingOrder.map(async (link) => {
-                console.log(totalContentLength)
-                console.log(link.contentLength)
-                link.contentWeight = 100 / totalContentLength * link.contentLength
-                console.log(link.contentWeight)
-            })
-            positions.map((locator, _index) => {
-                let resource = positions.filter((el: Locator) => el.href === locator.href)
-                let positionIndex = Math.ceil(locator.locations.progression * (resource.length - 1))
-                locator.locations.totalProgression = (locator.locations.position - 1) / (positions.length)
-                locator.locations.remainingPositions = Math.abs((positionIndex) - (resource.length - 1))
-                locator.locations.totalRemainingPositions = Math.abs((locator.locations.position - 1) - (positions.length - 1))
-            })
-            publication.positions = positions
-            console.log(positions)
+        var annotator = new LocalAnnotator({ store: store });
+
+        var upLink: UpLinkConfig
+        if (config.upLinkUrl) {
+            upLink = config.upLinkUrl;
         }
-    });
 
-    // Settings
-    R2Settings = await UserSettings.create({
-        store: settingsStore,
-        initialUserSettings: config.userSettings,
-        headerMenu: headerMenu,
-        material: config.material,
-        api: config.api
-    })
+        const publication: Publication = await Publication.getManifest(webpubManifestUrl, store);
 
-    // Navigator 
-    R2Navigator = await IFrameNavigator.create({
-        mainElement: mainElement,
-        headerMenu: headerMenu,
-        footerMenu: footerMenu,
-        publication: publication,
-        settings: R2Settings,
-        annotator: annotator,
-        upLink: upLink,
-        initialLastReadingPosition: config.lastReadingPosition,
-        material: config.material,
-        api: config.api,
-        rights: config.rights,
-        tts: config.tts,
-        injectables: config.injectables,
-        attributes: config.attributes
-    })
+        var startPosition = 0
+        var totalContentLength = 0
+        var positions = []
+        publication.readingOrder.map(async (link, index) => {
+            var href = publication.getAbsoluteHref(link.href);
+            await fetch(href)
+                .then(async r => {
+                    let length = (await r.blob()).size
+                    link.contentLength = length
+                    totalContentLength += length
+                    let positionLength = 1024
+                    let positionCount = Math.max(1, Math.ceil(length / positionLength))
+                    console.log(length + " Bytes")
+                    console.log(positionCount + " Positions")
+                    Array.from(Array(positionCount).keys()).map((_, position) => {
+                        const locator: Locator = {
+                            href: link.href,
+                            locations: {
+                                progression: (position) / (positionCount),
+                                position: startPosition + (position + 1),
+                            },
+                            type: link.type
+                        };
+                        console.log(locator)
+                        positions.push(locator)
+                    });
+                    startPosition = startPosition + positionCount
+                })
+            if (index + 1 == publication.readingOrder.length) {
+                publication.readingOrder.map(async (link) => {
+                    console.log(totalContentLength)
+                    console.log(link.contentLength)
+                    link.contentWeight = 100 / totalContentLength * link.contentLength
+                    console.log(link.contentWeight)
+                })
+                positions.map((locator, _index) => {
+                    let resource = positions.filter((el: Locator) => el.href === locator.href)
+                    let positionIndex = Math.ceil(locator.locations.progression * (resource.length - 1))
+                    locator.locations.totalProgression = (locator.locations.position - 1) / (positions.length)
+                    locator.locations.remainingPositions = Math.abs((positionIndex) - (resource.length - 1))
+                    locator.locations.totalRemainingPositions = Math.abs((locator.locations.position - 1) - (positions.length - 1))
+                })
+                publication.positions = positions
+                console.log(positions)
+            }
+        });
 
-    D2Highlighter = await TextHighlighter.create({ 
-        delegate: R2Navigator,
-        config: config.highlighter
-    })
-
-    // Bookmark Module
-    if (oc(config.rights).enableBookmarks(false)) {
-        BookmarkModuleInstance = await BookmarkModule.create({
-            annotator: annotator,
+        // Settings
+        R2Settings = await UserSettings.create({
+            store: settingsStore,
+            initialUserSettings: config.userSettings,
             headerMenu: headerMenu,
-            rights: config.rights,
-            publication: publication,
-            delegate: R2Navigator,
-            initialAnnotations: config.initialAnnotations,
+            material: config.material,
+            api: config.api
         })
-    }
 
-    // Annotation Module
-    if (oc(config.rights).enableAnnotations(false)) {
-        AnnotationModuleInstance = await AnnotationModule.create({
-            annotator: annotator,
+        // Navigator 
+        R2Navigator = await IFrameNavigator.create({
+            mainElement: mainElement,
             headerMenu: headerMenu,
-            rights: config.rights,
+            footerMenu: footerMenu,
             publication: publication,
+            settings: R2Settings,
+            annotator: annotator,
+            upLink: upLink,
+            initialLastReadingPosition: config.lastReadingPosition,
+            material: config.material,
+            api: config.api,
+            rights: config.rights,
+            tts: config.tts,
+            injectables: config.injectables,
+            attributes: config.attributes
+        })
+        
+        // Highlighter
+        D2Highlighter = await TextHighlighter.create({ 
             delegate: R2Navigator,
-            initialAnnotations: config.initialAnnotations,
+            config: config.highlighter
+        })
+
+        // Bookmark Module
+        if (oc(config.rights).enableBookmarks(false)) {
+            BookmarkModuleInstance = await BookmarkModule.create({
+                annotator: annotator,
+                headerMenu: headerMenu,
+                rights: config.rights,
+                publication: publication,
+                delegate: R2Navigator,
+                initialAnnotations: config.initialAnnotations,
+            })
+        }
+
+        // Annotation Module
+        if (oc(config.rights).enableAnnotations(false)) {
+            AnnotationModuleInstance = await AnnotationModule.create({
+                annotator: annotator,
+                headerMenu: headerMenu,
+                rights: config.rights,
+                publication: publication,
+                delegate: R2Navigator,
+                initialAnnotations: config.initialAnnotations,
             config: config.annotations,
             highlighter: D2Highlighter
-        })
-    }  
+            })
+        }  
 
-    // TTS Module
-    if (oc(config.rights).enableTTS(false)) {
-        R2TTSSettings = await TTSSettings.create({
-            store: settingsStore,
-            initialTTSSettings: config.tts,
-            headerMenu: headerMenu,
-            api: config.tts.api
-        })
-        TTSModuleInstance = await TTSModule.create({
-            delegate: R2Navigator,
-            tts: R2TTSSettings,
-            headerMenu: headerMenu,
-            rights: config.rights,
+        // TTS Module
+        if (oc(config.rights).enableTTS(false)) {
+            R2TTSSettings = await TTSSettings.create({
+                store: settingsStore,
+                initialTTSSettings: config.tts,
+                headerMenu: headerMenu,
+                api:config.tts.api
+            })
+            TTSModuleInstance = await TTSModule.create({
+                delegate: R2Navigator,
+                tts: R2TTSSettings,
+                headerMenu: headerMenu,
+                rights: config.rights,
             highlighter: D2Highlighter
-        })
-    }
+            })
+        }
 
-    // Search Module
-    if (oc(config.rights).enableSearch(false)) {
-        SearchModule.create({
-            headerMenu: headerMenu,
-            delegate: R2Navigator,
-            publication: publication,
-            // api: config.api,
-            config: config.search,
-            highlighter: D2Highlighter
-        }).then(function (searchModule) {
-            SearchModuleInstance = searchModule
-        });
-    }
+        // Search Module
+        if (oc(config.rights).enableSearch(false)) {
+            SearchModule.create({
+                headerMenu: headerMenu,
+                delegate: R2Navigator,
+                publication: publication,
+                // api: config.api,
+                config: config.search,
+                highlighter: D2Highlighter
+            }).then(function (searchModule) {
+                SearchModuleInstance = searchModule
+            });
+        }
+        // Timeline Module
+        if (oc(config.rights).enableTimeline(false)) {
+            TimelineModule.create({
+                publication: publication,
+                delegate: R2Navigator
+            }).then(function (timelineModule) {
+                TimelineModuleInstance = timelineModule
+            })
+        }
 
-    // Timeline Module
-    if (oc(config.rights).enableTimeline(false)) {
-        TimelineModule.create({
-            publication: publication,
-            delegate: R2Navigator
-        }).then(function (timelineModule) {
-            TimelineModuleInstance = timelineModule
-        })
+        // Content Protection Module
+        if (oc(config.rights).enableContentProtection(false)) {
+            ContentProtectionModule.create({
+                delegate: R2Navigator,
+                protection: config.protection
+            }).then(function (contentProtectionModule) {
+                ContentProtectionModuleInstance = contentProtectionModule;
+            });
+        }
+    
+        return new Promise(resolve => resolve(R2Navigator));
+    } else {
+        throw new Error("Browser not suppoorted");    
     }
-
-    return new Promise(resolve => resolve(R2Navigator));
 }
 
 exports.load = async function (config: ReaderConfig) {

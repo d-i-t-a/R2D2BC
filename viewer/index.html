@@ -596,7 +596,6 @@
                     //         )
                     //     })
                     // }
-
                 }
             },
             search: {
@@ -606,21 +605,38 @@
             highlighter: {
                 selectionMenuItems: selectionMenuItems,
             },
-            // annotations: {
+            annotations: {
             //     initialAnnotationColor: "var(--RS__highlightColor)",
             //     // initialAnnotationColor: "#ff8500",
-            // },
+            },
             protection: {
                 enforceSupportedBrowsers: true,
                 enableEncryption: true,
                 enableObfuscation: true,
                 disablePrint: true,
                 disbaleCopy: true,
-                disableInspect: false,
+                detectInspect: true,
+                clearOnInspect: false, // make sure detectInspect is true, otherwise this won't work
                 disableKeys: true,
-                disableContextMenu: true
+                disableContextMenu: true,
+                hideTargetUrl: true,
+                disableDrag: true,
+                api: {
+                    // make sure detectInspect is true, otherwise this won't be called
+                    // this callback will be executed in a loop while inspect is visible
+                    inspectDetected: function () {
+                        console.log("inspect detected")
+                    }
+                }
             },
             api: {
+                getContent: function (href) {
+                    return new Promise(function (resolve, reject) {
+                        resolve(
+                            // 'test, <a xmlns="http://www.w3.org/1999/xhtml" href="chapter_04.xhtml">Chapter 4</a>'
+                        )
+                    })
+                },
             },
             injectables: injectables,
             userSettings: userSettings,

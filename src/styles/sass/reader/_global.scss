@@ -60,6 +60,11 @@
     box-sizing: border-box;
   }
   
+  #reader-info-bottom {
+      bottom: 0px;
+      position: fixed;
+      width: 100%;
+  }
   .info {
     color: $ui-dark-gray;
     margin: 0;
@@ -87,7 +92,8 @@
     }
   
     .chapter-position,
-    .chapter-title {
+    .chapter-title,
+    .remaining-positions {
       font-size: 0.85rem;
       font-variant-numeric: lining-nums tabular-nums;
     }

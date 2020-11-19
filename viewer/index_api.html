@@ -69,6 +69,14 @@
         <button onclick="javascript:alert(D2Reader.totalResources())">totalResources</button><br>
         <button onclick="javascript:alert(D2Reader.currentResource())">currentResource</button><br>
         <button onclick="javascript:alert(D2Reader.mostRecentNavigatedTocItem())">mostRecentNavigatedTocItem</button><br>
+        <button onclick="javascript:D2Reader.currentLocator().then(
+            result => { 
+                alert(JSON.stringify(result))
+            })">currentProgressInfo</button><br>
+        <button onclick="javascript:D2Reader.positions().then(
+            result => { 
+                alert(JSON.stringify(result))
+            })">positions</button><br>
 
         <button onclick="javascript:D2Reader.resetUserSettings()">reset user setting</button><br>
         <button onclick="javascript:D2Reader.publisher(true)">publisher default</button><br>
@@ -221,6 +229,7 @@
                 <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="border: 0px; display: block;"
                     width="100%" height="100%"></iframe>
             </main>
+            <div id="container-view-timeline" class="timeline" style="left: unset; right: 1.25rem;margin-bottom: calc(37 * 3) + rem;"></div>
             <div id="toolbox-backdrop" class="toolbox-backdrop"></div>
 
             <span id="highlight-toolbox" class="highlight-toolbox">
@@ -325,7 +334,8 @@
                 enableBookmarks: true,
                 enableAnnotations: true,
                 enableTTS: true,
-                enableSearch: true
+                enableSearch: true,
+                enableTimeline: true
             },
             tts: {
                 enableSplitter: true,

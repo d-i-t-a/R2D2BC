@@ -42,7 +42,9 @@ export interface UpLinkConfig {
     label?: string;
     ariaLabel?: string;
 }
-
+export interface IFrameAttributes {
+    margin: number
+}
 export interface IFrameNavigatorConfig {
     mainElement: HTMLElement;
     headerMenu: HTMLElement;
@@ -58,6 +60,7 @@ export interface IFrameNavigatorConfig {
     api: any;
     tts: any;
     injectables: Array<Injectable>;
+    attributes: IFrameAttributes;
 }
 
 export interface Injectable {
@@ -102,6 +105,7 @@ export interface ReaderConfig {
     highlighter: {selectionMenuItems: Array<SelectionMenuItem>};
     injectables: Array<Injectable>;
     useLocalStorage: boolean;
+    attributes: IFrameAttributes;
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -180,6 +184,7 @@ export default class IFrameNavigator implements Navigator {
     rights: ReaderRights;
     tts: TTSSpeechConfig;
     injectables: Array<Injectable>
+    attributes: IFrameAttributes
 
     public static async create(config: IFrameNavigatorConfig): Promise<any> {
         const navigator = new this(
@@ -193,7 +198,8 @@ export default class IFrameNavigator implements Navigator {
             config.api,
             config.rights,
             config.tts,
-            config.injectables
+            config.injectables,
+            config.attributes || { margin: 0 },
         );
 
         await navigator.start(config.mainElement, config.headerMenu, config.footerMenu);
@@ -211,11 +217,13 @@ export default class IFrameNavigator implements Navigator {
         api: any,
         rights: ReaderRights,
         tts: any,
-        injectables: Array<Injectable>
+        injectables: Array<Injectable>,
+        attributes: IFrameAttributes,
     ) {
         this.settings = settings;
         this.annotator = annotator;
         this.reflowable = settings.reflowable
+        this.reflowable.attributes = attributes
         this.eventHandler = eventHandler || new EventHandler();
         this.upLinkConfig = upLinkConfig;
         this.initialLastReadingPosition = initialLastReadingPosition;
@@ -225,6 +233,7 @@ export default class IFrameNavigator implements Navigator {
         this.rights = rights
         this.tts = tts
         this.injectables = injectables
+        this.attributes = attributes || {margin: 0}
     }
 
     async stop() {
@@ -541,7 +550,7 @@ export default class IFrameNavigator implements Navigator {
     private updateBookView(): void {
         this.settings.isPaginated().then(paginated => {
             if (paginated) {
-                this.reflowable.height = (BrowserUtilities.getHeight() - 10 - 10 - 10 - 10);
+                this.reflowable.height = (BrowserUtilities.getHeight() - 40 - this.attributes.margin);
                 if (this.infoBottom) this.infoBottom.style.display = "block"
                 document.body.onscroll = () => { };
                 if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
@@ -580,10 +589,6 @@ export default class IFrameNavigator implements Navigator {
                 }
                 // document.body.style.overflow = "auto";
                 document.body.onscroll = () => {
-                    if(this.reflowable.isScrollmode()) {
-                        this.reflowable.setIframeHeight(this.iframe)
-                    }
-
                     this.saveCurrentReadingPosition();
                     if (this.reflowable.atEnd()) {
                         // Bring up the bottom nav when you get to the bottom,
@@ -1453,13 +1458,9 @@ export default class IFrameNavigator implements Navigator {
             this.toggleDisplay(this.linksBottom);
         }
 
-        // TODO paginator height needs to be calculated with headers and footers in mind
-        // material     - 70 - 10 - 40 - 10 (if page info needs showing, +30)
-        // api          - 10 - 10 - 10 - 10
-
         this.settings.isPaginated().then(paginated => {
             if (paginated) {
-                this.reflowable.height = (BrowserUtilities.getHeight() - 10 - 10 - 10 - 10);
+                this.reflowable.height = (BrowserUtilities.getHeight() - 40 - this.attributes.margin);
                 if (this.infoBottom) this.infoBottom.style.display = "block"
             } else {
                 if (this.infoBottom) this.infoBottom.style.display = "none"

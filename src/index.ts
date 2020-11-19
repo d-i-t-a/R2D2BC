@@ -292,7 +292,8 @@ export async function load(config: ReaderConfig): Promise<any> {
         api: config.api,
         rights: config.rights,
         tts: config.tts,
-        injectables: config.injectables
+        injectables: config.injectables,
+        attributes: config.attributes
     })
 
     D2Highlighter = await TextHighlighter.create({ 

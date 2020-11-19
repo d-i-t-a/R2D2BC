@@ -24,6 +24,8 @@ import * as BrowserUtilities from "../utils/BrowserUtilities";
 import Store from "../store/Store";
 import BookView from "./BookView";
 import { UserSettings } from "../model/user-settings/UserSettings";
+import { IFrameAttributes } from "../navigator/IFrameNavigator";
+import { debounce } from "debounce";
 
 
 export default class ReflowableBookView implements BookView {
@@ -70,7 +72,8 @@ export default class ReflowableBookView implements BookView {
     
             const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
             html.style.setProperty("--USER__scroll", "readium-scroll-on");
-            this.setSize();    
+            this.setSize();  
+            this.setIframeHeight(this.iframe)
         } else {
             this.name = "readium-scroll-off";
             this.label = "Paginated";        
@@ -95,6 +98,7 @@ export default class ReflowableBookView implements BookView {
     iframe: HTMLIFrameElement;
     sideMargin: number = 20;
     height: number = 0;
+    attributes: IFrameAttributes = {margin:0}
     
     start(): void {
         if (this.isScrollmode()) {
@@ -339,18 +343,20 @@ export default class ReflowableBookView implements BookView {
     private getScreenHeight(): number {
         const windowTop = window.scrollY;
         const windowBottom = windowTop + window.innerHeight;
-        return windowBottom - windowTop - 100
+        return windowBottom - windowTop - 40 - this.attributes.margin
     }
     setIframeHeight(iframe:any) {
-        if (iframe) {
-            var iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
-            if (iframeWin.document.body) {
-                // iframe.height = iframeWin.document.documentElement.scrollHeight || iframeWin.document.body.scrollHeight;
-                const minHeight = BrowserUtilities.getHeight() - 120;
-                const bodyHeight = iframeWin.document.documentElement.scrollHeight || iframeWin.document.body.scrollHeight;        
-                iframe.height = Math.max(minHeight, bodyHeight);
+        var d = debounce((iframe:any) => {
+            if (iframe) {
+                var iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
+                if (iframeWin.document.body) {
+                    const minHeight = BrowserUtilities.getHeight() - 40 - this.attributes.margin;
+                    const bodyHeight = iframeWin.document.documentElement.scrollHeight || iframeWin.document.body.scrollHeight;        
+                    iframe.height = Math.max(minHeight, bodyHeight);
+                }
             }
-        }
+        }, 400);
+        d(iframe)
     };
 
 
@@ -390,7 +396,6 @@ export default class ReflowableBookView implements BookView {
             const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
     
             const width = (BrowserUtilities.getWidth() - this.sideMargin * 2) + "px";
-            this.setIframeHeight(this.iframe)      
     
             const images = Array.prototype.slice.call(body.querySelectorAll("img"));
             for (const image of images) {
@@ -403,9 +408,7 @@ export default class ReflowableBookView implements BookView {
                 if (image.width > width) {
                     image.style.maxWidth = width;
                 }
-    
-                this.setIframeHeight(this.iframe)      
-    
+        
             }
         }
     }

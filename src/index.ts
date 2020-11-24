@@ -305,8 +305,8 @@ export async function load(config: ReaderConfig): Promise<any> {
                 totalContentLength += length
                 let positionLength = 1024
                 let positionCount = Math.max(1, Math.ceil(length / positionLength))
-                console.log(length + " Bytes")
-                console.log(positionCount + " Positions")
+                if (IS_DEV) console.log(length + " Bytes")
+                if (IS_DEV) console.log(positionCount + " Positions")
                 Array.from(Array(positionCount).keys()).map((_, position) => {
                     const locator: Locator = {
                         href: link.href,
@@ -316,17 +316,17 @@ export async function load(config: ReaderConfig): Promise<any> {
                         },
                         type: link.type
                     };
-                    console.log(locator)
+                    if (IS_DEV) console.log(locator)
                     positions.push(locator)
                 });
                 startPosition = startPosition + positionCount
             })
         if (index + 1 == publication.readingOrder.length) {
             publication.readingOrder.map(async (link) => {
-                console.log(totalContentLength)
-                console.log(link.contentLength)
+                if (IS_DEV) console.log(totalContentLength)
+                if (IS_DEV) console.log(link.contentLength)
                 link.contentWeight = 100 / totalContentLength * link.contentLength
-                console.log(link.contentWeight)
+                if (IS_DEV) console.log(link.contentWeight)
             })
             positions.map((locator, _index) => {
                 let resource = positions.filter((el: Locator) => el.href === locator.href)
@@ -336,7 +336,7 @@ export async function load(config: ReaderConfig): Promise<any> {
                 locator.locations.totalRemainingPositions = Math.abs((locator.locations.position - 1) - (positions.length - 1))
             })
             publication.positions = positions
-            console.log(positions)
+            if (IS_DEV) console.log(positions)
         }
     });
 

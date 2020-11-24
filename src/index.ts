@@ -32,6 +32,7 @@ import ContentProtectionModule from "./modules/protection/ContentProtectionModul
 import TextHighlighter from "./modules/highlight/TextHighlighter";
 import { Locator } from "./model/Locator";
 import TimelineModule from "./modules/positions/TimelineModule";
+import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 
 var R2Settings: UserSettings;
 var R2TTSSettings: TTSSettings;
@@ -271,7 +272,17 @@ export async function goToPosition(value) {
 
 export async function load(config: ReaderConfig): Promise<any> {
 
-    const supportedBrowsers = /(Edge\/(86(?:\.0)?|86(?:\.([1-9]|\d{2,}))?|(8[7-9]|9\d|\d{3,})(?:\.\d+)?))|((Chromium|Chrome)\/(86\.0|86\.([1-9]|\d{2,})|(8[7-9]|9\d|\d{3,})\.\d+)(?:\.\d+)?)|(Version\/(14\.0|14\.([1-9]|\d{2,})|(1[5-9]|[2-9]\d|\d{3,})\.\d+)(?:\.\d+)? Safari\/)/
+    var browsers:string[] = []
+
+    if (oc(config.protection).enforceSupportedBrowsers(false)) {
+         oc(config.protection).supportedBrowsers([]).forEach((browser: string) => {
+            browsers.push("last 1 " + browser + " version")
+         });
+    }
+	const supportedBrowsers = getUserAgentRegExp({
+		browsers: browsers,
+		allowHigherVersions: true,
+	});
 
     if ((oc(config.protection).enforceSupportedBrowsers(false) && supportedBrowsers.test(navigator.userAgent)) || oc(config.protection).enforceSupportedBrowsers(false) == false) {
 

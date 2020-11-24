@@ -621,6 +621,9 @@
                 disableContextMenu: true,
                 hideTargetUrl: true,
                 disableDrag: true,
+                supportedBrowsers: [ // this will only be used if enforceSupportedBrowsers is true, and has nothing to do with the r2d2bc modules supported browsers
+                    "Chrome", "ChromeAndroid", "Edge", "Firefox", "iOS", "Safari"
+                ],
                 api: {
                     // make sure detectInspect is true, otherwise this won't be called
                     // this callback will be executed in a loop while inspect is visible

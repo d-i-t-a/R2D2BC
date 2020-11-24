@@ -367,6 +367,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         attributes: config.attributes
     })
 
+    // Highlighter
     D2Highlighter = await TextHighlighter.create({ 
         delegate: R2Navigator,
         config: config.highlighter

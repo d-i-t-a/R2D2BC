@@ -1711,8 +1711,8 @@ export default class IFrameNavigator implements Navigator {
                 type: this.currentChapterLink.type,
                 title: this.currentChapterLink.title
             }
-            if (this.api && this.api.updateCurrentlocation) {
-                this.api.updateCurrentlocation(position).then(async _ => {
+            if (this.api && this.api.updateCurrentLocation) {
+                this.api.updateCurrentLocation(position).then(async _ => {
                     if (IS_DEV) { console.log("api updated current location", position) }
                     return this.annotator.saveLastReadingPosition(position);
                 })

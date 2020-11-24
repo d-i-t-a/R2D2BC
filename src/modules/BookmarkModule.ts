@@ -28,6 +28,7 @@ import { Bookmark, Locator } from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 import { v4 as uuid } from 'uuid';
+import { oc } from "ts-optchain";
 
 export type AddBookmark = (bookmark: Bookmark) => Promise<Bookmark>
 export type DeleteBookmark = (bookmark: Bookmark) => Promise<Bookmark>
@@ -49,20 +50,15 @@ export interface BookmarkModuleConfig {
 
 export default class BookmarkModule implements ReaderModule {
 
-    api: BookmarkModuleAPI;
-    annotator: Annotator | null;
-    rights: ReaderRights;
-
+    private api: BookmarkModuleAPI;
+    private annotator: Annotator | null;
+    private rights: ReaderRights;
     private publication: Publication;
-
     private bookmarksView: HTMLDivElement;
     private sideNavSectionBookmarks: HTMLElement;
-
     private headerMenu: HTMLElement;
-
     private initialAnnotations: any;
-
-    delegate: IFrameNavigator
+    private delegate: IFrameNavigator
 
     public static async create(config: BookmarkModuleConfig): Promise<any> {
         const module = new this(
@@ -107,12 +103,12 @@ export default class BookmarkModule implements ReaderModule {
 
         if (this.headerMenu) {
             var menuBookmark = HTMLUtilities.findElement(this.headerMenu, "#menu-button-bookmark") as HTMLLinkElement;
-            if (this.rights.enableBookmarks) {
-                if (menuBookmark) menuBookmark.parentElement.style.display = "unset";
+            if (this.rights.enableMaterial) {
+                if (menuBookmark) menuBookmark.parentElement.style.removeProperty("display")
                 if (menuBookmark) addEventListenerOptional(menuBookmark, 'click', this.saveBookmark.bind(this));
             } else {
-                if (menuBookmark) menuBookmark.parentElement.style.display = "none";
-                if (this.sideNavSectionBookmarks) this.sideNavSectionBookmarks.style.display = "none";
+                if (menuBookmark) menuBookmark.parentElement.style.setProperty("display", "none")
+                if (this.sideNavSectionBookmarks) this.sideNavSectionBookmarks.style.setProperty("display", "none")
             }
         }
 
@@ -136,7 +132,7 @@ export default class BookmarkModule implements ReaderModule {
 
                     if (IS_DEV) { console.log("Bookmark deleted " + JSON.stringify(deleted)); }
                     await this.showBookmarks();
-                    if (this.delegate.material) {
+                    if (oc(this.delegate.rights).enableMaterial(false)) {
                         toast({ html: 'bookmark deleted' })
                     }
                     return deleted
@@ -146,7 +142,7 @@ export default class BookmarkModule implements ReaderModule {
 
                 if (IS_DEV) { console.log("Bookmark deleted " + JSON.stringify(deleted)); }
                 await this.showBookmarks();
-                if (this.delegate.material) {
+                if (oc(this.delegate.rights).enableMaterial(false)) {
                     toast({ html: 'bookmark deleted' })
                 }
                 return deleted
@@ -191,7 +187,7 @@ export default class BookmarkModule implements ReaderModule {
                         var saved = await this.annotator.saveBookmark(bookmark);
 
                         if (IS_DEV) { console.log("Bookmark added " + JSON.stringify(saved)); }
-                        if (this.delegate.material) {
+                        if (oc(this.delegate.rights).enableMaterial(false)) {
                             toast({ html: 'bookmark added' })
                         }
                         await this.showBookmarks();
@@ -201,7 +197,7 @@ export default class BookmarkModule implements ReaderModule {
                     var saved = await this.annotator.saveBookmark(bookmark);
 
                     if (IS_DEV) { console.log("Bookmark added " + JSON.stringify(saved)); }
-                    if (this.delegate.material) {
+                    if (oc(this.delegate.rights).enableMaterial(false)) {
                         toast({ html: 'bookmark added' })
                     }
                     await this.showBookmarks();
@@ -209,7 +205,7 @@ export default class BookmarkModule implements ReaderModule {
                 }
 
             } else {
-                if (this.delegate.material) {
+                if (oc(this.delegate.rights).enableMaterial(false)) {
                     toast({ html: 'bookmark exists' })
                 }
             }
@@ -311,7 +307,7 @@ export default class BookmarkModule implements ReaderModule {
                                 });
 
                                 bookmarkItem.appendChild(bookmarkLink);
-                                if ((self.delegate.sideNavExanded && self.delegate.material) || !self.delegate.material) {
+                                if ((self.delegate.sideNavExpanded && oc(self.delegate.rights).enableMaterial(false)) || !oc(self.delegate.rights).enableMaterial(false)) {
                                     let bookmarkDeleteLink: HTMLElement = document.createElement("button");
                                     bookmarkDeleteLink.className = "delete";
                                     bookmarkDeleteLink.innerHTML = IconLib.delete;

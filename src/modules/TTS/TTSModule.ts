@@ -77,7 +77,7 @@ export default class TTSModule implements ReaderModule {
             whitespace.forEach(splittingWord => {
                 splittingWord.dataset.ttsColor = this.tts.color
             });
-
+            window.speechSynthesis.getVoices()
             this.initVoices(true);
 
             if (!this.hasEventListener) {
@@ -259,13 +259,20 @@ export default class TTSModule implements ReaderModule {
         if (IS_DEV) console.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen)
         var defaultVoice = undefined
         if (defaultVoiceHasHyphen == true) {
-            defaultVoice = this.voices.filter((v: any) => {
-                var lang = v.lang.replace("_", "-")
-                return lang == navigator.language && v.localService == true
+            defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
+                var lang = voice.lang.replace("_", "-")
+                return lang == navigator.language && voice.localService == true
             })[0]
         } else {
-            defaultVoice = this.voices.filter((v: any) => {
-                return v.lang == navigator.language && v.localService == true
+            defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
+                var lang = voice.lang
+                return lang == navigator.language && voice.localService == true
+            })[0]
+        }
+        if (defaultVoice == undefined) {
+            defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
+                var lang = voice.lang
+                return lang.includes(navigator.language) && voice.localService == true
             })[0]
         }
         if (IS_DEV) console.log("defaultVoice", defaultVoice)
@@ -280,9 +287,11 @@ export default class TTSModule implements ReaderModule {
             if (IS_DEV) console.log("defaultVoice")
             utterance.voice = defaultVoice
         }
-        utterance.lang = utterance.voice.lang
-        if (IS_DEV) console.log("utterance.voice.lang", utterance.voice.lang)
-        if (IS_DEV) console.log("utterance.lang", utterance.lang)
+        if (utterance.voice != undefined) {
+            utterance.lang = utterance.voice.lang
+            if (IS_DEV) console.log("utterance.voice.lang", utterance.voice.lang)
+            if (IS_DEV) console.log("utterance.lang", utterance.lang)
+        }
         if (IS_DEV) console.log("navigator.language", navigator.language)
 
         window.speechSynthesis.speak(utterance);

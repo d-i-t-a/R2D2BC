@@ -29,6 +29,8 @@ import { oc } from "ts-optchain"
 import { TTSSettings } from "./modules/TTS/TTSSettings";
 import SearchModule from "./modules/search/SearchModule";
 import TextHighlighter from "./modules/highlight/TextHighlighter";
+import { Locator } from "./model/Locator";
+import TimelineModule from "./modules/positions/TimelineModule";
 
 var R2Settings: UserSettings;
 var R2TTSSettings: TTSSettings;
@@ -38,6 +40,7 @@ var BookmarkModuleInstance: BookmarkModule;
 var AnnotationModuleInstance: AnnotationModule;
 var TTSModuleInstance: TTSModule;
 var SearchModuleInstance:SearchModule;
+var TimelineModuleInstance: TimelineModule;
 
 export const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -59,6 +62,9 @@ export async function unload() {
     }
     if (oc(R2Navigator.rights).enableSearch(false)) {
         SearchModuleInstance.stop()
+    }
+    if (oc(R2Navigator.rights).enableTimeline(false)) {
+        TimelineModuleInstance.stop()
     }
 }
 export function startReadAloud() {
@@ -251,6 +257,18 @@ export async function scroll(value) {
     R2Settings.scroll(value)
 }
 
+export async function currentLocator() {
+    if (IS_DEV) { console.log("currentLocator") }
+    return R2Navigator.currentLocator()
+}
+export async function positions() {
+    if (IS_DEV) { console.log("positions") }
+    return R2Navigator.positions()
+}
+export async function goToPosition(value) {
+    if (IS_DEV) { console.log("goToPosition") }
+    return R2Navigator.goToPosition(value)
+}
 
 export async function load(config: ReaderConfig): Promise<any> {
     var mainElement = document.getElementById("D2Reader-Container");
@@ -274,6 +292,53 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
 
     const publication: Publication = await Publication.getManifest(webpubManifestUrl, store);
+
+    var startPosition = 0
+    var totalContentLength = 0
+    var positions = []
+    publication.readingOrder.map(async (link, index) => {
+        var href = publication.getAbsoluteHref(link.href);
+        await fetch(href)
+            .then(async r => {
+                let length = (await r.blob()).size
+                link.contentLength = length
+                totalContentLength += length
+                let positionLength = 1024
+                let positionCount = Math.max(1, Math.ceil(length / positionLength))
+                if (IS_DEV) console.log(length + " Bytes")
+                if (IS_DEV) console.log(positionCount + " Positions")
+                Array.from(Array(positionCount).keys()).map((_, position) => {
+                    const locator: Locator = {
+                        href: link.href,
+                        locations: {
+                            progression: (position) / (positionCount),
+                            position: startPosition + (position + 1),
+                        },
+                        type: link.type
+                    };
+                    if (IS_DEV) console.log(locator)
+                    positions.push(locator)
+                });
+                startPosition = startPosition + positionCount
+            })
+        if (index + 1 == publication.readingOrder.length) {
+            publication.readingOrder.map(async (link) => {
+                if (IS_DEV) console.log(totalContentLength)
+                if (IS_DEV) console.log(link.contentLength)
+                link.contentWeight = 100 / totalContentLength * link.contentLength
+                if (IS_DEV) console.log(link.contentWeight)
+            })
+            positions.map((locator, _index) => {
+                let resource = positions.filter((el: Locator) => el.href === locator.href)
+                let positionIndex = Math.ceil(locator.locations.progression * (resource.length - 1))
+                locator.locations.totalProgression = (locator.locations.position - 1) / (positions.length)
+                locator.locations.remainingPositions = Math.abs((positionIndex) - (resource.length - 1))
+                locator.locations.totalRemainingPositions = Math.abs((locator.locations.position - 1) - (positions.length - 1))
+            })
+            publication.positions = positions
+            if (IS_DEV) console.log(positions)
+        }
+    });
 
     // Settings
     R2Settings = await UserSettings.create({
@@ -362,6 +427,16 @@ export async function load(config: ReaderConfig): Promise<any> {
         }).then(function (searchModule) {
             SearchModuleInstance = searchModule
         });
+    }
+
+    // Timeline Module
+    if (oc(config.rights).enableTimeline(false)) {
+        TimelineModule.create({
+            publication: publication,
+            delegate: R2Navigator
+        }).then(function (timelineModule) {
+            TimelineModuleInstance = timelineModule
+        })
     }
 
     return new Promise(resolve => resolve(R2Navigator));
@@ -498,4 +573,13 @@ exports.goToSearchID = function (href, index, current) {
 }
 exports.clearSearch = function () {
     clearSearch()
+}
+exports.currentLocator = function () {
+    return currentLocator()
+}
+exports.positions = function () {
+    return positions()
+}
+exports.goToPosition = function (value) {
+    goToPosition(value)
 }

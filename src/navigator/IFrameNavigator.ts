@@ -664,41 +664,6 @@ export default class IFrameNavigator implements Navigator {
 
     }
 
-    onScroll(): void {
-        this.saveCurrentReadingPosition();
-        if (this.reflowable && this.reflowable.atEnd()) {
-            // Bring up the bottom nav when you get to the bottom,
-            // if it wasn't already displayed.
-            if (!this.isDisplayed(this.linksBottom)) {
-                this.toggleDisplay(this.linksBottom);
-            }
-            if (!this.isDisplayed(this.linksMiddle)) {
-                this.toggleDisplay(this.linksMiddle);
-            }
-        } else {
-            // Remove the bottom nav when you scroll back up,
-            // if it was displayed because you were at the bottom.
-            if (this.isDisplayed(this.linksBottom) && !this.isDisplayed(this.links)) {
-                this.toggleDisplay(this.linksBottom);
-            }
-        }
-        if(this.reflowable.isScrollmode()) {
-            if (this.reflowable.atStart() && this.reflowable.atEnd()) {
-                this.nextChapterBottomAnchorElement.style.display = "unset"
-                this.previousChapterTopAnchorElement.style.display = "unset"
-            } else if (this.reflowable.atEnd()) {
-                this.previousChapterTopAnchorElement.style.display = "none"
-                this.nextChapterBottomAnchorElement.style.display = "unset"
-            } else if (this.reflowable.atStart()) {
-                this.nextChapterBottomAnchorElement.style.display = "none"
-                this.previousChapterTopAnchorElement.style.display = "unset"
-            } else {
-                this.nextChapterBottomAnchorElement.style.display = "none"
-                this.previousChapterTopAnchorElement.style.display = "none"
-            }
-        }
-
-    }
 
     private async loadManifest(): Promise<void> {
         try {

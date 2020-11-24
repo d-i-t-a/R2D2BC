@@ -80,7 +80,7 @@ export default class TimelineModule implements ReaderModule {
             this.timelineContainer.innerHTML = ""
             this.publication.readingOrder.forEach(link => {
 
-                console.log(link.contentWeight)
+                if (IS_DEV) console.log(link.contentWeight)
                 const linkHref = this.publication.getAbsoluteHref(link.href);
                 const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
                 const tocHref = (tocItemAbs.href.indexOf("#") !== -1) ? tocItemAbs.href.slice(0, tocItemAbs.href.indexOf("#")) : tocItemAbs.href
@@ -116,7 +116,7 @@ export default class TimelineModule implements ReaderModule {
 
                     const position1 = this.publication.positions.filter((el: Locator) => el.href === link.href)[0]
                     position1.href = this.publication.getAbsoluteHref(position1.href)
-                    console.log(position1)
+                    if (IS_DEV) console.log(position1)
                     this.delegate.navigate(position1)
                 });
 

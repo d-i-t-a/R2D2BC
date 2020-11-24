@@ -528,12 +528,23 @@
             },
             highlighter: {
                 selectionMenuItems: selectionMenuItems,
+                api: {
+                    selectionMenuOpen: function () {
+                        console.log("selectionMenuOpen")
+                    }, 
+                    selectionMenuClose: function () {
+                        console.log("selectionMenuClose")
+                    }, 
+                }
             },
             annotations: {
                 initialAnnotationColor: "var(--RS__highlightColor)",
                 // initialAnnotationColor: "#ff8500",
             },
             api: {
+                resourceReady: function () {
+                    console.log("resourceReady")
+                },
             },
             injectables: injectables,
             userSettings: userSettings,

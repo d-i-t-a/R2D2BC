@@ -1669,6 +1669,9 @@ export default class IFrameNavigator implements Navigator {
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                     }
                 }
+                if (this.api && this.api.resourceReady) {
+                    this.api.resourceReady()
+                }
             }, 300);
         } else {
             const startLink = this.publication.getStartLink();

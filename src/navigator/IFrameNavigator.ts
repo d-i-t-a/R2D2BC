@@ -34,6 +34,8 @@ import { IS_DEV } from "..";
 import Splitting from "../modules/TTS/splitting";
 import { oc } from "ts-optchain";
 import ReflowableBookView from "../views/ReflowableBookView";
+import SearchModule from "../modules/search/SearchModule";
+import TextHighlighter from "../modules/highlight/TextHighlighter";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -52,15 +54,12 @@ export interface IFrameNavigatorConfig {
     annotator?: Annotator;
     eventHandler?: EventHandler;
     upLink?: UpLinkConfig;
-    ui?: ReaderUI;
     initialLastReadingPosition?: ReadingPosition;
     rights?: ReaderRights;
-    material: boolean;
+    material?: ReaderUI;
     api: any;
     tts: any;
     injectables: Array<Injectable>;
-    selectionMenuItems?: Array<SelectionMenuItem>;
-    initialAnnotationColor?:string;
     attributes: IFrameAttributes;
 }
 
@@ -84,6 +83,8 @@ export interface ReaderRights {
     enableBookmarks?: boolean;
     enableAnnotations?: boolean;
     enableTTS?: boolean;
+    enableSearch?: boolean;
+    enableMaterial?: boolean;
 }
 
 export interface ReaderUI {
@@ -96,13 +97,13 @@ export interface ReaderConfig {
     lastReadingPosition: any;
     upLinkUrl: any;
     rights: ReaderRights;
-    ui: ReaderUI;
-    material: boolean;
+    material: ReaderUI;
     api: any;
     tts: any;
+    search: {color:string; current:string};
+    annotations: {initialAnnotationColor: string};
+    highlighter: {selectionMenuItems: Array<SelectionMenuItem>};
     injectables: Array<Injectable>;
-    selectionMenuItems: Array<SelectionMenuItem>;
-    initialAnnotationColor: string;
     useLocalStorage: boolean;
     attributes: IFrameAttributes;
 }
@@ -118,8 +119,10 @@ export default class IFrameNavigator implements Navigator {
     bookmarkModule?: BookmarkModule;
     annotationModule?: AnnotationModule;
     ttsModule?: TTSModule;
+    searchModule?: SearchModule;
+    highlighter?: TextHighlighter;
 
-    sideNavExanded: boolean = false
+    sideNavExpanded: boolean = false
     material: boolean = false
 
     mTabs: Array<any>;
@@ -181,8 +184,6 @@ export default class IFrameNavigator implements Navigator {
     rights: ReaderRights;
     tts: TTSSpeechConfig;
     injectables: Array<Injectable>
-    selectionMenuItems: Array<SelectionMenuItem>
-    initialAnnotationColor: string
     attributes: IFrameAttributes
 
     public static async create(config: IFrameNavigatorConfig): Promise<any> {
@@ -198,8 +199,6 @@ export default class IFrameNavigator implements Navigator {
             config.rights,
             config.tts,
             config.injectables,
-            config.selectionMenuItems || null,
-            config.initialAnnotationColor || null,
             config.attributes || { margin: 0 },
         );
 
@@ -214,13 +213,11 @@ export default class IFrameNavigator implements Navigator {
         upLinkConfig: UpLinkConfig | null = null,
         initialLastReadingPosition: ReadingPosition | null = null,
         publication: Publication,
-        material: boolean,
+        material: any,
         api: any,
         rights: ReaderRights,
         tts: any,
         injectables: Array<Injectable>,
-        selectionMenuItems: Array<SelectionMenuItem> | null = null,
-        initialAnnotationColor: string | null = null,
         attributes: IFrameAttributes,
     ) {
         this.settings = settings;
@@ -236,8 +233,6 @@ export default class IFrameNavigator implements Navigator {
         this.rights = rights
         this.tts = tts
         this.injectables = injectables
-        this.selectionMenuItems = selectionMenuItems
-        this.initialAnnotationColor = initialAnnotationColor
         this.attributes = attributes || {margin: 0}
     }
 
@@ -262,7 +257,7 @@ export default class IFrameNavigator implements Navigator {
         removeEventListenerOptional(window, "resize", this.onResize);
         removeEventListenerOptional(this.iframe, "resize", this.onResize);
 
-        if (this.material) {
+        if (oc(this.rights).enableMaterial(false)) {
 
             if (this.mDropdowns) {
                 this.mDropdowns.forEach(element => {
@@ -362,7 +357,12 @@ export default class IFrameNavigator implements Navigator {
             }
 
             var self = this;
-            if (this.material) {
+            if (this.headerMenu) {
+                var menuSearch = HTMLUtilities.findElement(this.headerMenu, "#menu-button-settings") as HTMLLinkElement;
+                var menuTTS = HTMLUtilities.findElement(this.headerMenu, "#menu-button-tts") as HTMLLinkElement;
+                var menuBookmark = HTMLUtilities.findElement(this.headerMenu, "#menu-button-bookmark") as HTMLLinkElement;
+            }
+            if (oc(this.rights).enableMaterial(false)) {
 
                 let elements = document.querySelectorAll('.sidenav');
                 if (elements) {
@@ -380,19 +380,51 @@ export default class IFrameNavigator implements Navigator {
                         alignment: 'right',
                         constrainWidth: false,
                         coverTrigger: false,
-                        closeOnClick: false
-
+                        closeOnClick: false,
+                        autoTrigger: false,
+                        onOpenEnd: function () {
+                            self.mTabs.forEach(element => {
+                                (element as any).updateTabIndicator()
+                            });
+                        }
                     });
                 }
                 let tabs = document.querySelectorAll('.tabs');
                 if (tabs) {
                     self.mTabs = Tabs.init(tabs);
                 }
+                if (this.headerMenu) {
+                    if (!oc(this.rights).enableBookmarks(false)) {
+                        if (menuBookmark) menuBookmark.parentElement.style.setProperty("display", "none")
+                        var sideNavSectionBookmarks = HTMLUtilities.findElement(this.headerMenu, "#sidenav-section-bookmarks") as HTMLElement;
+                        if (sideNavSectionBookmarks) sideNavSectionBookmarks.style.setProperty("display", "none")
+                    }
+                    if (!oc(this.rights).enableAnnotations(false)) {
+                        var sideNavSectionHighlights = HTMLUtilities.findElement(this.headerMenu, "#sidenav-section-highlights") as HTMLElement;
+                        if (sideNavSectionHighlights) sideNavSectionHighlights.style.setProperty("display", "none")
+                    }
+                    if (!oc(this.rights).enableTTS(false)) {
+                        if (menuTTS) menuTTS.parentElement.style.setProperty("display", "none")
+                    }
+                    if (!oc(this.rights).enableSearch(false)) {
+                        menuSearch.parentElement.style.removeProperty("display")
+                    }
+                }
+            } else {
+                if (this.headerMenu) {
+                    if (menuSearch) menuSearch.parentElement.style.setProperty("display", "none")
+                    if (menuTTS) menuTTS.parentElement.style.setProperty("display", "none")
+                    if (menuBookmark) menuBookmark.parentElement.style.setProperty("display", "none")
+                }
             }
-            setTimeout(() => {
+
+            setTimeout(async () => {
                 if (self.annotationModule !== undefined) {
                     self.annotationModule.drawHighlights()
                     // self.annotationModule.drawIndicators()
+                } else {
+                    await this.highlighter.destroyAllhighlights(this.iframe.contentDocument)
+                    self.searchModule.drawSearch()
                 }
             }, 300);
 
@@ -516,7 +548,6 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private updateBookView(): void {
-
         this.settings.isPaginated().then(paginated => {
             if (paginated) {
                 this.reflowable.height = (BrowserUtilities.getHeight() - 40 - this.attributes.margin);
@@ -608,10 +639,13 @@ export default class IFrameNavigator implements Navigator {
                 }
             }
         })
-        setTimeout(() => {
+        setTimeout(async () => {
             this.updatePositionInfo();
             if (this.annotationModule !== undefined) {
                 this.annotationModule.drawHighlights()
+            } else {
+                await this.highlighter.destroyAllhighlights(this.iframe.contentDocument)
+                this.searchModule.drawSearch()
             }
         }, 100);
 
@@ -858,7 +892,8 @@ export default class IFrameNavigator implements Navigator {
 
             setTimeout(() => {
                 if (this.newElementId) {
-                    this.reflowable.goToElement(this.newElementId);
+                    const element = (this.iframe.contentDocument as any).getElementById(this.newElementId);
+                    this.reflowable.goToElement(element);
                     this.newElementId = null;
                 }
             }, 100);
@@ -966,6 +1001,9 @@ export default class IFrameNavigator implements Navigator {
                 });
 
             }
+            if (this.highlighter !== undefined) {
+                await this.highlighter.initialize()
+            }
             setTimeout(() => {
 
                 const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
@@ -989,10 +1027,7 @@ export default class IFrameNavigator implements Navigator {
                 }
 
                 if (this.annotationModule !== undefined) {
-                    this.annotationModule.initialize(this.initialAnnotationColor)
-                    if (this.selectionMenuItems) {
-                        this.annotationModule.selectionMenuItems = this.selectionMenuItems
-                    }
+                    this.annotationModule.initialize()
                 }
                 if (oc(this.rights).enableTTS(false)) {
                     setTimeout(() => {
@@ -1157,14 +1192,14 @@ export default class IFrameNavigator implements Navigator {
             element.className += " active";
             sidenav.className += " expanded";
             element.innerText = "unfold_less";
-            this.sideNavExanded = true
+            this.sideNavExpanded = true
             this.bookmarkModule.showBookmarks()
             this.annotationModule.showHighlights()
         } else {
             element.className = element.className.replace(" active", "");
             sidenav.className = sidenav.className.replace(" expanded", "");
             element.innerText = "unfold_more";
-            this.sideNavExanded = false
+            this.sideNavExpanded = false
             this.bookmarkModule.showBookmarks()
             this.annotationModule.showHighlights()
         }
@@ -1173,12 +1208,12 @@ export default class IFrameNavigator implements Navigator {
     }
     startReadAloud() {
         if (oc(this.rights).enableTTS(false)) {
-            this.annotationModule.highlighter.speakAll()
+            this.highlighter.speakAll()
         }
     }
     stopReadAloud() {
         if (oc(this.rights).enableTTS(false)) {
-            this.annotationModule.highlighter.stopReadAloud()
+            this.highlighter.stopReadAloud()
         }
     }
     pauseReadAloud() {
@@ -1443,11 +1478,13 @@ export default class IFrameNavigator implements Navigator {
             this.updatePositionInfo();
             if (this.annotationModule !== undefined) {
                 this.annotationModule.handleResize()
+            } else {
+                this.searchModule.handleResize()
             }
         }, 100);
     }
 
-    private updatePositionInfo() {
+    updatePositionInfo() {
         if(this.reflowable.isPaginated()) {
             const currentPage = Math.round(this.reflowable.getCurrentPage());
             const pageCount = Math.round(this.reflowable.getPageCount());
@@ -1527,6 +1564,9 @@ export default class IFrameNavigator implements Navigator {
 
 
     navigate(locator: Locator): void {
+        if (this.searchModule != undefined) {
+            this.searchModule.clearSearch()
+        }
         const exists = this.publication.getTOCItem(locator.href)
         if (exists) {
             this.hideIframeContents();
@@ -1558,10 +1598,13 @@ export default class IFrameNavigator implements Navigator {
                 this.newElementId = locator.locations.fragment
                 this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
             }
-            setTimeout(() => {
+            setTimeout(async () => {
                 if (this.annotationModule !== undefined) {
                     this.annotationModule.drawHighlights()
                     this.annotationModule.showHighlights();
+                } else {
+                    await this.highlighter.destroyAllhighlights(this.iframe.contentDocument)
+                    this.searchModule.drawSearch()
                 }
 
                 if(this.reflowable.isScrollmode()) {

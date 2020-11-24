@@ -44,6 +44,24 @@
 
     <div style="position:absolute;top:0;left:0;z-index: 1000;">
 
+        <button onclick="javascript:D2Reader.search('frankenstein', true).then(
+            result => { 
+                console.log(JSON.stringify(result))
+            })">search in chapter</button><br>
+
+        <button onclick="javascript:D2Reader.search('frankenstein', false).then(
+            result => { 
+                console.log(JSON.stringify(result))
+            })">search in book</button><br>
+        
+        <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 2, false)">go to index 2 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 3, false)">go to index 3 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 10, false)">go to uuid 10 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 11, false)">go to uuid 11 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 2, false)">go to uuid 2 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 3, false)">go to uuid 3 in chapter OEBPS/Text/intro.xhtml</button><br>
+        <button onclick="javascript:D2Reader.clearSearch()">clear search</button><br>
+
         <button onclick="javascript:D2Reader.startReadAloud()">read aloud from top</button><br>
         <button onclick="javascript:D2Reader.stopReadAloud()">stop read aloud from top</button><br>
         <button onclick="javascript:D2Reader.pauseReadAloud()">pause read aloud from top</button><br>
@@ -252,7 +270,7 @@
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
             { type: 'style', url: '/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
-            // { type: 'style', url: http://' + window.location.host + '/viewer/readium-css/neon-after.css', r2after: true, appearance: 'neon' },
+            // { type: 'style', url: '/viewer/readium-css/neon-after.css', r2after: true, appearance: 'neon' },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic', systemFont: false },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
@@ -307,7 +325,8 @@
             rights: {
                 enableBookmarks: true,
                 enableAnnotations: true,
-                enableTTS: true
+                enableTTS: true,
+                enableSearch: true
             },
             tts: {
                 enableSplitter: true,
@@ -322,11 +341,19 @@
             //         lang : "en-GB",
             //     }
             },
+            search: {
+                color: "#fce300",
+                current: "#ed7138"
+            },
+            highlighter: {
+                selectionMenuItems: selectionMenuItems,
+            },
+            annotations: {
+                initialAnnotationColor: "var(--RS__highlightColor)",
+                // initialAnnotationColor: "#ff8500",
+            },
             // lastReadingPosition: lastReadingPosition,
             injectables: injectables,
-            selectionMenuItems: selectionMenuItems,
-            // initialAnnotationColor: "#ff8500",
-            initialAnnotationColor: "var(--RS__highlightColor)",
             userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {

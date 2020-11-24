@@ -22,9 +22,10 @@ import { IHighlight } from "../modules/highlight/common/highlight";
 export interface Locator {
     href: string;
     type?: string;
-    title: string;
+    title?: string;
     locations: Locations;
     text?: LocatorText;
+    displayInfo?: any;
 }
 
 
@@ -39,6 +40,8 @@ export interface Locations {
     progression?: number;     // 3 = bookmarks
     position?: number;        // 4 = goto page
     totalProgression?: number;
+    remainingPositions?: number;
+    totalRemainingPositions?: number;
 }
 
 export interface ReadingPosition extends Locator {

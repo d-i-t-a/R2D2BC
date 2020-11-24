@@ -1307,6 +1307,13 @@ export default class IFrameNavigator implements Navigator {
         let locator = this.publication.positions.filter((el: Locator) => el.locations.position == position)[0]
         goTo(locator)
     }
+
+    applyAtributes(attributes:IFrameAttributes) {
+        this.attributes = attributes
+        this.reflowable.attributes = attributes
+        this.handleResize()
+    }
+
     private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
         this.stopReadAloud();
         if(this.reflowable.isPaginated()) {

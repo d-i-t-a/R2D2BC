@@ -37,6 +37,7 @@ import ReflowableBookView from "../views/ReflowableBookView";
 import SearchModule from "../modules/search/SearchModule";
 import TextHighlighter from "../modules/highlight/TextHighlighter";
 import TimelineModule from "../modules/positions/TimelineModule";
+import { debounce } from "debounce";
 
 export interface UpLinkConfig {
     url?: URL;
@@ -555,6 +556,7 @@ export default class IFrameNavigator implements Navigator {
             }
         }
     }
+    isScrolling: boolean
 
     private updateBookView(): void {
         this.settings.isPaginated().then(paginated => {
@@ -597,8 +599,13 @@ export default class IFrameNavigator implements Navigator {
                     if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                     if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                 }
+                const onDoScrolling = debounce(() => {
+                    this.isScrolling = false;
+                }, 200);
+
                 // document.body.style.overflow = "auto";
                 document.body.onscroll = () => {
+                    this.isScrolling = true
                     this.saveCurrentReadingPosition();
                     if (this.reflowable.atEnd()) {
                         // Bring up the bottom nav when you get to the bottom,
@@ -631,7 +638,7 @@ export default class IFrameNavigator implements Navigator {
                             if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                         }
                     }
-
+                    onDoScrolling()
                 }
 
                 if (this.chapterTitle) this.chapterTitle.style.display = "none";
@@ -1429,6 +1436,9 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handleResize(): void {
+        if (this.isScrolling) {
+            return;
+        }
         const selectedView = this.reflowable;
         const oldPosition = selectedView.getCurrentPosition();
 

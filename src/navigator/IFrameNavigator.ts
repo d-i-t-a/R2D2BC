@@ -237,6 +237,7 @@ export default class IFrameNavigator implements Navigator {
         this.annotator = annotator;
         this.reflowable = settings.reflowable
         this.reflowable.attributes = attributes
+        this.reflowable.delegate = this
         this.eventHandler = eventHandler || new EventHandler();
         this.upLinkConfig = upLinkConfig;
         this.initialLastReadingPosition = initialLastReadingPosition;

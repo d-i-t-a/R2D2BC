@@ -297,9 +297,9 @@ export default class ContentProtectionModule implements ReaderModule {
                     this.rects = this.findRects(body);
                     this.rects.forEach((rect) => this.toggleRect(rect, this.securityContainer, this.isHacked));
 
+                    this.setupEvents()
                     if (!this.hasEventListener) {
                         this.hasEventListener = true
-                        this.setupEvents()
                         addEventListenerOptional(window, 'scroll', this.handleScroll.bind(this))
                     }
                     resolve();
@@ -421,7 +421,22 @@ export default class ContentProtectionModule implements ReaderModule {
         }
     }
 
+    recalculate() {
+        if (oc(this.protection).enableObfuscation(false)) {
 
+            const onDoResize = debounce(() => {
+                this.calcRects(this.rects);
+                if (this.rects != undefined) {
+                    this.rects.forEach((rect) => this.toggleRect(rect, this.securityContainer, this.isHacked));
+                }
+            }, 100);
+            if (this.rects) {
+                this.observe()
+                console.log("recalculate")
+                onDoResize();
+            }
+        }
+    }
 
     calcRects(rects: Array<ContentProtectionRect>): void {
         if (rects != undefined) {

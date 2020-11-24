@@ -24,8 +24,9 @@ import * as BrowserUtilities from "../utils/BrowserUtilities";
 import Store from "../store/Store";
 import BookView from "./BookView";
 import { UserSettings } from "../model/user-settings/UserSettings";
-import { IFrameAttributes } from "../navigator/IFrameNavigator";
+import IFrameNavigator, { IFrameAttributes } from "../navigator/IFrameNavigator";
 import { debounce } from "debounce";
+import { oc } from "ts-optchain";
 
 
 export default class ReflowableBookView implements BookView {
@@ -33,6 +34,7 @@ export default class ReflowableBookView implements BookView {
     private readonly USERSETTINGS = "userSetting";
     private readonly store: Store;
     private scrollMode: boolean
+    delegate: IFrameNavigator;
     constructor(store: Store) {
         this.store = store;
 
@@ -89,8 +91,9 @@ export default class ReflowableBookView implements BookView {
             const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
             html.style.setProperty("--USER__scroll", "readium-scroll-off");
         }
-
-
+        if (oc(this.delegate.rights).enableContentProtection(false)) {
+            this.delegate.contentProtectionModule.recalculate()
+        }
     }
     
     name: string;

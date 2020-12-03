@@ -102,7 +102,7 @@ export default class TextHighlighter {
     private options: any;
     private delegate: IFrameNavigator;
     private lastSelectedHighlight: number = undefined;
-    private config: { selectionMenuItems: Array<SelectionMenuItem>; };
+    private config: { selectionMenuItems: Array<SelectionMenuItem>; api: any; };
     private hasEventListener: boolean
 
 
@@ -681,6 +681,7 @@ export default class TextHighlighter {
     toolboxHide() {
         var toolbox = document.getElementById("highlight-toolbox");
         toolbox.style.display = "none";
+        this.selectionMenuClosed()
     }
 
     // Use short timeout to let the selection updated to 'finish', otherwise some
@@ -762,6 +763,24 @@ export default class TextHighlighter {
         this.toolboxHandler();
     }
 
+    isSelectionMenuOpen = false
+    selectionMenuOpened = debounce(() => {
+        if (!this.isSelectionMenuOpen) {
+            this.isSelectionMenuOpen = true
+            if (oc(this.config).api(false) && oc(this.config).api.selectionMenuOpen(false)) {
+                this.config.api.selectionMenuOpen()
+            }
+        }
+    }, 100);
+    selectionMenuClosed = debounce(() => {
+        if (this.isSelectionMenuOpen) {
+            this.isSelectionMenuOpen = false
+            if (oc(this.config).api(false) && oc(this.config).api.selectionMenuClose(false)) {
+                this.config.api.selectionMenuClose()
+            }
+        }
+    }, 100);
+
     toolboxPlacement() {
         var range = this.dom(this.delegate.iframe.contentDocument.body).getRange();
         if (!range || range.collapsed) {
@@ -781,6 +800,7 @@ export default class TextHighlighter {
 
         if (getComputedStyle(toolbox).display === "none") {
             toolbox.style.display = "block";
+            this.selectionMenuOpened()
 
             var self = this;
 
@@ -955,6 +975,7 @@ export default class TextHighlighter {
                 selection.removeAllRanges();
                 var toolbox = document.getElementById("highlight-toolbox");
                 toolbox.style.display = "none";
+                this.selectionMenuClosed()
             }
         }
     };
@@ -1633,6 +1654,7 @@ export default class TextHighlighter {
                         self.delegate.annotationModule.deleteSelectedHighlight(anno).then(async () => {
                             if (IS_DEV) { console.log("delete highlight " + anno.id) }
                             toolbox.style.display = "none";
+                            self.selectionMenuClosed()
                         })
                         deleteIcon.removeEventListener("click", deleteH);
                     };
@@ -1646,6 +1668,7 @@ export default class TextHighlighter {
 
                 } else {
                     toolbox.style.display = "none";
+                    this.selectionMenuClosed()
                     void toolbox.offsetWidth;
                     toolbox.style.display = "block";
                 }

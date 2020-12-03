@@ -275,6 +275,10 @@ export async function goToPosition(value) {
     if (IS_DEV) { console.log("goToPosition") }
     return R2Navigator.goToPosition(value)
 }
+export async function applyAtributes(value) {
+    if (IS_DEV) { console.log("applyAtributes") }
+    R2Navigator.applyAtributes(value)
+}
 
 export async function load(config: ReaderConfig): Promise<any> {
 
@@ -616,4 +620,7 @@ exports.positions = function () {
 }
 exports.goToPosition = function (value) {
     goToPosition(value)
+}
+exports.applyAtributes = function (value) {
+    applyAtributes(value)
 }

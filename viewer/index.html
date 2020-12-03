@@ -25,8 +25,7 @@
     <meta charset="utf-8" />
     <meta name="author" content="Aferdita Muriqi" />
     <meta name="description" content="A viewer application for EPUB files." />
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 
     <!-- R2 Reader CSS -->
     <link rel="stylesheet" href="reader.css" />
@@ -52,71 +51,48 @@
                 <nav class="navbar">
                     <div class="nav-wrapper"><span class="brand-logo  hide-on-med-and-down " id="book-title"></span>
                         <ul id="nav-mobile-right" class="right">
-                            <li style="display:none"><a data-target="container-view-note-input"
-                                    class="dropdown-trigger " id="menu-button-note"><i
-                                        class="material-icons">speaker_notes</i></a></li>
-                            <li><a class="saveBookmark" id="menu-button-bookmark"><i
-                                        class="material-icons">bookmark</i></a></li>
-                            <li><a data-target="container-view-tts-settings" class="dropdown-trigger "
-                                    id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>
-                            <li><a data-target="container-view-settings" class="dropdown-trigger "
-                                    id="menu-button-settings"><i class="material-icons">settings</i></a></li>
-                            <li style="display:none"><a data-target="container-view-search" class="dropdown-trigger "
-                                    id="menu-button-search"><i class="material-icons">search</i></a></li>
+                            <li style="display:none"><a data-target="container-view-note-input" class="dropdown-trigger " id="menu-button-note"><i class="material-icons">speaker_notes</i></a></li>
+                            <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
+                            <li><a data-target="container-view-tts-settings" class="dropdown-trigger " id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>
+                            <li><a data-target="container-view-settings" class="dropdown-trigger " id="menu-button-settings"><i class="material-icons">settings</i></a></li>
+                            <li style="display:none"><a data-target="container-view-search" class="dropdown-trigger " id="menu-button-search"><i class="material-icons">search</i></a></li>
                         </ul>
                         <ul id="nav-mobile-left" class="left">
-                            <li><a href="#!" data-target="sidenav-left" class="sidenav-trigger left"><i
-                                        class="material-icons  show-on-large">menu</i></a></li>
-                            <li><a rel="prev" style="padding-left: 7px; padding-right: 7px;"><i
-                                        class="material-icons ">arrow_back_ios</i></a></li>
-                            <li><a rel="next" style="padding-left: 7px; padding-right: 7px;"><i
-                                        class="material-icons ">arrow_forward_ios</i></a></li>
+                            <li><a href="#!" data-target="sidenav-left" class="sidenav-trigger left"><i class="material-icons  show-on-large">menu</i></a></li>
+                            <li><a rel="prev" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_back_ios</i></a></li>
+                            <li><a rel="next" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_forward_ios</i></a></li>
                         </ul>
                     </div>
                 </nav>
             </div>
             <ul id="sidenav-left" class="sidenav">
-                <li><a href="#" class="logo-container ">D2 Reader<i class="material-icons  left"
-                            style="margin-right: 15px">
+                <li><a href="#" class="logo-container ">D2 Reader<i class="material-icons  left" style="margin-right: 15px">
                             import_contacts
                         </i><i class="material-icons right  editAnnotations" id="expand-menu">unfold_more</i></a></li>
                 <li class="no-padding ">
                     <ul class="collapsible collapsible-accordion">
                         <li style="padding-left: 16px" id="sidenav-section-gotopage">
-                            Go To Page: <input type="text" style="width:100px;" id="goToPageNumberInput" /><button
-                                id="goToPageNumberButton">Go</button>
+                            Go To Page: <input type="text" style="width:100px;" id="goToPageNumberInput" /><button id="goToPageNumberButton">Go</button>
                         </li>
-                        <li class="bold" id="sidenav-section-toc"><a class="collapsible-header ">Table of Contents<i
-                                    class="material-icons chevron purple-yellow-text">chevron_left</i></a>
-                            <div id="container-view-toc" class="contents-view collapsible-body active"
-                                style="background-color : #ffffff">
+                        <li class="bold" id="sidenav-section-toc"><a class="collapsible-header ">Table of Contents<i class="material-icons chevron purple-yellow-text">chevron_left</i></a>
+                            <div id="container-view-toc" class="contents-view collapsible-body active" style="background-color : #ffffff">
                             </div>
                         </li>
-                        <li class="bold " id="sidenav-section-bookmarks"><a class="collapsible-header ">Bookmarks <i
-                                    class="material-icons chevron ">chevron_left</i></a>
-                            <div id="container-view-bookmarks" class="bookmarks-view collapsible-body active"
-                                style="background-color : #ffffff">
+                        <li class="bold " id="sidenav-section-bookmarks"><a class="collapsible-header ">Bookmarks <i class="material-icons chevron ">chevron_left</i></a>
+                            <div id="container-view-bookmarks" class="bookmarks-view collapsible-body active" style="background-color : #ffffff">
                             </div>
                         </li>
-                        <li class="bold " id="sidenav-section-highlights"><a
-                                class="collapsible-header allvit-purple-text">Highlights<i
-                                    class="material-icons chevron allvit-purple-text">chevron_left</i></a>
-                            <div id="container-view-highlights" class="highlights-view collapsible-body active"
-                                style="background-color : #ffffff">
+                        <li class="bold " id="sidenav-section-highlights"><a class="collapsible-header allvit-purple-text">Highlights<i class="material-icons chevron allvit-purple-text">chevron_left</i></a>
+                            <div id="container-view-highlights" class="highlights-view collapsible-body active" style="background-color : #ffffff">
                             </div>
                         </li>
-                        <li class="bold" id="sidenav-section-landmarks"><a
-                                class="collapsible-header allvit-purple-text">Landmarks<i
-                                    class="material-icons chevron allvit-purple-text">chevron_left</i></a>
-                            <div id="container-view-landmarks" class="landmarks-view collapsible-body active"
-                                style="background-color : #ffffff">
+                        <li class="bold" id="sidenav-section-landmarks"><a class="collapsible-header allvit-purple-text">Landmarks<i class="material-icons chevron allvit-purple-text">chevron_left</i></a>
+                            <div id="container-view-landmarks" class="landmarks-view collapsible-body active" style="background-color : #ffffff">
                             </div>
                         </li>
-                        <li class="bold" id="sidenav-section-pagelist"><a
-                                class="collapsible-header allvit-purple-text">Page
+                        <li class="bold" id="sidenav-section-pagelist"><a class="collapsible-header allvit-purple-text">Page
                                 List<i class="material-icons chevron allvit-purple-text">chevron_left</i></a>
-                            <div id="container-view-pagelist" class="pageList-view collapsible-body active"
-                                style="background-color : #ffffff">
+                            <div id="container-view-pagelist" class="pageList-view collapsible-body active" style="background-color : #ffffff">
                             </div>
                         </li>
                     </ul>
@@ -127,57 +103,40 @@
 
 
                 <center>
-                    <button style="width:24%" onclick="javascript:D2Reader.startReadAloud()"><i
-                            class="material-icons">play_arrow</i>PLAY</button>
-                    <button style="width:24%" onclick="javascript:D2Reader.stopReadAloud()"><i
-                            class="material-icons">stop</i>STOP</button>
-                    <button style="width:24%" onclick="javascript:D2Reader.pauseReadAloud()"><i
-                            class="material-icons">pause</i>PAUSE</button>
-                    <button style="width:24%" onclick="javascript:D2Reader.resumeReadAloud()"><i
-                            class="material-icons">play_arrow</i>RESUME</button>
+                    <button style="width:24%" onclick="javascript:D2Reader.startReadAloud()"><i class="material-icons">play_arrow</i>PLAY</button>
+                    <button style="width:24%" onclick="javascript:D2Reader.stopReadAloud()"><i class="material-icons">stop</i>STOP</button>
+                    <button style="width:24%" onclick="javascript:D2Reader.pauseReadAloud()"><i class="material-icons">pause</i>PAUSE</button>
+                    <button style="width:24%" onclick="javascript:D2Reader.resumeReadAloud()"><i class="material-icons">play_arrow</i>RESUME</button>
                 </center>
                 <center>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'orange' })"><i
-                            class="material-icons" style="color: rgba(250, 96, 0, 0.5);">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'red' })"><i class="material-icons"
-                            style="color: indianred;">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'gray' })"><i class="material-icons"
-                            style="color: lightslategrey;">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'purple' })"><i
-                            class="material-icons" style="color: mediumpurple;">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'green' })"><i class="material-icons"
-                            style="color: lightgreen;">lense</i></button>
+                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'orange' })"><i class="material-icons" style="color: rgba(250, 96, 0, 0.5);">lense</i></button>
+                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'red' })"><i class="material-icons" style="color: indianred;">lense</i></button>
+                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'gray' })"><i class="material-icons" style="color: lightslategrey;">lense</i></button>
+                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'purple' })"><i class="material-icons" style="color: mediumpurple;">lense</i></button>
+                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'green' })"><i class="material-icons" style="color: lightgreen;">lense</i></button>
                 </center>
 
                 <div>
                     <span style="width: 30%; display: inline-block;">Auto Scroll</span>
-                    <input type="checkbox" class="filled" id="autoScroll" name="autoScroll"
-                        onchange="javascript:D2Reader.applyTTSSettings({ autoScroll: this.checked })">
+                    <input type="checkbox" class="filled" id="autoScroll" name="autoScroll" onchange="javascript:D2Reader.applyTTSSettings({ autoScroll: this.checked })">
                 </div>
                 <div>
                     <label style="margin-right: 20px;">Language</label>
-                    <select style="width: 70%;" onchange="javascript:D2Reader.preferredVoice(value)"
-                        id="preferred-languages">
+                    <select style="width: 70%;" onchange="javascript:D2Reader.preferredVoice(value)" id="preferred-languages">
                         <option value="" disabled selected>Choose language</option>
                     </select>
                 </div>
                 <div class="range-slider">
                     <span style="width: 20%; display: inline-block;">Rate</span>
-                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="10" step="0.1"
-                        value="1" id="speechRate" name="speechRate"
-                        onchange="javascript:D2Reader.applyTTSSettings({ rate: this.value })" />
+                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="10" step="0.1" value="1" id="speechRate" name="speechRate" onchange="javascript:D2Reader.applyTTSSettings({ rate: this.value })" />
                 </div>
                 <div class="range-slider">
                     <label style="width: 20%; display: inline-block;">Pitch</label>
-                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="2" step="0.1"
-                        value="1" id="speechPitch" name="speechPitch"
-                        onchange="javascript:D2Reader.applyTTSSettings({ pitch: this.value })" />
+                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="2" step="0.1" value="1" id="speechPitch" name="speechPitch" onchange="javascript:D2Reader.applyTTSSettings({ pitch: this.value })" />
                 </div>
                 <div class="range-slider">
                     <label style="width: 20%; display: inline-block;">Volume</label>
-                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="1" step="0.1"
-                        value="1" id="speechVolume" name="speechVolume"
-                        onchange="javascript:D2Reader.applyTTSSettings({ volume: this.value })" />
+                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="1" step="0.1" value="1" id="speechVolume" name="speechVolume" onchange="javascript:D2Reader.applyTTSSettings({ volume: this.value })" />
                 </div>
 
                 <!-- userProperties.addIncremental(this.rate, 0.1, 10, 0.1, "", TTSREFS.RATE_REF, TTSREFS.RATE_KEY)
@@ -229,11 +188,9 @@
                     <li id="container-view-fontsize">
                         <ul class="settings-options">
 
-                            <li class="font-setting"><button id="decrease-font" class="decrease" role="menuitem"
-                                    tabindex="-1">A-</button></li>
+                            <li class="font-setting"><button id="decrease-font" class="decrease" role="menuitem" tabindex="-1">A-</button></li>
 
-                            <li class="font-setting"><button id="increase-font" class="increase" role="menuitem"
-                                    tabindex="-1">A+</button></li>
+                            <li class="font-setting"><button id="increase-font" class="increase" role="menuitem" tabindex="-1">A+</button></li>
 
                         </ul>
                     </li>
@@ -241,24 +198,20 @@
                     <li id="container-view-appearance">
                         <ul class="settings-options">
 
-                            <li class="reading-theme"><button id="day-theme" class="day-theme" role="menuitem"
-                                    tabindex="-1" aria-label="Day mode enabled">Day<svg
-                                        xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                        class="checkedIcon" role="img" aria-labelledby="check-icon">
+                            <li class="reading-theme"><button id="day-theme" class="day-theme" role="menuitem" tabindex="-1" aria-label="Day mode enabled">Day<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
+                                         class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-theme"><button id="sepia-theme" class="sepia-theme" role="menuitem"
-                                    tabindex="-1" aria-label="Sepia mode disabled">Sepia<svg
-                                        xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                        class="checkedIcon" role="img" aria-labelledby="check-icon">
+                            <li class="reading-theme"><button id="sepia-theme" class="sepia-theme" role="menuitem" tabindex="-1" aria-label="Sepia mode disabled">Sepia<svg xmlns="http://www.w3.org/2000/svg"
+                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
+                                         aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-theme"><button id="night-theme" class="night-theme" role="menuitem"
-                                    tabindex="-1" aria-label="Night mode disabled">Night<svg
-                                        xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                        class="checkedIcon" role="img" aria-labelledby="check-icon">
+                            <li class="reading-theme"><button id="night-theme" class="night-theme" role="menuitem" tabindex="-1" aria-label="Night mode disabled">Night<svg xmlns="http://www.w3.org/2000/svg"
+                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
+                                         aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
@@ -268,17 +221,15 @@
                     <li id="container-view-scroll">
                         <ul class="settings-options">
 
-                            <li class="reading-view"><button id="view-scroll" class="view-scroll" role="menuitem"
-                                    tabindex="-1" aria-label="Scroll view enabled">Scroll<svg
-                                        xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                        class="checkedIcon" role="img" aria-labelledby="check-icon">
+                            <li class="reading-view"><button id="view-scroll" class="view-scroll" role="menuitem" tabindex="-1" aria-label="Scroll view enabled">Scroll<svg xmlns="http://www.w3.org/2000/svg"
+                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
+                                         aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-view"><button id="view-paginated" class="view-paginated" role="menuitem"
-                                    tabindex="-1" aria-label="Paginated view disabled">Paginated<svg
-                                        xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                        class="checkedIcon" role="img" aria-labelledby="check-icon">
+                            <li class="reading-view"><button id="view-paginated" class="view-paginated" role="menuitem" tabindex="-1" aria-label="Paginated view disabled">Paginated<svg xmlns="http://www.w3.org/2000/svg"
+                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
+                                         aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
@@ -288,31 +239,26 @@
                     <li id="container-view-fontfamily">
                         <ul class="settings-options">
 
-                            <li class="reading-style"><button id="publisher-font" class="publisher-font" role="menuitem"
-                                    tabindex="-1" aria-label="Publisher font enabled">Publisher<svg
-                                        xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                        class="checkedIcon" role="img" aria-labelledby="check-icon">
+                            <li class="reading-style"><button id="publisher-font" class="publisher-font" role="menuitem" tabindex="-1" aria-label="Publisher font enabled">Publisher<svg xmlns="http://www.w3.org/2000/svg"
+                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
+                                         aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-style"><button id="serif-font" class="serif-font" role="menuitem"
-                                    tabindex="-1" aria-label="Serif font disabled">Serif<svg
-                                        xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                        class="checkedIcon" role="img" aria-labelledby="check-icon">
+                            <li class="reading-style"><button id="serif-font" class="serif-font" role="menuitem" tabindex="-1" aria-label="Serif font disabled">Serif<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
+                                         class="checkedIcon" role="img"
+                                         aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-style"><button id="sans-font" class="sans-font" role="menuitem"
-                                    tabindex="-1" aria-label="Sans-serif font disabled">Sans-serif<svg
-                                        xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                        class="checkedIcon" role="img" aria-labelledby="check-icon">
+                            <li class="reading-style"><button id="sans-font" class="sans-font" role="menuitem" tabindex="-1" aria-label="Sans-serif font disabled">Sans-serif<svg xmlns="http://www.w3.org/2000/svg"
+                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
+                                         aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-style"><button id="opendyslexic-font" class="opendyslexic-font"
-                                    role="menuitem" tabindex="-1" aria-label="Open Dyslexic font disabled">Open
-                                    Dyslexic<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                        class="checkedIcon" role="img" aria-labelledby="check-icon">
+                            <li class="reading-style"><button id="opendyslexic-font" class="opendyslexic-font" role="menuitem" tabindex="-1" aria-label="Open Dyslexic font disabled">Open
+                                    Dyslexic<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
@@ -324,8 +270,7 @@
             <div id="container-view-note-input" class="dropdown-content notifications">
                 <ul class="note-menu" role="menu">
                     <li>
-                        <textarea id="note-input" name="text" wrap="soft" class="note-input" name="note-input"
-                            placeholder="type your note here"></textarea><br>
+                        <textarea id="note-input" name="text" wrap="soft" class="note-input" name="note-input" placeholder="type your note here"></textarea><br>
                         <button id="save-note-button" class="saveNote btn right">
                             <span>save note</span>
                         </button>
@@ -335,9 +280,7 @@
             </div>
             <div id="container-view-search" class="dropdown-content dropdown-tabbed notifications">
                 <div class="search-wrapper" tabindex="-1">
-                    <i class="material-icons left" style="margin-right: -25px;position: relative;">search</i><input
-                        id="searchInput" placeholder="Search" style="padding-left: 25px; width: 100%;height: 40px;"
-                        type="text" />
+                    <i class="material-icons left" style="margin-right: -25px;position: relative;">search</i><input id="searchInput" placeholder="Search" style="padding-left: 25px; width: 100%;height: 40px;" type="text" />
                     <ul class="tabs tabs-fixed-width">
                         <li class="tab"><a href="#test1">Current Chapter</a></li>
                         <li class="tab"><a href="#test2">Entire Book</a></li>
@@ -363,17 +306,14 @@
                 <div id="reader-info-top" class="info top">
                     <span class="book-title"></span>
                 </div>
-                <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="border: 0px; display: block;"
-                    width="100%" height="100%"></iframe>
+                <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="border: 0px; display: block;" width="100%" height="100%"></iframe>
                 <div id="reader-info-bottom" class="info bottom">
                     <div style="width:20%;float: left;">
                         <span class="chapter-position"></span>
                         <span class="chapter-title"></span>
                     </div>
                     <div style="width:60%;float: left;">
-                        <input class="range-slider__range" style="width:100%" type="range" min="1" step="1"
-                            id="positionSlider" name="positionSlider"
-                            onchange="javascript:D2Reader.goToPosition( this.value )" />
+                        <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="javascript:D2Reader.goToPosition( this.value )" />
                     </div>
                     <div style="width:20%;float: right;">
                         <span class="remaining-positions"></span>
@@ -384,12 +324,11 @@
             <div id="container-view-timeline" class="timeline" style="top: 5rem;bottom: 2.5rem;"></div>
 
             <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
-                style="top: 65px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
+               style="top: 65px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
                 <i class="material-icons black-text" style="left: calc(50% - 12px);
                 position: relative;">keyboard_arrow_up</i>
             </a>
-            <a id="next-chapter" rel="next" role="button" aria-labelledby="next-label"
-                style="bottom: 0;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
+            <a id="next-chapter" rel="next" role="button" aria-labelledby="next-label" style="bottom: 0;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
                 <i class="material-icons black-text" style="left: calc(50% - 12px);
                 position: relative;">keyboard_arrow_down</i>
             </a>
@@ -397,60 +336,46 @@
             <div class="left-gutter" id="left-gutter">
             </div>
 
-            <div id="toolbox-backdrop" class="toolbox-backdrop"></div>
-
         </div>
 
         <span id="highlight-toolbox" class="highlight-toolbox">
             <div id="highlight-toolbox-mode-colors">
-                <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons"
-                        style="color:gray">close</i></button>
+                <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons" style="color:gray">close</i></button>
             </div>
             <div id="highlight-toolbox-mode-add">
                 <button style="display: unset;" id="colorIcon" class="color-option"><span></span></button>
-                <button style="background-color: gainsboro;" id="highlightIcon"><span
-                        style="background: yellow;display: inline-block;width: 24px;height: 24px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                            preserveAspectRatio="xMidYMid meet" role="img" class="icon open"
-                            aria-labelledby="text-icon">
+                <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon">
                             <title id="text-icon">Text</title>
                             <path d="M5 4v3h5.5v12h3V7H19V4z"></path>
                         </svg>
                     </span></button>
-                <button style="background-color: gainsboro;" id="underlineIcon"><span
-                        style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                            preserveAspectRatio="xMidYMid meet" role="img" class="icon open"
-                            aria-labelledby="text-icon">
+                <button style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon">
                             <title id="text-icon">Text</title>
                             <path d="M5 4v3h5.5v12h3V7H19V4z"></path>
                         </svg>
                     </span></button>
-                <button style="background-color: gainsboro;" id="speakIcon"><span
-                        style="display: inline-block;width: 24px;height: 24px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                            preserveAspectRatio="xMidYMid meet" role="img" class="icon open"
-                            aria-labelledby="speak-icon">
+                <button style="background-color: gainsboro;" id="speakIcon"><span style="display: inline-block;width: 24px;height: 24px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="speak-icon">
                             <title id="speak-icon">Speak</title>
                             <circle cx="9" cy="9" r="4"></circle>
                             <path
-                                d="M9 15c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4zm7.76-9.64l-1.68 1.69c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z">
+                                  d="M9 15c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4zm7.76-9.64l-1.68 1.69c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z">
                             </path>
                             <path d="M0 0h24v24H0z" fill="none"></path>
                         </svg>
                     </span></button>
-                <button style="background-color: gainsboro;" id="anIcon"><span
-                        style="display: inline-block;width: 24px;height: 24px;">
+                <button style="background-color: gainsboro;" id="anIcon"><span style="display: inline-block;width: 24px;height: 24px;">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="24" height="24">
                             <path d="M0 0h24v24H0z" fill="none" />
                             <path
-                                d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z" />
-                            </svg>
+                                  d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z" />
+                        </svg>
                     </span></button>
             </div>
             <div id="highlight-toolbox-mode-edit">
-                <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons"
-                        style="color:gray">delete</i></button>
+                <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons" style="color:gray">delete</i></button>
             </div>
         </span>
 
@@ -532,7 +457,6 @@
                 enableAnnotations: true,
                 enableTTS: true,
                 enableSearch: true,
-                enableContentProtection: true,
                 enableTimeline: true
             },
             material: {
@@ -596,7 +520,6 @@
                     //         )
                     //     })
                     // }
-
                 }
             },
             search: {
@@ -605,22 +528,23 @@
             },
             highlighter: {
                 selectionMenuItems: selectionMenuItems,
+                api: {
+                    selectionMenuOpen: function () {
+                        console.log("selectionMenuOpen")
+                    }, 
+                    selectionMenuClose: function () {
+                        console.log("selectionMenuClose")
+                    }, 
+                }
             },
-            // annotations: {
-            //     initialAnnotationColor: "var(--RS__highlightColor)",
-            //     // initialAnnotationColor: "#ff8500",
-            // },
-            protection: {
-                enforceSupportedBrowsers: true,
-                enableEncryption: true,
-                enableObfuscation: true,
-                disablePrint: true,
-                disbaleCopy: true,
-                disableInspect: false,
-                disableKeys: true,
-                disableContextMenu: true
+            annotations: {
+                initialAnnotationColor: "var(--RS__highlightColor)",
+                // initialAnnotationColor: "#ff8500",
             },
             api: {
+                resourceReady: function () {
+                    console.log("resourceReady")
+                },
             },
             injectables: injectables,
             userSettings: userSettings,

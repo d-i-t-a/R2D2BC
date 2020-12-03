@@ -39,6 +39,11 @@ import TextHighlighter from "../modules/highlight/TextHighlighter";
 import TimelineModule from "../modules/positions/TimelineModule";
 import { debounce } from "debounce";
 
+export type GetContent = (href: string) => Promise<string>
+export interface ContentAPI {
+    getContent: GetContent;
+}
+
 export interface UpLinkConfig {
     url?: URL;
     label?: string;
@@ -1060,7 +1065,57 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private tryAgain() {
-        this.iframe.src = this.currentChapterLink.href
+        this.precessContentForIframe();
+    }
+
+    private precessContentForIframe() {
+        const self = this
+        function writeIframeDoc(content: string) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(content, "application/xhtml+xml");
+            if (doc.head) {
+                doc.head.insertBefore(self.createBase(self.currentChapterLink.href), doc.head.firstChild)
+            }
+            const newHTML = doc.documentElement.outerHTML;
+            const iframeDoc = self.iframe.contentDocument;
+            iframeDoc.open();
+            iframeDoc.write(newHTML);
+            iframeDoc.close();
+        }
+        const link = new URL(this.currentChapterLink.href)
+        const isSameOrigin = (
+            window.location.protocol === link.protocol &&
+            window.location.port === link.port &&
+            window.location.hostname === link.hostname
+        );
+
+        if (this.api && this.api.getContent) {
+            this.api.getContent(this.currentChapterLink.href).then(content => {
+                if (content === undefined) {
+                    if (isSameOrigin) {
+                        this.iframe.src = this.currentChapterLink.href
+                    } else {
+                        fetch(this.currentChapterLink.href)
+                            .then(r => r.text())
+                            .then(async content => {
+                                writeIframeDoc.call(this, content);
+                            })
+                    }
+                } else {
+                    writeIframeDoc.call(this, content);
+                }
+            })
+        } else {
+            if (isSameOrigin) {
+                this.iframe.src = this.currentChapterLink.href
+            } else {
+                fetch(this.currentChapterLink.href)
+                    .then(r => r.text())
+                    .then(async content => {
+                        writeIframeDoc.call(this, content);
+                    })
+            }
+        }
     }
 
     private goBack() {
@@ -1608,8 +1663,8 @@ export default class IFrameNavigator implements Navigator {
                 this.currentChapterLink.type = locator.type
                 this.currentChapterLink.title = locator.title
             }
-            this.iframe.src = this.currentChapterLink.href
 
+            this.precessContentForIframe();
 
             if (locator.locations.fragment === undefined) {
                 this.currentTocUrl = null;

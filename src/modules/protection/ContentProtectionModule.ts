@@ -34,6 +34,8 @@ interface ContentProtectionRect {
     node: Element,
     height: number,
     top: number,
+    width: number,
+    left: number,
     textContent: string,
     scrambledTextContent: string,
     isObfuscated: boolean
@@ -442,9 +444,11 @@ export default class ContentProtectionModule implements ReaderModule {
         if (rects != undefined) {
             rects.forEach((rect) => {
                 try {
-                    const { top, height } = this.measureTextNode(rect.node);
+                    const { top, height, left, width } = this.measureTextNode(rect.node);
                     rect.top = top;
                     rect.height = height;
+                    rect.width = width;
+                    rect.left = left;
                 } catch (error) {
                     console.log("error " + error)
                     console.log(rect)
@@ -491,11 +495,13 @@ export default class ContentProtectionModule implements ReaderModule {
         const textNodes = this.findTextNodes(parent);
 
         return textNodes.map((node) => {
-            const { top, height } = this.measureTextNode(node);
+            const { top, height, left, width } = this.measureTextNode(node);
             const scrambled = (node.parentElement.nodeName == "option" || node.parentElement.nodeName == "script") ? node.textContent : this.obfuscateText(node.textContent)
             return {
                 top,
                 height,
+                width,
+                left,
                 node,
                 textContent: node.textContent,
                 scrambledTextContent: scrambled,
@@ -533,6 +539,9 @@ export default class ContentProtectionModule implements ReaderModule {
     }
 
     isOutsideViewport(rect: ContentProtectionRect): boolean {
+        const windowLeft = window.scrollX;
+        const windowRight = windowLeft + window.innerWidth;
+        const right = rect.left + rect.width;
         const bottom = rect.top + rect.height;
         const windowTop = window.scrollY;
         const windowBottom = windowTop + window.innerHeight;
@@ -540,7 +549,10 @@ export default class ContentProtectionModule implements ReaderModule {
         const isAbove = bottom < windowTop;
         const isBelow = rect.top > windowBottom;
 
-        return isAbove || isBelow;
+        const isLeft = right < windowLeft;
+        const isRight = rect.left > windowRight;
+
+        return isAbove || isBelow || isLeft || isRight;
     };
 
     findTextNodes(parentElement: Element, nodes: Array<Element> = []): Array<Element> {

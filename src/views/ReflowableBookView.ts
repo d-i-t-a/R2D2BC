@@ -269,7 +269,9 @@ export default class ReflowableBookView implements BookView {
             } else {
                 this.setLeftColumnsWidth(0);
             }
-
+        }
+        if (oc(this.delegate.rights).enableContentProtection(false)) {
+            this.delegate.contentProtectionModule.recalculate()
         }
     }
 
@@ -295,7 +297,9 @@ export default class ReflowableBookView implements BookView {
                 this.setLeftColumnsWidth(scrollWidth);
             }
         }
-
+        if (oc(this.delegate.rights).enableContentProtection(false)) {
+            this.delegate.contentProtectionModule.recalculate()
+        }
     }
 
     // doesn't exist in scrollmode

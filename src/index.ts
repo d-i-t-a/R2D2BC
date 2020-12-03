@@ -437,7 +437,7 @@ export async function load(config: ReaderConfig): Promise<any> {
                 tts: R2TTSSettings,
                 headerMenu: headerMenu,
                 rights: config.rights,
-            highlighter: D2Highlighter
+                highlighter: D2Highlighter
             })
         }
 

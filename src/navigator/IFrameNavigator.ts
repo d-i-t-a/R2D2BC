@@ -623,7 +623,7 @@ export default class IFrameNavigator implements Navigator {
                             this.toggleDisplay(this.linksBottom);
                         }
                     }
-                    if(this.reflowable.isScrollmode()) {
+                    if(this.reflowable.isScrollMode()) {
                         if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                             if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                             if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
@@ -1007,8 +1007,8 @@ export default class IFrameNavigator implements Navigator {
                 if (this.eventHandler) {
                     this.eventHandler.setupEvents(this.iframe.contentDocument);
                 }
-    
-                if(this.reflowable.isScrollmode()) {
+
+                if(this.reflowable.isScrollMode()) {
                     this.reflowable.setIframeHeight(this.iframe)
                 }
 
@@ -1161,7 +1161,7 @@ export default class IFrameNavigator implements Navigator {
             this.hideElement(element, control);
         }
         if (element === this.linksMiddle) {
-            if(this.reflowable.isScrollmode()) {
+            if(this.reflowable.isScrollMode()) {
                 this.showElement(element, control);
             } else {
                 this.hideElement(element, control);
@@ -1483,7 +1483,7 @@ export default class IFrameNavigator implements Navigator {
 
 
         setTimeout(() => {
-            if(this.reflowable.isScrollmode()) {
+            if(this.reflowable.isScrollMode()) {
                 this.reflowable.setIframeHeight(this.iframe)
             }
         }, 100);
@@ -1563,7 +1563,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private hideView(_view: HTMLDivElement, _control: HTMLButtonElement): void {
-        if(this.reflowable.isScrollmode()) {
+        if(this.reflowable.isScrollMode()) {
             document.body.style.overflow = "auto";
         }
     }
@@ -1629,7 +1629,7 @@ export default class IFrameNavigator implements Navigator {
                     }
                 }
 
-                if(this.reflowable.isScrollmode()) {
+                if(this.reflowable.isScrollMode()) {
                     if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"

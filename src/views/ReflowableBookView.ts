@@ -18,14 +18,14 @@
  */
 
 
-import { UserProperty } from "../model/user-settings/UserProperties";
+import {UserProperty} from "../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import Store from "../store/Store";
 import BookView from "./BookView";
-import { UserSettings } from "../model/user-settings/UserSettings";
-import { IFrameAttributes } from "../navigator/IFrameNavigator";
-import { debounce } from "debounce";
+import {UserSettings} from "../model/user-settings/UserSettings";
+import {IFrameAttributes} from "../navigator/IFrameNavigator";
+import {debounce} from "debounce";
 
 
 export default class ReflowableBookView implements BookView {
@@ -33,20 +33,21 @@ export default class ReflowableBookView implements BookView {
     private readonly USERSETTINGS = "userSetting";
     private readonly store: Store;
     private scrollMode: boolean
+
     constructor(store: Store) {
         this.store = store;
 
-        if (this.isScrollmode()) {
+        if (this.isScrollMode()) {
             this.name = "readium-scroll-on";
-            this.label = "Scrolling";        
+            this.label = "Scrolling";
         } else {
             this.name = "readium-scroll-off";
-            this.label = "Paginated";        
+            this.label = "Paginated";
         }
     }
 
 
-    setMode(scroll:boolean) {
+    setMode(scroll: boolean) {
         // this.iframe.height = "0";
         // this.iframe.width = "0";
 
@@ -55,28 +56,28 @@ export default class ReflowableBookView implements BookView {
         // const images = Array.prototype.slice.call(body.querySelectorAll("img"));
         // for (const image of images) {
         //     image.style.maxWidth = "";
-        // }    
+        // }
         this.scrollMode = scroll
 
         if (scroll) {
             this.name = "readium-scroll-on";
-            this.label = "Scrolling";        
+            this.label = "Scrolling";
             const head = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "head") as HTMLHeadElement;
 
             if (head) {
                 const viewport = HTMLUtilities.findElement(head, 'meta[name=viewport]') as HTMLMetaElement;
-                if(viewport) {
+                if (viewport) {
                     viewport.remove();
                 }
             }
-    
+
             const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
             html.style.setProperty("--USER__scroll", "readium-scroll-on");
-            this.setSize();  
+            this.setSize();
             this.setIframeHeight(this.iframe)
         } else {
             this.name = "readium-scroll-off";
-            this.label = "Paginated";        
+            this.label = "Paginated";
             // any is necessary because CSSStyleDeclaration type does not include
             // all the vendor-prefixed attributes.
             this.setSize();
@@ -92,34 +93,34 @@ export default class ReflowableBookView implements BookView {
 
 
     }
-    
+
     name: string;
     label: string;
     iframe: HTMLIFrameElement;
     sideMargin: number = 20;
     height: number = 0;
-    attributes: IFrameAttributes = {margin:0}
-    
+    attributes: IFrameAttributes = {margin: 0}
+
     start(): void {
-        if (this.isScrollmode()) {
+        if (this.isScrollMode()) {
             const head = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "head") as HTMLHeadElement;
             if (head) {
                 const viewport = HTMLUtilities.findElement(head, 'meta[name=viewport]') as HTMLMetaElement;
-                if(viewport) {
+                if (viewport) {
                     viewport.remove();
                 }
             }
-            this.setSize();    
+            this.setSize();
         } else {
             this.iframe.height = "0";
             this.iframe.width = "0";
-    
+
             const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
-    
+
             const images = Array.prototype.slice.call(body.querySelectorAll("img"));
             for (const image of images) {
                 image.style.maxWidth = "";
-            }    
+            }
 
             // any is necessary because CSSStyleDeclaration type does not include
             // all the vendor-prefixed attributes.
@@ -131,56 +132,56 @@ export default class ReflowableBookView implements BookView {
             this.checkForFixedScrollWidth();
         }
     }
+
     stop(): void {
-        // if (this.isScrollmode()) {
-            this.iframe.height = "0";
-            this.iframe.width = "0";
-    
-            const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
-    
-            const images = Array.prototype.slice.call(body.querySelectorAll("img"));
-            for (const image of images) {
-                image.style.maxWidth = "";
-            }    
-        // } else {
-        // }
+        this.iframe.height = "0";
+        this.iframe.width = "0";
+
+        const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+
+        const images = Array.prototype.slice.call(body.querySelectorAll("img"));
+        for (const image of images) {
+            image.style.maxWidth = "";
+        }
     }
+
     getCurrentPosition(): number {
-        if (this.isScrollmode()) {
-            const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
-            return document.scrollingElement.scrollTop / body.scrollHeight;    
+        if (this.isScrollMode()) {
+            return this.iframe.contentDocument.scrollingElement.scrollTop / this.iframe.contentDocument.body.scrollHeight;
         } else {
             const width = this.getColumnWidth();
             const leftWidth = this.getLeftColumnsWidth();
             const rightWidth = this.getRightColumnsWidth();
             const totalWidth = leftWidth + width + rightWidth;
-            return leftWidth / totalWidth;    
+            return leftWidth / totalWidth;
         }
     }
+
     goToPosition(position: number): void {
-        if (this.isScrollmode()) {
-            document.scrollingElement.scrollTop = document.scrollingElement.scrollHeight * position;    
+        if (this.isScrollMode()) {
+            this.iframe.contentDocument.scrollingElement.scrollTop = this.iframe.contentDocument.scrollingElement.scrollHeight * position;
         } else {
             // If the window has changed size since the columns were set up,
             // we need to reset position so we can determine the new total width.
-    
+
             const width = this.getColumnWidth();
             const rightWidth = this.getRightColumnsWidth();
             const totalWidth = width + rightWidth;
-    
+
             const newLeftWidth = position * totalWidth;
-    
+
             // Round the new left width so it's a multiple of the column width.
-    
+
             let roundedLeftWidth = Math.round(newLeftWidth / width) * width;
             if (roundedLeftWidth >= totalWidth) {
                 // We've gone too far and all the columns are off to the left.
                 // Move one column back into the viewport.
                 roundedLeftWidth = roundedLeftWidth - width;
             }
-            this.setLeftColumnsWidth(roundedLeftWidth);    
+            this.setLeftColumnsWidth(roundedLeftWidth);
         }
     }
+
     goToCssSelector(cssSelector: string, relative?: boolean): void {
         var element = (this.iframe.contentDocument as any).querySelector(cssSelector)
         this.goToElement(element, relative);
@@ -190,125 +191,127 @@ export default class ReflowableBookView implements BookView {
         const element = (this.iframe.contentDocument as any).getElementById(fragment);
         this.goToElement(element, relative);
     }
-    
+
     goToElement(element: HTMLElement | null, relative?: boolean): void {
-        if (this.isScrollmode()) {
+        if (this.isScrollMode()) {
             if (element) {
                 // Put the element as close to the top as possible.
-                document.scrollingElement.scrollTop = element.offsetTop;
-            }    
+                this.iframe.contentDocument.scrollingElement.scrollTop = element.offsetTop;
+            }
         } else {
             if (element) {
                 // Get the element's position in the iframe, and
                 // round that to figure out the column it's in.
-    
+
                 // There is a bug in Safari when using getBoundingClientRect
                 // on an element that spans multiple columns. Temporarily
                 // set the element's height to fit it on one column so we
                 // can determine the first column position.
                 const originalHeight = element.style.height;
                 element.style.height = "0";
-    
+
                 const left = element.getBoundingClientRect().left;
                 const width = this.getColumnWidth();
-                let roundedLeftWidth = Math.floor(left / width) * width;
+                const diff = this.iframe.contentDocument.scrollingElement.scrollLeft - width;
+                // let roundedLeftWidth = Math.ceil(left / width) * width;
+                let roundedLeftWidth = (Math.ceil(left / width) * width) + diff;
                 if (relative) {
                     const origin = this.getLeftColumnsWidth();
-                    roundedLeftWidth = (Math.floor(left / width) * width) + origin;
+                    roundedLeftWidth = (Math.ceil(left / width) * width) + origin;
                 }
-    
+
                 // Restore element's original height.
                 element.style.height = originalHeight;
-    
+                console.log(roundedLeftWidth)
                 this.setLeftColumnsWidth(roundedLeftWidth);
-            }    
+            }
         }
     }
+
     // at top in scrollmode
     atStart(): boolean {
-        if (this.isScrollmode()) {
-            return document.scrollingElement.scrollTop === 0;
+        if (this.isScrollMode()) {
+            return this.iframe.contentDocument.scrollingElement.scrollTop === 0;
         } else {
             const leftWidth = this.getLeftColumnsWidth();
             return (leftWidth <= 0);
         }
     }
+
     // at bottom in scrollmode
     atEnd(): boolean {
-        if (this.isScrollmode()) {
-            return (Math.ceil(document.scrollingElement.scrollHeight - document.scrollingElement.scrollTop) - 1) <= BrowserUtilities.getHeight();
+        if (this.isScrollMode()) {
+            return (Math.ceil(this.iframe.contentDocument.scrollingElement.scrollHeight - this.iframe.contentDocument.scrollingElement.scrollTop) - 1) <= BrowserUtilities.getHeight();
         } else {
             const rightWidth = this.getRightColumnsWidth();
-            return (rightWidth <= 0);    
+            return (rightWidth <= 0);
         }
     }
+
     goToPreviousPage(): void {
-        if (this.isScrollmode()) {
-            const leftHeight = document.scrollingElement.scrollTop;
+        if (this.isScrollMode()) {
+            const leftHeight = this.iframe.contentDocument.scrollingElement.scrollTop;
             const height = this.getScreenHeight();
-            var offset = leftHeight - height;
+            const offset = leftHeight - height;
             if (offset >= 0) {
-                document.scrollingElement.scrollTop = offset;
+                this.iframe.contentDocument.scrollingElement.scrollTop = offset;
             } else {
-                document.scrollingElement.scrollTop = 0;
-            }    
+                this.iframe.contentDocument.scrollingElement.scrollTop = 0;
+            }
         } else {
             const leftWidth = this.getLeftColumnsWidth();
             const width = this.getColumnWidth();
-    
-            var offset = leftWidth - width;
+            const offset = leftWidth - width;
             if (offset >= 0) {
                 this.setLeftColumnsWidth(offset);
             } else {
                 this.setLeftColumnsWidth(0);
             }
-    
+
         }
     }
 
     goToNextPage(): void {
-        if (this.isScrollmode()) {
-            const leftHeight = document.scrollingElement.scrollTop;
+        if (this.isScrollMode()) {
+            const leftHeight = this.iframe.contentDocument.scrollingElement.scrollTop;
             const height = this.getScreenHeight();
-            const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as HTMLElement;
-            const scrollHeight = html.scrollHeight;    
-            var offset = leftHeight + height;
+            const scrollHeight = this.iframe.contentDocument.scrollingElement.scrollHeight;
+            const offset = leftHeight + height;
             if (offset < scrollHeight) {
-                document.scrollingElement.scrollTop = offset;
+                this.iframe.contentDocument.scrollingElement.scrollTop = offset;
             } else {
-                document.scrollingElement.scrollTop = scrollHeight;
+                this.iframe.contentDocument.scrollingElement.scrollTop = scrollHeight;
             }
         } else {
             const leftWidth = this.getLeftColumnsWidth();
             const width = this.getColumnWidth();
-            const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as HTMLElement;
-            const scrollWidth = html.scrollWidth;
-            
-            var offset = leftWidth + width;
+            const scrollWidth = this.iframe.contentDocument.scrollingElement.scrollWidth;
+            const offset = leftWidth + width;
             if (offset < scrollWidth) {
                 this.setLeftColumnsWidth(offset);
             } else {
                 this.setLeftColumnsWidth(scrollWidth);
-            }    
+            }
         }
 
     }
+
     // doesn't exist in scrollmode
     getCurrentPage(): number {
-        if (this.isScrollmode()) {
+        if (this.isScrollMode()) {
             return 0
         } else {
             return this.getCurrentPosition() * this.getPageCount() + 1;
         }
     }
+
     // doesn't exist in scrollmode
     getPageCount(): number {
-        if (this.isScrollmode()) {
-            return 0 
+        if (this.isScrollMode()) {
+            return 0
         } else {
             const width = this.getColumnWidth();
-            const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as HTMLElement;
-            return html.scrollWidth / width;    
+            return this.iframe.contentDocument.scrollingElement.scrollWidth / width;
         }
     }
 
@@ -321,7 +324,8 @@ export default class ReflowableBookView implements BookView {
         }
         return this.scrollMode === false
     }
-    isScrollmode() {
+
+    isScrollMode() {
         if (this.iframe) {
             const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
             const scroll = UserSettings.scrollValues.findIndex((el: any) => el === html.style.getPropertyValue("--USER__scroll"))
@@ -329,6 +333,7 @@ export default class ReflowableBookView implements BookView {
         }
         return this.scrollMode === true
     }
+
     async getProperty(name: string): Promise<UserProperty> {
         let array = await this.store.get(this.USERSETTINGS);
         if (array) {
@@ -344,26 +349,25 @@ export default class ReflowableBookView implements BookView {
 
 // scrolling functions
 
-
     private getScreenHeight(): number {
         const windowTop = window.scrollY;
         const windowBottom = windowTop + window.innerHeight;
         return windowBottom - windowTop - 40 - this.attributes.margin
     }
-    setIframeHeight(iframe:any) {
-        var d = debounce((iframe:any) => {
+
+    setIframeHeight(iframe: any) {
+        let d = debounce((iframe: any) => {
             if (iframe) {
-                var iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
+                let iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
                 if (iframeWin.document.body) {
                     const minHeight = BrowserUtilities.getHeight() - 40 - this.attributes.margin;
-                    const bodyHeight = iframeWin.document.documentElement.scrollHeight || iframeWin.document.body.scrollHeight;        
+                    const bodyHeight = iframeWin.document.documentElement.scrollHeight || iframeWin.document.body.scrollHeight;
                     iframe.height = Math.max(minHeight, bodyHeight);
                 }
             }
         }, 100);
         d(iframe)
     };
-
 
 
 // paginated functions
@@ -397,11 +401,11 @@ export default class ReflowableBookView implements BookView {
             // Remove previous iframe height so body scroll height will be accurate.
             this.iframe.height = "0";
             this.iframe.width = BrowserUtilities.getWidth() + "px";
-    
+
             const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
-    
+
             const width = (BrowserUtilities.getWidth() - this.sideMargin * 2) + "px";
-    
+
             const images = Array.prototype.slice.call(body.querySelectorAll("img"));
             for (const image of images) {
                 if (image.hasAttribute("width")) {
@@ -413,34 +417,31 @@ export default class ReflowableBookView implements BookView {
                 if (image.width > width) {
                     image.style.maxWidth = width;
                 }
-        
+
             }
         }
     }
 
 
-    // TODO: if we cahnged the following functions to handle screen size (height and wdith) we can use it for both paginated and reflowable. 
-    // For example: getColumnWidth would be renamed to something that gives us either the offsetWidth when in paginated mode and the offsetHeight when in scrollmode. etc. 
-    // Since theses are the only 4 functions right now that are specifically used for paginated mode buyt give us nothing for scrollmode, it would make sense to make them more universal
+    // TODO: if we changed the following functions to handle screen size (height and wdith) we can use it for both paginated and reflowable.
+    // For example: getColumnWidth would be renamed to something that gives us either the offsetWidth when in paginated mode and the offsetHeight when in scrollmode. etc.
+    // Since theses are the only 4 functions right now that are specifically used for paginated mode but gives us nothing for scrollmode, it would make sense to make them more universal
 
 
     /** Returns the total width of the columns that are currently
-    positioned to the left of the iframe viewport. */
+     positioned to the left of the iframe viewport. */
     private getLeftColumnsWidth(): number {
-        const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as HTMLElement;
-        return html.scrollLeft;
+        return this.iframe.contentDocument.scrollingElement.scrollLeft;
     }
 
     /** Returns the total width of the columns that are currently
-        positioned to the right of the iframe viewport. */
+     positioned to the right of the iframe viewport. */
     private getRightColumnsWidth(): number {
-        const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as HTMLElement;
-        const scrollWidth = html.scrollWidth;
-
+        const scrollWidth = this.iframe.contentDocument.scrollingElement.scrollWidth;
         const width = this.getColumnWidth();
         let rightWidth = scrollWidth - width;
         if (this.hasFixedScrollWidth) {
-            // In some browsers (IE and Firefox with certain books), 
+            // In some browsers (IE and Firefox with certain books),
             // scrollWidth doesn't change when some columns
             // are off to the left, so we need to subtract them.
             const leftWidth = this.getLeftColumnsWidth();
@@ -451,14 +452,12 @@ export default class ReflowableBookView implements BookView {
 
     /** Returns the width of one column. */
     private getColumnWidth(): number {
-        const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as HTMLElement;
-        return html.offsetWidth;
+        return this.iframe.contentDocument.scrollingElement.clientWidth;
     }
 
     /** Shifts the columns so that the specified width is positioned
-        to the left of the iframe viewport. */
+     to the left of the iframe viewport. */
     private setLeftColumnsWidth(width: number) {
-        const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as HTMLElement;
-        html.scrollLeft = width;
+        this.iframe.contentDocument.scrollingElement.scrollLeft = width;
     }
 }

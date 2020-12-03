@@ -955,7 +955,7 @@ export default class IFrameNavigator implements Navigator {
 
 
             // Inject Readium CSS into Iframe Head
-            const head = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "head") as HTMLHeadElement;
+            const head = this.iframe.contentDocument.head
             if (head) {
 
                 head.insertBefore(this.createBase(this.currentChapterLink.href), head.firstChild)
@@ -992,8 +992,7 @@ export default class IFrameNavigator implements Navigator {
             }
             setTimeout(() => {
 
-                const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
-
+                const body = this.iframe.contentDocument.body
                 if (oc(this.rights).enableTTS(false) && oc(this.tts).enableSplitter(false)) {
                     Splitting({
                         target: body,
@@ -1017,13 +1016,13 @@ export default class IFrameNavigator implements Navigator {
                 }
                 if (oc(this.rights).enableTTS(false)) {
                     setTimeout(() => {
-                        const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+                        const body = this.iframe.contentDocument.body
                         if (this.ttsModule !== undefined) {
                             this.ttsModule.initialize(body)
                         }
                     }, 200);
                 }
-                const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+                const body = this.iframe.contentDocument.body
                 var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
                 for (var i = 0; i < pagebreaks.length; i++) {
                     var img = pagebreaks[i];
@@ -1216,7 +1215,7 @@ export default class IFrameNavigator implements Navigator {
         return this.publication.readingOrder.length
     }
     mostRecentNavigatedTocItem(): string {
-        return this.publication.getRelativeHref(this.currentTOCRawLink) 
+        return this.publication.getRelativeHref(this.currentTOCRawLink)
     }
     currentResource(): number {
         let currentLocation = this.currentChapterLink.href
@@ -1269,7 +1268,7 @@ export default class IFrameNavigator implements Navigator {
             resourceScreenIndex : Math.round(this.reflowable.getCurrentPage()),
             resourceScreenCount : Math.round(this.reflowable.getPageCount())
         }
-        return position 
+        return position
     }
 
     positions():any {
@@ -1507,7 +1506,7 @@ export default class IFrameNavigator implements Navigator {
             const pageCount = locator.displayInfo.resourceScreenCount
             const remaining = locator.locations.remainingPositions;
             if (this.chapterPosition) this.chapterPosition.innerHTML = "Page " + currentPage + " of " + pageCount;
-            if (this.remainingPositions) this.remainingPositions.innerHTML = remaining + " left in chapter";            
+            if (this.remainingPositions) this.remainingPositions.innerHTML = remaining + " left in chapter";
         } else {
             if (this.chapterPosition) this.chapterPosition.innerHTML = "";
             if (this.remainingPositions) this.remainingPositions.innerHTML = "";
@@ -1594,7 +1593,7 @@ export default class IFrameNavigator implements Navigator {
             if (locator.locations === undefined) {
                 locator.locations = {
                     progression: 0
-                } 
+                }
             }
             this.newPosition = locator;
             this.currentTOCRawLink = locator.href
@@ -1750,23 +1749,23 @@ export default class IFrameNavigator implements Navigator {
         return cssLink;
     }
     private createJavascriptLink(href: string, isAsync: boolean): HTMLScriptElement {
-        
+
         const jsLink = document.createElement('script');
         jsLink.type = 'text/javascript';
         jsLink.src = href;
 
         // Enforce synchronous behaviour of injected scripts
-        // unless specifically marked async, as though they 
+        // unless specifically marked async, as though they
         // were inserted using <script> tags
         //
-        // See comment on differing default behaviour of 
+        // See comment on differing default behaviour of
         // dynamically inserted script loading at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script#Attributes
         if(isAsync) {
             jsLink.async = true
         } else {
             jsLink.async = false
         }
-        
+
         return jsLink;
     }
 

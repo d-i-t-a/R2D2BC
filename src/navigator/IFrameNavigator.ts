@@ -37,6 +37,12 @@ import ReflowableBookView from "../views/ReflowableBookView";
 import SearchModule from "../modules/search/SearchModule";
 import TextHighlighter from "../modules/highlight/TextHighlighter";
 import TimelineModule from "../modules/positions/TimelineModule";
+import { debounce } from "debounce";
+
+export type GetContent = (href: string) => Promise<string>
+export interface ContentAPI {
+    getContent: GetContent;
+}
 
 export interface UpLinkConfig {
     url?: URL;
@@ -555,6 +561,7 @@ export default class IFrameNavigator implements Navigator {
             }
         }
     }
+    isScrolling: boolean
 
     private updateBookView(): void {
         this.settings.isPaginated().then(paginated => {
@@ -597,8 +604,13 @@ export default class IFrameNavigator implements Navigator {
                     if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                     if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                 }
+                const onDoScrolling = debounce(() => {
+                    this.isScrolling = false;
+                }, 200);
+
                 // document.body.style.overflow = "auto";
                 document.body.onscroll = () => {
+                    this.isScrolling = true
                     this.saveCurrentReadingPosition();
                     if (this.reflowable.atEnd()) {
                         // Bring up the bottom nav when you get to the bottom,
@@ -616,7 +628,7 @@ export default class IFrameNavigator implements Navigator {
                             this.toggleDisplay(this.linksBottom);
                         }
                     }
-                    if(this.reflowable.isScrollmode()) {
+                    if(this.reflowable.isScrollMode()) {
                         if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                             if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                             if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
@@ -631,7 +643,7 @@ export default class IFrameNavigator implements Navigator {
                             if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                         }
                     }
-
+                    onDoScrolling()
                 }
 
                 if (this.chapterTitle) this.chapterTitle.style.display = "none";
@@ -664,41 +676,6 @@ export default class IFrameNavigator implements Navigator {
 
     }
 
-    onScroll(): void {
-        this.saveCurrentReadingPosition();
-        if (this.reflowable && this.reflowable.atEnd()) {
-            // Bring up the bottom nav when you get to the bottom,
-            // if it wasn't already displayed.
-            if (!this.isDisplayed(this.linksBottom)) {
-                this.toggleDisplay(this.linksBottom);
-            }
-            if (!this.isDisplayed(this.linksMiddle)) {
-                this.toggleDisplay(this.linksMiddle);
-            }
-        } else {
-            // Remove the bottom nav when you scroll back up,
-            // if it was displayed because you were at the bottom.
-            if (this.isDisplayed(this.linksBottom) && !this.isDisplayed(this.links)) {
-                this.toggleDisplay(this.linksBottom);
-            }
-        }
-        if(this.reflowable.isScrollmode()) {
-            if (this.reflowable.atStart() && this.reflowable.atEnd()) {
-                this.nextChapterBottomAnchorElement.style.display = "unset"
-                this.previousChapterTopAnchorElement.style.display = "unset"
-            } else if (this.reflowable.atEnd()) {
-                this.previousChapterTopAnchorElement.style.display = "none"
-                this.nextChapterBottomAnchorElement.style.display = "unset"
-            } else if (this.reflowable.atStart()) {
-                this.nextChapterBottomAnchorElement.style.display = "none"
-                this.previousChapterTopAnchorElement.style.display = "unset"
-            } else {
-                this.nextChapterBottomAnchorElement.style.display = "none"
-                this.previousChapterTopAnchorElement.style.display = "none"
-            }
-        }
-
-    }
 
     private async loadManifest(): Promise<void> {
         try {
@@ -983,7 +960,7 @@ export default class IFrameNavigator implements Navigator {
 
 
             // Inject Readium CSS into Iframe Head
-            const head = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "head") as HTMLHeadElement;
+            const head = this.iframe.contentDocument.head
             if (head) {
 
                 head.insertBefore(this.createBase(this.currentChapterLink.href), head.firstChild)
@@ -1020,8 +997,7 @@ export default class IFrameNavigator implements Navigator {
             }
             setTimeout(() => {
 
-                const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
-
+                const body = this.iframe.contentDocument.body
                 if (oc(this.rights).enableTTS(false) && oc(this.tts).enableSplitter(false)) {
                     Splitting({
                         target: body,
@@ -1035,8 +1011,8 @@ export default class IFrameNavigator implements Navigator {
                 if (this.eventHandler) {
                     this.eventHandler.setupEvents(this.iframe.contentDocument);
                 }
-    
-                if(this.reflowable.isScrollmode()) {
+
+                if(this.reflowable.isScrollMode()) {
                     this.reflowable.setIframeHeight(this.iframe)
                 }
 
@@ -1045,13 +1021,13 @@ export default class IFrameNavigator implements Navigator {
                 }
                 if (oc(this.rights).enableTTS(false)) {
                     setTimeout(() => {
-                        const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+                        const body = this.iframe.contentDocument.body
                         if (this.ttsModule !== undefined) {
                             this.ttsModule.initialize(body)
                         }
                     }, 200);
                 }
-                const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
+                const body = this.iframe.contentDocument.body
                 var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
                 for (var i = 0; i < pagebreaks.length; i++) {
                     var img = pagebreaks[i];
@@ -1089,7 +1065,57 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private tryAgain() {
-        this.iframe.src = this.currentChapterLink.href
+        this.precessContentForIframe();
+    }
+
+    private precessContentForIframe() {
+        const self = this
+        function writeIframeDoc(content: string) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(content, "application/xhtml+xml");
+            if (doc.head) {
+                doc.head.insertBefore(self.createBase(self.currentChapterLink.href), doc.head.firstChild)
+            }
+            const newHTML = doc.documentElement.outerHTML;
+            const iframeDoc = self.iframe.contentDocument;
+            iframeDoc.open();
+            iframeDoc.write(newHTML);
+            iframeDoc.close();
+        }
+        const link = new URL(this.currentChapterLink.href)
+        const isSameOrigin = (
+            window.location.protocol === link.protocol &&
+            window.location.port === link.port &&
+            window.location.hostname === link.hostname
+        );
+
+        if (this.api && this.api.getContent) {
+            this.api.getContent(this.currentChapterLink.href).then(content => {
+                if (content === undefined) {
+                    if (isSameOrigin) {
+                        this.iframe.src = this.currentChapterLink.href
+                    } else {
+                        fetch(this.currentChapterLink.href)
+                            .then(r => r.text())
+                            .then(async content => {
+                                writeIframeDoc.call(this, content);
+                            })
+                    }
+                } else {
+                    writeIframeDoc.call(this, content);
+                }
+            })
+        } else {
+            if (isSameOrigin) {
+                this.iframe.src = this.currentChapterLink.href
+            } else {
+                fetch(this.currentChapterLink.href)
+                    .then(r => r.text())
+                    .then(async content => {
+                        writeIframeDoc.call(this, content);
+                    })
+            }
+        }
     }
 
     private goBack() {
@@ -1189,7 +1215,7 @@ export default class IFrameNavigator implements Navigator {
             this.hideElement(element, control);
         }
         if (element === this.linksMiddle) {
-            if(this.reflowable.isScrollmode()) {
+            if(this.reflowable.isScrollMode()) {
                 this.showElement(element, control);
             } else {
                 this.hideElement(element, control);
@@ -1244,7 +1270,7 @@ export default class IFrameNavigator implements Navigator {
         return this.publication.readingOrder.length
     }
     mostRecentNavigatedTocItem(): string {
-        return this.publication.getRelativeHref(this.currentTOCRawLink) 
+        return this.publication.getRelativeHref(this.currentTOCRawLink)
     }
     currentResource(): number {
         let currentLocation = this.currentChapterLink.href
@@ -1297,7 +1323,7 @@ export default class IFrameNavigator implements Navigator {
             resourceScreenIndex : Math.round(this.reflowable.getCurrentPage()),
             resourceScreenCount : Math.round(this.reflowable.getPageCount())
         }
-        return position 
+        return position
     }
 
     positions():any {
@@ -1307,6 +1333,13 @@ export default class IFrameNavigator implements Navigator {
         let locator = this.publication.positions.filter((el: Locator) => el.locations.position == position)[0]
         goTo(locator)
     }
+
+    applyAtributes(attributes:IFrameAttributes) {
+        this.attributes = attributes
+        this.reflowable.attributes = attributes
+        this.handleResize()
+    }
+
     private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
         this.stopReadAloud();
         if(this.reflowable.isPaginated()) {
@@ -1457,6 +1490,9 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handleResize(): void {
+        if (this.isScrolling) {
+            return;
+        }
         const selectedView = this.reflowable;
         const oldPosition = selectedView.getCurrentPosition();
 
@@ -1501,7 +1537,7 @@ export default class IFrameNavigator implements Navigator {
 
 
         setTimeout(() => {
-            if(this.reflowable.isScrollmode()) {
+            if(this.reflowable.isScrollMode()) {
                 this.reflowable.setIframeHeight(this.iframe)
             }
         }, 100);
@@ -1525,7 +1561,7 @@ export default class IFrameNavigator implements Navigator {
             const pageCount = locator.displayInfo.resourceScreenCount
             const remaining = locator.locations.remainingPositions;
             if (this.chapterPosition) this.chapterPosition.innerHTML = "Page " + currentPage + " of " + pageCount;
-            if (this.remainingPositions) this.remainingPositions.innerHTML = remaining + " left in chapter";            
+            if (this.remainingPositions) this.remainingPositions.innerHTML = remaining + " left in chapter";
         } else {
             if (this.chapterPosition) this.chapterPosition.innerHTML = "";
             if (this.remainingPositions) this.remainingPositions.innerHTML = "";
@@ -1581,7 +1617,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private hideView(_view: HTMLDivElement, _control: HTMLButtonElement): void {
-        if(this.reflowable.isScrollmode()) {
+        if(this.reflowable.isScrollMode()) {
             document.body.style.overflow = "auto";
         }
     }
@@ -1612,7 +1648,7 @@ export default class IFrameNavigator implements Navigator {
             if (locator.locations === undefined) {
                 locator.locations = {
                     progression: 0
-                } 
+                }
             }
             this.newPosition = locator;
             this.currentTOCRawLink = locator.href
@@ -1627,8 +1663,8 @@ export default class IFrameNavigator implements Navigator {
                 this.currentChapterLink.type = locator.type
                 this.currentChapterLink.title = locator.title
             }
-            this.iframe.src = this.currentChapterLink.href
 
+            this.precessContentForIframe();
 
             if (locator.locations.fragment === undefined) {
                 this.currentTocUrl = null;
@@ -1647,7 +1683,7 @@ export default class IFrameNavigator implements Navigator {
                     }
                 }
 
-                if(this.reflowable.isScrollmode()) {
+                if(this.reflowable.isScrollMode()) {
                     if (this.reflowable.atStart() && this.reflowable.atEnd()) {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
@@ -1661,6 +1697,9 @@ export default class IFrameNavigator implements Navigator {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                     }
+                }
+                if (this.api && this.api.resourceReady) {
+                    this.api.resourceReady()
                 }
             }, 300);
         } else {
@@ -1736,8 +1775,8 @@ export default class IFrameNavigator implements Navigator {
                 type: this.currentChapterLink.type,
                 title: this.currentChapterLink.title
             }
-            if (this.api && this.api.updateCurrentlocation) {
-                this.api.updateCurrentlocation(position).then(async _ => {
+            if (this.api && this.api.updateCurrentLocation) {
+                this.api.updateCurrentLocation(position).then(async _ => {
                     if (IS_DEV) { console.log("api updated current location", position) }
                     return this.annotator.saveLastReadingPosition(position);
                 })
@@ -1765,23 +1804,23 @@ export default class IFrameNavigator implements Navigator {
         return cssLink;
     }
     private createJavascriptLink(href: string, isAsync: boolean): HTMLScriptElement {
-        
+
         const jsLink = document.createElement('script');
         jsLink.type = 'text/javascript';
         jsLink.src = href;
 
         // Enforce synchronous behaviour of injected scripts
-        // unless specifically marked async, as though they 
+        // unless specifically marked async, as though they
         // were inserted using <script> tags
         //
-        // See comment on differing default behaviour of 
+        // See comment on differing default behaviour of
         // dynamically inserted script loading at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script#Attributes
         if(isAsync) {
             jsLink.async = true
         } else {
             jsLink.async = false
         }
-        
+
         return jsLink;
     }
 

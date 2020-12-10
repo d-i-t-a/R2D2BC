@@ -248,9 +248,8 @@
                 <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="border: 0px; display: block;"
                         width="100%" height="100%"></iframe>
             </main>
-
-            <div id="container-view-timeline" class="timeline" style="left: unset; right: 1.25rem;margin-bottom: 5rem;">
-            </div>
+            <div id="container-view-security" class="security"></div>
+            <div id="container-view-timeline" class="timeline" style="left: unset; right: 1.25rem;margin-bottom: 5rem;"></div>
 
             <span id="highlight-toolbox" class="highlight-toolbox">
                 <div id="highlight-toolbox-mode-add">
@@ -384,7 +383,8 @@
                 enableAnnotations: true,
                 enableTTS: true,
                 enableSearch: true,
-                enableTimeline: true
+                enableTimeline: true,
+                enableContentProtection: true,
             },
             tts: {
                 enableSplitter: true,
@@ -410,9 +410,28 @@
                 initialAnnotationColor: "var(--RS__highlightColor)",
                 // initialAnnotationColor: "#ff8500",
             },
-            api: {
+            protection: {
+                enforceSupportedBrowsers: true,
+                enableEncryption: true, // does nothing right now 
+                enableObfuscation: true,
+                disablePrint:true,
+                disbaleCopy:true,
+                detectInspect: true, 
+                clearOnInspect: false, // make sure detectInspect is true, otherwise this won't work
+                disableKeys: true,
+                disableContextMenu: true,
+                hideTargetUrl: true,
+                disableDrag: true,
+                api: {
+                    // make sure detectInspect is true, otherwise this won't be called
+                    // this callback will be executed in a loop while inspect is visible
+                    inspectDetected: function () {
+                        console.log("inspect detected")
+                    },
+                }
             },
-            // lastReadingPosition: lastReadingPosition,
+            api: {
+            },           
             injectables: injectables,
             userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)

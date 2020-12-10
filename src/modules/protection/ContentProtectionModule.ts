@@ -291,7 +291,6 @@ export default class ContentProtectionModule implements ReaderModule {
             return new Promise(async (resolve) => {
                 await (document as any).fonts.ready;
                 const body = HTMLUtilities.findRequiredIframeElement(this.delegate.iframe.contentDocument, 'body') as HTMLBodyElement;
-                console.log(body)
 
                 this.observe()
 
@@ -311,7 +310,6 @@ export default class ContentProtectionModule implements ReaderModule {
     }
 
     handleScroll() {
-        console.log("scroll")
         this.rects.forEach((rect) => this.toggleRect(rect, this.securityContainer, this.isHacked));
     }
     handleResize() {
@@ -326,7 +324,6 @@ export default class ContentProtectionModule implements ReaderModule {
             }, 10);
             if (this.rects) {
                 this.observe()
-                console.log("resize")
                 onDoResize();
             }
         }
@@ -434,7 +431,6 @@ export default class ContentProtectionModule implements ReaderModule {
             }, 100);
             if (this.rects) {
                 this.observe()
-                console.log("recalculate")
                 onDoResize();
             }
         }
@@ -450,12 +446,14 @@ export default class ContentProtectionModule implements ReaderModule {
                     rect.width = width;
                     rect.left = left;
                 } catch (error) {
-                    console.log("error " + error)
-                    console.log(rect)
-                    console.log(rect.node)
-                    console.log("scrambledTextContent " + rect.scrambledTextContent)
-                    console.log("textContent " + rect.textContent)
-                    console.log("isObfuscated " + rect.isObfuscated)
+                    if (IS_DEV) {
+                        console.log("error " + error)
+                        console.log(rect)
+                        console.log(rect.node)
+                        console.log("scrambledTextContent " + rect.scrambledTextContent)
+                        console.log("textContent " + rect.textContent)
+                        console.log("isObfuscated " + rect.isObfuscated)
+                    }
                 }
             });
         }
@@ -524,15 +522,17 @@ export default class ContentProtectionModule implements ReaderModule {
 
             return rect;
         } catch (error) {
-            console.log("measureTextNode " + error)
-            console.log("measureTextNode " + node)
-            console.log(node.textContent)
+            if (IS_DEV) {
+                console.log("measureTextNode " + error)
+                console.log("measureTextNode " + node)
+                console.log(node.textContent)
+            }
         }
     }
 
     isBeingHacked(element: HTMLElement): boolean {
         if (element.style.animation || element.style.transition || element.style.position || element.hasAttribute("style")) {
-            console.log("content being hacked")
+            if (IS_DEV) console.log("content being hacked")
             return true
         }
         return false

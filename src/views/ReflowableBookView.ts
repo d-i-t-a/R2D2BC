@@ -224,7 +224,6 @@ export default class ReflowableBookView implements BookView {
 
                 // Restore element's original height.
                 element.style.height = originalHeight;
-                console.log(roundedLeftWidth)
                 this.setLeftColumnsWidth(roundedLeftWidth);
             }
         }

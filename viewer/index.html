@@ -457,7 +457,8 @@
                 enableAnnotations: true,
                 enableTTS: true,
                 enableSearch: true,
-                enableTimeline: true
+                enableTimeline: true,
+                enableContentProtection: true
             },
             material: {
                 settings: {
@@ -541,7 +542,37 @@
                 initialAnnotationColor: "var(--RS__highlightColor)",
                 // initialAnnotationColor: "#ff8500",
             },
+            protection: {
+                enforceSupportedBrowsers: true,
+                enableEncryption: true,
+                enableObfuscation: true,
+                disablePrint: true,
+                disbaleCopy: true,
+                detectInspect: false,
+                clearOnInspect: true, // make sure detectInspect is true, otherwise this won't work
+                disableKeys: true,
+                disableContextMenu: true,
+                hideTargetUrl: true,
+                disableDrag: true,
+                supportedBrowsers: [ // this will only be used if enforceSupportedBrowsers is true, and has nothing to do with the r2d2bc modules supported browsers
+                    "Chrome", "ChromeAndroid", "Edge", "Firefox", "iOS", "Safari"
+                ],
+                api: {
+                    // make sure detectInspect is true, otherwise this won't be called
+                    // this callback will be executed in a loop while inspect is visible
+                    inspectDetected: function () {
+                        console.log("inspect detected")
+                    }
+                }
+            },
             api: {
+                getContent: function (href) {
+                    return new Promise(function (resolve, reject) {
+                        resolve(
+                            // 'test, <a xmlns="http://www.w3.org/1999/xhtml" href="chapter_04.xhtml">Chapter 4</a>'
+                        )
+                    })
+                },
                 resourceReady: function () {
                     console.log("resourceReady")
                 },

@@ -267,6 +267,7 @@
                     <span class="chapter-title"></span>
                 </div>
             </main>
+            <div id="container-view-security" class="security"></div>
 
             <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
                style="top: 65px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
@@ -377,7 +378,8 @@
                 enableMaterial: true,
                 enableBookmarks: true,
                 enableAnnotations: true,
-                enableTTS: true
+                enableTTS: true,
+                enableContentProtection: true,
             },
             attributes: {
                 margin: 120,
@@ -413,8 +415,28 @@
                 initialAnnotationColor: "var(--RS__highlightColor)",
                 // initialAnnotationColor: "#ff8500",
             },
-            api: {
+            protection: {
+                enforceSupportedBrowsers: true,
+                enableEncryption: true, // does nothing right now 
+                enableObfuscation: true,
+                disablePrint: true,
+                disbaleCopy: true,
+                detectInspect: true, 
+                clearOnInspect: false, // make sure detectInspect is true, otherwise this won't work
+                disableKeys: true,
+                disableContextMenu: true,
+                hideTargetUrl: true,
+                disableDrag: true,
+                api: {
+                    // make sure detectInspect is true, otherwise this won't be called
+                    // this callback will be executed in a loop while inspect is visible
+                    inspectDetected: function () {
+                        console.log("inspect detected")
+                    },
+                }
             },
+            api: {
+            },           
             injectables: injectables
         }).then(instance => {
             console.log("D2Reader loaded ", instance);

@@ -576,6 +576,23 @@
                 resourceReady: function () {
                     console.log("resourceReady")
                 },
+                resourceAtStart:function () {
+                    console.log("resourceAtStart")
+                },
+                resourceAtEnd:function () {
+                    console.log("resourceAtEnd")
+                },
+                resourceFitsScreen:function () {
+                    console.log("resourceFitsScreen")
+                },
+                updateCurrentLocation: function (location) {
+                    console.log("updateCurrentLocation")
+                    return new Promise(function (resolve, reject) {
+                        resolve(
+                            location
+                        )
+                    })
+                }
             },
             injectables: injectables,
             userSettings: userSettings,

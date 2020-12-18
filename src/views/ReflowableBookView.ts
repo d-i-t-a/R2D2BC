@@ -149,7 +149,7 @@ export default class ReflowableBookView implements BookView {
 
     getCurrentPosition(): number {
         if (this.isScrollMode()) {
-            return this.iframe.contentDocument.scrollingElement.scrollTop / this.iframe.contentDocument.body.scrollHeight;
+            return document.scrollingElement.scrollTop / this.iframe.contentDocument.scrollingElement.scrollHeight;
         } else {
             const width = this.getColumnWidth();
             const leftWidth = this.getLeftColumnsWidth();
@@ -161,7 +161,7 @@ export default class ReflowableBookView implements BookView {
 
     goToPosition(position: number): void {
         if (this.isScrollMode()) {
-            this.iframe.contentDocument.scrollingElement.scrollTop = this.iframe.contentDocument.scrollingElement.scrollHeight * position;
+            document.scrollingElement.scrollTop = this.iframe.contentDocument.scrollingElement.scrollHeight * position;
         } else {
             // If the window has changed size since the columns were set up,
             // we need to reset position so we can determine the new total width.
@@ -198,7 +198,7 @@ export default class ReflowableBookView implements BookView {
         if (this.isScrollMode()) {
             if (element) {
                 // Put the element as close to the top as possible.
-                this.iframe.contentDocument.scrollingElement.scrollTop = element.offsetTop;
+                document.scrollingElement.scrollTop = element.offsetTop;
             }
         } else {
             if (element) {
@@ -232,7 +232,7 @@ export default class ReflowableBookView implements BookView {
     // at top in scrollmode
     atStart(): boolean {
         if (this.isScrollMode()) {
-            return this.iframe.contentDocument.scrollingElement.scrollTop === 0;
+            return document.scrollingElement.scrollTop === 0;
         } else {
             const leftWidth = this.getLeftColumnsWidth();
             return (leftWidth <= 0);
@@ -242,7 +242,7 @@ export default class ReflowableBookView implements BookView {
     // at bottom in scrollmode
     atEnd(): boolean {
         if (this.isScrollMode()) {
-            return (Math.ceil(this.iframe.contentDocument.scrollingElement.scrollHeight - this.iframe.contentDocument.scrollingElement.scrollTop) - 1) <= BrowserUtilities.getHeight();
+            return (Math.ceil(this.iframe.contentDocument.scrollingElement.scrollHeight - document.scrollingElement.scrollTop) - 1) <= BrowserUtilities.getHeight();
         } else {
             const rightWidth = this.getRightColumnsWidth();
             return (rightWidth <= 0);

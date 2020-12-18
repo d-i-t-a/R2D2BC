@@ -281,9 +281,7 @@ export async function positions() {
 }
 export async function goToPosition(value) {
     if (IS_DEV) { console.log("goToPosition") }
-    if (oc(R2Navigator.rights).autoGeneratePositions(true)) {
-        return R2Navigator.goToPosition(value)
-    }
+    return R2Navigator.goToPosition(value)
 }
 export async function applyAtributes(value) {
     if (IS_DEV) { console.log("applyAtributes") }

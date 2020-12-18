@@ -95,6 +95,7 @@ export interface ReaderRights {
     enableContentProtection?: boolean;
     enableMaterial?: boolean;
     enableTimeline?: boolean;
+    autoGeneratePositions?: boolean;
 }
 
 export interface ReaderUI {
@@ -1335,9 +1336,26 @@ export default class IFrameNavigator implements Navigator {
         this.navigate(position);
     }
     currentLocator():Locator {
-        let positions = this.publication.positionsByHref(this.publication.getRelativeHref(this.currentTOCRawLink));
-        let positionIndex = Math.ceil(this.reflowable.getCurrentPosition() * (positions.length - 1))
-        let position = positions[positionIndex]
+        let position 
+        if (oc(this.rights).autoGeneratePositions(true)) {
+            let positions = this.publication.positionsByHref(this.publication.getRelativeHref(this.currentTOCRawLink));
+            let positionIndex = Math.ceil(this.reflowable.getCurrentPosition() * (positions.length - 1))
+            position = positions[positionIndex]
+        } else {
+            var tocItem = this.publication.getTOCItem(this.currentChapterLink.href);
+            if (this.currentTocUrl !== null) {
+                tocItem = this.publication.getTOCItem(this.currentTocUrl);
+            }
+            if (tocItem === null) {
+                tocItem = this.publication.getTOCItemAbsolute(this.currentChapterLink.href);
+            }
+            position = {
+                href: tocItem.href,
+                type: this.currentChapterLink.type,
+                title: this.currentChapterLink.title,
+                locations: {}
+            }
+        }
         position.locations.progression = this.reflowable.getCurrentPosition()
         position.displayInfo = {
             resourceScreenIndex : Math.round(this.reflowable.getCurrentPage()),
@@ -1350,8 +1368,10 @@ export default class IFrameNavigator implements Navigator {
         return this.publication.positions
     }
     goToPosition(position:number) {
-        let locator = this.publication.positions.filter((el: Locator) => el.locations.position == position)[0]
-        goTo(locator)
+        if (oc(this.rights).autoGeneratePositions(true)) {
+            let locator = this.publication.positions.filter((el: Locator) => el.locations.position == position)[0]
+            goTo(locator)
+        }
     }
 
     applyAtributes(attributes:IFrameAttributes) {

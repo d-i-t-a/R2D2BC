@@ -153,7 +153,14 @@
         <button
                 onclick="javascript:D2Reader.goTo({href:'OEBPS/Text/chapter_01.xhtml', title:'chapter 1', locations:{progression:0}})">go
             to chapter 1</button><br>
-        <button onclick="javascript:D2Reader.saveBookmark()">add bookmark</button><br>
+        <button onclick="javascript:D2Reader.saveBookmark().then(
+            result => { 
+                console.log(result);
+                D2Reader.bookmarks().then(
+                    res => { 
+                        console.log(res.length)
+                    })
+            }); ">add bookmark</button><br>
         <button onclick="javascript:D2Reader.deleteBookmark({id:0.32616493991327755})">delete bookmark</button><br>
 
         <button onclick="javascript:D2Reader.tableOfContents().then(

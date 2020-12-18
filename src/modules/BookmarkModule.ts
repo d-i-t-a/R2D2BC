@@ -148,7 +148,7 @@ export default class BookmarkModule implements ReaderModule {
                 return deleted
             }
         } else {
-            return new Promise<any>(resolve => resolve());
+            return new Promise<any>(resolve => resolve(null));
         }
     }
 
@@ -211,7 +211,7 @@ export default class BookmarkModule implements ReaderModule {
             }
 
         } else {
-            return new Promise<any>(resolve => resolve());
+            return new Promise<any>(resolve => resolve(null));
         }
     }
 

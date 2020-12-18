@@ -882,7 +882,7 @@ export default class IFrameNavigator implements Navigator {
 
             setTimeout(() => {
                 this.reflowable.goToPosition(bookViewPosition);
-            }, 100);
+            }, 200);
 
             setTimeout(() => {
                 if (this.newElementId) {
@@ -1289,9 +1289,16 @@ export default class IFrameNavigator implements Navigator {
         let currentLocation = this.currentChapterLink.href
         return this.publication.getSpineIndex(currentLocation)
     }
-    tableOfContents() : any{
+    tableOfContents() : any {
         return this.publication.tableOfContents
     }
+    atStart() : boolean {
+        return this.reflowable.atStart()
+    }
+    atEnd() : boolean {
+        return this.reflowable.atEnd()
+    }
+
     previousPage(): any {
         this.handlePreviousPageClick(null)
     }
@@ -1714,14 +1721,34 @@ export default class IFrameNavigator implements Navigator {
                     } else if (this.reflowable.atEnd()) {
                         if (this.nextChapterBottomAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                        if (this.api && this.api.resourceAtEnd) {
+                            this.api.resourceAtEnd()
+                        }
                     } else if (this.reflowable.atStart()) {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                        if (this.api && this.api.resourceAtStart) {
+                            this.api.resourceAtStart()
+                        }
                     } else {
                         if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                         if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                     }
                 }
+                if (this.reflowable.atStart() && this.reflowable.atEnd()) {
+                    if (this.api && this.api.resourceFitsScreen) {
+                        this.api.resourceFitsScreen()
+                    }
+                } else if (this.reflowable.atEnd()) {
+                    if (this.api && this.api.resourceAtEnd) {
+                        this.api.resourceAtEnd()
+                    }
+                } else if (this.reflowable.atStart()) {
+                    if (this.api && this.api.resourceAtStart) {
+                        this.api.resourceAtStart()
+                    }
+                }
+
                 if (this.api && this.api.resourceReady) {
                     this.api.resourceReady()
                 }
@@ -1805,6 +1832,7 @@ export default class IFrameNavigator implements Navigator {
                     return this.annotator.saveLastReadingPosition(position);
                 })
             } else {
+                if (IS_DEV) { console.log("save last reading position", position) }
                 return this.annotator.saveLastReadingPosition(position);
             }
 

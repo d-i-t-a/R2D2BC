@@ -128,7 +128,7 @@ export default class AnnotationModule implements ReaderModule {
                     this.drawHighlights()
                 }, 300);
             }
-            resolve();
+            resolve(null);
         });
     }
 
@@ -151,7 +151,7 @@ export default class AnnotationModule implements ReaderModule {
             return deleted
 
         } else {
-            return new Promise<any>(resolve => resolve());
+            return new Promise<any>(resolve => resolve(null));
         }
     }
 
@@ -234,7 +234,7 @@ export default class AnnotationModule implements ReaderModule {
             }
 
         } else {
-            return new Promise<any>(resolve => resolve());
+            return new Promise<any>(resolve => resolve(null));
         }
     }
 

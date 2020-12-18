@@ -258,6 +258,14 @@ export async function previousPage() {
     if (IS_DEV) { console.log("previousPage") }
     R2Navigator.previousPage()
 }
+export async function atStart() {
+    if (IS_DEV) { console.log("atStart") }
+    return R2Navigator.atStart()
+}
+export async function atEnd() {
+    if (IS_DEV) { console.log("atEnd") }
+    return R2Navigator.atEnd()
+}
 export async function scroll(value) {
     if (IS_DEV) { console.log("scroll " + value) }
     R2Settings.scroll(value)
@@ -572,6 +580,13 @@ exports.nextPage = function () {
 }
 exports.previousPage = function () {
     previousPage()
+}
+
+exports.atStart = function () {
+    return atStart()
+}
+exports.atEnd = function () {
+    return atEnd()
 }
 
 exports.scroll = function (value) {

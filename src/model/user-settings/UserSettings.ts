@@ -687,29 +687,13 @@ export class UserSettings implements UserSettings {
 
     async applyUserSettings(userSettings: UserSettings): Promise<void> {
 
-        if (userSettings.verticalScroll) {
-            var v: string
-            if (userSettings.verticalScroll == 'scroll') {
-                v = UserSettings.scrollValues[0]
-            } else if (userSettings.verticalScroll == 'paginated') {
-                v = UserSettings.scrollValues[1]
-            } else {
-                v = userSettings.verticalScroll
-            }
-            this.verticalScroll = UserSettings.scrollValues.findIndex((el: any) => el === v);
-            this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = this.verticalScroll;
-            this.storeProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF))
-            this.applyProperties()
-            this.viewChangeCallback();
-        }
-
         if (userSettings.appearance) {
             var a: string
-            if (userSettings.appearance == 'day') {
+            if (userSettings.appearance == 'day' || userSettings.appearance == 'readium-default-on') {
                 a = UserSettings.appearanceValues[0]
-            } else if (userSettings.appearance == 'sepia') {
+            } else if (userSettings.appearance == 'sepia' || userSettings.appearance == 'readium-sepia-on') {
                 a = UserSettings.appearanceValues[1]
-            } else if (userSettings.appearance == 'night') {
+            } else if (userSettings.appearance == 'night' || userSettings.appearance == 'readium-night-on') {
                 a = UserSettings.appearanceValues[2]
             } else {
                 a = userSettings.appearance
@@ -717,73 +701,79 @@ export class UserSettings implements UserSettings {
             this.appearance = UserSettings.appearanceValues.findIndex((el: any) => el === a);
             this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value = this.appearance;
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF))
-            this.applyProperties()
-            this.settingsChangeCallback();
         }
 
         if (userSettings.fontSize) {
             this.fontSize = userSettings.fontSize
             this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).value = this.fontSize;
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF))
-            this.applyProperties()
-            this.settingsChangeCallback();
         }
 
         if (userSettings.fontFamily) {
             this.fontFamily = UserSettings.fontFamilyValues.findIndex((el: any) => el === userSettings.fontFamily);
             this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value = this.fontFamily;
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF))
-            this.applyProperties()
-            this.settingsChangeCallback();
         }
 
         if (userSettings.letterSpacing) {
             this.letterSpacing = userSettings.letterSpacing
             this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).value = this.letterSpacing;
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF))
-            this.applyProperties()
-            this.settingsChangeCallback();
         }
 
         if (userSettings.wordSpacing) {
             this.wordSpacing = userSettings.wordSpacing
             this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).value = this.wordSpacing;
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF))
-            this.applyProperties()
-            this.settingsChangeCallback();
         }
 
         if (userSettings.columnCount) {
             this.columnCount = UserSettings.columnCountValues.findIndex((el: any) => el === userSettings.columnCount);
             this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value = this.columnCount;
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF))
-            this.applyProperties()
-            this.settingsChangeCallback();
         }
 
         if (userSettings.textAlignment) {
             this.textAlignment = UserSettings.textAlignmentValues.findIndex((el: any) => el === userSettings.textAlignment);
             this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value = this.textAlignment;
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF))
-            this.applyProperties()
-            this.settingsChangeCallback();
         }
 
         if (userSettings.lineHeight) {
             this.lineHeight = userSettings.lineHeight
             this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).value = this.lineHeight;
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF))
-            this.applyProperties()
-            this.settingsChangeCallback();
         }
 
         if (userSettings.pageMargins) {
             this.pageMargins = userSettings.pageMargins
             this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).value = this.pageMargins;
             this.storeProperty(this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF))
-            this.applyProperties()
-            this.settingsChangeCallback();
         }
+        this.applyProperties()
+        this.settingsChangeCallback();
+
+        setTimeout(async () => {
+            if (userSettings.verticalScroll != undefined) {
+                const position = this.reflowable.getCurrentPosition();
+                var v: string
+                if (userSettings.verticalScroll == 'scroll' || userSettings.verticalScroll == 'readium-scroll-on' || userSettings.verticalScroll == true) {
+                    v = UserSettings.scrollValues[0]
+                } else if (userSettings.verticalScroll == 'paginated' || userSettings.verticalScroll == 'readium-scroll-off' || userSettings.verticalScroll == false) {
+                    v = UserSettings.scrollValues[1]
+                } else {
+                    v = userSettings.verticalScroll
+                }
+    
+                this.verticalScroll = UserSettings.scrollValues.findIndex((el: any) => el === v);
+                this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = this.verticalScroll;
+                this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF))
+                this.applyProperties()
+                this.reflowable.setMode(this.verticalScroll === 0);
+                this.reflowable.goToPosition(position)
+                this.viewChangeCallback();
+            }
+        }, 10);
 
     }
 

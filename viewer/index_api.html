@@ -103,7 +103,7 @@
 
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'day'})">day</button><br>
         <button
-                onclick="javascript:D2Reader.applyUserSettings({appearance:'day',fontSize:100, fontFamily:'opendyslexic', letterSpacing:0.25, textAlignment:'justify'})">apply
+                onclick="javascript:D2Reader.applyUserSettings({appearance:'day', verticalScroll:false, fontSize:100, fontFamily:'opendyslexic', letterSpacing:0.25, textAlignment:'justify'})">apply
             multiple settings</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'sepia'})">sepia</button><br>
         <button onclick="javascript:D2Reader.applyUserSettings({appearance:'night'})">night</button><br>
@@ -153,7 +153,14 @@
         <button
                 onclick="javascript:D2Reader.goTo({href:'OEBPS/Text/chapter_01.xhtml', title:'chapter 1', locations:{progression:0}})">go
             to chapter 1</button><br>
-        <button onclick="javascript:D2Reader.saveBookmark()">add bookmark</button><br>
+        <button onclick="javascript:D2Reader.saveBookmark().then(
+            result => { 
+                console.log(result);
+                D2Reader.bookmarks().then(
+                    res => { 
+                        console.log(res.length)
+                    })
+            }); ">add bookmark</button><br>
         <button onclick="javascript:D2Reader.deleteBookmark({id:0.32616493991327755})">delete bookmark</button><br>
 
         <button onclick="javascript:D2Reader.tableOfContents().then(

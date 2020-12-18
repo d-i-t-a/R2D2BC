@@ -65,6 +65,9 @@ export default class TimelineModule implements ReaderModule {
         if (oc(this.delegate.rights).enableMaterial(false)) {
             this.positionSlider = HTMLUtilities.findElement(document, "#positionSlider") as HTMLInputElement;
         }
+        if (!oc(this.delegate.rights).autoGeneratePositions(true)) {
+            this.positionSlider.style.display = "none";
+        }
     }
 
     async initialize() {
@@ -72,7 +75,7 @@ export default class TimelineModule implements ReaderModule {
             await (document as any).fonts.ready;
 
             let locator = this.delegate.currentLocator()
-            if (oc(this.delegate.rights).enableMaterial(false)) {
+            if (oc(this.delegate.rights).enableMaterial(false) && oc(this.delegate.rights).autoGeneratePositions(true)) {
                 this.positionSlider.value = locator.locations.position.toString()
                 this.positionSlider.max = (locator.locations.totalRemainingPositions + locator.locations.position).toString()
             }
@@ -113,11 +116,23 @@ export default class TimelineModule implements ReaderModule {
 
                     event.preventDefault();
                     event.stopPropagation();
+                    let position
+                    if (oc(this.delegate.rights).autoGeneratePositions(true)) {
+                        position = this.publication.positions.filter((el: Locator) => el.href === link.href)[0]
+                        position.href = this.publication.getAbsoluteHref(position.href)
+                    } else {
+                        position = {
+                            href: tocHrefAbs,
+                            locations: {
+                                progression: 0
+                            },
+                            type: link.type,
+                            title: link.title
+                        };
+                    }
+                    if (IS_DEV) console.log(position)
+                    this.delegate.navigate(position)
 
-                    const position1 = this.publication.positions.filter((el: Locator) => el.href === link.href)[0]
-                    position1.href = this.publication.getAbsoluteHref(position1.href)
-                    if (IS_DEV) console.log(position1)
-                    this.delegate.navigate(position1)
                 });
 
                 if (tocHrefAbs === this.delegate.currentChapterLink.href) {

@@ -221,6 +221,15 @@ export default class Publication {
         if(link === null) {
             link = findItem(href, this.readingOrder);
         }
+        if(link === null) {
+            if (href.indexOf("#") !== -1) {
+                const newResource = href.slice(0, href.indexOf("#"))
+                link = findItem(newResource, this.tableOfContents);
+                if(link === null) {
+                    link = findItem(newResource, this.readingOrder);
+                }        
+            }
+        }
         return link
     }
 

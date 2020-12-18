@@ -93,25 +93,25 @@ export function resumeReadAloud() {
 export async function saveBookmark() {
     if (oc(R2Navigator.rights).enableBookmarks(false)) {
         if (IS_DEV) { console.log("saveBookmark") }
-        BookmarkModuleInstance.saveBookmark()
+        return await BookmarkModuleInstance.saveBookmark()
     }
 }
 export async function deleteBookmark(bookmark) {
     if (oc(R2Navigator.rights).enableBookmarks(false)) {
         if (IS_DEV) { console.log("deleteBookmark") }
-        BookmarkModuleInstance.deleteBookmark(bookmark)
+        return await BookmarkModuleInstance.deleteBookmark(bookmark)
     }
 }
 export async function deleteAnnotation(highlight) {
     if (oc(R2Navigator.rights).enableAnnotations(false)) {
         if (IS_DEV) { console.log("deleteAnnotation") }
-        AnnotationModuleInstance.deleteAnnotation(highlight)
+        return await AnnotationModuleInstance.deleteAnnotation(highlight)
     }
 }
 export async function addAnnotation(highlight) {
     if (oc(R2Navigator.rights).enableAnnotations(false)) {
         if (IS_DEV) { console.log("addAnnotation") }
-        AnnotationModuleInstance.addAnnotation(highlight)
+        return await AnnotationModuleInstance.addAnnotation(highlight)
     }
 }
 export async function tableOfContents() {
@@ -258,6 +258,14 @@ export async function previousPage() {
     if (IS_DEV) { console.log("previousPage") }
     R2Navigator.previousPage()
 }
+export async function atStart() {
+    if (IS_DEV) { console.log("atStart") }
+    return R2Navigator.atStart()
+}
+export async function atEnd() {
+    if (IS_DEV) { console.log("atEnd") }
+    return R2Navigator.atEnd()
+}
 export async function scroll(value) {
     if (IS_DEV) { console.log("scroll " + value) }
     R2Settings.scroll(value)
@@ -315,55 +323,56 @@ export async function load(config: ReaderConfig): Promise<any> {
         if (config.upLinkUrl) {
             upLink = config.upLinkUrl;
         }
-
         const publication: Publication = await Publication.getManifest(webpubManifestUrl, store);
 
-        var startPosition = 0
-        var totalContentLength = 0
-        var positions = []
-        publication.readingOrder.map(async (link, index) => {
-            var href = publication.getAbsoluteHref(link.href);
-            await fetch(href)
-                .then(async r => {
-                    let length = (await r.blob()).size
-                    link.contentLength = length
-                    totalContentLength += length
-                    let positionLength = 1024
-                    let positionCount = Math.max(1, Math.ceil(length / positionLength))
-                    if (IS_DEV) console.log(length + " Bytes")
-                    if (IS_DEV) console.log(positionCount + " Positions")
-                    Array.from(Array(positionCount).keys()).map((_, position) => {
-                        const locator: Locator = {
-                            href: link.href,
-                            locations: {
-                                progression: (position) / (positionCount),
-                                position: startPosition + (position + 1),
-                            },
-                            type: link.type
-                        };
-                        if (IS_DEV) console.log(locator)
-                        positions.push(locator)
-                    });
-                    startPosition = startPosition + positionCount
-                })
-            if (index + 1 == publication.readingOrder.length) {
-                publication.readingOrder.map(async (link) => {
-                    if (IS_DEV) console.log(totalContentLength)
-                    if (IS_DEV) console.log(link.contentLength)
-                    link.contentWeight = 100 / totalContentLength * link.contentLength
-                    if (IS_DEV) console.log(link.contentWeight)
-                })
-                positions.map((locator, _index) => {
-                    let resource = positions.filter((el: Locator) => el.href === locator.href)
-                    let positionIndex = Math.ceil(locator.locations.progression * (resource.length - 1))
-                    locator.locations.totalProgression = (locator.locations.position - 1) / (positions.length)
-                    locator.locations.remainingPositions = Math.abs((positionIndex) - (resource.length - 1))
-                    locator.locations.totalRemainingPositions = Math.abs((locator.locations.position - 1) - (positions.length - 1))
-                })
-                publication.positions = positions
-                if (IS_DEV) console.log(positions)    
-            }
-        });
+        if (oc(config.rights).autoGeneratePositions(true)) {
+            var startPosition = 0
+            var totalContentLength = 0
+            var positions = []
+            publication.readingOrder.map(async (link, index) => {
+                var href = publication.getAbsoluteHref(link.href);
+                await fetch(href)
+                    .then(async r => {
+                        let length = (await r.blob()).size
+                        link.contentLength = length
+                        totalContentLength += length
+                        let positionLength = 1024
+                        let positionCount = Math.max(1, Math.ceil(length / positionLength))
+                        if (IS_DEV) console.log(length + " Bytes")
+                        if (IS_DEV) console.log(positionCount + " Positions")
+                        Array.from(Array(positionCount).keys()).map((_, position) => {
+                            const locator: Locator = {
+                                href: link.href,
+                                locations: {
+                                    progression: (position) / (positionCount),
+                                    position: startPosition + (position + 1),
+                                },
+                                type: link.type
+                            };
+                            if (IS_DEV) console.log(locator)
+                            positions.push(locator)
+                        });
+                        startPosition = startPosition + positionCount
+                    })
+                if (index + 1 == publication.readingOrder.length) {
+                    publication.readingOrder.map(async (link) => {
+                        if (IS_DEV) console.log(totalContentLength)
+                        if (IS_DEV) console.log(link.contentLength)
+                        link.contentWeight = 100 / totalContentLength * link.contentLength
+                        if (IS_DEV) console.log(link.contentWeight)
+                    })
+                    positions.map((locator, _index) => {
+                        let resource = positions.filter((el: Locator) => el.href === locator.href)
+                        let positionIndex = Math.ceil(locator.locations.progression * (resource.length - 1))
+                        locator.locations.totalProgression = (locator.locations.position - 1) / (positions.length)
+                        locator.locations.remainingPositions = Math.abs((positionIndex) - (resource.length - 1))
+                        locator.locations.totalRemainingPositions = Math.abs((locator.locations.position - 1) - (positions.length - 1))
+                    })
+                    publication.positions = positions
+                    if (IS_DEV) console.log(positions)    
+                }
+            });
+        }
 
         // Settings
         R2Settings = await UserSettings.create({
@@ -537,18 +546,18 @@ exports.resetTTSSettings = function () {
 // - add bookmark
 // - delete bookmark
 exports.saveBookmark = function () {
-    saveBookmark()
+    return saveBookmark()
 }
 exports.deleteBookmark = function (bookmark) {
-    deleteBookmark(bookmark)
+    return deleteBookmark(bookmark)
 }
 
 exports.deleteAnnotation = function (highlight) {
-    deleteAnnotation(highlight)
+    return deleteAnnotation(highlight)
 }
 
 exports.addAnnotation = function (highlight) {
-    addAnnotation(highlight)
+    return addAnnotation(highlight)
 }
 
 // - go to locator (this will be used for anything form toc, bookmark, last reading position etc.)
@@ -572,6 +581,13 @@ exports.nextPage = function () {
 }
 exports.previousPage = function () {
     previousPage()
+}
+
+exports.atStart = function () {
+    return atStart()
+}
+exports.atEnd = function () {
+    return atEnd()
 }
 
 exports.scroll = function (value) {

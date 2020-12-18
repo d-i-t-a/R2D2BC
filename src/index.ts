@@ -93,25 +93,25 @@ export function resumeReadAloud() {
 export async function saveBookmark() {
     if (oc(R2Navigator.rights).enableBookmarks(false)) {
         if (IS_DEV) { console.log("saveBookmark") }
-        BookmarkModuleInstance.saveBookmark()
+        return await BookmarkModuleInstance.saveBookmark()
     }
 }
 export async function deleteBookmark(bookmark) {
     if (oc(R2Navigator.rights).enableBookmarks(false)) {
         if (IS_DEV) { console.log("deleteBookmark") }
-        BookmarkModuleInstance.deleteBookmark(bookmark)
+        return await BookmarkModuleInstance.deleteBookmark(bookmark)
     }
 }
 export async function deleteAnnotation(highlight) {
     if (oc(R2Navigator.rights).enableAnnotations(false)) {
         if (IS_DEV) { console.log("deleteAnnotation") }
-        AnnotationModuleInstance.deleteAnnotation(highlight)
+        return await AnnotationModuleInstance.deleteAnnotation(highlight)
     }
 }
 export async function addAnnotation(highlight) {
     if (oc(R2Navigator.rights).enableAnnotations(false)) {
         if (IS_DEV) { console.log("addAnnotation") }
-        AnnotationModuleInstance.addAnnotation(highlight)
+        return await AnnotationModuleInstance.addAnnotation(highlight)
     }
 }
 export async function tableOfContents() {
@@ -537,18 +537,18 @@ exports.resetTTSSettings = function () {
 // - add bookmark
 // - delete bookmark
 exports.saveBookmark = function () {
-    saveBookmark()
+    return saveBookmark()
 }
 exports.deleteBookmark = function (bookmark) {
-    deleteBookmark(bookmark)
+    return deleteBookmark(bookmark)
 }
 
 exports.deleteAnnotation = function (highlight) {
-    deleteAnnotation(highlight)
+    return deleteAnnotation(highlight)
 }
 
 exports.addAnnotation = function (highlight) {
-    addAnnotation(highlight)
+    return addAnnotation(highlight)
 }
 
 // - go to locator (this will be used for anything form toc, bookmark, last reading position etc.)

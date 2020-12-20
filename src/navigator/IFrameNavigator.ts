@@ -1338,7 +1338,7 @@ export default class IFrameNavigator implements Navigator {
     currentLocator():Locator {
         let position 
         if (oc(this.rights).autoGeneratePositions(true)) {
-            let positions = this.publication.positionsByHref(this.publication.getRelativeHref(this.currentTOCRawLink));
+            let positions = this.publication.positionsByHref(this.publication.getRelativeHref(this.currentChapterLink.href));
             let positionIndex = Math.ceil(this.reflowable.getCurrentPosition() * (positions.length - 1))
             position = positions[positionIndex]
         } else {
@@ -1683,96 +1683,195 @@ export default class IFrameNavigator implements Navigator {
 
 
     navigate(locator: Locator): void {
-        if (this.searchModule != undefined) {
-            this.searchModule.clearSearch()
-        }
         const exists = this.publication.getTOCItem(locator.href)
         if (exists) {
-            this.hideIframeContents();
-            this.showLoadingMessageAfterDelay();
-            if (locator.locations === undefined) {
-                locator.locations = {
-                    progression: 0
-                }
-            }
-            this.newPosition = locator;
-            this.currentTOCRawLink = locator.href
+            var isCurrentLoaded = false
 
             if (locator.href.indexOf("#") !== -1) {
                 const newResource = locator.href.slice(0, locator.href.indexOf("#"))
+                if (newResource == this.currentChapterLink.href) {
+                    isCurrentLoaded = true
+                }
                 this.currentChapterLink.href = newResource;
                 this.currentChapterLink.type = locator.type
                 this.currentChapterLink.title = locator.title
             } else {
+                if (locator.href == this.currentChapterLink.href) {
+                    isCurrentLoaded = true
+                }
                 this.currentChapterLink.href = locator.href
                 this.currentChapterLink.type = locator.type
                 this.currentChapterLink.title = locator.title
             }
 
-            this.precessContentForIframe();
-
-            if (locator.locations.fragment === undefined) {
-                this.currentTocUrl = null;
-            } else {
-                this.newElementId = locator.locations.fragment
-                this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
-            }
-            setTimeout(async () => {
-                if (oc(this.rights).enableContentProtection(false)) {
-                    this.contentProtectionModule.initializeResource()
+            if (isCurrentLoaded) {
+                console.log("is currently loaded")
+                console.log(locator.href)
+                console.log(this.currentChapterLink.href)
+                const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
+                locator.locations = {
+                    fragment: elementId
                 }
-            }, 100);
 
-            setTimeout(async () => {
-                if (this.annotationModule !== undefined) {
-                    this.annotationModule.drawHighlights()
-                    this.annotationModule.showHighlights();
+                this.newPosition = locator;
+                this.currentTOCRawLink = locator.href
+                if (locator.locations.fragment === undefined) {
+                    this.currentTocUrl = null;
                 } else {
-                    if (oc(this.rights).enableSearch(false)) {
-                        await this.highlighter.destroyAllhighlights(this.iframe.contentDocument)
-                        this.searchModule.drawSearch()
+                    this.newElementId = locator.locations.fragment
+                    this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
+                }
+
+                if (this.newElementId) {
+                    const element = (this.iframe.contentDocument as any).getElementById(this.newElementId);
+                    this.reflowable.goToElement(element);
+                    this.newElementId = null;
+                }
+    
+                let currentLocation = this.currentChapterLink.href
+                this.updatePositionInfo();
+    
+                const previous = this.publication.getPreviousSpineItem(currentLocation);
+                if (previous && previous.href) {
+                    this.previousChapterLink = previous
+                }
+                if (this.previousChapterAnchorElement) {
+                    if (this.previousChapterLink) {
+                        this.previousChapterAnchorElement.href = this.publication.getAbsoluteHref(this.previousChapterLink.href)
+                        this.previousChapterAnchorElement.className = this.previousChapterAnchorElement.className.replace(" disabled", "");
+                    } else {
+                        this.previousChapterAnchorElement.removeAttribute("href");
+                        this.previousChapterAnchorElement.className += " disabled";
                     }
                 }
+                const next = this.publication.getNextSpineItem(currentLocation);
+                this.nextChapterLink = next
+    
+                if (this.nextChapterAnchorElement) {
+                    if (this.nextChapterLink) {
+                        this.nextChapterAnchorElement.href = this.publication.getAbsoluteHref(this.nextChapterLink.href);
+                        this.nextChapterAnchorElement.className = this.nextChapterAnchorElement.className.replace(" disabled", "");
+                    } else {
+                        this.nextChapterAnchorElement.removeAttribute("href");
+                        this.nextChapterAnchorElement.className += " disabled";
+                    }
+                }
+    
+                if (this.currentTocUrl !== null) {
+                    this.setActiveTOCItem(this.currentTocUrl);
+                } else {
+                    this.setActiveTOCItem(currentLocation);
+                }
+    
+                if (this.publication.metadata.title) {
+                    if (this.bookTitle) this.bookTitle.innerHTML = this.publication.metadata.title;
+                }
+    
+                const spineItem = this.publication.getSpineItem(currentLocation);
+                if (spineItem !== null) {
+                    this.currentChapterLink.title = spineItem.title;
+                    this.currentChapterLink.type = spineItem.type
+                }
+                let tocItem = this.publication.getTOCItem(currentLocation);
+                if (this.currentTocUrl !== null) {
+                    tocItem = this.publication.getTOCItem(this.currentTocUrl);
+                }
+                if (!this.currentChapterLink.title && tocItem !== null && tocItem.title) {
+                    this.currentChapterLink.title = tocItem.title;
+                }
+                if (!this.currentChapterLink.type && tocItem !== null && tocItem.type) {
+                    this.currentChapterLink.title = tocItem.title;
+                }
+    
+                if (this.currentChapterLink.title) {
+                    if (this.chapterTitle) this.chapterTitle.innerHTML = "(" + this.currentChapterLink.title + ")";
+                } else {
+                    if (this.chapterTitle) this.chapterTitle.innerHTML = "(Current Chapter)";
+                }
+    
+                if (this.annotator) {
+                    this.saveCurrentReadingPosition();
+                }
+            } else {
+                if (this.searchModule != undefined) {
+                    this.searchModule.clearSearch()
+                }
+        
+                this.hideIframeContents();
+                this.showLoadingMessageAfterDelay();
+                if (locator.locations === undefined) {
+                    locator.locations = {
+                        progression: 0
+                    }
+                }
+                this.newPosition = locator;
+                this.currentTOCRawLink = locator.href
 
-                if(this.reflowable.isScrollMode()) {
+                this.precessContentForIframe();
+
+                if (locator.locations.fragment === undefined) {
+                    this.currentTocUrl = null;
+                } else {
+                    this.newElementId = locator.locations.fragment
+                    this.currentTocUrl = this.currentChapterLink.href + "#" + this.newElementId;
+                }
+                setTimeout(async () => {
+                    if (oc(this.rights).enableContentProtection(false)) {
+                        this.contentProtectionModule.initializeResource()
+                    }
+                }, 100);
+
+                setTimeout(async () => {
+                    if (this.annotationModule !== undefined) {
+                        this.annotationModule.drawHighlights()
+                        this.annotationModule.showHighlights();
+                    } else {
+                        if (oc(this.rights).enableSearch(false)) {
+                            await this.highlighter.destroyAllhighlights(this.iframe.contentDocument)
+                            this.searchModule.drawSearch()
+                        }
+                    }
+
+                    if(this.reflowable.isScrollMode()) {
+                        if (this.reflowable.atStart() && this.reflowable.atEnd()) {
+                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                        } else if (this.reflowable.atEnd()) {
+                            if (this.nextChapterBottomAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                            if (this.api && this.api.resourceAtEnd) {
+                                this.api.resourceAtEnd()
+                            }
+                        } else if (this.reflowable.atStart()) {
+                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                            if (this.api && this.api.resourceAtStart) {
+                                this.api.resourceAtStart()
+                            }
+                        } else {
+                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                        }
+                    }
                     if (this.reflowable.atStart() && this.reflowable.atEnd()) {
-                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                        if (this.api && this.api.resourceFitsScreen) {
+                            this.api.resourceFitsScreen()
+                        }
                     } else if (this.reflowable.atEnd()) {
-                        if (this.nextChapterBottomAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                         if (this.api && this.api.resourceAtEnd) {
                             this.api.resourceAtEnd()
                         }
                     } else if (this.reflowable.atStart()) {
-                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
                         if (this.api && this.api.resourceAtStart) {
                             this.api.resourceAtStart()
                         }
-                    } else {
-                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                     }
-                }
-                if (this.reflowable.atStart() && this.reflowable.atEnd()) {
-                    if (this.api && this.api.resourceFitsScreen) {
-                        this.api.resourceFitsScreen()
-                    }
-                } else if (this.reflowable.atEnd()) {
-                    if (this.api && this.api.resourceAtEnd) {
-                        this.api.resourceAtEnd()
-                    }
-                } else if (this.reflowable.atStart()) {
-                    if (this.api && this.api.resourceAtStart) {
-                        this.api.resourceAtStart()
-                    }
-                }
 
-                if (this.api && this.api.resourceReady) {
-                    this.api.resourceReady()
-                }
-            }, 300);
+                    if (this.api && this.api.resourceReady) {
+                        this.api.resourceReady()
+                    }
+                }, 300);
+            }
         } else {
             const startLink = this.publication.getStartLink();
             let startUrl: string | null = null;
@@ -1806,12 +1905,10 @@ export default class IFrameNavigator implements Navigator {
 
     private showLoadingMessageAfterDelay() {
         this.isLoading = true;
-        setTimeout(() => {
-            if (this.isLoading && this.loadingMessage) {
-                this.loadingMessage.style.display = "block";
-                this.loadingMessage.classList.add("is-loading");
-            }
-        }, 200);
+        if (this.isLoading && this.loadingMessage) {
+            this.loadingMessage.style.display = "block";
+            this.loadingMessage.classList.add("is-loading");
+        }
     }
 
     private hideIframeContents() {
@@ -1820,11 +1917,13 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private hideLoadingMessage() {
-        this.isLoading = false;
-        if (this.loadingMessage) {
-            this.loadingMessage.style.display = "none";
-            this.loadingMessage.classList.remove("is-loading");
-        }
+        setTimeout(() => {
+            this.isLoading = false;
+            if (this.loadingMessage) {
+                this.loadingMessage.style.display = "none";
+                this.loadingMessage.classList.remove("is-loading");
+            }
+        }, 150);
     }
 
     private async saveCurrentReadingPosition(): Promise<void> {
@@ -1836,12 +1935,21 @@ export default class IFrameNavigator implements Navigator {
             if (tocItem === null) {
                 tocItem = this.publication.getTOCItemAbsolute(this.currentChapterLink.href);
             }
-
+            let locations: Locations = {
+                progression: this.reflowable.getCurrentPosition()
+            }
+            if (tocItem.href.indexOf("#") !== -1) {
+                const elementId = tocItem.href.slice(tocItem.href.indexOf("#") + 1);
+                if (elementId !== null) {
+                    locations = {
+                        progression: this.reflowable.getCurrentPosition(),
+                        fragment: elementId
+                    }
+                }
+            }
             const position: ReadingPosition = {
                 href: tocItem.href,
-                locations: {
-                    progression: this.reflowable.getCurrentPosition()
-                },
+                locations: locations,
                 created: new Date(),
                 type: this.currentChapterLink.type,
                 title: this.currentChapterLink.title

@@ -251,13 +251,13 @@ export default class ReflowableBookView implements BookView {
 
     goToPreviousPage(): void {
         if (this.isScrollMode()) {
-            const leftHeight = this.iframe.contentDocument.scrollingElement.scrollTop;
+            const leftHeight = document.scrollingElement.scrollTop;
             const height = this.getScreenHeight();
             const offset = leftHeight - height;
             if (offset >= 0) {
-                this.iframe.contentDocument.scrollingElement.scrollTop = offset;
+                document.scrollingElement.scrollTop = offset;
             } else {
-                this.iframe.contentDocument.scrollingElement.scrollTop = 0;
+                document.scrollingElement.scrollTop = 0;
             }
         } else {
             const leftWidth = this.getLeftColumnsWidth();
@@ -276,14 +276,14 @@ export default class ReflowableBookView implements BookView {
 
     goToNextPage(): void {
         if (this.isScrollMode()) {
-            const leftHeight = this.iframe.contentDocument.scrollingElement.scrollTop;
+            const leftHeight = document.scrollingElement.scrollTop;
             const height = this.getScreenHeight();
             const scrollHeight = this.iframe.contentDocument.scrollingElement.scrollHeight;
             const offset = leftHeight + height;
             if (offset < scrollHeight) {
-                this.iframe.contentDocument.scrollingElement.scrollTop = offset;
+                document.scrollingElement.scrollTop = offset;
             } else {
-                this.iframe.contentDocument.scrollingElement.scrollTop = scrollHeight;
+                document.scrollingElement.scrollTop = scrollHeight;
             }
         } else {
             const leftWidth = this.getLeftColumnsWidth();

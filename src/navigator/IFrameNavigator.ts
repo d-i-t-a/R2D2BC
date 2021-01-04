@@ -1605,8 +1605,20 @@ export default class IFrameNavigator implements Navigator {
             const currentPage = locator.displayInfo.resourceScreenIndex
             const pageCount = locator.displayInfo.resourceScreenCount
             const remaining = locator.locations.remainingPositions;
-            if (this.chapterPosition && remaining) {this.chapterPosition.innerHTML = "Page " + currentPage + " of " + pageCount;} else {this.chapterPosition.innerHTML = "";}
-            if (this.remainingPositions && remaining) {this.remainingPositions.innerHTML = remaining + " left in chapter";} else {this.remainingPositions.innerHTML = "Page " + currentPage + " of " + pageCount}
+            if (this.chapterPosition) {
+                if (remaining) {
+                    this.chapterPosition.innerHTML = "Page " + currentPage + " of " + pageCount;
+                } else {
+                    this.chapterPosition.innerHTML = "";
+                }
+            }
+            if (this.remainingPositions) {
+                if (remaining) {
+                    this.remainingPositions.innerHTML = remaining + " left in chapter";
+                } else {
+                    this.remainingPositions.innerHTML = "Page " + currentPage + " of " + pageCount
+                }
+            }
         } else {
             if (this.chapterPosition) this.chapterPosition.innerHTML = "";
             if (this.remainingPositions) this.remainingPositions.innerHTML = "";

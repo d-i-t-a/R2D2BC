@@ -849,9 +849,15 @@ export default class TextHighlighter {
                     underlineIcon.addEventListener("click", commentEvent);
                 }
             } else {
-                highlightIcon.style.setProperty('display', "none")
-                underlineIcon.style.setProperty('display', "none")
-                colorIcon.style.setProperty('display', "none")
+                if (highlightIcon) {
+                    highlightIcon.style.setProperty('display', "none")
+                }
+                if (underlineIcon) {
+                    underlineIcon.style.setProperty('display', "none")
+                }
+                if (colorIcon) {
+                    colorIcon.style.setProperty('display', "none")
+                }
             }
             if (this.delegate.rights.enableTTS) {
                 if (speakIcon) {
@@ -862,7 +868,9 @@ export default class TextHighlighter {
                     speakIcon.addEventListener("click", speakEvent);
                 }
             } else {
-                speakIcon.style.setProperty('display', "none")
+                if (speakIcon) {
+                    speakIcon.style.setProperty('display', "none")
+                }
             }
 
             if (oc(this.config).selectionMenuItems([])) {

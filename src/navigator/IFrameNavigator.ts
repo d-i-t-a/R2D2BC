@@ -874,7 +874,6 @@ export default class IFrameNavigator implements Navigator {
             let bookViewPosition = 0;
             if (this.newPosition) {
                 bookViewPosition = this.newPosition.locations.progression;
-                this.newPosition = null;
             }
             this.handleResize();
             this.updateBookView();
@@ -891,7 +890,12 @@ export default class IFrameNavigator implements Navigator {
                     const element = (this.iframe.contentDocument as any).getElementById(this.newElementId);
                     this.reflowable.goToElement(element);
                     this.newElementId = null;
+                } else {
+                    if ((this.newPosition as Annotation).highlight) {
+                        this.reflowable.goToCssSelector((this.newPosition as Annotation).highlight.selectionInfo.rangeInfo.startContainerElementCssSelector)
+                    }
                 }
+                this.newPosition = null;
                 this.updatePositionInfo();
             }, 200);
 

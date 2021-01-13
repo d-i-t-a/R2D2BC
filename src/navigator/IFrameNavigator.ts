@@ -885,17 +885,13 @@ export default class IFrameNavigator implements Navigator {
                 this.reflowable.goToPosition(bookViewPosition);
             }, 200);
 
+            let currentLocation = this.currentChapterLink.href
             setTimeout(() => {
                 if (this.newElementId) {
                     const element = (this.iframe.contentDocument as any).getElementById(this.newElementId);
                     this.reflowable.goToElement(element);
                     this.newElementId = null;
                 }
-            }, 100);
-
-            let currentLocation = this.currentChapterLink.href
-
-            setTimeout(() => {
                 this.updatePositionInfo();
             }, 200);
 
@@ -1622,6 +1618,9 @@ export default class IFrameNavigator implements Navigator {
         } else {
             if (this.chapterPosition) this.chapterPosition.innerHTML = "";
             if (this.remainingPositions) this.remainingPositions.innerHTML = "";
+        }
+        if (this.annotator) {
+            this.saveCurrentReadingPosition();
         }
     }
 

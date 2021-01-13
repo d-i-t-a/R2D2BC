@@ -1748,7 +1748,6 @@ export default class IFrameNavigator implements Navigator {
                     } else {
                         this.reflowable.goToPosition(locator.locations.progression);
                     }
-                    this.updatePositionInfo()
                 }
     
                 let currentLocation = this.currentChapterLink.href

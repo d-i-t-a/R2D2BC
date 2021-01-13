@@ -24,7 +24,7 @@ import EventHandler, { addEventListenerOptional, removeEventListenerOptional } f
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import { defaultUpLinkTemplate, simpleUpLinkTemplate, readerLoading, readerError } from "../utils/HTMLTemplates";
-import { Locator, ReadingPosition, Locations } from "../model/Locator";
+import { Locator, ReadingPosition, Locations, Annotation } from "../model/Locator";
 import { Sidenav, Collapsible, Dropdown, Tabs } from "materialize-css";
 import { UserSettingsUIConfig, UserSettings } from "../model/user-settings/UserSettings";
 import BookmarkModule from "../modules/BookmarkModule";
@@ -1720,11 +1720,12 @@ export default class IFrameNavigator implements Navigator {
                 console.log("is currently loaded")
                 console.log(locator.href)
                 console.log(this.currentChapterLink.href)
-                const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
-                locator.locations = {
-                    fragment: elementId
+                if (locator.href.indexOf("#") !== -1) {
+                    const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
+                    locator.locations = {
+                        fragment: elementId
+                    }
                 }
-
                 this.newPosition = locator;
                 this.currentTOCRawLink = locator.href
                 if (locator.locations.fragment === undefined) {
@@ -1738,6 +1739,9 @@ export default class IFrameNavigator implements Navigator {
                     const element = (this.iframe.contentDocument as any).getElementById(this.newElementId);
                     this.reflowable.goToElement(element);
                     this.newElementId = null;
+                } else {
+                    this.reflowable.goToCssSelector((locator as Annotation).highlight.selectionInfo.rangeInfo.startContainerElementCssSelector)
+                    this.updatePositionInfo()
                 }
     
                 let currentLocation = this.currentChapterLink.href

@@ -1743,7 +1743,11 @@ export default class IFrameNavigator implements Navigator {
                     this.reflowable.goToElement(element);
                     this.newElementId = null;
                 } else {
-                    this.reflowable.goToCssSelector((locator as Annotation).highlight.selectionInfo.rangeInfo.startContainerElementCssSelector)
+                    if ((locator as Annotation).highlight) {
+                        this.reflowable.goToCssSelector((locator as Annotation).highlight.selectionInfo.rangeInfo.startContainerElementCssSelector)
+                    } else {
+                        this.reflowable.goToPosition(locator.locations.progression);
+                    }
                     this.updatePositionInfo()
                 }
     

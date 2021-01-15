@@ -283,105 +283,108 @@ export class UserSettings implements UserSettings {
 
     async applyProperties(): Promise<any> {
 
-        const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
-        const rootElement = document.documentElement;
-        const body = HTMLUtilities.findRequiredElement(rootElement, "body") as HTMLBodyElement;
+        if (oc(this.reflowable.delegate.publication.metadata.rendition).layout("unknown") != 'fixed') {
 
-        // Apply publishers default 
-        if (await this.getProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY)){
-            html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).toString());
-        }
-        // Apply font size 
-        if (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY)){
-            html.style.setProperty(ReadiumCSS.FONT_SIZE_KEY, this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).toString());
-        }
-        // Apply word spacing 
-        if (await this.getProperty(ReadiumCSS.WORD_SPACING_KEY)){
-            html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, "readium-advanced-on");
-            html.style.setProperty(ReadiumCSS.WORD_SPACING_KEY, this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).toString());
-        }
-        // Apply letter spacing 
-        if (await this.getProperty(ReadiumCSS.LETTER_SPACING_KEY)){
-            html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, "readium-advanced-on");
-            html.style.setProperty(ReadiumCSS.LETTER_SPACING_KEY, this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).toString());
-        }
-        // Apply column count 
-        if (await this.getProperty(ReadiumCSS.COLUMN_COUNT_KEY)){
-            html.style.setProperty(ReadiumCSS.COLUMN_COUNT_KEY, this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).toString());
-        }
-        // Apply text alignment 
-        if (await this.getProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY)){
-            if (this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).toString() === "auto") {
-                html.style.removeProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY)
-            } else {
-                html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, "readium-advanced-on");
-                html.style.setProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY, this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).toString());
+            const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
+            const rootElement = document.documentElement;
+            const body = HTMLUtilities.findRequiredElement(rootElement, "body") as HTMLBodyElement;
+
+            // Apply publishers default 
+            if (await this.getProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY)){
+                html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).toString());
             }
-        }
-        // Apply line height 
-        if (await this.getProperty(ReadiumCSS.LINE_HEIGHT_KEY)){
-            html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, "readium-advanced-on");
-            html.style.setProperty(ReadiumCSS.LINE_HEIGHT_KEY, this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).toString());
-        }
-        // Apply page margins 
-        if (await this.getProperty(ReadiumCSS.PAGE_MARGINS_KEY)){
-            html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, "readium-advanced-on");
-            html.style.setProperty(ReadiumCSS.PAGE_MARGINS_KEY, this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).toString());
-        }
+            // Apply font size 
+            if (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY)){
+                html.style.setProperty(ReadiumCSS.FONT_SIZE_KEY, this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).toString());
+            }
+            // Apply word spacing 
+            if (await this.getProperty(ReadiumCSS.WORD_SPACING_KEY)){
+                html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, "readium-advanced-on");
+                html.style.setProperty(ReadiumCSS.WORD_SPACING_KEY, this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).toString());
+            }
+            // Apply letter spacing 
+            if (await this.getProperty(ReadiumCSS.LETTER_SPACING_KEY)){
+                html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, "readium-advanced-on");
+                html.style.setProperty(ReadiumCSS.LETTER_SPACING_KEY, this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).toString());
+            }
+            // Apply column count 
+            if (await this.getProperty(ReadiumCSS.COLUMN_COUNT_KEY)){
+                html.style.setProperty(ReadiumCSS.COLUMN_COUNT_KEY, this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).toString());
+            }
+            // Apply text alignment 
+            if (await this.getProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY)){
+                if (this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).toString() === "auto") {
+                    html.style.removeProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY)
+                } else {
+                    html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, "readium-advanced-on");
+                    html.style.setProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY, this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).toString());
+                }
+            }
+            // Apply line height 
+            if (await this.getProperty(ReadiumCSS.LINE_HEIGHT_KEY)){
+                html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, "readium-advanced-on");
+                html.style.setProperty(ReadiumCSS.LINE_HEIGHT_KEY, this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).toString());
+            }
+            // Apply page margins 
+            if (await this.getProperty(ReadiumCSS.PAGE_MARGINS_KEY)){
+                html.style.setProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY, "readium-advanced-on");
+                html.style.setProperty(ReadiumCSS.PAGE_MARGINS_KEY, this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).toString());
+            }
 
-        // Apply appearance 
-        if (await this.getProperty(ReadiumCSS.APPEARANCE_KEY)){
-            html.style.setProperty(ReadiumCSS.APPEARANCE_KEY, this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString());
-            if (this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 0) {
+            // Apply appearance 
+            if (await this.getProperty(ReadiumCSS.APPEARANCE_KEY)){
+                html.style.setProperty(ReadiumCSS.APPEARANCE_KEY, this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString());
+                if (this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 0) {
+                    HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
+                    HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
+                } else if (this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 1) {
+                    HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "sepia");
+                    HTMLUtilities.setAttr(body, "data-viewer-theme", "sepia");
+                } else if (this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 2) {
+                    HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "night");
+                    HTMLUtilities.setAttr(body, "data-viewer-theme", "night");
+                }
+            } else {
+                html.style.setProperty(ReadiumCSS.APPEARANCE_KEY, this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString());
                 HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
                 HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
-            } else if (this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 1) {
-                HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "sepia");
-                HTMLUtilities.setAttr(body, "data-viewer-theme", "sepia");
-            } else if (this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 2) {
-                HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "night");
-                HTMLUtilities.setAttr(body, "data-viewer-theme", "night");
             }
-        } else {
-            html.style.setProperty(ReadiumCSS.APPEARANCE_KEY, this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString());
-            HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
-            HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
-        }
-        // Apply font family 
-        if (await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY)){
-            html.style.setProperty(ReadiumCSS.FONT_FAMILY_KEY, this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).toString());
-            if (this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 0) {
+            // Apply font family 
+            if (await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY)){
+                html.style.setProperty(ReadiumCSS.FONT_FAMILY_KEY, this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).toString());
+                if (this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 0) {
+                    HTMLUtilities.setAttr(html, "data-viewer-font", "publisher");
+                    html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-off");
+                } else if (this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 1) {
+                    HTMLUtilities.setAttr(html, "data-viewer-font", "serif");
+                    html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-on");
+                } else if (this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 2) {
+                    HTMLUtilities.setAttr(html, "data-viewer-font", "sans");
+                    html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-on");
+                } else { 
+                    HTMLUtilities.setAttr(html, "data-viewer-font", this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).toString());
+                    html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-on");
+                }
+            } else {
+                html.style.setProperty(ReadiumCSS.FONT_FAMILY_KEY, this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).toString());
                 HTMLUtilities.setAttr(html, "data-viewer-font", "publisher");
                 html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-off");
-            } else if (this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 1) {
-                HTMLUtilities.setAttr(html, "data-viewer-font", "serif");
-                html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-on");
-            } else if (this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 2) {
-                HTMLUtilities.setAttr(html, "data-viewer-font", "sans");
-                html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-on");
-            } else { 
-                HTMLUtilities.setAttr(html, "data-viewer-font", this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).toString());
-                html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-on");
             }
-        } else {
-            html.style.setProperty(ReadiumCSS.FONT_FAMILY_KEY, this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).toString());
-            HTMLUtilities.setAttr(html, "data-viewer-font", "publisher");
-            html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-off");
-        }
 
-        if (await this.getProperty(ReadiumCSS.SCROLL_KEY)){
-            if (this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value == 0) {
-                html.style.setProperty("--USER__scroll", "readium-scroll-on");
+            if (await this.getProperty(ReadiumCSS.SCROLL_KEY)){
+                if (this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value == 0) {
+                    html.style.setProperty("--USER__scroll", "readium-scroll-on");
+                } else {
+                    html.style.setProperty("--USER__scroll", "readium-scroll-off");
+                }
             } else {
-                html.style.setProperty("--USER__scroll", "readium-scroll-off");
+                html.style.setProperty("--USER__scroll", "readium-scroll-on");
             }
-        } else {
-            html.style.setProperty("--USER__scroll", "readium-scroll-on");
-        }
-        this.isScrollmode().then(scroll => {
-            this.reflowable.setMode(scroll)
-        })
+            this.isScrollmode().then(scroll => {
+                this.reflowable.setMode(scroll)
+            })
         
+        }
     }
 
     setIframe(iframe: HTMLIFrameElement) {

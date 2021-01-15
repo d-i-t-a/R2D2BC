@@ -123,6 +123,7 @@ export interface ReaderConfig {
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
 export default class IFrameNavigator implements Navigator {
     iframe: HTMLIFrameElement;
+    iframe2: HTMLIFrameElement;
     currentTocUrl: string;
     headerMenu: HTMLElement;
     mainElement: HTMLElement;
@@ -304,8 +305,62 @@ export default class IFrameNavigator implements Navigator {
         this.mainElement = mainElement;
         try {
 
-            // Main Element
-            this.iframe = HTMLUtilities.findRequiredElement(mainElement, "main#iframe-wrapper iframe") as HTMLIFrameElement;
+            this.iframe = HTMLUtilities.findElement(mainElement, "main#iframe-wrapper iframe") as HTMLIFrameElement;
+            this.iframe2 = HTMLUtilities.findElement(mainElement, "#second") as HTMLIFrameElement;
+
+            if (!this.iframe) {
+                // <div style="display: flex; align-items: center; justify-content: center;">
+                //     <div>
+                //         <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="opacity: 1;"></iframe>
+                //     </div>
+                //     <div>
+                //         <iframe id="second" allowtransparency="true" title="ePub Reader" SCROLLING="no" style="opacity: 1;"></iframe>
+                //     </div>
+                // </div> 
+
+                var wrapper  = HTMLUtilities.findRequiredElement(mainElement, "main#iframe-wrapper") as HTMLElement;
+                this.iframe = document.createElement("iframe");
+                this.iframe.setAttribute('SCROLLING', 'no');
+                this.iframe.setAttribute('allowtransparency', 'true');
+
+                var spreads = document.createElement('div');
+                var spread_left = document.createElement('div');
+                spreads.style.display = 'flex';
+                spreads.style.alignItems = 'center';
+                spreads.style.justifyContent = 'center';
+                let info = document.getElementById("reader-info-bottom")
+                if (info) {
+                    wrapper.insertBefore(spreads, info)
+                }
+
+                spreads.appendChild(spread_left);
+                spread_left.appendChild(this.iframe);
+
+                if (oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
+                    var spread_right = document.createElement('div');
+                    spreads.appendChild(spread_right);
+                    this.iframe2 = document.createElement('iframe');
+                    this.iframe2.setAttribute('SCROLLING', 'no');
+                    this.iframe2.setAttribute('allowtransparency', 'true');
+                    this.iframe2.style.opacity = '1';
+                    spread_right.appendChild(this.iframe2);
+                }
+
+            }
+
+
+            if (oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
+                var wrapper  = HTMLUtilities.findRequiredElement(mainElement, "main#iframe-wrapper") as HTMLElement;
+                const minHeight = BrowserUtilities.getHeight() - 40 - this.attributes.margin;
+                wrapper.style.height = (minHeight + 40) + "px";
+                var iframeParent  = this.iframe.parentElement.parentElement as HTMLElement;
+                iframeParent.style.height = (minHeight + 40) + "px";
+            } else {
+                if (this.iframe2) {
+                    this.iframe2.remove()
+                }
+            }
+
             this.loadingMessage = HTMLUtilities.findElement(mainElement, "#reader-loading") as HTMLDivElement;
             if (this.loadingMessage) {
                 this.loadingMessage.innerHTML = readerLoading;
@@ -1095,6 +1150,25 @@ export default class IFrameNavigator implements Navigator {
             iframeDoc.open();
             iframeDoc.write(newHTML);
             iframeDoc.close();
+
+            if(self.iframe2) {
+                const next = self.publication.getNextSpineItem(self.currentChapterLink.href);
+                var n = self.publication.getAbsoluteHref(next.href)
+                fetch(n)
+                .then(r => r.text())
+                .then(async content => {
+                    const doc2 = parser.parseFromString(content, "application/xhtml+xml");
+                    if (doc2.head) {
+                        doc2.head.insertBefore(self.createBase(n), doc2.head.firstChild)
+                    }
+                    const newHTML = doc2.documentElement.outerHTML;
+                    const iframeDoc2 = self.iframe2.contentDocument;
+                    iframeDoc2.open();
+                    iframeDoc2.write(newHTML);
+                    iframeDoc2.close();
+                })
+            }
+
         }
         const link = new URL(this.currentChapterLink.href)
         const isSameOrigin = (
@@ -1108,6 +1182,11 @@ export default class IFrameNavigator implements Navigator {
                 if (content === undefined) {
                     if (isSameOrigin) {
                         this.iframe.src = this.currentChapterLink.href
+                        if (this.iframe2 && oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
+                            const next = this.publication.getNextSpineItem(this.currentChapterLink.href);
+                            var n = this.publication.getAbsoluteHref(next.href)
+                            this.iframe2.src = n
+                        }
                     } else {
                         fetch(this.currentChapterLink.href)
                             .then(r => r.text())
@@ -1122,6 +1201,11 @@ export default class IFrameNavigator implements Navigator {
         } else {
             if (isSameOrigin) {
                 this.iframe.src = this.currentChapterLink.href
+                if (this.iframe2 && oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
+                    const next = this.publication.getNextSpineItem(this.currentChapterLink.href);
+                    var n = this.publication.getAbsoluteHref(next.href)
+                    this.iframe2.src = n
+                }
             } else {
                 fetch(this.currentChapterLink.href)
                     .then(r => r.text())
@@ -1130,6 +1214,24 @@ export default class IFrameNavigator implements Navigator {
                     })
             }
         }
+        if (oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
+            setTimeout(() => {
+                const height = getComputedStyle(this.iframe.contentDocument.body).height;
+                const width = getComputedStyle(this.iframe.contentDocument.body).width;
+                var iframeParent  = this.iframe.parentElement.parentElement as HTMLElement;
+                var widthRatio = (parseInt(getComputedStyle(iframeParent).width) - 100) / (this.iframe2 ? ((parseInt(width.replace('px', '')) * 2) + 200) : parseInt(width.replace('px', '')));    
+                var heightRatio = (parseInt(getComputedStyle(iframeParent).height) - 100) / parseInt(height.replace('px', ''));
+                var scale = Math.min(widthRatio, heightRatio);
+                iframeParent.style.transform = "scale("+scale+")";
+                this.iframe.style.height = height;
+                this.iframe.style.width = width;
+                if (this.iframe2) {
+                    this.iframe2.style.height = height;
+                    this.iframe2.style.width = width;
+                }
+            }, 400);
+        }
+
     }
 
     private goBack() {
@@ -1533,6 +1635,31 @@ export default class IFrameNavigator implements Navigator {
         if (this.isScrolling) {
             return;
         }
+
+        if (oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
+
+            var wrapper  = HTMLUtilities.findRequiredElement(this.mainElement, "main#iframe-wrapper") as HTMLElement;
+            const minHeight = BrowserUtilities.getHeight() - 40 - this.attributes.margin;
+            wrapper.style.height = (minHeight + 40) + "px";
+
+            var iframeParent  = this.iframe.parentElement.parentElement as HTMLElement;
+            iframeParent.style.height = (minHeight + 40) + "px";
+
+            const height = getComputedStyle(this.iframe.contentDocument.body).height;
+            const width = getComputedStyle(this.iframe.contentDocument.body).width;
+
+            var widthRatio = (parseInt(getComputedStyle(iframeParent).width) - 100) / (this.iframe2 ? ((parseInt(width.replace('px', '')) * 2) + 200) : parseInt(width.replace('px', '')));    
+            var heightRatio = (parseInt(getComputedStyle(iframeParent).height) - 100) / parseInt(height.replace('px', ''));
+            var scale = Math.min(widthRatio, heightRatio);
+            iframeParent.style.transform = "scale("+scale+")";
+            this.iframe.style.height = height;
+            this.iframe.style.width = width;
+            if (this.iframe2) {
+                this.iframe2.style.height = height;
+                this.iframe2.style.width = width;
+            }
+        }
+
         const selectedView = this.reflowable;
         const oldPosition = selectedView.getCurrentPosition();
 

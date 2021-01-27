@@ -97,7 +97,7 @@ export default class ContentProtectionModule implements ReaderModule {
             removeEventListenerOptional(document, 'keydown', this.disableSave);
         }
 
-        if (oc(this.protection).disbaleCopy(false)) {
+        if (oc(this.protection).disableCopy(false)) {
             removeEventListenerOptional(this.delegate.mainElement, 'copy', this.preventCopy);
             removeEventListenerOptional(this.delegate.headerMenu, 'copy', this.preventCopy);
             removeEventListenerOptional(this.delegate.iframe.contentDocument, 'copy', this.preventCopy);
@@ -218,7 +218,7 @@ export default class ContentProtectionModule implements ReaderModule {
             addEventListenerOptional(document, 'keydown', this.disableSave);
 
         }
-        if (oc(this.protection).disbaleCopy(false)) {
+        if (oc(this.protection).disableCopy(false)) {
             addEventListenerOptional(this.delegate.mainElement, 'copy', this.preventCopy);
             addEventListenerOptional(this.delegate.headerMenu, 'copy', this.preventCopy);
             addEventListenerOptional(this.delegate.iframe, 'copy', this.preventCopy);

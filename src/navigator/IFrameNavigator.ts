@@ -1382,88 +1382,31 @@ export default class IFrameNavigator implements Navigator {
 
     private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
         this.stopReadAloud();
-        if(this.reflowable.isPaginated()) {
-            if (this.reflowable.atStart()) {
-                if (this.previousChapterLink) {
-
-                    this.handlePreviousChapterClick(event)
-
-                }
-            } else {
-                this.reflowable.goToPreviousPage();
-                this.updatePositionInfo();
-                this.saveCurrentReadingPosition();
-            }
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+        if (this.reflowable.atStart()) {
+            this.handlePreviousChapterClick(event)
         } else {
-            if (this.reflowable.atStart()) {
-                if (this.previousChapterLink) {
-                    const position: Locator = {
-                        href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
-                        locations: {
-                            progression: 1
-                        },
-                        type: this.previousChapterLink.type,
-                        title: this.previousChapterLink.title
-                    };
-
-                    this.navigate(position);
-                }
-            } else {
-                this.reflowable.goToPreviousPage();
-                this.updatePositionInfo();
-                this.saveCurrentReadingPosition();
-            }
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+            this.reflowable.goToPreviousPage();
+            this.updatePositionInfo();
+            this.saveCurrentReadingPosition();
+        }
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
         }
     }
 
     private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
         this.stopReadAloud();
-        if(this.reflowable.isPaginated()) {
-            if (this.reflowable.atEnd()) {
-                if (this.nextChapterLink) {
-
-                    this.handleNextChapterClick(event)
-                }
-            } else {
-                this.reflowable.goToNextPage();
-                this.updatePositionInfo();
-                this.saveCurrentReadingPosition();
-            }
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+        if (this.reflowable.atEnd()) {
+            this.handleNextChapterClick(event)
         } else {
-            if (this.reflowable.atEnd()) {
-                if (this.nextChapterLink) {
-                    const position: Locator = {
-                        href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
-                        locations: {
-                            progression: 0
-                        },
-                        type: this.nextChapterLink.type,
-                        title: this.nextChapterLink.title
-                    };
-
-                    this.navigate(position);
-                }
-            } else {
-                this.reflowable.goToNextPage();
-                this.updatePositionInfo();
-                this.saveCurrentReadingPosition();
-            }
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+            this.reflowable.goToNextPage();
+            this.updatePositionInfo();
+            this.saveCurrentReadingPosition();
+        }
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
         }
     }
 

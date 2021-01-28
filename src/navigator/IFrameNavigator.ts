@@ -1385,21 +1385,8 @@ export default class IFrameNavigator implements Navigator {
         if(this.reflowable.isPaginated()) {
             if (this.reflowable.atStart()) {
                 if (this.previousChapterLink) {
-                    const position: Locator = {
-                        href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
-                        locations: {
-                            progression: 1
-                        },
-                        type: this.previousChapterLink.type,
-                        title: this.previousChapterLink.title
-                    };
 
-                    this.navigate(position);
-                    setTimeout(() => {
-                        this.reflowable.goToPosition(1);
-                        this.updatePositionInfo();
-                        this.saveCurrentReadingPosition();
-                    }, 1);
+                    this.handlePreviousChapterClick(event)
 
                 }
             } else {
@@ -1442,21 +1429,8 @@ export default class IFrameNavigator implements Navigator {
         if(this.reflowable.isPaginated()) {
             if (this.reflowable.atEnd()) {
                 if (this.nextChapterLink) {
-                    const position: Locator = {
-                        href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
-                        locations: {
-                            progression: 0
-                        },
-                        type: this.nextChapterLink.type,
-                        title: this.nextChapterLink.title
-                    };
 
-                    this.navigate(position);
-                    setTimeout(() => {
-                        this.reflowable.goToPosition(0);
-                        this.updatePositionInfo();
-                        this.saveCurrentReadingPosition();
-                    }, 1);
+                    this.handleNextChapterClick(event)
                 }
             } else {
                 this.reflowable.goToNextPage();
@@ -1628,7 +1602,7 @@ export default class IFrameNavigator implements Navigator {
         }
     }
 
-    private handlePreviousChapterClick(event: MouseEvent): void {
+    private handlePreviousChapterClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
         if (this.previousChapterLink) {
             const position: Locator = {
                 href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
@@ -1648,7 +1622,7 @@ export default class IFrameNavigator implements Navigator {
         }
     }
 
-    private handleNextChapterClick(event: MouseEvent): void {
+    private handleNextChapterClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
         if (this.nextChapterLink) {
             const position: Locator = {
                 href: this.publication.getAbsoluteHref(this.nextChapterLink.href),

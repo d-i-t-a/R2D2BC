@@ -171,10 +171,12 @@ export default class ContentProtectionModule implements ReaderModule {
     }
 
     public async activate() {
-        this.observe()
-        const body = HTMLUtilities.findRequiredIframeElement(this.delegate.iframe.contentDocument, 'body') as HTMLBodyElement;
-        this.rects = this.findRects(body);
-        this.rects.forEach((rect) => this.toggleRect(rect, this.securityContainer, this.isHacked));
+        if (oc(this.protection).enableObfuscation(false)) {
+            this.observe()
+            const body = HTMLUtilities.findRequiredIframeElement(this.delegate.iframe.contentDocument, 'body') as HTMLBodyElement;
+            this.rects = this.findRects(body);
+            this.rects.forEach((rect) => this.toggleRect(rect, this.securityContainer, this.isHacked));
+        }
     }
     private setupEvents(): void {
 
@@ -420,7 +422,7 @@ export default class ContentProtectionModule implements ReaderModule {
         }
     }
 
-    recalculate() {
+    recalculate(delay:number = 0) {
         if (oc(this.protection).enableObfuscation(false)) {
 
             const onDoResize = debounce(() => {
@@ -428,7 +430,7 @@ export default class ContentProtectionModule implements ReaderModule {
                 if (this.rects != undefined) {
                     this.rects.forEach((rect) => this.toggleRect(rect, this.securityContainer, this.isHacked));
                 }
-            }, 100);
+            }, delay);
             if (this.rects) {
                 this.observe()
                 onDoResize();
@@ -475,18 +477,16 @@ export default class ContentProtectionModule implements ReaderModule {
     toggleRect(rect: ContentProtectionRect, securityContainer: HTMLElement, isHacked: boolean): void {
         const outsideViewport = this.isOutsideViewport(rect);
         const beingHacked = this.isBeingHacked(securityContainer)
-
-        if (beingHacked || isHacked) {
-            rect.node.textContent = rect.scrambledTextContent;
-            rect.isObfuscated = true;
-        } else if (outsideViewport) {
-            rect.node.textContent = rect.scrambledTextContent;
-            rect.isObfuscated = true;
-        } else {
+    
+        if (rect.isObfuscated && !outsideViewport && !beingHacked && !isHacked) { 
             rect.node.textContent = rect.textContent;
             rect.isObfuscated = false;
         }
-
+    
+        if (!rect.isObfuscated && (outsideViewport || beingHacked || isHacked)) { 
+            rect.node.textContent = rect.scrambledTextContent;
+            rect.isObfuscated = true;
+        }
     }
 
     findRects(parent: HTMLElement): Array<ContentProtectionRect> {

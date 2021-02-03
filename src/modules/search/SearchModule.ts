@@ -114,9 +114,15 @@ export default class SearchModule implements ReaderModule {
         self.currentChapterSearchResult = [];
         self.currentHighlights = []
         var localSearchResultChapter: any = []
+        if (oc(this.delegate.rights).enableContentProtection(false)) {
+            this.delegate.contentProtectionModule.deactivate()
+        }
         await this.searchAndPaintChapter(searchVal, index, async (result) => {
             localSearchResultChapter = result
             goToResultPage(1)
+            if (oc(this.delegate.rights).enableContentProtection(false)) {
+                this.delegate.contentProtectionModule.recalculate(200)
+            }    
         })
 
         async function goToResultPage(page: number) {
@@ -544,7 +550,7 @@ export default class SearchModule implements ReaderModule {
                 .then(async data => {
                     ({ data, tocItem })
                     var parser = new DOMParser();
-                    var doc = parser.parseFromString(data, "text/html");
+                    var doc = parser.parseFromString(data, "application/xhtml+xml");
                     searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(result => {
                         result.forEach(searchItem => {
                             localSearchResultBook.push(searchItem)
@@ -571,7 +577,7 @@ export default class SearchModule implements ReaderModule {
             .then(async data => {
                 ({ data, tocItem })
                 var parser = new DOMParser();
-                var doc = parser.parseFromString(data, "text/html");
+                var doc = parser.parseFromString(data, "application/xhtml+xml");
                 searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(result => {
                     result.forEach(searchItem => {
                         localSearchResultBook.push(searchItem)

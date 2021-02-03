@@ -1761,6 +1761,9 @@ export default class IFrameNavigator implements Navigator {
                 }, 100);
 
                 setTimeout(async () => {
+                    if (oc(this.rights).enableContentProtection(false)) {
+                        this.contentProtectionModule.recalculate(300)
+                    }
                     if (this.annotationModule !== undefined) {
                         this.annotationModule.drawHighlights()
                         this.annotationModule.showHighlights();

@@ -523,7 +523,7 @@ exports.startReadAloud = function () {
 exports.stopReadAloud = function () {
     stopReadAloud()
 }
-exports.pasueReadAloud = function () {
+exports.pauseReadAloud = function () {
     pauseReadAloud()
 }
 exports.resumeReadAloud = function () {

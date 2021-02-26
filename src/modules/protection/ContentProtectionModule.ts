@@ -290,7 +290,7 @@ export default class ContentProtectionModule implements ReaderModule {
 
         if (oc(this.protection).enableObfuscation(false)) {
 
-            return new Promise(async (resolve) => {
+            return new Promise<void>(async (resolve) => {
                 await (document as any).fonts.ready;
                 const body = HTMLUtilities.findRequiredIframeElement(this.delegate.iframe.contentDocument, 'body') as HTMLBodyElement;
 

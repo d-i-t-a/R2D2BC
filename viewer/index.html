@@ -308,14 +308,14 @@
                 </div>
                 <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="border: 0px; display: block;" width="100%" height="100%"></iframe>
                 <div id="reader-info-bottom" class="info bottom">
-                    <div style="width:20%;float: left;">
+                    <div>
                         <span class="chapter-position"></span>
                         <span class="chapter-title"></span>
                     </div>
-                    <div style="width:60%;float: left;">
+                    <div class="scrubber">
                         <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="javascript:D2Reader.goToPosition( this.value )" />
                     </div>
-                    <div style="width:20%;float: right;">
+                    <div>
                         <span class="remaining-positions"></span>
                     </div>
                 </div>
@@ -459,7 +459,7 @@
                 enableSearch: true,
                 enableTimeline: true,
                 enableContentProtection: true,
-                autoGeneratePositions: false
+                autoGeneratePositions: true
             },
             material: {
                 settings: {

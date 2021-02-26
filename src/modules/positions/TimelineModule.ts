@@ -71,7 +71,7 @@ export default class TimelineModule implements ReaderModule {
     }
 
     async initialize() {
-        return new Promise(async (resolve) => {
+        return new Promise<void>(async (resolve) => {
             await (document as any).fonts.ready;
 
             let locator = this.delegate.currentLocator()

@@ -45,7 +45,7 @@ export default class LocalAnnotator implements Annotator {
             const position = JSON.parse(positionString);
             return new Promise(resolve => resolve(position));
         }
-        return new Promise(resolve => resolve());
+        return new Promise<void>(resolve => resolve());
     }
 
     public async initLastReadingPosition(position: ReadingPosition): Promise<void> {
@@ -111,7 +111,7 @@ export default class LocalAnnotator implements Annotator {
                 return new Promise(resolve => resolve(locator));
             }
         }
-        return new Promise(resolve => resolve());
+        return new Promise<void>(resolve => resolve());
     }
 
     public async deleteBookmark(bookmark: any): Promise<any> {
@@ -136,7 +136,7 @@ export default class LocalAnnotator implements Annotator {
             bookmarks = bookmarks.sort((n1: Bookmark, n2: Bookmark) => n1.locations.progression - n2.locations.progression);
             return new Promise(resolve => resolve(bookmarks));
         }
-        return new Promise(resolve => resolve());
+        return new Promise<void>(resolve => resolve());
     }
 
     public async initAnnotations(list: any): Promise<any> {
@@ -221,7 +221,7 @@ export default class LocalAnnotator implements Annotator {
             annotations = annotations.sort((n1: Annotation, n2: Annotation) => n1.locations.progression - n2.locations.progression);
             return new Promise(resolve => resolve(annotations));
         }
-        return new Promise(resolve => resolve());
+        return new Promise<void>(resolve => resolve());
     }
 
     public async getAnnotationPosition(id: any, iframeWin: IReadiumIFrameWindow): Promise<any> {
@@ -237,7 +237,7 @@ export default class LocalAnnotator implements Annotator {
                 }
             }
         }
-        return new Promise(resolve => resolve());
+        return new Promise<void>(resolve => resolve());
     }
 
 
@@ -250,7 +250,7 @@ export default class LocalAnnotator implements Annotator {
                 return new Promise(resolve => resolve(filtered[0]));
             }
         }
-        return new Promise(resolve => resolve());
+        return new Promise<void>(resolve => resolve());
     }
 
 }

@@ -195,6 +195,36 @@ export default class ReflowableBookView implements BookView {
         this.goToElement(element, relative);
     }
 
+    snap(element: HTMLElement | null, _relative?: boolean): void {
+        if (element) {
+            if (this.isScrollMode()) {
+            //     // Put the element as close to the top as possible.
+            //     document.scrollingElement.scrollTop = element.offsetTop;
+            } else {
+                // Get the element's position in the iframe, and
+                // round that to figure out the column it's in.
+                // There is a bug in Safari when using getBoundingClientRect
+                // on an element that spans multiple columns. Temporarily
+                // set the element's height to fit it on one column so we
+                // can determine the first column position.
+                const originalHeight = element.style.height;
+                element.style.height = "0";
+
+                const width = this.getColumnWidth();
+                const left = this.getLeftColumnsWidth() + element.getBoundingClientRect().left;
+                let roundedLeftWidth = (Math.floor(left / width) * width);
+
+                // Restore element's original height.
+                element.style.height = originalHeight;
+                this.setLeftColumnsWidth(roundedLeftWidth);
+
+                if (oc(this.delegate.rights).enableContentProtection(false)) {
+                    this.delegate.contentProtectionModule.recalculate(200)
+                }
+            }
+        } 
+    }
+
     goToElement(element: HTMLElement | null, relative?: boolean): void {
         if (this.isScrollMode()) {
             if (element) {

@@ -138,7 +138,7 @@ export async function annotations() {
 export async function search(term, current) {
     if (oc(R2Navigator.rights).enableSearch(false)) {
         if (IS_DEV) { console.log("search") }
-        return await SearchModuleInstance.search(term, current)   
+        return await SearchModuleInstance.search(term, current)
     } else {
         return []
     }
@@ -146,19 +146,19 @@ export async function search(term, current) {
 export async function goToSearchIndex(href, index, current) {
     if (oc(R2Navigator.rights).enableSearch(false)) {
         if (IS_DEV) { console.log("goToSearchIndex") }
-        await SearchModuleInstance.goToSearchIndex(href, index, current)   
+        await SearchModuleInstance.goToSearchIndex(href, index, current)
     }
 }
 export async function goToSearchID(href, index, current) {
     if (oc(R2Navigator.rights).enableSearch(false)) {
         if (IS_DEV) { console.log("goToSearchID") }
-        await SearchModuleInstance.goToSearchID(href, index, current)   
+        await SearchModuleInstance.goToSearchID(href, index, current)
     }
 }
 export async function clearSearch() {
     if (oc(R2Navigator.rights).enableSearch(false)) {
         if (IS_DEV) { console.log("clearSearch") }
-        await SearchModuleInstance.clearSearch()   
+        await SearchModuleInstance.clearSearch()
     }
 }
 
@@ -287,6 +287,10 @@ export async function applyAtributes(value) {
     if (IS_DEV) { console.log("applyAtributes") }
     R2Navigator.applyAtributes(value)
 }
+export async function snapToElement(value) {
+    if (IS_DEV) { console.log("snapToElement") }
+    R2Navigator.snapToElement(value)
+}
 
 export async function load(config: ReaderConfig): Promise<any> {
 
@@ -391,7 +395,7 @@ export async function load(config: ReaderConfig): Promise<any> {
                         locator.locations.totalRemainingPositions = Math.abs((locator.locations.position - 1) - (positions.length - 1))
                     })
                     publication.positions = positions
-                    if (IS_DEV) console.log(positions)    
+                    if (IS_DEV) console.log(positions)
                 }
             });
         }
@@ -405,7 +409,7 @@ export async function load(config: ReaderConfig): Promise<any> {
             api: config.api
         })
 
-        // Navigator 
+        // Navigator
         R2Navigator = await IFrameNavigator.create({
             mainElement: mainElement,
             headerMenu: headerMenu,
@@ -422,9 +426,9 @@ export async function load(config: ReaderConfig): Promise<any> {
             injectables: oc(publication.metadata.rendition).layout("unknown") == 'fixed' ? [] : config.injectables,
             attributes: config.attributes
         })
-        
+
         // Highlighter
-        D2Highlighter = await TextHighlighter.create({ 
+        D2Highlighter = await TextHighlighter.create({
             delegate: R2Navigator,
             config: config.highlighter
         })
@@ -453,7 +457,7 @@ export async function load(config: ReaderConfig): Promise<any> {
             config: config.annotations,
             highlighter: D2Highlighter
             })
-        }  
+        }
 
         // TTS Module
         if (oc(config.rights).enableTTS(false)) {
@@ -504,10 +508,10 @@ export async function load(config: ReaderConfig): Promise<any> {
                 ContentProtectionModuleInstance = contentProtectionModule;
             });
         }
-    
+
         return new Promise(resolve => resolve(R2Navigator));
     } else {
-        throw new Error("Browser not suppoorted");    
+        throw new Error("Browser not suppoorted");
     }
 }
 
@@ -545,7 +549,7 @@ exports.startReadAloud = function () {
 exports.stopReadAloud = function () {
     stopReadAloud()
 }
-exports.pasueReadAloud = function () {
+exports.pauseReadAloud = function () {
     pauseReadAloud()
 }
 exports.resumeReadAloud = function () {
@@ -661,4 +665,7 @@ exports.goToPosition = function (value) {
 }
 exports.applyAtributes = function (value) {
     applyAtributes(value)
+}
+exports.snapToElement = function (value) {
+    snapToElement(value)
 }

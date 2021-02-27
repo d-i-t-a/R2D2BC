@@ -39,6 +39,8 @@ import ContentProtectionModule from "../modules/protection/ContentProtectionModu
 import TextHighlighter from "../modules/highlight/TextHighlighter";
 import TimelineModule from "../modules/positions/TimelineModule";
 import { debounce } from "debounce";
+import TouchEventHandler from "../utils/TouchEventHandler";
+import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 
 export type GetContent = (href: string) => Promise<string>
 export interface ContentAPI {
@@ -61,6 +63,8 @@ export interface IFrameNavigatorConfig {
     settings: UserSettings;
     annotator?: Annotator;
     eventHandler?: EventHandler;
+    touchEventHandler?: TouchEventHandler;
+    keyboardEventHandler?: KeyboardEventHandler;
     upLink?: UpLinkConfig;
     initialLastReadingPosition?: ReadingPosition;
     rights?: ReaderRights;
@@ -154,6 +158,8 @@ export default class IFrameNavigator implements Navigator {
 
     reflowable: ReflowableBookView | null
     private eventHandler: EventHandler;
+    private touchEventHandler: TouchEventHandler;
+    private keyboardEventHandler: KeyboardEventHandler;
     private upLinkConfig: UpLinkConfig | null;
     private upLink: HTMLAnchorElement | null = null;
 
@@ -207,6 +213,8 @@ export default class IFrameNavigator implements Navigator {
             config.settings,
             config.annotator || null,
             config.eventHandler || null,
+            config.touchEventHandler || null,
+            config.keyboardEventHandler || null,
             config.upLink || null,
             config.initialLastReadingPosition || null,
             config.publication,
@@ -226,6 +234,8 @@ export default class IFrameNavigator implements Navigator {
         settings: UserSettings,
         annotator: Annotator | null = null,
         eventHandler: EventHandler | null = null,
+        touchEventHandler: TouchEventHandler | null = null,
+        keyboardEventHandler: KeyboardEventHandler | null = null,
         upLinkConfig: UpLinkConfig | null = null,
         initialLastReadingPosition: ReadingPosition | null = null,
         publication: Publication,
@@ -242,6 +252,8 @@ export default class IFrameNavigator implements Navigator {
         this.reflowable.attributes = attributes
         this.reflowable.delegate = this
         this.eventHandler = eventHandler || new EventHandler();
+        this.touchEventHandler = touchEventHandler || new TouchEventHandler();
+        this.keyboardEventHandler = keyboardEventHandler || new KeyboardEventHandler();
         this.upLinkConfig = upLinkConfig;
         this.initialLastReadingPosition = initialLastReadingPosition;
         this.publication = publication
@@ -421,7 +433,7 @@ export default class IFrameNavigator implements Navigator {
             this.isLoading = true;
 
             this.setupEvents();
-
+            
             this.settings.setIframe(this.iframe);
             this.settings.onSettingsChange(this.handleResize.bind(this));
             this.settings.onViewChange(this.updateBookView.bind(this));
@@ -628,7 +640,7 @@ export default class IFrameNavigator implements Navigator {
         this.settings.isPaginated().then(paginated => {
             if (paginated) {
                 this.reflowable.height = (BrowserUtilities.getHeight() - 40 - this.attributes.margin);
-                if (this.infoBottom) this.infoBottom.style.display = "block"
+                if (this.infoBottom) this.infoBottom.style.removeProperty("display")
                 document.body.onscroll = () => { };
                 if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                 if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
@@ -640,6 +652,14 @@ export default class IFrameNavigator implements Navigator {
                 if (this.eventHandler) {
                     this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
                     this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
+                }
+                if (this.touchEventHandler) {
+                    this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
+                    this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
+                }
+                if (this.keyboardEventHandler) {
+                    this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
+                    this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
                 }
                 if (!this.isDisplayed(this.linksBottom)) {
                     this.toggleDisplay(this.linksBottom);
@@ -713,6 +733,14 @@ export default class IFrameNavigator implements Navigator {
                 if (this.eventHandler) {
                     this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
                     this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
+                }
+                if (this.touchEventHandler) {
+                    this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
+                    this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
+                }
+                if (this.keyboardEventHandler) {
+                    this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
+                    this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
                 }
                 if (!this.isDisplayed(this.linksBottom)) {
                     this.toggleDisplay(this.linksBottom);
@@ -1079,6 +1107,10 @@ export default class IFrameNavigator implements Navigator {
 
                 if (this.eventHandler) {
                     this.eventHandler.setupEvents(this.iframe.contentDocument);
+                    this.touchEventHandler.setupEvents(this.iframe.contentDocument)
+                    this.keyboardEventHandler.delegate = this
+                    this.keyboardEventHandler.setupEvents(this.iframe.contentDocument)
+                    this.keyboardEventHandler.setupEvents(document)
                 }
 
                 if(this.reflowable.isScrollMode()) {
@@ -1424,12 +1456,9 @@ export default class IFrameNavigator implements Navigator {
                 }
             }
         }
-        const position: Locator = {
-            href: locator.href,
-            locations: locations,
-            type: locator.type,
-            title: locator.title
-        };
+        const position = {...locator};
+        position.locations = locations
+
         const linkHref = this.publication.getAbsoluteHref(locator.href);
         if (IS_DEV) console.log(locator.href)
         if (IS_DEV) console.log(linkHref)
@@ -1475,7 +1504,9 @@ export default class IFrameNavigator implements Navigator {
             goTo(locator)
         }
     }
-
+    snapToElement(element:HTMLElement) {
+        this.reflowable.snap(element) 
+    }
     applyAtributes(attributes:IFrameAttributes) {
         this.attributes = attributes
         this.reflowable.attributes = attributes
@@ -1484,114 +1515,31 @@ export default class IFrameNavigator implements Navigator {
 
     private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
         this.stopReadAloud();
-        if(this.reflowable.isPaginated()) {
-            if (this.reflowable.atStart()) {
-                if (this.previousChapterLink) {
-                    const position: Locator = {
-                        href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
-                        locations: {
-                            progression: 1
-                        },
-                        type: this.previousChapterLink.type,
-                        title: this.previousChapterLink.title
-                    };
-
-                    this.navigate(position);
-                    setTimeout(() => {
-                        this.reflowable.goToPosition(1);
-                        this.updatePositionInfo();
-                        this.saveCurrentReadingPosition();
-                    }, 1);
-
-                }
-            } else {
-                this.reflowable.goToPreviousPage();
-                this.updatePositionInfo();
-                this.saveCurrentReadingPosition();
-            }
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+        if (this.reflowable.atStart()) {
+            this.handlePreviousChapterClick(event)
         } else {
-            if (this.reflowable.atStart()) {
-                if (this.previousChapterLink) {
-                    const position: Locator = {
-                        href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
-                        locations: {
-                            progression: 1
-                        },
-                        type: this.previousChapterLink.type,
-                        title: this.previousChapterLink.title
-                    };
-
-                    this.navigate(position);
-                }
-            } else {
-                this.reflowable.goToPreviousPage();
-                this.updatePositionInfo();
-                this.saveCurrentReadingPosition();
-            }
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+            this.reflowable.goToPreviousPage();
+            this.updatePositionInfo();
+            this.saveCurrentReadingPosition();
+        }
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
         }
     }
 
     private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
         this.stopReadAloud();
-        if(this.reflowable.isPaginated()) {
-            if (this.reflowable.atEnd()) {
-                if (this.nextChapterLink) {
-                    const position: Locator = {
-                        href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
-                        locations: {
-                            progression: 0
-                        },
-                        type: this.nextChapterLink.type,
-                        title: this.nextChapterLink.title
-                    };
-
-                    this.navigate(position);
-                    setTimeout(() => {
-                        this.reflowable.goToPosition(0);
-                        this.updatePositionInfo();
-                        this.saveCurrentReadingPosition();
-                    }, 1);
-                }
-            } else {
-                this.reflowable.goToNextPage();
-                this.updatePositionInfo();
-                this.saveCurrentReadingPosition();
-            }
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+        if (this.reflowable.atEnd()) {
+            this.handleNextChapterClick(event)
         } else {
-            if (this.reflowable.atEnd()) {
-                if (this.nextChapterLink) {
-                    const position: Locator = {
-                        href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
-                        locations: {
-                            progression: 0
-                        },
-                        type: this.nextChapterLink.type,
-                        title: this.nextChapterLink.title
-                    };
-
-                    this.navigate(position);
-                }
-            } else {
-                this.reflowable.goToNextPage();
-                this.updatePositionInfo();
-                this.saveCurrentReadingPosition();
-            }
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+            this.reflowable.goToNextPage();
+            this.updatePositionInfo();
+            this.saveCurrentReadingPosition();
+        }
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
         }
     }
 
@@ -1696,7 +1644,7 @@ export default class IFrameNavigator implements Navigator {
         this.settings.isPaginated().then(paginated => {
             if (paginated) {
                 this.reflowable.height = (BrowserUtilities.getHeight() - 40 - this.attributes.margin);
-                if (this.infoBottom) this.infoBottom.style.display = "block"
+                if (this.infoBottom) this.infoBottom.style.removeProperty("display")
             } else {
                 if (this.infoBottom) this.infoBottom.style.display = "none"
             }
@@ -1755,7 +1703,7 @@ export default class IFrameNavigator implements Navigator {
         }
     }
 
-    private handlePreviousChapterClick(event: MouseEvent): void {
+    private handlePreviousChapterClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
         if (this.previousChapterLink) {
             const position: Locator = {
                 href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
@@ -1775,7 +1723,7 @@ export default class IFrameNavigator implements Navigator {
         }
     }
 
-    private handleNextChapterClick(event: MouseEvent): void {
+    private handleNextChapterClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
         if (this.nextChapterLink) {
             const position: Locator = {
                 href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
@@ -1971,6 +1919,9 @@ export default class IFrameNavigator implements Navigator {
                 }, 100);
 
                 setTimeout(async () => {
+                    if (oc(this.rights).enableContentProtection(false)) {
+                        this.contentProtectionModule.recalculate(300)
+                    }
                     if (this.annotationModule !== undefined) {
                         this.annotationModule.drawHighlights()
                         this.annotationModule.showHighlights();

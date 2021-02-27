@@ -287,6 +287,10 @@ export async function applyAtributes(value) {
     if (IS_DEV) { console.log("applyAtributes") }
     R2Navigator.applyAtributes(value)
 }
+export async function snapToElement(value) {
+    if (IS_DEV) { console.log("snapToElement") }
+    R2Navigator.snapToElement(value)
+}
 
 export async function load(config: ReaderConfig): Promise<any> {
 
@@ -639,4 +643,7 @@ exports.goToPosition = function (value) {
 }
 exports.applyAtributes = function (value) {
     applyAtributes(value)
+}
+exports.snapToElement = function (value) {
+    snapToElement(value)
 }

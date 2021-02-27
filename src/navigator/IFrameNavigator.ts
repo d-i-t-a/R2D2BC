@@ -1402,7 +1402,9 @@ export default class IFrameNavigator implements Navigator {
             goTo(locator)
         }
     }
-
+    snapToElement(element:HTMLElement) {
+        this.reflowable.snap(element) 
+    }
     applyAtributes(attributes:IFrameAttributes) {
         this.attributes = attributes
         this.reflowable.attributes = attributes

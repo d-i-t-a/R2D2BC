@@ -219,7 +219,7 @@ export default class ReflowableBookView implements BookView {
                 this.setLeftColumnsWidth(roundedLeftWidth);
 
                 if (oc(this.delegate.rights).enableContentProtection(false)) {
-                    this.delegate.contentProtectionModule.recalculate(200)
+                    this.delegate.contentProtectionModule.recalculate(0)
                 }
             }
         } 

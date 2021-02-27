@@ -40,6 +40,7 @@ import TextHighlighter from "../modules/highlight/TextHighlighter";
 import TimelineModule from "../modules/positions/TimelineModule";
 import { debounce } from "debounce";
 import TouchEventHandler from "../utils/TouchEventHandler";
+import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 
 export type GetContent = (href: string) => Promise<string>
 export interface ContentAPI {
@@ -63,6 +64,7 @@ export interface IFrameNavigatorConfig {
     annotator?: Annotator;
     eventHandler?: EventHandler;
     touchEventHandler?: TouchEventHandler;
+    keyboardEventHandler?: KeyboardEventHandler;
     upLink?: UpLinkConfig;
     initialLastReadingPosition?: ReadingPosition;
     rights?: ReaderRights;
@@ -156,6 +158,7 @@ export default class IFrameNavigator implements Navigator {
     reflowable: ReflowableBookView | null
     private eventHandler: EventHandler;
     private touchEventHandler: TouchEventHandler;
+    private keyboardEventHandler: KeyboardEventHandler;
     private upLinkConfig: UpLinkConfig | null;
     private upLink: HTMLAnchorElement | null = null;
 
@@ -210,6 +213,7 @@ export default class IFrameNavigator implements Navigator {
             config.annotator || null,
             config.eventHandler || null,
             config.touchEventHandler || null,
+            config.keyboardEventHandler || null,
             config.upLink || null,
             config.initialLastReadingPosition || null,
             config.publication,
@@ -230,6 +234,7 @@ export default class IFrameNavigator implements Navigator {
         annotator: Annotator | null = null,
         eventHandler: EventHandler | null = null,
         touchEventHandler: TouchEventHandler | null = null,
+        keyboardEventHandler: KeyboardEventHandler | null = null,
         upLinkConfig: UpLinkConfig | null = null,
         initialLastReadingPosition: ReadingPosition | null = null,
         publication: Publication,
@@ -247,6 +252,7 @@ export default class IFrameNavigator implements Navigator {
         this.reflowable.delegate = this
         this.eventHandler = eventHandler || new EventHandler();
         this.touchEventHandler = touchEventHandler || new TouchEventHandler();
+        this.keyboardEventHandler = keyboardEventHandler || new KeyboardEventHandler();
         this.upLinkConfig = upLinkConfig;
         this.initialLastReadingPosition = initialLastReadingPosition;
         this.publication = publication
@@ -596,6 +602,10 @@ export default class IFrameNavigator implements Navigator {
                     this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
                     this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
                 }
+                if (this.keyboardEventHandler) {
+                    this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
+                    this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
+                }
                 if (!this.isDisplayed(this.linksBottom)) {
                     this.toggleDisplay(this.linksBottom);
                 }
@@ -672,6 +682,10 @@ export default class IFrameNavigator implements Navigator {
                 if (this.touchEventHandler) {
                     this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
                     this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
+                }
+                if (this.keyboardEventHandler) {
+                    this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
+                    this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
                 }
                 if (!this.isDisplayed(this.linksBottom)) {
                     this.toggleDisplay(this.linksBottom);
@@ -1039,6 +1053,9 @@ export default class IFrameNavigator implements Navigator {
                 if (this.eventHandler) {
                     this.eventHandler.setupEvents(this.iframe.contentDocument);
                     this.touchEventHandler.setupEvents(this.iframe.contentDocument)
+                    this.keyboardEventHandler.delegate = this
+                    this.keyboardEventHandler.setupEvents(this.iframe.contentDocument)
+                    this.keyboardEventHandler.setupEvents(document)
                 }
 
                 if(this.reflowable.isScrollMode()) {
@@ -1337,12 +1354,9 @@ export default class IFrameNavigator implements Navigator {
                 }
             }
         }
-        const position: Locator = {
-            href: locator.href,
-            locations: locations,
-            type: locator.type,
-            title: locator.title
-        };
+        const position = {...locator};
+        position.locations = locations
+
         const linkHref = this.publication.getAbsoluteHref(locator.href);
         if (IS_DEV) console.log(locator.href)
         if (IS_DEV) console.log(linkHref)
@@ -1388,7 +1402,9 @@ export default class IFrameNavigator implements Navigator {
             goTo(locator)
         }
     }
-
+    snapToElement(element:HTMLElement) {
+        this.reflowable.snap(element) 
+    }
     applyAtributes(attributes:IFrameAttributes) {
         this.attributes = attributes
         this.reflowable.attributes = attributes

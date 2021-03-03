@@ -401,11 +401,9 @@ export default class ReflowableBookView implements BookView {
             if (iframe) {
                 let iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
                 if (iframeWin.document.body) {
-                    if (oc(this.delegate.publication.metadata.rendition).layout("unknown") != 'fixed') {
-                        const minHeight = BrowserUtilities.getHeight() - 40 - this.attributes.margin;
-                        const bodyHeight = iframeWin.document.documentElement.scrollHeight || iframeWin.document.body.scrollHeight;
-                        iframe.height = Math.max(minHeight, bodyHeight);
-                    }
+                    const minHeight = BrowserUtilities.getHeight() - 40 - this.attributes.margin;
+                    const bodyHeight = iframeWin.document.documentElement.scrollHeight || iframeWin.document.body.scrollHeight;
+                    iframe.height = Math.max(minHeight, bodyHeight);
                 }
             }
         }, 100);
@@ -428,26 +426,22 @@ export default class ReflowableBookView implements BookView {
 
     private setSize(): void {
         if (this.isPaginated()) {
-            if (oc(this.delegate.publication.metadata.rendition).layout("unknown") != 'fixed') {
-                // any is necessary because CSSStyleDeclaration type does not include
-                // all the vendor-prefixed attributes.
-                const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as any;
+            // any is necessary because CSSStyleDeclaration type does not include
+            // all the vendor-prefixed attributes.
+            const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as any;
 
-                (this.iframe.contentDocument as any).documentElement.style.height = (this.height) + "px";
-                this.iframe.height = (this.height) + "px";
-                this.iframe.width = BrowserUtilities.getWidth() + "px";
+            (this.iframe.contentDocument as any).documentElement.style.height = (this.height) + "px";
+            this.iframe.height = (this.height) + "px";
+            this.iframe.width = BrowserUtilities.getWidth() + "px";
 
-                const images = body.querySelectorAll("img");
-                for (const image of images) {
-                    image.style.width = image.width + "px";
-                }
+            const images = body.querySelectorAll("img");
+            for (const image of images) {
+                image.style.width = image.width + "px";
             }
         } else {
             // Remove previous iframe height so body scroll height will be accurate.
-            if (oc(this.delegate.publication.metadata.rendition).layout("unknown") != 'fixed') {
-                this.iframe.height = "0";
-                this.iframe.width = BrowserUtilities.getWidth() + "px";
-            }
+            this.iframe.height = "0";
+            this.iframe.width = BrowserUtilities.getWidth() + "px";
 
             const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
 

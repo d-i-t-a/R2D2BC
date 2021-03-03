@@ -165,7 +165,7 @@ export default class BookmarkModule implements ReaderModule {
             }
 
 
-            const bookmarkPosition = this.delegate.reflowable.getCurrentPosition();
+            const bookmarkPosition = this.delegate.view.getCurrentPosition();
 
             const id: string = uuid();
 

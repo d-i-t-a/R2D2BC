@@ -17,13 +17,25 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
+import IFrameNavigator, { IFrameAttributes } from "../navigator/IFrameNavigator";
+
 interface BookView {
+    layout: string;
     name: string;
     label: string;
 
     iframe: Element;
     sideMargin: number;
     height: number;
+    delegate: IFrameNavigator;
+    attributes: IFrameAttributes;
+
+
+    setMode?(scroll: boolean);
+    isScrollMode?()
+    isPaginated?()
+    goToElement?(element: HTMLElement | null, relative?: boolean): void;
+    setIframeHeight?(iframe: any)
 
     /** Load this view in its book element, at the specified position. */
     start(): void;
@@ -35,11 +47,12 @@ interface BookView {
     goToPosition(position: number): void;
     goToFragment(fragment: string): void;
     goToCssSelector(cssSelector: string): void;
+    snap(element: HTMLElement | null, relative?: boolean): void;
 
-    atStart(): boolean;
-    atEnd(): boolean;
-    goToPreviousPage(): void;
-    goToNextPage(): void;
+    atStart?(): boolean;
+    atEnd?(): boolean;
+    goToPreviousPage?(): void;
+    goToNextPage?(): void;
     getCurrentPage(): number;
     getPageCount(): number;
 

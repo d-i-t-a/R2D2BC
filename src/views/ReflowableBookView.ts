@@ -31,6 +31,8 @@ import { oc } from "ts-optchain";
 
 export default class ReflowableBookView implements BookView {
 
+    layout = 'reflowable';
+
     private readonly USERSETTINGS = "userSetting";
     private readonly store: Store;
     private scrollMode: boolean

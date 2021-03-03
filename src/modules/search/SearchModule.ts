@@ -629,7 +629,7 @@ export default class SearchModule implements ReaderModule {
                 current.highlight.color = currentColor
                 this.highlighter.setAndResetSearchHighlight(current.highlight, this.currentHighlights)
 
-                this.delegate.reflowable.goToCssSelector(current.rangeInfo.startContainerElementCssSelector)
+                this.delegate.view.goToCssSelector(current.rangeInfo.startContainerElementCssSelector)
                 this.delegate.updatePositionInfo()
             }
         }, 200);

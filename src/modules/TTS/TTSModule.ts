@@ -383,7 +383,7 @@ export default class TTSModule implements ReaderModule {
 
                             }
                             splittingWord.dataset.ttsCurrentWord = "true"
-                            if (self.delegate.reflowable.isScrollMode() && self.tts.autoScroll && !self.userScrolled) {
+                            if (self.delegate.view.isScrollMode() && self.tts.autoScroll && !self.userScrolled) {
                                 splittingWord.scrollIntoView({
                                     block: "center",
                                     behavior: "smooth",

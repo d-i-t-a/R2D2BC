@@ -790,7 +790,7 @@ export default class TextHighlighter {
         var rect = range.getBoundingClientRect();
         var toolbox = document.getElementById("highlight-toolbox");
 
-        toolbox.style.top = rect.top + 'px';
+        toolbox.style.top = rect.top  + oc(this.delegate.attributes).navHeight(0) + 'px';
         toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
     }
 
@@ -1534,7 +1534,7 @@ export default class TextHighlighter {
             return;
         }
 
-        const paginated = this.delegate.reflowable.isPaginated();
+        const paginated = this.delegate.view.isPaginated();
         const bodyRect = documant.body.getBoundingClientRect();
         const scrollElement = this.getScrollingElement(documant);
 
@@ -1626,7 +1626,7 @@ export default class TextHighlighter {
                 // } else {
                 var toolbox = document.getElementById("highlight-toolbox");
                 // toolbox.style.top = ev.clientY + 74 + 'px';
-                toolbox.style.top = ev.clientY + 'px';
+                toolbox.style.top = ev.clientY + oc(this.delegate.attributes).navHeight(0) + 'px';
                 toolbox.style.left = ev.clientX + "px";
 
                 if (getComputedStyle(toolbox).display === "none") {
@@ -1864,7 +1864,7 @@ export default class TextHighlighter {
             highlightParent.setAttribute("data-click", "1");
         }
 
-        const paginated = this.delegate.reflowable.isPaginated();
+        const paginated = this.delegate.view.isPaginated();
 
         // Resize Sensor sets body position to "relative" (default static),
         // which may breaks things!

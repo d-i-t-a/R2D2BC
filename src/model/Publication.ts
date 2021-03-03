@@ -26,6 +26,7 @@ export interface Metadata {
     identifier?: string;
     language?: string;
     modified?: string;
+    rendition?: any;
 }
 
 export interface Link {

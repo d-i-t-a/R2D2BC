@@ -329,42 +329,68 @@ export async function load(config: ReaderConfig): Promise<any> {
         }
         const publication: Publication = await Publication.getManifest(webpubManifestUrl, store);
 
+        if (oc(publication.metadata.rendition).layout("unknown") == 'fixed') {
+        
+            config.rights.enableAnnotations = false;
+            config.rights.enableSearch = false;
+            config.rights.enableTTS = false;
+            // config.protection.enableObfuscation = false;
+            
+        }
+
         if (oc(config.rights).autoGeneratePositions(true)) {
             var startPosition = 0
             var totalContentLength = 0
             var positions = []
             publication.readingOrder.map(async (link, index) => {
-                var href = publication.getAbsoluteHref(link.href);
-                await fetch(href)
-                    .then(async r => {
-                        let length = (await r.blob()).size
-                        link.contentLength = length
-                        totalContentLength += length
-                        let positionLength = 1024
-                        let positionCount = Math.max(1, Math.ceil(length / positionLength))
-                        if (IS_DEV) console.log(length + " Bytes")
-                        if (IS_DEV) console.log(positionCount + " Positions")
-                        Array.from(Array(positionCount).keys()).map((_, position) => {
-                            const locator: Locator = {
-                                href: link.href,
-                                locations: {
-                                    progression: (position) / (positionCount),
-                                    position: startPosition + (position + 1),
-                                },
-                                type: link.type
-                            };
-                            if (IS_DEV) console.log(locator)
-                            positions.push(locator)
-                        });
-                        startPosition = startPosition + positionCount
-                    })
+
+                if (oc(publication.metadata.rendition).layout("unknown") == 'fixed') {
+                    const locator: Locator = {
+                        href: link.href,
+                        locations: {
+                            progression: 0,
+                            position: startPosition + 1,
+                        },
+                        type: link.type
+                    };
+                    if (IS_DEV) console.log(locator)
+                    positions.push(locator)
+                    startPosition = startPosition + 1
+                } else {
+                    var href = publication.getAbsoluteHref(link.href);
+                    await fetch(href)
+                        .then(async r => {
+                            let length = (await r.blob()).size
+                            link.contentLength = length
+                            totalContentLength += length
+                            let positionLength = 1024
+                            let positionCount = Math.max(1, Math.ceil(length / positionLength))
+                            if (IS_DEV) console.log(length + " Bytes")
+                            if (IS_DEV) console.log(positionCount + " Positions")
+                            Array.from(Array(positionCount).keys()).map((_, position) => {
+                                const locator: Locator = {
+                                    href: link.href,
+                                    locations: {
+                                        progression: (position) / (positionCount),
+                                        position: startPosition + (position + 1),
+                                    },
+                                    type: link.type
+                                };
+                                if (IS_DEV) console.log(locator)
+                                positions.push(locator)
+                            });
+                            startPosition = startPosition + positionCount
+                        })
+                }
                 if (index + 1 == publication.readingOrder.length) {
-                    publication.readingOrder.map(async (link) => {
-                        if (IS_DEV) console.log(totalContentLength)
-                        if (IS_DEV) console.log(link.contentLength)
-                        link.contentWeight = 100 / totalContentLength * link.contentLength
-                        if (IS_DEV) console.log(link.contentWeight)
-                    })
+                    if (oc(publication.metadata.rendition).layout("unknown") != 'fixed') {
+                        publication.readingOrder.map(async (link) => {
+                            if (IS_DEV) console.log(totalContentLength)
+                            if (IS_DEV) console.log(link.contentLength)
+                            link.contentWeight = 100 / totalContentLength * link.contentLength
+                            if (IS_DEV) console.log(link.contentWeight)
+                        })
+                    }
                     positions.map((locator, _index) => {
                         let resource = positions.filter((el: Locator) => el.href === locator.href)
                         let positionIndex = Math.ceil(locator.locations.progression * (resource.length - 1))
@@ -384,7 +410,8 @@ export async function load(config: ReaderConfig): Promise<any> {
             initialUserSettings: config.userSettings,
             headerMenu: headerMenu,
             material: config.material,
-            api: config.api
+            api: config.api,
+            layout: oc(publication.metadata.rendition).layout("unknown") == 'fixed' ? 'fixed' : 'reflowable'
         })
 
         // Navigator
@@ -401,15 +428,17 @@ export async function load(config: ReaderConfig): Promise<any> {
             api: config.api,
             rights: config.rights,
             tts: config.tts,
-            injectables: config.injectables,
+            injectables: oc(publication.metadata.rendition).layout("unknown") == 'fixed' ? [] : config.injectables,
             attributes: config.attributes
         })
 
         // Highlighter
-        D2Highlighter = await TextHighlighter.create({
-            delegate: R2Navigator,
-            config: config.highlighter
-        })
+        if (oc(publication.metadata.rendition).layout("unknown") != 'fixed') {
+            D2Highlighter = await TextHighlighter.create({ 
+                delegate: R2Navigator,
+                config: config.highlighter
+            })
+        }
 
         // Bookmark Module
         if (oc(config.rights).enableBookmarks(false)) {

@@ -498,6 +498,9 @@ export default class IFrameNavigator implements Navigator {
                     if (!oc(this.rights).enableSearch(false)) {
                         menuSearch.parentElement.style.removeProperty("display")
                     }
+                    if (menuSearch && oc(this.view.delegate.publication.metadata.rendition).layout("unknown") == 'fixed') {
+                        menuSearch.parentElement.style.setProperty("display", "none")
+                    }    
                 }
             } else {
                 if (this.headerMenu) {

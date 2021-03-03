@@ -33,7 +33,6 @@ import TTSModule, { TTSSpeechConfig } from "../modules/TTS/TTSModule";
 import { goTo, IS_DEV } from "..";
 import Splitting from "../modules/TTS/splitting";
 import { oc } from "ts-optchain";
-import ReflowableBookView from "../views/ReflowableBookView";
 import SearchModule from "../modules/search/SearchModule";
 import ContentProtectionModule from "../modules/protection/ContentProtectionModule";
 import TextHighlighter from "../modules/highlight/TextHighlighter";
@@ -41,6 +40,7 @@ import TimelineModule from "../modules/positions/TimelineModule";
 import { debounce } from "debounce";
 import TouchEventHandler from "../utils/TouchEventHandler";
 import KeyboardEventHandler from "../utils/KeyboardEventHandler";
+import BookView from "../views/BookView";
 
 export type GetContent = (href: string) => Promise<string>
 export interface ContentAPI {
@@ -53,7 +53,9 @@ export interface UpLinkConfig {
     ariaLabel?: string;
 }
 export interface IFrameAttributes {
-    margin: number
+    margin: number;
+    navHeight?: number;
+    iframePaddingTop?: number;
 }
 export interface IFrameNavigatorConfig {
     mainElement: HTMLElement;
@@ -156,7 +158,8 @@ export default class IFrameNavigator implements Navigator {
     settings: UserSettings;
     private annotator: Annotator | null;
 
-    reflowable: ReflowableBookView | null
+    view: BookView | null;
+
     private eventHandler: EventHandler;
     private touchEventHandler: TouchEventHandler;
     private keyboardEventHandler: KeyboardEventHandler;
@@ -248,9 +251,9 @@ export default class IFrameNavigator implements Navigator {
     ) {
         this.settings = settings;
         this.annotator = annotator;
-        this.reflowable = settings.reflowable
-        this.reflowable.attributes = attributes
-        this.reflowable.delegate = this
+        this.view = settings.view
+        this.view.attributes = attributes
+        this.view.delegate = this
         this.eventHandler = eventHandler || new EventHandler();
         this.touchEventHandler = touchEventHandler || new TouchEventHandler();
         this.keyboardEventHandler = keyboardEventHandler || new KeyboardEventHandler();
@@ -321,15 +324,6 @@ export default class IFrameNavigator implements Navigator {
             this.iframe2 = HTMLUtilities.findElement(mainElement, "#second") as HTMLIFrameElement;
 
             if (!this.iframe) {
-                // <div style="display: flex; align-items: center; justify-content: center;">
-                //     <div>
-                //         <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="opacity: 1;"></iframe>
-                //     </div>
-                //     <div>
-                //         <iframe id="second" allowtransparency="true" title="ePub Reader" SCROLLING="no" style="opacity: 1;"></iframe>
-                //     </div>
-                // </div> 
-
                 var wrapper  = HTMLUtilities.findRequiredElement(mainElement, "main#iframe-wrapper") as HTMLElement;
                 this.iframe = document.createElement("iframe");
                 this.iframe.setAttribute('SCROLLING', 'no');
@@ -343,6 +337,8 @@ export default class IFrameNavigator implements Navigator {
                 let info = document.getElementById("reader-info-bottom")
                 if (info) {
                     wrapper.insertBefore(spreads, info)
+                } else {
+                    wrapper.appendChild(spreads)
                 }
 
                 spreads.appendChild(spread_left);
@@ -356,10 +352,17 @@ export default class IFrameNavigator implements Navigator {
                     this.iframe2.setAttribute('allowtransparency', 'true');
                     this.iframe2.style.opacity = '1';
                     spread_right.appendChild(this.iframe2);
+
+                    spread_left.style.clipPath = 'polygon(0% -20%, 100% -20%, 100% 120%, -20% 120%)';
+                    spread_left.style.boxShadow = '0 0 8px 2px #ccc';
+                    spread_right.style.clipPath = 'polygon(0% -20%, 100% -20%, 120% 100%, 0% 120%)';
+                    spread_right.style.boxShadow = '0 0 8px 2px #ccc';
+                    
+                } else {
+                    this.iframe.style.paddingTop =  oc(this.attributes).iframePaddingTop(0) + 'px';
                 }
 
             }
-
 
             if (oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
                 var wrapper  = HTMLUtilities.findRequiredElement(mainElement, "main#iframe-wrapper") as HTMLElement;
@@ -549,8 +552,11 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private setupEvents(): void {
-        addEventListenerOptional(this.iframe, 'load', this.handleIFrameLoad.bind(this));
-
+        if(this.iframe2) {
+            addEventListenerOptional(this.iframe2, 'load', this.handleIFrameLoad.bind(this));
+        } else {
+            addEventListenerOptional(this.iframe, 'load', this.handleIFrameLoad.bind(this));
+        }
         addEventListenerOptional(this.previousChapterAnchorElement, 'click', this.handlePreviousChapterClick.bind(this));
         addEventListenerOptional(this.nextChapterAnchorElement, 'click', this.handleNextChapterClick.bind(this));
 
@@ -637,86 +643,58 @@ export default class IFrameNavigator implements Navigator {
     isScrolling: boolean
 
     private updateBookView(): void {
-        this.settings.isPaginated().then(paginated => {
-            if (paginated) {
-                this.reflowable.height = (BrowserUtilities.getHeight() - 40 - this.attributes.margin);
-                if (this.infoBottom) this.infoBottom.style.removeProperty("display")
-                document.body.onscroll = () => { };
-                if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-                if (this.nextPageAnchorElement) this.nextPageAnchorElement.style.display = "unset"
-                if (this.previousPageAnchorElement) this.previousPageAnchorElement.style.display = "unset"
-                if (this.chapterTitle) this.chapterTitle.style.display = "inline";
-                if (this.chapterPosition) this.chapterPosition.style.display = "inline";
-                if (this.remainingPositions) this.remainingPositions.style.display = "inline";
-                if (this.eventHandler) {
-                    this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
-                    this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
-                }
-                if (this.touchEventHandler) {
-                    this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
-                    this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
-                }
-                if (this.keyboardEventHandler) {
-                    this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
-                    this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
-                }
-                if (!this.isDisplayed(this.linksBottom)) {
-                    this.toggleDisplay(this.linksBottom);
-                }
-
-                if (!this.isDisplayed(this.linksMiddle)) {
-                    this.toggleDisplay(this.linksMiddle);
-                }    
-            } else {
-                if (this.infoBottom) this.infoBottom.style.display = "none"
-                if (this.nextPageAnchorElement) this.nextPageAnchorElement.style.display = "none"
-                if (this.previousPageAnchorElement) this.previousPageAnchorElement.style.display = "none"
-                if (this.reflowable.atStart() && this.reflowable.atEnd()) {
-                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                } else if (this.reflowable.atEnd()) {
-                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                } else if (this.reflowable.atStart()) {
-                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                } else {
+        if (this.view.layout == 'fixed') {
+            if (this.nextPageAnchorElement) this.nextPageAnchorElement.style.display = "none"
+            if (this.previousPageAnchorElement) this.previousPageAnchorElement.style.display = "none"
+            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+        } else {
+            this.settings.isPaginated().then(paginated => {
+                if (paginated) {
+                    this.view.height = (BrowserUtilities.getHeight() - 40 - this.attributes.margin);
+                    if (this.infoBottom) this.infoBottom.style.removeProperty("display")
+                    document.body.onscroll = () => { };
                     if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                     if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-                }
-                const onDoScrolling = debounce(() => {
-                    this.isScrolling = false;
-                }, 200);
-
-                // document.body.style.overflow = "auto";
-                document.body.onscroll = () => {
-                    this.isScrolling = true
-                    this.saveCurrentReadingPosition();
-                    if (this.reflowable.atEnd()) {
-                        // Bring up the bottom nav when you get to the bottom,
-                        // if it wasn't already displayed.
-                        if (!this.isDisplayed(this.linksBottom)) {
-                            this.toggleDisplay(this.linksBottom);
-                        }
-                        if (!this.isDisplayed(this.linksMiddle)) {
-                            this.toggleDisplay(this.linksMiddle);
-                        }
-                    } else {
-                        // Remove the bottom nav when you scroll back up,
-                        // if it was displayed because you were at the bottom.
-                        if (this.isDisplayed(this.linksBottom) && !this.isDisplayed(this.links)) {
-                            this.toggleDisplay(this.linksBottom);
-                        }
+                    if (this.nextPageAnchorElement) this.nextPageAnchorElement.style.display = "unset"
+                    if (this.previousPageAnchorElement) this.previousPageAnchorElement.style.display = "unset"
+                    if (this.chapterTitle) this.chapterTitle.style.display = "inline";
+                    if (this.chapterPosition) this.chapterPosition.style.display = "inline";
+                    if (this.remainingPositions) this.remainingPositions.style.display = "inline";
+                    if (this.eventHandler) {
+                        this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
+                        this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
                     }
-                    if(this.reflowable.isScrollMode()) {
-                        if (this.reflowable.atStart() && this.reflowable.atEnd()) {
+                    if (this.touchEventHandler) {
+                        this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
+                        this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
+                    }
+                    if (this.keyboardEventHandler) {
+                        this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
+                        this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
+                    }    
+                    if (!this.isDisplayed(this.linksBottom)) {
+                        this.toggleDisplay(this.linksBottom);
+                    }
+
+                    if (!this.isDisplayed(this.linksMiddle)) {
+                        this.toggleDisplay(this.linksMiddle);
+                    }    
+                } else {
+                    if (this.infoBottom) this.infoBottom.style.display = "none"
+                    if (this.nextPageAnchorElement) this.nextPageAnchorElement.style.display = "none"
+                    if (this.previousPageAnchorElement) this.previousPageAnchorElement.style.display = "none"
+                    if (this.view.layout == 'fixed') {
+                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                    } else {
+                        if (this.view.atStart() && this.view.atEnd()) {
                             if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
                             if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                        } else if (this.reflowable.atEnd()) {
+                        } else if (this.view.atEnd()) {
                             if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                             if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                        } else if (this.reflowable.atStart()) {
+                        } else if (this.view.atStart()) {
                             if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                             if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
                         } else {
@@ -724,16 +702,62 @@ export default class IFrameNavigator implements Navigator {
                             if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                         }
                     }
-                    onDoScrolling()
-                }
+                    const onDoScrolling = debounce(() => {
+                        this.isScrolling = false;
+                    }, 200);
 
-                if (this.chapterTitle) this.chapterTitle.style.display = "none";
-                if (this.chapterPosition) this.chapterPosition.style.display = "none";
-                if (this.remainingPositions) this.remainingPositions.style.display = "none";
-                if (this.eventHandler) {
-                    this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
-                    this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
-                }
+                    // document.body.style.overflow = "auto";
+                    document.body.onscroll = () => {
+                        this.isScrolling = true
+                        this.saveCurrentReadingPosition();
+                        if (this.view.atEnd()) {
+                            // Bring up the bottom nav when you get to the bottom,
+                            // if it wasn't already displayed.
+                            if (!this.isDisplayed(this.linksBottom)) {
+                                this.toggleDisplay(this.linksBottom);
+                            }
+                            if (!this.isDisplayed(this.linksMiddle)) {
+                                this.toggleDisplay(this.linksMiddle);
+                            }
+                        } else {
+                            // Remove the bottom nav when you scroll back up,
+                            // if it was displayed because you were at the bottom.
+                            if (this.isDisplayed(this.linksBottom) && !this.isDisplayed(this.links)) {
+                                this.toggleDisplay(this.linksBottom);
+                            }
+                        }
+                        if (this.view.layout == 'fixed') {
+                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                        } else {
+                            this.settings.isPaginated().then(paginated => {
+                                if(!paginated) {
+                                    if (this.view.atStart() && this.view.atEnd()) {
+                                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                                    } else if (this.view.atEnd()) {
+                                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                                    } else if (this.view.atStart()) {
+                                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                                    } else {
+                                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                                    }
+                                }
+                            })
+                        }
+                        onDoScrolling()
+                    }
+
+                    if (this.chapterTitle) this.chapterTitle.style.display = "none";
+                    if (this.chapterPosition) this.chapterPosition.style.display = "none";
+                    if (this.remainingPositions) this.remainingPositions.style.display = "none";
+                    if (this.eventHandler) {
+                        this.eventHandler.onInternalLink = this.handleInternalLink.bind(this);
+                        this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
+                    }
                 if (this.touchEventHandler) {
                     this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
                     this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
@@ -742,27 +766,27 @@ export default class IFrameNavigator implements Navigator {
                     this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(this);
                     this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(this);
                 }
-                if (!this.isDisplayed(this.linksBottom)) {
-                    this.toggleDisplay(this.linksBottom);
-                }
+                    if (!this.isDisplayed(this.linksBottom)) {
+                        this.toggleDisplay(this.linksBottom);
+                    }
 
-                if (!this.isDisplayed(this.linksMiddle)) {
-                    this.toggleDisplay(this.linksMiddle);
+                    if (!this.isDisplayed(this.linksMiddle)) {
+                        this.toggleDisplay(this.linksMiddle);
+                    }
                 }
-            }
-        })
-        setTimeout(async () => {
-            this.updatePositionInfo();
-            if (this.annotationModule !== undefined) {
-                this.annotationModule.drawHighlights()
-            } else {
-                if (oc(this.rights).enableSearch(false)) {
-                    await this.highlighter.destroyAllhighlights(this.iframe.contentDocument)
-                    this.searchModule.drawSearch()
+            })
+            setTimeout(async () => {
+                this.updatePositionInfo();
+                if (this.annotationModule !== undefined) {
+                    this.annotationModule.drawHighlights()
+                } else {
+                    if (oc(this.rights).enableSearch(false)) {
+                        await this.highlighter.destroyAllhighlights(this.iframe.contentDocument)
+                        this.searchModule.drawSearch()
+                    }
                 }
-            }
-        }, 200);
-
+            }, 200);
+        }
     }
 
 
@@ -964,18 +988,18 @@ export default class IFrameNavigator implements Navigator {
             this.settings.applyProperties();
 
             setTimeout(() => {
-                this.reflowable.goToPosition(bookViewPosition);
+                this.view.goToPosition(bookViewPosition);
             }, 200);
 
             let currentLocation = this.currentChapterLink.href
             setTimeout(() => {
                 if (this.newElementId) {
                     const element = (this.iframe.contentDocument as any).getElementById(this.newElementId);
-                    this.reflowable.goToElement(element);
+                    this.view.goToElement(element);
                     this.newElementId = null;
                 } else {
-                    if ((this.newPosition as Annotation).highlight) {
-                        this.reflowable.goToCssSelector((this.newPosition as Annotation).highlight.selectionInfo.rangeInfo.startContainerElementCssSelector)
+                    if (this.newPosition && (this.newPosition as Annotation).highlight) {
+                        this.view.goToCssSelector((this.newPosition as Annotation).highlight.selectionInfo.rangeInfo.startContainerElementCssSelector)
                     }
                 }
                 this.newPosition = null;
@@ -1112,11 +1136,11 @@ export default class IFrameNavigator implements Navigator {
                     this.keyboardEventHandler.setupEvents(this.iframe.contentDocument)
                     this.keyboardEventHandler.setupEvents(document)
                 }
-
-                if(this.reflowable.isScrollMode()) {
-                    this.reflowable.setIframeHeight(this.iframe)
+                if (this.view.layout != 'fixed') {
+                    if(oc(this.view).isScrollMode()) {
+                        this.view.setIframeHeight(this.iframe)
+                    }
                 }
-
                 if (this.annotationModule !== undefined) {
                     this.annotationModule.initialize()
                 }
@@ -1171,37 +1195,35 @@ export default class IFrameNavigator implements Navigator {
 
     private precessContentForIframe() {
         const self = this
-        function writeIframeDoc(content: string) {
+        var index = this.publication.getSpineIndex(this.currentChapterLink.href) 
+        var even:boolean = index%2 == 1
+
+        function writeIframeDoc(content: string, href:string) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(content, "application/xhtml+xml");
             if (doc.head) {
-                doc.head.insertBefore(self.createBase(self.currentChapterLink.href), doc.head.firstChild)
+                doc.head.insertBefore(self.createBase(href), doc.head.firstChild)
             }
             const newHTML = doc.documentElement.outerHTML;
             const iframeDoc = self.iframe.contentDocument;
             iframeDoc.open();
             iframeDoc.write(newHTML);
             iframeDoc.close();
-
-            if(self.iframe2) {
-                const next = self.publication.getNextSpineItem(self.currentChapterLink.href);
-                var n = self.publication.getAbsoluteHref(next.href)
-                fetch(n)
-                .then(r => r.text())
-                .then(async content => {
-                    const doc2 = parser.parseFromString(content, "application/xhtml+xml");
-                    if (doc2.head) {
-                        doc2.head.insertBefore(self.createBase(n), doc2.head.firstChild)
-                    }
-                    const newHTML = doc2.documentElement.outerHTML;
-                    const iframeDoc2 = self.iframe2.contentDocument;
-                    iframeDoc2.open();
-                    iframeDoc2.write(newHTML);
-                    iframeDoc2.close();
-                })
-            }
-
         }
+
+        function writeIframe2Doc(content: string, href:string) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(content, "application/xhtml+xml");
+            if (doc.head) {
+                doc.head.insertBefore(self.createBase(href), doc.head.firstChild)
+            }
+            const newHTML = doc.documentElement.outerHTML;
+            const iframeDoc = self.iframe2.contentDocument;
+            iframeDoc.open();
+            iframeDoc.write(newHTML);
+            iframeDoc.close();
+        }
+        
         const link = new URL(this.currentChapterLink.href)
         const isSameOrigin = (
             window.location.protocol === link.protocol &&
@@ -1210,56 +1232,203 @@ export default class IFrameNavigator implements Navigator {
         );
 
         if (this.api && this.api.getContent) {
-            this.api.getContent(this.currentChapterLink.href).then(content => {
-                if (content === undefined) {
+            if (oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
+                if (even) {
+                    this.api.getContent(this.currentChapterLink.href).then(content => {
+                        if (content === undefined) {
+                            if (isSameOrigin) {
+                                this.iframe.src = this.currentChapterLink.href
+                            } else {
+                                fetch(this.currentChapterLink.href)
+                                    .then(r => r.text())
+                                    .then(async content => {
+                                        writeIframeDoc.call(this, content, this.currentChapterLink.href);
+                                    })
+                            }
+                        } else {
+                            writeIframeDoc.call(this, content, this.currentChapterLink.href);
+                        }
+                    })
+                    if (this.iframe2) {
+                        if (index < this.publication.readingOrder.length - 1) {
+                            const next = this.publication.getNextSpineItem(this.currentChapterLink.href);
+                            var href = this.publication.getAbsoluteHref(next.href)
+                            this.api.getContent(href).then(content => {
+                                if (content === undefined) {
+                                    if (isSameOrigin) {
+                                        this.iframe2.src = href
+                                    } else {
+                                        fetch(href)
+                                            .then(r => r.text())
+                                            .then(async content => {
+                                                writeIframe2Doc.call(this, content, href);
+                                            })
+                                    }
+                                } else {
+                                    writeIframe2Doc.call(this, content, href);
+                                }
+                            })   
+                        } else {
+                            this.iframe2.src = 'about:blank'
+                        } 
+                    }    
+                } else {
+                    if (index > 0) {
+                        const prev = this.publication.getPreviousSpineItem(this.currentChapterLink.href);
+                        var href = this.publication.getAbsoluteHref(prev.href)
+                        this.api.getContent(href).then(content => {
+                            if (content === undefined) {
+                                if (isSameOrigin) {
+                                    this.iframe.src = href
+                                } else {
+                                    fetch(href)
+                                        .then(r => r.text())
+                                        .then(async content => {
+                                            writeIframeDoc.call(this, content, href);
+                                        })
+                                }
+                            } else {
+                                writeIframeDoc.call(this, content, href);
+                            }
+                        })
+                    } else {
+                        this.iframe.src = 'about:blank'
+                    }
+                    if (this.iframe2 && oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
+                        this.api.getContent(this.currentChapterLink.href).then(content => {
+                            if (content === undefined) {
+                                if (isSameOrigin) {
+                                    this.iframe2.src = this.currentChapterLink.href
+                                } else {
+                                    fetch(this.currentChapterLink.href)
+                                        .then(r => r.text())
+                                        .then(async content => {
+                                            writeIframe2Doc.call(this, content, this.currentChapterLink.href);
+                                        })
+                                }
+                            } else {
+                                writeIframe2Doc.call(this, content, this.currentChapterLink.href);
+                            }
+                        })      
+                    }    
+                }
+            } else {
+                this.api.getContent(this.currentChapterLink.href).then(content => {
+                    if (content === undefined) {
+                        if (isSameOrigin) {
+                            this.iframe.src = this.currentChapterLink.href
+                        } else {
+                            fetch(this.currentChapterLink.href)
+                                .then(r => r.text())
+                                .then(async content => {
+                                    writeIframeDoc.call(this, content, this.currentChapterLink.href);
+                                })
+                        }
+                    } else {
+                        writeIframeDoc.call(this, content, this.currentChapterLink.href);
+                    }
+                })
+            }
+        } else {
+            if (oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
+                if (even) {
                     if (isSameOrigin) {
                         this.iframe.src = this.currentChapterLink.href
-                        if (this.iframe2 && oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
-                            const next = this.publication.getNextSpineItem(this.currentChapterLink.href);
-                            var n = this.publication.getAbsoluteHref(next.href)
-                            this.iframe2.src = n
+                        if (this.iframe2) {
+                            if (index < this.publication.readingOrder.length - 1) {
+                                const next = this.publication.getNextSpineItem(this.currentChapterLink.href);
+                                var href = this.publication.getAbsoluteHref(next.href)
+                                this.iframe2.src = href
+                            } else {
+                                this.iframe2.src = 'about:blank'
+                            }
                         }
                     } else {
                         fetch(this.currentChapterLink.href)
                             .then(r => r.text())
                             .then(async content => {
-                                writeIframeDoc.call(this, content);
+                                writeIframeDoc.call(this, content, this.currentChapterLink.href);
                             })
-                    }
+                        if (this.iframe2) {
+                            if (index < this.publication.readingOrder.length - 1) {
+                                const next = this.publication.getNextSpineItem(this.currentChapterLink.href);
+                                var href = this.publication.getAbsoluteHref(next.href)
+                                fetch(href)
+                                    .then(r => r.text())
+                                    .then(async content => {
+                                        writeIframe2Doc.call(this, content, href);
+                                    })
+                            } else {
+                                this.iframe2.src = 'about:blank'
+                            }
+                        }
+                    }    
                 } else {
-                    writeIframeDoc.call(this, content);
-                }
-            })
-        } else {
-            if (isSameOrigin) {
-                this.iframe.src = this.currentChapterLink.href
-                if (this.iframe2 && oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
-                    const next = this.publication.getNextSpineItem(this.currentChapterLink.href);
-                    var n = this.publication.getAbsoluteHref(next.href)
-                    this.iframe2.src = n
+                    if (index > 0) {
+                        const prev = this.publication.getPreviousSpineItem(this.currentChapterLink.href);
+                        var href = this.publication.getAbsoluteHref(prev.href)
+                        if (isSameOrigin) {
+                            this.iframe.src = href
+                            if (this.iframe2) {
+                                this.iframe2.src = this.currentChapterLink.href
+                            }
+                        } else {
+                            fetch(href)
+                                .then(r => r.text())
+                                .then(async content => {
+                                    writeIframeDoc.call(this, content, href);
+                                })
+                            if (this.iframe2) {
+                                fetch(this.currentChapterLink.href)
+                                .then(r => r.text())
+                                .then(async content => {
+                                    writeIframe2Doc.call(this, content, this.currentChapterLink.href);
+                                })
+                            }
+                        }    
+                    } else {
+                        this.iframe.src = 'about:blank'
+                    }
+                    if (this.iframe2) {
+                        if (isSameOrigin) {
+                            this.iframe2.src = this.currentChapterLink.href
+                        } else {
+                            fetch(this.currentChapterLink.href)
+                                .then(r => r.text())
+                                .then(async content => {
+                                    writeIframe2Doc.call(this, content, this.currentChapterLink.href);
+                                })
+                        }
+                    }    
                 }
             } else {
-                fetch(this.currentChapterLink.href)
-                    .then(r => r.text())
-                    .then(async content => {
-                        writeIframeDoc.call(this, content);
-                    })
+                if (isSameOrigin) {
+                    this.iframe.src = this.currentChapterLink.href
+                } else {
+                    fetch(this.currentChapterLink.href)
+                        .then(r => r.text())
+                        .then(async content => {
+                            writeIframeDoc.call(this, content, this.currentChapterLink.href);
+                        })
+                }
             }
         }
         if (oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
             setTimeout(() => {
-                const height = getComputedStyle(this.iframe.contentDocument.body).height;
-                const width = getComputedStyle(this.iframe.contentDocument.body).width;
-                var iframeParent  = this.iframe.parentElement.parentElement as HTMLElement;
+                const height = getComputedStyle(index == 0 && this.iframe2 ? this.iframe2.contentDocument.body : this.iframe.contentDocument.body).height;
+                const width = getComputedStyle(index == 0 && this.iframe2 ? this.iframe2.contentDocument.body : this.iframe.contentDocument.body).width;
+                var iframeParent  = index == 0 && this.iframe2 ? this.iframe2.parentElement.parentElement : this.iframe.parentElement.parentElement as HTMLElement;
                 var widthRatio = (parseInt(getComputedStyle(iframeParent).width) - 100) / (this.iframe2 ? ((parseInt(width.replace('px', '')) * 2) + 200) : parseInt(width.replace('px', '')));    
                 var heightRatio = (parseInt(getComputedStyle(iframeParent).height) - 100) / parseInt(height.replace('px', ''));
                 var scale = Math.min(widthRatio, heightRatio);
                 iframeParent.style.transform = "scale("+scale+")";
+                this.iframe.parentElement.style.height = height;
                 this.iframe.style.height = height;
                 this.iframe.style.width = width;
                 if (this.iframe2) {
                     this.iframe2.style.height = height;
                     this.iframe2.style.width = width;
+                    this.iframe2.parentElement.style.height = height;
                 }
             }, 400);
         }
@@ -1363,7 +1532,7 @@ export default class IFrameNavigator implements Navigator {
             this.hideElement(element, control);
         }
         if (element === this.linksMiddle) {
-            if(this.reflowable.isScrollMode()) {
+            if(oc(this.view).isScrollMode()) {
                 this.showElement(element, control);
             } else {
                 this.hideElement(element, control);
@@ -1428,10 +1597,10 @@ export default class IFrameNavigator implements Navigator {
         return this.publication.tableOfContents
     }
     atStart() : boolean {
-        return this.reflowable.atStart()
+        return this.view.atStart()
     }
     atEnd() : boolean {
-        return this.reflowable.atEnd()
+        return this.view.atEnd()
     }
 
     previousPage(): any {
@@ -1468,9 +1637,9 @@ export default class IFrameNavigator implements Navigator {
     }
     currentLocator():Locator {
         let position 
-        if (oc(this.rights).autoGeneratePositions(true)) {
+        if (oc(this.rights).autoGeneratePositions(true) && this.publication.positions) {
             let positions = this.publication.positionsByHref(this.publication.getRelativeHref(this.currentChapterLink.href));
-            let positionIndex = Math.ceil(this.reflowable.getCurrentPosition() * (positions.length - 1))
+            let positionIndex = Math.ceil(this.view.getCurrentPosition() * (positions.length - 1))
             position = positions[positionIndex]
         } else {
             var tocItem = this.publication.getTOCItem(this.currentChapterLink.href);
@@ -1487,10 +1656,10 @@ export default class IFrameNavigator implements Navigator {
                 locations: {}
             }
         }
-        position.locations.progression = this.reflowable.getCurrentPosition()
+        position.locations.progression = this.view.getCurrentPosition()
         position.displayInfo = {
-            resourceScreenIndex : Math.round(this.reflowable.getCurrentPage()),
-            resourceScreenCount : Math.round(this.reflowable.getPageCount())
+            resourceScreenIndex : Math.round(this.view.getCurrentPage()),
+            resourceScreenCount : Math.round(this.view.getPageCount())
         }
         return position
     }
@@ -1505,41 +1674,49 @@ export default class IFrameNavigator implements Navigator {
         }
     }
     snapToElement(element:HTMLElement) {
-        this.reflowable.snap(element) 
+        this.view.snap(element) 
     }
     applyAtributes(attributes:IFrameAttributes) {
         this.attributes = attributes
-        this.reflowable.attributes = attributes
+        this.view.attributes = attributes
         this.handleResize()
     }
 
     private handlePreviousPageClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
         this.stopReadAloud();
-        if (this.reflowable.atStart()) {
+        if (this.view.layout == 'fixed') {
             this.handlePreviousChapterClick(event)
         } else {
-            this.reflowable.goToPreviousPage();
-            this.updatePositionInfo();
-            this.saveCurrentReadingPosition();
-        }
-        if (event) {
-            event.preventDefault();
-            event.stopPropagation();
+            if (this.view.atStart()) {
+                this.handlePreviousChapterClick(event)
+            } else {
+                this.view.goToPreviousPage();
+                this.updatePositionInfo();
+                this.saveCurrentReadingPosition();
+            }
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
         }
     }
 
     private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
         this.stopReadAloud();
-        if (this.reflowable.atEnd()) {
+        if (this.view.layout == 'fixed') {
             this.handleNextChapterClick(event)
         } else {
-            this.reflowable.goToNextPage();
-            this.updatePositionInfo();
-            this.saveCurrentReadingPosition();
-        }
-        if (event) {
-            event.preventDefault();
-            event.stopPropagation();
+            if (this.view.atEnd()) {
+                this.handleNextChapterClick(event)
+            } else {
+                this.view.goToNextPage();
+                this.updatePositionInfo();
+                this.saveCurrentReadingPosition();
+            }
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
         }
     }
 
@@ -1586,29 +1763,32 @@ export default class IFrameNavigator implements Navigator {
 
         if (oc(this.publication.metadata.rendition).layout("unknown") == 'fixed') {
 
+            var index = this.publication.getSpineIndex(this.currentChapterLink.href) 
             var wrapper  = HTMLUtilities.findRequiredElement(this.mainElement, "main#iframe-wrapper") as HTMLElement;
             const minHeight = BrowserUtilities.getHeight() - 40 - this.attributes.margin;
             wrapper.style.height = (minHeight + 40) + "px";
 
-            var iframeParent  = this.iframe.parentElement.parentElement as HTMLElement;
+            var iframeParent  = index == 0 && this.iframe2 ? this.iframe2.parentElement.parentElement : this.iframe.parentElement.parentElement as HTMLElement;
             iframeParent.style.height = (minHeight + 40) + "px";
 
-            const height = getComputedStyle(this.iframe.contentDocument.body).height;
-            const width = getComputedStyle(this.iframe.contentDocument.body).width;
+            const height = getComputedStyle(index == 0 && this.iframe2  ? this.iframe2.contentDocument.body : this.iframe.contentDocument.body).height;
+            const width = getComputedStyle(index == 0 && this.iframe2 ? this.iframe2.contentDocument.body : this.iframe.contentDocument.body).width;
 
             var widthRatio = (parseInt(getComputedStyle(iframeParent).width) - 100) / (this.iframe2 ? ((parseInt(width.replace('px', '')) * 2) + 200) : parseInt(width.replace('px', '')));    
             var heightRatio = (parseInt(getComputedStyle(iframeParent).height) - 100) / parseInt(height.replace('px', ''));
             var scale = Math.min(widthRatio, heightRatio);
             iframeParent.style.transform = "scale("+scale+")";
+            this.iframe.parentElement.style.height = height;
             this.iframe.style.height = height;
             this.iframe.style.width = width;
             if (this.iframe2) {
                 this.iframe2.style.height = height;
                 this.iframe2.style.width = width;
+                this.iframe2.parentElement.style.height = height;
             }
         }
 
-        const selectedView = this.reflowable;
+        const selectedView = this.view;
         const oldPosition = selectedView.getCurrentPosition();
 
         this.settings.applyProperties()
@@ -1641,19 +1821,22 @@ export default class IFrameNavigator implements Navigator {
             this.toggleDisplay(this.linksBottom);
         }
 
-        this.settings.isPaginated().then(paginated => {
-            if (paginated) {
-                this.reflowable.height = (BrowserUtilities.getHeight() - 40 - this.attributes.margin);
-                if (this.infoBottom) this.infoBottom.style.removeProperty("display")
-            } else {
-                if (this.infoBottom) this.infoBottom.style.display = "none"
-            }
-        })
-
+        if (this.view.layout != 'fixed') {
+            this.settings.isPaginated().then(paginated => {
+                if (paginated) {
+                    this.view.height = (BrowserUtilities.getHeight() - 40 - this.attributes.margin);
+                    if (this.infoBottom) this.infoBottom.style.removeProperty("display")
+                } else {
+                    if (this.infoBottom) this.infoBottom.style.display = "none"
+                }
+            })
+        }
 
         setTimeout(() => {
-            if(this.reflowable.isScrollMode()) {
-                this.reflowable.setIframeHeight(this.iframe)
+            if (this.view.layout != 'fixed') {
+                if(oc(this.view).isScrollMode()) {
+                    this.view.setIframeHeight(this.iframe)
+                }
             }
         }, 100);
         setTimeout(() => {
@@ -1675,28 +1858,33 @@ export default class IFrameNavigator implements Navigator {
     }
 
     updatePositionInfo() {
-        if(this.reflowable.isPaginated()) {
-            const locator = this.currentLocator()
-            const currentPage = locator.displayInfo.resourceScreenIndex
-            const pageCount = locator.displayInfo.resourceScreenCount
-            const remaining = locator.locations.remainingPositions;
-            if (this.chapterPosition) {
-                if (remaining) {
-                    this.chapterPosition.innerHTML = "Page " + currentPage + " of " + pageCount;
-                } else {
-                    this.chapterPosition.innerHTML = "";
-                }
-            }
-            if (this.remainingPositions) {
-                if (remaining) {
-                    this.remainingPositions.innerHTML = remaining + " left in chapter";
-                } else {
-                    this.remainingPositions.innerHTML = "Page " + currentPage + " of " + pageCount
-                }
-            }
-        } else {
+        if (this.view.layout == 'fixed') {
             if (this.chapterPosition) this.chapterPosition.innerHTML = "";
             if (this.remainingPositions) this.remainingPositions.innerHTML = "";
+        } else {
+            if(oc(this.view).isPaginated()) {
+                const locator = this.currentLocator()
+                const currentPage = locator.displayInfo.resourceScreenIndex
+                const pageCount = locator.displayInfo.resourceScreenCount
+                const remaining = locator.locations.remainingPositions;
+                if (this.chapterPosition) {
+                    if (remaining) {
+                        this.chapterPosition.innerHTML = "Page " + currentPage + " of " + pageCount;
+                    } else {
+                        this.chapterPosition.innerHTML = "";
+                    }
+                }
+                if (this.remainingPositions) {
+                    if (remaining) {
+                        this.remainingPositions.innerHTML = remaining + " left in chapter";
+                    } else {
+                        this.remainingPositions.innerHTML = "Page " + currentPage + " of " + pageCount
+                    }
+                }
+            } else {
+                if (this.chapterPosition) this.chapterPosition.innerHTML = "";
+                if (this.remainingPositions) this.remainingPositions.innerHTML = "";
+            }
         }
         if (this.annotator) {
             this.saveCurrentReadingPosition();
@@ -1704,18 +1892,36 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handlePreviousChapterClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
-        if (this.previousChapterLink) {
+        if (this.view.layout == 'fixed') {
+            var index = this.publication.getSpineIndex(this.currentChapterLink.href) 
+            index = index - 2;
+            if (index < 0) index = 0
+            var previous = this.publication.readingOrder[index]
             const position: Locator = {
-                href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
+                href: this.publication.getAbsoluteHref(previous.href),
                 locations: {
-                    progression: 1
+                    progression: 0
                 },
-                type: this.previousChapterLink.type,
-                title: this.previousChapterLink.title
+                type: previous.type,
+                title: previous.title
             };
 
             this.stopReadAloud();
             this.navigate(position);
+        } else {
+            if (this.previousChapterLink) {
+                const position: Locator = {
+                    href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
+                    locations: {
+                        progression: 1
+                    },
+                    type: this.previousChapterLink.type,
+                    title: this.previousChapterLink.title
+                };
+
+                this.stopReadAloud();
+                this.navigate(position);
+            }
         }
         if (event) {
             event.preventDefault();
@@ -1724,18 +1930,36 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private handleNextChapterClick(event: MouseEvent | TouchEvent | KeyboardEvent): void {
-        if (this.nextChapterLink) {
+        if (this.view.layout == 'fixed') {
+            var index = this.publication.getSpineIndex(this.currentChapterLink.href) 
+            index = index + 2;
+            if (index >= this.publication.readingOrder.length -1) index = this.publication.readingOrder.length -1
+            var next = this.publication.readingOrder[index]
             const position: Locator = {
-                href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
+                href: this.publication.getAbsoluteHref(next.href),
                 locations: {
                     progression: 0
                 },
-                type: this.nextChapterLink.type,
-                title: this.nextChapterLink.title
+                type: next.type,
+                title: next.title
             };
 
             this.stopReadAloud();
             this.navigate(position);
+        } else {
+            if (this.nextChapterLink) {
+                const position: Locator = {
+                    href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
+                    locations: {
+                        progression: 0
+                    },
+                    type: this.nextChapterLink.type,
+                    title: this.nextChapterLink.title
+                };
+
+                this.stopReadAloud();
+                this.navigate(position);
+            }
         }
         if (event) {
             event.preventDefault();
@@ -1752,8 +1976,10 @@ export default class IFrameNavigator implements Navigator {
     }
 
     private hideView(_view: HTMLDivElement, _control: HTMLButtonElement): void {
-        if(this.reflowable.isScrollMode()) {
-            document.body.style.overflow = "auto";
+        if (this.view.layout != 'fixed') {
+            if(oc(this.view).isScrollMode()) {
+                document.body.style.overflow = "auto";
+            }
         }
     }
 
@@ -1815,13 +2041,13 @@ export default class IFrameNavigator implements Navigator {
 
                 if (this.newElementId) {
                     const element = (this.iframe.contentDocument as any).getElementById(this.newElementId);
-                    this.reflowable.goToElement(element);
+                    this.view.goToElement(element);
                     this.newElementId = null;
                 } else {
                     if ((locator as Annotation).highlight) {
-                        this.reflowable.goToCssSelector((locator as Annotation).highlight.selectionInfo.rangeInfo.startContainerElementCssSelector)
+                        this.view.goToCssSelector((locator as Annotation).highlight.selectionInfo.rangeInfo.startContainerElementCssSelector)
                     } else {
-                        this.reflowable.goToPosition(locator.locations.progression);
+                        this.view.goToPosition(locator.locations.progression);
                     }
                 }
     
@@ -1931,39 +2157,48 @@ export default class IFrameNavigator implements Navigator {
                             this.searchModule.drawSearch()
                         }
                     }
-
-                    if(this.reflowable.isScrollMode()) {
-                        if (this.reflowable.atStart() && this.reflowable.atEnd()) {
-                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                        } else if (this.reflowable.atEnd()) {
-                            if (this.nextChapterBottomAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                            if (this.api && this.api.resourceAtEnd) {
-                                this.api.resourceAtEnd()
-                            }
-                        } else if (this.reflowable.atStart()) {
-                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                            if (this.api && this.api.resourceAtStart) {
-                                this.api.resourceAtStart()
-                            }
-                        } else {
-                            if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
-                            if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
-                        }
-                    }
-                    if (this.reflowable.atStart() && this.reflowable.atEnd()) {
+                    if (this.view.layout == 'fixed') {
+                        if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                        if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                         if (this.api && this.api.resourceFitsScreen) {
                             this.api.resourceFitsScreen()
                         }
-                    } else if (this.reflowable.atEnd()) {
-                        if (this.api && this.api.resourceAtEnd) {
-                            this.api.resourceAtEnd()
-                        }
-                    } else if (this.reflowable.atStart()) {
-                        if (this.api && this.api.resourceAtStart) {
-                            this.api.resourceAtStart()
+                    } else {
+                        this.settings.isPaginated().then(paginated => {
+                            if(!paginated) {
+                                if (this.view.atStart() && this.view.atEnd()) {
+                                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                                } else if (this.view.atEnd()) {
+                                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
+                                    if (this.api && this.api.resourceAtEnd) {
+                                        this.api.resourceAtEnd()
+                                    }
+                                } else if (this.view.atStart()) {
+                                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
+                                    if (this.api && this.api.resourceAtStart) {
+                                        this.api.resourceAtStart()
+                                    }
+                                } else {
+                                    if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
+                                    if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
+                                }
+                            }
+                        })
+                        if (this.view.atStart() && this.view.atEnd()) {
+                            if (this.api && this.api.resourceFitsScreen) {
+                                this.api.resourceFitsScreen()
+                            }
+                        } else if (this.view.atEnd()) {
+                            if (this.api && this.api.resourceAtEnd) {
+                                this.api.resourceAtEnd()
+                            }
+                        } else if (this.view.atStart()) {
+                            if (this.api && this.api.resourceAtStart) {
+                                this.api.resourceAtStart()
+                            }
                         }
                     }
 
@@ -2036,13 +2271,13 @@ export default class IFrameNavigator implements Navigator {
                 tocItem = this.publication.getTOCItemAbsolute(this.currentChapterLink.href);
             }
             let locations: Locations = {
-                progression: this.reflowable.getCurrentPosition()
+                progression: this.view.getCurrentPosition()
             }
             if (tocItem.href.indexOf("#") !== -1) {
                 const elementId = tocItem.href.slice(tocItem.href.indexOf("#") + 1);
                 if (elementId !== null) {
                     locations = {
-                        progression: this.reflowable.getCurrentPosition(),
+                        progression: this.view.getCurrentPosition(),
                         fragment: elementId
                     }
                 }

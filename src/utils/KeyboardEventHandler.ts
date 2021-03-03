@@ -31,7 +31,7 @@ export default class KeyboardEventHandler {
         var self = this;
 
         element.addEventListener('focusin', function(event: KeyboardEvent) {
-            self.delegate.reflowable.snap(event.target as HTMLElement)
+            self.delegate.view.snap(event.target as HTMLElement)
         }, true);
 
         element.addEventListener('keydown', function (event: KeyboardEvent) {

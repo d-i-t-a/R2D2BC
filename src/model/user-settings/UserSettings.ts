@@ -26,6 +26,8 @@ import { addEventListenerOptional } from "../../utils/EventHandler";
 import { ReaderUI}  from "../../navigator/IFrameNavigator"
 import {oc} from "ts-optchain"
 import ReflowableBookView from "../../views/ReflowableBookView";
+import FixedBookView from "../../views/FixedBookView";
+import BookView from "../../views/BookView";
 
 export interface UserSettingsConfig {
     /** Store to save the user's selections in. */
@@ -34,6 +36,7 @@ export interface UserSettingsConfig {
     headerMenu: HTMLElement;
     material: ReaderUI;
     api: any;
+    layout: string;
 }
 export interface UserSettingsUIConfig {
     fontSize?: boolean;
@@ -109,7 +112,7 @@ export class UserSettings implements UserSettings {
     private themeButtons: { [key: string]: HTMLButtonElement };
     private viewButtons: { [key: string]: HTMLButtonElement };
 
-    reflowable: ReflowableBookView;
+    view: BookView;
 
     private settingsChangeCallback: () => void = () => { };
     private viewChangeCallback: () => void = () => { };
@@ -126,7 +129,8 @@ export class UserSettings implements UserSettings {
             config.store,
             config.headerMenu,
             config.material,
-            config.api
+            config.api,
+            config.layout
         );
 
         if (config.initialUserSettings) {
@@ -184,10 +188,10 @@ export class UserSettings implements UserSettings {
         return new Promise(resolve => resolve(settings));
     }
 
-    protected constructor(store: Store, headerMenu: HTMLElement, material: ReaderUI, api: any) {
+    protected constructor(store: Store, headerMenu: HTMLElement, material: ReaderUI, api: any, layout:string) {
         this.store = store;
 
-        this.reflowable = new ReflowableBookView(this.store);
+        this.view = layout == 'fixed' ? new FixedBookView(this.store) : new ReflowableBookView(this.store);
 
         this.headerMenu = headerMenu;
         this.material = material;
@@ -283,7 +287,7 @@ export class UserSettings implements UserSettings {
 
     async applyProperties(): Promise<any> {
 
-        if (oc(this.reflowable.delegate.publication.metadata.rendition).layout("unknown") != 'fixed') {
+        if (oc(this.view.delegate.publication.metadata.rendition).layout("unknown") != 'fixed') {
 
             const html = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "html") as any;
             const rootElement = document.documentElement;
@@ -381,7 +385,7 @@ export class UserSettings implements UserSettings {
                 html.style.setProperty("--USER__scroll", "readium-scroll-on");
             }
             this.isScrollmode().then(scroll => {
-                this.reflowable.setMode(scroll)
+                this.view.setMode(scroll)
             })
         
         }
@@ -389,7 +393,7 @@ export class UserSettings implements UserSettings {
 
     setIframe(iframe: HTMLIFrameElement) {
         this.iframe = iframe
-        this.reflowable.iframe = iframe
+        this.view.iframe = iframe
         if (this.settingsView) this.renderControls(this.settingsView);
     }
 
@@ -512,13 +516,13 @@ export class UserSettings implements UserSettings {
                 const button = this.viewButtons[index];
                 if (button) {
                     addEventListenerOptional(button, 'click', (event: MouseEvent) => {
-                        const position = this.reflowable.getCurrentPosition();
+                        const position = this.view.getCurrentPosition();
                         this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = index;
                         this.storeProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF))
                         this.applyProperties()
                         this.updateViewButtons();
-                        this.reflowable.setMode(index === 0);
-                        this.reflowable.goToPosition(position)
+                        this.view.setMode(index === 0);
+                        this.view.goToPosition(position)
                         event.preventDefault();
                         this.viewChangeCallback();
                     });
@@ -758,7 +762,7 @@ export class UserSettings implements UserSettings {
 
         setTimeout(async () => {
             if (userSettings.verticalScroll != undefined) {
-                const position = this.reflowable.getCurrentPosition();
+                const position = this.view.getCurrentPosition();
                 var v: string
                 if (userSettings.verticalScroll == 'scroll' || userSettings.verticalScroll == 'readium-scroll-on' || userSettings.verticalScroll == true) {
                     v = UserSettings.scrollValues[0]
@@ -772,8 +776,8 @@ export class UserSettings implements UserSettings {
                 this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = this.verticalScroll;
                 this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF))
                 this.applyProperties()
-                this.reflowable.setMode(this.verticalScroll === 0);
-                this.reflowable.goToPosition(position)
+                this.view.setMode(this.verticalScroll === 0);
+                this.view.goToPosition(position)
                 this.viewChangeCallback();
             }
         }, 10);
@@ -781,7 +785,7 @@ export class UserSettings implements UserSettings {
     }
 
     async scroll(scroll: boolean): Promise<void> {
-        const position = this.reflowable.getCurrentPosition();
+        const position = this.view.getCurrentPosition();
         var v: string
         if (scroll) {
             v = UserSettings.scrollValues[0]
@@ -795,8 +799,8 @@ export class UserSettings implements UserSettings {
         if (oc(this.material).settings.scroll(false)) {
             this.updateViewButtons();
         }
-        this.reflowable.setMode(scroll)
-        this.reflowable.goToPosition(position)
+        this.view.setMode(scroll)
+        this.view.goToPosition(position)
         this.viewChangeCallback();
     }
 

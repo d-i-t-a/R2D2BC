@@ -329,6 +329,15 @@ export async function load(config: ReaderConfig): Promise<any> {
         }
         const publication: Publication = await Publication.getManifest(webpubManifestUrl, store);
 
+        if (oc(publication.metadata.rendition).layout("unknown") == 'fixed') {
+        
+            config.rights.enableAnnotations = false;
+            config.rights.enableSearch = false;
+            config.rights.enableTTS = false;
+            // config.protection.enableObfuscation = false;
+            
+        }
+
         if (oc(config.rights).autoGeneratePositions(true)) {
             var startPosition = 0
             var totalContentLength = 0
@@ -336,24 +345,17 @@ export async function load(config: ReaderConfig): Promise<any> {
             publication.readingOrder.map(async (link, index) => {
 
                 if (oc(publication.metadata.rendition).layout("unknown") == 'fixed') {
-                    var href = publication.getAbsoluteHref(link.href);
-                    await fetch(href)
-                        .then(async r => {
-                            let length = (await r.blob()).size
-                            link.contentLength = length
-                            totalContentLength += length
-
-                            const locator: Locator = {
-                                href: link.href,
-                                locations: {
-                                    position: startPosition + 1,
-                                },
-                                type: link.type
-                            };
-                            if (IS_DEV) console.log(locator)
-                            positions.push(locator)
-                            startPosition = startPosition + 1
-                        })
+                    const locator: Locator = {
+                        href: link.href,
+                        locations: {
+                            progression: 0,
+                            position: startPosition + 1,
+                        },
+                        type: link.type
+                    };
+                    if (IS_DEV) console.log(locator)
+                    positions.push(locator)
+                    startPosition = startPosition + 1
                 } else {
                     var href = publication.getAbsoluteHref(link.href);
                     await fetch(href)
@@ -381,12 +383,14 @@ export async function load(config: ReaderConfig): Promise<any> {
                         })
                 }
                 if (index + 1 == publication.readingOrder.length) {
-                    publication.readingOrder.map(async (link) => {
-                        if (IS_DEV) console.log(totalContentLength)
-                        if (IS_DEV) console.log(link.contentLength)
-                        link.contentWeight = 100 / totalContentLength * link.contentLength
-                        if (IS_DEV) console.log(link.contentWeight)
-                    })
+                    if (oc(publication.metadata.rendition).layout("unknown") != 'fixed') {
+                        publication.readingOrder.map(async (link) => {
+                            if (IS_DEV) console.log(totalContentLength)
+                            if (IS_DEV) console.log(link.contentLength)
+                            link.contentWeight = 100 / totalContentLength * link.contentLength
+                            if (IS_DEV) console.log(link.contentWeight)
+                        })
+                    }
                     positions.map((locator, _index) => {
                         let resource = positions.filter((el: Locator) => el.href === locator.href)
                         let positionIndex = Math.ceil(locator.locations.progression * (resource.length - 1))
@@ -406,7 +410,8 @@ export async function load(config: ReaderConfig): Promise<any> {
             initialUserSettings: config.userSettings,
             headerMenu: headerMenu,
             material: config.material,
-            api: config.api
+            api: config.api,
+            layout: oc(publication.metadata.rendition).layout("unknown") == 'fixed' ? 'fixed' : 'reflowable'
         })
 
         // Navigator
@@ -428,10 +433,12 @@ export async function load(config: ReaderConfig): Promise<any> {
         })
 
         // Highlighter
-        D2Highlighter = await TextHighlighter.create({
-            delegate: R2Navigator,
-            config: config.highlighter
-        })
+        if (oc(publication.metadata.rendition).layout("unknown") != 'fixed') {
+            D2Highlighter = await TextHighlighter.create({ 
+                delegate: R2Navigator,
+                config: config.highlighter
+            })
+        }
 
         // Bookmark Module
         if (oc(config.rights).enableBookmarks(false)) {

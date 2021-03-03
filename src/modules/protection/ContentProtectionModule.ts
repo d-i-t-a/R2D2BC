@@ -93,6 +93,10 @@ export default class ContentProtectionModule implements ReaderModule {
             removeEventListenerOptional(this.delegate.headerMenu, 'keydown', this.disableSave);
             removeEventListenerOptional(this.delegate.iframe.contentDocument, 'keydown', this.disableSave);
             removeEventListenerOptional(this.delegate.iframe.contentWindow, 'keydown', this.disableSave);
+            if(this.delegate.iframe2) {
+                removeEventListenerOptional(this.delegate.iframe2.contentDocument, 'keydown', this.disableSave);
+                removeEventListenerOptional(this.delegate.iframe2.contentWindow, 'keydown', this.disableSave);    
+            }
             removeEventListenerOptional(window, 'keydown', this.disableSave);
             removeEventListenerOptional(document, 'keydown', this.disableSave);
         }
@@ -102,12 +106,20 @@ export default class ContentProtectionModule implements ReaderModule {
             removeEventListenerOptional(this.delegate.headerMenu, 'copy', this.preventCopy);
             removeEventListenerOptional(this.delegate.iframe.contentDocument, 'copy', this.preventCopy);
             removeEventListenerOptional(this.delegate.iframe.contentWindow, 'copy', this.preventCopy);
+            if(this.delegate.iframe2) {
+                removeEventListenerOptional(this.delegate.iframe2.contentDocument, 'copy', this.preventCopy);
+                removeEventListenerOptional(this.delegate.iframe2.contentWindow, 'copy', this.preventCopy);
+            }
             removeEventListenerOptional(window, 'copy', this.preventCopy);
             removeEventListenerOptional(document, 'copy', this.preventCopy);
             removeEventListenerOptional(this.delegate.mainElement, 'cut', this.preventCopy);
             removeEventListenerOptional(this.delegate.headerMenu, 'cut', this.preventCopy);
             removeEventListenerOptional(this.delegate.iframe.contentDocument, 'cut', this.preventCopy);
             removeEventListenerOptional(this.delegate.iframe.contentWindow, 'cut', this.preventCopy);
+            if(this.delegate.iframe2) {
+                removeEventListenerOptional(this.delegate.iframe2.contentDocument, 'cut', this.preventCopy);
+                removeEventListenerOptional(this.delegate.iframe2.contentWindow, 'cut', this.preventCopy);
+            }
             removeEventListenerOptional(window, 'cut', this.preventCopy);
             removeEventListenerOptional(document, 'cut', this.preventCopy);
         }
@@ -116,12 +128,20 @@ export default class ContentProtectionModule implements ReaderModule {
             removeEventListenerOptional(this.delegate.headerMenu, 'beforeprint', this.beforePrint.bind(this));
             removeEventListenerOptional(this.delegate.iframe.contentDocument, 'beforeprint', this.beforePrint);
             removeEventListenerOptional(this.delegate.iframe.contentWindow, 'beforeprint', this.beforePrint);
+            if(this.delegate.iframe2) {
+                removeEventListenerOptional(this.delegate.iframe2.contentDocument, 'beforeprint', this.beforePrint);
+                removeEventListenerOptional(this.delegate.iframe2.contentWindow, 'beforeprint', this.beforePrint);
+            }
             removeEventListenerOptional(window, 'beforeprint', this.beforePrint);
             removeEventListenerOptional(document, 'beforeprint', this.beforePrint);
             removeEventListenerOptional(this.delegate.mainElement, 'afterprint', this.afterPrint.bind(this));
             removeEventListenerOptional(this.delegate.headerMenu, 'afterprint', this.afterPrint.bind(this));
             removeEventListenerOptional(this.delegate.iframe.contentDocument, 'afterprint', this.afterPrint.bind(this));
             removeEventListenerOptional(this.delegate.iframe.contentWindow, 'afterprint', this.afterPrint.bind(this));
+            if(this.delegate.iframe2) {
+                removeEventListenerOptional(this.delegate.iframe2.contentDocument, 'afterprint', this.afterPrint.bind(this));
+                removeEventListenerOptional(this.delegate.iframe2.contentWindow, 'afterprint', this.afterPrint.bind(this));
+            }
             removeEventListenerOptional(window, 'afterprint', this.afterPrint.bind(this));
             removeEventListenerOptional(document, 'afterprint', this.afterPrint.bind(this));
 
@@ -131,6 +151,10 @@ export default class ContentProtectionModule implements ReaderModule {
             removeEventListenerOptional(this.delegate.headerMenu, 'contextmenu', this.disableContext);
             removeEventListenerOptional(this.delegate.iframe.contentDocument, 'contextmenu', this.disableContext);
             removeEventListenerOptional(this.delegate.iframe.contentWindow, 'contextmenu', this.disableContext);
+            if(this.delegate.iframe2) {
+                removeEventListenerOptional(this.delegate.iframe2.contentDocument, 'contextmenu', this.disableContext);
+                removeEventListenerOptional(this.delegate.iframe2.contentWindow, 'contextmenu', this.disableContext);
+            }
             removeEventListenerOptional(window, 'contextmenu', this.disableContext);
             removeEventListenerOptional(document, 'contextmenu', this.disableContext);
         }
@@ -216,6 +240,12 @@ export default class ContentProtectionModule implements ReaderModule {
             addEventListenerOptional(this.delegate.iframe.contentDocument, 'keydown', this.disableSave);
             addEventListenerOptional(this.delegate.iframe.contentWindow, 'keydown', this.disableSave);
             addEventListenerOptional(this.delegate.iframe.contentWindow.document, 'keydown', this.disableSave);
+            if(this.delegate.iframe2) {
+                addEventListenerOptional(this.delegate.iframe2.ownerDocument, 'keydown', this.disableSave);
+                addEventListenerOptional(this.delegate.iframe2.contentDocument, 'keydown', this.disableSave);
+                addEventListenerOptional(this.delegate.iframe2.contentWindow, 'keydown', this.disableSave);
+                addEventListenerOptional(this.delegate.iframe2.contentWindow.document, 'keydown', this.disableSave);    
+            }
             addEventListenerOptional(window, 'keydown', this.disableSave);
             addEventListenerOptional(document, 'keydown', this.disableSave);
 
@@ -228,6 +258,12 @@ export default class ContentProtectionModule implements ReaderModule {
             addEventListenerOptional(this.delegate.iframe.contentDocument, 'copy', this.preventCopy);
             addEventListenerOptional(this.delegate.iframe.contentWindow, 'copy', this.preventCopy);
             addEventListenerOptional(this.delegate.iframe.contentWindow.document, 'copy', this.preventCopy);
+            if(this.delegate.iframe2) {
+                addEventListenerOptional(this.delegate.iframe2.ownerDocument, 'copy', this.preventCopy);
+                addEventListenerOptional(this.delegate.iframe2.contentDocument, 'copy', this.preventCopy);
+                addEventListenerOptional(this.delegate.iframe2.contentWindow, 'copy', this.preventCopy);
+                addEventListenerOptional(this.delegate.iframe2.contentWindow.document, 'copy', this.preventCopy);    
+            }
             addEventListenerOptional(window, 'copy', this.preventCopy);
             addEventListenerOptional(document, 'copy', this.preventCopy);
 
@@ -238,6 +274,12 @@ export default class ContentProtectionModule implements ReaderModule {
             addEventListenerOptional(this.delegate.iframe.contentDocument, 'cut', this.preventCopy);
             addEventListenerOptional(this.delegate.iframe.contentWindow, 'cut', this.preventCopy);
             addEventListenerOptional(this.delegate.iframe.contentWindow.document, 'cut', this.preventCopy);
+            if(this.delegate.iframe2) {
+                addEventListenerOptional(this.delegate.iframe2.ownerDocument, 'cut', this.preventCopy);
+                addEventListenerOptional(this.delegate.iframe2.contentDocument, 'cut', this.preventCopy);
+                addEventListenerOptional(this.delegate.iframe2.contentWindow, 'cut', this.preventCopy);
+                addEventListenerOptional(this.delegate.iframe2.contentWindow.document, 'cut', this.preventCopy);
+            }
             addEventListenerOptional(window, 'cut', this.preventCopy);
             addEventListenerOptional(document, 'cut', this.preventCopy);
         }
@@ -250,6 +292,12 @@ export default class ContentProtectionModule implements ReaderModule {
             addEventListenerOptional(this.delegate.iframe.contentDocument, 'beforeprint', this.beforePrint.bind(this));
             addEventListenerOptional(this.delegate.iframe.contentWindow, 'beforeprint', this.beforePrint.bind(this));
             addEventListenerOptional(this.delegate.iframe.contentWindow.document, 'beforeprint', this.beforePrint.bind(this));
+            if(this.delegate.iframe2) {
+                addEventListenerOptional(this.delegate.iframe2.ownerDocument, 'beforeprint', this.beforePrint.bind(this));
+                addEventListenerOptional(this.delegate.iframe2.contentDocument, 'beforeprint', this.beforePrint.bind(this));
+                addEventListenerOptional(this.delegate.iframe2.contentWindow, 'beforeprint', this.beforePrint.bind(this));
+                addEventListenerOptional(this.delegate.iframe2.contentWindow.document, 'beforeprint', this.beforePrint.bind(this));
+            }
             addEventListenerOptional(window, 'beforeprint', this.beforePrint.bind(this));
             addEventListenerOptional(document, 'beforeprint', this.beforePrint.bind(this));
 
@@ -260,6 +308,12 @@ export default class ContentProtectionModule implements ReaderModule {
             addEventListenerOptional(this.delegate.iframe.contentDocument, 'afterprint', this.afterPrint.bind(this));
             addEventListenerOptional(this.delegate.iframe.contentWindow, 'afterprint', this.afterPrint.bind(this));
             addEventListenerOptional(this.delegate.iframe.contentWindow.document, 'afterprint', this.afterPrint.bind(this));
+            if(this.delegate.iframe2) {
+                addEventListenerOptional(this.delegate.iframe2.ownerDocument, 'afterprint', this.afterPrint.bind(this));
+                addEventListenerOptional(this.delegate.iframe2.contentDocument, 'afterprint', this.afterPrint.bind(this));
+                addEventListenerOptional(this.delegate.iframe2.contentWindow, 'afterprint', this.afterPrint.bind(this));
+                addEventListenerOptional(this.delegate.iframe2.contentWindow.document, 'afterprint', this.afterPrint.bind(this));                
+            }
             addEventListenerOptional(window, 'afterprint', this.afterPrint.bind(this));
             addEventListenerOptional(document, 'afterprint', this.afterPrint.bind(this));
         }
@@ -271,6 +325,12 @@ export default class ContentProtectionModule implements ReaderModule {
             addEventListenerOptional(this.delegate.iframe.contentDocument, 'contextmenu', this.disableContext);
             addEventListenerOptional(this.delegate.iframe.contentWindow, 'contextmenu', this.disableContext);
             addEventListenerOptional(this.delegate.iframe.contentWindow.document, 'contextmenu', this.disableContext);
+            if(this.delegate.iframe2) {
+                addEventListenerOptional(this.delegate.iframe2.ownerDocument, 'contextmenu', this.disableContext);
+                addEventListenerOptional(this.delegate.iframe2.contentDocument, 'contextmenu', this.disableContext);
+                addEventListenerOptional(this.delegate.iframe2.contentWindow, 'contextmenu', this.disableContext);
+                addEventListenerOptional(this.delegate.iframe2.contentWindow.document, 'contextmenu', this.disableContext);
+            }
             addEventListenerOptional(window, 'contextmenu', this.disableContext);
             addEventListenerOptional(document, 'contextmenu', this.disableContext);
         }
@@ -403,6 +463,32 @@ export default class ContentProtectionModule implements ReaderModule {
             aElement.removeEventListener('click', onAElementClick);
           });
         }
+
+        if (this.delegate.iframe2) {
+            const aElements = this.delegate.iframe2.contentDocument.querySelectorAll('a');
+
+            aElements.forEach((aElement) => {
+              const dataHref = aElement.getAttribute('data-href');
+              if (!dataHref) {
+                aElement.setAttribute('data-href', aElement.getAttribute('href'));
+                aElement.setAttribute('data-href-resolved', aElement.href);
+              }
+            });
+        
+            if (activate) {
+              aElements.forEach((aElement) => {
+                aElement.setAttribute('href', '');
+                aElement.addEventListener('click', onAElementClick);
+              });
+            } else {
+              aElements.forEach((aElement) => {
+                aElement.setAttribute('href', aElement.getAttribute('data-href'));
+                aElement.removeEventListener('click', onAElementClick);
+              });
+            }
+    
+        }
+
     };
     
     preventDrag(activate) {
@@ -420,6 +506,19 @@ export default class ContentProtectionModule implements ReaderModule {
             this.delegate.iframe.contentDocument.body.removeEventListener('dragstart', onDragstart);
             this.delegate.iframe.contentDocument.body.setAttribute('style', bodyStyle.replace(dragStyle, ''));
         }
+
+        if (this.delegate.iframe2) {
+            const bodyStyle = this.delegate.iframe2.contentDocument.body.getAttribute('style') || '';
+    
+            if (activate) {
+                this.delegate.iframe2.contentDocument.body.addEventListener('dragstart', onDragstart);
+                this.delegate.iframe2.contentDocument.body.setAttribute('style', bodyStyle + dragStyle);
+            } else {
+                this.delegate.iframe2.contentDocument.body.removeEventListener('dragstart', onDragstart);
+                this.delegate.iframe2.contentDocument.body.setAttribute('style', bodyStyle.replace(dragStyle, ''));
+            }    
+        }
+
     }
 
     recalculate(delay:number = 0) {

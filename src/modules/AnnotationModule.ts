@@ -196,7 +196,7 @@ export default class AnnotationModule implements ReaderModule {
                 tocItem = this.publication.getTOCItemAbsolute(this.delegate.currentChapterLink.href);
             }
 
-            const bookmarkPosition = this.delegate.reflowable.getCurrentPosition();
+            const bookmarkPosition = this.delegate.view.getCurrentPosition();
 
             const body = HTMLUtilities.findRequiredIframeElement(this.delegate.iframe.contentDocument, "body") as HTMLBodyElement;
             const progression = highlight.position ? (highlight.position / body.scrollHeight) : bookmarkPosition

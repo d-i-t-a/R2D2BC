@@ -306,7 +306,6 @@
                 <div id="reader-info-top" class="info top">
                     <span class="book-title"></span>
                 </div>
-                <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="border: 0px; display: block;" width="100%" height="100%"></iframe>
                 <div id="reader-info-bottom" class="info bottom">
                     <div>
                         <span class="chapter-position"></span>
@@ -412,7 +411,7 @@
             return params;
         };
         var urlParams = getURLQueryParams();
-        // var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
+        var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
 
         var injectables = [
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
@@ -447,9 +446,12 @@
         ]
 
         D2Reader.load({
+            upLinkUrl: upLink,
             url: new URL(urlParams['url']),
             attributes: {
                 margin: 120,
+                navHeight: 70,
+                iframePaddingTop: 20,
             },
             rights: {
                 enableMaterial: true,

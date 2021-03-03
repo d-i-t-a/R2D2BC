@@ -75,7 +75,7 @@ export default class TimelineModule implements ReaderModule {
             await (document as any).fonts.ready;
 
             let locator = this.delegate.currentLocator()
-            if (oc(this.delegate.rights).enableMaterial(false) && oc(this.delegate.rights).autoGeneratePositions(true)) {
+            if (oc(this.delegate.rights).enableMaterial(false) && oc(this.delegate.rights).autoGeneratePositions(true) && this.publication.positions) {
                 this.positionSlider.value = locator.locations.position.toString()
                 this.positionSlider.max = (locator.locations.totalRemainingPositions + locator.locations.position).toString()
             }
@@ -90,11 +90,11 @@ export default class TimelineModule implements ReaderModule {
                 const tocHrefAbs = this.publication.getAbsoluteHref(tocHref);
 
                 var chapterHeight
-                if (this.publication.positions) {
+                if (this.publication.positions && this.delegate.view.layout != 'fixed') {
                     if (link.contentWeight) {
                         chapterHeight = link.contentWeight
                     } else {
-                        chapterHeight = 5
+                        chapterHeight = 1
                     }
                 } else {
                     chapterHeight = 100 / this.publication.readingOrder.length
@@ -116,9 +116,9 @@ export default class TimelineModule implements ReaderModule {
 
                     event.preventDefault();
                     event.stopPropagation();
-                    let position
+                    var position
                     if (oc(this.delegate.rights).autoGeneratePositions(true)) {
-                        position = this.publication.positions.filter((el: Locator) => el.href === link.href)[0]
+                        position = { ...this.publication.positions.filter((el: Locator) => el.href === link.href)[0] } 
                         position.href = this.publication.getAbsoluteHref(position.href)
                     } else {
                         position = {

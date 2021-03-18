@@ -662,17 +662,17 @@ export default class TextHighlighter {
         switch (mode) {
             case 'colors':
                 if (toolboxColorsOptions) toolboxColorsOptions.style.display = "unset"
-                toolboxAddOptions.style.display = "none"
+                if (toolboxAddOptions) toolboxAddOptions.style.display = "none"
                 if (toolboxEditOptions) toolboxEditOptions.style.display = "none"
                 break;
             case 'edit':
                 if (toolboxColorsOptions) toolboxColorsOptions.style.display = "none"
-                toolboxAddOptions.style.display = "none"
+                if (toolboxAddOptions) toolboxAddOptions.style.display = "none"
                 if (toolboxEditOptions) toolboxEditOptions.style.display = "unset"
                 break;
             default:
                 if (toolboxColorsOptions) toolboxColorsOptions.style.display = "none"
-                toolboxAddOptions.style.display = "unset"
+                if (toolboxAddOptions) toolboxAddOptions.style.display = "unset"
                 if (toolboxEditOptions) toolboxEditOptions.style.display = "none"
                 break;
         }
@@ -809,7 +809,7 @@ export default class TextHighlighter {
             var underlineIcon = document.getElementById("underlineIcon");
             var colorIcon = document.getElementById("colorIcon");
             var speakIcon = document.getElementById("speakIcon");
-            if (this.delegate.rights.enableAnnotations) {
+            if (oc(this.delegate.rights).enableAnnotations(false)) {
 
                 if (highlightIcon) {
                     highlightIcon.style.display = "unset";
@@ -859,7 +859,7 @@ export default class TextHighlighter {
                     colorIcon.style.setProperty('display', "none")
                 }
             }
-            if (this.delegate.rights.enableTTS) {
+            if (oc(this.delegate.rights).enableTTS(false)) {
                 if (speakIcon) {
                     function speakEvent() {
                         speakIcon.removeEventListener("click", speakEvent);
@@ -939,7 +939,7 @@ export default class TextHighlighter {
 
                 var highlight = this.createHighlight(self.dom(self.delegate.iframe.contentDocument.body).getWindow(), selectionInfo, createColor, true, marker);
                 this.options.onAfterHighlight(highlight, marker);
-                if (this.delegate.rights.enableAnnotations) {
+                if (oc(this.delegate.rights).enableAnnotations(false)) {
                     this.delegate.annotationModule.saveAnnotation(highlight, marker)
                 }
             }
@@ -955,7 +955,7 @@ export default class TextHighlighter {
     };
 
     speak() {
-        if (this.delegate.rights.enableTTS) {
+        if (oc(this.delegate.rights).enableTTS(false)) {
             var self = this
             function getCssSelector(element: Element): string {
                 const options = {
@@ -988,12 +988,12 @@ export default class TextHighlighter {
         }
     };
     stopReadAloud() {
-        if (this.delegate.rights.enableTTS) {
+        if (oc(this.delegate.rights).enableTTS(false)) {
             this.doneSpeaking()
         }
     }
     speakAll() {
-        if (this.delegate.rights.enableTTS) {
+        if (oc(this.delegate.rights).enableTTS(false)) {
             var self = this
             function getCssSelector(element: Element): string {
                 const options = {
@@ -1040,7 +1040,7 @@ export default class TextHighlighter {
     }
 
     doneSpeaking(reload: boolean = false) {
-        if (this.delegate.rights.enableTTS) {
+        if (oc(this.delegate.rights).enableTTS(false)) {
             this.toolboxHide();
             this.dom(this.delegate.iframe.contentDocument.body).removeAllRanges();
             this.delegate.ttsModule.cancel()

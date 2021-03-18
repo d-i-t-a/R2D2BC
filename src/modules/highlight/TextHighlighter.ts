@@ -662,17 +662,17 @@ export default class TextHighlighter {
         switch (mode) {
             case 'colors':
                 if (toolboxColorsOptions) toolboxColorsOptions.style.display = "unset"
-                toolboxAddOptions.style.display = "none"
+                if (toolboxAddOptions) toolboxAddOptions.style.display = "none"
                 if (toolboxEditOptions) toolboxEditOptions.style.display = "none"
                 break;
             case 'edit':
                 if (toolboxColorsOptions) toolboxColorsOptions.style.display = "none"
-                toolboxAddOptions.style.display = "none"
+                if (toolboxAddOptions) toolboxAddOptions.style.display = "none"
                 if (toolboxEditOptions) toolboxEditOptions.style.display = "unset"
                 break;
             default:
                 if (toolboxColorsOptions) toolboxColorsOptions.style.display = "none"
-                toolboxAddOptions.style.display = "unset"
+                if (toolboxAddOptions) toolboxAddOptions.style.display = "unset"
                 if (toolboxEditOptions) toolboxEditOptions.style.display = "none"
                 break;
         }

@@ -103,7 +103,7 @@ export default class BookmarkModule implements ReaderModule {
 
         if (this.headerMenu) {
             var menuBookmark = HTMLUtilities.findElement(this.headerMenu, "#menu-button-bookmark") as HTMLLinkElement;
-            if (this.rights.enableMaterial) {
+            if (oc(this.rights).enableMaterial(false)) {
                 if (menuBookmark) menuBookmark.parentElement.style.removeProperty("display")
                 if (menuBookmark) addEventListenerOptional(menuBookmark, 'click', this.saveBookmark.bind(this));
             } else {

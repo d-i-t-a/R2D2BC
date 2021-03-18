@@ -123,7 +123,7 @@ export default class AnnotationModule implements ReaderModule {
     initialize() {
         return new Promise(async (resolve) => {
             await (document as any).fonts.ready;
-            if (this.rights.enableAnnotations) {
+            if (oc(this.rights).enableAnnotations(false)) {
                 setTimeout(() => {
                     this.drawHighlights()
                 }, 300);
@@ -261,7 +261,7 @@ export default class AnnotationModule implements ReaderModule {
     }
 
     async drawHighlights(search: boolean = true): Promise<void> {
-        if (this.rights.enableAnnotations && this.highlighter) {
+        if (oc(this.rights).enableAnnotations(false) && this.highlighter) {
             if (this.api) {
                 let highlights: Array<any> = [];
                 if (this.annotator) {
@@ -339,7 +339,7 @@ export default class AnnotationModule implements ReaderModule {
                 this.highlighter.setColor(this.config.initialAnnotationColor);
             }
         }
-        if (search && this.rights.enableSearch) {
+        if (search && oc(this.rights).enableSearch(false)) {
             this.delegate.searchModule.drawSearch()
         }
     }

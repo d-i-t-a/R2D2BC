@@ -32,6 +32,7 @@
     "moduleResolution": "node",
     "outDir": "./dist/",
     "sourceMap": true,
+    "declaration": true,
     "preserveConstEnums": true,
     "strictNullChecks": false,
     "target": "es6"

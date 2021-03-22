@@ -2145,7 +2145,7 @@ export default class IFrameNavigator implements Navigator {
                     if (oc(this.rights).enableContentProtection(false)) {
                         this.contentProtectionModule.initializeResource()
                     }
-                }, 100);
+                }, 200);
 
                 setTimeout(async () => {
                     if (oc(this.rights).enableContentProtection(false)) {

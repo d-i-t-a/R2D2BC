@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -14,8 +14,8 @@
   },
   "scripts": {
     "prepare": "npm run build",
-    "build": "webpack --mode=production && npm run sass && cpx \"dist/*.{css,js,map,woff,woff2}\" viewer/ && cpx \"dist/injectables/**/*.{css,js,map}\" viewer/injectables/",
-    "dev": "webpack --mode=development && npm run sass && cpx \"dist/*.{css,js,map,woff,woff2}\" viewer/ && cpx \"dist/injectables/**/*.{css,js,map}\" viewer/injectables/",
+    "build": "webpack --mode=production && npm run sass && cpx \"dist/*.{css,js,map,woff,woff2}\" viewer/ && cpx \"injectables/**/*.{css,js}\" viewer/injectables/ && cpx \"dist/injectables/**/*.{css,js,map}\" viewer/injectables/",
+    "dev": "webpack --mode=development && npm run sass && cpx \"dist/*.{css,js,map,woff,woff2}\" viewer/ && cpx \"injectables/**/*.{css,js}\" viewer/injectables/ && cpx \"dist/injectables/**/*.{css,js,map}\" viewer/injectables/",
     "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
     "examples": "rimraf examples/streamed/readers/viewer && cpx \"viewer/*.{html,css,js,map,woff,woff2}\" examples/streamed/readers/viewer && cpx \"viewer/readium-css/*.{css,js}\" examples/streamed/readers/viewer/readium-css && cpx \"viewer/fonts/*/*.{css,woff,woff2}\" examples/streamed/readers/viewer/fonts && cpx \"viewer/injectables/**/*.{css,js,map}\" examples/streamed/readers/viewer/injectables && cpx \"injectables/**/*.{css,js,map}\" examples/streamed/readers/viewer/injectables",
     "streamed": "node \"./examples/streamed/server/server-cli.inlinesourcemap.js\" ./examples/streamed/epubs/",

@@ -14,12 +14,13 @@
  * limitations under the License.
  *
  * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
- * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Licensed to: CAST under one or more contributor license agreements.
  */
 
 {
   "compileOnSave": true,
   "compilerOptions": {
+    "rootDir": ".",
     "forceConsistentCasingInFileNames": true,
     "module": "es6",
     "noEmitOnError": true,
@@ -30,18 +31,11 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "moduleResolution": "node",
-    "outDir": "./dist/",
+    "outDir": "../dist/injectables",
     "sourceMap": true,
     "declaration": true,
     "preserveConstEnums": true,
     "strictNullChecks": false,
     "target": "es6"
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "src/sw.ts",
-    "injectables/*"
-  ]
 }

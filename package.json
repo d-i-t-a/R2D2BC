@@ -4,8 +4,8 @@
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
-  "main": "src/index.js",
-  "typings": "src/index.ts",
+  "main": "dist/reader.js",
+  "typings": "dist/index.d.ts",
   "engines": {
     "node": ">8.0.0"
   },

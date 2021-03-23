@@ -28,7 +28,7 @@
     "cssesc": "^3.0.0",
     "debounce": "^1.2.1",
     "detect-browser": "^5.2.0",
-    "jshashes": "^1.0.8",
+    "jscrypto": "0.0.1",
     "mark.js": "^8.11.1",
     "promise-polyfill": "^8.2.0",
     "sanitize-html": "^2.3.3",

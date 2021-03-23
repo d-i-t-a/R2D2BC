@@ -17,7 +17,7 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import * as JsHashes  from 'jshashes';
+import { SHA256 } from "jscrypto/es6/SHA256";
 import { debounce } from "debounce";
 
 import {
@@ -1780,8 +1780,7 @@ export default class TextHighlighter {
             }
 
             const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
-            const hash =  new JsHashes.SHA256;
-            const sha256Hex = hash.hex(uniqueStr);
+            const sha256Hex = SHA256.hash(uniqueStr);
             const id = "R2_HIGHLIGHT_" + sha256Hex;
 
             this.destroyHighlight(this.delegate.iframe.contentDocument, id);
@@ -1817,8 +1816,7 @@ export default class TextHighlighter {
             // const unique = new Buffer(JSON.stringify(selectionInfo.rangeInfo, null, "")).toString("base64");
             // const unique = new Buffer(uniqueStr).toString("base64");
             // const id = "R2_HIGHLIGHT_" + unique.replace(/\+/, "_").replace(/=/, "-").replace(/\//, ".");
-            const hash =  new JsHashes.SHA256;
-            const sha256Hex = hash.hex(uniqueStr);
+            const sha256Hex = SHA256.hash(uniqueStr);
             const id = "R2_HIGHLIGHT_" + sha256Hex;
 
             this.destroyHighlight(win.document, id);

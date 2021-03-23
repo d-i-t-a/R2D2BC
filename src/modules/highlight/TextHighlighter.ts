@@ -17,7 +17,7 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import * as crypto from "crypto";
+import * as JsHashes  from 'jshashes';
 import { debounce } from "debounce";
 
 import {
@@ -1780,9 +1780,8 @@ export default class TextHighlighter {
             }
 
             const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
-            const checkSum = crypto.createHash("sha256");
-            checkSum.update(uniqueStr);
-            const sha256Hex = checkSum.digest("hex");
+            const hash =  new JsHashes.SHA256;
+            const sha256Hex = hash.hex(uniqueStr);
             const id = "R2_HIGHLIGHT_" + sha256Hex;
 
             this.destroyHighlight(this.delegate.iframe.contentDocument, id);
@@ -1818,9 +1817,8 @@ export default class TextHighlighter {
             // const unique = new Buffer(JSON.stringify(selectionInfo.rangeInfo, null, "")).toString("base64");
             // const unique = new Buffer(uniqueStr).toString("base64");
             // const id = "R2_HIGHLIGHT_" + unique.replace(/\+/, "_").replace(/=/, "-").replace(/\//, ".");
-            const checkSum = crypto.createHash("sha256");
-            checkSum.update(uniqueStr);
-            const sha256Hex = checkSum.digest("hex");
+            const hash =  new JsHashes.SHA256;
+            const sha256Hex = hash.hex(uniqueStr);
             const id = "R2_HIGHLIGHT_" + sha256Hex;
 
             this.destroyHighlight(win.document, id);

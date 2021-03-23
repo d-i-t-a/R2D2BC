@@ -1,4 +1,5 @@
 const path = require("path");
+const webpack = require('webpack')
 
 module.exports = [{
     mode: 'production',
@@ -21,8 +22,17 @@ module.exports = [{
         ]
     },
     resolve: {
-        extensions: [".tsx", ".ts", ".js"]
+        extensions: [".tsx", ".ts", ".js"],
+        fallback: { "url": false },
+        alias: {
+            process: "process/browser"
+        } 
     },
+    plugins: [
+        new webpack.ProvidePlugin({
+                process: 'process/browser',
+        }),
+    ],
     output: {
         filename: "[name].js",
         library: "D2Reader",

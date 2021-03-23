@@ -80,9 +80,9 @@ export interface IFrameNavigatorConfig {
 export interface Injectable {
     type: string;
     url?: string;
-    r2after: boolean;
-    r2before: boolean;
-    r2default: boolean;
+    r2after?: boolean;
+    r2before?: boolean;
+    r2default?: boolean;
     fontFamily?: string;
     systemFont?: boolean;
     appearance?: string;
@@ -109,21 +109,21 @@ export interface ReaderUI {
 }
 export interface ReaderConfig {
     url: URL;
-    userSettings: any;
-    initialAnnotations: any;
-    lastReadingPosition: any;
-    upLinkUrl: any;
-    rights: ReaderRights;
-    material: ReaderUI;
-    api: any;
-    tts: any;
-    search: {color:string; current:string};
+    userSettings?: any;
+    initialAnnotations?: any;
+    lastReadingPosition?: any;
+    upLinkUrl?: any;
+    rights?: ReaderRights;
+    material?: ReaderUI;
+    api?: any;
+    tts?: any;
+    search?: {color:string; current:string};
     protection?: any;
-    annotations: {initialAnnotationColor: string};
-    highlighter: {selectionMenuItems: Array<SelectionMenuItem>};
+    annotations?: {initialAnnotationColor: string};
+    highlighter?: {selectionMenuItems: Array<SelectionMenuItem>};
     injectables: Array<Injectable>;
-    useLocalStorage: boolean;
-    attributes: IFrameAttributes;
+    useLocalStorage?: boolean;
+    attributes?: IFrameAttributes;
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */

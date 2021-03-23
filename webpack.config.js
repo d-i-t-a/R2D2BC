@@ -34,13 +34,10 @@ module.exports = [{
         //         resolve.fallback: { "url": false }
         fallback: { "url": false },
 
-        alias: {
-            process: "process/browser"
-        } 
     },
     plugins: [
         new webpack.ProvidePlugin({
-            process: 'process/browser',
+            process: 'process',
         }),
     ],
     output: {

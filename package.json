@@ -20,7 +20,8 @@
     "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
     "examples": "rimraf examples/streamed/readers/viewer && cpx \"viewer/*.{html,css,js,map,woff,woff2}\" examples/streamed/readers/viewer && cpx \"viewer/readium-css/*.{css,js}\" examples/streamed/readers/viewer/readium-css && cpx \"viewer/fonts/*/*.{css,woff,woff2}\" examples/streamed/readers/viewer/fonts && cpx \"viewer/injectables/**/*.{css,js,map}\" examples/streamed/readers/viewer/injectables && cpx \"injectables/**/*.{css,js,map}\" examples/streamed/readers/viewer/injectables",
     "streamed": "node \"./examples/streamed/server/server-cli.inlinesourcemap.js\" ./examples/streamed/epubs/",
-    "clean": "rimraf node_modules lib dist examples/streamed/readers/viewer"
+    "clean": "rimraf node_modules lib dist examples/streamed/readers/viewer",
+    "start": "http-server viewer"
   },
   "dependencies": {
     "browser-detect-devtools": "^1.0.4",
@@ -66,6 +67,7 @@
     "chai": "^4.3.4",
     "cpx": "^1.5.0",
     "express": "^4.17.1",
+    "http-server": "^0.12.3",
     "materialize-css": "^1.0.0",
     "minimist": ">=1.2.5",
     "mocha": "^8.3.2",

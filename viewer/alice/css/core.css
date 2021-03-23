@@ -1,0 +1,187 @@
+@namespace epub "http://www.idpf.org/2007/ops";
+body {
+  hyphens: auto;
+  adobe-hyphenate: auto;
+  -webkit-hyphens: auto;
+  -epub-hyphens: auto;
+  -moz-hyphens: auto;
+  -epub-hyphens: auto;
+  }
+
+section.titlepage {
+  margin-top: 0;
+  margin-right: 0;
+  margin-bottom: 0;
+  margin-left: 0;
+  padding: 0;
+  text-align: center; }
+
+section.titlepage img {
+  width: 100%;
+  margin-top: 10%; }
+
+p {
+  margin-top: 0;
+  margin-right: 0;
+  margin-bottom: 0;
+  margin-left: 0;
+  text-indent: 1em; }
+
+hr {
+  border: none;
+  border-top: 1px solid;
+  height: 0;
+  margin-top: 1.5em;
+  margin-right: auto;
+  margin-bottom: 1.5em;
+  margin-left: auto;
+  width: 25%; }
+
+q:before,
+q:after {
+  content: ''; }
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-variant: small-caps;
+  hyphens: none;
+  adobe-text-layout: optimizeSpeed;
+  /* For Nook */
+  adobe-hyphenate: none;
+  -webkit-hyphens: none;
+  -epub-hyphens: none;
+  -moz-hyphens: none;
+  -epub-hyphens: none;
+  page-break-after: avoid;
+  -webkit-column-break-after: avoid;
+  /* For Readium */
+  text-align: center;
+  margin-top: 3em;
+  margin-right: 0;
+  margin-bottom: 3em;
+  margin-left: 0; }
+
+blockquote + p,
+blockquote p.first-child,
+blockquote p:first-child,
+h2 + p,
+h3 + p,
+header + p,
+hr + p,
+section.footnotes > ol > li > p.first-child,
+section.footnotes > ol > li > p:first-child {
+  text-indent: 0; }
+
+cite {
+  font-style: normal; }
+
+blockquote cite {
+  display: block;
+  font-style: italic;
+  text-align: right; }
+
+blockquote cite i {
+  font-style: normal; }
+
+strong {
+  font-weight: normal;
+  font-variant: small-caps;
+  text-transform: lowercase; }
+
+a.noteref {
+  font-size: .75em;
+  vertical-align: super; }
+
+section.footnotes > ol > li {
+  margin-top: 1em;
+  margin-right: 0;
+  margin-bottom: 1em;
+  margin-left: 0; }
+
+section.colophon,
+section.imprint {
+  text-align: center; }
+
+section.colophon header,
+section.imprint header {
+  font-size: 0;
+  margin-top: 5%;
+  margin-right: auto;
+  margin-bottom: 5%;
+  margin-left: auto; }
+
+section.colophon h2,
+section.imprint h2 {
+  display: none; }
+
+section.colophon img.z3998-publisher-logo,
+section.imprint img.z3998-publisher-logo {
+  max-width: 25%; }
+
+section.colophon p,
+section.imprint p {
+  margin-top: 1em;
+  margin-right: auto;
+  margin-bottom: 1em;
+  margin-left: auto;
+  text-indent: 0; }
+
+section.imprint p {
+  font-size: .75em;
+  text-align: justify;
+  width: 75%; }
+
+a.raw-url {
+  hyphens: none;
+  adobe-text-layout: optimizeSpeed;
+  /* For Nook */
+  adobe-hyphenate: none;
+  -webkit-hyphens: none;
+  -epub-hyphens: none;
+  -moz-hyphens: none;
+  -epub-hyphens: none; }
+
+section.colophon p + p:before {
+  border-top: 1px solid;
+  content: "";
+  display: block;
+  margin-top: auto;
+  margin-right: auto;
+  margin-bottom: 1em;
+  margin-left: auto;
+  width: 25%; }
+
+section.colophon a,
+section.colophon .name,
+section.colophon .release-date,
+section.colophon .revision-date {
+  font-variant: small-caps; }
+
+section.copyright-page p {
+  margin-top: 1em;
+  margin-right: auto;
+  margin-bottom: 1em;
+  margin-left: auto;
+  text-indent: 0; }
+
+section.copyright-page blockquote p {
+  font-style: italic;
+  text-align: left;
+  text-indent: 0; }
+
+section.copyright-page blockquote p span {
+  display: block;
+  padding-left: 1em;
+  text-indent: -1em; }
+
+section.copyright-page blockquote br {
+  display: none; }
+
+/* epub2 compatibility CSS */
+section.colophon img.z3998-publisher-logo,
+section.imprint img.z3998-publisher-logo {
+  width: 220px; }

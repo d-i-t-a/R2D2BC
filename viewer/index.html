@@ -414,15 +414,15 @@
         var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
 
         var injectables = [
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
-            { type: 'style', url: '/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
+            { type: 'style', url: '/readium-css/ReadiumCSS-before.css', r2before: true },
+            { type: 'style', url: '/readium-css/ReadiumCSS-default.css', r2default: true },
+            { type: 'style', url: '/readium-css/ReadiumCSS-after.css', r2after: true },
+            { type: 'style', url: '/injectables/pagebreak/pagebreak.css', r2after: true },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
-            { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
-            { type: 'script', url: '/viewer/injectables/footnotes/footnotes.js' },
-            { type: 'style', url: '/viewer/injectables/footnotes/footnotes.css' },
-            { type: 'style', url: '/viewer/injectables/style/style.css' },
+            { type: 'style', url: '/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
+            { type: 'script', url: '/injectables/footnotes/footnotes.js' },
+            { type: 'style', url: '/injectables/footnotes/footnotes.css' },
+            { type: 'style', url: '/injectables/style/style.css' },
         ]
         var userSettings = {
             // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
@@ -444,10 +444,12 @@
                 }
             }
         ]
+        const url = new URL("/alice/manifest.json", window.location.href);
 
         D2Reader.load({
             upLinkUrl: upLink,
-            url: new URL(urlParams['url']),
+            url: url,
+            // url: new URL(urlParams['url']),
             attributes: {
                 margin: 120,
                 navHeight: 70,

@@ -414,15 +414,15 @@
         var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
 
         var injectables = [
-            { type: 'style', url: 'http://127.0.0.1:8080/readium-css/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: 'http://127.0.0.1:8080/readium-css/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: 'http://127.0.0.1:8080/readium-css/ReadiumCSS-after.css', r2after: true },
-            { type: 'style', url: 'http://127.0.0.1:8080/injectables/pagebreak/pagebreak.css', r2after: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            { type: 'style', url: '/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
-            { type: 'style', url: 'http://127.0.0.1:8080/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
-            { type: 'script', url: 'http://127.0.0.1:8080/injectables/footnotes/footnotes.js' },
-            { type: 'style', url: 'http://127.0.0.1:8080/injectables/footnotes/footnotes.css' },
-            { type: 'style', url: 'http://127.0.0.1:8080/injectables/style/style.css' },
+            { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
+            { type: 'script', url: '/viewer/injectables/footnotes/footnotes.js' },
+            { type: 'style', url: '/viewer/injectables/footnotes/footnotes.css' },
+            { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
         var userSettings = {
             // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
@@ -444,12 +444,10 @@
                 }
             }
         ]
-        const url = new URL("https://alice.dita.digital/manifest.json");
 
         D2Reader.load({
             upLinkUrl: upLink,
-            url: url,
-            // url: new URL(urlParams['url']),
+            url: new URL(urlParams['url']),
             attributes: {
                 margin: 120,
                 navHeight: 70,

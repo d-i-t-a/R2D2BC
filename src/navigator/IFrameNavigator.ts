@@ -750,6 +750,7 @@ export default class IFrameNavigator implements Navigator {
                                     }
                                 }
                             })
+                            this.checkResourcePosition()
                         }
                         onDoScrolling()
                     }
@@ -2175,34 +2176,16 @@ export default class IFrameNavigator implements Navigator {
                                 } else if (this.view.atEnd()) {
                                     if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                                     if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "unset"
-                                    if (this.api && this.api.resourceAtEnd) {
-                                        this.api.resourceAtEnd()
-                                    }
                                 } else if (this.view.atStart()) {
                                     if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                                     if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "unset"
-                                    if (this.api && this.api.resourceAtStart) {
-                                        this.api.resourceAtStart()
-                                    }
                                 } else {
                                     if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                                     if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                                 }
                             }
                         })
-                        if (this.view.atStart() && this.view.atEnd()) {
-                            if (this.api && this.api.resourceFitsScreen) {
-                                this.api.resourceFitsScreen()
-                            }
-                        } else if (this.view.atEnd()) {
-                            if (this.api && this.api.resourceAtEnd) {
-                                this.api.resourceAtEnd()
-                            }
-                        } else if (this.view.atStart()) {
-                            if (this.api && this.api.resourceAtStart) {
-                                this.api.resourceAtStart()
-                            }
-                        }
+                        this.checkResourcePosition()
                     }
 
                     if (this.api && this.api.resourceReady) {
@@ -2230,6 +2213,22 @@ export default class IFrameNavigator implements Navigator {
         }
 
     }
+
+    checkResourcePosition= debounce(() => {
+        if (this.view.atStart() && this.view.atEnd()) {
+            if (this.api && this.api.resourceFitsScreen) {
+                this.api.resourceFitsScreen()
+            }
+        } else if (this.view.atEnd()) {
+            if (this.api && this.api.resourceAtEnd) {
+                this.api.resourceAtEnd()
+            }
+        } else if (this.view.atStart()) {
+            if (this.api && this.api.resourceAtStart) {
+                this.api.resourceAtStart()
+            }
+        }    
+    }, 200);
 
     private showIframeContents() {
         this.isBeingStyled = false;

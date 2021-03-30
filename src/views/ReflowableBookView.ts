@@ -304,6 +304,7 @@ export default class ReflowableBookView implements BookView {
             } else {
                 this.setLeftColumnsWidth(0);
             }
+            this.delegate.checkResourcePosition()
         }
         if (oc(this.delegate.rights).enableContentProtection(false)) {
             this.delegate.contentProtectionModule.recalculate()
@@ -331,6 +332,7 @@ export default class ReflowableBookView implements BookView {
             } else {
                 this.setLeftColumnsWidth(scrollWidth);
             }
+            this.delegate.checkResourcePosition()
         }
         if (oc(this.delegate.rights).enableContentProtection(false)) {
             this.delegate.contentProtectionModule.recalculate()

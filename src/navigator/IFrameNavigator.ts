@@ -2183,10 +2183,9 @@ export default class IFrameNavigator implements Navigator {
                                     if (this.nextChapterBottomAnchorElement) this.nextChapterBottomAnchorElement.style.display = "none"
                                     if (this.previousChapterTopAnchorElement) this.previousChapterTopAnchorElement.style.display = "none"
                                 }
-                            } else {
-                                this.checkResourcePosition()
                             }
                         })
+                        this.checkResourcePosition()
                     }
 
                     if (this.api && this.api.resourceReady) {

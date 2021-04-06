@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "1.7.4",
+  "version": "1.7.5",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -13,7 +13,6 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "preinstall": "npx npm-force-resolutions",
     "prepare": "npm run build",
     "build": "webpack --mode=production && npm run sass && cpx \"dist/*.{css,js,map,woff,woff2}\" viewer/ && cpx \"injectables/**/*.{css,js}\" viewer/injectables/ && cpx \"dist/injectables/**/*.{css,js,map}\" viewer/injectables/",
     "dev": "webpack --mode=development && npm run sass && cpx \"dist/*.{css,js,map,woff,woff2}\" viewer/ && cpx \"injectables/**/*.{css,js}\" viewer/injectables/ && cpx \"dist/injectables/**/*.{css,js,map}\" viewer/injectables/",

@@ -32,7 +32,7 @@ import BookView from "../../views/BookView";
 export interface UserSettingsConfig {
     /** Store to save the user's selections in. */
     store: Store,
-    initialUserSettings: UserSettings;
+    initialUserSettings: InitialUserSettings;
     headerMenu: HTMLElement;
     material: ReaderUI;
     api: any;
@@ -53,12 +53,15 @@ export interface UserSettingsUIConfig {
     lineHeight: boolean;
 }
 
-export interface UserSettings {
+/**
+ * The shape of the UserSettings class.
+ */
+export interface IUserSettings {
     fontSize: number
     fontOverride: boolean
     fontFamily: number
     appearance: any
-    verticalScroll: any
+    verticalScroll: boolean
 
     //Advanced settings
     publisherDefaults: boolean
@@ -70,8 +73,30 @@ export interface UserSettings {
     lineHeight: number
 }
 
+/**
+ * The settings that someone might pass in when instantiating
+ * the reader. Differs from the internal settings values for 
+ * backwards compatibility.
+ */
+export interface InitialUserSettings {
+    fontSize: number
+    fontOverride: boolean
+    fontFamily: number
+    appearance: any
+    verticalScroll?: boolean | "readium-scroll-on" | "readium-scroll-off" | "scroll" | "paginated"
 
-export class UserSettings implements UserSettings {
+    //Advanced settings
+    publisherDefaults: boolean
+    textAlignment: number
+    columnCount: number
+    wordSpacing: number
+    letterSpacing: number
+    pageMargins: number
+    lineHeight: number 
+}
+
+
+export class UserSettings implements IUserSettings {
     async isPaginated() {
         let scroll = ( await this.getProperty(ReadiumCSS.SCROLL_KEY) != null) ? ( await this.getProperty(ReadiumCSS.SCROLL_KEY) as Switchable).value : 0
         return scroll === 1
@@ -94,7 +119,7 @@ export class UserSettings implements UserSettings {
     fontOverride = false
     fontFamily = 0
     appearance: any = 0
-    verticalScroll: any = 0
+    verticalScroll = true
 
     //Advanced settings
     publisherDefaults = true
@@ -134,9 +159,9 @@ export class UserSettings implements UserSettings {
         );
 
         if (config.initialUserSettings) {
-            var initialUserSettings:UserSettings= config.initialUserSettings
-            if(initialUserSettings.verticalScroll) {
-                settings.verticalScroll = UserSettings.scrollValues.findIndex((el: any) => el === initialUserSettings.verticalScroll);
+            var initialUserSettings = config.initialUserSettings
+            if(initialUserSettings.verticalScroll !== undefined) {
+                settings.verticalScroll = this.parseScrollSetting(initialUserSettings.verticalScroll)
                 if (IS_DEV) console.log(settings.verticalScroll);
             }
             if(initialUserSettings.appearance) {
@@ -225,7 +250,7 @@ export class UserSettings implements UserSettings {
     private async reset() {
 
         this.appearance = 0
-        this.verticalScroll = 0
+        this.verticalScroll = false
         this.fontSize = 100.0
         this.fontOverride = false
         this.fontFamily = 0
@@ -761,22 +786,13 @@ export class UserSettings implements UserSettings {
         this.settingsChangeCallback();
 
         setTimeout(async () => {
-            if (userSettings.verticalScroll != undefined) {
+            if (userSettings.verticalScroll !== undefined) {
                 const position = this.view.getCurrentPosition();
-                var v: string
-                if (userSettings.verticalScroll == 'scroll' || userSettings.verticalScroll == 'readium-scroll-on' || userSettings.verticalScroll == true) {
-                    v = UserSettings.scrollValues[0]
-                } else if (userSettings.verticalScroll == 'paginated' || userSettings.verticalScroll == 'readium-scroll-off' || userSettings.verticalScroll == false) {
-                    v = UserSettings.scrollValues[1]
-                } else {
-                    v = userSettings.verticalScroll
-                }
-    
-                this.verticalScroll = UserSettings.scrollValues.findIndex((el: any) => el === v);
+                this.verticalScroll = UserSettings.parseScrollSetting(userSettings.verticalScroll);
                 this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = this.verticalScroll;
                 this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF))
                 this.applyProperties()
-                this.view.setMode(this.verticalScroll === 0);
+                this.view.setMode(this.verticalScroll);
                 this.view.goToPosition(position)
                 this.viewChangeCallback();
             }
@@ -784,15 +800,25 @@ export class UserSettings implements UserSettings {
 
     }
 
+    /**
+     * Parses a scroll setting from a variety of inputs to a simple boolean
+     */
+    private static parseScrollSetting(inputSetting: InitialUserSettings["verticalScroll"]): boolean {
+        switch (inputSetting) {
+            case true:
+            case "scroll":
+            case "readium-scroll-on":
+                return true
+            case false:
+            case "paginated":
+            case "readium-scroll-off":
+                return false
+        }
+    }
+
     async scroll(scroll: boolean): Promise<void> {
         const position = this.view.getCurrentPosition();
-        var v: string
-        if (scroll) {
-            v = UserSettings.scrollValues[0]
-        } else {
-            v = UserSettings.scrollValues[1]
-        }
-        this.verticalScroll = UserSettings.scrollValues.findIndex((el: any) => el === v);
+        this.verticalScroll = scroll;
         this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = this.verticalScroll;
         this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF))
         this.applyProperties()

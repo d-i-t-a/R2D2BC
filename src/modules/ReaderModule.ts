@@ -17,6 +17,5 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-interface ReaderModule {
-}
+interface ReaderModule {}
 export default ReaderModule;

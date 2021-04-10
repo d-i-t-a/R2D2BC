@@ -18,7 +18,7 @@
  */
 
 export interface IDocInfo {
-    isFixedLayout: boolean;
-    isRightToLeft: boolean;
-    isVerticalWritingMode: boolean;
+  isFixedLayout: boolean;
+  isRightToLeft: boolean;
+  isVerticalWritingMode: boolean;
 }

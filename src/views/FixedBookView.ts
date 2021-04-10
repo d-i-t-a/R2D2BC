@@ -17,50 +17,46 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-
 import Store from "../store/Store";
-import IFrameNavigator, { IFrameAttributes } from "../navigator/IFrameNavigator";
+import IFrameNavigator, {
+  IFrameAttributes,
+} from "../navigator/IFrameNavigator";
 import BookView from "./BookView";
 
-
 export default class FixedBookView implements BookView {
+  layout = "fixed";
+  constructor(_store: Store) {}
 
-    layout = "fixed";
-    constructor(_store: Store) {}
+  delegate: IFrameNavigator;
+  name: string;
+  label: string;
+  iframe: HTMLIFrameElement;
+  iframe2: HTMLIFrameElement;
+  sideMargin: number = 20;
+  height: number = 0;
+  attributes: IFrameAttributes = { margin: 0 };
 
+  start(): void {}
 
-    delegate: IFrameNavigator;
-    name: string;
-    label: string;
-    iframe: HTMLIFrameElement;
-    iframe2: HTMLIFrameElement;
-    sideMargin: number = 20;
-    height: number = 0;
-    attributes: IFrameAttributes = {margin: 0}
+  stop(): void {}
 
-    start(): void {}
+  getCurrentPosition(): number {
+    return 0;
+  }
 
-    stop(): void {}
+  goToPosition(_position: number): void {}
 
-    getCurrentPosition(): number {
-        return 0;
-    }
+  goToCssSelector(_cssSelector: string, _relative?: boolean): void {}
 
-    goToPosition(_position: number): void {}
+  goToFragment(_fragment: string, _relative?: boolean): void {}
 
-    goToCssSelector(_cssSelector: string, _relative?: boolean): void {}
+  snap(_element: HTMLElement, _relative?: boolean): void {}
 
-    goToFragment(_fragment: string, _relative?: boolean): void {}
+  getCurrentPage(): number {
+    return 0;
+  }
 
-    snap(_element: HTMLElement, _relative?: boolean): void {}
-
-    getCurrentPage(): number {
-        return 0
-    }
-
-    getPageCount(): number {
-        return 1
-    }
-
-
+  getPageCount(): number {
+    return 1;
+  }
 }

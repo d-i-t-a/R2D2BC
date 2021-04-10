@@ -1,10 +1,9 @@
-name: CI
+name: Node CI
 on: [push]
 jobs:
   build:
     name: Build, lint, and test on Node ${{ matrix.node }}
 
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         node: ['10.x', '12.x', '14.x']

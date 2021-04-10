@@ -27,130 +27,144 @@ import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { oc } from "ts-optchain";
 
 export interface TimelineModuleConfig {
-    publication: Publication;
-    delegate: IFrameNavigator;
+  publication: Publication;
+  delegate: IFrameNavigator;
 }
 
 export default class TimelineModule implements ReaderModule {
+  private publication: Publication;
+  private delegate: IFrameNavigator;
+  private timelineContainer: HTMLDivElement;
+  private positionSlider: HTMLInputElement;
 
-    private publication: Publication;
-    private delegate: IFrameNavigator;
-    private timelineContainer: HTMLDivElement;
-    private positionSlider: HTMLInputElement;
+  public static async create(config: TimelineModuleConfig) {
+    const timeline = new this(config.delegate, config.publication);
 
-    public static async create(config: TimelineModuleConfig) {
-        const timeline = new this(
-            config.delegate,
-            config.publication
-        );
+    await timeline.start();
+    return timeline;
+  }
 
-        await timeline.start();
-        return timeline;
+  private constructor(delegate: IFrameNavigator, publication: Publication) {
+    this.delegate = delegate;
+    this.publication = publication;
+  }
+
+  async stop() {
+    if (IS_DEV) {
+      console.log("Timeline module stop");
     }
+  }
 
-    private constructor(delegate: IFrameNavigator, publication: Publication) {
-        this.delegate = delegate
-        this.publication = publication
+  protected async start(): Promise<void> {
+    this.delegate.timelineModule = this;
+
+    this.timelineContainer = HTMLUtilities.findElement(
+      document,
+      "#container-view-timeline"
+    ) as HTMLDivElement;
+    if (oc(this.delegate.rights).enableMaterial(false)) {
+      this.positionSlider = HTMLUtilities.findElement(
+        document,
+        "#positionSlider"
+      ) as HTMLInputElement;
     }
-
-    async stop() {
-        if (IS_DEV) { console.log("Timeline module stop") }
+    if (!oc(this.delegate.rights).autoGeneratePositions(true)) {
+      this.positionSlider.style.display = "none";
     }
+  }
 
-    protected async start(): Promise<void> {
+  async initialize() {
+    return new Promise<void>(async (resolve) => {
+      await (document as any).fonts.ready;
 
-        this.delegate.timelineModule = this
+      let locator = this.delegate.currentLocator();
+      if (
+        oc(this.delegate.rights).enableMaterial(false) &&
+        oc(this.delegate.rights).autoGeneratePositions(true) &&
+        this.publication.positions
+      ) {
+        this.positionSlider.value = locator.locations.position.toString();
+        this.positionSlider.max = (
+          locator.locations.totalRemainingPositions + locator.locations.position
+        ).toString();
+      }
 
-        this.timelineContainer = HTMLUtilities.findElement(document, "#container-view-timeline") as HTMLDivElement;
-        if (oc(this.delegate.rights).enableMaterial(false)) {
-            this.positionSlider = HTMLUtilities.findElement(document, "#positionSlider") as HTMLInputElement;
+      this.timelineContainer.innerHTML = "";
+      this.publication.readingOrder.forEach((link) => {
+        if (IS_DEV) console.log(link.contentWeight);
+        const linkHref = this.publication.getAbsoluteHref(link.href);
+        const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
+        const tocHref =
+          tocItemAbs.href.indexOf("#") !== -1
+            ? tocItemAbs.href.slice(0, tocItemAbs.href.indexOf("#"))
+            : tocItemAbs.href;
+        const tocHrefAbs = this.publication.getAbsoluteHref(tocHref);
+
+        var chapterHeight;
+        if (
+          this.publication.positions &&
+          this.delegate.view.layout != "fixed"
+        ) {
+          if (link.contentWeight) {
+            chapterHeight = link.contentWeight;
+          } else {
+            chapterHeight = 1;
+          }
+        } else {
+          chapterHeight = 100 / this.publication.readingOrder.length;
         }
-        if (!oc(this.delegate.rights).autoGeneratePositions(true)) {
-            this.positionSlider.style.display = "none";
+
+        var chapter = document.createElement("div");
+        chapter.style.height = chapterHeight + "%";
+        chapter.style.width = "100%";
+        chapter.className = "chapter";
+
+        if (tocItemAbs.title !== undefined) {
+          var tooltip = document.createElement("span");
+          tooltip.innerHTML = tocItemAbs.title;
+          tooltip.className = "chapter-tooltip";
+          chapter.appendChild(tooltip);
         }
-    }
 
-    async initialize() {
-        return new Promise<void>(async (resolve) => {
-            await (document as any).fonts.ready;
-
-            let locator = this.delegate.currentLocator()
-            if (oc(this.delegate.rights).enableMaterial(false) && oc(this.delegate.rights).autoGeneratePositions(true) && this.publication.positions) {
-                this.positionSlider.value = locator.locations.position.toString()
-                this.positionSlider.max = (locator.locations.totalRemainingPositions + locator.locations.position).toString()
-            }
-
-            this.timelineContainer.innerHTML = ""
-            this.publication.readingOrder.forEach(link => {
-
-                if (IS_DEV) console.log(link.contentWeight)
-                const linkHref = this.publication.getAbsoluteHref(link.href);
-                const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
-                const tocHref = (tocItemAbs.href.indexOf("#") !== -1) ? tocItemAbs.href.slice(0, tocItemAbs.href.indexOf("#")) : tocItemAbs.href
-                const tocHrefAbs = this.publication.getAbsoluteHref(tocHref);
-
-                var chapterHeight
-                if (this.publication.positions && this.delegate.view.layout != 'fixed') {
-                    if (link.contentWeight) {
-                        chapterHeight = link.contentWeight
-                    } else {
-                        chapterHeight = 1
-                    }
-                } else {
-                    chapterHeight = 100 / this.publication.readingOrder.length
-                }
-
-                var chapter = document.createElement("div")
-                chapter.style.height = chapterHeight + "%"
-                chapter.style.width = "100%"
-                chapter.className = "chapter";
-
-                if (tocItemAbs.title !== undefined) {
-                    var tooltip = document.createElement("span")
-                    tooltip.innerHTML = tocItemAbs.title;
-                    tooltip.className = "chapter-tooltip";
-                    chapter.appendChild(tooltip);
-                }
-
-                addEventListenerOptional(chapter, 'click', (event: MouseEvent) => {
-
-                    event.preventDefault();
-                    event.stopPropagation();
-                    var position
-                    if (oc(this.delegate.rights).autoGeneratePositions(true)) {
-                        position = { ...this.publication.positions.filter((el: Locator) => el.href === link.href)[0] } 
-                        position.href = this.publication.getAbsoluteHref(position.href)
-                    } else {
-                        position = {
-                            href: tocHrefAbs,
-                            locations: {
-                                progression: 0
-                            },
-                            type: link.type,
-                            title: link.title
-                        };
-                    }
-                    if (IS_DEV) console.log(position)
-                    this.delegate.navigate(position)
-
-                });
-
-                if (tocHrefAbs === this.delegate.currentChapterLink.href) {
-                    chapter.className += " active";
-                } else {
-                    chapter.className = chapter.className.replace(" active", "");
-                }
-
-                // append bookmarks indicator
-                // append notes indicator
-                // append highlights indicator
-
-                this.timelineContainer.appendChild(chapter)
-
-            });
-
-            resolve()
+        addEventListenerOptional(chapter, "click", (event: MouseEvent) => {
+          event.preventDefault();
+          event.stopPropagation();
+          var position;
+          if (oc(this.delegate.rights).autoGeneratePositions(true)) {
+            position = {
+              ...this.publication.positions.filter(
+                (el: Locator) => el.href === link.href
+              )[0],
+            };
+            position.href = this.publication.getAbsoluteHref(position.href);
+          } else {
+            position = {
+              href: tocHrefAbs,
+              locations: {
+                progression: 0,
+              },
+              type: link.type,
+              title: link.title,
+            };
+          }
+          if (IS_DEV) console.log(position);
+          this.delegate.navigate(position);
         });
-    }
 
+        if (tocHrefAbs === this.delegate.currentChapterLink.href) {
+          chapter.className += " active";
+        } else {
+          chapter.className = chapter.className.replace(" active", "");
+        }
+
+        // append bookmarks indicator
+        // append notes indicator
+        // append highlights indicator
+
+        this.timelineContainer.appendChild(chapter);
+      });
+
+      resolve();
+    });
+  }
 }

@@ -304,8 +304,8 @@ export default class SearchModule implements ReaderModule {
     var href = this.publication.getAbsoluteHref(tocItem.href);
     await fetch(href)
       .then((r) => r.text())
-      .then(async (data) => {
-        ({ data, tocItem });
+      .then(async (_data) => {
+        // ({ data, tocItem });
         // TODO: this seems to break with obfuscation
         // var parser = new DOMParser();
         // var doc = parser.parseFromString(data, "text/html");
@@ -677,7 +677,7 @@ export default class SearchModule implements ReaderModule {
       await fetch(href)
         .then((r) => r.text())
         .then(async (data) => {
-          ({ data, tocItem });
+          // ({ data, tocItem });
           var parser = new DOMParser();
           var doc = parser.parseFromString(data, "application/xhtml+xml");
           searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
@@ -708,7 +708,7 @@ export default class SearchModule implements ReaderModule {
     await fetch(href)
       .then((r) => r.text())
       .then(async (data) => {
-        ({ data, tocItem });
+        // ({ data, tocItem });
         var parser = new DOMParser();
         var doc = parser.parseFromString(data, "application/xhtml+xml");
         searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(

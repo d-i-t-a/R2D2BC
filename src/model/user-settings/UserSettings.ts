@@ -601,12 +601,7 @@ export class UserSettings implements UserSettings {
         ) as HTMLButtonElement;
       }
     } else {
-      HTMLUtilities.findElement(element, "#container-view-fontsize")
-        ? HTMLUtilities.findElement(
-            element,
-            "#container-view-fontsize"
-          ).remove()
-        : null;
+      HTMLUtilities.findElement(element, "#container-view-fontsize")?.remove();
     }
     if (oc(this.material).settings.fontFamily(false)) {
       this.fontButtons = {};
@@ -636,12 +631,10 @@ export class UserSettings implements UserSettings {
       }
       this.updateFontButtons();
     } else {
-      HTMLUtilities.findElement(element, "#container-view-fontfamily")
-        ? HTMLUtilities.findElement(
-            element,
-            "#container-view-fontfamily"
-          ).remove()
-        : null;
+      HTMLUtilities.findElement(
+        element,
+        "#container-view-fontfamily"
+      )?.remove();
     }
 
     if (oc(this.material).settings.appearance(false)) {
@@ -671,12 +664,10 @@ export class UserSettings implements UserSettings {
         }
       }
     } else {
-      HTMLUtilities.findElement(element, "#container-view-appearance")
-        ? HTMLUtilities.findElement(
-            element,
-            "#container-view-appearance"
-          ).remove()
-        : null;
+      HTMLUtilities.findElement(
+        element,
+        "#container-view-appearance"
+      )?.remove();
     }
 
     if (oc(this.material).settings.scroll(false)) {
@@ -691,9 +682,7 @@ export class UserSettings implements UserSettings {
       ) as HTMLButtonElement;
       this.updateViewButtons();
     } else {
-      HTMLUtilities.findElement(element, "#container-view-scroll")
-        ? HTMLUtilities.findElement(element, "#container-view-scroll").remove()
-        : null;
+      HTMLUtilities.findElement(element, "#container-view-scroll")?.remove();
     }
 
     this.setupEvents();
@@ -1065,7 +1054,7 @@ export class UserSettings implements UserSettings {
       }
       await this.store.set(this.USERSETTINGS, JSON.stringify(array));
     } else {
-      let array = new Array();
+      let array = [];
       array.push(property);
       await this.store.set(this.USERSETTINGS, JSON.stringify(array));
     }

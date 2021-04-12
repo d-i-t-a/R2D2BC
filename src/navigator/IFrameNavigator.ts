@@ -1219,7 +1219,7 @@ export default class IFrameNavigator implements Navigator {
             } else {
               // Set focus back to the contents toggle button so screen readers
               // don't get stuck on a hidden link.
-              menuControl ? menuControl.focus() : null;
+              menuControl?.focus();
 
               let locations: Locations = {
                 progression: 0,

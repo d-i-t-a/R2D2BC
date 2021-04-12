@@ -74,20 +74,20 @@
         [].slice.call(e[0].nodeName ? e : (parent || root).querySelectorAll(e));
   }
 
-  /**
-   * Creates and fills an array with the value provided
-   * @template {T}
-   * @param {number} len
-   * @param {() => T} valueProvider
-   * @return {T}
-   */
-  function Array2D(len) {
-    var a = [];
-    for (; len--; ) {
-      a[len] = [];
-    }
-    return a;
-  }
+  // /**
+  //  * Creates and fills an array with the value provided
+  //  * @template {T}
+  //  * @param {number} len
+  //  * @param {() => T} valueProvider
+  //  * @return {T}
+  //  */
+  // function Array2D(len) {
+  //   var a = [];
+  //   for (; len--; ) {
+  //     a[len] = [];
+  //   }
+  //   return a;
+  // }
 
   function each(items, fn) {
     items && items.some(fn);

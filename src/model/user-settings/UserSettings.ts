@@ -89,12 +89,7 @@ export interface InitialUserSettings {
   fontOverride: boolean;
   fontFamily: number;
   appearance: any;
-  verticalScroll?:
-    | boolean
-    | "readium-scroll-on"
-    | "readium-scroll-off"
-    | "scroll"
-    | "paginated";
+  verticalScroll: any;
 
   //Advanced settings
   publisherDefaults: boolean;
@@ -139,7 +134,7 @@ export class UserSettings implements IUserSettings {
   fontOverride = false;
   fontFamily = 0;
   appearance: any = 0;
-  verticalScroll = true;
+  verticalScroll: any = 0;
 
   //Advanced settings
   publisherDefaults = true;
@@ -1272,7 +1267,7 @@ export class UserSettings implements IUserSettings {
         ).value = this.verticalScroll;
         this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF));
         this.applyProperties();
-        this.view.setMode(this.verticalScroll);
+        this.view.setMode(this.verticalScroll === 0);
         this.view.goToPosition(position);
         this.viewChangeCallback();
       }
@@ -1284,22 +1279,30 @@ export class UserSettings implements IUserSettings {
    */
   private static parseScrollSetting(
     inputSetting: InitialUserSettings["verticalScroll"]
-  ): boolean {
+  ): any {
     switch (inputSetting) {
       case true:
       case "scroll":
       case "readium-scroll-on":
-        return true;
+        return 1;
       case false:
       case "paginated":
       case "readium-scroll-off":
-        return false;
+        return 0;
     }
   }
 
   async scroll(scroll: boolean): Promise<void> {
     const position = this.view.getCurrentPosition();
-    this.verticalScroll = scroll;
+    let v: string;
+    if (scroll) {
+      v = UserSettings.scrollValues[0];
+    } else {
+      v = UserSettings.scrollValues[1];
+    }
+    this.verticalScroll = UserSettings.scrollValues.findIndex(
+      (el: any) => el === v
+    );
     this.userProperties.getByRef(
       ReadiumCSS.SCROLL_REF
     ).value = this.verticalScroll;

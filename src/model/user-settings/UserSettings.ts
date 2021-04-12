@@ -111,14 +111,14 @@ export class UserSettings implements IUserSettings {
     let scroll =
       (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
         ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
-        : UserSettings.parseScrollSetting(this.verticalScroll);
+        : this.verticalScroll;
     return scroll === false;
   }
   async isScrollMode() {
     let scroll =
       (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
         ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
-        : UserSettings.parseScrollSetting(this.verticalScroll);
+        : this.verticalScroll;
     return scroll === true;
   }
 

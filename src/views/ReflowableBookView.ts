@@ -22,7 +22,6 @@ import * as HTMLUtilities from "../utils/HTMLUtilities";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import Store from "../store/Store";
 import BookView from "./BookView";
-import { UserSettings } from "../model/user-settings/UserSettings";
 import IFrameNavigator, {
   IFrameAttributes,
 } from "../navigator/IFrameNavigator";
@@ -407,10 +406,9 @@ export default class ReflowableBookView implements BookView {
         this.iframe.contentDocument,
         "html"
       ) as any;
-      const scroll = UserSettings.scrollValues.findIndex(
-        (el: any) => el === html.style.getPropertyValue("--USER__scroll")
-      );
-      return scroll === 1;
+      const scroll =
+        "readium-scroll-on" === html.style.getPropertyValue("--USER__scroll");
+      return scroll;
     }
     return this.scrollMode === false;
   }
@@ -421,10 +419,9 @@ export default class ReflowableBookView implements BookView {
         this.iframe.contentDocument,
         "html"
       ) as any;
-      const scroll = UserSettings.scrollValues.findIndex(
-        (el: any) => el === html.style.getPropertyValue("--USER__scroll")
-      );
-      return scroll === 0;
+      const paginated =
+        "readium-scroll-off" === html.style.getPropertyValue("--USER__scroll");
+      return paginated;
     }
     return this.scrollMode === true;
   }

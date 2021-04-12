@@ -1126,7 +1126,7 @@ export class UserSettings implements IUserSettings {
         UserSettings.columnCountValues[
           this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value
         ], // "auto", "1", "2"
-      verticalScroll: this.verticalScroll, //readium-scroll-on, readium-scroll-off,
+      verticalScroll: this.verticalScroll,
       fontSize: this.fontSize,
       wordSpacing: this.wordSpacing,
       letterSpacing: this.letterSpacing,

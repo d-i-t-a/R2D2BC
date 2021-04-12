@@ -138,7 +138,7 @@ export class UserSettings implements IUserSettings {
   fontOverride = false;
   fontFamily = 0;
   appearance: any = 0;
-  verticalScroll: any = 0;
+  verticalScroll = false;
 
   //Advanced settings
   publisherDefaults = true;
@@ -1265,7 +1265,7 @@ export class UserSettings implements IUserSettings {
         ).value = this.verticalScroll;
         this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF));
         this.applyProperties();
-        this.view.setMode(this.verticalScroll === 0);
+        this.view.setMode(this.verticalScroll);
         this.view.goToPosition(position);
         this.viewChangeCallback();
       }

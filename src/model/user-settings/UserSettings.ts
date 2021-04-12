@@ -111,14 +111,14 @@ export class UserSettings implements IUserSettings {
     let scroll =
       (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
         ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
-        : this.verticalScroll;
+        : UserSettings.parseScrollSetting(this.verticalScroll);
     return scroll;
   }
   async isScrollmode() {
     let scroll =
       (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
         ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
-        : this.verticalScroll;
+        : UserSettings.parseScrollSetting(this.verticalScroll);
     return scroll;
   }
 
@@ -821,13 +821,14 @@ export class UserSettings implements IUserSettings {
         if (button) {
           addEventListenerOptional(button, "click", (event: MouseEvent) => {
             const position = this.view.getCurrentPosition();
-            this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = index;
+            this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
+              index == 0 ? true : false;
             this.storeProperty(
               this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
             );
             this.applyProperties();
             this.updateViewButtons();
-            this.view.setMode(index === 0);
+            this.view.setMode(index == 0 ? true : false);
             this.view.goToPosition(position);
             event.preventDefault();
             this.viewChangeCallback();
@@ -868,15 +869,16 @@ export class UserSettings implements IUserSettings {
           index
         ].className.replace(" active", "");
       }
+
+      const index =
+        (await this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value) ==
+        true
+          ? 0
+          : 1;
+
       if (this.userProperties) {
-        if (
-          this.viewButtons[
-            await this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value
-          ]
-        )
-          this.viewButtons[
-            await this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value
-          ].className += " active";
+        if (this.viewButtons[index])
+          this.viewButtons[index].className += " active";
       }
     }
   }

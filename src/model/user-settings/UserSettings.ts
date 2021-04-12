@@ -111,15 +111,15 @@ export class UserSettings implements IUserSettings {
     let scroll =
       (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
         ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
-        : 0;
-    return scroll === 1;
+        : this.verticalScroll;
+    return scroll;
   }
   async isScrollmode() {
     let scroll =
       (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
         ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
-        : 0;
-    return scroll === 0;
+        : this.verticalScroll;
+    return scroll;
   }
 
   private readonly store: Store;
@@ -600,7 +600,7 @@ export class UserSettings implements IUserSettings {
       }
 
       if (await this.getProperty(ReadiumCSS.SCROLL_KEY)) {
-        if (this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value == 0) {
+        if (this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value == true) {
           html.style.setProperty("--USER__scroll", "readium-scroll-on");
         } else {
           html.style.setProperty("--USER__scroll", "readium-scroll-off");

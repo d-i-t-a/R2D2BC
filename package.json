@@ -64,6 +64,7 @@
     "@types/uuid": "^8.3.0",
     "@typescript-eslint/eslint-plugin": "^4.21.0",
     "@typescript-eslint/parser": "^4.21.0",
+    "babel-eslint": "^10.1.0",
     "braces": ">=3.0.2",
     "browserslist-useragent-regexp": "^3.0.0",
     "chai": "^4.3.4",

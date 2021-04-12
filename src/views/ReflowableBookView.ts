@@ -407,7 +407,7 @@ export default class ReflowableBookView implements BookView {
         "html"
       ) as any;
       const scroll =
-        "readium-scroll-off" === html.style.getPropertyValue("--USER__scroll");
+        "readium-scroll-on" === html.style.getPropertyValue("--USER__scroll");
       return scroll === false;
     }
     return this.scrollMode === false;

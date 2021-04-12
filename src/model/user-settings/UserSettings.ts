@@ -138,7 +138,7 @@ export class UserSettings implements IUserSettings {
   fontOverride = false;
   fontFamily = 0;
   appearance: any = 0;
-  verticalScroll = false;
+  verticalScroll = true;
 
   //Advanced settings
   publisherDefaults = true;
@@ -335,7 +335,7 @@ export class UserSettings implements IUserSettings {
 
   private async reset() {
     this.appearance = 0;
-    this.verticalScroll = false;
+    this.verticalScroll = true;
     this.fontSize = 100.0;
     this.fontOverride = false;
     this.fontFamily = 0;

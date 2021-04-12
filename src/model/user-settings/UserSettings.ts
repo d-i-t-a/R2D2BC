@@ -112,14 +112,14 @@ export class UserSettings implements IUserSettings {
       (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
         ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
         : UserSettings.parseScrollSetting(this.verticalScroll);
-    return scroll == false;
+    return scroll === false;
   }
-  async isScrollmode() {
+  async isScrollMode() {
     let scroll =
       (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
         ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
         : UserSettings.parseScrollSetting(this.verticalScroll);
-    return scroll == true;
+    return scroll === true;
   }
 
   private readonly store: Store;
@@ -608,7 +608,7 @@ export class UserSettings implements IUserSettings {
       } else {
         html.style.setProperty("--USER__scroll", "readium-scroll-on");
       }
-      this.isScrollmode().then((scroll) => {
+      this.isScrollMode().then((scroll) => {
         this.view.setMode(scroll);
       });
     }
@@ -822,13 +822,13 @@ export class UserSettings implements IUserSettings {
           addEventListenerOptional(button, "click", (event: MouseEvent) => {
             const position = this.view.getCurrentPosition();
             this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
-              index == 0 ? true : false;
+              index === 0 ? true : false;
             this.storeProperty(
               this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
             );
             this.applyProperties();
             this.updateViewButtons();
-            this.view.setMode(index == 0 ? true : false);
+            this.view.setMode(index === 0 ? true : false);
             this.view.goToPosition(position);
             event.preventDefault();
             this.viewChangeCallback();
@@ -871,7 +871,7 @@ export class UserSettings implements IUserSettings {
       }
 
       const index =
-        (await this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value) ==
+        (await this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value) ===
         true
           ? 0
           : 1;

@@ -83,7 +83,7 @@ export class TTSSettings implements TTSSpeechConfig {
   private settingsChangeCallback: (key?: string) => void = () => {};
 
   private settingsView: HTMLDivElement;
-  private headerMenu: HTMLElement;
+  private readonly headerMenu: HTMLElement;
   private speechRate: HTMLInputElement;
   private speechPitch: HTMLInputElement;
   private speechVolume: HTMLInputElement;

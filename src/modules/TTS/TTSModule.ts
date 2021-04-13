@@ -55,11 +55,11 @@ export default class TTSModule implements ReaderModule {
   private voices: SpeechSynthesisVoice[] = [];
   private clean: any;
   private rights: ReaderRights;
-  private highlighter: TextHighlighter;
+  private readonly highlighter: TextHighlighter;
   private delegate: IFrameNavigator;
   private body: any;
   private hasEventListener: boolean = false;
-  private headerMenu: HTMLElement;
+  private readonly headerMenu: HTMLElement;
 
   initialize(body: any) {
     if (this.highlighter !== undefined) {
@@ -236,7 +236,7 @@ export default class TTSModule implements ReaderModule {
     }
     if (IS_DEV) console.log("initialVoiceHasHyphen", initialVoiceHasHyphen);
     if (IS_DEV) console.log("voices", this.voices);
-    var initialVoice = undefined;
+    var initialVoice;
     if (initialVoiceHasHyphen === true) {
       initialVoice =
         this.tts.voice && this.tts.voice.lang && this.tts.voice.name
@@ -277,7 +277,7 @@ export default class TTSModule implements ReaderModule {
       self.delegate.publication.metadata.language[0].indexOf("-") !== -1;
     if (IS_DEV)
       console.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
-    var publicationVoice = undefined;
+    var publicationVoice;
     if (publicationVoiceHasHyphen === true) {
       publicationVoice =
         this.tts.voice && this.tts.voice.usePublication
@@ -312,7 +312,7 @@ export default class TTSModule implements ReaderModule {
 
     var defaultVoiceHasHyphen = navigator.language.indexOf("-") !== -1;
     if (IS_DEV) console.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen);
-    var defaultVoice = undefined;
+    var defaultVoice;
     if (defaultVoiceHasHyphen === true) {
       defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
         var lang = voice.lang.replace("_", "-");

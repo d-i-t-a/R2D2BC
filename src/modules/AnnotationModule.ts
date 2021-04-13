@@ -26,10 +26,10 @@ import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { IHighlight } from "./highlight/common/highlight";
 import {
-  Bookmark,
-  Locator,
   Annotation,
   AnnotationMarker,
+  Bookmark,
+  Locator,
 } from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
@@ -57,16 +57,16 @@ export interface AnnotationModuleConfig {
 }
 
 export default class AnnotationModule implements ReaderModule {
-  private api: AnnotationModuleAPI;
-  private annotator: Annotator | null;
+  private readonly api: AnnotationModuleAPI;
+  private readonly annotator: Annotator | null;
   private rights: ReaderRights;
   private publication: Publication;
   private highlightsView: HTMLDivElement;
-  private headerMenu: HTMLElement;
-  private highlighter: TextHighlighter;
-  private initialAnnotations: any;
+  private readonly headerMenu: HTMLElement;
+  private readonly highlighter: TextHighlighter;
+  private readonly initialAnnotations: any;
   private delegate: IFrameNavigator;
-  private config: { initialAnnotationColor: string };
+  private readonly config: { initialAnnotationColor: string };
 
   public static async create(config: AnnotationModuleConfig) {
     const annotations = new this(
@@ -519,7 +519,9 @@ export default class AnnotationModule implements ReaderModule {
 
                 let timestamp: HTMLSpanElement = document.createElement("span");
                 timestamp.className = "timestamp";
-                timestamp.innerHTML = self.readableTimestamp(locator.created);
+                timestamp.innerHTML = AnnotationModule.readableTimestamp(
+                  locator.created
+                );
                 bookmarkLink.appendChild(timestamp);
 
                 addEventListenerOptional(
@@ -586,8 +588,7 @@ export default class AnnotationModule implements ReaderModule {
     locator: Bookmark
   ): void {
     if (locator) {
-      const linkHref = this.publication.getAbsoluteHref(locator.href);
-      locator.href = linkHref;
+      locator.href = this.publication.getAbsoluteHref(locator.href);
       this.delegate.stopReadAloud();
       this.delegate.navigate(locator);
     } else {
@@ -616,7 +617,7 @@ export default class AnnotationModule implements ReaderModule {
     }
   }
 
-  private readableTimestamp(timestamp: string) {
+  private static readableTimestamp(timestamp: string) {
     const date = new Date(timestamp);
     return date.toDateString() + " " + date.toLocaleTimeString();
   }

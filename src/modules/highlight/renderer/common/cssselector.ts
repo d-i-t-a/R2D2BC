@@ -27,11 +27,11 @@ export const fullQualifiedSelector = (
   justSelector: boolean
 ): string => {
   if (node.nodeType !== Node.ELEMENT_NODE) {
-    const lowerCaseName =
+    return (
       ((node as Element).localName &&
         (node as Element).localName.toLowerCase()) ||
-      node.nodeName.toLowerCase();
-    return lowerCaseName;
+      node.nodeName.toLowerCase()
+    );
   }
   return cssPath(node, justSelector);
 };

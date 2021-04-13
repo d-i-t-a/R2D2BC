@@ -157,12 +157,10 @@ export default class Publication {
   }
 
   public getSpineIndex(href: string): number | null {
-    const index = this.readingOrder.findIndex(
+    return this.readingOrder.findIndex(
       (item) =>
         item.href && new URL(item.href, this.manifestUrl.href).href === href
     );
-
-    return index;
   }
 
   public getAbsoluteHref(href: string): string | null {

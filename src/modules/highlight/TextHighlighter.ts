@@ -34,7 +34,7 @@ import {
 import { IEventPayload_R2_EVENT_HIGHLIGHT_CLICK } from "./common/events";
 import { IColor, IHighlight } from "./common/highlight";
 import { ISelectionInfo } from "./common/selection";
-import { IRectSimple, getClientRectsNoOverlap } from "./common/rect-utils";
+import { getClientRectsNoOverlap, IRectSimple } from "./common/rect-utils";
 import {
   convertRangeInfo,
   getCurrentSelectionInfo,
@@ -817,7 +817,7 @@ export default class TextHighlighter {
           endOffset = selection.focusOffset;
         selection.collapse(selection.anchorNode, selection.anchorOffset);
 
-        var direction = [];
+        var direction: any[];
         if (backwards) {
           direction = ["backward", "forward"];
         } else {
@@ -856,7 +856,6 @@ export default class TextHighlighter {
         "selectionchange",
         this.toolboxPlacement.bind(this)
       );
-      var self = this;
       setTimeout(function () {
         var selection = self
           .dom(self.delegate.iframe.contentDocument.body)
@@ -1035,6 +1034,7 @@ export default class TextHighlighter {
   /**
    * Highlights current range.
    * @param {boolean} keepRange - Don't remove range after highlighting. Default: false.
+   * @param marker
    * @memberof TextHighlighter
    */
   doHighlight(keepRange?: boolean, marker?: AnnotationMarker) {
@@ -1529,7 +1529,6 @@ export default class TextHighlighter {
    * Creates wrapper for highlights.
    * TextHighlighter instance calls this method each time it needs to create highlights and pass options retrieved
    * in constructor.
-   * @param {object} options - the same object as in TextHighlighter constructor.
    * @returns {HTMLElement}
    * @memberof TextHighlighter
    * @static
@@ -1618,7 +1617,6 @@ export default class TextHighlighter {
         return h.id === id;
       });
       if (highlight) {
-        const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
         if (highlight.marker === AnnotationMarker.Underline) {
           // Highlight color as string check
           if (typeof highlight.color === "object") {
@@ -1644,7 +1642,7 @@ export default class TextHighlighter {
           if (typeof highlight.color === "object") {
             highlightArea.style.setProperty(
               "background-color",
-              `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
+              `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY})`,
               "important"
             );
           } else {
@@ -1661,7 +1659,6 @@ export default class TextHighlighter {
     highlight: IHighlight
   ) {
     for (const highlightArea of highlightAreas) {
-      const opacity = ALT_BACKGROUND_COLOR_OPACITY;
       if (highlight.marker === AnnotationMarker.Underline) {
         // Highlight color as string check
         if (typeof highlight.color === "object") {
@@ -1687,7 +1684,7 @@ export default class TextHighlighter {
         if (typeof highlight.color === "object") {
           highlightArea.style.setProperty(
             "background-color",
-            `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
+            `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${ALT_BACKGROUND_COLOR_OPACITY})`,
             "important"
           );
         } else {
@@ -1713,12 +1710,11 @@ export default class TextHighlighter {
       highlights.forEach((highlight) => {
         if (id === highlight.id) {
           if (highlight) {
-            const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
             // Highlight color as string check
             if (typeof highlight.color === "object") {
               highlightArea.style.setProperty(
                 "background-color",
-                `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
+                `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY})`,
                 "important"
               );
             } else {
@@ -1729,12 +1725,11 @@ export default class TextHighlighter {
       });
       if (id === highlight.id) {
         if (highlight) {
-          const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
           // Highlight color as string check
           if (typeof highlight.color === "object") {
             highlightArea.style.setProperty(
               "background-color",
-              `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
+              `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY})`,
               "important"
             );
           } else {
@@ -2075,12 +2070,11 @@ export default class TextHighlighter {
         this.delegate.iframe.contentWindow as any,
         highlight
       );
-      var position = parseInt(
+      highlight.position = parseInt(
         ((highlightDom.hasChildNodes
           ? highlightDom.childNodes[0]
           : highlightDom) as HTMLDivElement).style.top.replace("px", "")
       );
-      highlight.position = position;
       return highlight;
     } catch (e) {
       throw "Can't create highlight: " + e;
@@ -2114,12 +2108,11 @@ export default class TextHighlighter {
       _highlights.push(highlight);
 
       let highlightDom = this.createHighlightDom(win, highlight);
-      var position = parseInt(
+      highlight.position = parseInt(
         ((highlightDom.hasChildNodes
           ? highlightDom.childNodes[0]
           : highlightDom) as HTMLDivElement).style.top.replace("px", "")
       );
-      highlight.position = position;
 
       return highlight;
     } catch (e) {
@@ -2168,7 +2161,7 @@ export default class TextHighlighter {
     const xOffset = paginated ? -scrollElement.scrollLeft : bodyRect.left;
     const yOffset = paginated ? -scrollElement.scrollTop : bodyRect.top;
 
-    const scale = 1 / 1;
+    const scale = 1;
 
     const drawUnderline = false;
     const drawStrikeThrough = false;

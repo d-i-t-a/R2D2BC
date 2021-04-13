@@ -78,11 +78,7 @@ export function sameRanges(r1: IRangeInfo, r2: IRangeInfo): boolean {
   if (r1.endContainerChildTextNodeIndex !== r2.endContainerChildTextNodeIndex) {
     return false;
   }
-  if (r1.endOffset !== r2.endOffset) {
-    return false;
-  }
-
-  return true;
+  return r1.endOffset === r2.endOffset;
 }
 
 export interface ISelectionInfo {

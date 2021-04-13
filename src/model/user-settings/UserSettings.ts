@@ -19,11 +19,11 @@
 
 import Store from "../../store/Store";
 import {
-  UserProperty,
-  UserProperties,
   Enumerable,
-  Switchable,
   Incremental,
+  Switchable,
+  UserProperties,
+  UserProperty,
 } from "./UserProperties";
 import { ReadiumCSS } from "./ReadiumCSS";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
@@ -162,7 +162,7 @@ export class UserSettings implements IUserSettings {
   private viewChangeCallback: () => void = () => {};
 
   private settingsView: HTMLDivElement;
-  private headerMenu: HTMLElement;
+  private readonly headerMenu: HTMLElement;
   private material: ReaderUI | null = null;
   api: any;
 
@@ -825,13 +825,13 @@ export class UserSettings implements IUserSettings {
           addEventListenerOptional(button, "click", (event: MouseEvent) => {
             const position = this.view.getCurrentPosition();
             this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
-              index === 0 ? true : false;
+              index === 0;
             this.storeProperty(
               this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
             );
             this.applyProperties();
             this.updateViewButtons();
-            this.view.setMode(index === 0 ? true : false);
+            this.view.setMode(index === 0);
             this.view.goToPosition(position);
             event.preventDefault();
             this.viewChangeCallback();
@@ -1112,7 +1112,7 @@ export class UserSettings implements IUserSettings {
   }
 
   async currentSettings() {
-    var userSettings = {
+    return {
       appearance:
         UserSettings.appearanceValues[
           this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value
@@ -1136,7 +1136,6 @@ export class UserSettings implements IUserSettings {
       pageMargins: this.pageMargins,
       lineHeight: this.lineHeight,
     };
-    return userSettings;
   }
 
   async applyUserSettings(userSettings: UserSettings): Promise<void> {

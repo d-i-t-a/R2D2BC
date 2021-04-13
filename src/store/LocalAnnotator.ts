@@ -19,7 +19,7 @@
 import { SHA256 } from "jscrypto/es6/SHA256";
 import Annotator, { AnnotationType } from "./Annotator";
 import Store from "./Store";
-import { ReadingPosition, Bookmark, Annotation } from "../model/Locator";
+import { Annotation, Bookmark, ReadingPosition } from "../model/Locator";
 import { IReadiumIFrameWindow } from "../modules/highlight/renderer/iframe/state";
 import { IHighlight } from "../modules/highlight/common/highlight";
 import TextHighlighter from "../modules/highlight/TextHighlighter";
@@ -185,8 +185,7 @@ export default class LocalAnnotator implements Annotator {
     annotations.forEach((rangeRepresentation) => {
       const uniqueStr = `${rangeRepresentation.highlight.selectionInfo.rangeInfo.startContainerElementCssSelector}${rangeRepresentation.highlight.selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${rangeRepresentation.highlight.selectionInfo.rangeInfo.startOffset}${rangeRepresentation.highlight.selectionInfo.rangeInfo.endContainerElementCssSelector}${rangeRepresentation.highlight.selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${rangeRepresentation.highlight.selectionInfo.rangeInfo.endOffset}`;
       const sha256Hex = SHA256.hash(uniqueStr);
-      const id = "R2_HIGHLIGHT_" + sha256Hex;
-      rangeRepresentation.highlight.id = id;
+      rangeRepresentation.highlight.id = "R2_HIGHLIGHT_" + sha256Hex;
 
       // Highlight color as string passthrough
       var rangeColor: any;
@@ -198,11 +197,10 @@ export default class LocalAnnotator implements Annotator {
       rangeRepresentation.highlight.color = rangeColor;
       rangeRepresentation.highlight.pointerInteraction = true;
 
-      const cleanText = rangeRepresentation.highlight.selectionInfo.rawText
+      rangeRepresentation.highlight.selectionInfo.cleanText = rangeRepresentation.highlight.selectionInfo.rawText
         .trim()
         .replace(/\n/g, " ")
         .replace(/\s\s+/g, " ");
-      rangeRepresentation.highlight.selectionInfo.cleanText = cleanText;
 
       annotationsToStore.push(rangeRepresentation);
     });

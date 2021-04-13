@@ -47,7 +47,7 @@ export interface SearchModuleConfig {
 export default class SearchModule implements ReaderModule {
   private config: SearchConfig;
   private publication: Publication;
-  private headerMenu: HTMLElement;
+  private readonly headerMenu: HTMLElement;
   private delegate: IFrameNavigator;
   private searchInput: HTMLInputElement;
   private searchGo: HTMLElement;

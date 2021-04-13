@@ -17,6 +17,7 @@
    * @param el{HTMLElement}
    * @param varName {string}
    * @param value {string|number}
+   * @param key
    */
   function setProperty(el, varName, value, key) {
     if (key !== undefined) {
@@ -197,7 +198,8 @@
    * @param el {Node} Element to split
    * @param key {string}
    * @param splitOn {string}
-   * @param includeSpace {boolean}
+   * @param includePrevious
+   * @param preserveWhitespace
    * @returns {HTMLElement[]}
    */
   function splitText(el, key, splitOn, includePrevious, preserveWhitespace) {

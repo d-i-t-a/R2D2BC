@@ -31,9 +31,9 @@ export interface LocalStorageStoreConfig {
 /** Class that stores key/value pairs in localStorage if possible
     but falls back to an in-memory store. */
 export default class LocalStorageStore implements Store {
-  private fallbackStore: MemoryStore | null;
-  private prefix: string;
-  private useLocalStorage: boolean;
+  private readonly fallbackStore: MemoryStore | null;
+  private readonly prefix: string;
+  private readonly useLocalStorage: boolean;
 
   public constructor(config: LocalStorageStoreConfig) {
     this.prefix = config.prefix;

@@ -431,7 +431,7 @@ export default class ReflowableBookView implements BookView {
     if (array) {
       let properties = JSON.parse(array) as Array<UserProperty>;
       properties = properties.filter((el: UserProperty) => el.name === name);
-      if (properties.length == 0) {
+      if (properties.length === 0) {
         return null;
       }
       return properties[0];

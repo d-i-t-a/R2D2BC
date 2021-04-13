@@ -103,7 +103,7 @@ export default class LocalAnnotator implements Annotator {
         JSON.stringify(savedBookmarksObj)
       );
     } else {
-      let bookmarksAry = new Array();
+      let bookmarksAry = [];
       bookmarksAry.push(bookmark);
       await this.store.set(
         LocalAnnotator.BOOKMARKS,
@@ -181,7 +181,7 @@ export default class LocalAnnotator implements Annotator {
       annotations = list;
     }
 
-    let annotationsToStore: Array<any> = new Array();
+    let annotationsToStore: Array<any> = [];
     annotations.forEach((rangeRepresentation) => {
       const uniqueStr = `${rangeRepresentation.highlight.selectionInfo.rangeInfo.startContainerElementCssSelector}${rangeRepresentation.highlight.selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${rangeRepresentation.highlight.selectionInfo.rangeInfo.startOffset}${rangeRepresentation.highlight.selectionInfo.rangeInfo.endContainerElementCssSelector}${rangeRepresentation.highlight.selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${rangeRepresentation.highlight.selectionInfo.rangeInfo.endOffset}`;
       const sha256Hex = SHA256.hash(uniqueStr);
@@ -224,7 +224,7 @@ export default class LocalAnnotator implements Annotator {
         JSON.stringify(annotations)
       );
     } else {
-      let annotations = new Array();
+      let annotations = [];
       annotations.push(annotation);
       await this.store.set(
         LocalAnnotator.ANNOTATIONS,
@@ -252,7 +252,7 @@ export default class LocalAnnotator implements Annotator {
     if (savedAnnotations) {
       let annotations = JSON.parse(savedAnnotations) as Array<any>;
       annotations = annotations.filter(
-        (el: Annotation) => el.highlight.id != annotation.highlight.id
+        (el: Annotation) => el.highlight.id !== annotation.highlight.id
       );
       await this.store.set(
         LocalAnnotator.ANNOTATIONS,
@@ -282,7 +282,7 @@ export default class LocalAnnotator implements Annotator {
     const savedAnnotations = await this.store.get(LocalAnnotator.ANNOTATIONS);
     if (savedAnnotations) {
       const annotations = JSON.parse(savedAnnotations);
-      const filtered = annotations.filter((el: Annotation) => el.id == id);
+      const filtered = annotations.filter((el: Annotation) => el.id === id);
       if (filtered.length > 0) {
         let foundElement = iframeWin.document.getElementById(
           `${filtered[0].highlight.id}`
@@ -305,7 +305,7 @@ export default class LocalAnnotator implements Annotator {
     if (savedAnnotations) {
       const annotations = JSON.parse(savedAnnotations);
       const filtered = annotations.filter(
-        (el: Annotation) => el.highlight.id == highlight.id
+        (el: Annotation) => el.highlight.id === highlight.id
       );
       if (filtered.length > 0) {
         return new Promise((resolve) => resolve(filtered[0]));

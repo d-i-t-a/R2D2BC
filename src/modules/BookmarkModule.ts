@@ -329,7 +329,7 @@ export default class BookmarkModule implements ReaderModule {
                 );
                 bookmarkLink.setAttribute("href", locator.href);
 
-                if (type == AnnotationType.Bookmark) {
+                if (type === AnnotationType.Bookmark) {
                   bookmarkLink.className = "bookmark-link";
 
                   let title: HTMLSpanElement = document.createElement("span");
@@ -431,7 +431,7 @@ export default class BookmarkModule implements ReaderModule {
       console.log("bookmark data locator: ", locator);
     }
     if (locator) {
-      if (type == AnnotationType.Bookmark) {
+      if (type === AnnotationType.Bookmark) {
         this.deleteBookmark(locator);
       }
     } else {

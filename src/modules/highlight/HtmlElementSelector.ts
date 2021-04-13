@@ -63,7 +63,7 @@ export const generateSelector = (
       currentNode = (currentNode.parentNode ||
         currentNode.parentElement) as HTMLElement;
 
-      if (currentNode == (relativeTo.parentNode || relativeTo.parentElement)) {
+      if (currentNode === (relativeTo.parentNode || relativeTo.parentElement)) {
         break;
       }
     }

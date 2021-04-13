@@ -429,7 +429,7 @@ export class TTSSettings implements TTSSpeechConfig {
       array.push(property);
       await this.store.set(this.TTSSETTINGS, JSON.stringify(array));
     } else {
-      let array = new Array();
+      let array = [];
       array.push(property);
       await this.store.set(this.TTSSETTINGS, JSON.stringify(array));
     }
@@ -441,7 +441,7 @@ export class TTSSettings implements TTSSpeechConfig {
     if (array) {
       let properties = JSON.parse(array) as Array<UserProperty>;
       properties = properties.filter((el: UserProperty) => el.name === name);
-      if (properties.length == 0) {
+      if (properties.length === 0) {
         return null;
       }
       return properties[0];
@@ -484,7 +484,7 @@ export class TTSSettings implements TTSSpeechConfig {
       await this.saveProperty(this.userProperties.getByRef(TTSREFS.COLOR_REF));
       this.settingsChangeCallback();
     }
-    if (ttsSettings.autoScroll != undefined) {
+    if (ttsSettings.autoScroll !== undefined) {
       if (IS_DEV) console.log("autoScroll " + this.autoScroll);
       this.autoScroll = ttsSettings.autoScroll;
       this.userProperties.getByRef(
@@ -511,20 +511,20 @@ export class TTSSettings implements TTSSpeechConfig {
         : undefined;
     var lang =
       value.indexOf(":") !== -1 ? value.slice(value.indexOf(":") + 1) : value;
-    if (name != undefined && lang != undefined) {
+    if (name !== undefined && lang !== undefined) {
       this.ttsSet("voice", { usePublication: true, name: name, lang: lang });
-    } else if (lang != undefined && name == undefined) {
+    } else if (lang !== undefined && name === undefined) {
       this.ttsSet("voice", { usePublication: true, lang: lang });
     }
   }
 
   async ttsSet(key: any, value: any) {
-    if (key == TTSREFS.COLOR_REF) {
+    if (key === TTSREFS.COLOR_REF) {
       this.color = value;
       this.userProperties.getByRef(TTSREFS.COLOR_REF).value = this.color;
       await this.saveProperty(this.userProperties.getByRef(TTSREFS.COLOR_REF));
       this.settingsChangeCallback();
-    } else if (key == TTSREFS.AUTO_SCROLL_REF) {
+    } else if (key === TTSREFS.AUTO_SCROLL_REF) {
       this.autoScroll = value;
       this.userProperties.getByRef(
         TTSREFS.AUTO_SCROLL_REF
@@ -533,7 +533,7 @@ export class TTSSettings implements TTSSpeechConfig {
         this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF)
       );
       this.settingsChangeCallback();
-    } else if (key == TTSREFS.VOICE_REF) {
+    } else if (key === TTSREFS.VOICE_REF) {
       this.voice = value;
       this.userProperties.getByRef(TTSREFS.VOICE_REF).value = this.voice;
       await this.saveProperty(this.userProperties.getByRef(TTSREFS.VOICE_REF));
@@ -542,19 +542,19 @@ export class TTSSettings implements TTSSpeechConfig {
   }
 
   async increase(incremental: string): Promise<void> {
-    if (incremental == "rate") {
+    if (incremental === "rate") {
       (this.userProperties.getByRef(
         TTSREFS.RATE_REF
       ) as Incremental).increment();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
       this.settingsChangeCallback();
-    } else if (incremental == "pitch") {
+    } else if (incremental === "pitch") {
       (this.userProperties.getByRef(
         TTSREFS.PITCH_REF
       ) as Incremental).increment();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
       this.settingsChangeCallback();
-    } else if (incremental == "volume") {
+    } else if (incremental === "volume") {
       (this.userProperties.getByRef(
         TTSREFS.VOLUME_REF
       ) as Incremental).increment();
@@ -564,19 +564,19 @@ export class TTSSettings implements TTSSpeechConfig {
   }
 
   async decrease(incremental: string): Promise<void> {
-    if (incremental == "rate") {
+    if (incremental === "rate") {
       (this.userProperties.getByRef(
         TTSREFS.RATE_REF
       ) as Incremental).decrement();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
       this.settingsChangeCallback();
-    } else if (incremental == "pitch") {
+    } else if (incremental === "pitch") {
       (this.userProperties.getByRef(
         TTSREFS.PITCH_REF
       ) as Incremental).decrement();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
       this.settingsChangeCallback();
-    } else if (incremental == "volume") {
+    } else if (incremental === "volume") {
       (this.userProperties.getByRef(
         TTSREFS.VOLUME_REF
       ) as Incremental).decrement();

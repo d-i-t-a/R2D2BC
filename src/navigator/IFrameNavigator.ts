@@ -416,7 +416,7 @@ export default class IFrameNavigator implements Navigator {
         spread_left.appendChild(this.iframe);
 
         if (
-          oc(this.publication.metadata.rendition).layout("unknown") == "fixed"
+          oc(this.publication.metadata.rendition).layout("unknown") === "fixed"
         ) {
           var spread_right = document.createElement("div");
           spreads.appendChild(spread_right);
@@ -439,7 +439,7 @@ export default class IFrameNavigator implements Navigator {
       }
 
       if (
-        oc(this.publication.metadata.rendition).layout("unknown") == "fixed"
+        oc(this.publication.metadata.rendition).layout("unknown") === "fixed"
       ) {
         var wrapper = HTMLUtilities.findRequiredElement(
           mainElement,
@@ -710,7 +710,7 @@ export default class IFrameNavigator implements Navigator {
             menuSearch &&
             oc(this.view.delegate.publication.metadata.rendition).layout(
               "unknown"
-            ) == "fixed"
+            ) === "fixed"
           ) {
             menuSearch.parentElement.style.setProperty("display", "none");
           }
@@ -933,7 +933,7 @@ export default class IFrameNavigator implements Navigator {
   isScrolling: boolean;
 
   private updateBookView(): void {
-    if (this.view.layout == "fixed") {
+    if (this.view.layout === "fixed") {
       if (this.nextPageAnchorElement)
         this.nextPageAnchorElement.style.display = "none";
       if (this.previousPageAnchorElement)
@@ -999,7 +999,7 @@ export default class IFrameNavigator implements Navigator {
             this.nextPageAnchorElement.style.display = "none";
           if (this.previousPageAnchorElement)
             this.previousPageAnchorElement.style.display = "none";
-          if (this.view.layout == "fixed") {
+          if (this.view.layout === "fixed") {
             if (this.nextChapterBottomAnchorElement)
               this.nextChapterBottomAnchorElement.style.display = "none";
             if (this.previousChapterTopAnchorElement)
@@ -1054,7 +1054,7 @@ export default class IFrameNavigator implements Navigator {
                 this.toggleDisplay(this.linksBottom);
               }
             }
-            if (this.view.layout == "fixed") {
+            if (this.view.layout === "fixed") {
               if (this.nextChapterBottomAnchorElement)
                 this.nextChapterBottomAnchorElement.style.display = "none";
               if (this.previousChapterTopAnchorElement)
@@ -1552,7 +1552,7 @@ export default class IFrameNavigator implements Navigator {
           this.keyboardEventHandler.setupEvents(this.iframe.contentDocument);
           this.keyboardEventHandler.setupEvents(document);
         }
-        if (this.view.layout != "fixed") {
+        if (this.view.layout !== "fixed") {
           if (oc(this.view).isScrollMode()) {
             this.view.setIframeHeight(this.iframe);
           }
@@ -1573,7 +1573,7 @@ export default class IFrameNavigator implements Navigator {
         for (var i = 0; i < pagebreaks.length; i++) {
           var img = pagebreaks[i];
           if (IS_DEV) console.log(img);
-          if (img.innerHTML.length == 0) {
+          if (img.innerHTML.length === 0) {
             img.innerHTML = img.getAttribute("title");
           }
           img.className = "epubPageBreak";
@@ -1608,7 +1608,7 @@ export default class IFrameNavigator implements Navigator {
   private precessContentForIframe() {
     const self = this;
     var index = this.publication.getSpineIndex(this.currentChapterLink.href);
-    var even: boolean = index % 2 == 1;
+    var even: boolean = index % 2 === 1;
 
     function writeIframeDoc(content: string, href: string) {
       const parser = new DOMParser();
@@ -1644,7 +1644,7 @@ export default class IFrameNavigator implements Navigator {
 
     if (this.api && this.api.getContent) {
       if (
-        oc(this.publication.metadata.rendition).layout("unknown") == "fixed"
+        oc(this.publication.metadata.rendition).layout("unknown") === "fixed"
       ) {
         if (even) {
           this.api.getContent(this.currentChapterLink.href).then((content) => {
@@ -1717,7 +1717,8 @@ export default class IFrameNavigator implements Navigator {
           }
           if (
             this.iframe2 &&
-            oc(this.publication.metadata.rendition).layout("unknown") == "fixed"
+            oc(this.publication.metadata.rendition).layout("unknown") ===
+              "fixed"
           ) {
             this.api
               .getContent(this.currentChapterLink.href)
@@ -1769,7 +1770,7 @@ export default class IFrameNavigator implements Navigator {
       }
     } else {
       if (
-        oc(this.publication.metadata.rendition).layout("unknown") == "fixed"
+        oc(this.publication.metadata.rendition).layout("unknown") === "fixed"
       ) {
         if (even) {
           if (isSameOrigin) {
@@ -1871,20 +1872,20 @@ export default class IFrameNavigator implements Navigator {
         }
       }
     }
-    if (oc(this.publication.metadata.rendition).layout("unknown") == "fixed") {
+    if (oc(this.publication.metadata.rendition).layout("unknown") === "fixed") {
       setTimeout(() => {
         const height = getComputedStyle(
-          index == 0 && this.iframe2
+          index === 0 && this.iframe2
             ? this.iframe2.contentDocument.body
             : this.iframe.contentDocument.body
         ).height;
         const width = getComputedStyle(
-          index == 0 && this.iframe2
+          index === 0 && this.iframe2
             ? this.iframe2.contentDocument.body
             : this.iframe.contentDocument.body
         ).width;
         var iframeParent =
-          index == 0 && this.iframe2
+          index === 0 && this.iframe2
             ? this.iframe2.parentElement.parentElement
             : (this.iframe.parentElement.parentElement as HTMLElement);
         var widthRatio =
@@ -2186,7 +2187,7 @@ export default class IFrameNavigator implements Navigator {
   goToPosition(position: number) {
     if (oc(this.rights).autoGeneratePositions(true)) {
       let locator = this.publication.positions.filter(
-        (el: Locator) => el.locations.position == position
+        (el: Locator) => el.locations.position === position
       )[0];
       goTo(locator);
     }
@@ -2204,7 +2205,7 @@ export default class IFrameNavigator implements Navigator {
     event: MouseEvent | TouchEvent | KeyboardEvent
   ): void {
     this.stopReadAloud();
-    if (this.view.layout == "fixed") {
+    if (this.view.layout === "fixed") {
       this.handlePreviousChapterClick(event);
     } else {
       if (this.view.atStart()) {
@@ -2223,7 +2224,7 @@ export default class IFrameNavigator implements Navigator {
 
   private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
     this.stopReadAloud();
-    if (this.view.layout == "fixed") {
+    if (this.view.layout === "fixed") {
       this.handleNextChapterClick(event);
     } else {
       if (this.view.atEnd()) {
@@ -2283,7 +2284,7 @@ export default class IFrameNavigator implements Navigator {
       return;
     }
 
-    if (oc(this.publication.metadata.rendition).layout("unknown") == "fixed") {
+    if (oc(this.publication.metadata.rendition).layout("unknown") === "fixed") {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
       var wrapper = HTMLUtilities.findRequiredElement(
         this.mainElement,
@@ -2294,18 +2295,18 @@ export default class IFrameNavigator implements Navigator {
       wrapper.style.height = minHeight + 40 + "px";
 
       var iframeParent =
-        index == 0 && this.iframe2
+        index === 0 && this.iframe2
           ? this.iframe2.parentElement.parentElement
           : (this.iframe.parentElement.parentElement as HTMLElement);
       iframeParent.style.height = minHeight + 40 + "px";
 
       const height = getComputedStyle(
-        index == 0 && this.iframe2
+        index === 0 && this.iframe2
           ? this.iframe2.contentDocument.body
           : this.iframe.contentDocument.body
       ).height;
       const width = getComputedStyle(
-        index == 0 && this.iframe2
+        index === 0 && this.iframe2
           ? this.iframe2.contentDocument.body
           : this.iframe.contentDocument.body
       ).width;
@@ -2363,7 +2364,7 @@ export default class IFrameNavigator implements Navigator {
       this.toggleDisplay(this.linksBottom);
     }
 
-    if (this.view.layout != "fixed") {
+    if (this.view.layout !== "fixed") {
       this.settings.isPaginated().then((paginated) => {
         if (paginated) {
           this.view.height =
@@ -2376,7 +2377,7 @@ export default class IFrameNavigator implements Navigator {
     }
 
     setTimeout(() => {
-      if (this.view.layout != "fixed") {
+      if (this.view.layout !== "fixed") {
         if (oc(this.view).isScrollMode()) {
           this.view.setIframeHeight(this.iframe);
         }
@@ -2401,7 +2402,7 @@ export default class IFrameNavigator implements Navigator {
   }
 
   updatePositionInfo() {
-    if (this.view.layout == "fixed") {
+    if (this.view.layout === "fixed") {
       if (this.chapterPosition) this.chapterPosition.innerHTML = "";
       if (this.remainingPositions) this.remainingPositions.innerHTML = "";
     } else {
@@ -2439,7 +2440,7 @@ export default class IFrameNavigator implements Navigator {
   private handlePreviousChapterClick(
     event: MouseEvent | TouchEvent | KeyboardEvent
   ): void {
-    if (this.view.layout == "fixed") {
+    if (this.view.layout === "fixed") {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
       index = index - 2;
       if (index < 0) index = 0;
@@ -2479,7 +2480,7 @@ export default class IFrameNavigator implements Navigator {
   private handleNextChapterClick(
     event: MouseEvent | TouchEvent | KeyboardEvent
   ): void {
-    if (this.view.layout == "fixed") {
+    if (this.view.layout === "fixed") {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
       index = index + 2;
       if (index >= this.publication.readingOrder.length - 1)
@@ -2525,7 +2526,7 @@ export default class IFrameNavigator implements Navigator {
   }
 
   private hideView(_view: HTMLDivElement, _control: HTMLButtonElement): void {
-    if (this.view.layout != "fixed") {
+    if (this.view.layout !== "fixed") {
       if (oc(this.view).isScrollMode()) {
         document.body.style.overflow = "auto";
       }
@@ -2556,14 +2557,14 @@ export default class IFrameNavigator implements Navigator {
 
       if (locator.href.indexOf("#") !== -1) {
         const newResource = locator.href.slice(0, locator.href.indexOf("#"));
-        if (newResource == this.currentChapterLink.href) {
+        if (newResource === this.currentChapterLink.href) {
           isCurrentLoaded = true;
         }
         this.currentChapterLink.href = newResource;
         this.currentChapterLink.type = locator.type;
         this.currentChapterLink.title = locator.title;
       } else {
-        if (locator.href == this.currentChapterLink.href) {
+        if (locator.href === this.currentChapterLink.href) {
           isCurrentLoaded = true;
         }
         this.currentChapterLink.href = locator.href;
@@ -2691,7 +2692,7 @@ export default class IFrameNavigator implements Navigator {
           this.saveCurrentReadingPosition();
         }
       } else {
-        if (this.searchModule != undefined) {
+        if (this.searchModule !== undefined) {
           this.searchModule.clearSearch();
         }
 
@@ -2735,7 +2736,7 @@ export default class IFrameNavigator implements Navigator {
               this.searchModule.drawSearch();
             }
           }
-          if (this.view.layout == "fixed") {
+          if (this.view.layout === "fixed") {
             if (this.nextChapterBottomAnchorElement)
               this.nextChapterBottomAnchorElement.style.display = "none";
             if (this.previousChapterTopAnchorElement)

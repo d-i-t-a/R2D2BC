@@ -72,7 +72,7 @@ async function markCuedWords(glossary: Array<GlossaryItem>) {
             };
 
             window.onclick = function (event) {
-              if (event.target == modal) {
+              if (event.target === modal) {
                 modal.style.display = "none";
                 modal.parentElement.removeChild(modal);
               }

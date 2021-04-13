@@ -31,7 +31,7 @@ document.addEventListener(
 
       var link = element.querySelector("a");
       if (link) {
-        var attribute = link.getAttribute("epub:type") == "noteref";
+        var attribute = link.getAttribute("epub:type") === "noteref";
         if (attribute) {
           var href = link.getAttribute("href");
           if (href.indexOf("#") > 0) {
@@ -77,7 +77,7 @@ document.addEventListener(
                   };
 
                   window.onclick = function (event) {
-                    if (event.target == modal) {
+                    if (event.target === modal) {
                       modal.style.display = "none";
                       modal.parentElement.removeChild(modal);
                     }

@@ -241,9 +241,9 @@ export async function currentSettings() {
 }
 export async function increase(incremental) {
   if (
-    (incremental == "pitch" ||
-      incremental == "rate" ||
-      incremental == "volume") &&
+    (incremental === "pitch" ||
+      incremental === "rate" ||
+      incremental === "volume") &&
     oc(R2Navigator.rights).enableTTS(false)
   ) {
     if (IS_DEV) {
@@ -259,9 +259,9 @@ export async function increase(incremental) {
 }
 export async function decrease(incremental) {
   if (
-    (incremental == "pitch" ||
-      incremental == "rate" ||
-      incremental == "volume") &&
+    (incremental === "pitch" ||
+      incremental === "rate" ||
+      incremental === "volume") &&
     oc(R2Navigator.rights).enableTTS(false)
   ) {
     if (IS_DEV) {
@@ -410,7 +410,7 @@ export async function load(config: ReaderConfig): Promise<any> {
   if (
     (oc(config.protection).enforceSupportedBrowsers(false) &&
       supportedBrowsers.test(navigator.userAgent)) ||
-    oc(config.protection).enforceSupportedBrowsers(false) == false
+    oc(config.protection).enforceSupportedBrowsers(false) === false
   ) {
     var mainElement = document.getElementById("D2Reader-Container");
     var headerMenu = document.getElementById("headerMenu");
@@ -436,7 +436,7 @@ export async function load(config: ReaderConfig): Promise<any> {
       store
     );
 
-    if (oc(publication.metadata.rendition).layout("unknown") == "fixed") {
+    if (oc(publication.metadata.rendition).layout("unknown") === "fixed") {
       config.rights.enableAnnotations = false;
       config.rights.enableSearch = false;
       config.rights.enableTTS = false;
@@ -448,7 +448,7 @@ export async function load(config: ReaderConfig): Promise<any> {
       var totalContentLength = 0;
       var positions = [];
       publication.readingOrder.map(async (link, index) => {
-        if (oc(publication.metadata.rendition).layout("unknown") == "fixed") {
+        if (oc(publication.metadata.rendition).layout("unknown") === "fixed") {
           const locator: Locator = {
             href: link.href,
             locations: {
@@ -485,8 +485,10 @@ export async function load(config: ReaderConfig): Promise<any> {
             startPosition = startPosition + positionCount;
           });
         }
-        if (index + 1 == publication.readingOrder.length) {
-          if (oc(publication.metadata.rendition).layout("unknown") != "fixed") {
+        if (index + 1 === publication.readingOrder.length) {
+          if (
+            oc(publication.metadata.rendition).layout("unknown") !== "fixed"
+          ) {
             publication.readingOrder.map(async (link) => {
               if (IS_DEV) console.log(totalContentLength);
               if (IS_DEV) console.log(link.contentLength);
@@ -525,7 +527,7 @@ export async function load(config: ReaderConfig): Promise<any> {
       material: config.material,
       api: config.api,
       layout:
-        oc(publication.metadata.rendition).layout("unknown") == "fixed"
+        oc(publication.metadata.rendition).layout("unknown") === "fixed"
           ? "fixed"
           : "reflowable",
     });
@@ -545,14 +547,14 @@ export async function load(config: ReaderConfig): Promise<any> {
       rights: config.rights,
       tts: config.tts,
       injectables:
-        oc(publication.metadata.rendition).layout("unknown") == "fixed"
+        oc(publication.metadata.rendition).layout("unknown") === "fixed"
           ? []
           : config.injectables,
       attributes: config.attributes,
     });
 
     // Highlighter
-    if (oc(publication.metadata.rendition).layout("unknown") != "fixed") {
+    if (oc(publication.metadata.rendition).layout("unknown") !== "fixed") {
       D2Highlighter = await TextHighlighter.create({
         delegate: R2Navigator,
         config: config.highlighter,

@@ -200,7 +200,7 @@ export class UserSettings implements IUserSettings {
           (el: any) => el === initialUserSettings.fontFamily
         );
         if (IS_DEV) console.log(settings.fontFamily);
-        if (settings.fontFamily != 0) {
+        if (settings.fontFamily !== 0) {
           settings.fontOverride = true;
         }
       }
@@ -252,7 +252,7 @@ export class UserSettings implements IUserSettings {
     this.store = store;
 
     this.view =
-      layout == "fixed"
+      layout === "fixed"
         ? new FixedBookView(this.store)
         : new ReflowableBookView(this.store);
 
@@ -283,7 +283,7 @@ export class UserSettings implements IUserSettings {
         ? ((await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY)) as Enumerable)
             .value
         : this.fontFamily;
-    if (this.fontFamily != 0) {
+    if (this.fontFamily !== 0) {
       this.fontOverride = true;
     }
     this.publisherDefaults =
@@ -414,8 +414,9 @@ export class UserSettings implements IUserSettings {
 
   async applyProperties(): Promise<any> {
     if (
-      oc(this.view.delegate.publication.metadata.rendition).layout("unknown") !=
-      "fixed"
+      oc(this.view.delegate.publication.metadata.rendition).layout(
+        "unknown"
+      ) !== "fixed"
     ) {
       const html = HTMLUtilities.findRequiredIframeElement(
         this.iframe.contentDocument,
@@ -523,17 +524,17 @@ export class UserSettings implements IUserSettings {
           this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString()
         );
         if (
-          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 0
+          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value === 0
         ) {
           HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
           HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
         } else if (
-          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 1
+          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value === 1
         ) {
           HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "sepia");
           HTMLUtilities.setAttr(body, "data-viewer-theme", "sepia");
         } else if (
-          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value == 2
+          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value === 2
         ) {
           HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "night");
           HTMLUtilities.setAttr(body, "data-viewer-theme", "night");
@@ -553,7 +554,7 @@ export class UserSettings implements IUserSettings {
           this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).toString()
         );
         if (
-          this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 0
+          this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value === 0
         ) {
           HTMLUtilities.setAttr(html, "data-viewer-font", "publisher");
           html.style.setProperty(
@@ -561,7 +562,7 @@ export class UserSettings implements IUserSettings {
             "readium-font-off"
           );
         } else if (
-          this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 1
+          this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value === 1
         ) {
           HTMLUtilities.setAttr(html, "data-viewer-font", "serif");
           html.style.setProperty(
@@ -569,7 +570,7 @@ export class UserSettings implements IUserSettings {
             "readium-font-on"
           );
         } else if (
-          this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value == 2
+          this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value === 2
         ) {
           HTMLUtilities.setAttr(html, "data-viewer-font", "sans");
           html.style.setProperty(
@@ -600,7 +601,9 @@ export class UserSettings implements IUserSettings {
       }
 
       if (await this.getProperty(ReadiumCSS.SCROLL_KEY)) {
-        if (this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value == true) {
+        if (
+          this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value === true
+        ) {
           html.style.setProperty("--USER__scroll", "readium-scroll-on");
         } else {
           html.style.setProperty("--USER__scroll", "readium-scroll-off");
@@ -1077,7 +1080,7 @@ export class UserSettings implements IUserSettings {
     if (savedProperties) {
       let array = JSON.parse(savedProperties);
       array = array.filter((el: any) => el.name !== property.name);
-      if (property.value != undefined) {
+      if (property.value !== undefined) {
         array.push(property);
       }
       await this.store.set(this.USERSETTINGS, JSON.stringify(array));
@@ -1094,7 +1097,7 @@ export class UserSettings implements IUserSettings {
     if (array) {
       let properties = JSON.parse(array) as Array<UserProperty>;
       properties = properties.filter((el: UserProperty) => el.name === name);
-      if (properties.length == 0) {
+      if (properties.length === 0) {
         return null;
       }
       return properties[0];
@@ -1140,18 +1143,18 @@ export class UserSettings implements IUserSettings {
     if (userSettings.appearance) {
       var a: string;
       if (
-        userSettings.appearance == "day" ||
-        userSettings.appearance == "readium-default-on"
+        userSettings.appearance === "day" ||
+        userSettings.appearance === "readium-default-on"
       ) {
         a = UserSettings.appearanceValues[0];
       } else if (
-        userSettings.appearance == "sepia" ||
-        userSettings.appearance == "readium-sepia-on"
+        userSettings.appearance === "sepia" ||
+        userSettings.appearance === "readium-sepia-on"
       ) {
         a = UserSettings.appearanceValues[1];
       } else if (
-        userSettings.appearance == "night" ||
-        userSettings.appearance == "readium-night-on"
+        userSettings.appearance === "night" ||
+        userSettings.appearance === "readium-night-on"
       ) {
         a = UserSettings.appearanceValues[2];
       } else {
@@ -1309,28 +1312,28 @@ export class UserSettings implements IUserSettings {
   }
 
   async increase(incremental): Promise<void> {
-    if (incremental == "fontSize") {
+    if (incremental === "fontSize") {
       (this.userProperties.getByRef(
         ReadiumCSS.FONT_SIZE_REF
       ) as Incremental).increment();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
       );
-    } else if (incremental == "letterSpacing") {
+    } else if (incremental === "letterSpacing") {
       (this.userProperties.getByRef(
         ReadiumCSS.LETTER_SPACING_REF
       ) as Incremental).increment();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
-    } else if (incremental == "wordSpacing") {
+    } else if (incremental === "wordSpacing") {
       (this.userProperties.getByRef(
         ReadiumCSS.WORD_SPACING_REF
       ) as Incremental).increment();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
-    } else if (incremental == "lineHeight") {
+    } else if (incremental === "lineHeight") {
       (this.userProperties.getByRef(
         ReadiumCSS.LINE_HEIGHT_REF
       ) as Incremental).increment();
@@ -1343,28 +1346,28 @@ export class UserSettings implements IUserSettings {
   }
 
   async decrease(incremental): Promise<void> {
-    if (incremental == "fontSize") {
+    if (incremental === "fontSize") {
       (this.userProperties.getByRef(
         ReadiumCSS.FONT_SIZE_REF
       ) as Incremental).decrement();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
       );
-    } else if (incremental == "letterSpacing") {
+    } else if (incremental === "letterSpacing") {
       (this.userProperties.getByRef(
         ReadiumCSS.LETTER_SPACING_REF
       ) as Incremental).decrement();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
-    } else if (incremental == "wordSpacing") {
+    } else if (incremental === "wordSpacing") {
       (this.userProperties.getByRef(
         ReadiumCSS.WORD_SPACING_REF
       ) as Incremental).decrement();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
-    } else if (incremental == "lineHeight") {
+    } else if (incremental === "lineHeight") {
       (this.userProperties.getByRef(
         ReadiumCSS.LINE_HEIGHT_REF
       ) as Incremental).decrement();

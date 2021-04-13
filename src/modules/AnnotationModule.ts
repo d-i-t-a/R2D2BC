@@ -389,7 +389,7 @@ export default class AnnotationModule implements ReaderModule {
           });
         }
       }
-      if (this.config && oc(this.config).initialAnnotationColor != undefined) {
+      if (this.config && oc(this.config).initialAnnotationColor !== undefined) {
         this.highlighter.setColor(this.config.initialAnnotationColor);
       }
     }
@@ -467,7 +467,7 @@ export default class AnnotationModule implements ReaderModule {
                 );
                 bookmarkLink.setAttribute("href", locator.href);
 
-                if (type == AnnotationType.Annotation) {
+                if (type === AnnotationType.Annotation) {
                   bookmarkLink.className = "highlight-link";
                   let title: HTMLSpanElement = document.createElement("span");
                   let marker: HTMLSpanElement = document.createElement("span");
@@ -475,7 +475,8 @@ export default class AnnotationModule implements ReaderModule {
                   marker.innerHTML = locator.highlight.selectionInfo.cleanText;
 
                   if (
-                    (locator as Annotation).marker == AnnotationMarker.Underline
+                    (locator as Annotation).marker ===
+                    AnnotationMarker.Underline
                   ) {
                     if (typeof (locator as Annotation).color === "object") {
                       marker.style.setProperty(
@@ -605,7 +606,7 @@ export default class AnnotationModule implements ReaderModule {
       console.log("annotation data locator: ", locator);
     }
     if (locator) {
-      if (type == AnnotationType.Annotation) {
+      if (type === AnnotationType.Annotation) {
         this.deleteHighlight(locator);
       }
     } else {

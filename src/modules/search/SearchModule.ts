@@ -215,8 +215,7 @@ export default class SearchModule implements ReaderModule {
         let previousResultPage: HTMLLIElement = document.createElement("li");
         previousResultPage.className = "disabled";
 
-        previousResultPage.innerHTML =
-          '<a href="#!">' + "left" /*IconsAllvit.arrowLeft*/ + "</a>";
+        previousResultPage.innerHTML = '<a href="#!">left</a>';
         if (paginated.pre_page != null) {
           previousResultPage.className = "waves-effect";
           addEventListenerOptional(
@@ -235,7 +234,7 @@ export default class SearchModule implements ReaderModule {
         for (let index = 1; index <= paginated.total_pages; index++) {
           let element: HTMLLIElement = document.createElement("li");
           element.className = "waves-effect";
-          if (index == paginated.page) {
+          if (index === paginated.page) {
             element.className = "active";
             activeElement = element;
           }
@@ -255,8 +254,7 @@ export default class SearchModule implements ReaderModule {
 
         let nextResultPage: HTMLLIElement = document.createElement("li");
         nextResultPage.className = "disabled";
-        nextResultPage.innerHTML =
-          '<a href="#!">' + "right" /*IconsAllvit.arrowRight*/ + "</a>";
+        nextResultPage.innerHTML = '<a href="#!">right</a>';
         if (paginated.next_page != null) {
           nextResultPage.className = "waves-effect";
           addEventListenerOptional(
@@ -325,7 +323,7 @@ export default class SearchModule implements ReaderModule {
             };
             setTimeout(() => {
               var highlight;
-              if (i == index) {
+              if (i === index) {
                 highlight = this.highlighter.createSearchHighlight(
                   selectionInfo,
                   this.config.current
@@ -386,16 +384,16 @@ export default class SearchModule implements ReaderModule {
 
     if (current) {
       item = this.currentChapterSearchResult.filter(
-        (el: any) => el.uuid == index
+        (el: any) => el.uuid === index
       )[0];
       filteredIndex = this.currentChapterSearchResult.findIndex(
-        (el: any) => el.uuid == index
+        (el: any) => el.uuid === index
       );
     } else {
-      item = filteredIndexes.filter((el: any) => el.uuid == index)[0];
-      filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid == index);
+      item = filteredIndexes.filter((el: any) => el.uuid === index)[0];
+      filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid === index);
     }
-    if (item != undefined) {
+    if (item !== undefined) {
       if (currentLocation === absolutehref) {
         this.jumpToMark(filteredIndex);
       } else {
@@ -441,7 +439,7 @@ export default class SearchModule implements ReaderModule {
     } else {
       item = filteredIndexes[filteredIndex];
     }
-    if (item != undefined) {
+    if (item !== undefined) {
       if (currentLocation === absolutehref) {
         this.jumpToMark(filteredIndex);
       } else {
@@ -586,8 +584,7 @@ export default class SearchModule implements ReaderModule {
 
         let previousResultPage: HTMLLIElement = document.createElement("li");
         previousResultPage.className = "disabled";
-        previousResultPage.innerHTML =
-          '<a href="#!">' + "left" /*IconsAllvit.arrowLeft*/ + "</a>";
+        previousResultPage.innerHTML = '<a href="#!">left</a>';
         if (paginated.pre_page != null) {
           previousResultPage.className = "waves-effect";
           addEventListenerOptional(
@@ -606,7 +603,7 @@ export default class SearchModule implements ReaderModule {
         for (let index = 1; index <= paginated.total_pages; index++) {
           let element: HTMLLIElement = document.createElement("li");
           element.className = "waves-effect";
-          if (index == paginated.page) {
+          if (index === paginated.page) {
             element.className = "active";
             activeElement = element;
           }
@@ -626,8 +623,7 @@ export default class SearchModule implements ReaderModule {
 
         let nextResultPage: HTMLLIElement = document.createElement("li");
         nextResultPage.className = "disabled";
-        nextResultPage.innerHTML =
-          '<a href="#!">' + "right" /*IconsAllvit.arrowRight*/ + "</a>";
+        nextResultPage.innerHTML = '<a href="#!">right</a>';
         if (paginated.next_page != null) {
           nextResultPage.className = "waves-effect";
           addEventListenerOptional(
@@ -690,7 +686,7 @@ export default class SearchModule implements ReaderModule {
           );
         });
 
-      if (index == this.publication.readingOrder.length - 1) {
+      if (index === this.publication.readingOrder.length - 1) {
         return localSearchResultBook;
       }
     }

@@ -111,21 +111,20 @@ export class UserSettings implements IUserSettings {
     let scroll =
       (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
         ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
-        : 0;
-    return scroll === 1;
+        : this.verticalScroll;
+    return scroll === false;
   }
-  async isScrollmode() {
+  async isScrollMode() {
     let scroll =
       (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
         ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
-        : 0;
-    return scroll === 0;
+        : this.verticalScroll;
+    return scroll === true;
   }
 
   private readonly store: Store;
   private readonly USERSETTINGS = "userSetting";
 
-  static scrollValues = ["readium-scroll-on", "readium-scroll-off"];
   private static appearanceValues = [
     "readium-default-on",
     "readium-sepia-on",
@@ -336,7 +335,7 @@ export class UserSettings implements IUserSettings {
 
   private async reset() {
     this.appearance = 0;
-    this.verticalScroll = false;
+    this.verticalScroll = true;
     this.fontSize = 100.0;
     this.fontOverride = false;
     this.fontFamily = 0;
@@ -601,7 +600,7 @@ export class UserSettings implements IUserSettings {
       }
 
       if (await this.getProperty(ReadiumCSS.SCROLL_KEY)) {
-        if (this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value == 0) {
+        if (this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value == true) {
           html.style.setProperty("--USER__scroll", "readium-scroll-on");
         } else {
           html.style.setProperty("--USER__scroll", "readium-scroll-off");
@@ -609,7 +608,7 @@ export class UserSettings implements IUserSettings {
       } else {
         html.style.setProperty("--USER__scroll", "readium-scroll-on");
       }
-      this.isScrollmode().then((scroll) => {
+      this.isScrollMode().then((scroll) => {
         this.view.setMode(scroll);
       });
     }
@@ -817,18 +816,19 @@ export class UserSettings implements IUserSettings {
     }
 
     if (oc(this.material).settings.scroll(false)) {
-      for (let index = 0; index < UserSettings.scrollValues.length; index++) {
+      for (let index = 0; index < 2; index++) {
         const button = this.viewButtons[index];
         if (button) {
           addEventListenerOptional(button, "click", (event: MouseEvent) => {
             const position = this.view.getCurrentPosition();
-            this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value = index;
+            this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
+              index === 0 ? true : false;
             this.storeProperty(
               this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
             );
             this.applyProperties();
             this.updateViewButtons();
-            this.view.setMode(index === 0);
+            this.view.setMode(index === 0 ? true : false);
             this.view.goToPosition(position);
             event.preventDefault();
             this.viewChangeCallback();
@@ -864,20 +864,21 @@ export class UserSettings implements IUserSettings {
 
   private async updateViewButtons(): Promise<void> {
     if (oc(this.material).settings.scroll(false)) {
-      for (let index = 0; index < UserSettings.scrollValues.length; index++) {
+      for (let index = 0; index < 2; index++) {
         this.viewButtons[index].className = this.viewButtons[
           index
         ].className.replace(" active", "");
       }
+
+      const index =
+        (await this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value) ===
+        true
+          ? 0
+          : 1;
+
       if (this.userProperties) {
-        if (
-          this.viewButtons[
-            await this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value
-          ]
-        )
-          this.viewButtons[
-            await this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value
-          ].className += " active";
+        if (this.viewButtons[index])
+          this.viewButtons[index].className += " active";
       }
     }
   }
@@ -952,10 +953,7 @@ export class UserSettings implements IUserSettings {
       publisherDefault: this.userProperties.getByRef(
         ReadiumCSS.PUBLISHER_DEFAULT_REF
       ).value,
-      verticalScroll:
-        UserSettings.scrollValues[
-          await this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value
-        ],
+      verticalScroll: this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value,
     };
     if (this.api && this.api.updateUserSettings) {
       this.api.updateUserSettings(userSettings).then((_) => {
@@ -1128,10 +1126,7 @@ export class UserSettings implements IUserSettings {
         UserSettings.columnCountValues[
           this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value
         ], // "auto", "1", "2"
-      verticalScroll:
-        UserSettings.scrollValues[
-          this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value
-        ], //readium-scroll-on, readium-scroll-off,
+      verticalScroll: this.verticalScroll,
       fontSize: this.fontSize,
       wordSpacing: this.wordSpacing,
       letterSpacing: this.letterSpacing,

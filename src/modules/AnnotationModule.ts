@@ -136,7 +136,7 @@ export default class AnnotationModule implements ReaderModule {
   initialize() {
     return new Promise(async (resolve) => {
       await (document as any).fonts.ready;
-      if (oc(this.rights).enableAnnotations(false)) {
+      if (this.rights?.enableAnnotations) {
         setTimeout(() => {
           this.drawHighlights();
         }, 300);
@@ -165,7 +165,7 @@ export default class AnnotationModule implements ReaderModule {
       }
       await this.showHighlights();
       await this.drawHighlights();
-      if (oc(this.delegate.rights).enableMaterial(false)) {
+      if (this.delegate.rights?.enableMaterial) {
         toast({ html: "highlight deleted" });
       }
       return deleted;
@@ -295,7 +295,7 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   async drawHighlights(search: boolean = true): Promise<void> {
-    if (oc(this.rights).enableAnnotations(false) && this.highlighter) {
+    if ((this.rights?.enableAnnotations ?? false) && this.highlighter) {
       if (this.api) {
         let highlights: Array<any> = [];
         if (this.annotator) {
@@ -393,7 +393,7 @@ export default class AnnotationModule implements ReaderModule {
         this.highlighter.setColor(this.config.initialAnnotationColor);
       }
     }
-    if (search && oc(this.rights).enableSearch(false)) {
+    if (search && (this.rights?.enableSearch ?? false)) {
       this.delegate.searchModule.drawSearch();
     }
   }
@@ -537,8 +537,8 @@ export default class AnnotationModule implements ReaderModule {
                 bookmarkItem.appendChild(bookmarkLink);
                 if (
                   (self.delegate.sideNavExpanded &&
-                    oc(self.delegate.rights).enableMaterial(false)) ||
-                  !oc(self.delegate.rights).enableMaterial(false)
+                    (self.delegate.rights?.enableMaterial ?? false)) ||
+                  !(self.delegate.rights?.enableMaterial ?? false)
                 ) {
                   let bookmarkDeleteLink: HTMLElement = document.createElement(
                     "button"

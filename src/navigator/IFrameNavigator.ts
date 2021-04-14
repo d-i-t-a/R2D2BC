@@ -351,7 +351,7 @@ export default class IFrameNavigator implements Navigator {
     removeEventListenerOptional(window, "resize", this.onResize);
     removeEventListenerOptional(this.iframe, "resize", this.onResize);
 
-    if (oc(this.rights).enableMaterial(false)) {
+    if (this.rights?.enableMaterial) {
       if (this.mDropdowns) {
         this.mDropdowns.forEach((element) => {
           (element as any).destroy();
@@ -415,7 +415,7 @@ export default class IFrameNavigator implements Navigator {
         spread_left.appendChild(this.iframe);
 
         if (
-          oc(this.publication.metadata.rendition).layout("unknown") === "fixed"
+          (this.publication.metadata.rendition?.layout ?? "unknown") === "fixed"
         ) {
           var spread_right = document.createElement("div");
           spreads.appendChild(spread_right);
@@ -433,12 +433,12 @@ export default class IFrameNavigator implements Navigator {
           spread_right.style.boxShadow = "0 0 8px 2px #ccc";
         } else {
           this.iframe.style.paddingTop =
-            oc(this.attributes).iframePaddingTop(0) + "px";
+            (this.attributes?.iframePaddingTop ?? 0) + "px";
         }
       }
 
       if (
-        oc(this.publication.metadata.rendition).layout("unknown") === "fixed"
+        (this.publication.metadata.rendition?.layout ?? "unknown") === "fixed"
       ) {
         var wrapper = HTMLUtilities.findRequiredElement(
           mainElement,
@@ -647,7 +647,7 @@ export default class IFrameNavigator implements Navigator {
           "#menu-button-bookmark"
         ) as HTMLLinkElement;
       }
-      if (oc(this.rights).enableMaterial(false)) {
+      if (this.rights?.enableMaterial) {
         let elements = document.querySelectorAll(".sidenav");
         if (elements) {
           self.mSidenav = Sidenav.init(elements, {
@@ -680,7 +680,7 @@ export default class IFrameNavigator implements Navigator {
           self.mTabs = Tabs.init(tabs);
         }
         if (this.headerMenu) {
-          if (!oc(this.rights).enableBookmarks(false)) {
+          if (!(this.rights?.enableBookmarks ?? false)) {
             if (menuBookmark)
               menuBookmark.parentElement.style.setProperty("display", "none");
             var sideNavSectionBookmarks = HTMLUtilities.findElement(
@@ -690,7 +690,7 @@ export default class IFrameNavigator implements Navigator {
             if (sideNavSectionBookmarks)
               sideNavSectionBookmarks.style.setProperty("display", "none");
           }
-          if (!oc(this.rights).enableAnnotations(false)) {
+          if (!(this.rights?.enableAnnotations ?? false)) {
             var sideNavSectionHighlights = HTMLUtilities.findElement(
               this.headerMenu,
               "#sidenav-section-highlights"
@@ -698,18 +698,16 @@ export default class IFrameNavigator implements Navigator {
             if (sideNavSectionHighlights)
               sideNavSectionHighlights.style.setProperty("display", "none");
           }
-          if (!oc(this.rights).enableTTS(false)) {
+          if (!(this.rights?.enableTTS ?? false)) {
             if (menuTTS)
               menuTTS.parentElement.style.setProperty("display", "none");
           }
-          if (!oc(this.rights).enableSearch(false)) {
+          if (!(this.rights?.enableSearch ?? false)) {
             menuSearch.parentElement.style.removeProperty("display");
           }
           if (
             menuSearch &&
-            oc(this.view.delegate.publication.metadata.rendition).layout(
-              "unknown"
-            ) === "fixed"
+            (this.view.delegate.publication.metadata.rendition?.layout ?? "unknown") === "fixed"
           ) {
             menuSearch.parentElement.style.setProperty("display", "none");
           }
@@ -730,7 +728,7 @@ export default class IFrameNavigator implements Navigator {
           self.annotationModule.drawHighlights();
           // self.annotationModule.drawIndicators()
         } else {
-          if (oc(this.rights).enableSearch(false)) {
+          if (this.rights?.enableSearch) {
             await this.highlighter.destroyAllhighlights(
               this.iframe.contentDocument
             );
@@ -1139,7 +1137,7 @@ export default class IFrameNavigator implements Navigator {
         if (this.annotationModule !== undefined) {
           this.annotationModule.drawHighlights();
         } else {
-          if (oc(this.rights).enableSearch(false)) {
+          if (this.rights?.enableSearch) {
             await this.highlighter.destroyAllhighlights(
               this.iframe.contentDocument
             );
@@ -1527,15 +1525,15 @@ export default class IFrameNavigator implements Navigator {
       setTimeout(() => {
         const body = this.iframe.contentDocument.body;
         if (
-          oc(this.rights).enableTTS(false) &&
-          oc(this.tts).enableSplitter(false)
+          (this.rights?.enableTTS ?? false) &&
+          (this.tts?.enableSplitter ?? false)
         ) {
           Splitting({
             target: body,
             by: "lines",
           });
         }
-        if (oc(this.rights).enableContentProtection(false)) {
+        if (this.rights?.enableContentProtection) {
           setTimeout(async () => {
             if (this.contentProtectionModule !== undefined) {
               await this.contentProtectionModule.initialize();
@@ -1553,14 +1551,14 @@ export default class IFrameNavigator implements Navigator {
           this.keyboardEventHandler.setupEvents(document);
         }
         if (this.view.layout !== "fixed") {
-          if (oc(this.view).isScrollMode()) {
+          if (this.view?.isScrollMode()) {
             this.view.setIframeHeight(this.iframe);
           }
         }
         if (this.annotationModule !== undefined) {
           this.annotationModule.initialize();
         }
-        if (oc(this.rights).enableTTS(false)) {
+        if (this.rights?.enableTTS) {
           setTimeout(() => {
             const body = this.iframe.contentDocument.body;
             if (this.ttsModule !== undefined) {
@@ -1650,7 +1648,7 @@ export default class IFrameNavigator implements Navigator {
 
     if (this.api && this.api.getContent) {
       if (
-        oc(this.publication.metadata.rendition).layout("unknown") === "fixed"
+        (this.publication.metadata.rendition?.layout ?? "unknown") === "fixed"
       ) {
         if (even) {
           this.api.getContent(this.currentChapterLink.href).then((content) => {
@@ -1723,7 +1721,7 @@ export default class IFrameNavigator implements Navigator {
           }
           if (
             this.iframe2 &&
-            oc(this.publication.metadata.rendition).layout("unknown") ===
+            (this.publication.metadata.rendition?.layout ?? "unknown") ===
               "fixed"
           ) {
             this.api
@@ -1776,7 +1774,7 @@ export default class IFrameNavigator implements Navigator {
       }
     } else {
       if (
-        oc(this.publication.metadata.rendition).layout("unknown") === "fixed"
+        (this.publication.metadata.rendition?.layout ?? "unknown") === "fixed"
       ) {
         if (even) {
           if (isSameOrigin) {
@@ -1877,7 +1875,7 @@ export default class IFrameNavigator implements Navigator {
         }
       }
     }
-    if (oc(this.publication.metadata.rendition).layout("unknown") === "fixed") {
+    if ((this.publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
       setTimeout(() => {
         const height = getComputedStyle(
           index === 0 && this.iframe2
@@ -2043,7 +2041,7 @@ export default class IFrameNavigator implements Navigator {
       IFrameNavigator.hideElement(element, control);
     }
     if (element === this.linksMiddle) {
-      if (oc(this.view).isScrollMode()) {
+      if (this.view?.isScrollMode()) {
         IFrameNavigator.showElement(element, control);
       } else {
         IFrameNavigator.hideElement(element, control);
@@ -2077,22 +2075,22 @@ export default class IFrameNavigator implements Navigator {
     event.stopPropagation();
   }
   startReadAloud() {
-    if (oc(this.rights).enableTTS(false)) {
+    if (this.rights?.enableTTS) {
       this.highlighter.speakAll();
     }
   }
   stopReadAloud() {
-    if (oc(this.rights).enableTTS(false)) {
+    if (this.rights?.enableTTS) {
       this.highlighter.stopReadAloud();
     }
   }
   pauseReadAloud() {
-    if (oc(this.rights).enableTTS(false)) {
+    if (this.rights?.enableTTS) {
       this.ttsModule.speakPause();
     }
   }
   resumeReadAloud() {
-    if (oc(this.rights).enableTTS(false)) {
+    if (this.rights?.enableTTS) {
       this.ttsModule.speakResume();
     }
   }
@@ -2151,7 +2149,7 @@ export default class IFrameNavigator implements Navigator {
   currentLocator(): Locator {
     let position;
     if (
-      oc(this.rights).autoGeneratePositions(true) &&
+      (this.rights?.autoGeneratePositions ?? true) &&
       this.publication.positions
     ) {
       let positions = this.publication.positionsByHref(
@@ -2190,7 +2188,7 @@ export default class IFrameNavigator implements Navigator {
     return this.publication.positions;
   }
   goToPosition(position: number) {
-    if (oc(this.rights).autoGeneratePositions(true)) {
+    if ((this.rights?.autoGeneratePositions ?? true)) {
       let locator = this.publication.positions.filter(
         (el: Locator) => el.locations.position === position
       )[0];
@@ -2289,7 +2287,7 @@ export default class IFrameNavigator implements Navigator {
       return;
     }
 
-    if (oc(this.publication.metadata.rendition).layout("unknown") === "fixed") {
+    if ((this.publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
       var wrapper = HTMLUtilities.findRequiredElement(
         this.mainElement,
@@ -2383,7 +2381,7 @@ export default class IFrameNavigator implements Navigator {
 
     setTimeout(() => {
       if (this.view.layout !== "fixed") {
-        if (oc(this.view).isScrollMode()) {
+        if (this.view?.isScrollMode()) {
           this.view.setIframeHeight(this.iframe);
         }
       }
@@ -2394,11 +2392,11 @@ export default class IFrameNavigator implements Navigator {
       if (this.annotationModule !== undefined) {
         this.annotationModule.handleResize();
       } else {
-        if (oc(this.rights).enableSearch(false)) {
+        if (this.rights?.enableSearch) {
           this.searchModule.handleResize();
         }
       }
-      if (oc(this.rights).enableContentProtection(false)) {
+      if (this.rights?.enableContentProtection) {
         if (this.contentProtectionModule !== undefined) {
           this.contentProtectionModule.handleResize();
         }
@@ -2411,7 +2409,7 @@ export default class IFrameNavigator implements Navigator {
       if (this.chapterPosition) this.chapterPosition.innerHTML = "";
       if (this.remainingPositions) this.remainingPositions.innerHTML = "";
     } else {
-      if (oc(this.view).isPaginated()) {
+      if (this.view?.isPaginated()) {
         const locator = this.currentLocator();
         const currentPage = locator.displayInfo.resourceScreenIndex;
         const pageCount = locator.displayInfo.resourceScreenCount;
@@ -2535,7 +2533,7 @@ export default class IFrameNavigator implements Navigator {
 
   private hideView(_view: HTMLDivElement, _control: HTMLButtonElement): void {
     if (this.view.layout !== "fixed") {
-      if (oc(this.view).isScrollMode()) {
+      if (this.view?.isScrollMode()) {
         document.body.style.overflow = "auto";
       }
     }
@@ -2725,20 +2723,20 @@ export default class IFrameNavigator implements Navigator {
             this.currentChapterLink.href + "#" + this.newElementId;
         }
         setTimeout(async () => {
-          if (oc(this.rights).enableContentProtection(false)) {
+          if (this.rights?.enableContentProtection) {
             this.contentProtectionModule.initializeResource();
           }
         }, 200);
 
         setTimeout(async () => {
-          if (oc(this.rights).enableContentProtection(false)) {
+          if (this.rights?.enableContentProtection) {
             this.contentProtectionModule.recalculate(300);
           }
           if (this.annotationModule !== undefined) {
             this.annotationModule.drawHighlights();
             this.annotationModule.showHighlights();
           } else {
-            if (oc(this.rights).enableSearch(false)) {
+            if (this.rights?.enableSearch) {
               await this.highlighter.destroyAllhighlights(
                 this.iframe.contentDocument
               );

@@ -876,7 +876,7 @@ export default class TextHighlighter {
     if (!this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = true;
       if (
-        oc(this.config).api(false) &&
+        (this.config?.api ?? false) &&
         oc(this.config).api.selectionMenuOpen(false)
       ) {
         this.config.api.selectionMenuOpen();
@@ -887,7 +887,7 @@ export default class TextHighlighter {
     if (this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = false;
       if (
-        oc(this.config).api(false) &&
+        (this.config?.api ?? false) &&
         oc(this.config).api.selectionMenuClose(false)
       ) {
         this.config.api.selectionMenuClose();
@@ -905,7 +905,7 @@ export default class TextHighlighter {
     var toolbox = document.getElementById("highlight-toolbox");
 
     toolbox.style.top =
-      rect.top + oc(this.delegate.attributes).navHeight(0) + "px";
+      rect.top + (this.delegate.attributes?.navHeight ?? 0) + "px";
     toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
   }
 
@@ -923,7 +923,7 @@ export default class TextHighlighter {
       var underlineIcon = document.getElementById("underlineIcon");
       var colorIcon = document.getElementById("colorIcon");
       var speakIcon = document.getElementById("speakIcon");
-      if (oc(this.delegate.rights).enableAnnotations(false)) {
+      if (this.delegate.rights?.enableAnnotations) {
         if (highlightIcon) {
           highlightIcon.style.display = "unset";
           if (colorIcon) {
@@ -976,7 +976,7 @@ export default class TextHighlighter {
           colorIcon.style.setProperty("display", "none");
         }
       }
-      if (oc(this.delegate.rights).enableTTS(false)) {
+      if (this.delegate.rights?.enableTTS) {
         if (speakIcon) {
           function speakEvent() {
             speakIcon.removeEventListener("click", speakEvent);
@@ -990,9 +990,8 @@ export default class TextHighlighter {
         }
       }
 
-      if (oc(this.config).selectionMenuItems([])) {
-        oc(this.config)
-          .selectionMenuItems([])
+      if ((this.config?.selectionMenuItems ?? [])) {
+        (this.config?.selectionMenuItems ?? [])
           .forEach((menuItem) => {
             var itemElement = document.getElementById(menuItem.id);
             var self = this;
@@ -1076,7 +1075,7 @@ export default class TextHighlighter {
           marker
         );
         this.options.onAfterHighlight(highlight, marker);
-        if (oc(this.delegate.rights).enableAnnotations(false)) {
+        if (this.delegate.rights?.enableAnnotations) {
           this.delegate.annotationModule.saveAnnotation(highlight, marker);
         }
       }
@@ -1092,7 +1091,7 @@ export default class TextHighlighter {
   }
 
   speak() {
-    if (oc(this.delegate.rights).enableTTS(false)) {
+    if (this.delegate.rights?.enableTTS) {
       var self = this;
       function getCssSelector(element: Element): string {
         const options = {
@@ -1133,12 +1132,12 @@ export default class TextHighlighter {
     }
   }
   stopReadAloud() {
-    if (oc(this.delegate.rights).enableTTS(false)) {
+    if (this.delegate.rights?.enableTTS) {
       this.doneSpeaking();
     }
   }
   speakAll() {
-    if (oc(this.delegate.rights).enableTTS(false)) {
+    if (this.delegate.rights?.enableTTS) {
       var self = this;
       function getCssSelector(element: Element): string {
         const options = {
@@ -1206,7 +1205,7 @@ export default class TextHighlighter {
   }
 
   doneSpeaking(reload: boolean = false) {
-    if (oc(this.delegate.rights).enableTTS(false)) {
+    if (this.delegate.rights?.enableTTS) {
       this.toolboxHide();
       this.dom(this.delegate.iframe.contentDocument.body).removeAllRanges();
       this.delegate.ttsModule.cancel();
@@ -1742,10 +1741,8 @@ export default class TextHighlighter {
 
   isIOS() {
     // Second test is needed for iOS 13+
-    return (
-      navigator.userAgent.match(/iPhone|iPad|iPod/i) != null ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-    );
+    return navigator.userAgent.match(/iPhone|iPad|iPod/i) != null ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   }
   isAndroid() {
     return navigator.userAgent.match(/Android/i) != null;
@@ -1898,7 +1895,7 @@ export default class TextHighlighter {
         var toolbox = document.getElementById("highlight-toolbox");
         // toolbox.style.top = ev.clientY + 74 + 'px';
         toolbox.style.top =
-          ev.clientY + oc(this.delegate.attributes).navHeight(0) + "px";
+          ev.clientY + (this.delegate.attributes?.navHeight ?? 0) + "px";
         toolbox.style.left = ev.clientX + "px";
 
         if (getComputedStyle(toolbox).display === "none") {

@@ -817,11 +817,9 @@ export default class TextHighlighter {
           endOffset = selection.focusOffset;
         selection.collapse(selection.anchorNode, selection.anchorOffset);
 
-        var direction: any[];
+        let direction = ["forward", "backward"];
         if (backwards) {
           direction = ["backward", "forward"];
-        } else {
-          direction = ["forward", "backward"];
         }
 
         selection.modify("move", direction[0], "character");

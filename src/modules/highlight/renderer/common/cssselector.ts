@@ -28,9 +28,7 @@ export const fullQualifiedSelector = (
 ): string => {
   if (node.nodeType !== Node.ELEMENT_NODE) {
     return (
-      ((node as Element).localName &&
-        (node as Element).localName.toLowerCase()) ||
-      node.nodeName.toLowerCase()
+      (node as Element)?.localName.toLowerCase() ?? node.nodeName.toLowerCase()
     );
   }
   return cssPath(node, justSelector);

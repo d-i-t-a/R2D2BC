@@ -779,7 +779,7 @@ export default class TextHighlighter {
 
   toolboxHide() {
     var toolbox = document.getElementById("highlight-toolbox");
-    toolbox.style.display = "none";
+    if (toolbox) toolbox.style.display = "none";
     this.selectionMenuClosed();
   }
 
@@ -839,7 +839,7 @@ export default class TextHighlighter {
     );
     var range = this.dom(this.delegate.iframe.contentDocument.body).getRange();
 
-    if (!range || range.collapsed) {
+    if ((!range || range.collapsed) && toolboxAddOptions) {
       // Only force hide for `toolboxMode('add')`
       if (getComputedStyle(toolboxAddOptions).display !== "none") {
         self.toolboxHide();
@@ -902,129 +902,132 @@ export default class TextHighlighter {
     var rect = range.getBoundingClientRect();
     var toolbox = document.getElementById("highlight-toolbox");
 
-    toolbox.style.top =
-      rect.top + oc(this.delegate.attributes).navHeight(0) + "px";
-    toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
+    if (toolbox) {
+      toolbox.style.top =
+        rect.top + oc(this.delegate.attributes).navHeight(0) + "px";
+      toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
+    }
   }
 
   toolboxHandler() {
     var toolbox = document.getElementById("highlight-toolbox");
+    if (toolbox) {
+      if (getComputedStyle(toolbox).display === "none") {
+        toolbox.style.display = "block";
+        this.selectionMenuOpened();
 
-    if (getComputedStyle(toolbox).display === "none") {
-      toolbox.style.display = "block";
-      this.selectionMenuOpened();
+        var self = this;
 
-      var self = this;
-
-      self.toolboxMode("add");
-      var highlightIcon = document.getElementById("highlightIcon");
-      var underlineIcon = document.getElementById("underlineIcon");
-      var colorIcon = document.getElementById("colorIcon");
-      var speakIcon = document.getElementById("speakIcon");
-      if (oc(this.delegate.rights).enableAnnotations(false)) {
-        if (highlightIcon) {
-          highlightIcon.style.display = "unset";
-          if (colorIcon) {
-            if (highlightIcon.getElementsByTagName("span").length > 0) {
-              (highlightIcon.getElementsByTagName(
-                "span"
-              )[0] as HTMLSpanElement).style.background = this.getColor();
+        self.toolboxMode("add");
+        var highlightIcon = document.getElementById("highlightIcon");
+        var underlineIcon = document.getElementById("underlineIcon");
+        var colorIcon = document.getElementById("colorIcon");
+        var speakIcon = document.getElementById("speakIcon");
+        if (oc(this.delegate.rights).enableAnnotations(false)) {
+          if (highlightIcon) {
+            highlightIcon.style.display = "unset";
+            if (colorIcon) {
+              if (highlightIcon.getElementsByTagName("span").length > 0) {
+                (highlightIcon.getElementsByTagName(
+                  "span"
+                )[0] as HTMLSpanElement).style.background = this.getColor();
+              }
             }
           }
-        }
-        if (underlineIcon) {
-          underlineIcon.style.display = "unset";
-          if (colorIcon) {
-            if (underlineIcon.getElementsByTagName("span").length > 0) {
-              (underlineIcon.getElementsByTagName(
-                "span"
-              )[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+          if (underlineIcon) {
+            underlineIcon.style.display = "unset";
+            if (colorIcon) {
+              if (underlineIcon.getElementsByTagName("span").length > 0) {
+                (underlineIcon.getElementsByTagName(
+                  "span"
+                )[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+              }
             }
           }
-        }
-        if (colorIcon) {
-          colorIcon.style.display = "unset";
-          var colorIconSymbol = colorIcon.lastChild as HTMLElement;
-          colorIconSymbol.style.backgroundColor = this.getColor();
-        }
-        if (highlightIcon) {
-          function highlightEvent() {
-            self.doHighlight(false, AnnotationMarker.Highlight);
-            self.toolboxHide();
-            highlightIcon.removeEventListener("click", highlightEvent);
+          if (colorIcon) {
+            colorIcon.style.display = "unset";
+            var colorIconSymbol = colorIcon.lastChild as HTMLElement;
+            colorIconSymbol.style.backgroundColor = this.getColor();
           }
-          highlightIcon.addEventListener("click", highlightEvent);
-        }
-        if (underlineIcon) {
-          function commentEvent() {
-            self.doHighlight(false, AnnotationMarker.Underline);
-            self.toolboxHide();
-            underlineIcon.removeEventListener("click", commentEvent);
+          if (highlightIcon) {
+            function highlightEvent() {
+              self.doHighlight(false, AnnotationMarker.Highlight);
+              self.toolboxHide();
+              highlightIcon.removeEventListener("click", highlightEvent);
+            }
+            highlightIcon.addEventListener("click", highlightEvent);
           }
-          underlineIcon.addEventListener("click", commentEvent);
-        }
-      } else {
-        if (highlightIcon) {
-          highlightIcon.style.setProperty("display", "none");
-        }
-        if (underlineIcon) {
-          underlineIcon.style.setProperty("display", "none");
-        }
-        if (colorIcon) {
-          colorIcon.style.setProperty("display", "none");
-        }
-      }
-      if (oc(this.delegate.rights).enableTTS(false)) {
-        if (speakIcon) {
-          function speakEvent() {
-            speakIcon.removeEventListener("click", speakEvent);
-            self.speak();
+          if (underlineIcon) {
+            function commentEvent() {
+              self.doHighlight(false, AnnotationMarker.Underline);
+              self.toolboxHide();
+              underlineIcon.removeEventListener("click", commentEvent);
+            }
+            underlineIcon.addEventListener("click", commentEvent);
           }
-          speakIcon.addEventListener("click", speakEvent);
+        } else {
+          if (highlightIcon) {
+            highlightIcon.style.setProperty("display", "none");
+          }
+          if (underlineIcon) {
+            underlineIcon.style.setProperty("display", "none");
+          }
+          if (colorIcon) {
+            colorIcon.style.setProperty("display", "none");
+          }
         }
-      } else {
-        if (speakIcon) {
-          speakIcon.style.setProperty("display", "none");
+        if (oc(this.delegate.rights).enableTTS(false)) {
+          if (speakIcon) {
+            function speakEvent() {
+              speakIcon.removeEventListener("click", speakEvent);
+              self.speak();
+            }
+            speakIcon.addEventListener("click", speakEvent);
+          }
+        } else {
+          if (speakIcon) {
+            speakIcon.style.setProperty("display", "none");
+          }
         }
-      }
 
-      if (oc(this.config).selectionMenuItems([])) {
-        oc(this.config)
-          .selectionMenuItems([])
-          .forEach((menuItem) => {
-            var itemElement = document.getElementById(menuItem.id);
-            var self = this;
+        if (oc(this.config).selectionMenuItems([])) {
+          oc(this.config)
+            .selectionMenuItems([])
+            .forEach((menuItem) => {
+              var itemElement = document.getElementById(menuItem.id);
+              var self = this;
 
-            function itemEvent() {
-              itemElement.removeEventListener("click", itemEvent);
+              function itemEvent() {
+                itemElement.removeEventListener("click", itemEvent);
 
-              function getCssSelector(element: Element): string {
-                const options = {
-                  className: (str: string) => {
-                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-                  },
-                  idName: (str: string) => {
-                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-                  },
-                };
-                return uniqueCssSelector(
-                  element,
-                  self.delegate.iframe.contentDocument,
-                  options
+                function getCssSelector(element: Element): string {
+                  const options = {
+                    className: (str: string) => {
+                      return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                    },
+                    idName: (str: string) => {
+                      return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                    },
+                  };
+                  return uniqueCssSelector(
+                    element,
+                    self.delegate.iframe.contentDocument,
+                    options
+                  );
+                }
+
+                const selectionInfo = getCurrentSelectionInfo(
+                  self.delegate.iframe.contentWindow,
+                  getCssSelector
                 );
+                if (selectionInfo !== undefined) {
+                  menuItem.callback(selectionInfo.cleanText);
+                }
+                self.callbackComplete();
               }
-
-              const selectionInfo = getCurrentSelectionInfo(
-                self.delegate.iframe.contentWindow,
-                getCssSelector
-              );
-              if (selectionInfo !== undefined) {
-                menuItem.callback(selectionInfo.cleanText);
-              }
-              self.callbackComplete();
-            }
-            itemElement.addEventListener("click", itemEvent);
-          });
+              itemElement.addEventListener("click", itemEvent);
+            });
+        }
       }
     }
   }

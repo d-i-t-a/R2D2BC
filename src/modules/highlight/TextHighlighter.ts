@@ -875,10 +875,7 @@ export default class TextHighlighter {
   selectionMenuOpened = debounce(() => {
     if (!this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = true;
-      if (
-        (this.config?.api ?? false) &&
-        oc(this.config).api.selectionMenuOpen(false)
-      ) {
+      if (this.config?.api && this.config?.api?.selectionMenuOpen) {
         this.config.api.selectionMenuOpen();
       }
     }
@@ -886,10 +883,7 @@ export default class TextHighlighter {
   selectionMenuClosed = debounce(() => {
     if (this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = false;
-      if (
-        (this.config?.api ?? false) &&
-        oc(this.config).api.selectionMenuClose(false)
-      ) {
+      if (this.config?.api && oc(this.config).api.selectionMenuClose(false)) {
         this.config.api.selectionMenuClose();
       }
     }

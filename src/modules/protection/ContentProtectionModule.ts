@@ -385,7 +385,7 @@ export default class ContentProtectionModule implements ReaderModule {
             window.location.replace(window.location.origin);
           }
           if (
-            (self.protection?.api ?? false) &&
+            self.protection?.api &&
             oc(self.protection).api.inspectDetected(false)
           ) {
             self.protection.api.inspectDetected();

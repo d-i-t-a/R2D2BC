@@ -243,7 +243,7 @@ export async function increase(incremental) {
     (incremental === "pitch" ||
       incremental === "rate" ||
       incremental === "volume") &&
-    (R2Navigator.rights?.enableTTS ?? false)
+    R2Navigator.rights?.enableTTS
   ) {
     if (IS_DEV) {
       console.log("increase " + incremental);
@@ -261,7 +261,7 @@ export async function decrease(incremental) {
     (incremental === "pitch" ||
       incremental === "rate" ||
       incremental === "volume") &&
-    (R2Navigator.rights?.enableTTS ?? false)
+    R2Navigator.rights?.enableTTS
   ) {
     if (IS_DEV) {
       console.log("decrease " + incremental);
@@ -405,9 +405,9 @@ export async function load(config: ReaderConfig): Promise<any> {
   });
 
   if (
-    ((config.protection?.enforceSupportedBrowsers ?? false) &&
+    (config.protection?.enforceSupportedBrowsers &&
       supportedBrowsers.test(navigator.userAgent)) ||
-    (config.protection?.enforceSupportedBrowsers ?? false) === false
+    !config.protection?.enforceSupportedBrowsers
   ) {
     var mainElement = document.getElementById("D2Reader-Container");
     var headerMenu = document.getElementById("headerMenu");

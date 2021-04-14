@@ -361,8 +361,8 @@ export default class BookmarkModule implements ReaderModule {
                 bookmarkItem.appendChild(bookmarkLink);
                 if (
                   (self.delegate.sideNavExpanded &&
-                    (self.delegate.rights?.enableMaterial ?? false)) ||
-                  !(self.delegate.rights?.enableMaterial ?? false)
+                    self.delegate.rights?.enableMaterial) ||
+                  !self.delegate.rights?.enableMaterial
                 ) {
                   let bookmarkDeleteLink: HTMLElement = document.createElement(
                     "button"

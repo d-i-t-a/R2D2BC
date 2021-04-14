@@ -679,7 +679,7 @@ export default class IFrameNavigator implements Navigator {
           self.mTabs = Tabs.init(tabs);
         }
         if (this.headerMenu) {
-          if (!(this.rights?.enableBookmarks ?? false)) {
+          if (!this.rights?.enableBookmarks) {
             if (menuBookmark)
               menuBookmark.parentElement.style.setProperty("display", "none");
             var sideNavSectionBookmarks = HTMLUtilities.findElement(
@@ -689,7 +689,7 @@ export default class IFrameNavigator implements Navigator {
             if (sideNavSectionBookmarks)
               sideNavSectionBookmarks.style.setProperty("display", "none");
           }
-          if (!(this.rights?.enableAnnotations ?? false)) {
+          if (!this.rights?.enableAnnotations) {
             var sideNavSectionHighlights = HTMLUtilities.findElement(
               this.headerMenu,
               "#sidenav-section-highlights"
@@ -697,11 +697,11 @@ export default class IFrameNavigator implements Navigator {
             if (sideNavSectionHighlights)
               sideNavSectionHighlights.style.setProperty("display", "none");
           }
-          if (!(this.rights?.enableTTS ?? false)) {
+          if (!this.rights?.enableTTS) {
             if (menuTTS)
               menuTTS.parentElement.style.setProperty("display", "none");
           }
-          if (!(this.rights?.enableSearch ?? false)) {
+          if (!this.rights?.enableSearch) {
             menuSearch.parentElement.style.removeProperty("display");
           }
           if (
@@ -1524,10 +1524,7 @@ export default class IFrameNavigator implements Navigator {
       }
       setTimeout(() => {
         const body = this.iframe.contentDocument.body;
-        if (
-          (this.rights?.enableTTS ?? false) &&
-          (this.tts?.enableSplitter ?? false)
-        ) {
+        if (this.rights?.enableTTS && this.tts?.enableSplitter) {
           Splitting({
             target: body,
             by: "lines",

@@ -78,7 +78,7 @@ export default class TimelineModule implements ReaderModule {
 
       let locator = this.delegate.currentLocator();
       if (
-        (this.delegate.rights?.enableMaterial ?? false) &&
+        this.delegate.rights?.enableMaterial &&
         (this.delegate.rights?.autoGeneratePositions ?? true) &&
         this.publication.positions
       ) {

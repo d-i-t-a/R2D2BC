@@ -295,7 +295,7 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   async drawHighlights(search: boolean = true): Promise<void> {
-    if ((this.rights?.enableAnnotations ?? false) && this.highlighter) {
+    if (this.rights?.enableAnnotations && this.highlighter) {
       if (this.api) {
         let highlights: Array<any> = [];
         if (this.annotator) {
@@ -393,7 +393,7 @@ export default class AnnotationModule implements ReaderModule {
         this.highlighter.setColor(this.config.initialAnnotationColor);
       }
     }
-    if (search && (this.rights?.enableSearch ?? false)) {
+    if (search && this.rights?.enableSearch) {
       this.delegate.searchModule.drawSearch();
     }
   }
@@ -537,8 +537,8 @@ export default class AnnotationModule implements ReaderModule {
                 bookmarkItem.appendChild(bookmarkLink);
                 if (
                   (self.delegate.sideNavExpanded &&
-                    (self.delegate.rights?.enableMaterial ?? false)) ||
-                  !(self.delegate.rights?.enableMaterial ?? false)
+                    self.delegate.rights?.enableMaterial) ||
+                  !self.delegate.rights?.enableMaterial
                 ) {
                   let bookmarkDeleteLink: HTMLElement = document.createElement(
                     "button"

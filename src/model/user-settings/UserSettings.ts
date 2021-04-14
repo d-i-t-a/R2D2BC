@@ -873,13 +873,11 @@ export class UserSettings implements IUserSettings {
         ].className.replace(" active", "");
       }
 
-      const index =
-        (await this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value) ===
-        true
-          ? 0
-          : 1;
-
       if (this.userProperties) {
+        const index =
+          this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value === true
+            ? 0
+            : 1;
         if (this.viewButtons[index])
           this.viewButtons[index].className += " active";
       }

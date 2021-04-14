@@ -990,42 +990,41 @@ export default class TextHighlighter {
         }
       }
 
-      if ((this.config?.selectionMenuItems ?? [])) {
-        (this.config?.selectionMenuItems ?? [])
-          .forEach((menuItem) => {
-            var itemElement = document.getElementById(menuItem.id);
-            var self = this;
+      if (this.config?.selectionMenuItems ?? []) {
+        (this.config?.selectionMenuItems ?? []).forEach((menuItem) => {
+          var itemElement = document.getElementById(menuItem.id);
+          var self = this;
 
-            function itemEvent() {
-              itemElement.removeEventListener("click", itemEvent);
+          function itemEvent() {
+            itemElement.removeEventListener("click", itemEvent);
 
-              function getCssSelector(element: Element): string {
-                const options = {
-                  className: (str: string) => {
-                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-                  },
-                  idName: (str: string) => {
-                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-                  },
-                };
-                return uniqueCssSelector(
-                  element,
-                  self.delegate.iframe.contentDocument,
-                  options
-                );
-              }
-
-              const selectionInfo = getCurrentSelectionInfo(
-                self.delegate.iframe.contentWindow,
-                getCssSelector
+            function getCssSelector(element: Element): string {
+              const options = {
+                className: (str: string) => {
+                  return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                },
+                idName: (str: string) => {
+                  return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                },
+              };
+              return uniqueCssSelector(
+                element,
+                self.delegate.iframe.contentDocument,
+                options
               );
-              if (selectionInfo !== undefined) {
-                menuItem.callback(selectionInfo.cleanText);
-              }
-              self.callbackComplete();
             }
-            itemElement.addEventListener("click", itemEvent);
-          });
+
+            const selectionInfo = getCurrentSelectionInfo(
+              self.delegate.iframe.contentWindow,
+              getCssSelector
+            );
+            if (selectionInfo !== undefined) {
+              menuItem.callback(selectionInfo.cleanText);
+            }
+            self.callbackComplete();
+          }
+          itemElement.addEventListener("click", itemEvent);
+        });
       }
     }
   }
@@ -1741,8 +1740,10 @@ export default class TextHighlighter {
 
   isIOS() {
     // Second test is needed for iOS 13+
-    return navigator.userAgent.match(/iPhone|iPad|iPod/i) != null ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    return (
+      navigator.userAgent.match(/iPhone|iPad|iPod/i) != null ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    );
   }
   isAndroid() {
     return navigator.userAgent.match(/Android/i) != null;

@@ -414,7 +414,8 @@ export class UserSettings implements IUserSettings {
 
   async applyProperties(): Promise<any> {
     if (
-      (this.view.delegate.publication.metadata.rendition?.layout ?? "unknown") !== "fixed"
+      (this.view.delegate.publication.metadata.rendition?.layout ??
+        "unknown") !== "fixed"
     ) {
       const html = HTMLUtilities.findRequiredIframeElement(
         this.iframe.contentDocument,

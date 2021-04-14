@@ -47,7 +47,6 @@ import AnnotationModule from "../modules/AnnotationModule";
 import TTSModule, { TTSSpeechConfig } from "../modules/TTS/TTSModule";
 import { goTo, IS_DEV } from "..";
 import Splitting from "../modules/TTS/splitting";
-import { oc } from "ts-optchain";
 import SearchModule from "../modules/search/SearchModule";
 import ContentProtectionModule from "../modules/protection/ContentProtectionModule";
 import TextHighlighter from "../modules/highlight/TextHighlighter";
@@ -707,7 +706,8 @@ export default class IFrameNavigator implements Navigator {
           }
           if (
             menuSearch &&
-            (this.view.delegate.publication.metadata.rendition?.layout ?? "unknown") === "fixed"
+            (this.view.delegate.publication.metadata.rendition?.layout ??
+              "unknown") === "fixed"
           ) {
             menuSearch.parentElement.style.setProperty("display", "none");
           }
@@ -1875,7 +1875,9 @@ export default class IFrameNavigator implements Navigator {
         }
       }
     }
-    if ((this.publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
+    if (
+      (this.publication.metadata.rendition?.layout ?? "unknown") === "fixed"
+    ) {
       setTimeout(() => {
         const height = getComputedStyle(
           index === 0 && this.iframe2
@@ -2188,7 +2190,7 @@ export default class IFrameNavigator implements Navigator {
     return this.publication.positions;
   }
   goToPosition(position: number) {
-    if ((this.rights?.autoGeneratePositions ?? true)) {
+    if (this.rights?.autoGeneratePositions ?? true) {
       let locator = this.publication.positions.filter(
         (el: Locator) => el.locations.position === position
       )[0];
@@ -2287,7 +2289,9 @@ export default class IFrameNavigator implements Navigator {
       return;
     }
 
-    if ((this.publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
+    if (
+      (this.publication.metadata.rendition?.layout ?? "unknown") === "fixed"
+    ) {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
       var wrapper = HTMLUtilities.findRequiredElement(
         this.mainElement,

@@ -28,7 +28,6 @@ import BookmarkModule from "./modules/BookmarkModule";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
 import TTSModule from "./modules/TTS/TTSModule";
-import { oc } from "ts-optchain";
 import { TTSSettings } from "./modules/TTS/TTSSettings";
 import SearchModule from "./modules/search/SearchModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
@@ -396,10 +395,9 @@ export async function load(config: ReaderConfig): Promise<any> {
   var browsers: string[] = [];
 
   if (config.protection?.enforceSupportedBrowsers) {
-    (config.protection?.supportedBrowsers ?? [])
-      .forEach((browser: string) => {
-        browsers.push("last 1 " + browser + " version");
-      });
+    (config.protection?.supportedBrowsers ?? []).forEach((browser: string) => {
+      browsers.push("last 1 " + browser + " version");
+    });
   }
   const supportedBrowsers = getUserAgentRegExp({
     browsers: browsers,
@@ -442,7 +440,7 @@ export async function load(config: ReaderConfig): Promise<any> {
       // config.protection.enableObfuscation = false;
     }
 
-    if ((config.rights?.autoGeneratePositions ?? true)) {
+    if (config.rights?.autoGeneratePositions ?? true) {
       var startPosition = 0;
       var totalContentLength = 0;
       var positions = [];

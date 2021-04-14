@@ -28,7 +28,6 @@ import { Bookmark, Locator } from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 import { v4 as uuid } from "uuid";
-import { oc } from "ts-optchain";
 
 export type AddBookmark = (bookmark: Bookmark) => Promise<Bookmark>;
 export type DeleteBookmark = (bookmark: Bookmark) => Promise<Bookmark>;

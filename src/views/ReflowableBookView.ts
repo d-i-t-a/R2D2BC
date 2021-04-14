@@ -26,7 +26,6 @@ import IFrameNavigator, {
   IFrameAttributes,
 } from "../navigator/IFrameNavigator";
 import { debounce } from "debounce";
-import { oc } from "ts-optchain";
 
 export default class ReflowableBookView implements BookView {
   layout = "reflowable";

@@ -29,7 +29,6 @@ import { Locator, Locations } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import TextHighlighter from "../highlight/TextHighlighter";
-import { oc } from "ts-optchain";
 
 export interface SearchConfig {
   color: string;

@@ -24,7 +24,6 @@ import IFrameNavigator from "../../navigator/IFrameNavigator";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import ReaderModule from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { oc } from "ts-optchain";
 
 export interface TimelineModuleConfig {
   publication: Publication;
@@ -130,7 +129,7 @@ export default class TimelineModule implements ReaderModule {
           event.preventDefault();
           event.stopPropagation();
           var position;
-          if ((this.delegate.rights?.autoGeneratePositions ?? true)) {
+          if (this.delegate.rights?.autoGeneratePositions ?? true) {
             position = {
               ...this.publication.positions.filter(
                 (el: Locator) => el.href === link.href

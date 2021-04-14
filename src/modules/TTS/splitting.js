@@ -17,9 +17,10 @@
    * @param el{HTMLElement}
    * @param varName {string}
    * @param value {string|number}
+   * @param key
    */
   function setProperty(el, varName, value, key) {
-    if (key != undefined) {
+    if (key !== undefined) {
       el.setAttribute("data-" + key + "-index", value);
     } else {
       el.style.setProperty(varName, value);
@@ -64,7 +65,7 @@
    * @returns {HTMLElement[]}
    */
   function $(e, parent) {
-    return !e || e.length == 0
+    return !e || e.length === 0
       ? // null or empty string returns empty array
         []
       : e.nodeName
@@ -138,7 +139,7 @@
   function resolvePlugins(by, parent, deps) {
     // skip if already visited this dependency
     var index = deps.indexOf(by);
-    if (index == -1) {
+    if (index === -1) {
       // if new to dependency array, add to the beginning
       deps.unshift(by);
 
@@ -197,7 +198,8 @@
    * @param el {Node} Element to split
    * @param key {string}
    * @param splitOn {string}
-   * @param includeSpace {boolean}
+   * @param includePrevious
+   * @param preserveWhitespace
    * @returns {HTMLElement[]}
    */
   function splitText(el, key, splitOn, includePrevious, preserveWhitespace) {
@@ -220,11 +222,11 @@
         return;
       }
       if (
-        next.tagName == "select" ||
-        next.tagName == "input" ||
-        next.tagName == "option" ||
-        next.tagName == "textarea" ||
-        next.tagName == "script"
+        next.tagName === "select" ||
+        next.tagName === "input" ||
+        next.tagName === "option" ||
+        next.tagName === "textarea" ||
+        next.tagName === "script"
       ) {
         allElements.push(next);
         return;

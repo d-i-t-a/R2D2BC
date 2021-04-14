@@ -34,7 +34,7 @@ import {
 import { IEventPayload_R2_EVENT_HIGHLIGHT_CLICK } from "./common/events";
 import { IColor, IHighlight } from "./common/highlight";
 import { ISelectionInfo } from "./common/selection";
-import { IRectSimple, getClientRectsNoOverlap } from "./common/rect-utils";
+import { getClientRectsNoOverlap, IRectSimple } from "./common/rect-utils";
 import {
   convertRangeInfo,
   getCurrentSelectionInfo,
@@ -164,7 +164,7 @@ export default class TextHighlighter {
 
     var self = this;
     async function unselect() {
-      if (self.lastSelectedHighlight == undefined) {
+      if (self.lastSelectedHighlight === undefined) {
         // self.delegate.api.highlightUnSelected().then(async () => {
         //     if (IS_DEV) {console.log("highlightUnSelected,  click on existing")}
         // })
@@ -817,11 +817,9 @@ export default class TextHighlighter {
           endOffset = selection.focusOffset;
         selection.collapse(selection.anchorNode, selection.anchorOffset);
 
-        var direction = [];
+        let direction = ["forward", "backward"];
         if (backwards) {
           direction = ["backward", "forward"];
-        } else {
-          direction = ["forward", "backward"];
         }
 
         selection.modify("move", direction[0], "character");
@@ -856,7 +854,6 @@ export default class TextHighlighter {
         "selectionchange",
         this.toolboxPlacement.bind(this)
       );
-      var self = this;
       setTimeout(function () {
         var selection = self
           .dom(self.delegate.iframe.contentDocument.body)
@@ -1021,7 +1018,7 @@ export default class TextHighlighter {
                 self.delegate.iframe.contentWindow,
                 getCssSelector
               );
-              if (selectionInfo != undefined) {
+              if (selectionInfo !== undefined) {
                 menuItem.callback(selectionInfo.cleanText);
               }
               self.callbackComplete();
@@ -1035,6 +1032,7 @@ export default class TextHighlighter {
   /**
    * Highlights current range.
    * @param {boolean} keepRange - Don't remove range after highlighting. Default: false.
+   * @param marker
    * @memberof TextHighlighter
    */
   doHighlight(keepRange?: boolean, marker?: AnnotationMarker) {
@@ -1114,7 +1112,7 @@ export default class TextHighlighter {
         self.delegate.iframe.contentWindow,
         getCssSelector
       );
-      if (selectionInfo != undefined) {
+      if (selectionInfo !== undefined) {
         // if (this.options.onBeforeHighlight(selectionInfo) === true) {
         //     var highlight = this.createHighlight(self.dom(self.el).getWindow(), selectionInfo,  TextHighlighter.hexToRgbString(this.getColor()),true, marker)
         //     this.options.onAfterHighlight(highlight, marker);
@@ -1160,7 +1158,7 @@ export default class TextHighlighter {
         this.dom(this.delegate.iframe.contentDocument.body).getWindow(),
         getCssSelector
       );
-      if (selectionInfo != undefined) {
+      if (selectionInfo !== undefined) {
         self.speak();
       } else {
         var node = this.dom(
@@ -1181,7 +1179,7 @@ export default class TextHighlighter {
           getCssSelector
         );
 
-        if (selectionInfo != undefined && selectionInfo.cleanText) {
+        if (selectionInfo !== undefined && selectionInfo.cleanText) {
           this.delegate.ttsModule.speak(selectionInfo as any, false, () => {
             var selection = self
               .dom(self.delegate.iframe.contentDocument.body)
@@ -1529,7 +1527,6 @@ export default class TextHighlighter {
    * Creates wrapper for highlights.
    * TextHighlighter instance calls this method each time it needs to create highlights and pass options retrieved
    * in constructor.
-   * @param {object} options - the same object as in TextHighlighter constructor.
    * @returns {HTMLElement}
    * @memberof TextHighlighter
    * @static
@@ -1553,7 +1550,7 @@ export default class TextHighlighter {
   public static hexToRgbString(hex: string) {
     var c: any;
     c = hex.substring(1).split("");
-    if (c.length == 3) {
+    if (c.length === 3) {
       c = [c[0], c[0], c[1], c[1], c[2], c[2]];
     }
     c = "0x" + c.join("");
@@ -1618,8 +1615,7 @@ export default class TextHighlighter {
         return h.id === id;
       });
       if (highlight) {
-        const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
-        if (highlight.marker == AnnotationMarker.Underline) {
+        if (highlight.marker === AnnotationMarker.Underline) {
           // Highlight color as string check
           if (typeof highlight.color === "object") {
             highlightArea.style.setProperty(
@@ -1644,7 +1640,7 @@ export default class TextHighlighter {
           if (typeof highlight.color === "object") {
             highlightArea.style.setProperty(
               "background-color",
-              `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
+              `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY})`,
               "important"
             );
           } else {
@@ -1661,8 +1657,7 @@ export default class TextHighlighter {
     highlight: IHighlight
   ) {
     for (const highlightArea of highlightAreas) {
-      const opacity = ALT_BACKGROUND_COLOR_OPACITY;
-      if (highlight.marker == AnnotationMarker.Underline) {
+      if (highlight.marker === AnnotationMarker.Underline) {
         // Highlight color as string check
         if (typeof highlight.color === "object") {
           highlightArea.style.setProperty(
@@ -1687,7 +1682,7 @@ export default class TextHighlighter {
         if (typeof highlight.color === "object") {
           highlightArea.style.setProperty(
             "background-color",
-            `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
+            `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${ALT_BACKGROUND_COLOR_OPACITY})`,
             "important"
           );
         } else {
@@ -1713,12 +1708,11 @@ export default class TextHighlighter {
       highlights.forEach((highlight) => {
         if (id === highlight.id) {
           if (highlight) {
-            const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
             // Highlight color as string check
             if (typeof highlight.color === "object") {
               highlightArea.style.setProperty(
                 "background-color",
-                `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
+                `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY})`,
                 "important"
               );
             } else {
@@ -1729,12 +1723,11 @@ export default class TextHighlighter {
       });
       if (id === highlight.id) {
         if (highlight) {
-          const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
           // Highlight color as string check
           if (typeof highlight.color === "object") {
             highlightArea.style.setProperty(
               "background-color",
-              `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
+              `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY})`,
               "important"
             );
           } else {
@@ -2075,12 +2068,11 @@ export default class TextHighlighter {
         this.delegate.iframe.contentWindow as any,
         highlight
       );
-      var position = parseInt(
+      highlight.position = parseInt(
         ((highlightDom.hasChildNodes
           ? highlightDom.childNodes[0]
           : highlightDom) as HTMLDivElement).style.top.replace("px", "")
       );
-      highlight.position = position;
       return highlight;
     } catch (e) {
       throw "Can't create highlight: " + e;
@@ -2114,12 +2106,11 @@ export default class TextHighlighter {
       _highlights.push(highlight);
 
       let highlightDom = this.createHighlightDom(win, highlight);
-      var position = parseInt(
+      highlight.position = parseInt(
         ((highlightDom.hasChildNodes
           ? highlightDom.childNodes[0]
           : highlightDom) as HTMLDivElement).style.top.replace("px", "")
       );
-      highlight.position = position;
 
       return highlight;
     } catch (e) {
@@ -2168,7 +2159,7 @@ export default class TextHighlighter {
     const xOffset = paginated ? -scrollElement.scrollLeft : bodyRect.left;
     const yOffset = paginated ? -scrollElement.scrollTop : bodyRect.top;
 
-    const scale = 1 / 1;
+    const scale = 1;
 
     const drawUnderline = false;
     const drawStrikeThrough = false;
@@ -2202,7 +2193,7 @@ export default class TextHighlighter {
         }, ${opacity}) !important`;
       }
 
-      if (highlight.marker == AnnotationMarker.Underline) {
+      if (highlight.marker === AnnotationMarker.Underline) {
         // Highlight color as string check
         if (typeof highlight.color === "object") {
           highlightArea.setAttribute(

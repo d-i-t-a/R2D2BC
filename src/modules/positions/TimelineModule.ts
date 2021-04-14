@@ -103,7 +103,7 @@ export default class TimelineModule implements ReaderModule {
         var chapterHeight;
         if (
           this.publication.positions &&
-          this.delegate.view.layout != "fixed"
+          this.delegate.view.layout !== "fixed"
         ) {
           if (link.contentWeight) {
             chapterHeight = link.contentWeight;

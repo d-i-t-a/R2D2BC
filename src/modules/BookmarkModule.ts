@@ -49,14 +49,14 @@ export interface BookmarkModuleConfig {
 }
 
 export default class BookmarkModule implements ReaderModule {
-  private api: BookmarkModuleAPI;
-  private annotator: Annotator | null;
+  private readonly api: BookmarkModuleAPI;
+  private readonly annotator: Annotator | null;
   private rights: ReaderRights;
   private publication: Publication;
   private bookmarksView: HTMLDivElement;
   private sideNavSectionBookmarks: HTMLElement;
-  private headerMenu: HTMLElement;
-  private initialAnnotations: any;
+  private readonly headerMenu: HTMLElement;
+  private readonly initialAnnotations: any;
   private delegate: IFrameNavigator;
 
   public static async create(config: BookmarkModuleConfig): Promise<any> {
@@ -329,7 +329,7 @@ export default class BookmarkModule implements ReaderModule {
                 );
                 bookmarkLink.setAttribute("href", locator.href);
 
-                if (type == AnnotationType.Bookmark) {
+                if (type === AnnotationType.Bookmark) {
                   bookmarkLink.className = "bookmark-link";
 
                   let title: HTMLSpanElement = document.createElement("span");
@@ -344,7 +344,9 @@ export default class BookmarkModule implements ReaderModule {
 
                 let timestamp: HTMLSpanElement = document.createElement("span");
                 timestamp.className = "timestamp";
-                timestamp.innerHTML = self.readableTimestamp(locator.created);
+                timestamp.innerHTML = BookmarkModule.readableTimestamp(
+                  locator.created
+                );
                 bookmarkLink.appendChild(timestamp);
 
                 addEventListenerOptional(
@@ -411,8 +413,7 @@ export default class BookmarkModule implements ReaderModule {
     locator: Bookmark
   ): void {
     if (locator) {
-      const linkHref = this.publication.getAbsoluteHref(locator.href);
-      locator.href = linkHref;
+      locator.href = this.publication.getAbsoluteHref(locator.href);
       this.delegate.stopReadAloud();
       this.delegate.navigate(locator);
     } else {
@@ -431,7 +432,7 @@ export default class BookmarkModule implements ReaderModule {
       console.log("bookmark data locator: ", locator);
     }
     if (locator) {
-      if (type == AnnotationType.Bookmark) {
+      if (type === AnnotationType.Bookmark) {
         this.deleteBookmark(locator);
       }
     } else {
@@ -441,7 +442,7 @@ export default class BookmarkModule implements ReaderModule {
     }
   }
 
-  private readableTimestamp(timestamp: string) {
+  private static readableTimestamp(timestamp: string) {
     const date = new Date(timestamp);
     return date.toDateString() + " " + date.toLocaleTimeString();
   }

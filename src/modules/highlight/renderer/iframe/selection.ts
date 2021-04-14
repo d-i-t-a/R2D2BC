@@ -425,10 +425,7 @@ export function normalizeRange(r: Range) {
     if (node === sc && so === length) {
       return false;
     }
-    if (node === ec && eo === 0) {
-      return false;
-    }
-    return true;
+    return !(node === ec && eo === 0);
   }
 
   // Move the start container until it is included or collapses to the end.

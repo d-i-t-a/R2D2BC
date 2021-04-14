@@ -111,7 +111,7 @@ export function rectIntersect(rect1: IRect, rect2: IRect): IRect {
   const minRight = Math.min(rect1.right, rect2.right);
   const maxTop = Math.max(rect1.top, rect2.top);
   const minBottom = Math.min(rect1.bottom, rect2.bottom);
-  const rect: IRect = {
+  return {
     bottom: minBottom,
     height: Math.max(0, minBottom - maxTop),
     left: maxLeft,
@@ -119,7 +119,6 @@ export function rectIntersect(rect1: IRect, rect2: IRect): IRect {
     top: maxTop,
     width: Math.max(0, minRight - maxLeft),
   };
-  return rect;
 }
 
 // rect1 - rect2

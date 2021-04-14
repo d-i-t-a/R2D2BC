@@ -820,7 +820,7 @@ export default class ContentProtectionModule implements ReaderModule {
     if (oc(this.protection).enableObfuscation(false)) {
       const onDoResize = debounce(() => {
         this.calcRects(this.rects);
-        if (this.rects != undefined) {
+        if (this.rects !== undefined) {
           this.rects.forEach((rect) =>
             this.toggleRect(rect, this.securityContainer, this.isHacked)
           );
@@ -853,7 +853,7 @@ export default class ContentProtectionModule implements ReaderModule {
     if (
       navigator.platform === "MacIntel" || navigator.platform.match("Mac")
         ? event.metaKey
-        : event.ctrlKey && (event.key === "s" || event.keyCode == 83)
+        : event.ctrlKey && (event.key === "s" || event.keyCode === 83)
     ) {
       event.preventDefault();
       event.stopPropagation();
@@ -1022,7 +1022,7 @@ export default class ContentProtectionModule implements ReaderModule {
     if (oc(this.protection).enableObfuscation(false)) {
       const onDoResize = debounce(() => {
         this.calcRects(this.rects);
-        if (this.rects != undefined) {
+        if (this.rects !== undefined) {
           this.rects.forEach((rect) =>
             this.toggleRect(rect, this.securityContainer, this.isHacked)
           );
@@ -1036,7 +1036,7 @@ export default class ContentProtectionModule implements ReaderModule {
   }
 
   calcRects(rects: Array<ContentProtectionRect>): void {
-    if (rects != undefined) {
+    if (rects !== undefined) {
       rects.forEach((rect) => {
         try {
           const { top, height, left, width } = this.measureTextNode(rect.node);
@@ -1099,8 +1099,8 @@ export default class ContentProtectionModule implements ReaderModule {
     return textNodes.map((node) => {
       const { top, height, left, width } = this.measureTextNode(node);
       const scrambled =
-        node.parentElement.nodeName == "option" ||
-        node.parentElement.nodeName == "script"
+        node.parentElement.nodeName === "option" ||
+        node.parentElement.nodeName === "script"
           ? node.textContent
           : this.obfuscateText(node.textContent);
       return {

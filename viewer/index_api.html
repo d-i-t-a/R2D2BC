@@ -46,12 +46,12 @@
     <div style="position:fixed;top:0;left:0;z-index: 1000;bottom: 0; overflow: scroll;">
 
         <button onclick="javascript:D2Reader.search('frankenstein', true).then(
-            result => { 
+            result => {
                 console.log(JSON.stringify(result))
             })">search in chapter</button><br>
 
         <button onclick="javascript:D2Reader.search('frankenstein', false).then(
-            result => { 
+            result => {
                 console.log(JSON.stringify(result))
             })">search in book</button><br>
 
@@ -81,11 +81,11 @@
         <button
                 onclick="javascript:alert(D2Reader.mostRecentNavigatedTocItem())">mostRecentNavigatedTocItem</button><br>
         <button onclick="javascript:D2Reader.currentLocator().then(
-            result => { 
+            result => {
                 alert(JSON.stringify(result))
             })">currentProgressInfo</button><br>
         <button onclick="javascript:D2Reader.positions().then(
-            result => { 
+            result => {
                 alert(JSON.stringify(result))
             })">positions</button><br>
 
@@ -154,17 +154,17 @@
                 onclick="javascript:D2Reader.goTo({href:'OEBPS/Text/chapter_01.xhtml', title:'chapter 1', locations:{progression:0}})">go
             to chapter 1</button><br>
         <button onclick="javascript:D2Reader.saveBookmark().then(
-            result => { 
+            result => {
                 console.log(result);
                 D2Reader.bookmarks().then(
-                    res => { 
+                    res => {
                         console.log(res.length)
                     })
             }); ">add bookmark</button><br>
         <button onclick="javascript:D2Reader.deleteBookmark({id:0.32616493991327755})">delete bookmark</button><br>
 
         <button onclick="javascript:D2Reader.tableOfContents().then(
-            result => { 
+            result => {
                 console.log(result)
                 console.log(result.length)
                 var container = document.getElementById('container-toc');
@@ -189,7 +189,7 @@
             TOC</button><br>
 
         <button onclick="javascript:D2Reader.bookmarks().then(
-                result => { 
+                result => {
                     console.log(result)
                     console.log(result.length)
                     var container = document.getElementById('container-bookmarks');
@@ -214,7 +214,7 @@
             bookmarks</button><br>
 
         <button onclick="javascript:D2Reader.annotations().then(
-                    result => { 
+                    result => {
                         console.log(result)
                         console.log(result.length)
                         var container = document.getElementById('container-annotations');
@@ -239,7 +239,7 @@
             annotations</button><br>
 
         <button onclick="javascript:D2Reader.currentSettings().then(
-            result => { 
+            result => {
                 console.log(result)
             })">current usersettings</button><br>
 
@@ -419,16 +419,16 @@
             },
             protection: {
                 enforceSupportedBrowsers: true,
-                enableEncryption: true, // does nothing right now 
+                enableEncryption: true, // does nothing right now
                 enableObfuscation: true,
                 disablePrint:true,
                 disableCopy:true,
-                detectInspect: true, 
+                detectInspect: true,
                 clearOnInspect: false, // make sure detectInspect is true, otherwise this won't work
                 disableKeys: true,
                 disableContextMenu: true,
                 hideTargetUrl: true,
-                disableDrag: true,
+                disableDrag: false,
                 api: {
                     // make sure detectInspect is true, otherwise this won't be called
                     // this callback will be executed in a loop while inspect is visible
@@ -438,7 +438,7 @@
                 }
             },
             api: {
-            },           
+            },
             injectables: injectables,
             userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)

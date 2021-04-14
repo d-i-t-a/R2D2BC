@@ -26,7 +26,6 @@ import {
   addEventListenerOptional,
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
-import { oc } from "ts-optchain";
 import * as sanitize from "sanitize-html";
 import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
 import TextHighlighter from "../highlight/TextHighlighter";
@@ -399,18 +398,20 @@ export default class TTSModule implements ReaderModule {
       var spokenWordCleaned = word.replace(/[^a-zA-Z0-9 ]/g, "");
       if (IS_DEV) console.log("spokenWordCleaned", spokenWordCleaned);
 
-      var splittingWord = self.splittingResult[self.index] as HTMLElement;
-      var splittingWordCleaned = oc(splittingWord)
-        .dataset.word("")
-        .replace(/[^a-zA-Z0-9 ]/g, "");
+      let splittingWord = self.splittingResult[self.index] as HTMLElement;
+      var splittingWordCleaned = splittingWord?.dataset.word.replace(
+        /[^a-zA-Z0-9 ]/g,
+        ""
+      );
       if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
 
       if (splittingWordCleaned.length === 0) {
         self.index++;
         splittingWord = self.splittingResult[self.index] as HTMLElement;
-        splittingWordCleaned = oc(splittingWord)
-          .dataset.word("")
-          .replace(/[^a-zA-Z0-9 ]/g, "");
+        splittingWordCleaned = splittingWord?.dataset.word.replace(
+          /[^a-zA-Z0-9 ]/g,
+          ""
+        );
         if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
       }
 

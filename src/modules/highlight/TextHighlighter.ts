@@ -47,7 +47,6 @@ import { icons } from "../../utils/IconLib";
 import IFrameNavigator, {
   SelectionMenuItem,
 } from "../../navigator/IFrameNavigator";
-import { oc } from "ts-optchain";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
@@ -883,7 +882,7 @@ export default class TextHighlighter {
   selectionMenuClosed = debounce(() => {
     if (this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = false;
-      if (this.config?.api && oc(this.config).api.selectionMenuClose(false)) {
+      if (this.config?.api && this.config?.api.selectionMenuClose) {
         this.config.api.selectionMenuClose();
       }
     }

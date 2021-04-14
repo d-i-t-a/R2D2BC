@@ -26,7 +26,6 @@ import {
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
 import { IS_DEV } from "../..";
-import { oc } from "ts-optchain";
 
 export interface ContentProtectionModuleConfig {
   delegate: IFrameNavigator;
@@ -384,10 +383,7 @@ export default class ContentProtectionModule implements ReaderModule {
             window.sessionStorage.clear();
             window.location.replace(window.location.origin);
           }
-          if (
-            self.protection?.api &&
-            oc(self.protection).api.inspectDetected(false)
-          ) {
+          if (self.protection?.api && self.protection?.api.inspectDetected) {
             self.protection.api.inspectDetected();
           }
         }

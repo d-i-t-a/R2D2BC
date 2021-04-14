@@ -35,7 +35,6 @@ import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from "uuid";
-import { oc } from "ts-optchain";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
 
@@ -389,7 +388,7 @@ export default class AnnotationModule implements ReaderModule {
           });
         }
       }
-      if (this.config && oc(this.config).initialAnnotationColor !== undefined) {
+      if (this.config && this.config?.initialAnnotationColor !== undefined) {
         this.highlighter.setColor(this.config.initialAnnotationColor);
       }
     }

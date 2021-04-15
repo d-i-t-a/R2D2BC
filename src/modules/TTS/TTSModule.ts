@@ -31,15 +31,15 @@ import * as sanitize from "sanitize-html";
 import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
 import TextHighlighter from "../highlight/TextHighlighter";
 
-export interface TTSModuleConfig {
-  delegate: IFrameNavigator;
-  headerMenu: HTMLElement;
-  rights: ReaderRights;
-  tts: TTSSettings;
-  highlighter: TextHighlighter;
+export interface TTSModuleAPI {
+  started: any;
+  stopped: any;
+  paused: any;
+  resumed: any;
+  finished: any;
+  updateSettings: any;
 }
-
-export interface TTSSpeechConfig {
+export interface TTSModuleConfig {
   enableSplitter?: boolean;
   color?: string;
   autoScroll?: boolean;
@@ -47,6 +47,17 @@ export interface TTSSpeechConfig {
   pitch?: number;
   volume?: number;
   voice?: TTSVoice;
+
+  api: TTSModuleAPI;
+}
+
+export interface TTSModuleProperties {
+  delegate: IFrameNavigator;
+  headerMenu: HTMLElement;
+  rights: ReaderRights;
+  tts: TTSSettings;
+  highlighter: TextHighlighter;
+  config: TTSModuleConfig;
 }
 
 export default class TTSModule implements ReaderModule {
@@ -60,6 +71,7 @@ export default class TTSModule implements ReaderModule {
   private body: any;
   private hasEventListener: boolean = false;
   private readonly headerMenu: HTMLElement;
+  private readonly config: TTSModuleConfig;
 
   initialize(body: any) {
     if (this.highlighter !== undefined) {
@@ -143,8 +155,8 @@ export default class TTSModule implements ReaderModule {
 
   cancel() {
     if (window.speechSynthesis.speaking) {
-      if (this.tts.api && typeof this.tts.api.stopped === "function")
-        this.tts.api.stopped();
+      if (this.config.api && typeof this.config.api.stopped === "function")
+        this.config.api.stopped();
       this.userScrolled = false;
       window.speechSynthesis.cancel();
       if (this.splittingResult && this.delegate.tts.enableSplitter) {
@@ -177,8 +189,8 @@ export default class TTSModule implements ReaderModule {
     partial: boolean,
     callback: () => void
   ): Promise<any> {
-    if (this.tts.api && typeof this.tts.api.started === "function")
-      this.tts.api.started();
+    if (this.config.api && typeof this.config.api.started === "function")
+      this.config.api.started();
 
     var self = this;
     this.userScrolled = false;
@@ -480,16 +492,16 @@ export default class TTSModule implements ReaderModule {
           splittingWord.dataset.ttsCurrentLine = "false";
         });
       }
-      if (self.tts.api && typeof self.tts.api.finished === "function")
-        self.tts.api.finished();
+      if (self.config.api && typeof self.config.api.finished === "function")
+        self.config.api.finished();
     };
     callback();
   }
 
   speakPause() {
     if (window.speechSynthesis.speaking) {
-      if (this.tts.api && typeof this.tts.api.paused === "function")
-        this.tts.api.paused();
+      if (this.config.api && typeof this.config.api.paused === "function")
+        this.config.api.paused();
       this.userScrolled = false;
       window.speechSynthesis.pause();
     }
@@ -497,20 +509,21 @@ export default class TTSModule implements ReaderModule {
 
   speakResume() {
     if (window.speechSynthesis.speaking) {
-      if (this.tts.api && typeof this.tts.api.resumed === "function")
-        this.tts.api.resumed();
+      if (this.config.api && typeof this.config.api.resumed === "function")
+        this.config.api.resumed();
       this.userScrolled = false;
       window.speechSynthesis.resume();
     }
   }
 
-  public static async create(config: TTSModuleConfig) {
+  public static async create(properties: TTSModuleProperties) {
     const tts = new this(
-      config.delegate,
-      config.tts,
-      config.headerMenu,
-      config.rights,
-      config.highlighter
+      properties.delegate,
+      properties.tts,
+      properties.headerMenu,
+      properties.rights,
+      properties.highlighter,
+      properties.config
     );
     await tts.start();
     return tts;
@@ -521,13 +534,15 @@ export default class TTSModule implements ReaderModule {
     tts: TTSSettings,
     headerMenu: HTMLElement,
     rights: ReaderRights,
-    highlighter: TextHighlighter
+    highlighter: TextHighlighter,
+    config: TTSModuleConfig | null = null
   ) {
     this.delegate = delegate;
     this.tts = tts;
     this.headerMenu = headerMenu;
     this.rights = rights;
     this.highlighter = highlighter;
+    this.config = config;
   }
 
   protected async start(): Promise<void> {

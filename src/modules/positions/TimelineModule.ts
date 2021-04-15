@@ -26,7 +26,7 @@ import ReaderModule from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { oc } from "ts-optchain";
 
-export interface TimelineModuleConfig {
+export interface TimelineModuleProperties {
   publication: Publication;
   delegate: IFrameNavigator;
 }
@@ -37,9 +37,8 @@ export default class TimelineModule implements ReaderModule {
   private timelineContainer: HTMLDivElement;
   private positionSlider: HTMLInputElement;
 
-  public static async create(config: TimelineModuleConfig) {
-    const timeline = new this(config.delegate, config.publication);
-
+  public static async create(properties: TimelineModuleProperties) {
+    const timeline = new this(properties.delegate, properties.publication);
     await timeline.start();
     return timeline;
   }

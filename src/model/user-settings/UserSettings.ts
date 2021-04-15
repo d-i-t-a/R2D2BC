@@ -29,11 +29,12 @@ import { ReadiumCSS } from "./ReadiumCSS";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { IS_DEV } from "../..";
 import { addEventListenerOptional } from "../../utils/EventHandler";
-import { ReaderUI } from "../../navigator/IFrameNavigator";
+import { NavigatorAPI, ReaderUI } from "../../navigator/IFrameNavigator";
 import { oc } from "ts-optchain";
 import ReflowableBookView from "../../views/ReflowableBookView";
 import FixedBookView from "../../views/FixedBookView";
 import BookView from "../../views/BookView";
+
 
 export interface UserSettingsConfig {
   /** Store to save the user's selections in. */
@@ -41,7 +42,7 @@ export interface UserSettingsConfig {
   initialUserSettings: InitialUserSettings;
   headerMenu: HTMLElement;
   material: ReaderUI;
-  api: any;
+  api: NavigatorAPI;
   layout: string;
 }
 export interface UserSettingsUIConfig {
@@ -164,7 +165,7 @@ export class UserSettings implements IUserSettings {
   private settingsView: HTMLDivElement;
   private readonly headerMenu: HTMLElement;
   private material: ReaderUI | null = null;
-  api: any;
+  api: NavigatorAPI;
 
   private iframe: HTMLIFrameElement;
 
@@ -246,7 +247,7 @@ export class UserSettings implements IUserSettings {
     store: Store,
     headerMenu: HTMLElement,
     material: ReaderUI,
-    api: any,
+    api: NavigatorAPI,
     layout: string
   ) {
     this.store = store;
@@ -956,8 +957,8 @@ export class UserSettings implements IUserSettings {
       ).value,
       verticalScroll: this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value,
     };
-    if (this.api && this.api.updateUserSettings) {
-      this.api.updateUserSettings(userSettings).then((_) => {
+    if (this.api && this.api.updateSettings) {
+      this.api.updateSettings(userSettings).then((_) => {
         if (IS_DEV) {
           console.log("api updated user settings", userSettings);
         }

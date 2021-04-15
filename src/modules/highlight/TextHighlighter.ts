@@ -61,6 +61,10 @@ const DEFAULT_BACKGROUND_COLOR: IColor = {
   green: 50,
   red: 230,
 };
+export interface TextSelectorAPI {
+  selectionMenuOpen: any;
+  selectionMenuClose: any;
+}
 
 export const _highlights: IHighlight[] = [];
 
@@ -110,25 +114,30 @@ let bodyEventListenersSet = false;
 let _highlightsContainer: HTMLElement | null;
 
 export interface TextHighlighterConfig {
+  selectionMenuItems: Array<SelectionMenuItem>;
+  api: TextSelectorAPI;
+}
+
+export interface TextHighlighterProperties {
   delegate: IFrameNavigator;
-  config: { selectionMenuItems: Array<SelectionMenuItem> };
+  config: TextHighlighterConfig;
 }
 
 export default class TextHighlighter {
   private options: any;
   private delegate: IFrameNavigator;
   private lastSelectedHighlight: number = undefined;
-  private config: { selectionMenuItems: Array<SelectionMenuItem>; api: any };
+  private config: TextHighlighterConfig;
   private hasEventListener: boolean;
 
-  public static async create(config: TextHighlighterConfig): Promise<any> {
+  public static async create(config: TextHighlighterProperties): Promise<any> {
     const module = new this(config.delegate, config.config, false, {});
     return new Promise((resolve) => resolve(module));
   }
 
   private constructor(
     delegate: IFrameNavigator,
-    config: any,
+    config: TextHighlighterConfig,
     hasEventListener: boolean,
     options: any
   ) {
@@ -873,10 +882,7 @@ export default class TextHighlighter {
   selectionMenuOpened = debounce(() => {
     if (!this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = true;
-      if (
-        oc(this.config).api(false) &&
-        oc(this.config).api.selectionMenuOpen(false)
-      ) {
+      if (oc(this.config).api && oc(this.config).api.selectionMenuOpen(false)) {
         this.config.api.selectionMenuOpen();
       }
     }
@@ -885,7 +891,7 @@ export default class TextHighlighter {
     if (this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = false;
       if (
-        oc(this.config).api(false) &&
+        oc(this.config).api &&
         oc(this.config).api.selectionMenuClose(false)
       ) {
         this.config.api.selectionMenuClose();
@@ -1888,8 +1894,13 @@ export default class TextHighlighter {
           payload.highlight
         )) as Annotation;
         // if(anno.comment) {
-        if (this.delegate.api && this.delegate.api.selectedAnnotation) {
-          this.delegate.api.selectedAnnotation(anno).then(async () => {});
+        if (
+          this.delegate.annotationModule.config.api &&
+          this.delegate.annotationModule.config.api.selectedAnnotation
+        ) {
+          this.delegate.annotationModule.config.api
+            .selectedAnnotation(anno)
+            .then(async () => {});
         }
         if (IS_DEV) {
           console.log("selected highlight " + anno.id);

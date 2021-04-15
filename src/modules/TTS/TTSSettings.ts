@@ -29,7 +29,7 @@ import {
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { IS_DEV } from "../..";
 import { addEventListenerOptional } from "../../utils/EventHandler";
-import { TTSSpeechConfig } from "./TTSModule";
+import { TTSModuleAPI, TTSModuleConfig } from "./TTSModule";
 
 export class TTSREFS {
   static readonly COLOR_REF = "color";
@@ -49,9 +49,9 @@ export class TTSREFS {
 
 export interface TTSSettingsConfig {
   store: Store;
-  initialTTSSettings: TTSSettings;
+  initialTTSSettings: TTSModuleConfig;
   headerMenu: HTMLElement;
-  api: any;
+  api: TTSModuleAPI;
 }
 
 export interface TTSVoice {
@@ -60,7 +60,17 @@ export interface TTSVoice {
   lang?: string;
 }
 
-export class TTSSettings implements TTSSpeechConfig {
+export interface ITTSUserSettings {
+  enableSplitter?: boolean;
+  color?: string;
+  autoScroll?: boolean;
+  rate?: number;
+  pitch?: number;
+  volume?: number;
+  voice?: TTSVoice;
+}
+
+export class TTSSettings implements ITTSUserSettings {
   private readonly store: Store;
   private readonly TTSSETTINGS = "ttsSetting";
 
@@ -89,13 +99,13 @@ export class TTSSettings implements TTSSpeechConfig {
   private speechVolume: HTMLInputElement;
   private speechAutoScroll: HTMLInputElement;
 
-  api: any;
+  private readonly api: TTSModuleAPI;
 
   public static async create(config: TTSSettingsConfig): Promise<any> {
     const settings = new this(config.store, config.headerMenu, config.api);
 
     if (config.initialTTSSettings) {
-      var initialTTSSettings: TTSSettings = config.initialTTSSettings;
+      let initialTTSSettings = config.initialTTSSettings;
 
       if (initialTTSSettings.rate) {
         settings.rate = initialTTSSettings.rate;
@@ -127,13 +137,18 @@ export class TTSSettings implements TTSSpeechConfig {
     return new Promise((resolve) => resolve(settings));
   }
 
-  protected constructor(store: Store, headerMenu: HTMLElement, api: any) {
+  protected constructor(
+    store: Store,
+    headerMenu: HTMLElement,
+    api: TTSModuleAPI
+  ) {
     this.store = store;
-
-    this.headerMenu = headerMenu;
     this.api = api;
+    this.headerMenu = headerMenu;
     this.initialise();
   }
+
+  enableSplitter?: boolean;
 
   async stop() {
     if (IS_DEV) {
@@ -352,7 +367,7 @@ export class TTSSettings implements TTSSpeechConfig {
   }
 
   private async updateUserSettings() {
-    var ttsSettings: TTSSpeechConfig = {
+    var ttsSettings: ITTSUserSettings = {
       rate: this.userProperties.getByRef(TTSREFS.RATE_REF).value,
       pitch: this.userProperties.getByRef(TTSREFS.PITCH_REF).value,
       volume: this.userProperties.getByRef(TTSREFS.VOLUME_REF).value,
@@ -361,10 +376,10 @@ export class TTSSettings implements TTSSpeechConfig {
       autoScroll: this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF).value,
     };
     this.applyTTSSettings(ttsSettings);
-    if (this.api && this.api.updateTTSSettings) {
-      this.api.updateUserSettings(ttsSettings).then((_) => {
+    if (this.api && this.api.updateSettings) {
+      this.api.updateSettings(ttsSettings).then(async (settings) => {
         if (IS_DEV) {
-          console.log("api updated tts settings", ttsSettings);
+          console.log("api updated tts settings", settings);
         }
       });
     }
@@ -455,7 +470,7 @@ export class TTSSettings implements TTSSpeechConfig {
     this.settingsChangeCallback();
   }
 
-  async applyTTSSettings(ttsSettings: TTSSpeechConfig): Promise<void> {
+  async applyTTSSettings(ttsSettings: ITTSUserSettings): Promise<void> {
     if (ttsSettings.rate) {
       if (IS_DEV) console.log("rate " + this.rate);
       this.rate = ttsSettings.rate;

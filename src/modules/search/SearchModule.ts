@@ -31,13 +31,16 @@ import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import TextHighlighter from "../highlight/TextHighlighter";
 import { oc } from "ts-optchain";
 
-export interface SearchConfig {
-  color: string;
-  current: string;
-}
+export interface SearchModuleAPI {}
 
 export interface SearchModuleConfig {
-  config: SearchConfig;
+  color: string;
+  current: string;
+  api: SearchModuleAPI;
+}
+
+export interface SearchModuleProperties {
+  config: SearchModuleConfig;
   publication: Publication;
   headerMenu: HTMLElement;
   delegate: IFrameNavigator;
@@ -45,7 +48,7 @@ export interface SearchModuleConfig {
 }
 
 export default class SearchModule implements ReaderModule {
-  private config: SearchConfig;
+  private config: SearchModuleConfig;
   private publication: Publication;
   private readonly headerMenu: HTMLElement;
   private delegate: IFrameNavigator;
@@ -56,13 +59,13 @@ export default class SearchModule implements ReaderModule {
   private currentHighlights: any = [];
   private highlighter: TextHighlighter;
 
-  public static async create(config: SearchModuleConfig) {
+  public static async create(properties: SearchModuleProperties) {
     const search = new this(
-      config.headerMenu,
-      config.delegate,
-      config.publication,
-      config.config,
-      config.highlighter
+      properties.headerMenu,
+      properties.delegate,
+      properties.publication,
+      properties.config,
+      properties.highlighter
     );
 
     await search.start();
@@ -73,7 +76,7 @@ export default class SearchModule implements ReaderModule {
     headerMenu: HTMLElement,
     delegate: IFrameNavigator,
     publication: Publication,
-    config: any,
+    config: SearchModuleConfig,
     highlighter: TextHighlighter
   ) {
     this.delegate = delegate;

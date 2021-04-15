@@ -42,15 +42,25 @@ import {
   UserSettings,
   UserSettingsUIConfig,
 } from "../model/user-settings/UserSettings";
-import BookmarkModule from "../modules/BookmarkModule";
-import AnnotationModule from "../modules/AnnotationModule";
-import TTSModule, { TTSSpeechConfig } from "../modules/TTS/TTSModule";
+import BookmarkModule, {
+  BookmarkModuleConfig,
+} from "../modules/BookmarkModule";
+import AnnotationModule, {
+  AnnotationModuleConfig,
+} from "../modules/AnnotationModule";
+import TTSModule, { TTSModuleConfig } from "../modules/TTS/TTSModule";
 import { goTo, IS_DEV } from "..";
 import Splitting from "../modules/TTS/splitting";
 import { oc } from "ts-optchain";
-import SearchModule from "../modules/search/SearchModule";
-import ContentProtectionModule from "../modules/protection/ContentProtectionModule";
-import TextHighlighter from "../modules/highlight/TextHighlighter";
+import SearchModule, {
+  SearchModuleConfig,
+} from "../modules/search/SearchModule";
+import ContentProtectionModule, {
+  ContentProtectionModuleConfig,
+} from "../modules/protection/ContentProtectionModule";
+import TextHighlighter, {
+  TextHighlighterConfig,
+} from "../modules/highlight/TextHighlighter";
 import TimelineModule from "../modules/positions/TimelineModule";
 import { debounce } from "debounce";
 import TouchEventHandler from "../utils/TouchEventHandler";
@@ -58,8 +68,15 @@ import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 import BookView from "../views/BookView";
 
 export type GetContent = (href: string) => Promise<string>;
-export interface ContentAPI {
+export interface NavigatorAPI {
+  updateSettings: any;
   getContent: GetContent;
+
+  resourceReady: any;
+  resourceAtStart: any;
+  resourceAtEnd: any;
+  resourceFitsScreen: any;
+  updateCurrentLocation: any;
 }
 
 export interface UpLinkConfig {
@@ -86,8 +103,8 @@ export interface IFrameNavigatorConfig {
   initialLastReadingPosition?: ReadingPosition;
   rights?: ReaderRights;
   material?: ReaderUI;
-  api: any;
-  tts: any;
+  api: NavigatorAPI;
+  tts: TTSModuleConfig;
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;
 }
@@ -130,12 +147,13 @@ export interface ReaderConfig {
   upLinkUrl?: any;
   rights?: ReaderRights;
   material?: ReaderUI;
-  api?: any;
-  tts?: any;
-  search?: { color: string; current: string };
-  protection?: any;
-  annotations?: { initialAnnotationColor: string };
-  highlighter?: { selectionMenuItems: Array<SelectionMenuItem> };
+  api?: NavigatorAPI;
+  tts?: TTSModuleConfig;
+  search?: SearchModuleConfig;
+  protection?: ContentProtectionModuleConfig;
+  annotations?: AnnotationModuleConfig;
+  bookmarks?: BookmarkModuleConfig;
+  highlighter?: TextHighlighterConfig;
   injectables: Array<Injectable>;
   useLocalStorage?: boolean;
   attributes?: IFrameAttributes;
@@ -220,9 +238,9 @@ export default class IFrameNavigator implements Navigator {
   private isBeingStyled: boolean;
   private isLoading: boolean;
   private readonly initialLastReadingPosition: ReadingPosition;
-  api: any;
+  api: NavigatorAPI;
   rights: ReaderRights;
-  tts: TTSSpeechConfig;
+  tts: TTSModuleConfig;
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;
 
@@ -262,9 +280,9 @@ export default class IFrameNavigator implements Navigator {
     initialLastReadingPosition: ReadingPosition | null = null,
     publication: Publication,
     material: any,
-    api: any,
+    api: NavigatorAPI,
     rights: ReaderRights,
-    tts: any,
+    tts: TTSModuleConfig,
     injectables: Array<Injectable>,
     attributes: IFrameAttributes
   ) {

@@ -570,6 +570,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         publication: publication,
         delegate: R2Navigator,
         initialAnnotations: config.initialAnnotations,
+        config: config.bookmarks,
       });
     }
 
@@ -601,6 +602,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         headerMenu: headerMenu,
         rights: config.rights,
         highlighter: D2Highlighter,
+        config: config.tts,
       });
     }
 
@@ -631,7 +633,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     if (oc(config.rights).enableContentProtection(false)) {
       ContentProtectionModule.create({
         delegate: R2Navigator,
-        protection: config.protection,
+        config: config.protection,
       }).then(function (contentProtectionModule) {
         ContentProtectionModuleInstance = contentProtectionModule;
       });

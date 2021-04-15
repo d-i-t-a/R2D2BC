@@ -407,6 +407,16 @@
                     // lang: "de_DE" // initial language, default system language will be used it this language can't be found
                     // name: "Karen" // will be only used together with the lang, if lang is not given, name will be ignored
                 },
+                api: {
+                    updateSettings: function (settings) {
+                        console.log("updateSettings")
+                        return new Promise(function (resolve, reject) {
+                            resolve(
+                                settings
+                            )
+                        })
+                    }
+                }
             },
             highlighter: {
                 // selectionMenuItems: selectionMenuItems,
@@ -421,7 +431,7 @@
                 enableObfuscation: true,
                 disablePrint: true,
                 disableCopy: true,
-                detectInspect: true,
+                detectInspect: false,
                 clearOnInspect: false, // make sure detectInspect is true, otherwise this won't work
                 disableKeys: true,
                 disableContextMenu: true,

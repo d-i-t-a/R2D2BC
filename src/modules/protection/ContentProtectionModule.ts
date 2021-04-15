@@ -26,7 +26,6 @@ import {
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
 import { IS_DEV } from "../..";
-import { oc } from "ts-optchain";
 
 export interface ContentProtectionModuleConfig {
   enforceSupportedBrowsers: boolean;
@@ -90,7 +89,7 @@ export default class ContentProtectionModule implements ReaderModule {
   protected async start(): Promise<void> {
     this.delegate.contentProtectionModule = this;
 
-    if (oc(this.config).enableObfuscation(false)) {
+    if (this.config?.enableObfuscation) {
       this.securityContainer = HTMLUtilities.findElement(
         document,
         "#container-view-security"
@@ -116,7 +115,7 @@ export default class ContentProtectionModule implements ReaderModule {
     }
     this.mutationObserver.disconnect();
 
-    if (oc(this.config).disableKeys(false)) {
+    if (this.config?.disableKeys) {
       removeEventListenerOptional(
         this.delegate.mainElement,
         "keydown",
@@ -153,7 +152,7 @@ export default class ContentProtectionModule implements ReaderModule {
       removeEventListenerOptional(document, "keydown", this.disableSave);
     }
 
-    if (oc(this.config).disableCopy(false)) {
+    if (this.config?.disableCopy) {
       removeEventListenerOptional(
         this.delegate.mainElement,
         "copy",
@@ -223,7 +222,7 @@ export default class ContentProtectionModule implements ReaderModule {
       removeEventListenerOptional(window, "cut", this.preventCopy);
       removeEventListenerOptional(document, "cut", this.preventCopy);
     }
-    if (oc(this.config).disablePrint(false)) {
+    if (this.config?.disablePrint) {
       removeEventListenerOptional(
         this.delegate.mainElement,
         "beforeprint",
@@ -301,7 +300,7 @@ export default class ContentProtectionModule implements ReaderModule {
         this.afterPrint.bind(this)
       );
     }
-    if (oc(this.config).disableContextMenu(false)) {
+    if (this.config?.disableContextMenu) {
       removeEventListenerOptional(
         this.delegate.mainElement,
         "contextmenu",
@@ -337,18 +336,18 @@ export default class ContentProtectionModule implements ReaderModule {
       removeEventListenerOptional(window, "contextmenu", this.disableContext);
       removeEventListenerOptional(document, "contextmenu", this.disableContext);
     }
-    if (oc(this.config).hideTargetUrl(false)) {
+    if (this.config?.hideTargetUrl) {
       this.hideTargetUrls(false);
     }
-    if (oc(this.config).disableDrag(false)) {
+    if (this.config?.disableDrag) {
       this.preventDrag(false);
     }
 
     removeEventListenerOptional(window, "scroll", this.handleScroll.bind(this));
   }
 
-  observe() {
-    if (oc(this.config).enableObfuscation(false)) {
+  observe(): any {
+    if (this.config?.enableObfuscation) {
       if (this.securityContainer.hasAttribute("style")) {
         this.isHacked = true;
       }
@@ -365,7 +364,7 @@ export default class ContentProtectionModule implements ReaderModule {
   }
 
   public async deactivate() {
-    if (oc(this.config).enableObfuscation(false)) {
+    if (this.config?.enableObfuscation) {
       this.observe();
       this.rects.forEach((rect) =>
         this.deactivateRect(rect, this.securityContainer, this.isHacked)
@@ -374,7 +373,7 @@ export default class ContentProtectionModule implements ReaderModule {
   }
 
   public async activate() {
-    if (oc(this.config).enableObfuscation(false)) {
+    if (this.config?.enableObfuscation) {
       this.observe();
       const body = HTMLUtilities.findRequiredIframeElement(
         this.delegate.iframe.contentDocument,
@@ -388,7 +387,7 @@ export default class ContentProtectionModule implements ReaderModule {
   }
   private setupEvents(): void {
     var self = this;
-    if (oc(this.config).detectInspect(false)) {
+    if (this.config?.detectInspect) {
       var checkStatus = "off";
       var div = document.createElement("div");
       Object.defineProperty(div, "id", {
@@ -401,16 +400,13 @@ export default class ContentProtectionModule implements ReaderModule {
         checkStatus = "off";
         console.log(div);
         if (checkStatus === "on") {
-          if (oc(self.config).clearOnInspect(false)) {
+          if (self.config?.clearOnInspect) {
             console.clear();
             window.localStorage.clear();
             window.sessionStorage.clear();
             window.location.replace(window.location.origin);
           }
-          if (
-            oc(self.config).api &&
-            oc(self.config).api.inspectDetected(false)
-          ) {
+          if (self.config?.api && self.config?.api.inspectDetected) {
             self.config.api.inspectDetected();
           }
         }
@@ -418,7 +414,7 @@ export default class ContentProtectionModule implements ReaderModule {
       });
     }
 
-    if (oc(this.config).disableKeys(false)) {
+    if (this.config?.disableKeys) {
       addEventListenerOptional(
         this.delegate.mainElement,
         "keydown",
@@ -479,7 +475,7 @@ export default class ContentProtectionModule implements ReaderModule {
       addEventListenerOptional(window, "keydown", this.disableSave);
       addEventListenerOptional(document, "keydown", this.disableSave);
     }
-    if (oc(this.config).disableCopy(false)) {
+    if (this.config?.disableCopy) {
       addEventListenerOptional(
         this.delegate.mainElement,
         "copy",
@@ -593,7 +589,7 @@ export default class ContentProtectionModule implements ReaderModule {
       addEventListenerOptional(document, "cut", this.preventCopy);
     }
 
-    if (oc(this.config).disablePrint(false)) {
+    if (this.config?.disablePrint) {
       addEventListenerOptional(
         this.delegate.mainElement,
         "beforeprint",
@@ -730,7 +726,7 @@ export default class ContentProtectionModule implements ReaderModule {
         this.afterPrint.bind(this)
       );
     }
-    if (oc(this.config).disableContextMenu(false)) {
+    if (this.config?.disableContextMenu) {
       addEventListenerOptional(
         this.delegate.mainElement,
         "contextmenu",
@@ -794,16 +790,16 @@ export default class ContentProtectionModule implements ReaderModule {
   }
 
   initializeResource() {
-    if (oc(this.config).hideTargetUrl(false)) {
+    if (this.config?.hideTargetUrl) {
       this.hideTargetUrls(true);
     }
-    if (oc(this.config).disableDrag(false)) {
+    if (this.config?.disableDrag) {
       this.preventDrag(true);
     }
   }
 
   public async initialize() {
-    if (oc(this.config).enableObfuscation(false)) {
+    if (this.config?.enableObfuscation) {
       return new Promise<void>(async (resolve) => {
         await (document as any).fonts.ready;
         const body = HTMLUtilities.findRequiredIframeElement(
@@ -840,7 +836,7 @@ export default class ContentProtectionModule implements ReaderModule {
     );
   }
   handleResize() {
-    if (oc(this.config).enableObfuscation(false)) {
+    if (this.config?.enableObfuscation) {
       const onDoResize = debounce(() => {
         this.calcRects(this.rects);
         if (this.rects !== undefined) {
@@ -1042,7 +1038,7 @@ export default class ContentProtectionModule implements ReaderModule {
   }
 
   recalculate(delay: number = 0) {
-    if (oc(this.config).enableObfuscation(false)) {
+    if (this.config?.enableObfuscation) {
       const onDoResize = debounce(() => {
         this.calcRects(this.rects);
         if (this.rects !== undefined) {

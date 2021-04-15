@@ -24,7 +24,6 @@ import IFrameNavigator from "../../navigator/IFrameNavigator";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import ReaderModule from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { oc } from "ts-optchain";
 
 export interface TimelineModuleProperties {
   publication: Publication;
@@ -61,13 +60,13 @@ export default class TimelineModule implements ReaderModule {
       document,
       "#container-view-timeline"
     ) as HTMLDivElement;
-    if (oc(this.delegate.rights).enableMaterial(false)) {
+    if (this.delegate.rights?.enableMaterial) {
       this.positionSlider = HTMLUtilities.findElement(
         document,
         "#positionSlider"
       ) as HTMLInputElement;
     }
-    if (!oc(this.delegate.rights).autoGeneratePositions(true)) {
+    if (!(this.delegate.rights?.autoGeneratePositions ?? true)) {
       this.positionSlider.style.display = "none";
     }
   }
@@ -78,8 +77,8 @@ export default class TimelineModule implements ReaderModule {
 
       let locator = this.delegate.currentLocator();
       if (
-        oc(this.delegate.rights).enableMaterial(false) &&
-        oc(this.delegate.rights).autoGeneratePositions(true) &&
+        this.delegate.rights?.enableMaterial &&
+        (this.delegate.rights?.autoGeneratePositions ?? true) &&
         this.publication.positions
       ) {
         this.positionSlider.value = locator.locations.position.toString();
@@ -129,7 +128,7 @@ export default class TimelineModule implements ReaderModule {
           event.preventDefault();
           event.stopPropagation();
           var position;
-          if (oc(this.delegate.rights).autoGeneratePositions(true)) {
+          if (this.delegate.rights?.autoGeneratePositions ?? true) {
             position = {
               ...this.publication.positions.filter(
                 (el: Locator) => el.href === link.href

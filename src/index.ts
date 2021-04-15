@@ -28,7 +28,6 @@ import BookmarkModule from "./modules/BookmarkModule";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
 import TTSModule from "./modules/TTS/TTSModule";
-import { oc } from "ts-optchain";
 import { TTSSettings } from "./modules/TTS/TTSSettings";
 import SearchModule from "./modules/search/SearchModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
@@ -58,23 +57,23 @@ export async function unload() {
   document.body.onscroll = () => {};
   R2Navigator.stop();
   R2Settings.stop();
-  if (oc(R2Navigator.rights).enableTTS(false)) {
+  if (R2Navigator.rights?.enableTTS) {
     R2TTSSettings.stop();
     TTSModuleInstance.stop();
   }
-  if (oc(R2Navigator.rights).enableBookmarks(false)) {
+  if (R2Navigator.rights?.enableBookmarks) {
     BookmarkModuleInstance.stop();
   }
-  if (oc(R2Navigator.rights).enableAnnotations(false)) {
+  if (R2Navigator.rights?.enableAnnotations) {
     AnnotationModuleInstance.stop();
   }
-  if (oc(R2Navigator.rights).enableSearch(false)) {
+  if (R2Navigator.rights?.enableSearch) {
     SearchModuleInstance.stop();
   }
-  if (oc(R2Navigator.rights).enableContentProtection(false)) {
+  if (R2Navigator.rights?.enableContentProtection) {
     ContentProtectionModuleInstance.stop();
   }
-  if (oc(R2Navigator.rights).enableTimeline(false)) {
+  if (R2Navigator.rights?.enableTimeline) {
     TimelineModuleInstance.stop();
   }
 }
@@ -104,7 +103,7 @@ export function resumeReadAloud() {
 }
 
 export async function saveBookmark() {
-  if (oc(R2Navigator.rights).enableBookmarks(false)) {
+  if (R2Navigator.rights?.enableBookmarks) {
     if (IS_DEV) {
       console.log("saveBookmark");
     }
@@ -112,7 +111,7 @@ export async function saveBookmark() {
   }
 }
 export async function deleteBookmark(bookmark) {
-  if (oc(R2Navigator.rights).enableBookmarks(false)) {
+  if (R2Navigator.rights?.enableBookmarks) {
     if (IS_DEV) {
       console.log("deleteBookmark");
     }
@@ -120,7 +119,7 @@ export async function deleteBookmark(bookmark) {
   }
 }
 export async function deleteAnnotation(highlight) {
-  if (oc(R2Navigator.rights).enableAnnotations(false)) {
+  if (R2Navigator.rights?.enableAnnotations) {
     if (IS_DEV) {
       console.log("deleteAnnotation");
     }
@@ -128,7 +127,7 @@ export async function deleteAnnotation(highlight) {
   }
 }
 export async function addAnnotation(highlight) {
-  if (oc(R2Navigator.rights).enableAnnotations(false)) {
+  if (R2Navigator.rights?.enableAnnotations) {
     if (IS_DEV) {
       console.log("addAnnotation");
     }
@@ -142,7 +141,7 @@ export async function tableOfContents() {
   return await R2Navigator.tableOfContents();
 }
 export async function bookmarks() {
-  if (oc(R2Navigator.rights).enableBookmarks(false)) {
+  if (R2Navigator.rights?.enableBookmarks) {
     if (IS_DEV) {
       console.log("bookmarks");
     }
@@ -152,7 +151,7 @@ export async function bookmarks() {
   }
 }
 export async function annotations() {
-  if (oc(R2Navigator.rights).enableAnnotations(false)) {
+  if (R2Navigator.rights?.enableAnnotations) {
     if (IS_DEV) {
       console.log("annotations");
     }
@@ -163,7 +162,7 @@ export async function annotations() {
 }
 
 export async function search(term, current) {
-  if (oc(R2Navigator.rights).enableSearch(false)) {
+  if (R2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
       console.log("search");
     }
@@ -173,7 +172,7 @@ export async function search(term, current) {
   }
 }
 export async function goToSearchIndex(href, index, current) {
-  if (oc(R2Navigator.rights).enableSearch(false)) {
+  if (R2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
       console.log("goToSearchIndex");
     }
@@ -181,7 +180,7 @@ export async function goToSearchIndex(href, index, current) {
   }
 }
 export async function goToSearchID(href, index, current) {
-  if (oc(R2Navigator.rights).enableSearch(false)) {
+  if (R2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
       console.log("goToSearchID");
     }
@@ -189,7 +188,7 @@ export async function goToSearchID(href, index, current) {
   }
 }
 export async function clearSearch() {
-  if (oc(R2Navigator.rights).enableSearch(false)) {
+  if (R2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
       console.log("clearSearch");
     }
@@ -244,7 +243,7 @@ export async function increase(incremental) {
     (incremental === "pitch" ||
       incremental === "rate" ||
       incremental === "volume") &&
-    oc(R2Navigator.rights).enableTTS(false)
+    R2Navigator.rights?.enableTTS
   ) {
     if (IS_DEV) {
       console.log("increase " + incremental);
@@ -262,7 +261,7 @@ export async function decrease(incremental) {
     (incremental === "pitch" ||
       incremental === "rate" ||
       incremental === "volume") &&
-    oc(R2Navigator.rights).enableTTS(false)
+    R2Navigator.rights?.enableTTS
   ) {
     if (IS_DEV) {
       console.log("decrease " + incremental);
@@ -282,7 +281,7 @@ export async function publisher(on) {
   R2Settings.publisher(on);
 }
 export async function resetTTSSettings() {
-  if (oc(R2Navigator.rights).enableTTS(false)) {
+  if (R2Navigator.rights?.enableTTS) {
     if (IS_DEV) {
       console.log("resetSettings");
     }
@@ -290,7 +289,7 @@ export async function resetTTSSettings() {
   }
 }
 export async function applyTTSSettings(ttsSettings) {
-  if (oc(R2Navigator.rights).enableTTS(false)) {
+  if (R2Navigator.rights?.enableTTS) {
     if (IS_DEV) {
       console.log("applyTTSSettings");
     }
@@ -299,7 +298,7 @@ export async function applyTTSSettings(ttsSettings) {
 }
 
 export async function ttsSet(key, value) {
-  if (oc(R2Navigator.rights).enableTTS(false)) {
+  if (R2Navigator.rights?.enableTTS) {
     if (IS_DEV) {
       console.log("set " + key + " value " + value);
     }
@@ -307,7 +306,7 @@ export async function ttsSet(key, value) {
   }
 }
 export async function preferredVoice(value) {
-  if (oc(R2Navigator.rights).enableTTS(false)) {
+  if (R2Navigator.rights?.enableTTS) {
     R2TTSSettings.preferredVoice(value);
   }
 }
@@ -395,12 +394,10 @@ export async function snapToElement(value) {
 export async function load(config: ReaderConfig): Promise<any> {
   var browsers: string[] = [];
 
-  if (oc(config.protection).enforceSupportedBrowsers(false)) {
-    oc(config.protection)
-      .supportedBrowsers([])
-      .forEach((browser: string) => {
-        browsers.push("last 1 " + browser + " version");
-      });
+  if (config.protection?.enforceSupportedBrowsers) {
+    (config.protection?.supportedBrowsers ?? []).forEach((browser: string) => {
+      browsers.push("last 1 " + browser + " version");
+    });
   }
   const supportedBrowsers = getUserAgentRegExp({
     browsers: browsers,
@@ -408,9 +405,9 @@ export async function load(config: ReaderConfig): Promise<any> {
   });
 
   if (
-    (oc(config.protection).enforceSupportedBrowsers(false) &&
+    (config.protection?.enforceSupportedBrowsers &&
       supportedBrowsers.test(navigator.userAgent)) ||
-    oc(config.protection).enforceSupportedBrowsers(false) === false
+    !config.protection?.enforceSupportedBrowsers
   ) {
     var mainElement = document.getElementById("D2Reader-Container");
     var headerMenu = document.getElementById("headerMenu");
@@ -436,19 +433,19 @@ export async function load(config: ReaderConfig): Promise<any> {
       store
     );
 
-    if (oc(publication.metadata.rendition).layout("unknown") === "fixed") {
+    if ((publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
       config.rights.enableAnnotations = false;
       config.rights.enableSearch = false;
       config.rights.enableTTS = false;
       // config.protection.enableObfuscation = false;
     }
 
-    if (oc(config.rights).autoGeneratePositions(true)) {
+    if (config.rights?.autoGeneratePositions ?? true) {
       var startPosition = 0;
       var totalContentLength = 0;
       var positions = [];
       publication.readingOrder.map(async (link, index) => {
-        if (oc(publication.metadata.rendition).layout("unknown") === "fixed") {
+        if ((publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
           const locator: Locator = {
             href: link.href,
             locations: {
@@ -487,7 +484,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         }
         if (index + 1 === publication.readingOrder.length) {
           if (
-            oc(publication.metadata.rendition).layout("unknown") !== "fixed"
+            (publication.metadata.rendition?.layout ?? "unknown") !== "fixed"
           ) {
             publication.readingOrder.map(async (link) => {
               if (IS_DEV) console.log(totalContentLength);
@@ -527,7 +524,7 @@ export async function load(config: ReaderConfig): Promise<any> {
       material: config.material,
       api: config.api,
       layout:
-        oc(publication.metadata.rendition).layout("unknown") === "fixed"
+        (publication.metadata.rendition?.layout ?? "unknown") === "fixed"
           ? "fixed"
           : "reflowable",
     });
@@ -547,14 +544,14 @@ export async function load(config: ReaderConfig): Promise<any> {
       rights: config.rights,
       tts: config.tts,
       injectables:
-        oc(publication.metadata.rendition).layout("unknown") === "fixed"
+        (publication.metadata.rendition?.layout ?? "unknown") === "fixed"
           ? []
           : config.injectables,
       attributes: config.attributes,
     });
 
     // Highlighter
-    if (oc(publication.metadata.rendition).layout("unknown") !== "fixed") {
+    if ((publication.metadata.rendition?.layout ?? "unknown") !== "fixed") {
       D2Highlighter = await TextHighlighter.create({
         delegate: R2Navigator,
         config: config.highlighter,
@@ -562,7 +559,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
 
     // Bookmark Module
-    if (oc(config.rights).enableBookmarks(false)) {
+    if (config.rights?.enableBookmarks) {
       BookmarkModuleInstance = await BookmarkModule.create({
         annotator: annotator,
         headerMenu: headerMenu,
@@ -575,7 +572,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
 
     // Annotation Module
-    if (oc(config.rights).enableAnnotations(false)) {
+    if (config.rights?.enableAnnotations) {
       AnnotationModuleInstance = await AnnotationModule.create({
         annotator: annotator,
         headerMenu: headerMenu,
@@ -589,7 +586,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
 
     // TTS Module
-    if (oc(config.rights).enableTTS(false)) {
+    if (config.rights?.enableTTS) {
       R2TTSSettings = await TTSSettings.create({
         store: settingsStore,
         initialTTSSettings: config.tts,
@@ -607,7 +604,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
 
     // Search Module
-    if (oc(config.rights).enableSearch(false)) {
+    if (config.rights?.enableSearch) {
       SearchModule.create({
         headerMenu: headerMenu,
         delegate: R2Navigator,
@@ -620,7 +617,7 @@ export async function load(config: ReaderConfig): Promise<any> {
       });
     }
     // Timeline Module
-    if (oc(config.rights).enableTimeline(false)) {
+    if (config.rights?.enableTimeline) {
       TimelineModule.create({
         publication: publication,
         delegate: R2Navigator,
@@ -630,7 +627,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
 
     // Content Protection Module
-    if (oc(config.rights).enableContentProtection(false)) {
+    if (config.rights?.enableContentProtection) {
       ContentProtectionModule.create({
         delegate: R2Navigator,
         config: config.protection,

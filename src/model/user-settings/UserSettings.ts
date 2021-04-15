@@ -30,11 +30,9 @@ import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { IS_DEV } from "../..";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import { NavigatorAPI, ReaderUI } from "../../navigator/IFrameNavigator";
-import { oc } from "ts-optchain";
 import ReflowableBookView from "../../views/ReflowableBookView";
 import FixedBookView from "../../views/FixedBookView";
 import BookView from "../../views/BookView";
-
 
 export interface UserSettingsConfig {
   /** Store to save the user's selections in. */
@@ -415,9 +413,8 @@ export class UserSettings implements IUserSettings {
 
   async applyProperties(): Promise<any> {
     if (
-      oc(this.view.delegate.publication.metadata.rendition).layout(
-        "unknown"
-      ) !== "fixed"
+      (this.view.delegate.publication.metadata.rendition?.layout ??
+        "unknown") !== "fixed"
     ) {
       const html = HTMLUtilities.findRequiredIframeElement(
         this.iframe.contentDocument,
@@ -625,7 +622,7 @@ export class UserSettings implements IUserSettings {
   }
 
   private renderControls(element: HTMLElement): void {
-    if (oc(this.material).settings.fontSize(false)) {
+    if (this.material?.settings.fontSize) {
       this.fontSizeButtons = {};
       for (const fontSizeName of ["decrease", "increase"]) {
         this.fontSizeButtons[fontSizeName] = HTMLUtilities.findElement(
@@ -636,7 +633,7 @@ export class UserSettings implements IUserSettings {
     } else {
       HTMLUtilities.findElement(element, "#container-view-fontsize")?.remove();
     }
-    if (oc(this.material).settings.fontFamily(false)) {
+    if (this.material?.settings.fontFamily) {
       this.fontButtons = {};
       this.fontButtons[0] = HTMLUtilities.findElement(
         element,
@@ -670,7 +667,7 @@ export class UserSettings implements IUserSettings {
       )?.remove();
     }
 
-    if (oc(this.material).settings.appearance(false)) {
+    if (this.material?.settings.appearance) {
       this.themeButtons = {};
       this.themeButtons[0] = HTMLUtilities.findElement(
         element,
@@ -703,7 +700,7 @@ export class UserSettings implements IUserSettings {
       )?.remove();
     }
 
-    if (oc(this.material).settings.scroll(false)) {
+    if (this.material?.settings.scroll) {
       this.viewButtons = {};
       this.viewButtons[0] = HTMLUtilities.findElement(
         element,
@@ -739,7 +736,7 @@ export class UserSettings implements IUserSettings {
   }
 
   private async setupEvents(): Promise<void> {
-    if (oc(this.material).settings.fontSize(false)) {
+    if (this.material?.settings.fontSize) {
       addEventListenerOptional(
         this.fontSizeButtons["decrease"],
         "click",
@@ -772,7 +769,7 @@ export class UserSettings implements IUserSettings {
       );
     }
 
-    if (oc(this.material).settings.fontFamily(false)) {
+    if (this.material?.settings.fontFamily) {
       for (
         let index = 0;
         index < UserSettings.fontFamilyValues.length;
@@ -796,7 +793,7 @@ export class UserSettings implements IUserSettings {
       }
     }
 
-    if (oc(this.material).settings.appearance(false)) {
+    if (this.material?.settings.appearance) {
       for (
         let index = 0;
         index < UserSettings.appearanceValues.length;
@@ -819,7 +816,7 @@ export class UserSettings implements IUserSettings {
       }
     }
 
-    if (oc(this.material).settings.scroll(false)) {
+    if (this.material?.settings.scroll) {
       for (let index = 0; index < 2; index++) {
         const button = this.viewButtons[index];
         if (button) {
@@ -843,7 +840,7 @@ export class UserSettings implements IUserSettings {
   }
 
   private async updateFontButtons(): Promise<void> {
-    if (oc(this.material).settings.fontFamily(false)) {
+    if (this.material?.settings.fontFamily) {
       for (
         let index = 0;
         index < UserSettings.fontFamilyValues.length;
@@ -867,7 +864,7 @@ export class UserSettings implements IUserSettings {
   }
 
   private async updateViewButtons(): Promise<void> {
-    if (oc(this.material).settings.scroll(false)) {
+    if (this.material?.settings.scroll) {
       for (let index = 0; index < 2; index++) {
         this.viewButtons[index].className = this.viewButtons[
           index
@@ -901,7 +898,7 @@ export class UserSettings implements IUserSettings {
       UserSettings.fontFamilyValues.push(fontFamily);
       this.applyProperties();
 
-      if (this.settingsView && oc(this.material).settings.fontFamily(false)) {
+      if (this.settingsView && this.material?.settings.fontFamily) {
         const index = UserSettings.fontFamilyValues.length - 1;
         this.fontButtons[index] = HTMLUtilities.findElement(
           this.settingsView,
@@ -1301,7 +1298,7 @@ export class UserSettings implements IUserSettings {
     ).value = this.verticalScroll;
     this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF));
     this.applyProperties();
-    if (oc(this.material).settings.scroll(false)) {
+    if (this.material?.settings.scroll) {
       this.updateViewButtons();
     }
     this.view.setMode(scroll);

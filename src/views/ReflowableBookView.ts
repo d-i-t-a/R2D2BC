@@ -26,7 +26,6 @@ import IFrameNavigator, {
   IFrameAttributes,
 } from "../navigator/IFrameNavigator";
 import { debounce } from "debounce";
-import { oc } from "ts-optchain";
 
 export default class ReflowableBookView implements BookView {
   layout = "reflowable";
@@ -103,7 +102,7 @@ export default class ReflowableBookView implements BookView {
       ) as any;
       html.style.setProperty("--USER__scroll", "readium-scroll-off");
     }
-    if (oc(this.delegate.rights).enableContentProtection(false)) {
+    if (this.delegate.rights?.enableContentProtection) {
       this.delegate.contentProtectionModule.recalculate();
     }
   }
@@ -252,7 +251,7 @@ export default class ReflowableBookView implements BookView {
         element.style.height = originalHeight;
         this.setLeftColumnsWidth(roundedLeftWidth);
 
-        if (oc(this.delegate.rights).enableContentProtection(false)) {
+        if (this.delegate.rights?.enableContentProtection) {
           this.delegate.contentProtectionModule.recalculate(0);
         }
       }
@@ -291,7 +290,7 @@ export default class ReflowableBookView implements BookView {
         // Restore element's original height.
         element.style.height = originalHeight;
         this.setLeftColumnsWidth(roundedLeftWidth);
-        if (oc(this.delegate.rights).enableContentProtection(false)) {
+        if (this.delegate.rights?.enableContentProtection) {
           this.delegate.contentProtectionModule.recalculate(200);
         }
       }
@@ -347,7 +346,7 @@ export default class ReflowableBookView implements BookView {
       }
       this.delegate.checkResourcePosition();
     }
-    if (oc(this.delegate.rights).enableContentProtection(false)) {
+    if (this.delegate.rights?.enableContentProtection) {
       this.delegate.contentProtectionModule.recalculate();
     }
   }
@@ -377,7 +376,7 @@ export default class ReflowableBookView implements BookView {
       }
       this.delegate.checkResourcePosition();
     }
-    if (oc(this.delegate.rights).enableContentProtection(false)) {
+    if (this.delegate.rights?.enableContentProtection) {
       this.delegate.contentProtectionModule.recalculate();
     }
   }

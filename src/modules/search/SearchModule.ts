@@ -29,7 +29,6 @@ import { Locator, Locations } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import TextHighlighter from "../highlight/TextHighlighter";
-import { oc } from "ts-optchain";
 
 export interface SearchModuleAPI {}
 
@@ -155,13 +154,13 @@ export default class SearchModule implements ReaderModule {
     self.currentChapterSearchResult = [];
     self.currentHighlights = [];
     var localSearchResultChapter: any = [];
-    if (oc(this.delegate.rights).enableContentProtection(false)) {
+    if (this.delegate.rights?.enableContentProtection) {
       this.delegate.contentProtectionModule.deactivate();
     }
     await this.searchAndPaintChapter(searchVal, index, async (result) => {
       localSearchResultChapter = result;
       goToResultPage(1);
-      if (oc(this.delegate.rights).enableContentProtection(false)) {
+      if (this.delegate.rights?.enableContentProtection) {
         this.delegate.contentProtectionModule.recalculate(200);
       }
     });
@@ -293,10 +292,10 @@ export default class SearchModule implements ReaderModule {
 
     // clear search results // needs more works
     this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument);
-    if (oc(this.delegate.rights).enableAnnotations(false)) {
+    if (this.delegate.rights?.enableAnnotations) {
       this.delegate.annotationModule.drawHighlights();
     } else {
-      if (oc(this.delegate.rights).enableSearch(false)) {
+      if (this.delegate.rights?.enableSearch) {
         this.drawSearch();
       }
     }
@@ -355,7 +354,7 @@ export default class SearchModule implements ReaderModule {
     this.currentChapterSearchResult = [];
     this.currentHighlights = [];
     this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument);
-    if (oc(this.delegate.rights).enableAnnotations(false)) {
+    if (this.delegate.rights?.enableAnnotations) {
       this.delegate.annotationModule.drawHighlights();
     }
   }

@@ -33,7 +33,6 @@
     "mark.js": "^8.11.1",
     "promise-polyfill": "^8.2.0",
     "sanitize-html": "^2.3.3",
-    "ts-optchain": "^0.1.8",
     "whatwg-fetch": "^3.6.2"
   },
   "browserslist": {

@@ -35,7 +35,6 @@ import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from "uuid";
-import { oc } from "ts-optchain";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
 
@@ -136,7 +135,7 @@ export default class AnnotationModule implements ReaderModule {
   initialize() {
     return new Promise(async (resolve) => {
       await (document as any).fonts.ready;
-      if (oc(this.rights).enableAnnotations(false)) {
+      if (this.rights?.enableAnnotations) {
         setTimeout(() => {
           this.drawHighlights();
         }, 300);
@@ -165,7 +164,7 @@ export default class AnnotationModule implements ReaderModule {
       }
       await this.showHighlights();
       await this.drawHighlights();
-      if (oc(this.delegate.rights).enableMaterial(false)) {
+      if (this.delegate.rights?.enableMaterial) {
         toast({ html: "highlight deleted" });
       }
       return deleted;
@@ -295,7 +294,7 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   async drawHighlights(search: boolean = true): Promise<void> {
-    if (oc(this.rights).enableAnnotations(false) && this.highlighter) {
+    if (this.rights?.enableAnnotations && this.highlighter) {
       if (this.api) {
         let highlights: Array<any> = [];
         if (this.annotator) {
@@ -389,11 +388,11 @@ export default class AnnotationModule implements ReaderModule {
           });
         }
       }
-      if (this.config && oc(this.config).initialAnnotationColor !== undefined) {
+      if (this.config && this.config?.initialAnnotationColor !== undefined) {
         this.highlighter.setColor(this.config.initialAnnotationColor);
       }
     }
-    if (search && oc(this.rights).enableSearch(false)) {
+    if (search && this.rights?.enableSearch) {
       this.delegate.searchModule.drawSearch();
     }
   }
@@ -537,8 +536,8 @@ export default class AnnotationModule implements ReaderModule {
                 bookmarkItem.appendChild(bookmarkLink);
                 if (
                   (self.delegate.sideNavExpanded &&
-                    oc(self.delegate.rights).enableMaterial(false)) ||
-                  !oc(self.delegate.rights).enableMaterial(false)
+                    self.delegate.rights?.enableMaterial) ||
+                  !self.delegate.rights?.enableMaterial
                 ) {
                   let bookmarkDeleteLink: HTMLElement = document.createElement(
                     "button"

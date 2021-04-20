@@ -2058,10 +2058,12 @@ export default class IFrameNavigator implements Navigator {
       IFrameNavigator.hideElement(element, control);
     }
     if (element === this.linksMiddle) {
-      if (this.view?.isScrollMode()) {
-        IFrameNavigator.showElement(element, control);
-      } else {
-        IFrameNavigator.hideElement(element, control);
+      if (this.view.layout !== "fixed") {
+        if (this.view?.isScrollMode()) {
+          IFrameNavigator.showElement(element, control);
+        } else {
+          IFrameNavigator.hideElement(element, control);
+        }
       }
     }
   }

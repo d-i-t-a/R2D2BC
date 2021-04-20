@@ -2215,7 +2215,7 @@ export default class IFrameNavigator implements Navigator {
   snapToElement(element: HTMLElement) {
     this.view.snap(element);
   }
-  applyAtributes(attributes: IFrameAttributes) {
+  applyAttributes(attributes: IFrameAttributes) {
     this.attributes = attributes;
     this.view.attributes = attributes;
     this.handleResize();

@@ -122,7 +122,7 @@
                 </div>
                 <div>
                     <label style="margin-right: 20px;">Language</label>
-                    <select style="width: 70%;" onchange="javascript:D2Reader.preferredVoice(value)" id="preferred-languages">
+                    <select style="width: 70%;" onchange="javascript:D2Reader.applyPreferredVoice(value)" id="preferred-languages">
                         <option value="" disabled selected>Choose language</option>
                     </select>
                 </div>
@@ -144,9 +144,9 @@
         userProperties.addIncremental(this.volume, 0.1, 1, 0.1, "", TTSREFS.VOLUME_REF, TTSREFS.VOLUME_KEY) -->
 
                 <!-- <ul class="settings-menu" role="menu" tabindex="0">
-        
 
-        
+
+
                     <li id="container-view-rate">
                         <ul class="settings-options">
 
@@ -486,7 +486,7 @@
                 voice: {
                     usePublication: false//, // true = will be used no matter if an initial language is set, false = ignore publicaiton language
                     // lang: "de_DE" // initial language, default system language will be used it this language can't be found
-                    // name: "Karen" // will be only used together with the lang, if lang is not given, name will be ignored 
+                    // name: "Karen" // will be only used together with the lang, if lang is not given, name will be ignored
                 },
                 api: {
                     started: function () {
@@ -537,10 +537,10 @@
                 api: {
                     selectionMenuOpen: function () {
                         console.log("selectionMenuOpen")
-                    }, 
+                    },
                     selectionMenuClose: function () {
                         console.log("selectionMenuClose")
-                    }, 
+                    },
                 }
             },
             annotations: {

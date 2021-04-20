@@ -297,17 +297,17 @@ export async function applyTTSSettings(ttsSettings) {
   }
 }
 
-export async function ttsSet(key, value) {
+export async function applyTTSSetting(key, value) {
   if (R2Navigator.rights?.enableTTS) {
     if (IS_DEV) {
       console.log("set " + key + " value " + value);
     }
-    R2TTSSettings.ttsSet(key, value);
+    R2TTSSettings.applyTTSSetting(key, value);
   }
 }
-export async function preferredVoice(value) {
+export async function applyPreferredVoice(value) {
   if (R2Navigator.rights?.enableTTS) {
-    R2TTSSettings.preferredVoice(value);
+    R2TTSSettings.applyPreferredVoice(value);
   }
 }
 
@@ -378,11 +378,11 @@ export async function goToPosition(value) {
   }
   return R2Navigator.goToPosition(value);
 }
-export async function applyAtributes(value) {
+export async function applyAttributes(value) {
   if (IS_DEV) {
-    console.log("applyAtributes");
+    console.log("applyAttributes");
   }
-  R2Navigator.applyAtributes(value);
+  R2Navigator.applyAttributes(value);
 }
 export async function snapToElement(value) {
   if (IS_DEV) {
@@ -686,11 +686,11 @@ exports.resumeReadAloud = function () {
 exports.applyTTSSettings = function (ttsSettings) {
   applyTTSSettings(ttsSettings);
 };
-exports.ttsSet = function (key, value) {
-  ttsSet(key, value);
+exports.applyTTSSetting = function (key, value) {
+  applyTTSSetting(key, value);
 };
-exports.preferredVoice = function (value) {
-  preferredVoice(value);
+exports.applyPreferredVoice = function (value) {
+  applyPreferredVoice(value);
 };
 exports.resetTTSSettings = function () {
   resetTTSSettings();
@@ -790,8 +790,8 @@ exports.positions = function () {
 exports.goToPosition = function (value) {
   goToPosition(value);
 };
-exports.applyAtributes = function (value) {
-  applyAtributes(value);
+exports.applyAttributes = function (value) {
+  applyAttributes(value);
 };
 exports.snapToElement = function (value) {
   snapToElement(value);

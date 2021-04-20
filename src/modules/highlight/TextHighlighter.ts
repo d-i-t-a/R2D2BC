@@ -890,13 +890,13 @@ export default class TextHighlighter {
   selectionMenuOpened = debounce(() => {
     if (!this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = true;
-      this.api?.selectionMenuOpen();
+      if (this.api?.selectionMenuOpen) this.api?.selectionMenuOpen();
     }
   }, 100);
   selectionMenuClosed = debounce(() => {
     if (this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = false;
-      this.api?.selectionMenuClose();
+      if (this.api?.selectionMenuClose) this.api?.selectionMenuClose();
     }
   }, 100);
 

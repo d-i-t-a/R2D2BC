@@ -376,11 +376,13 @@ export class TTSSettings implements ITTSUserSettings {
       autoScroll: this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF).value,
     };
     this.applyTTSSettings(ttsSettings);
-    this.api?.updateSettings(ttsSettings).then(async (settings) => {
-      if (IS_DEV) {
-        console.log("api updated tts settings", settings);
-      }
-    });
+    if (this.api?.updateSettings) {
+      this.api?.updateSettings(ttsSettings).then(async (settings) => {
+        if (IS_DEV) {
+          console.log("api updated tts settings", settings);
+        }
+      });
+    }
   }
 
   private getTTSSettings(): UserProperties {

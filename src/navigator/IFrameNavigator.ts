@@ -2767,7 +2767,7 @@ export default class IFrameNavigator implements Navigator {
               this.nextChapterBottomAnchorElement.style.display = "none";
             if (this.previousChapterTopAnchorElement)
               this.previousChapterTopAnchorElement.style.display = "none";
-            this.api?.resourceFitsScreen();
+            if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
           } else {
             this.settings.isPaginated().then((paginated) => {
               if (!paginated) {
@@ -2798,8 +2798,7 @@ export default class IFrameNavigator implements Navigator {
             });
             this.checkResourcePosition();
           }
-
-          this.api?.resourceReady();
+          if (this.api?.resourceReady) this.api?.resourceReady();
         }, 300);
       }
     } else {
@@ -2824,11 +2823,11 @@ export default class IFrameNavigator implements Navigator {
 
   checkResourcePosition = debounce(() => {
     if (this.view.atStart() && this.view.atEnd()) {
-      this.api?.resourceFitsScreen();
+      if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
     } else if (this.view.atEnd()) {
-      this.api?.resourceAtEnd();
+      if (this.api?.resourceAtEnd) this.api?.resourceAtEnd();
     } else if (this.view.atStart()) {
-      this.api?.resourceAtStart();
+      if (this.api?.resourceAtStart) this.api?.resourceAtStart();
     }
   }, 200);
 

@@ -155,7 +155,7 @@ export default class TTSModule implements ReaderModule {
 
   cancel() {
     if (window.speechSynthesis.speaking) {
-      this.api?.stopped();
+      if (this.api?.stopped) this.api?.stopped();
       this.userScrolled = false;
       window.speechSynthesis.cancel();
       if (
@@ -191,7 +191,7 @@ export default class TTSModule implements ReaderModule {
     partial: boolean,
     callback: () => void
   ): Promise<any> {
-    this.api?.started();
+    if (this.api?.started) this.api?.started();
 
     var self = this;
     this.userScrolled = false;
@@ -502,7 +502,7 @@ export default class TTSModule implements ReaderModule {
 
   speakPause() {
     if (window.speechSynthesis.speaking) {
-      this.api?.paused();
+      if (this.api?.paused) this.api?.paused();
       this.userScrolled = false;
       window.speechSynthesis.pause();
     }
@@ -510,7 +510,7 @@ export default class TTSModule implements ReaderModule {
 
   speakResume() {
     if (window.speechSynthesis.speaking) {
-      this.api?.resumed();
+      if (this.api?.resumed) this.api?.resumed();
       this.userScrolled = false;
       window.speechSynthesis.resume();
     }

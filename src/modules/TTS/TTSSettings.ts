@@ -519,7 +519,7 @@ export class TTSSettings implements ITTSUserSettings {
     }
   }
 
-  async preferredVoice(value: any) {
+  async applyPreferredVoice(value: any) {
     var name =
       value.indexOf(":") !== -1
         ? value.slice(0, value.indexOf(":"))
@@ -527,13 +527,17 @@ export class TTSSettings implements ITTSUserSettings {
     var lang =
       value.indexOf(":") !== -1 ? value.slice(value.indexOf(":") + 1) : value;
     if (name !== undefined && lang !== undefined) {
-      this.ttsSet("voice", { usePublication: true, name: name, lang: lang });
+      this.applyTTSSetting("voice", {
+        usePublication: true,
+        name: name,
+        lang: lang,
+      });
     } else if (lang !== undefined && name === undefined) {
-      this.ttsSet("voice", { usePublication: true, lang: lang });
+      this.applyTTSSetting("voice", { usePublication: true, lang: lang });
     }
   }
 
-  async ttsSet(key: any, value: any) {
+  async applyTTSSetting(key: any, value: any) {
     if (key === TTSREFS.COLOR_REF) {
       this.color = value;
       this.userProperties.getByRef(TTSREFS.COLOR_REF).value = this.color;

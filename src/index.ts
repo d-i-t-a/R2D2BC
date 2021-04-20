@@ -297,17 +297,17 @@ export async function applyTTSSettings(ttsSettings) {
   }
 }
 
-export async function ttsSet(key, value) {
+export async function applyTTSSetting(key, value) {
   if (R2Navigator.rights?.enableTTS) {
     if (IS_DEV) {
       console.log("set " + key + " value " + value);
     }
-    R2TTSSettings.ttsSet(key, value);
+    R2TTSSettings.applyTTSSetting(key, value);
   }
 }
-export async function preferredVoice(value) {
+export async function applyPreferredVoice(value) {
   if (R2Navigator.rights?.enableTTS) {
-    R2TTSSettings.preferredVoice(value);
+    R2TTSSettings.applyPreferredVoice(value);
   }
 }
 
@@ -378,11 +378,11 @@ export async function goToPosition(value) {
   }
   return R2Navigator.goToPosition(value);
 }
-export async function applyAtributes(value) {
+export async function applyAttributes(value) {
   if (IS_DEV) {
-    console.log("applyAtributes");
+    console.log("applyAttributes");
   }
-  R2Navigator.applyAtributes(value);
+  R2Navigator.applyAttributes(value);
 }
 export async function snapToElement(value) {
   if (IS_DEV) {
@@ -394,10 +394,12 @@ export async function snapToElement(value) {
 export async function load(config: ReaderConfig): Promise<any> {
   var browsers: string[] = [];
 
-  if (config.protection?.enforceSupportedBrowsers) {
-    (config.protection?.supportedBrowsers ?? []).forEach((browser: string) => {
-      browsers.push("last 1 " + browser + " version");
-    });
+  if (config.protection?.properties?.enforceSupportedBrowsers) {
+    (config.protection?.properties?.supportedBrowsers ?? []).forEach(
+      (browser: string) => {
+        browsers.push("last 1 " + browser + " version");
+      }
+    );
   }
   const supportedBrowsers = getUserAgentRegExp({
     browsers: browsers,
@@ -405,9 +407,9 @@ export async function load(config: ReaderConfig): Promise<any> {
   });
 
   if (
-    (config.protection?.enforceSupportedBrowsers &&
+    (config.protection?.properties?.enforceSupportedBrowsers &&
       supportedBrowsers.test(navigator.userAgent)) ||
-    !config.protection?.enforceSupportedBrowsers
+    !config.protection?.properties?.enforceSupportedBrowsers
   ) {
     var mainElement = document.getElementById("D2Reader-Container");
     var headerMenu = document.getElementById("headerMenu");
@@ -554,7 +556,8 @@ export async function load(config: ReaderConfig): Promise<any> {
     if ((publication.metadata.rendition?.layout ?? "unknown") !== "fixed") {
       D2Highlighter = await TextHighlighter.create({
         delegate: R2Navigator,
-        config: config.highlighter,
+        properties: config.highlighter?.properties,
+        api: config.highlighter?.api,
       });
     }
 
@@ -567,6 +570,8 @@ export async function load(config: ReaderConfig): Promise<any> {
         publication: publication,
         delegate: R2Navigator,
         initialAnnotations: config.initialAnnotations,
+        properties: config.bookmarks?.properties,
+        api: config.bookmarks?.api,
       });
     }
 
@@ -579,8 +584,9 @@ export async function load(config: ReaderConfig): Promise<any> {
         publication: publication,
         delegate: R2Navigator,
         initialAnnotations: config.initialAnnotations,
-        config: config.annotations,
         highlighter: D2Highlighter,
+        properties: config.annotations?.properties,
+        api: config.annotations?.api,
       });
     }
 
@@ -590,7 +596,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         store: settingsStore,
         initialTTSSettings: config.tts,
         headerMenu: headerMenu,
-        api: config.tts.api,
+        api: config.tts?.api,
       });
       TTSModuleInstance = await TTSModule.create({
         delegate: R2Navigator,
@@ -598,6 +604,8 @@ export async function load(config: ReaderConfig): Promise<any> {
         headerMenu: headerMenu,
         rights: config.rights,
         highlighter: D2Highlighter,
+        properties: config.tts?.properties,
+        api: config.tts?.api,
       });
     }
 
@@ -607,9 +615,9 @@ export async function load(config: ReaderConfig): Promise<any> {
         headerMenu: headerMenu,
         delegate: R2Navigator,
         publication: publication,
-        // api: config.api,
-        config: config.search,
         highlighter: D2Highlighter,
+        properties: config.search?.properties,
+        api: config.search?.api,
       }).then(function (searchModule) {
         SearchModuleInstance = searchModule;
       });
@@ -628,7 +636,8 @@ export async function load(config: ReaderConfig): Promise<any> {
     if (config.rights?.enableContentProtection) {
       ContentProtectionModule.create({
         delegate: R2Navigator,
-        protection: config.protection,
+        properties: config.protection?.properties,
+        api: config.protection?.api,
       }).then(function (contentProtectionModule) {
         ContentProtectionModuleInstance = contentProtectionModule;
       });
@@ -684,11 +693,11 @@ exports.resumeReadAloud = function () {
 exports.applyTTSSettings = function (ttsSettings) {
   applyTTSSettings(ttsSettings);
 };
-exports.ttsSet = function (key, value) {
-  ttsSet(key, value);
+exports.applyTTSSetting = function (key, value) {
+  applyTTSSetting(key, value);
 };
-exports.preferredVoice = function (value) {
-  preferredVoice(value);
+exports.applyPreferredVoice = function (value) {
+  applyPreferredVoice(value);
 };
 exports.resetTTSSettings = function () {
   resetTTSSettings();
@@ -788,8 +797,8 @@ exports.positions = function () {
 exports.goToPosition = function (value) {
   goToPosition(value);
 };
-exports.applyAtributes = function (value) {
-  applyAtributes(value);
+exports.applyAttributes = function (value) {
+  applyAttributes(value);
 };
 exports.snapToElement = function (value) {
   snapToElement(value);

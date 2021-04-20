@@ -60,6 +60,10 @@ const DEFAULT_BACKGROUND_COLOR: IColor = {
   green: 50,
   red: 230,
 };
+export interface TextSelectorAPI {
+  selectionMenuOpen: any;
+  selectionMenuClose: any;
+}
 
 export const _highlights: IHighlight[] = [];
 
@@ -108,31 +112,45 @@ let bodyEventListenersSet = false;
 // TODO this needs to reflect layer name
 let _highlightsContainer: HTMLElement | null;
 
+export interface TextHighlighterProperties {
+  selectionMenuItems: Array<SelectionMenuItem>;
+}
+
 export interface TextHighlighterConfig {
   delegate: IFrameNavigator;
-  config: { selectionMenuItems: Array<SelectionMenuItem> };
+  properties: TextHighlighterProperties;
+  api: TextSelectorAPI;
 }
 
 export default class TextHighlighter {
   private options: any;
   private delegate: IFrameNavigator;
   private lastSelectedHighlight: number = undefined;
-  private config: { selectionMenuItems: Array<SelectionMenuItem>; api: any };
+  private properties: TextHighlighterProperties;
+  private api: TextSelectorAPI;
   private hasEventListener: boolean;
 
   public static async create(config: TextHighlighterConfig): Promise<any> {
-    const module = new this(config.delegate, config.config, false, {});
+    const module = new this(
+      config.delegate,
+      config.properties,
+      config.api,
+      false,
+      {}
+    );
     return new Promise((resolve) => resolve(module));
   }
 
   private constructor(
     delegate: IFrameNavigator,
-    config: any,
+    properties: TextHighlighterProperties,
+    api: TextSelectorAPI,
     hasEventListener: boolean,
     options: any
   ) {
     this.delegate = delegate;
-    this.config = config;
+    this.properties = properties;
+    this.api = api;
     this.hasEventListener = hasEventListener;
     this.options = this.defaults(options, {
       color: "#fce300",
@@ -778,7 +796,7 @@ export default class TextHighlighter {
 
   toolboxHide() {
     var toolbox = document.getElementById("highlight-toolbox");
-    toolbox.style.display = "none";
+    if (toolbox) toolbox.style.display = "none";
     this.selectionMenuClosed();
   }
 
@@ -838,7 +856,7 @@ export default class TextHighlighter {
     );
     var range = this.dom(this.delegate.iframe.contentDocument.body).getRange();
 
-    if (!range || range.collapsed) {
+    if ((!range || range.collapsed) && toolboxAddOptions) {
       // Only force hide for `toolboxMode('add')`
       if (getComputedStyle(toolboxAddOptions).display !== "none") {
         self.toolboxHide();
@@ -872,17 +890,13 @@ export default class TextHighlighter {
   selectionMenuOpened = debounce(() => {
     if (!this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = true;
-      if (this.config?.api && this.config?.api?.selectionMenuOpen) {
-        this.config.api.selectionMenuOpen();
-      }
+      if (this.api?.selectionMenuOpen) this.api?.selectionMenuOpen();
     }
   }, 100);
   selectionMenuClosed = debounce(() => {
     if (this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = false;
-      if (this.config?.api && this.config?.api.selectionMenuClose) {
-        this.config.api.selectionMenuClose();
-      }
+      if (this.api?.selectionMenuClose) this.api?.selectionMenuClose();
     }
   }, 100);
 
@@ -895,127 +909,130 @@ export default class TextHighlighter {
     var rect = range.getBoundingClientRect();
     var toolbox = document.getElementById("highlight-toolbox");
 
-    toolbox.style.top =
-      rect.top + (this.delegate.attributes?.navHeight ?? 0) + "px";
-    toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
+    if (toolbox) {
+      toolbox.style.top =
+        rect.top + (this.delegate.attributes?.navHeight ?? 0) + "px";
+      toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
+    }
   }
 
   toolboxHandler() {
     var toolbox = document.getElementById("highlight-toolbox");
+    if (toolbox) {
+      if (getComputedStyle(toolbox).display === "none") {
+        toolbox.style.display = "block";
+        this.selectionMenuOpened();
 
-    if (getComputedStyle(toolbox).display === "none") {
-      toolbox.style.display = "block";
-      this.selectionMenuOpened();
+        var self = this;
 
-      var self = this;
-
-      self.toolboxMode("add");
-      var highlightIcon = document.getElementById("highlightIcon");
-      var underlineIcon = document.getElementById("underlineIcon");
-      var colorIcon = document.getElementById("colorIcon");
-      var speakIcon = document.getElementById("speakIcon");
-      if (this.delegate.rights?.enableAnnotations) {
-        if (highlightIcon) {
-          highlightIcon.style.display = "unset";
-          if (colorIcon) {
-            if (highlightIcon.getElementsByTagName("span").length > 0) {
-              (highlightIcon.getElementsByTagName(
-                "span"
-              )[0] as HTMLSpanElement).style.background = this.getColor();
+        self.toolboxMode("add");
+        var highlightIcon = document.getElementById("highlightIcon");
+        var underlineIcon = document.getElementById("underlineIcon");
+        var colorIcon = document.getElementById("colorIcon");
+        var speakIcon = document.getElementById("speakIcon");
+        if (this.delegate.rights?.enableAnnotations) {
+          if (highlightIcon) {
+            highlightIcon.style.display = "unset";
+            if (colorIcon) {
+              if (highlightIcon.getElementsByTagName("span").length > 0) {
+                (highlightIcon.getElementsByTagName(
+                  "span"
+                )[0] as HTMLSpanElement).style.background = this.getColor();
+              }
             }
           }
-        }
-        if (underlineIcon) {
-          underlineIcon.style.display = "unset";
-          if (colorIcon) {
-            if (underlineIcon.getElementsByTagName("span").length > 0) {
-              (underlineIcon.getElementsByTagName(
-                "span"
-              )[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+          if (underlineIcon) {
+            underlineIcon.style.display = "unset";
+            if (colorIcon) {
+              if (underlineIcon.getElementsByTagName("span").length > 0) {
+                (underlineIcon.getElementsByTagName(
+                  "span"
+                )[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+              }
             }
           }
-        }
-        if (colorIcon) {
-          colorIcon.style.display = "unset";
-          var colorIconSymbol = colorIcon.lastChild as HTMLElement;
-          colorIconSymbol.style.backgroundColor = this.getColor();
-        }
-        if (highlightIcon) {
-          function highlightEvent() {
-            self.doHighlight(false, AnnotationMarker.Highlight);
-            self.toolboxHide();
-            highlightIcon.removeEventListener("click", highlightEvent);
+          if (colorIcon) {
+            colorIcon.style.display = "unset";
+            var colorIconSymbol = colorIcon.lastChild as HTMLElement;
+            colorIconSymbol.style.backgroundColor = this.getColor();
           }
-          highlightIcon.addEventListener("click", highlightEvent);
-        }
-        if (underlineIcon) {
-          function commentEvent() {
-            self.doHighlight(false, AnnotationMarker.Underline);
-            self.toolboxHide();
-            underlineIcon.removeEventListener("click", commentEvent);
+          if (highlightIcon) {
+            function highlightEvent() {
+              self.doHighlight(false, AnnotationMarker.Highlight);
+              self.toolboxHide();
+              highlightIcon.removeEventListener("click", highlightEvent);
+            }
+            highlightIcon.addEventListener("click", highlightEvent);
           }
-          underlineIcon.addEventListener("click", commentEvent);
-        }
-      } else {
-        if (highlightIcon) {
-          highlightIcon.style.setProperty("display", "none");
-        }
-        if (underlineIcon) {
-          underlineIcon.style.setProperty("display", "none");
-        }
-        if (colorIcon) {
-          colorIcon.style.setProperty("display", "none");
-        }
-      }
-      if (this.delegate.rights?.enableTTS) {
-        if (speakIcon) {
-          function speakEvent() {
-            speakIcon.removeEventListener("click", speakEvent);
-            self.speak();
+          if (underlineIcon) {
+            function commentEvent() {
+              self.doHighlight(false, AnnotationMarker.Underline);
+              self.toolboxHide();
+              underlineIcon.removeEventListener("click", commentEvent);
+            }
+            underlineIcon.addEventListener("click", commentEvent);
           }
-          speakIcon.addEventListener("click", speakEvent);
+        } else {
+          if (highlightIcon) {
+            highlightIcon.style.setProperty("display", "none");
+          }
+          if (underlineIcon) {
+            underlineIcon.style.setProperty("display", "none");
+          }
+          if (colorIcon) {
+            colorIcon.style.setProperty("display", "none");
+          }
         }
-      } else {
-        if (speakIcon) {
-          speakIcon.style.setProperty("display", "none");
+        if (this.delegate.rights?.enableTTS) {
+          if (speakIcon) {
+            function speakEvent() {
+              speakIcon.removeEventListener("click", speakEvent);
+              self.speak();
+            }
+            speakIcon.addEventListener("click", speakEvent);
+          }
+        } else {
+          if (speakIcon) {
+            speakIcon.style.setProperty("display", "none");
+          }
         }
-      }
 
-      if (this.config?.selectionMenuItems ?? []) {
-        (this.config?.selectionMenuItems ?? []).forEach((menuItem) => {
-          var itemElement = document.getElementById(menuItem.id);
-          var self = this;
+        if (this.properties?.selectionMenuItems ?? []) {
+          (this.properties?.selectionMenuItems ?? []).forEach((menuItem) => {
+            var itemElement = document.getElementById(menuItem.id);
+            var self = this;
 
-          function itemEvent() {
-            itemElement.removeEventListener("click", itemEvent);
+            function itemEvent() {
+              itemElement.removeEventListener("click", itemEvent);
 
-            function getCssSelector(element: Element): string {
-              const options = {
-                className: (str: string) => {
-                  return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-                },
-                idName: (str: string) => {
-                  return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-                },
-              };
-              return uniqueCssSelector(
-                element,
-                self.delegate.iframe.contentDocument,
-                options
+              function getCssSelector(element: Element): string {
+                const options = {
+                  className: (str: string) => {
+                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                  },
+                  idName: (str: string) => {
+                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                  },
+                };
+                return uniqueCssSelector(
+                  element,
+                  self.delegate.iframe.contentDocument,
+                  options
+                );
+              }
+
+              const selectionInfo = getCurrentSelectionInfo(
+                self.delegate.iframe.contentWindow,
+                getCssSelector
               );
+              if (selectionInfo !== undefined) {
+                menuItem.callback(selectionInfo.cleanText);
+              }
+              self.callbackComplete();
             }
-
-            const selectionInfo = getCurrentSelectionInfo(
-              self.delegate.iframe.contentWindow,
-              getCssSelector
-            );
-            if (selectionInfo !== undefined) {
-              menuItem.callback(selectionInfo.cleanText);
-            }
-            self.callbackComplete();
-          }
-          itemElement.addEventListener("click", itemEvent);
-        });
+            itemElement.addEventListener("click", itemEvent);
+          });
+        }
       }
     }
   }
@@ -1110,7 +1127,7 @@ export default class TextHighlighter {
         // }
         this.delegate.ttsModule.speak(selectionInfo as any, true, () => {});
       }
-      if (this.delegate.tts.enableSplitter) {
+      if (this.delegate.tts.properties?.enableSplitter) {
         const selection = self
           .dom(self.delegate.iframe.contentDocument.body)
           .getSelection();
@@ -1876,9 +1893,10 @@ export default class TextHighlighter {
           payload.highlight
         )) as Annotation;
         // if(anno.comment) {
-        if (this.delegate.api && this.delegate.api.selectedAnnotation) {
-          this.delegate.api.selectedAnnotation(anno).then(async () => {});
-        }
+        this.delegate.annotationModule.api
+          ?.selectedAnnotation(anno)
+          .then(async () => {});
+
         if (IS_DEV) {
           console.log("selected highlight " + anno.id);
         }

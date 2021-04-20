@@ -29,7 +29,7 @@ import { ReadiumCSS } from "./ReadiumCSS";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { IS_DEV } from "../..";
 import { addEventListenerOptional } from "../../utils/EventHandler";
-import { ReaderUI } from "../../navigator/IFrameNavigator";
+import { NavigatorAPI, ReaderUI } from "../../navigator/IFrameNavigator";
 import ReflowableBookView from "../../views/ReflowableBookView";
 import FixedBookView from "../../views/FixedBookView";
 import BookView from "../../views/BookView";
@@ -40,7 +40,7 @@ export interface UserSettingsConfig {
   initialUserSettings: InitialUserSettings;
   headerMenu: HTMLElement;
   material: ReaderUI;
-  api: any;
+  api: NavigatorAPI;
   layout: string;
 }
 export interface UserSettingsUIConfig {
@@ -85,7 +85,7 @@ export interface IUserSettings {
  */
 export interface InitialUserSettings {
   fontSize: number;
-  fontOverride: boolean;
+  fontOverride?: boolean | "readium-font-on" | "readium-font-off";
   fontFamily: number;
   appearance: any;
   verticalScroll?:
@@ -96,7 +96,7 @@ export interface InitialUserSettings {
     | "paginated";
 
   //Advanced settings
-  publisherDefaults: boolean;
+  publisherDefaults?: boolean | "readium-advanced-on" | "readium-advanced-on";
   textAlignment: number;
   columnCount: number;
   wordSpacing: number;
@@ -163,7 +163,7 @@ export class UserSettings implements IUserSettings {
   private settingsView: HTMLDivElement;
   private readonly headerMenu: HTMLElement;
   private material: ReaderUI | null = null;
-  api: any;
+  api: NavigatorAPI;
 
   private iframe: HTMLIFrameElement;
 
@@ -245,7 +245,7 @@ export class UserSettings implements IUserSettings {
     store: Store,
     headerMenu: HTMLElement,
     material: ReaderUI,
-    api: any,
+    api: NavigatorAPI,
     layout: string
   ) {
     this.store = store;
@@ -426,15 +426,6 @@ export class UserSettings implements IUserSettings {
         "body"
       ) as HTMLBodyElement;
 
-      // Apply publishers default
-      if (await this.getProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY)) {
-        html.style.setProperty(
-          ReadiumCSS.PUBLISHER_DEFAULT_KEY,
-          this.userProperties
-            .getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF)
-            .toString()
-        );
-      }
       // Apply font size
       if (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY)) {
         html.style.setProperty(
@@ -545,6 +536,7 @@ export class UserSettings implements IUserSettings {
         HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
         HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
       }
+
       // Apply font family
       if (await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY)) {
         html.style.setProperty(
@@ -609,6 +601,30 @@ export class UserSettings implements IUserSettings {
       } else {
         html.style.setProperty("--USER__scroll", "readium-scroll-on");
       }
+
+      // Apply publishers default
+      if (await this.getProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY)) {
+        if (
+          this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF)
+            .value === true
+        ) {
+          html.style.setProperty(
+            "--USER__advancedSettings",
+            "readium-advanced-off"
+          );
+        } else {
+          html.style.setProperty(
+            "--USER__advancedSettings",
+            "readium-advanced-on"
+          );
+        }
+      } else {
+        html.style.setProperty(
+          "--USER__advancedSettings",
+          "readium-advanced-off"
+        );
+      }
+
       this.isScrollMode().then((scroll) => {
         this.view.setMode(scroll);
       });
@@ -954,8 +970,8 @@ export class UserSettings implements IUserSettings {
       ).value,
       verticalScroll: this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value,
     };
-    if (this.api && this.api.updateUserSettings) {
-      this.api.updateUserSettings(userSettings).then((_) => {
+    if (this.api?.updateSettings) {
+      this.api?.updateSettings(userSettings).then((_) => {
         if (IS_DEV) {
           console.log("api updated user settings", userSettings);
         }

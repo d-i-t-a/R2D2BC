@@ -30,13 +30,16 @@ import { IS_DEV } from "../..";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import TextHighlighter from "../highlight/TextHighlighter";
 
-export interface SearchConfig {
+export interface SearchModuleAPI {}
+
+export interface SearchModuleProperties {
   color: string;
   current: string;
 }
 
 export interface SearchModuleConfig {
-  config: SearchConfig;
+  properties: SearchModuleProperties;
+  api: SearchModuleAPI;
   publication: Publication;
   headerMenu: HTMLElement;
   delegate: IFrameNavigator;
@@ -44,7 +47,9 @@ export interface SearchModuleConfig {
 }
 
 export default class SearchModule implements ReaderModule {
-  private config: SearchConfig;
+  private properties: SearchModuleProperties;
+  // @ts-ignore
+  private api: SearchModuleAPI;
   private publication: Publication;
   private readonly headerMenu: HTMLElement;
   private delegate: IFrameNavigator;
@@ -60,7 +65,8 @@ export default class SearchModule implements ReaderModule {
       config.headerMenu,
       config.delegate,
       config.publication,
-      config.config,
+      config.properties,
+      config.api,
       config.highlighter
     );
 
@@ -72,13 +78,15 @@ export default class SearchModule implements ReaderModule {
     headerMenu: HTMLElement,
     delegate: IFrameNavigator,
     publication: Publication,
-    config: any,
+    properties: SearchModuleProperties,
+    api: SearchModuleAPI,
     highlighter: TextHighlighter
   ) {
     this.delegate = delegate;
     this.headerMenu = headerMenu;
     this.publication = publication;
-    this.config = config;
+    this.properties = properties;
+    this.api = api;
     this.highlighter = highlighter;
   }
 
@@ -325,13 +333,13 @@ export default class SearchModule implements ReaderModule {
               if (i === index) {
                 highlight = this.highlighter.createSearchHighlight(
                   selectionInfo,
-                  this.config.current
+                  this.properties?.current
                 );
                 this.jumpToMark(index);
               } else {
                 highlight = this.highlighter.createSearchHighlight(
                   selectionInfo,
-                  this.config.color
+                  this.properties?.color
                 );
               }
               searchItem.highlight = highlight;
@@ -730,7 +738,7 @@ export default class SearchModule implements ReaderModule {
         };
         var highlight = this.highlighter.createSearchHighlight(
           selectionInfo,
-          this.config.color
+          this.properties?.color
         );
         searchItem.highlight = highlight;
         this.currentHighlights.push(highlight);
@@ -750,13 +758,13 @@ export default class SearchModule implements ReaderModule {
       if (this.currentChapterSearchResult.length) {
         var current = this.currentChapterSearchResult[index];
         this.currentHighlights.forEach((highlight) => {
-          var createColor: any = this.config.color;
+          var createColor: any = this.properties?.color;
           if (TextHighlighter.isHexColor(createColor)) {
             createColor = TextHighlighter.hexToRgbChannels(createColor);
           }
           highlight.color = createColor;
         });
-        var currentColor: any = this.config.current;
+        var currentColor: any = this.properties?.current;
         if (TextHighlighter.isHexColor(currentColor)) {
           currentColor = TextHighlighter.hexToRgbChannels(currentColor);
         }

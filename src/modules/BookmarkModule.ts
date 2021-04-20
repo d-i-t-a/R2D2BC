@@ -29,14 +29,13 @@ import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 import { v4 as uuid } from "uuid";
 
-export type AddBookmark = (bookmark: Bookmark) => Promise<Bookmark>;
-export type DeleteBookmark = (bookmark: Bookmark) => Promise<Bookmark>;
-
 export interface BookmarkModuleAPI {
-  addBookmark: AddBookmark;
-  deleteBookmark: DeleteBookmark;
+  addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
+  deleteBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
   getBookmarks: Array<any>;
 }
+
+export interface BookmarkModuleProperties {}
 
 export interface BookmarkModuleConfig {
   annotator: Annotator;
@@ -45,10 +44,11 @@ export interface BookmarkModuleConfig {
   publication: Publication;
   delegate: IFrameNavigator;
   initialAnnotations?: any;
+  properties: BookmarkModuleProperties;
+  api: BookmarkModuleAPI;
 }
 
 export default class BookmarkModule implements ReaderModule {
-  private readonly api: BookmarkModuleAPI;
   private readonly annotator: Annotator | null;
   private rights: ReaderRights;
   private publication: Publication;
@@ -57,6 +57,9 @@ export default class BookmarkModule implements ReaderModule {
   private readonly headerMenu: HTMLElement;
   private readonly initialAnnotations: any;
   private delegate: IFrameNavigator;
+  // @ts-ignore
+  private readonly properties: BookmarkModuleProperties;
+  private readonly api: BookmarkModuleAPI;
 
   public static async create(config: BookmarkModuleConfig): Promise<any> {
     const module = new this(
@@ -65,7 +68,9 @@ export default class BookmarkModule implements ReaderModule {
       config.rights || { enableBookmarks: false },
       config.publication,
       config.delegate,
-      config.initialAnnotations || null
+      config.initialAnnotations || null,
+      config.properties,
+      config.api
     );
     await module.start();
     return new Promise((resolve) => resolve(module));
@@ -77,7 +82,9 @@ export default class BookmarkModule implements ReaderModule {
     rights: ReaderRights,
     publication: Publication,
     delegate: IFrameNavigator,
-    initialAnnotations: any | null = null
+    initialAnnotations: any | null = null,
+    properties: BookmarkModuleProperties | null = null,
+    api: BookmarkModuleAPI | null = null
   ) {
     this.annotator = annotator;
     this.rights = rights;
@@ -85,7 +92,8 @@ export default class BookmarkModule implements ReaderModule {
     this.headerMenu = headerMenu;
     this.delegate = delegate;
     this.initialAnnotations = initialAnnotations;
-    this.api = this.delegate.api;
+    this.properties = properties;
+    this.api = api;
   }
 
   async stop() {
@@ -143,8 +151,8 @@ export default class BookmarkModule implements ReaderModule {
 
   async deleteBookmark(bookmark: Bookmark): Promise<any> {
     if (this.annotator) {
-      if (this.api && this.api.deleteBookmark) {
-        this.api.deleteBookmark(bookmark).then(async (_result) => {
+      if (this.api?.deleteBookmark) {
+        this.api?.deleteBookmark(bookmark).then(async (_result) => {
           var deleted = await this.annotator.deleteBookmark(bookmark);
 
           if (IS_DEV) {
@@ -206,7 +214,7 @@ export default class BookmarkModule implements ReaderModule {
       if (
         !(await this.annotator.locatorExists(bookmark, AnnotationType.Bookmark))
       ) {
-        if (this.api && this.api.addBookmark) {
+        if (this.api?.addBookmark) {
           this.api.addBookmark(bookmark).then(async (bookmark) => {
             if (IS_DEV) console.log(bookmark);
             var saved = await this.annotator.saveBookmark(bookmark);

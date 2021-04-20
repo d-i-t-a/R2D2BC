@@ -38,7 +38,6 @@ export default class TimelineModule implements ReaderModule {
 
   public static async create(config: TimelineModuleConfig) {
     const timeline = new this(config.delegate, config.publication);
-
     await timeline.start();
     return timeline;
   }

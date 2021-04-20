@@ -30,15 +30,15 @@ import * as sanitize from "sanitize-html";
 import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
 import TextHighlighter from "../highlight/TextHighlighter";
 
-export interface TTSModuleConfig {
-  delegate: IFrameNavigator;
-  headerMenu: HTMLElement;
-  rights: ReaderRights;
-  tts: TTSSettings;
-  highlighter: TextHighlighter;
+export interface TTSModuleAPI {
+  started: any;
+  stopped: any;
+  paused: any;
+  resumed: any;
+  finished: any;
+  updateSettings: any;
 }
-
-export interface TTSSpeechConfig {
+export interface TTSModuleProperties {
   enableSplitter?: boolean;
   color?: string;
   autoScroll?: boolean;
@@ -46,6 +46,16 @@ export interface TTSSpeechConfig {
   pitch?: number;
   volume?: number;
   voice?: TTSVoice;
+}
+
+export interface TTSModuleConfig {
+  delegate: IFrameNavigator;
+  headerMenu: HTMLElement;
+  rights: ReaderRights;
+  tts: TTSSettings;
+  highlighter: TextHighlighter;
+  properties: TTSModuleProperties;
+  api: TTSModuleAPI;
 }
 
 export default class TTSModule implements ReaderModule {
@@ -59,6 +69,9 @@ export default class TTSModule implements ReaderModule {
   private body: any;
   private hasEventListener: boolean = false;
   private readonly headerMenu: HTMLElement;
+  // @ts-ignore
+  private readonly properties: TTSModuleProperties;
+  private readonly api: TTSModuleAPI;
 
   initialize(body: any) {
     if (this.highlighter !== undefined) {
@@ -142,11 +155,13 @@ export default class TTSModule implements ReaderModule {
 
   cancel() {
     if (window.speechSynthesis.speaking) {
-      if (this.tts.api && typeof this.tts.api.stopped === "function")
-        this.tts.api.stopped();
+      if (this.api?.stopped) this.api?.stopped();
       this.userScrolled = false;
       window.speechSynthesis.cancel();
-      if (this.splittingResult && this.delegate.tts.enableSplitter) {
+      if (
+        this.splittingResult &&
+        this.delegate.tts.properties?.enableSplitter
+      ) {
         this.splittingResult.forEach((splittingWord) => {
           splittingWord.dataset.ttsCurrentWord = "false";
           splittingWord.dataset.ttsCurrentLine = "false";
@@ -176,15 +191,14 @@ export default class TTSModule implements ReaderModule {
     partial: boolean,
     callback: () => void
   ): Promise<any> {
-    if (this.tts.api && typeof this.tts.api.started === "function")
-      this.tts.api.started();
+    if (this.api?.started) this.api?.started();
 
     var self = this;
     this.userScrolled = false;
 
     this.cancel();
 
-    if (this.delegate.tts.enableSplitter) {
+    if (this.delegate.tts.properties?.enableSplitter) {
       if (partial) {
         var allWords = self.body.querySelectorAll("[data-word]");
 
@@ -388,7 +402,7 @@ export default class TTSModule implements ReaderModule {
         }
         lastword = word;
 
-        if (self.delegate.tts.enableSplitter) {
+        if (self.delegate.tts.properties?.enableSplitter) {
           processWord(word);
         }
       }
@@ -467,7 +481,7 @@ export default class TTSModule implements ReaderModule {
     utterance.onend = function () {
       if (IS_DEV) console.log("utterance ended");
       self.highlighter.doneSpeaking();
-      if (self.delegate.tts.enableSplitter) {
+      if (self.delegate.tts.properties?.enableSplitter) {
         let splittingResult = self.body.querySelectorAll("[data-word]");
         splittingResult.forEach((splittingWord) => {
           splittingWord.dataset.ttsColor = self.tts.color;
@@ -481,16 +495,14 @@ export default class TTSModule implements ReaderModule {
           splittingWord.dataset.ttsCurrentLine = "false";
         });
       }
-      if (self.tts.api && typeof self.tts.api.finished === "function")
-        self.tts.api.finished();
+      self.api?.finished();
     };
     callback();
   }
 
   speakPause() {
     if (window.speechSynthesis.speaking) {
-      if (this.tts.api && typeof this.tts.api.paused === "function")
-        this.tts.api.paused();
+      if (this.api?.paused) this.api?.paused();
       this.userScrolled = false;
       window.speechSynthesis.pause();
     }
@@ -498,8 +510,7 @@ export default class TTSModule implements ReaderModule {
 
   speakResume() {
     if (window.speechSynthesis.speaking) {
-      if (this.tts.api && typeof this.tts.api.resumed === "function")
-        this.tts.api.resumed();
+      if (this.api?.resumed) this.api?.resumed();
       this.userScrolled = false;
       window.speechSynthesis.resume();
     }
@@ -511,7 +522,8 @@ export default class TTSModule implements ReaderModule {
       config.tts,
       config.headerMenu,
       config.rights,
-      config.highlighter
+      config.highlighter,
+      config.properties
     );
     await tts.start();
     return tts;
@@ -522,13 +534,15 @@ export default class TTSModule implements ReaderModule {
     tts: TTSSettings,
     headerMenu: HTMLElement,
     rights: ReaderRights,
-    highlighter: TextHighlighter
+    highlighter: TextHighlighter,
+    properties: TTSModuleProperties | null = null
   ) {
     this.delegate = delegate;
     this.tts = tts;
     this.headerMenu = headerMenu;
     this.rights = rights;
     this.highlighter = highlighter;
+    this.properties = properties;
   }
 
   protected async start(): Promise<void> {

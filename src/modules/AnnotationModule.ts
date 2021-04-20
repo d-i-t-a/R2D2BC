@@ -43,6 +43,9 @@ export interface AnnotationModuleAPI {
   deleteAnnotation: Highlight;
   selectedAnnotation: Highlight;
 }
+export interface AnnotationModuleProperties {
+  initialAnnotationColor: string;
+}
 
 export interface AnnotationModuleConfig {
   annotator: Annotator;
@@ -51,12 +54,12 @@ export interface AnnotationModuleConfig {
   publication: Publication;
   delegate: IFrameNavigator;
   initialAnnotations?: any;
-  config: { initialAnnotationColor: string };
+  properties: AnnotationModuleProperties;
+  api: AnnotationModuleAPI;
   highlighter: TextHighlighter;
 }
 
 export default class AnnotationModule implements ReaderModule {
-  private readonly api: AnnotationModuleAPI;
   private readonly annotator: Annotator | null;
   private rights: ReaderRights;
   private publication: Publication;
@@ -65,7 +68,8 @@ export default class AnnotationModule implements ReaderModule {
   private readonly highlighter: TextHighlighter;
   private readonly initialAnnotations: any;
   private delegate: IFrameNavigator;
-  private readonly config: { initialAnnotationColor: string };
+  properties: AnnotationModuleProperties;
+  api: AnnotationModuleAPI;
 
   public static async create(config: AnnotationModuleConfig) {
     const annotations = new this(
@@ -75,7 +79,8 @@ export default class AnnotationModule implements ReaderModule {
       config.publication,
       config.delegate,
       config.initialAnnotations || null,
-      config.config,
+      config.properties,
+      config.api,
       config.highlighter
     );
     await annotations.start();
@@ -89,7 +94,8 @@ export default class AnnotationModule implements ReaderModule {
     publication: Publication,
     delegate: IFrameNavigator,
     initialAnnotations: any | null = null,
-    config: any | null = null,
+    properties: AnnotationModuleProperties | null = null,
+    api: AnnotationModuleAPI | null = null,
     highlighter: TextHighlighter
   ) {
     this.annotator = annotator;
@@ -98,9 +104,9 @@ export default class AnnotationModule implements ReaderModule {
     this.headerMenu = headerMenu;
     this.delegate = delegate;
     this.initialAnnotations = initialAnnotations;
-    this.api = this.delegate.api;
     this.highlighter = highlighter;
-    this.config = config;
+    this.properties = properties;
+    this.api = api;
   }
 
   async stop() {
@@ -126,7 +132,7 @@ export default class AnnotationModule implements ReaderModule {
     }
   }
 
-  handleResize(): any {
+  handleResize() {
     setTimeout(() => {
       this.drawHighlights();
     }, 10);
@@ -183,8 +189,8 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   public async deleteHighlight(highlight: Annotation): Promise<any> {
-    if (this.api && this.api.deleteAnnotation) {
-      this.api.deleteAnnotation(highlight).then(async () => {
+    if (this.api?.deleteAnnotation) {
+      this.api?.deleteAnnotation(highlight).then(async () => {
         this.deleteLocalHighlight(highlight.id);
       });
     } else {
@@ -193,7 +199,7 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   public async deleteSelectedHighlight(highlight: Annotation): Promise<any> {
-    if (this.api && this.api.deleteAnnotation) {
+    if (this.api?.deleteAnnotation) {
       this.api.deleteAnnotation(highlight).then(async () => {
         this.deleteLocalHighlight(highlight.id);
       });
@@ -247,7 +253,7 @@ export default class AnnotationModule implements ReaderModule {
           highlight: highlight.selectionInfo.cleanText,
         },
       };
-      if (this.api && this.api.addAnnotation) {
+      if (this.api?.addAnnotation) {
         this.api.addAnnotation(annotation).then(async (result) => {
           annotation.id = result.id;
           var saved = await this.annotator.saveAnnotation(annotation);
@@ -388,8 +394,8 @@ export default class AnnotationModule implements ReaderModule {
           });
         }
       }
-      if (this.config && this.config?.initialAnnotationColor !== undefined) {
-        this.highlighter.setColor(this.config.initialAnnotationColor);
+      if (this.properties?.initialAnnotationColor) {
+        this.highlighter.setColor(this.properties?.initialAnnotationColor);
       }
     }
     if (search && this.rights?.enableSearch) {

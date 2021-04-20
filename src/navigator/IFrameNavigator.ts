@@ -42,14 +42,24 @@ import {
   UserSettings,
   UserSettingsUIConfig,
 } from "../model/user-settings/UserSettings";
-import BookmarkModule from "../modules/BookmarkModule";
-import AnnotationModule from "../modules/AnnotationModule";
-import TTSModule, { TTSSpeechConfig } from "../modules/TTS/TTSModule";
+import BookmarkModule, {
+  BookmarkModuleConfig,
+} from "../modules/BookmarkModule";
+import AnnotationModule, {
+  AnnotationModuleConfig,
+} from "../modules/AnnotationModule";
+import TTSModule, { TTSModuleConfig } from "../modules/TTS/TTSModule";
 import { goTo, IS_DEV } from "..";
 import Splitting from "../modules/TTS/splitting";
-import SearchModule from "../modules/search/SearchModule";
-import ContentProtectionModule from "../modules/protection/ContentProtectionModule";
-import TextHighlighter from "../modules/highlight/TextHighlighter";
+import SearchModule, {
+  SearchModuleConfig,
+} from "../modules/search/SearchModule";
+import ContentProtectionModule, {
+  ContentProtectionModuleConfig,
+} from "../modules/protection/ContentProtectionModule";
+import TextHighlighter, {
+  TextHighlighterConfig,
+} from "../modules/highlight/TextHighlighter";
 import TimelineModule from "../modules/positions/TimelineModule";
 import { debounce } from "debounce";
 import TouchEventHandler from "../utils/TouchEventHandler";
@@ -57,8 +67,15 @@ import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 import BookView from "../views/BookView";
 
 export type GetContent = (href: string) => Promise<string>;
-export interface ContentAPI {
+export interface NavigatorAPI {
+  updateSettings: any;
   getContent: GetContent;
+
+  resourceReady: any;
+  resourceAtStart: any;
+  resourceAtEnd: any;
+  resourceFitsScreen: any;
+  updateCurrentLocation: any;
 }
 
 export interface UpLinkConfig {
@@ -85,8 +102,8 @@ export interface IFrameNavigatorConfig {
   initialLastReadingPosition?: ReadingPosition;
   rights?: ReaderRights;
   material?: ReaderUI;
-  api: any;
-  tts: any;
+  api: NavigatorAPI;
+  tts: TTSModuleConfig;
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;
 }
@@ -129,12 +146,13 @@ export interface ReaderConfig {
   upLinkUrl?: any;
   rights?: ReaderRights;
   material?: ReaderUI;
-  api?: any;
-  tts?: any;
-  search?: { color: string; current: string };
-  protection?: any;
-  annotations?: { initialAnnotationColor: string };
-  highlighter?: { selectionMenuItems: Array<SelectionMenuItem> };
+  api?: NavigatorAPI;
+  tts?: TTSModuleConfig;
+  search?: SearchModuleConfig;
+  protection?: ContentProtectionModuleConfig;
+  annotations?: AnnotationModuleConfig;
+  bookmarks?: BookmarkModuleConfig;
+  highlighter?: TextHighlighterConfig;
   injectables: Array<Injectable>;
   useLocalStorage?: boolean;
   attributes?: IFrameAttributes;
@@ -219,9 +237,9 @@ export default class IFrameNavigator implements Navigator {
   private isBeingStyled: boolean;
   private isLoading: boolean;
   private readonly initialLastReadingPosition: ReadingPosition;
-  api: any;
+  api: NavigatorAPI;
   rights: ReaderRights;
-  tts: TTSSpeechConfig;
+  tts: TTSModuleConfig;
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;
 
@@ -261,9 +279,9 @@ export default class IFrameNavigator implements Navigator {
     initialLastReadingPosition: ReadingPosition | null = null,
     publication: Publication,
     material: any,
-    api: any,
+    api: NavigatorAPI,
     rights: ReaderRights,
-    tts: any,
+    tts: TTSModuleConfig,
     injectables: Array<Injectable>,
     attributes: IFrameAttributes
   ) {
@@ -1524,7 +1542,7 @@ export default class IFrameNavigator implements Navigator {
       }
       setTimeout(() => {
         const body = this.iframe.contentDocument.body;
-        if (this.rights?.enableTTS && this.tts?.enableSplitter) {
+        if (this.rights?.enableTTS && this.tts?.properties?.enableSplitter) {
           Splitting({
             target: body,
             by: "lines",
@@ -1643,12 +1661,12 @@ export default class IFrameNavigator implements Navigator {
       window.location.port === link.port &&
       window.location.hostname === link.hostname;
 
-    if (this.api && this.api.getContent) {
+    if (this.api?.getContent) {
       if (
         (this.publication.metadata.rendition?.layout ?? "unknown") === "fixed"
       ) {
         if (even) {
-          this.api.getContent(this.currentChapterLink.href).then((content) => {
+          this.api?.getContent(this.currentChapterLink.href).then((content) => {
             if (content === undefined) {
               if (isSameOrigin) {
                 this.iframe.src = this.currentChapterLink.href;
@@ -1673,7 +1691,7 @@ export default class IFrameNavigator implements Navigator {
                 this.currentChapterLink.href
               );
               var href = this.publication.getAbsoluteHref(next.href);
-              this.api.getContent(href).then((content) => {
+              this.api?.getContent(href).then((content) => {
                 if (content === undefined) {
                   if (isSameOrigin) {
                     this.iframe2.src = href;
@@ -1698,7 +1716,7 @@ export default class IFrameNavigator implements Navigator {
               this.currentChapterLink.href
             );
             var href = this.publication.getAbsoluteHref(prev.href);
-            this.api.getContent(href).then((content) => {
+            this.api?.getContent(href).then((content) => {
               if (content === undefined) {
                 if (isSameOrigin) {
                   this.iframe.src = href;
@@ -1749,7 +1767,7 @@ export default class IFrameNavigator implements Navigator {
           }
         }
       } else {
-        this.api.getContent(this.currentChapterLink.href).then((content) => {
+        this.api?.getContent(this.currentChapterLink.href).then((content) => {
           if (content === undefined) {
             if (isSameOrigin) {
               this.iframe.src = this.currentChapterLink.href;
@@ -2197,7 +2215,7 @@ export default class IFrameNavigator implements Navigator {
   snapToElement(element: HTMLElement) {
     this.view.snap(element);
   }
-  applyAtributes(attributes: IFrameAttributes) {
+  applyAttributes(attributes: IFrameAttributes) {
     this.attributes = attributes;
     this.view.attributes = attributes;
     this.handleResize();
@@ -2749,9 +2767,7 @@ export default class IFrameNavigator implements Navigator {
               this.nextChapterBottomAnchorElement.style.display = "none";
             if (this.previousChapterTopAnchorElement)
               this.previousChapterTopAnchorElement.style.display = "none";
-            if (this.api && this.api.resourceFitsScreen) {
-              this.api.resourceFitsScreen();
-            }
+            if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
           } else {
             this.settings.isPaginated().then((paginated) => {
               if (!paginated) {
@@ -2782,10 +2798,7 @@ export default class IFrameNavigator implements Navigator {
             });
             this.checkResourcePosition();
           }
-
-          if (this.api && this.api.resourceReady) {
-            this.api.resourceReady();
-          }
+          if (this.api?.resourceReady) this.api?.resourceReady();
         }, 300);
       }
     } else {
@@ -2810,17 +2823,11 @@ export default class IFrameNavigator implements Navigator {
 
   checkResourcePosition = debounce(() => {
     if (this.view.atStart() && this.view.atEnd()) {
-      if (this.api && this.api.resourceFitsScreen) {
-        this.api.resourceFitsScreen();
-      }
+      if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
     } else if (this.view.atEnd()) {
-      if (this.api && this.api.resourceAtEnd) {
-        this.api.resourceAtEnd();
-      }
+      if (this.api?.resourceAtEnd) this.api?.resourceAtEnd();
     } else if (this.view.atStart()) {
-      if (this.api && this.api.resourceAtStart) {
-        this.api.resourceAtStart();
-      }
+      if (this.api?.resourceAtStart) this.api?.resourceAtStart();
     }
   }, 200);
 
@@ -2887,8 +2894,8 @@ export default class IFrameNavigator implements Navigator {
         type: this.currentChapterLink.type,
         title: this.currentChapterLink.title,
       };
-      if (this.api && this.api.updateCurrentLocation) {
-        this.api.updateCurrentLocation(position).then(async (_) => {
+      if (this.api?.updateCurrentLocation) {
+        this.api?.updateCurrentLocation(position).then(async (_) => {
           if (IS_DEV) {
             console.log("api updated current location", position);
           }

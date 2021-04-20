@@ -25,7 +25,7 @@ import { addEventListenerOptional } from "../../utils/EventHandler";
 import ReaderModule from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 
-export interface TimelineModuleProperties {
+export interface TimelineModuleConfig {
   publication: Publication;
   delegate: IFrameNavigator;
 }
@@ -36,8 +36,8 @@ export default class TimelineModule implements ReaderModule {
   private timelineContainer: HTMLDivElement;
   private positionSlider: HTMLInputElement;
 
-  public static async create(properties: TimelineModuleProperties) {
-    const timeline = new this(properties.delegate, properties.publication);
+  public static async create(config: TimelineModuleConfig) {
+    const timeline = new this(config.delegate, config.publication);
     await timeline.start();
     return timeline;
   }

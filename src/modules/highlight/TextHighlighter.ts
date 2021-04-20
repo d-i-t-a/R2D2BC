@@ -112,36 +112,45 @@ let bodyEventListenersSet = false;
 // TODO this needs to reflect layer name
 let _highlightsContainer: HTMLElement | null;
 
-export interface TextHighlighterConfig {
+export interface TextHighlighterProperties {
   selectionMenuItems: Array<SelectionMenuItem>;
-  api: TextSelectorAPI;
 }
 
-export interface TextHighlighterProperties {
+export interface TextHighlighterConfig {
   delegate: IFrameNavigator;
-  config: TextHighlighterConfig;
+  properties: TextHighlighterProperties;
+  api: TextSelectorAPI;
 }
 
 export default class TextHighlighter {
   private options: any;
   private delegate: IFrameNavigator;
   private lastSelectedHighlight: number = undefined;
-  private config: TextHighlighterConfig;
+  private properties: TextHighlighterProperties;
+  private api: TextSelectorAPI;
   private hasEventListener: boolean;
 
-  public static async create(config: TextHighlighterProperties): Promise<any> {
-    const module = new this(config.delegate, config.config, false, {});
+  public static async create(config: TextHighlighterConfig): Promise<any> {
+    const module = new this(
+      config.delegate,
+      config.properties,
+      config.api,
+      false,
+      {}
+    );
     return new Promise((resolve) => resolve(module));
   }
 
   private constructor(
     delegate: IFrameNavigator,
-    config: TextHighlighterConfig,
+    properties: TextHighlighterProperties,
+    api: TextSelectorAPI,
     hasEventListener: boolean,
     options: any
   ) {
     this.delegate = delegate;
-    this.config = config;
+    this.properties = properties;
+    this.api = api;
     this.hasEventListener = hasEventListener;
     this.options = this.defaults(options, {
       color: "#fce300",
@@ -881,17 +890,13 @@ export default class TextHighlighter {
   selectionMenuOpened = debounce(() => {
     if (!this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = true;
-      if (this.config?.api && this.config?.api?.selectionMenuOpen) {
-        this.config.api.selectionMenuOpen();
-      }
+      if (this.api?.selectionMenuOpen) this.api?.selectionMenuOpen();
     }
   }, 100);
   selectionMenuClosed = debounce(() => {
     if (this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = false;
-      if (this.config?.api && this.config?.api.selectionMenuClose) {
-        this.config.api.selectionMenuClose();
-      }
+      if (this.api?.selectionMenuClose) this.api?.selectionMenuClose();
     }
   }, 100);
 
@@ -992,8 +997,8 @@ export default class TextHighlighter {
           }
         }
 
-        if (this.config?.selectionMenuItems ?? []) {
-          (this.config?.selectionMenuItems ?? []).forEach((menuItem) => {
+        if (this.properties?.selectionMenuItems ?? []) {
+          (this.properties?.selectionMenuItems ?? []).forEach((menuItem) => {
             var itemElement = document.getElementById(menuItem.id);
             var self = this;
 
@@ -1122,7 +1127,7 @@ export default class TextHighlighter {
         // }
         this.delegate.ttsModule.speak(selectionInfo as any, true, () => {});
       }
-      if (this.delegate.tts.enableSplitter) {
+      if (this.delegate.tts.properties?.enableSplitter) {
         const selection = self
           .dom(self.delegate.iframe.contentDocument.body)
           .getSelection();
@@ -1888,14 +1893,10 @@ export default class TextHighlighter {
           payload.highlight
         )) as Annotation;
         // if(anno.comment) {
-        if (
-          this.delegate.annotationModule.config.api &&
-          this.delegate.annotationModule.config.api.selectedAnnotation
-        ) {
-          this.delegate.annotationModule.config.api
-            .selectedAnnotation(anno)
-            .then(async () => {});
-        }
+        this.delegate.annotationModule.api
+          ?.selectedAnnotation(anno)
+          .then(async () => {});
+
         if (IS_DEV) {
           console.log("selected highlight " + anno.id);
         }

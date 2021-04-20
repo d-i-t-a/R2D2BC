@@ -1542,7 +1542,7 @@ export default class IFrameNavigator implements Navigator {
       }
       setTimeout(() => {
         const body = this.iframe.contentDocument.body;
-        if (this.rights?.enableTTS && this.tts?.enableSplitter) {
+        if (this.rights?.enableTTS && this.tts?.properties?.enableSplitter) {
           Splitting({
             target: body,
             by: "lines",
@@ -1661,12 +1661,12 @@ export default class IFrameNavigator implements Navigator {
       window.location.port === link.port &&
       window.location.hostname === link.hostname;
 
-    if (this.api && this.api.getContent) {
+    if (this.api?.getContent) {
       if (
         (this.publication.metadata.rendition?.layout ?? "unknown") === "fixed"
       ) {
         if (even) {
-          this.api.getContent(this.currentChapterLink.href).then((content) => {
+          this.api?.getContent(this.currentChapterLink.href).then((content) => {
             if (content === undefined) {
               if (isSameOrigin) {
                 this.iframe.src = this.currentChapterLink.href;
@@ -1691,7 +1691,7 @@ export default class IFrameNavigator implements Navigator {
                 this.currentChapterLink.href
               );
               var href = this.publication.getAbsoluteHref(next.href);
-              this.api.getContent(href).then((content) => {
+              this.api?.getContent(href).then((content) => {
                 if (content === undefined) {
                   if (isSameOrigin) {
                     this.iframe2.src = href;
@@ -1716,7 +1716,7 @@ export default class IFrameNavigator implements Navigator {
               this.currentChapterLink.href
             );
             var href = this.publication.getAbsoluteHref(prev.href);
-            this.api.getContent(href).then((content) => {
+            this.api?.getContent(href).then((content) => {
               if (content === undefined) {
                 if (isSameOrigin) {
                   this.iframe.src = href;
@@ -1767,7 +1767,7 @@ export default class IFrameNavigator implements Navigator {
           }
         }
       } else {
-        this.api.getContent(this.currentChapterLink.href).then((content) => {
+        this.api?.getContent(this.currentChapterLink.href).then((content) => {
           if (content === undefined) {
             if (isSameOrigin) {
               this.iframe.src = this.currentChapterLink.href;
@@ -2767,9 +2767,7 @@ export default class IFrameNavigator implements Navigator {
               this.nextChapterBottomAnchorElement.style.display = "none";
             if (this.previousChapterTopAnchorElement)
               this.previousChapterTopAnchorElement.style.display = "none";
-            if (this.api && this.api.resourceFitsScreen) {
-              this.api.resourceFitsScreen();
-            }
+            if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
           } else {
             this.settings.isPaginated().then((paginated) => {
               if (!paginated) {
@@ -2800,10 +2798,7 @@ export default class IFrameNavigator implements Navigator {
             });
             this.checkResourcePosition();
           }
-
-          if (this.api && this.api.resourceReady) {
-            this.api.resourceReady();
-          }
+          if (this.api?.resourceReady) this.api?.resourceReady();
         }, 300);
       }
     } else {
@@ -2828,17 +2823,11 @@ export default class IFrameNavigator implements Navigator {
 
   checkResourcePosition = debounce(() => {
     if (this.view.atStart() && this.view.atEnd()) {
-      if (this.api && this.api.resourceFitsScreen) {
-        this.api.resourceFitsScreen();
-      }
+      if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
     } else if (this.view.atEnd()) {
-      if (this.api && this.api.resourceAtEnd) {
-        this.api.resourceAtEnd();
-      }
+      if (this.api?.resourceAtEnd) this.api?.resourceAtEnd();
     } else if (this.view.atStart()) {
-      if (this.api && this.api.resourceAtStart) {
-        this.api.resourceAtStart();
-      }
+      if (this.api?.resourceAtStart) this.api?.resourceAtStart();
     }
   }, 200);
 
@@ -2905,8 +2894,8 @@ export default class IFrameNavigator implements Navigator {
         type: this.currentChapterLink.type,
         title: this.currentChapterLink.title,
       };
-      if (this.api && this.api.updateCurrentLocation) {
-        this.api.updateCurrentLocation(position).then(async (_) => {
+      if (this.api?.updateCurrentLocation) {
+        this.api?.updateCurrentLocation(position).then(async (_) => {
           if (IS_DEV) {
             console.log("api updated current location", position);
           }

@@ -32,14 +32,14 @@ import TextHighlighter from "../highlight/TextHighlighter";
 
 export interface SearchModuleAPI {}
 
-export interface SearchModuleConfig {
+export interface SearchModuleProperties {
   color: string;
   current: string;
-  api: SearchModuleAPI;
 }
 
-export interface SearchModuleProperties {
-  config: SearchModuleConfig;
+export interface SearchModuleConfig {
+  properties: SearchModuleProperties;
+  api: SearchModuleAPI;
   publication: Publication;
   headerMenu: HTMLElement;
   delegate: IFrameNavigator;
@@ -47,7 +47,9 @@ export interface SearchModuleProperties {
 }
 
 export default class SearchModule implements ReaderModule {
-  private config: SearchModuleConfig;
+  private properties: SearchModuleProperties;
+  // @ts-ignore
+  private api: SearchModuleAPI;
   private publication: Publication;
   private readonly headerMenu: HTMLElement;
   private delegate: IFrameNavigator;
@@ -58,13 +60,14 @@ export default class SearchModule implements ReaderModule {
   private currentHighlights: any = [];
   private highlighter: TextHighlighter;
 
-  public static async create(properties: SearchModuleProperties) {
+  public static async create(config: SearchModuleConfig) {
     const search = new this(
-      properties.headerMenu,
-      properties.delegate,
-      properties.publication,
-      properties.config,
-      properties.highlighter
+      config.headerMenu,
+      config.delegate,
+      config.publication,
+      config.properties,
+      config.api,
+      config.highlighter
     );
 
     await search.start();
@@ -75,13 +78,15 @@ export default class SearchModule implements ReaderModule {
     headerMenu: HTMLElement,
     delegate: IFrameNavigator,
     publication: Publication,
-    config: SearchModuleConfig,
+    properties: SearchModuleProperties,
+    api: SearchModuleAPI,
     highlighter: TextHighlighter
   ) {
     this.delegate = delegate;
     this.headerMenu = headerMenu;
     this.publication = publication;
-    this.config = config;
+    this.properties = properties;
+    this.api = api;
     this.highlighter = highlighter;
   }
 
@@ -328,13 +333,13 @@ export default class SearchModule implements ReaderModule {
               if (i === index) {
                 highlight = this.highlighter.createSearchHighlight(
                   selectionInfo,
-                  this.config.current
+                  this.properties?.current
                 );
                 this.jumpToMark(index);
               } else {
                 highlight = this.highlighter.createSearchHighlight(
                   selectionInfo,
-                  this.config.color
+                  this.properties?.color
                 );
               }
               searchItem.highlight = highlight;
@@ -733,7 +738,7 @@ export default class SearchModule implements ReaderModule {
         };
         var highlight = this.highlighter.createSearchHighlight(
           selectionInfo,
-          this.config.color
+          this.properties?.color
         );
         searchItem.highlight = highlight;
         this.currentHighlights.push(highlight);
@@ -753,13 +758,13 @@ export default class SearchModule implements ReaderModule {
       if (this.currentChapterSearchResult.length) {
         var current = this.currentChapterSearchResult[index];
         this.currentHighlights.forEach((highlight) => {
-          var createColor: any = this.config.color;
+          var createColor: any = this.properties?.color;
           if (TextHighlighter.isHexColor(createColor)) {
             createColor = TextHighlighter.hexToRgbChannels(createColor);
           }
           highlight.color = createColor;
         });
-        var currentColor: any = this.config.current;
+        var currentColor: any = this.properties?.current;
         if (TextHighlighter.isHexColor(currentColor)) {
           currentColor = TextHighlighter.hexToRgbChannels(currentColor);
         }

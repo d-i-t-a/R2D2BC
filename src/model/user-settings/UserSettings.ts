@@ -954,8 +954,8 @@ export class UserSettings implements IUserSettings {
       ).value,
       verticalScroll: this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value,
     };
-    if (this.api && this.api.updateSettings) {
-      this.api.updateSettings(userSettings).then((_) => {
+    if (this.api?.updateSettings) {
+      this.api?.updateSettings(userSettings).then((_) => {
         if (IS_DEV) {
           console.log("api updated user settings", userSettings);
         }

@@ -27,7 +27,7 @@ import {
 } from "./UserProperties";
 import { ReadiumCSS } from "./ReadiumCSS";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { IS_DEV, publisher } from "../..";
+import { IS_DEV } from "../..";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import { NavigatorAPI, ReaderUI } from "../../navigator/IFrameNavigator";
 import ReflowableBookView from "../../views/ReflowableBookView";
@@ -1212,7 +1212,6 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
-      publisher(false);
     }
 
     if (userSettings.wordSpacing) {
@@ -1223,7 +1222,6 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
-      publisher(false);
     }
 
     if (userSettings.columnCount) {
@@ -1248,7 +1246,6 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF)
       );
-      publisher(false);
     }
 
     if (userSettings.lineHeight) {
@@ -1259,7 +1256,6 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF)
       );
-      publisher(false);
     }
 
     if (userSettings.pageMargins) {
@@ -1270,7 +1266,6 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF)
       );
-      publisher(false);
     }
     this.applyProperties();
     this.settingsChangeCallback();
@@ -1342,7 +1337,6 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
-      publisher(false);
     } else if (incremental === "wordSpacing") {
       (this.userProperties.getByRef(
         ReadiumCSS.WORD_SPACING_REF
@@ -1350,7 +1344,6 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
-      publisher(false);
     } else if (incremental === "lineHeight") {
       (this.userProperties.getByRef(
         ReadiumCSS.LINE_HEIGHT_REF
@@ -1358,7 +1351,6 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF)
       );
-      publisher(false);
     }
     this.applyProperties();
     this.settingsChangeCallback();
@@ -1379,7 +1371,6 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
-      publisher(false);
     } else if (incremental === "wordSpacing") {
       (this.userProperties.getByRef(
         ReadiumCSS.WORD_SPACING_REF
@@ -1387,7 +1378,6 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
-      publisher(false);
     } else if (incremental === "lineHeight") {
       (this.userProperties.getByRef(
         ReadiumCSS.LINE_HEIGHT_REF
@@ -1395,7 +1385,6 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF)
       );
-      publisher(false);
     }
     this.applyProperties();
     this.settingsChangeCallback();

@@ -35,7 +35,7 @@ This project implements most components of the [Readium Architecture](https://gi
 - Integrates Readium CSS
 - Integrates a simple Navigator for reflowable publications
 
-Additionally it:
+Additionally, it:
 - Provides a decoupled Minimal UI
 - Provides build system optimization (Webpack)
 

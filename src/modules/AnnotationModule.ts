@@ -43,19 +43,19 @@ export interface AnnotationModuleAPI {
   deleteAnnotation: Highlight;
   selectedAnnotation: Highlight;
 }
-export interface AnnotationModuleConfig {
+export interface AnnotationModuleProperties {
   initialAnnotationColor: string;
-  api: AnnotationModuleAPI;
 }
 
-export interface AnnotationModuleProperties {
+export interface AnnotationModuleConfig {
   annotator: Annotator;
   headerMenu: HTMLElement;
   rights: ReaderRights;
   publication: Publication;
   delegate: IFrameNavigator;
   initialAnnotations?: any;
-  config: AnnotationModuleConfig;
+  properties: AnnotationModuleProperties;
+  api: AnnotationModuleAPI;
   highlighter: TextHighlighter;
 }
 
@@ -68,18 +68,20 @@ export default class AnnotationModule implements ReaderModule {
   private readonly highlighter: TextHighlighter;
   private readonly initialAnnotations: any;
   private delegate: IFrameNavigator;
-  config: AnnotationModuleConfig;
+  properties: AnnotationModuleProperties;
+  api: AnnotationModuleAPI;
 
-  public static async create(properties: AnnotationModuleProperties) {
+  public static async create(config: AnnotationModuleConfig) {
     const annotations = new this(
-      properties.annotator,
-      properties.headerMenu,
-      properties.rights || { enableAnnotations: false, enableTTS: false },
-      properties.publication,
-      properties.delegate,
-      properties.initialAnnotations || null,
-      properties.config,
-      properties.highlighter
+      config.annotator,
+      config.headerMenu,
+      config.rights || { enableAnnotations: false, enableTTS: false },
+      config.publication,
+      config.delegate,
+      config.initialAnnotations || null,
+      config.properties,
+      config.api,
+      config.highlighter
     );
     await annotations.start();
     return annotations;
@@ -92,7 +94,8 @@ export default class AnnotationModule implements ReaderModule {
     publication: Publication,
     delegate: IFrameNavigator,
     initialAnnotations: any | null = null,
-    config: AnnotationModuleConfig | null = null,
+    properties: AnnotationModuleProperties | null = null,
+    api: AnnotationModuleAPI | null = null,
     highlighter: TextHighlighter
   ) {
     this.annotator = annotator;
@@ -102,7 +105,8 @@ export default class AnnotationModule implements ReaderModule {
     this.delegate = delegate;
     this.initialAnnotations = initialAnnotations;
     this.highlighter = highlighter;
-    this.config = config;
+    this.properties = properties;
+    this.api = api;
   }
 
   async stop() {
@@ -185,8 +189,8 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   public async deleteHighlight(highlight: Annotation): Promise<any> {
-    if (this.config.api && this.config.api.deleteAnnotation) {
-      this.config.api.deleteAnnotation(highlight).then(async () => {
+    if (this.api?.deleteAnnotation) {
+      this.api?.deleteAnnotation(highlight).then(async () => {
         this.deleteLocalHighlight(highlight.id);
       });
     } else {
@@ -195,8 +199,8 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   public async deleteSelectedHighlight(highlight: Annotation): Promise<any> {
-    if (this.config.api && this.config.api.deleteAnnotation) {
-      this.config.api.deleteAnnotation(highlight).then(async () => {
+    if (this.api?.deleteAnnotation) {
+      this.api.deleteAnnotation(highlight).then(async () => {
         this.deleteLocalHighlight(highlight.id);
       });
     } else {
@@ -249,8 +253,8 @@ export default class AnnotationModule implements ReaderModule {
           highlight: highlight.selectionInfo.cleanText,
         },
       };
-      if (this.config.api && this.config.api.addAnnotation) {
-        this.config.api.addAnnotation(annotation).then(async (result) => {
+      if (this.api?.addAnnotation) {
+        this.api.addAnnotation(annotation).then(async (result) => {
           annotation.id = result.id;
           var saved = await this.annotator.saveAnnotation(annotation);
           await this.showHighlights();
@@ -297,7 +301,7 @@ export default class AnnotationModule implements ReaderModule {
 
   async drawHighlights(search: boolean = true): Promise<void> {
     if (this.rights?.enableAnnotations && this.highlighter) {
-      if (this.config.api) {
+      if (this.api) {
         let highlights: Array<any> = [];
         if (this.annotator) {
           highlights = (await this.annotator.getAnnotations()) as Array<any>;
@@ -390,8 +394,8 @@ export default class AnnotationModule implements ReaderModule {
           });
         }
       }
-      if (this.config && this.config?.initialAnnotationColor !== undefined) {
-        this.highlighter.setColor(this.config.initialAnnotationColor);
+      if (this.properties?.initialAnnotationColor) {
+        this.highlighter.setColor(this.properties?.initialAnnotationColor);
       }
     }
     if (search && this.rights?.enableSearch) {

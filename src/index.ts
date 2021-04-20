@@ -394,10 +394,12 @@ export async function snapToElement(value) {
 export async function load(config: ReaderConfig): Promise<any> {
   var browsers: string[] = [];
 
-  if (config.protection?.enforceSupportedBrowsers) {
-    (config.protection?.supportedBrowsers ?? []).forEach((browser: string) => {
-      browsers.push("last 1 " + browser + " version");
-    });
+  if (config.protection?.properties?.enforceSupportedBrowsers) {
+    (config.protection?.properties?.supportedBrowsers ?? []).forEach(
+      (browser: string) => {
+        browsers.push("last 1 " + browser + " version");
+      }
+    );
   }
   const supportedBrowsers = getUserAgentRegExp({
     browsers: browsers,
@@ -405,9 +407,9 @@ export async function load(config: ReaderConfig): Promise<any> {
   });
 
   if (
-    (config.protection?.enforceSupportedBrowsers &&
+    (config.protection?.properties?.enforceSupportedBrowsers &&
       supportedBrowsers.test(navigator.userAgent)) ||
-    !config.protection?.enforceSupportedBrowsers
+    !config.protection?.properties?.enforceSupportedBrowsers
   ) {
     var mainElement = document.getElementById("D2Reader-Container");
     var headerMenu = document.getElementById("headerMenu");
@@ -554,7 +556,8 @@ export async function load(config: ReaderConfig): Promise<any> {
     if ((publication.metadata.rendition?.layout ?? "unknown") !== "fixed") {
       D2Highlighter = await TextHighlighter.create({
         delegate: R2Navigator,
-        config: config.highlighter,
+        properties: config.highlighter.properties,
+        api: config.highlighter.api,
       });
     }
 
@@ -567,7 +570,8 @@ export async function load(config: ReaderConfig): Promise<any> {
         publication: publication,
         delegate: R2Navigator,
         initialAnnotations: config.initialAnnotations,
-        config: config.bookmarks,
+        properties: config.bookmarks.properties,
+        api: config.bookmarks.api,
       });
     }
 
@@ -580,8 +584,9 @@ export async function load(config: ReaderConfig): Promise<any> {
         publication: publication,
         delegate: R2Navigator,
         initialAnnotations: config.initialAnnotations,
-        config: config.annotations,
         highlighter: D2Highlighter,
+        properties: config.annotations.properties,
+        api: config.annotations.api,
       });
     }
 
@@ -599,7 +604,8 @@ export async function load(config: ReaderConfig): Promise<any> {
         headerMenu: headerMenu,
         rights: config.rights,
         highlighter: D2Highlighter,
-        config: config.tts,
+        properties: config.tts.properties,
+        api: config.tts.api,
       });
     }
 
@@ -609,9 +615,9 @@ export async function load(config: ReaderConfig): Promise<any> {
         headerMenu: headerMenu,
         delegate: R2Navigator,
         publication: publication,
-        // api: config.api,
-        config: config.search,
         highlighter: D2Highlighter,
+        properties: config.search.properties,
+        api: config.search.api,
       }).then(function (searchModule) {
         SearchModuleInstance = searchModule;
       });
@@ -630,7 +636,8 @@ export async function load(config: ReaderConfig): Promise<any> {
     if (config.rights?.enableContentProtection) {
       ContentProtectionModule.create({
         delegate: R2Navigator,
-        config: config.protection,
+        properties: config.protection.properties,
+        api: config.protection.api,
       }).then(function (contentProtectionModule) {
         ContentProtectionModuleInstance = contentProtectionModule;
       });

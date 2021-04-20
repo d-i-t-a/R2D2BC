@@ -107,28 +107,28 @@ export class TTSSettings implements ITTSUserSettings {
     if (config.initialTTSSettings) {
       let initialTTSSettings = config.initialTTSSettings;
 
-      if (initialTTSSettings.rate) {
-        settings.rate = initialTTSSettings.rate;
+      if (initialTTSSettings.properties?.rate) {
+        settings.rate = initialTTSSettings.properties.rate;
         if (IS_DEV) console.log(settings.rate);
       }
-      if (initialTTSSettings.pitch) {
-        settings.pitch = initialTTSSettings.pitch;
+      if (initialTTSSettings.properties?.pitch) {
+        settings.pitch = initialTTSSettings.properties.pitch;
         if (IS_DEV) console.log(settings.pitch);
       }
-      if (initialTTSSettings.volume) {
-        settings.volume = initialTTSSettings.volume;
+      if (initialTTSSettings.properties?.volume) {
+        settings.volume = initialTTSSettings.properties.volume;
         if (IS_DEV) console.log(settings.volume);
       }
-      if (initialTTSSettings.color) {
-        settings.color = initialTTSSettings.color;
+      if (initialTTSSettings.properties?.color) {
+        settings.color = initialTTSSettings.properties.color;
         if (IS_DEV) console.log(settings.color);
       }
-      if (initialTTSSettings.autoScroll) {
-        settings.autoScroll = initialTTSSettings.autoScroll;
+      if (initialTTSSettings.properties?.autoScroll) {
+        settings.autoScroll = initialTTSSettings.properties.autoScroll;
         if (IS_DEV) console.log(settings.autoScroll);
       }
-      if (initialTTSSettings.voice) {
-        settings.voice = initialTTSSettings.voice;
+      if (initialTTSSettings.properties?.voice) {
+        settings.voice = initialTTSSettings.properties.voice;
         if (IS_DEV) console.log(settings.voice);
       }
     }
@@ -376,13 +376,11 @@ export class TTSSettings implements ITTSUserSettings {
       autoScroll: this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF).value,
     };
     this.applyTTSSettings(ttsSettings);
-    if (this.api && this.api.updateSettings) {
-      this.api.updateSettings(ttsSettings).then(async (settings) => {
-        if (IS_DEV) {
-          console.log("api updated tts settings", settings);
-        }
-      });
-    }
+    this.api?.updateSettings(ttsSettings).then(async (settings) => {
+      if (IS_DEV) {
+        console.log("api updated tts settings", settings);
+      }
+    });
   }
 
   private getTTSSettings(): UserProperties {

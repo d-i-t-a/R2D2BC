@@ -48,13 +48,12 @@ export interface TTSModuleProperties {
   voice?: TTSVoice;
 }
 
-export interface TTSModuleConfig {
+export interface TTSModuleConfig extends TTSModuleProperties {
   delegate: IFrameNavigator;
   headerMenu: HTMLElement;
   rights: ReaderRights;
   tts: TTSSettings;
   highlighter: TextHighlighter;
-  properties: TTSModuleProperties;
   api: TTSModuleAPI;
 }
 
@@ -158,10 +157,7 @@ export default class TTSModule implements ReaderModule {
       if (this.api?.stopped) this.api?.stopped();
       this.userScrolled = false;
       window.speechSynthesis.cancel();
-      if (
-        this.splittingResult &&
-        this.delegate.tts.properties?.enableSplitter
-      ) {
+      if (this.splittingResult && this.delegate.tts?.enableSplitter) {
         this.splittingResult.forEach((splittingWord) => {
           splittingWord.dataset.ttsCurrentWord = "false";
           splittingWord.dataset.ttsCurrentLine = "false";
@@ -198,7 +194,7 @@ export default class TTSModule implements ReaderModule {
 
     this.cancel();
 
-    if (this.delegate.tts.properties?.enableSplitter) {
+    if (this.delegate.tts?.enableSplitter) {
       if (partial) {
         var allWords = self.body.querySelectorAll("[data-word]");
 
@@ -402,7 +398,7 @@ export default class TTSModule implements ReaderModule {
         }
         lastword = word;
 
-        if (self.delegate.tts.properties?.enableSplitter) {
+        if (self.delegate.tts?.enableSplitter) {
           processWord(word);
         }
       }
@@ -481,7 +477,7 @@ export default class TTSModule implements ReaderModule {
     utterance.onend = function () {
       if (IS_DEV) console.log("utterance ended");
       self.highlighter.doneSpeaking();
-      if (self.delegate.tts.properties?.enableSplitter) {
+      if (self.delegate.tts?.enableSplitter) {
         let splittingResult = self.body.querySelectorAll("[data-word]");
         splittingResult.forEach((splittingWord) => {
           splittingWord.dataset.ttsColor = self.tts.color;
@@ -523,7 +519,7 @@ export default class TTSModule implements ReaderModule {
       config.headerMenu,
       config.rights,
       config.highlighter,
-      config.properties
+      config as TTSModuleProperties
     );
     await tts.start();
     return tts;

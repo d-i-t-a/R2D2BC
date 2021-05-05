@@ -47,14 +47,13 @@ export interface AnnotationModuleProperties {
   initialAnnotationColor: string;
 }
 
-export interface AnnotationModuleConfig {
+export interface AnnotationModuleConfig extends AnnotationModuleProperties {
   annotator: Annotator;
   headerMenu: HTMLElement;
   rights: ReaderRights;
   publication: Publication;
   delegate: IFrameNavigator;
   initialAnnotations?: any;
-  properties: AnnotationModuleProperties;
   api: AnnotationModuleAPI;
   highlighter: TextHighlighter;
 }
@@ -79,7 +78,7 @@ export default class AnnotationModule implements ReaderModule {
       config.publication,
       config.delegate,
       config.initialAnnotations || null,
-      config.properties,
+      config as AnnotationModuleProperties,
       config.api,
       config.highlighter
     );

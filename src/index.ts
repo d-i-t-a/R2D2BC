@@ -136,7 +136,7 @@ export async function addAnnotation(highlight) {
 }
 export async function tableOfContents() {
   if (IS_DEV) {
-    console.log("bookmarks");
+    console.log("tableOfContents");
   }
   return await R2Navigator.tableOfContents();
 }
@@ -394,12 +394,10 @@ export async function snapToElement(value) {
 export async function load(config: ReaderConfig): Promise<any> {
   var browsers: string[] = [];
 
-  if (config.protection?.properties?.enforceSupportedBrowsers) {
-    (config.protection?.properties?.supportedBrowsers ?? []).forEach(
-      (browser: string) => {
-        browsers.push("last 1 " + browser + " version");
-      }
-    );
+  if (config.protection?.enforceSupportedBrowsers) {
+    (config.protection?.supportedBrowsers ?? []).forEach((browser: string) => {
+      browsers.push("last 1 " + browser + " version");
+    });
   }
   const supportedBrowsers = getUserAgentRegExp({
     browsers: browsers,
@@ -407,9 +405,9 @@ export async function load(config: ReaderConfig): Promise<any> {
   });
 
   if (
-    (config.protection?.properties?.enforceSupportedBrowsers &&
+    (config.protection?.enforceSupportedBrowsers &&
       supportedBrowsers.test(navigator.userAgent)) ||
-    !config.protection?.properties?.enforceSupportedBrowsers
+    !config.protection?.enforceSupportedBrowsers
   ) {
     var mainElement = document.getElementById("D2Reader-Container");
     var headerMenu = document.getElementById("headerMenu");
@@ -498,7 +496,7 @@ export async function load(config: ReaderConfig): Promise<any> {
           }
           positions.map((locator, _index) => {
             let resource = positions.filter(
-              (el: Locator) => el.href === locator.href
+              (el: Locator) => el.href === decodeURI(locator.href)
             );
             let positionIndex = Math.ceil(
               locator.locations.progression * (resource.length - 1)
@@ -556,8 +554,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     if ((publication.metadata.rendition?.layout ?? "unknown") !== "fixed") {
       D2Highlighter = await TextHighlighter.create({
         delegate: R2Navigator,
-        properties: config.highlighter?.properties,
-        api: config.highlighter?.api,
+        ...config.highlighter,
       });
     }
 
@@ -570,8 +567,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         publication: publication,
         delegate: R2Navigator,
         initialAnnotations: config.initialAnnotations,
-        properties: config.bookmarks?.properties,
-        api: config.bookmarks?.api,
+        ...config.bookmarks,
       });
     }
 
@@ -585,8 +581,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         delegate: R2Navigator,
         initialAnnotations: config.initialAnnotations,
         highlighter: D2Highlighter,
-        properties: config.annotations?.properties,
-        api: config.annotations?.api,
+        ...config.annotations,
       });
     }
 
@@ -596,7 +591,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         store: settingsStore,
         initialTTSSettings: config.tts,
         headerMenu: headerMenu,
-        api: config.tts?.api,
+        ...config.tts,
       });
       TTSModuleInstance = await TTSModule.create({
         delegate: R2Navigator,
@@ -604,8 +599,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         headerMenu: headerMenu,
         rights: config.rights,
         highlighter: D2Highlighter,
-        properties: config.tts?.properties,
-        api: config.tts?.api,
+        ...config.tts,
       });
     }
 
@@ -616,8 +610,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         delegate: R2Navigator,
         publication: publication,
         highlighter: D2Highlighter,
-        properties: config.search?.properties,
-        api: config.search?.api,
+        ...config.search,
       }).then(function (searchModule) {
         SearchModuleInstance = searchModule;
       });
@@ -636,8 +629,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     if (config.rights?.enableContentProtection) {
       ContentProtectionModule.create({
         delegate: R2Navigator,
-        properties: config.protection?.properties,
-        api: config.protection?.api,
+        ...config.protection,
       }).then(function (contentProtectionModule) {
         ContentProtectionModuleInstance = contentProtectionModule;
       });

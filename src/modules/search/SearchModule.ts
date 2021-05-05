@@ -37,8 +37,7 @@ export interface SearchModuleProperties {
   current: string;
 }
 
-export interface SearchModuleConfig {
-  properties: SearchModuleProperties;
+export interface SearchModuleConfig extends SearchModuleProperties {
   api: SearchModuleAPI;
   publication: Publication;
   headerMenu: HTMLElement;
@@ -65,7 +64,7 @@ export default class SearchModule implements ReaderModule {
       config.headerMenu,
       config.delegate,
       config.publication,
-      config.properties,
+      config as SearchModuleProperties,
       config.api,
       config.highlighter
     );

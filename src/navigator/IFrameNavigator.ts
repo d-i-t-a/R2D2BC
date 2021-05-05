@@ -1542,7 +1542,7 @@ export default class IFrameNavigator implements Navigator {
       }
       setTimeout(() => {
         const body = this.iframe.contentDocument.body;
-        if (this.rights?.enableTTS && this.tts?.properties?.enableSplitter) {
+        if (this.rights?.enableTTS && this.tts?.enableSplitter) {
           Splitting({
             target: body,
             by: "lines",
@@ -2209,7 +2209,7 @@ export default class IFrameNavigator implements Navigator {
   goToPosition(position: number) {
     if (this.rights?.autoGeneratePositions ?? true) {
       let locator = this.publication.positions.filter(
-        (el: Locator) => el.locations.position === position
+        (el: Locator) => el.locations.position === parseInt(String(position))
       )[0];
       goTo(locator);
     }

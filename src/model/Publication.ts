@@ -245,6 +245,6 @@ export default class Publication {
    * positionsByHref
    */
   public positionsByHref(href: string) {
-    return this.positions.filter((el: Locator) => el.href === href);
+    return this.positions.filter((el: Locator) => el.href === decodeURI(href));
   }
 }

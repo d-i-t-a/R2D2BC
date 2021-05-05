@@ -29,7 +29,7 @@ import {
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { IS_DEV } from "../..";
 import { addEventListenerOptional } from "../../utils/EventHandler";
-import { TTSModuleAPI, TTSModuleConfig } from "./TTSModule";
+import { TTSModuleAPI, TTSModuleProperties } from "./TTSModule";
 
 export class TTSREFS {
   static readonly COLOR_REF = "color";
@@ -49,7 +49,7 @@ export class TTSREFS {
 
 export interface TTSSettingsConfig {
   store: Store;
-  initialTTSSettings: TTSModuleConfig;
+  initialTTSSettings: TTSModuleProperties;
   headerMenu: HTMLElement;
   api: TTSModuleAPI;
 }
@@ -107,28 +107,28 @@ export class TTSSettings implements ITTSUserSettings {
     if (config.initialTTSSettings) {
       let initialTTSSettings = config.initialTTSSettings;
 
-      if (initialTTSSettings.properties?.rate) {
-        settings.rate = initialTTSSettings.properties.rate;
+      if (initialTTSSettings?.rate) {
+        settings.rate = initialTTSSettings.rate;
         if (IS_DEV) console.log(settings.rate);
       }
-      if (initialTTSSettings.properties?.pitch) {
-        settings.pitch = initialTTSSettings.properties.pitch;
+      if (initialTTSSettings?.pitch) {
+        settings.pitch = initialTTSSettings.pitch;
         if (IS_DEV) console.log(settings.pitch);
       }
-      if (initialTTSSettings.properties?.volume) {
-        settings.volume = initialTTSSettings.properties.volume;
+      if (initialTTSSettings?.volume) {
+        settings.volume = initialTTSSettings.volume;
         if (IS_DEV) console.log(settings.volume);
       }
-      if (initialTTSSettings.properties?.color) {
-        settings.color = initialTTSSettings.properties.color;
+      if (initialTTSSettings?.color) {
+        settings.color = initialTTSSettings.color;
         if (IS_DEV) console.log(settings.color);
       }
-      if (initialTTSSettings.properties?.autoScroll) {
-        settings.autoScroll = initialTTSSettings.properties.autoScroll;
+      if (initialTTSSettings?.autoScroll) {
+        settings.autoScroll = initialTTSSettings.autoScroll;
         if (IS_DEV) console.log(settings.autoScroll);
       }
-      if (initialTTSSettings.properties?.voice) {
-        settings.voice = initialTTSSettings.properties.voice;
+      if (initialTTSSettings?.voice) {
+        settings.voice = initialTTSSettings.voice;
         if (IS_DEV) console.log(settings.voice);
       }
     }

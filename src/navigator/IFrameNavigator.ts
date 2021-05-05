@@ -2126,6 +2126,9 @@ export default class IFrameNavigator implements Navigator {
   tableOfContents(): any {
     return this.publication.tableOfContents;
   }
+  readingOrder(): any {
+    return this.publication.readingOrder;
+  }
   atStart(): boolean {
     return this.view.atStart();
   }

@@ -235,23 +235,51 @@ export default class AnnotationModule implements ReaderModule {
         ? highlight.position / body.scrollHeight
         : bookmarkPosition;
       const id: string = uuid();
+      let annotation: Annotation;
+      if (
+        (this.rights?.autoGeneratePositions ?? true) &&
+        this.publication.positions
+      ) {
+        const positions = this.publication.positionsByHref(
+          this.publication.getRelativeHref(
+            this.delegate.currentChapterLink.href
+          )
+        );
+        const positionIndex = Math.ceil(progression * (positions.length - 1));
+        const locator = positions[positionIndex];
 
-      const annotation: Annotation = {
-        id: id,
-        href: tocItem.href,
-        locations: {
-          progression: progression,
-        },
-        created: new Date(),
-        type: this.delegate.currentChapterLink.type,
-        title: this.delegate.currentChapterLink.title,
-        highlight: highlight,
-        color: this.highlighter.getColor(),
-        marker: marker,
-        text: {
-          highlight: highlight.selectionInfo.cleanText,
-        },
-      };
+        annotation = {
+          ...locator,
+          id: id,
+          href: tocItem.href,
+          created: new Date(),
+          title: this.delegate.currentChapterLink.title,
+          highlight: highlight,
+          color: this.highlighter.getColor(),
+          marker: marker,
+          text: {
+            highlight: highlight.selectionInfo.cleanText,
+          },
+        };
+      } else {
+        annotation = {
+          id: id,
+          href: tocItem.href,
+          locations: {
+            progression: progression,
+          },
+          created: new Date(),
+          type: this.delegate.currentChapterLink.type,
+          title: this.delegate.currentChapterLink.title,
+          highlight: highlight,
+          color: this.highlighter.getColor(),
+          marker: marker,
+          text: {
+            highlight: highlight.selectionInfo.cleanText,
+          },
+        };
+      }
+
       if (this.api?.addAnnotation) {
         this.api.addAnnotation(annotation).then(async (result) => {
           annotation.id = result.id;

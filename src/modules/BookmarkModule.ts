@@ -196,20 +196,40 @@ export default class BookmarkModule implements ReaderModule {
         );
       }
 
-      const bookmarkPosition = this.delegate.view.getCurrentPosition();
-
+      const progression = this.delegate.view.getCurrentPosition();
       const id: string = uuid();
+      let bookmark: Bookmark;
+      if (
+        (this.rights?.autoGeneratePositions ?? true) &&
+        this.publication.positions
+      ) {
+        const positions = this.publication.positionsByHref(
+          this.publication.getRelativeHref(
+            this.delegate.currentChapterLink.href
+          )
+        );
+        const positionIndex = Math.ceil(progression * (positions.length - 1));
+        const locator = positions[positionIndex];
 
-      const bookmark: Bookmark = {
-        id: id,
-        href: tocItem.href,
-        locations: {
-          progression: bookmarkPosition,
-        },
-        created: new Date(),
-        type: this.delegate.currentChapterLink.type,
-        title: this.delegate.currentChapterLink.title,
-      };
+        bookmark = {
+          ...locator,
+          id: id,
+          href: tocItem.href,
+          created: new Date(),
+          title: this.delegate.currentChapterLink.title,
+        };
+      } else {
+        bookmark = {
+          id: id,
+          href: tocItem.href,
+          locations: {
+            progression: progression,
+          },
+          created: new Date(),
+          type: this.delegate.currentChapterLink.type,
+          title: this.delegate.currentChapterLink.title,
+        };
+      }
 
       if (
         !(await this.annotator.locatorExists(bookmark, AnnotationType.Bookmark))

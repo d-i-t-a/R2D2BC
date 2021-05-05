@@ -42,9 +42,9 @@ export interface ContentProtectionModuleProperties {
   supportedBrowsers: [];
 }
 
-export interface ContentProtectionModuleConfig {
+export interface ContentProtectionModuleConfig
+  extends ContentProtectionModuleProperties {
   delegate: IFrameNavigator;
-  properties: ContentProtectionModuleProperties;
   api: ContentProtectionModuleAPI;
 }
 
@@ -74,7 +74,11 @@ export default class ContentProtectionModule implements ReaderModule {
   private mutationObserver: MutationObserver;
 
   public static async create(config: ContentProtectionModuleConfig) {
-    const security = new this(config.delegate, config.properties, config.api);
+    const security = new this(
+      config.delegate,
+      config as ContentProtectionModuleProperties,
+      config.api
+    );
     await security.start();
     return security;
   }

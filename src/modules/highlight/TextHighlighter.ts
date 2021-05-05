@@ -116,9 +116,8 @@ export interface TextHighlighterProperties {
   selectionMenuItems: Array<SelectionMenuItem>;
 }
 
-export interface TextHighlighterConfig {
+export interface TextHighlighterConfig extends TextHighlighterProperties {
   delegate: IFrameNavigator;
-  properties: TextHighlighterProperties;
   api: TextSelectorAPI;
 }
 
@@ -133,7 +132,7 @@ export default class TextHighlighter {
   public static async create(config: TextHighlighterConfig): Promise<any> {
     const module = new this(
       config.delegate,
-      config.properties,
+      config as TextHighlighterProperties,
       config.api,
       false,
       {}
@@ -1127,7 +1126,7 @@ export default class TextHighlighter {
         // }
         this.delegate.ttsModule.speak(selectionInfo as any, true, () => {});
       }
-      if (this.delegate.tts.properties?.enableSplitter) {
+      if (this.delegate.tts?.enableSplitter) {
         const selection = self
           .dom(self.delegate.iframe.contentDocument.body)
           .getSelection();

@@ -140,6 +140,12 @@ export async function tableOfContents() {
   }
   return await R2Navigator.tableOfContents();
 }
+export async function readingOrder() {
+  if (IS_DEV) {
+    console.log("readingOrder");
+  }
+  return await R2Navigator.readingOrder();
+}
 export async function bookmarks() {
   if (R2Navigator.rights?.enableBookmarks) {
     if (IS_DEV) {
@@ -749,6 +755,10 @@ exports.scroll = function (value) {
 exports.tableOfContents = function () {
   return tableOfContents();
 };
+exports.readingOrder = function () {
+  return readingOrder();
+};
+
 exports.bookmarks = function () {
   return bookmarks();
 };

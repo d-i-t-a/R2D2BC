@@ -2126,6 +2126,9 @@ export default class IFrameNavigator implements Navigator {
   tableOfContents(): any {
     return this.publication.tableOfContents;
   }
+  readingOrder(): any {
+    return this.publication.readingOrder;
+  }
   atStart(): boolean {
     return this.view.atStart();
   }
@@ -2889,13 +2892,37 @@ export default class IFrameNavigator implements Navigator {
           };
         }
       }
-      const position: ReadingPosition = {
-        href: tocItem.href,
-        locations: locations,
-        created: new Date(),
-        type: this.currentChapterLink.type,
-        title: this.currentChapterLink.title,
-      };
+
+      let position: ReadingPosition;
+      if (
+        (this.rights?.autoGeneratePositions ?? true) &&
+        this.publication.positions
+      ) {
+        const positions = this.publication.positionsByHref(
+          this.publication.getRelativeHref(tocItem.href)
+        );
+        const positionIndex = Math.ceil(
+          locations.progression * (positions.length - 1)
+        );
+        const locator = positions[positionIndex];
+        locator.locations.fragment = locations.fragment;
+
+        position = {
+          ...locator,
+          href: tocItem.href,
+          created: new Date(),
+          title: this.currentChapterLink.title,
+        };
+      } else {
+        position = {
+          href: tocItem.href,
+          locations: locations,
+          created: new Date(),
+          type: this.currentChapterLink.type,
+          title: this.currentChapterLink.title,
+        };
+      }
+
       if (this.api?.updateCurrentLocation) {
         this.api?.updateCurrentLocation(position).then(async (_) => {
           if (IS_DEV) {

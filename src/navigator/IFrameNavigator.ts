@@ -107,8 +107,12 @@ export interface IFrameNavigatorConfig {
   tts: TTSModuleConfig;
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;
+  services: PublicationServices;
 }
-
+export interface PublicationServices {
+  positions?: URL;
+  weight?: URL;
+}
 export interface Injectable {
   type: string;
   url?: string;
@@ -157,6 +161,7 @@ export interface ReaderConfig {
   injectables: Array<Injectable>;
   useLocalStorage?: boolean;
   attributes?: IFrameAttributes;
+  services?: PublicationServices;
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -243,6 +248,7 @@ export default class IFrameNavigator implements Navigator {
   tts: TTSModuleConfig;
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;
+  services: PublicationServices;
 
   public static async create(config: IFrameNavigatorConfig): Promise<any> {
     const navigator = new this(
@@ -259,7 +265,8 @@ export default class IFrameNavigator implements Navigator {
       config.rights,
       config.tts,
       config.injectables,
-      config.attributes || { margin: 0 }
+      config.attributes || { margin: 0 },
+      config.services
     );
 
     await navigator.start(
@@ -284,7 +291,8 @@ export default class IFrameNavigator implements Navigator {
     rights: ReaderRights,
     tts: TTSModuleConfig,
     injectables: Array<Injectable>,
-    attributes: IFrameAttributes
+    attributes: IFrameAttributes,
+    services: PublicationServices
   ) {
     this.settings = settings;
     this.annotator = annotator;
@@ -304,6 +312,7 @@ export default class IFrameNavigator implements Navigator {
     this.tts = tts;
     this.injectables = injectables;
     this.attributes = attributes || { margin: 0 };
+    this.services = services;
   }
 
   async stop() {
@@ -2171,10 +2180,7 @@ export default class IFrameNavigator implements Navigator {
   }
   currentLocator(): Locator {
     let position;
-    if (
-      (this.rights?.autoGeneratePositions ?? true) &&
-      this.publication.positions
-    ) {
+    if (this.publication.positions) {
       let positions = this.publication.positionsByHref(
         this.publication.getRelativeHref(this.currentChapterLink.href)
       );
@@ -2211,7 +2217,7 @@ export default class IFrameNavigator implements Navigator {
     return this.publication.positions;
   }
   goToPosition(position: number) {
-    if (this.rights?.autoGeneratePositions ?? true) {
+    if (this.publication.positions) {
       let locator = this.publication.positions.filter(
         (el: Locator) => el.locations.position === parseInt(String(position))
       )[0];
@@ -2898,10 +2904,7 @@ export default class IFrameNavigator implements Navigator {
       }
 
       let position: ReadingPosition;
-      if (
-        (this.rights?.autoGeneratePositions ?? true) &&
-        this.publication.positions
-      ) {
+      if (this.publication.positions) {
         const positions = this.publication.positionsByHref(
           this.publication.getRelativeHref(tocItem.href)
         );

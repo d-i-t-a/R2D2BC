@@ -236,10 +236,7 @@ export default class AnnotationModule implements ReaderModule {
         : bookmarkPosition;
       const id: string = uuid();
       let annotation: Annotation;
-      if (
-        (this.rights?.autoGeneratePositions ?? true) &&
-        this.publication.positions
-      ) {
+      if (this.publication.positions) {
         const positions = this.publication.positionsByHref(
           this.publication.getRelativeHref(
             this.delegate.currentChapterLink.href

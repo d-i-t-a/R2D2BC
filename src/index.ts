@@ -450,6 +450,7 @@ export async function load(config: ReaderConfig): Promise<any> {
       var startPosition = 0;
       var totalContentLength = 0;
       var positions = [];
+      var weight = {};
       publication.readingOrder.map(async (link, index) => {
         if ((publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
           const locator: Locator = {
@@ -497,6 +498,7 @@ export async function load(config: ReaderConfig): Promise<any> {
               if (IS_DEV) console.log(link.contentLength);
               link.contentWeight =
                 (100 / totalContentLength) * link.contentLength;
+              weight[link.href] = link.contentWeight;
               if (IS_DEV) console.log(link.contentWeight);
             });
           }
@@ -520,6 +522,29 @@ export async function load(config: ReaderConfig): Promise<any> {
           if (IS_DEV) console.log(positions);
         }
       });
+    } else {
+      if (config.services?.positions) {
+        await fetch(config.services?.positions.href)
+          .then((r) => r.text())
+          .then(async (content) => {
+            publication.positions = JSON.parse(content);
+          });
+      }
+      if (config.services?.weight) {
+        await fetch(config.services?.weight.href)
+          .then((r) => r.text())
+          .then(async (content) => {
+            if (
+              (publication.metadata.rendition?.layout ?? "unknown") !== "fixed"
+            ) {
+              let weight = JSON.parse(content);
+              publication.readingOrder.map(async (link) => {
+                link.contentWeight = weight[link.href];
+                if (IS_DEV) console.log(link.contentWeight);
+              });
+            }
+          });
+      }
     }
 
     // Settings
@@ -554,6 +579,7 @@ export async function load(config: ReaderConfig): Promise<any> {
           ? []
           : config.injectables,
       attributes: config.attributes,
+      services: config.services,
     });
 
     // Highlighter

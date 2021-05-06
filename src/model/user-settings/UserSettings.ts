@@ -1059,7 +1059,7 @@ export class UserSettings implements IUserSettings {
     userProperties.addIncremental(
       this.wordSpacing,
       0,
-      0,
+      1,
       0.25,
       "rem",
       ReadiumCSS.WORD_SPACING_REF,

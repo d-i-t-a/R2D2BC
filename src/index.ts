@@ -520,9 +520,6 @@ export async function load(config: ReaderConfig): Promise<any> {
           });
           publication.positions = positions;
           if (IS_DEV) console.log(positions);
-          if (IS_DEV)
-            console.log("##### positions " + JSON.stringify(positions));
-          if (IS_DEV) console.log("##### weigth " + JSON.stringify(weight));
         }
       });
     } else {

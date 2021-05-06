@@ -87,6 +87,7 @@ export interface IFrameAttributes {
   margin: number;
   navHeight?: number;
   iframePaddingTop?: number;
+  bottomInfoHeight?: number;
 }
 export interface IFrameNavigatorConfig {
   mainElement: HTMLElement;
@@ -2385,7 +2386,10 @@ export default class IFrameNavigator implements Navigator {
     }
     // TODO paginator page info
     // 0 = hide , 40 = show
-    if (this.infoBottom) this.infoBottom.style.height = 40 + "px";
+    if (this.infoBottom)
+      this.infoBottom.style.height = this.attributes.bottomInfoHeight
+        ? this.attributes.bottomInfoHeight + "px"
+        : 40 + "px";
 
     if (linksBottomHidden) {
       this.toggleDisplay(this.linksBottom);

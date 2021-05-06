@@ -60,11 +60,16 @@
     box-sizing: border-box;
   }
   
-  #reader-info-bottom {
+  #reader-info-bottom-flex {
       bottom: 0px;
       position: fixed;
       width: 100%;
       display: flex;
+  }
+  #reader-info-bottom {
+    bottom: 0px;
+    position: fixed;
+    width: 100%;
   }
   .info {
     color: $ui-dark-gray;

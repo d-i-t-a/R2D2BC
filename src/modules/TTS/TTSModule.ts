@@ -22,485 +22,569 @@ import { IS_DEV } from "../..";
 import { ISelectionInfo } from "../../model/Locator";
 import { TTSSettings, TTSVoice } from "./TTSSettings";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { addEventListenerOptional, removeEventListenerOptional } from "../../utils/EventHandler";
-import { oc } from "ts-optchain";
-import * as sanitize from 'sanitize-html';
+import {
+  addEventListenerOptional,
+  removeEventListenerOptional,
+} from "../../utils/EventHandler";
+import * as sanitize from "sanitize-html";
 import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
 import TextHighlighter from "../highlight/TextHighlighter";
 
-export interface TTSModuleConfig {
-    delegate: IFrameNavigator;
-    headerMenu: HTMLElement;
-    rights: ReaderRights;
-    tts: TTSSettings;
-    highlighter: TextHighlighter;
+export interface TTSModuleAPI {
+  started: any;
+  stopped: any;
+  paused: any;
+  resumed: any;
+  finished: any;
+  updateSettings: any;
+}
+export interface TTSModuleProperties {
+  enableSplitter?: boolean;
+  color?: string;
+  autoScroll?: boolean;
+  rate?: number;
+  pitch?: number;
+  volume?: number;
+  voice?: TTSVoice;
 }
 
-export interface TTSSpeechConfig {
-    enableSplitter?: boolean;
-    color?: string;
-    autoScroll?: boolean;
-    rate?: number;
-    pitch?: number;
-    volume?: number;
-    voice?: TTSVoice;
+export interface TTSModuleConfig extends TTSModuleProperties {
+  delegate: IFrameNavigator;
+  headerMenu: HTMLElement;
+  rights: ReaderRights;
+  tts: TTSSettings;
+  highlighter: TextHighlighter;
+  api: TTSModuleAPI;
 }
 
 export default class TTSModule implements ReaderModule {
+  private tts: TTSSettings;
+  private splittingResult: any[];
+  private voices: SpeechSynthesisVoice[] = [];
+  private clean: any;
+  private rights: ReaderRights;
+  private readonly highlighter: TextHighlighter;
+  private delegate: IFrameNavigator;
+  private body: any;
+  private hasEventListener: boolean = false;
+  private readonly headerMenu: HTMLElement;
+  // @ts-ignore
+  private readonly properties: TTSModuleProperties;
+  private readonly api: TTSModuleAPI;
 
-    private tts: TTSSettings;
-    private splittingResult: any[]
-    private voices: SpeechSynthesisVoice[] = []
-    private clean: any
-    private rights: ReaderRights;
-    private highlighter: TextHighlighter;
-    private delegate: IFrameNavigator
-    private body: any
-    private hasEventListener: boolean = false
-    private headerMenu: HTMLElement;
+  initialize(body: any) {
+    if (this.highlighter !== undefined) {
+      this.tts.setControls();
+      this.tts.onSettingsChange(this.handleResize.bind(this));
+      this.body = body;
+      this.clean = sanitize(this.body.innerHTML, {
+        allowedTags: [],
+        allowedAttributes: {},
+      });
 
-    initialize(body: any) {
-        if (this.highlighter !== undefined) {
-            this.tts.setControls();
-            this.tts.onSettingsChange(this.handleResize.bind(this));
-            this.body = body
-            this.clean = sanitize(this.body.innerHTML, {
-                allowedTags: [],
-                allowedAttributes: {}
-            })
+      let splittingResult = body.querySelectorAll("[data-word]");
+      splittingResult.forEach((splittingWord) => {
+        splittingWord.dataset.ttsColor = this.tts.color;
+      });
+      let whitespace = body.querySelectorAll("[data-whitespace]");
+      whitespace.forEach((splittingWord) => {
+        splittingWord.dataset.ttsColor = this.tts.color;
+      });
+      window.speechSynthesis.getVoices();
+      this.initVoices(true);
 
-            let splittingResult = body.querySelectorAll("[data-word]");
-            splittingResult.forEach(splittingWord => {
-                splittingWord.dataset.ttsColor = this.tts.color
-            });
-            let whitespace = body.querySelectorAll("[data-whitespace]");
-            whitespace.forEach(splittingWord => {
-                splittingWord.dataset.ttsColor = this.tts.color
-            });
-            window.speechSynthesis.getVoices()
-            this.initVoices(true);
-
-            if (!this.hasEventListener) {
-                this.hasEventListener = true
-                addEventListenerOptional(document, 'wheel', this.wheel.bind(this));
-                addEventListenerOptional(this.body, 'wheel', this.wheel.bind(this));
-                addEventListenerOptional(document, 'keydown', this.wheel.bind(this));
-                addEventListenerOptional(this.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));
-            }
-        }
-    }
-
-    private initVoices(first: boolean) {
-        function setSpeech() {
-            return new Promise(
-                function (resolve, _reject) {
-                    let synth = window.speechSynthesis;
-                    let id;
-
-                    id = setInterval(() => {
-                        if (synth.getVoices().length !== 0) {
-                            resolve(synth.getVoices());
-                            clearInterval(id);
-                        }
-                    }, 10);
-                }
-            );
-        }
-
-        let s = setSpeech();
-        s.then(async (voices: SpeechSynthesisVoice[]) => {
-            if (IS_DEV) console.log(voices);
-            this.voices = []
-            voices.forEach(voice => {
-                if (voice.localService == true) {
-                    this.voices.push(voice);
-                }
-            });
-            if (IS_DEV) console.log(this.voices);
-            if (first) {
-                // preferred-languages
-                if (this.headerMenu) {
-                    var preferredLanguageSelector = HTMLUtilities.findElement(this.headerMenu, "#preferred-languages") as HTMLSelectElement;
-                    if (preferredLanguageSelector) {
-                        this.voices.forEach(voice => {
-                            var v = document.createElement("option") as HTMLOptionElement;
-                            v.value = voice.name + ":" + voice.lang;
-                            v.innerHTML = voice.name + " (" + voice.lang + ")";
-                            preferredLanguageSelector.add(v);
-                        });
-                    }
-                }
-            }
-        });
-    }
-
-    cancel() {
-        if (window.speechSynthesis.speaking) {
-            if (this.tts.api && typeof this.tts.api.stopped === "function") this.tts.api.stopped()
-            this.userScrolled = false
-            window.speechSynthesis.cancel()
-            if (this.splittingResult && this.delegate.tts.enableSplitter) {
-                this.splittingResult.forEach(splittingWord => {
-                    splittingWord.dataset.ttsCurrentWord = "false"
-                    splittingWord.dataset.ttsCurrentLine = "false"
-                });
-            }
-        }
-    }
-
-    private handleResize(): void {
-        let splittingResult = this.body.querySelectorAll("[data-word]");
-        splittingResult.forEach(splittingWord => {
-            splittingWord.dataset.ttsColor = this.tts.color
-            splittingWord.dataset.ttsCurrentWord = "false"
-            splittingWord.dataset.ttsCurrentLine = "false"
-
-        });
-        let whitespace = this.body.querySelectorAll("[data-whitespace]");
-        whitespace.forEach(splittingWord => {
-            splittingWord.dataset.ttsColor = this.tts.color
-            splittingWord.dataset.ttsCurrentWord = "false"
-            splittingWord.dataset.ttsCurrentLine = "false"
-        });
-    }
-    index = 0
-
-    async speak(selectionInfo: ISelectionInfo | undefined, partial: boolean, callback: () => void): Promise<any> {
-
-        if (this.tts.api && typeof this.tts.api.started === "function") this.tts.api.started()
-
-        var self = this
-        this.userScrolled = false
-
-        this.cancel()
-
-        if (this.delegate.tts.enableSplitter) {
-            if (partial) {
-                var allWords = self.body.querySelectorAll("[data-word]");
-
-                var startNode = (selectionInfo as ISelectionInfo).range.startContainer.parentElement
-                if (startNode.tagName.toLowerCase() === "a") {
-                    startNode = startNode.parentElement as HTMLElement
-                }
-                if (startNode.dataset == undefined) {
-                    startNode = startNode.nextElementSibling as HTMLElement
-                }
-
-                var endNode = (selectionInfo as ISelectionInfo).range.endContainer.parentElement
-                if (endNode.tagName.toLowerCase() === "a") {
-                    endNode = endNode.parentElement as HTMLElement
-                }
-                if (endNode.dataset == undefined) {
-                    endNode = endNode.previousElementSibling as HTMLElement
-                }
-
-                var startWordIndex = parseInt(startNode.dataset.wordIndex)
-                var endWordIndex = parseInt(endNode.dataset.wordIndex) + 1
-
-                let array = Array.from(allWords)
-                this.splittingResult = array.slice(startWordIndex, endWordIndex)
-            } else {
-                document.scrollingElement.scrollTop = 0
-                this.splittingResult = self.body.querySelectorAll("[data-word]");
-            }
-        }
-        const utterance = partial ? new SpeechSynthesisUtterance(selectionInfo.cleanText) : new SpeechSynthesisUtterance(this.clean)
-        utterance.rate = this.tts.rate
-        utterance.pitch = this.tts.pitch
-        utterance.volume = this.tts.volume
-
-        if (IS_DEV) console.log("this.tts.voice.lang", this.tts.voice.lang)
-
-        var initialVoiceHasHyphen = true
-        if (this.tts.voice && this.tts.voice.lang) {
-            initialVoiceHasHyphen = (this.tts.voice.lang.indexOf("-") !== -1)
-            if (initialVoiceHasHyphen == false) {
-                this.tts.voice.lang = this.tts.voice.lang.replace("_", "-")
-                initialVoiceHasHyphen = true
-            }
-        }
-        if (IS_DEV) console.log("initialVoiceHasHyphen", initialVoiceHasHyphen)
-        if (IS_DEV) console.log("voices", this.voices)
-        var initialVoice = undefined
-        if (initialVoiceHasHyphen == true) {
-            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => {
-                var lang = v.lang.replace("_", "-")
-                return lang == this.tts.voice.lang && v.name == this.tts.voice.name
-            })[0] : undefined
-            if (initialVoice == undefined) {
-                initialVoice = (this.tts.voice && this.tts.voice.lang) ? this.voices.filter((v: any) => v.lang.replace("_", "-") == this.tts.voice.lang)[0] : undefined
-            }
-        } else {
-            initialVoice = (this.tts.voice && this.tts.voice.lang && this.tts.voice.name) ? this.voices.filter((v: any) => {
-                return v.lang == this.tts.voice.lang && v.name == this.tts.voice.name
-            })[0] : undefined
-            if (initialVoice == undefined) {
-                initialVoice = (this.tts.voice && this.tts.voice.lang) ? this.voices.filter((v: any) => v.lang == this.tts.voice.lang)[0] : undefined
-            }
-        }
-        if (IS_DEV) console.log("initialVoice", initialVoice)
-
-        var publicationVoiceHasHyphen = (self.delegate.publication.metadata.language[0].indexOf("-") !== -1)
-        if (IS_DEV) console.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen)
-        var publicationVoice = undefined
-        if (publicationVoiceHasHyphen == true) {
-            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) => {
-                var lang = v.lang.replace("_", "-")
-                return lang.startsWith(self.delegate.publication.metadata.language[0]) || lang.endsWith(self.delegate.publication.metadata.language[0].toUpperCase())
-            })[0] : undefined
-        } else {
-            publicationVoice = (this.tts.voice && this.tts.voice.usePublication) ? this.voices.filter((v: any) => {
-                return v.lang.startsWith(self.delegate.publication.metadata.language[0]) || v.lang.endsWith(self.delegate.publication.metadata.language[0].toUpperCase())
-            })[0] : undefined
-        }
-        if (IS_DEV) console.log("publicationVoice", publicationVoice)
-
-        var defaultVoiceHasHyphen = (navigator.language.indexOf("-") !== -1)
-        if (IS_DEV) console.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen)
-        var defaultVoice = undefined
-        if (defaultVoiceHasHyphen == true) {
-            defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
-                var lang = voice.lang.replace("_", "-")
-                return lang == navigator.language && voice.localService == true
-            })[0]
-        } else {
-            defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
-                var lang = voice.lang
-                return lang == navigator.language && voice.localService == true
-            })[0]
-        }
-        if (defaultVoice == undefined) {
-            defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
-                var lang = voice.lang
-                return lang.includes(navigator.language) && voice.localService == true
-            })[0]
-        }
-        if (IS_DEV) console.log("defaultVoice", defaultVoice)
-
-        if (initialVoice) {
-            if (IS_DEV) console.log("initialVoice")
-            utterance.voice = initialVoice
-        } else if (publicationVoice) {
-            if (IS_DEV) console.log("publicationVoice")
-            utterance.voice = publicationVoice
-        } else if (defaultVoice) {
-            if (IS_DEV) console.log("defaultVoice")
-            utterance.voice = defaultVoice
-        }
-        if (utterance.voice != undefined) {
-            utterance.lang = utterance.voice.lang
-            if (IS_DEV) console.log("utterance.voice.lang", utterance.voice.lang)
-            if (IS_DEV) console.log("utterance.lang", utterance.lang)
-        }
-        if (IS_DEV) console.log("navigator.language", navigator.language)
-
-        window.speechSynthesis.speak(utterance);
-
-        this.index = 0
-
-        var lastword = undefined
-
-        utterance.onboundary = function (e: any) {
-            if (e.name === "sentence") {
-                if (IS_DEV) console.log("sentence boundary", e.charIndex, e.charLength, utterance.text.slice(e.charIndex, e.charIndex + e.charLength));
-            }
-            if (e.name === "word") {
-
-                function getWordAt(str, pos) {
-                    // Perform type conversions.
-                    str = String(str);
-                    pos = Number(pos) >>> 0;
-
-                    // Search for the word's beginning and end.
-                    var left = str.slice(0, pos + 1).search(/\S+$/),
-                        right = str.slice(pos).search(/\s/);
-
-                    // The last word in the string is a special case.
-                    if (right < 0) {
-                        return str.slice(left);
-                    }
-
-                    // Return the word, using the located bounds to extract it from the string.
-                    return str.slice(left, right + pos);
-                }
-                const word = getWordAt(utterance.text, e.charIndex)
-                if (lastword == word) {
-                    self.index--
-                }
-                lastword = word
-
-                if (self.delegate.tts.enableSplitter) {
-
-
-                    processWord(word)
-
-                }
-            }
-        }
-
-
-
-        async function processWord(word) {
-
-            var spokenWordCleaned = word.replace(/[^a-zA-Z0-9 ]/g, "")
-            if (IS_DEV) console.log("spokenWordCleaned", spokenWordCleaned);
-
-            var splittingWord = self.splittingResult[self.index] as HTMLElement
-            var splittingWordCleaned = oc(splittingWord).dataset.word("").replace(/[^a-zA-Z0-9 ]/g, "")
-            if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
-
-            if (splittingWordCleaned.length == 0) {
-                self.index++
-                splittingWord = self.splittingResult[self.index] as HTMLElement
-                splittingWordCleaned = oc(splittingWord).dataset.word("").replace(/[^a-zA-Z0-9 ]/g, "")
-                if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
-            }
-
-            if (splittingWord) {
-
-                var isAnchorParent = splittingWord.parentElement.tagName.toLowerCase() === "a"
-                if (!isAnchorParent) {
-
-                    if (spokenWordCleaned.length > 0 && splittingWordCleaned.length > 0) {
-
-                        if (splittingWordCleaned.startsWith(spokenWordCleaned) || splittingWordCleaned.endsWith(spokenWordCleaned)
-                            || spokenWordCleaned.startsWith(splittingWordCleaned) || spokenWordCleaned.endsWith(splittingWordCleaned)) {
-
-                            if (self.index > 0) {
-                                let splittingResult = self.body.querySelectorAll("[data-word]");
-                                splittingResult.forEach(splittingWord => {
-                                    splittingWord.dataset.ttsColor = self.tts.color
-                                    splittingWord.dataset.ttsCurrentWord = "false"
-                                    splittingWord.dataset.ttsCurrentLine = "false"
-
-                                });
-                                let whitespace = self.body.querySelectorAll("[data-whitespace]");
-                                whitespace.forEach(splittingWord => {
-                                    splittingWord.dataset.ttsColor = self.tts.color
-                                    splittingWord.dataset.ttsCurrentWord = "false"
-                                    splittingWord.dataset.ttsCurrentLine = "false"
-                                });
-
-                            }
-                            splittingWord.dataset.ttsCurrentWord = "true"
-                            if (self.delegate.view.isScrollMode() && self.tts.autoScroll && !self.userScrolled) {
-                                splittingWord.scrollIntoView({
-                                    block: "center",
-                                    behavior: "smooth",
-                                })
-                            }
-                        } else {
-                            self.index++
-                        }
-                    } else if (spokenWordCleaned.length == 0) {
-                        self.index--
-                    }
-                }
-                self.index++
-            }
-
-        }
-
-        utterance.onend = function () {
-            if (IS_DEV) console.log("utterance ended");
-            self.highlighter.doneSpeaking()
-            if (self.delegate.tts.enableSplitter) {
-
-                let splittingResult = self.body.querySelectorAll("[data-word]");
-                splittingResult.forEach(splittingWord => {
-                    splittingWord.dataset.ttsColor = self.tts.color
-                    splittingWord.dataset.ttsCurrentWord = "false"
-                    splittingWord.dataset.ttsCurrentLine = "false"
-
-                });
-                let whitespace = self.body.querySelectorAll("[data-whitespace]");
-                whitespace.forEach(splittingWord => {
-                    splittingWord.dataset.ttsColor = self.tts.color
-                    splittingWord.dataset.ttsCurrentWord = "false"
-                    splittingWord.dataset.ttsCurrentLine = "false"
-                });
-
-            }
-            if (self.tts.api && typeof self.tts.api.finished === "function") self.tts.api.finished()
-        }
-        callback()
-
-    }
-
-
-    speakPause() {
-        if (window.speechSynthesis.speaking) {
-            if (this.tts.api && typeof this.tts.api.paused === "function") this.tts.api.paused()
-            this.userScrolled = false
-            window.speechSynthesis.pause()
-        }
-    }
-
-    speakResume() {
-        if (window.speechSynthesis.speaking) {
-            if (this.tts.api && typeof this.tts.api.resumed === "function") this.tts.api.resumed()
-            this.userScrolled = false
-            window.speechSynthesis.resume()
-        }
-    }
-
-    public static async create(config: TTSModuleConfig) {
-        const tts = new this(
-            config.delegate,
-            config.tts,
-            config.headerMenu,
-            config.rights,
-            config.highlighter
+      if (!this.hasEventListener) {
+        this.hasEventListener = true;
+        addEventListenerOptional(document, "wheel", this.wheel.bind(this));
+        addEventListenerOptional(this.body, "wheel", this.wheel.bind(this));
+        addEventListenerOptional(document, "keydown", this.wheel.bind(this));
+        addEventListenerOptional(
+          this.delegate.iframe.contentDocument,
+          "keydown",
+          this.wheel.bind(this)
         );
-        await tts.start();
-        return tts;
+      }
+    }
+  }
+
+  private initVoices(first: boolean) {
+    function setSpeech() {
+      return new Promise(function (resolve, _reject) {
+        let synth = window.speechSynthesis;
+        let id;
+
+        id = setInterval(() => {
+          if (synth.getVoices().length !== 0) {
+            resolve(synth.getVoices());
+            clearInterval(id);
+          }
+        }, 10);
+      });
     }
 
-    public constructor(delegate: IFrameNavigator, tts: TTSSettings, headerMenu: HTMLElement, rights: ReaderRights, highlighter: TextHighlighter) {
-        this.delegate = delegate
-        this.tts = tts
-        this.headerMenu = headerMenu
-        this.rights = rights
-        this.highlighter = highlighter
-    }
-
-    protected async start(): Promise<void> {
-        this.delegate.ttsModule = this
-
+    let s = setSpeech();
+    s.then(async (voices: SpeechSynthesisVoice[]) => {
+      if (IS_DEV) console.log(voices);
+      this.voices = [];
+      voices.forEach((voice) => {
+        if (voice.localService === true) {
+          this.voices.push(voice);
+        }
+      });
+      if (IS_DEV) console.log(this.voices);
+      if (first) {
+        // preferred-languages
         if (this.headerMenu) {
-            var menuTTS = HTMLUtilities.findElement(this.headerMenu, "#menu-button-tts") as HTMLLinkElement;
-            if (oc(this.rights).enableMaterial(false)) {
-                if (menuTTS) menuTTS.parentElement.style.removeProperty("display")
+          var preferredLanguageSelector = HTMLUtilities.findElement(
+            this.headerMenu,
+            "#preferred-languages"
+          ) as HTMLSelectElement;
+          if (preferredLanguageSelector) {
+            this.voices.forEach((voice) => {
+              var v = document.createElement("option") as HTMLOptionElement;
+              v.value = voice.name + ":" + voice.lang;
+              v.innerHTML = voice.name + " (" + voice.lang + ")";
+              preferredLanguageSelector.add(v);
+            });
+          }
+        }
+      }
+    });
+  }
+
+  cancel() {
+    if (window.speechSynthesis.speaking) {
+      if (this.api?.stopped) this.api?.stopped();
+      this.userScrolled = false;
+      window.speechSynthesis.cancel();
+      if (this.splittingResult && this.delegate.tts?.enableSplitter) {
+        this.splittingResult.forEach((splittingWord) => {
+          splittingWord.dataset.ttsCurrentWord = "false";
+          splittingWord.dataset.ttsCurrentLine = "false";
+        });
+      }
+    }
+  }
+
+  private handleResize(): void {
+    let splittingResult = this.body.querySelectorAll("[data-word]");
+    splittingResult.forEach((splittingWord) => {
+      splittingWord.dataset.ttsColor = this.tts.color;
+      splittingWord.dataset.ttsCurrentWord = "false";
+      splittingWord.dataset.ttsCurrentLine = "false";
+    });
+    let whitespace = this.body.querySelectorAll("[data-whitespace]");
+    whitespace.forEach((splittingWord) => {
+      splittingWord.dataset.ttsColor = this.tts.color;
+      splittingWord.dataset.ttsCurrentWord = "false";
+      splittingWord.dataset.ttsCurrentLine = "false";
+    });
+  }
+  index = 0;
+
+  async speak(
+    selectionInfo: ISelectionInfo | undefined,
+    partial: boolean,
+    callback: () => void
+  ): Promise<any> {
+    if (this.api?.started) this.api?.started();
+
+    var self = this;
+    this.userScrolled = false;
+
+    this.cancel();
+
+    if (this.delegate.tts?.enableSplitter) {
+      if (partial) {
+        var allWords = self.body.querySelectorAll("[data-word]");
+
+        var startNode = (selectionInfo as ISelectionInfo).range.startContainer
+          .parentElement;
+        if (startNode.tagName.toLowerCase() === "a") {
+          startNode = startNode.parentElement as HTMLElement;
+        }
+        if (startNode.dataset === undefined) {
+          startNode = startNode.nextElementSibling as HTMLElement;
+        }
+
+        var endNode = (selectionInfo as ISelectionInfo).range.endContainer
+          .parentElement;
+        if (endNode.tagName.toLowerCase() === "a") {
+          endNode = endNode.parentElement as HTMLElement;
+        }
+        if (endNode.dataset === undefined) {
+          endNode = endNode.previousElementSibling as HTMLElement;
+        }
+
+        var startWordIndex = parseInt(startNode.dataset.wordIndex);
+        var endWordIndex = parseInt(endNode.dataset.wordIndex) + 1;
+
+        let array = Array.from(allWords);
+        this.splittingResult = array.slice(startWordIndex, endWordIndex);
+      } else {
+        document.scrollingElement.scrollTop = 0;
+        this.splittingResult = self.body.querySelectorAll("[data-word]");
+      }
+    }
+    const utterance = partial
+      ? new SpeechSynthesisUtterance(selectionInfo.cleanText)
+      : new SpeechSynthesisUtterance(this.clean);
+    utterance.rate = this.tts.rate;
+    utterance.pitch = this.tts.pitch;
+    utterance.volume = this.tts.volume;
+
+    if (IS_DEV) console.log("this.tts.voice.lang", this.tts.voice.lang);
+
+    var initialVoiceHasHyphen = true;
+    if (this.tts.voice && this.tts.voice.lang) {
+      initialVoiceHasHyphen = this.tts.voice.lang.indexOf("-") !== -1;
+      if (initialVoiceHasHyphen === false) {
+        this.tts.voice.lang = this.tts.voice.lang.replace("_", "-");
+        initialVoiceHasHyphen = true;
+      }
+    }
+    if (IS_DEV) console.log("initialVoiceHasHyphen", initialVoiceHasHyphen);
+    if (IS_DEV) console.log("voices", this.voices);
+    var initialVoice;
+    if (initialVoiceHasHyphen === true) {
+      initialVoice =
+        this.tts.voice && this.tts.voice.lang && this.tts.voice.name
+          ? this.voices.filter((v: any) => {
+              var lang = v.lang.replace("_", "-");
+              return (
+                lang === this.tts.voice.lang && v.name === this.tts.voice.name
+              );
+            })[0]
+          : undefined;
+      if (initialVoice === undefined) {
+        initialVoice =
+          this.tts.voice && this.tts.voice.lang
+            ? this.voices.filter(
+                (v: any) => v.lang.replace("_", "-") === this.tts.voice.lang
+              )[0]
+            : undefined;
+      }
+    } else {
+      initialVoice =
+        this.tts.voice && this.tts.voice.lang && this.tts.voice.name
+          ? this.voices.filter((v: any) => {
+              return (
+                v.lang === this.tts.voice.lang && v.name === this.tts.voice.name
+              );
+            })[0]
+          : undefined;
+      if (initialVoice === undefined) {
+        initialVoice =
+          this.tts.voice && this.tts.voice.lang
+            ? this.voices.filter((v: any) => v.lang === this.tts.voice.lang)[0]
+            : undefined;
+      }
+    }
+    if (IS_DEV) console.log("initialVoice", initialVoice);
+
+    var publicationVoiceHasHyphen =
+      self.delegate.publication.metadata.language[0].indexOf("-") !== -1;
+    if (IS_DEV)
+      console.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
+    var publicationVoice;
+    if (publicationVoiceHasHyphen === true) {
+      publicationVoice =
+        this.tts.voice && this.tts.voice.usePublication
+          ? this.voices.filter((v: any) => {
+              var lang = v.lang.replace("_", "-");
+              return (
+                lang.startsWith(
+                  self.delegate.publication.metadata.language[0]
+                ) ||
+                lang.endsWith(
+                  self.delegate.publication.metadata.language[0].toUpperCase()
+                )
+              );
+            })[0]
+          : undefined;
+    } else {
+      publicationVoice =
+        this.tts.voice && this.tts.voice.usePublication
+          ? this.voices.filter((v: any) => {
+              return (
+                v.lang.startsWith(
+                  self.delegate.publication.metadata.language[0]
+                ) ||
+                v.lang.endsWith(
+                  self.delegate.publication.metadata.language[0].toUpperCase()
+                )
+              );
+            })[0]
+          : undefined;
+    }
+    if (IS_DEV) console.log("publicationVoice", publicationVoice);
+
+    var defaultVoiceHasHyphen = navigator.language.indexOf("-") !== -1;
+    if (IS_DEV) console.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen);
+    var defaultVoice;
+    if (defaultVoiceHasHyphen === true) {
+      defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
+        var lang = voice.lang.replace("_", "-");
+        return lang === navigator.language && voice.localService === true;
+      })[0];
+    } else {
+      defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
+        var lang = voice.lang;
+        return lang === navigator.language && voice.localService === true;
+      })[0];
+    }
+    if (defaultVoice === undefined) {
+      defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
+        var lang = voice.lang;
+        return lang.includes(navigator.language) && voice.localService === true;
+      })[0];
+    }
+    if (IS_DEV) console.log("defaultVoice", defaultVoice);
+
+    if (initialVoice) {
+      if (IS_DEV) console.log("initialVoice");
+      utterance.voice = initialVoice;
+    } else if (publicationVoice) {
+      if (IS_DEV) console.log("publicationVoice");
+      utterance.voice = publicationVoice;
+    } else if (defaultVoice) {
+      if (IS_DEV) console.log("defaultVoice");
+      utterance.voice = defaultVoice;
+    }
+    if (utterance.voice !== undefined) {
+      utterance.lang = utterance.voice.lang;
+      if (IS_DEV) console.log("utterance.voice.lang", utterance.voice.lang);
+      if (IS_DEV) console.log("utterance.lang", utterance.lang);
+    }
+    if (IS_DEV) console.log("navigator.language", navigator.language);
+
+    window.speechSynthesis.speak(utterance);
+
+    this.index = 0;
+
+    var lastword = undefined;
+
+    utterance.onboundary = function (e: any) {
+      if (e.name === "sentence") {
+        if (IS_DEV)
+          console.log(
+            "sentence boundary",
+            e.charIndex,
+            e.charLength,
+            utterance.text.slice(e.charIndex, e.charIndex + e.charLength)
+          );
+      }
+      if (e.name === "word") {
+        function getWordAt(str, pos) {
+          // Perform type conversions.
+          str = String(str);
+          pos = Number(pos) >>> 0;
+
+          // Search for the word's beginning and end.
+          var left = str.slice(0, pos + 1).search(/\S+$/),
+            right = str.slice(pos).search(/\s/);
+
+          // The last word in the string is a special case.
+          if (right < 0) {
+            return str.slice(left);
+          }
+
+          // Return the word, using the located bounds to extract it from the string.
+          return str.slice(left, right + pos);
+        }
+        const word = getWordAt(utterance.text, e.charIndex);
+        if (lastword === word) {
+          self.index--;
+        }
+        lastword = word;
+
+        if (self.delegate.tts?.enableSplitter) {
+          processWord(word);
+        }
+      }
+    };
+
+    async function processWord(word) {
+      var spokenWordCleaned = word.replace(/[^a-zA-Z0-9 ]/g, "");
+      if (IS_DEV) console.log("spokenWordCleaned", spokenWordCleaned);
+
+      let splittingWord = self.splittingResult[self.index] as HTMLElement;
+      var splittingWordCleaned = splittingWord?.dataset.word.replace(
+        /[^a-zA-Z0-9 ]/g,
+        ""
+      );
+      if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
+
+      if (splittingWordCleaned.length === 0) {
+        self.index++;
+        splittingWord = self.splittingResult[self.index] as HTMLElement;
+        splittingWordCleaned = splittingWord?.dataset.word.replace(
+          /[^a-zA-Z0-9 ]/g,
+          ""
+        );
+        if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
+      }
+
+      if (splittingWord) {
+        var isAnchorParent =
+          splittingWord.parentElement.tagName.toLowerCase() === "a";
+        if (!isAnchorParent) {
+          if (spokenWordCleaned.length > 0 && splittingWordCleaned.length > 0) {
+            if (
+              splittingWordCleaned.startsWith(spokenWordCleaned) ||
+              splittingWordCleaned.endsWith(spokenWordCleaned) ||
+              spokenWordCleaned.startsWith(splittingWordCleaned) ||
+              spokenWordCleaned.endsWith(splittingWordCleaned)
+            ) {
+              if (self.index > 0) {
+                let splittingResult = self.body.querySelectorAll("[data-word]");
+                splittingResult.forEach((splittingWord) => {
+                  splittingWord.dataset.ttsColor = self.tts.color;
+                  splittingWord.dataset.ttsCurrentWord = "false";
+                  splittingWord.dataset.ttsCurrentLine = "false";
+                });
+                let whitespace = self.body.querySelectorAll(
+                  "[data-whitespace]"
+                );
+                whitespace.forEach((splittingWord) => {
+                  splittingWord.dataset.ttsColor = self.tts.color;
+                  splittingWord.dataset.ttsCurrentWord = "false";
+                  splittingWord.dataset.ttsCurrentLine = "false";
+                });
+              }
+              splittingWord.dataset.ttsCurrentWord = "true";
+              if (
+                self.delegate.view.isScrollMode() &&
+                self.tts.autoScroll &&
+                !self.userScrolled
+              ) {
+                splittingWord.scrollIntoView({
+                  block: "center",
+                  behavior: "smooth",
+                });
+              }
             } else {
-                if (menuTTS) menuTTS.parentElement.style.setProperty("display", "none")
+              self.index++;
             }
+          } else if (spokenWordCleaned.length === 0) {
+            self.index--;
+          }
         }
-
+        self.index++;
+      }
     }
 
-    userScrolled = false
-    private wheel(event: KeyboardEvent | MouseEvent | TrackEvent): void {
-        if (event instanceof KeyboardEvent) {
-            const key = event.key;
-            switch (key) {
-                case "ArrowUp":
-                    this.userScrolled = true
-                    break;
-                case "ArrowDown":
-                    this.userScrolled = true
-                    break;
-            }
-        } else {
-            this.userScrolled = true
-        }
-    }
+    utterance.onend = function () {
+      if (IS_DEV) console.log("utterance ended");
+      self.highlighter.doneSpeaking();
+      if (self.delegate.tts?.enableSplitter) {
+        let splittingResult = self.body.querySelectorAll("[data-word]");
+        splittingResult.forEach((splittingWord) => {
+          splittingWord.dataset.ttsColor = self.tts.color;
+          splittingWord.dataset.ttsCurrentWord = "false";
+          splittingWord.dataset.ttsCurrentLine = "false";
+        });
+        let whitespace = self.body.querySelectorAll("[data-whitespace]");
+        whitespace.forEach((splittingWord) => {
+          splittingWord.dataset.ttsColor = self.tts.color;
+          splittingWord.dataset.ttsCurrentWord = "false";
+          splittingWord.dataset.ttsCurrentLine = "false";
+        });
+      }
+      self.api?.finished();
+    };
+    callback();
+  }
 
-    async stop() {
-        if (IS_DEV) { console.log("TTS module stop") }
-        removeEventListenerOptional(document, 'wheel', this.wheel.bind(this));
-        removeEventListenerOptional(this.body, 'wheel', this.wheel.bind(this));
-        removeEventListenerOptional(document, 'keydown', this.wheel.bind(this));
-        removeEventListenerOptional(this.delegate.iframe.contentDocument, 'keydown', this.wheel.bind(this));
+  speakPause() {
+    if (window.speechSynthesis.speaking) {
+      if (this.api?.paused) this.api?.paused();
+      this.userScrolled = false;
+      window.speechSynthesis.pause();
     }
+  }
 
+  speakResume() {
+    if (window.speechSynthesis.speaking) {
+      if (this.api?.resumed) this.api?.resumed();
+      this.userScrolled = false;
+      window.speechSynthesis.resume();
+    }
+  }
+
+  public static async create(config: TTSModuleConfig) {
+    const tts = new this(
+      config.delegate,
+      config.tts,
+      config.headerMenu,
+      config.rights,
+      config.highlighter,
+      config as TTSModuleProperties
+    );
+    await tts.start();
+    return tts;
+  }
+
+  public constructor(
+    delegate: IFrameNavigator,
+    tts: TTSSettings,
+    headerMenu: HTMLElement,
+    rights: ReaderRights,
+    highlighter: TextHighlighter,
+    properties: TTSModuleProperties | null = null
+  ) {
+    this.delegate = delegate;
+    this.tts = tts;
+    this.headerMenu = headerMenu;
+    this.rights = rights;
+    this.highlighter = highlighter;
+    this.properties = properties;
+  }
+
+  protected async start(): Promise<void> {
+    this.delegate.ttsModule = this;
+
+    if (this.headerMenu) {
+      var menuTTS = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#menu-button-tts"
+      ) as HTMLLinkElement;
+      if (this.rights?.enableMaterial) {
+        if (menuTTS) menuTTS.parentElement.style.removeProperty("display");
+      } else {
+        if (menuTTS) menuTTS.parentElement.style.setProperty("display", "none");
+      }
+    }
+  }
+
+  userScrolled = false;
+  private wheel(event: KeyboardEvent | MouseEvent | TrackEvent): void {
+    if (event instanceof KeyboardEvent) {
+      const key = event.key;
+      switch (key) {
+        case "ArrowUp":
+          this.userScrolled = true;
+          break;
+        case "ArrowDown":
+          this.userScrolled = true;
+          break;
+      }
+    } else {
+      this.userScrolled = true;
+    }
+  }
+
+  async stop() {
+    if (IS_DEV) {
+      console.log("TTS module stop");
+    }
+    removeEventListenerOptional(document, "wheel", this.wheel.bind(this));
+    removeEventListenerOptional(this.body, "wheel", this.wheel.bind(this));
+    removeEventListenerOptional(document, "keydown", this.wheel.bind(this));
+    removeEventListenerOptional(
+      this.delegate.iframe.contentDocument,
+      "keydown",
+      this.wheel.bind(this)
+    );
+  }
 }

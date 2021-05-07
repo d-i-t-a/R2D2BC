@@ -18,85 +18,104 @@
  */
 
 export default class TouchEventHandler {
+  private static readonly TAP_TOLERANCE = 10;
+  private static readonly LONG_PRESS_MS = 500;
+  private static readonly SLOW_SWIPE_MS = 500;
 
-    private static readonly TAP_TOLERANCE = 10;
-    private static readonly LONG_PRESS_MS = 500;
-    private static readonly SLOW_SWIPE_MS = 500;
+  public onBackwardSwipe: (event: UIEvent) => void = () => {};
+  public onForwardSwipe: (event: UIEvent) => void = () => {};
 
-    public onBackwardSwipe: (event: UIEvent) => void = () => { };
-    public onForwardSwipe: (event: UIEvent) => void = () => { };
+  public setupEvents = (element: HTMLElement | Document): void => {
+    var touchEventStart: TouchEvent | null = null;
+    var touchEventEnd: TouchEvent | null = null;
+    var self = this;
 
-    public setupEvents = (element: HTMLElement | Document): void => {
-        var touchEventStart: TouchEvent | null = null;
-        var touchEventEnd: TouchEvent | null = null;
-        var self = this;
+    element.addEventListener(
+      "touchstart",
+      function (event: TouchEvent) {
+        if (event.changedTouches.length !== 1) {
+          return;
+        }
+        touchEventStart = event;
+      },
+      false
+    );
 
-        element.addEventListener('touchstart', function (event: TouchEvent) {
-            if (event.changedTouches.length !== 1) {
-                return;
-            }
-            touchEventStart = event;
-        }, false)
+    element.addEventListener(
+      "touchend",
+      function (event: TouchEvent) {
+        if (event.changedTouches.length !== 1) {
+          return;
+        }
 
-        element.addEventListener('touchend', function (event: TouchEvent) {
-            if (event.changedTouches.length !== 1) {
-                return;
-            }
+        if (!touchEventStart) {
+          return;
+        }
 
-            if (!touchEventStart) {
-                return;
-            }
+        const startTouch = touchEventStart.changedTouches[0];
+        const endTouch = event.changedTouches[0];
 
-            const startTouch = touchEventStart.changedTouches[0];
-            const endTouch = event.changedTouches[0];
-            
-            if (!startTouch) {
-                return;
-            }
+        if (!startTouch) {
+          return;
+        }
 
-            const devicePixelRatio = window.devicePixelRatio;
-            const xDevicePixels = (startTouch.clientX - endTouch.clientX) / devicePixelRatio;
-            const yDevicePixels = (startTouch.clientY - endTouch.clientY) / devicePixelRatio;
+        const devicePixelRatio = window.devicePixelRatio;
+        const xDevicePixels =
+          (startTouch.clientX - endTouch.clientX) / devicePixelRatio;
+        const yDevicePixels =
+          (startTouch.clientY - endTouch.clientY) / devicePixelRatio;
 
-            if (Math.abs(xDevicePixels) < TouchEventHandler.TAP_TOLERANCE && Math.abs(yDevicePixels) < TouchEventHandler.TAP_TOLERANCE) {
-                if (touchEventEnd) {
-                    touchEventStart = null;
-                    touchEventEnd = null;
-                    return;
-                }
-
-                if (event.timeStamp - touchEventStart.timeStamp > TouchEventHandler.LONG_PRESS_MS) {
-                    touchEventStart = null;
-                    touchEventEnd = null;
-                    return;
-                }
-
-                touchEventStart = null;
-                touchEventEnd = event;
-                return;
-            }
-            
-            touchEventEnd = null;
-
-            if (event.timeStamp - touchEventStart.timeStamp > TouchEventHandler.SLOW_SWIPE_MS) {
-                touchEventStart = null;
-                return;
-            }
-
-            const slope = (startTouch.clientY - endTouch.clientY) / (startTouch.clientX - endTouch.clientX);
-            if (Math.abs(slope) > 0.5) {
-                touchEventStart = null;
-                return;
-            }
-
-            if (xDevicePixels < 0) {
-                self.onBackwardSwipe(event);
-            } else {
-                self.onForwardSwipe(event);
-            }
-
+        if (
+          Math.abs(xDevicePixels) < TouchEventHandler.TAP_TOLERANCE &&
+          Math.abs(yDevicePixels) < TouchEventHandler.TAP_TOLERANCE
+        ) {
+          if (touchEventEnd) {
             touchEventStart = null;
+            touchEventEnd = null;
+            return;
+          }
 
-        }, false)
-    }
+          if (
+            event.timeStamp - touchEventStart.timeStamp >
+            TouchEventHandler.LONG_PRESS_MS
+          ) {
+            touchEventStart = null;
+            touchEventEnd = null;
+            return;
+          }
+
+          touchEventStart = null;
+          touchEventEnd = event;
+          return;
+        }
+
+        touchEventEnd = null;
+
+        if (
+          event.timeStamp - touchEventStart.timeStamp >
+          TouchEventHandler.SLOW_SWIPE_MS
+        ) {
+          touchEventStart = null;
+          return;
+        }
+
+        const slope =
+          (startTouch.clientY - endTouch.clientY) /
+          (startTouch.clientX - endTouch.clientX);
+        if (Math.abs(slope) > 0.5) {
+          touchEventStart = null;
+          return;
+        }
+
+        if (xDevicePixels < 0) {
+          self.onBackwardSwipe(event);
+        } else {
+          self.onForwardSwipe(event);
+        }
+
+        touchEventStart = null;
+      },
+      false
+    );
+  };
 }

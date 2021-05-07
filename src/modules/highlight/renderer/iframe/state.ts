@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2018-2020 DITA (AM Consulting LLC)
  *
@@ -19,23 +18,21 @@
  */
 
 import { IEventPayload_R2_EVENT_READING_LOCATION } from "../../common/events";
-import { Link } from '../../../../model/Publication';
+import { Link } from "../../../../model/Publication";
 
 export interface IReadiumIFrameWindowState {
-
-    hashElement: Element | null;
-    locationHashOverride: Element | undefined;
-    locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
-
+  hashElement: Element | null;
+  locationHashOverride: Element | undefined;
+  locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
 }
 export interface IReadiumIFrameWindow extends Window {
-    READIUM2: IReadiumIFrameWindowState;
+  READIUM2: IReadiumIFrameWindowState;
 }
 
 export interface IReadiumIFrameState {
-    id: number;
-    link: Link | undefined;
+  id: number;
+  link: Link | undefined;
 }
 export interface IReadiumIFrame extends HTMLIFrameElement {
-    READIUM2: IReadiumIFrameState;
+  READIUM2: IReadiumIFrameState;
 }

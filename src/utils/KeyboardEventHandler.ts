@@ -20,31 +20,36 @@
 import IFrameNavigator from "../navigator/IFrameNavigator";
 
 export default class KeyboardEventHandler {
+  delegate: IFrameNavigator;
 
-    delegate: IFrameNavigator;
+  public onBackwardSwipe: (event: UIEvent) => void = () => {};
+  public onForwardSwipe: (event: UIEvent) => void = () => {};
 
-    public onBackwardSwipe: (event: UIEvent) => void = () => { };
-    public onForwardSwipe: (event: UIEvent) => void = () => { };
+  public setupEvents = (element: HTMLElement | Document): void => {
+    var self = this;
 
-    
-    public setupEvents = (element: HTMLElement | Document): void => {
-        var self = this;
+    element.addEventListener(
+      "focusin",
+      function (event: KeyboardEvent) {
+        self.delegate.view.snap(event.target as HTMLElement);
+      },
+      true
+    );
 
-        element.addEventListener('focusin', function(event: KeyboardEvent) {
-            self.delegate.view.snap(event.target as HTMLElement)
-        }, true);
-
-        element.addEventListener('keydown', function (event: KeyboardEvent) {
-            const key = event.key;
-            switch (key) {
-                case "ArrowRight":
-                    self.onForwardSwipe(event);
-                    break;
-                case "ArrowLeft":
-                    self.onBackwardSwipe(event);
-                    break;
-            }
-
-        }, false)
-    }
+    element.addEventListener(
+      "keydown",
+      function (event: KeyboardEvent) {
+        const key = event.key;
+        switch (key) {
+          case "ArrowRight":
+            self.onForwardSwipe(event);
+            break;
+          case "ArrowLeft":
+            self.onBackwardSwipe(event);
+            break;
+        }
+      },
+      false
+    );
+  };
 }

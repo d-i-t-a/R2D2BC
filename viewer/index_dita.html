@@ -54,7 +54,7 @@
                             <li style="display:none"><a data-target="container-view-note-input" class="dropdown-trigger " id="menu-button-note"><i class="material-icons">speaker_notes</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
                             <li><a data-target="container-view-tts-settings" class="dropdown-trigger " id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>
-                            <li><a data-target="container-view-settings" class="dropdown-trigger " id="menu-button-settings"><i class="material-icons">settings</i></a></li>
+                            <li><a data-target="container-view-settings-custom" class="dropdown-trigger " id="menu-button-settings"><i class="material-icons">settings</i></a></li>
                             <li style="display:none"><a data-target="container-view-search" class="dropdown-trigger " id="menu-button-search"><i class="material-icons">search</i></a></li>
                         </ul>
                         <ul id="nav-mobile-left" class="left">
@@ -98,174 +98,289 @@
                     </ul>
                 </li>
             </ul>
-            <div id="container-view-tts-settings" class="dropdown-content notifications">
-                <!-- oninput="showVal(this.value)" onchange="showVal(this.value)" -->
+            <div id="container-view-tts-settings" class="dropdown-content settings">
 
-
-                <center>
-                    <button style="width:24%" onclick="javascript:D2Reader.startReadAloud()"><i class="material-icons">play_arrow</i>PLAY</button>
-                    <button style="width:24%" onclick="javascript:D2Reader.stopReadAloud()"><i class="material-icons">stop</i>STOP</button>
-                    <button style="width:24%" onclick="javascript:D2Reader.pauseReadAloud()"><i class="material-icons">pause</i>PAUSE</button>
-                    <button style="width:24%" onclick="javascript:D2Reader.resumeReadAloud()"><i class="material-icons">play_arrow</i>RESUME</button>
+                <center style="display: flex;
+    justify-content: center;">
+                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="D2Reader.startReadAloud()"><i
+                            class="material-icons">play_arrow</i>PLAY
+                    </button>
+                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="D2Reader.stopReadAloud()"><i
+                            class="material-icons">stop</i>STOP
+                    </button>
+                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="D2Reader.pauseReadAloud()"><i
+                            class="material-icons">pause</i>PAUSE
+                    </button>
+                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="D2Reader.resumeReadAloud()"><i
+                            class="material-icons">play_arrow</i>RESUME
+                    </button>
                 </center>
-                <center>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'orange' })"><i class="material-icons" style="color: rgba(250, 96, 0, 0.5);">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'red' })"><i class="material-icons" style="color: indianred;">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'gray' })"><i class="material-icons" style="color: lightslategrey;">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'purple' })"><i class="material-icons" style="color: mediumpurple;">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'green' })"><i class="material-icons" style="color: lightgreen;">lense</i></button>
+                <center style="display: flex;
+    justify-content: center;">
+                    <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'orange' })"><i
+                            class="material-icons" style="color: rgba(250, 96, 0, 0.5);font-size: 24pt;">lense</i></button>
+                    <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'red' })"><i
+                            class="material-icons"
+                            style="color: indianred;font-size: 24pt;">lense</i></button>
+                    <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'gray' })"><i
+                            class="material-icons"
+                            style="color: lightslategrey;font-size: 24pt;">lense</i></button>
+                    <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'purple' })"><i
+                            class="material-icons" style="color: mediumpurple;font-size: 24pt;">lense</i></button>
+                    <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'green' })"><i
+                            class="material-icons"
+                            style="color: lightgreen;font-size: 24pt;">lense</i></button>
                 </center>
 
                 <div>
-                    <span style="width: 30%; display: inline-block;">Auto Scroll</span>
-                    <input type="checkbox" class="filled" id="autoScroll" name="autoScroll" onchange="javascript:D2Reader.applyTTSSettings({ autoScroll: this.checked })">
+                    <center style="display: flex;
+    justify-content: center;
+    align-items: center;">
+                        <label style="margin-right: 10px;">Auto Scroll</label>
+                        <input type="checkbox" class="filled" id="autoScroll" name="autoScroll"
+                               onchange="D2Reader.applyTTSSettings({ autoScroll: this.checked })">
+                    </center>
                 </div>
+
                 <div>
-                    <label style="margin-right: 20px;">Language</label>
-                    <select style="width: 70%;" onchange="javascript:D2Reader.preferredVoice(value)" id="preferred-languages">
-                        <option value="" disabled selected>Choose language</option>
-                    </select>
+                    <label style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Language</label>
+                    <center>
+                        <select style="width: 80%;" onchange="D2Reader.applyPreferredVoice(value)"
+                                id="preferred-languages">
+                            <option value="" disabled selected>Choose language</option>
+                        </select>
+                    </center>
                 </div>
                 <div class="range-slider">
-                    <span style="width: 20%; display: inline-block;">Rate</span>
-                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="10" step="0.1" value="1" id="speechRate" name="speechRate" onchange="javascript:D2Reader.applyTTSSettings({ rate: this.value })" />
+                    <label style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Rate</label>
+                    <input class="range-slider__range_settings" type="range" min="0.1" max="10" step="0.1"
+                           value="1" id="speechRate" name="speechRate"
+                           onchange="D2Reader.applyTTSSettings({ rate: this.value })"/>
                 </div>
                 <div class="range-slider">
-                    <label style="width: 20%; display: inline-block;">Pitch</label>
-                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="2" step="0.1" value="1" id="speechPitch" name="speechPitch" onchange="javascript:D2Reader.applyTTSSettings({ pitch: this.value })" />
+                    <label style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Pitch</label>
+                    <input class="range-slider__range_settings" type="range" min="0.1" max="2" step="0.1"
+                           value="1" id="speechPitch" name="speechPitch"
+                           onchange="D2Reader.applyTTSSettings({ pitch: this.value })"/>
                 </div>
                 <div class="range-slider">
-                    <label style="width: 20%; display: inline-block;">Volume</label>
-                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="1" step="0.1" value="1" id="speechVolume" name="speechVolume" onchange="javascript:D2Reader.applyTTSSettings({ volume: this.value })" />
+                    <label style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Volume</label>
+                    <input class="range-slider__range_settings" type="range" min="0.1" max="1" step="0.1"
+                           value="1" id="speechVolume" name="speechVolume"
+                           onchange="D2Reader.applyTTSSettings({ volume: this.value })"/>
                 </div>
 
-                <!-- userProperties.addIncremental(this.rate, 0.1, 10, 0.1, "", TTSREFS.RATE_REF, TTSREFS.RATE_KEY)
-        userProperties.addIncremental(this.pitch, 0.1, 2, 0.1, "", TTSREFS.PITCH_REF, TTSREFS.PITCH_KEY)
-        userProperties.addIncremental(this.volume, 0.1, 1, 0.1, "", TTSREFS.VOLUME_REF, TTSREFS.VOLUME_KEY) -->
 
-                <!-- <ul class="settings-menu" role="menu" tabindex="0">
-        
-
-        
-                    <li id="container-view-rate">
-                        <ul class="settings-options">
-
-                            <li class="rate-setting"><button id="decrease-rate" class="decrease" role="menuitem"
-                                    tabindex="-1">Rate decrease</button></li>
-
-                            <li class="rate-setting"><button id="increase-rate" class="increase" role="menuitem"
-                                    tabindex="-1">Rate increase</button></li>
-
-                        </ul>
-                    </li>
-                    <li id="container-view-pitch">
-                        <ul class="settings-options">
-
-                            <li class="pitch-setting"><button id="decrease-pitch" class="decrease" role="menuitem"
-                                    tabindex="-1">Pitch decrease</button></li>
-
-                            <li class="pitch-setting"><button id="increase-pitch" class="increase" role="menuitem"
-                                    tabindex="-1">Pitch increase</button></li>
-
-                        </ul>
-                    </li>
-                    <li id="container-view-volume">
-                        <ul class="settings-options">
-
-                            <li class="volume-setting"><button id="decrease-volume" class="decrease" role="menuitem"
-                                    tabindex="-1">Volume decrease</button></li>
-
-                            <li class="volume-setting"><button id="increase-volume" class="increase" role="menuitem"
-                                    tabindex="-1">Volume increase</button></li>
-
-                        </ul>
-                    </li>
-                </ul> -->
             </div>
-            <div id="container-view-settings" class="dropdown-content settings-view notifications">
-                <ul class="settings-menu" role="menu">
+            <div id="container-view-settings-custom" class="dropdown-content settings-view settings">
 
-                    <li id="container-view-fontsize">
-                        <ul class="settings-options">
+                <div class="range-slider">
+                    <label style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Fontsize</label>
+                    <input class="range-slider__range_settings" type="range" min="100" max="300" step="25"
+                           value="100" id="fontSize" name="fontSize"
+                           onchange="D2Reader.applyUserSettings({ fontSize: this.value })"/>
+                </div>
 
-                            <li class="font-setting"><button id="decrease-font" class="decrease" role="menuitem" tabindex="-1">A-</button></li>
+                <div>
+                    <label style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Font</label>
+                    <center>
+                        <select style="width: 80%;" onchange="D2Reader.applyUserSettings({fontFamily:value});reload();"
+                                id="fontFamily">
+                            <option value="Original">Publisher</option>
+                            <option value="serif">Serif</option>
+                            <option value="sans-serif">Sans-serif</option>
+                            <option value="opendyslexic">Open Dyslexic</option>
+                        </select>
+                    </center>
+                </div>
+                <div>
+                    <center>
+                        <button style="width: 30%;
+    background-color: white;
+    height: 50px;
+    border-radius: 25px 0px 0px 25px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'day'})">DAY
+                        </button><button style="width: 30%;
+    background-color: wheat;
+    height: 50px;
+    /*border-radius: 25px;*/
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'sepia'})">SEPIA
+                    </button><button style="width: 30%;
+    background-color: black;
+    height: 50px;
+    border-radius: 0px 25px 25px 0px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: white;
+    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'night'})">NIGHT
+                    </button>
+                    </center>
+                </div>
+                <div id="scrollMode" style="padding-bottom: 10px">
 
-                            <li class="font-setting"><button id="increase-font" class="increase" role="menuitem" tabindex="-1">A+</button></li>
 
-                        </ul>
-                    </li>
+                    <label style="display: block;
+                               text-align: center;
+                               line-height: 12pt;">Layout</label>
+                    <center>
+                        <button style="width: 100px;
+        background-color: white;
+height: 50px;
+    border-radius: 25px 0px 0px 25px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt; text-transform: uppercase"
+                                onclick="D2Reader.applyUserSettings({verticalScroll:true});setScroll('true')">Scroll
+                        </button><button style="width: 100px;
+        background-color: white;
+height: 50px;
+    border-radius: 0px 25px 25px 0px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase"
+                                         onclick="D2Reader.applyUserSettings({verticalScroll:false});setScroll('false')">
+                        Paginated
+                    </button>
+                    </center>
+                </div>
+                <div id="textAlignment">
+                    <label style="display: block;
+    text-align: center;
+    line-height: 12pt;">Alignment</label>
+                    <center>
+                        <button style="width: 30%;
+       background-color: white;
+ height: 50px;
+    border-radius: 25px 0px 0px 25px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase"
+                                onclick="D2Reader.applyUserSettings({textAlignment:'auto'});setAlignment('auto')">Auto
+                        </button><button style="width: 30%;
+        background-color: white;
+height: 50px;
+    /*border-radius: 25px;*/
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase"
+                                         onclick="D2Reader.applyUserSettings({textAlignment:'justify'});setAlignment('justify')">
+                        justify
+                    </button><button style="width: 30%;
+        background-color: white;
+height: 50px;
+    border-radius: 0px 25px 25px 0px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase"
+                                     onclick="D2Reader.applyUserSettings({textAlignment:'start'});setAlignment('start')">
+                        start
+                    </button>
+                    </center>
+                </div>
+                <div id="columnCount">
+                    <label style="display: block;
+    text-align: center;
+    line-height: 12pt;">Page Mode</label>
+                    <center>
+                        <button style="width: 30%;
+        background-color: white;
+height: 50px;
+    border-radius: 25px 0px 0px 25px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase"
+                                onclick="D2Reader.applyUserSettings({columnCount:'auto'});setColor('auto')">Auto
+                        </button><button style="width: 30%;
+        background-color: white;
+height: 50px;
+    /*border-radius: 25px;*/
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({columnCount:'1'});setColor('1')">
+                        Single
+                    </button><button style="width: 30%;
+        background-color: white;
+height: 50px;
+    border-radius: 0px 25px 25px 0px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({columnCount:'2'});setColor('2')">
+                        Double
+                    </button>
+                    </center>
+                </div>
 
-                    <li id="container-view-appearance">
-                        <ul class="settings-options">
+                <div class="range-slider">
+                    <label  style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Word Spacing</label>
+                    <input class="range-slider__range_settings"  type="range" min="0" max="1" step="0.25"
+                           value="0" id="wordSpacing" name="wordSpacing"
+                           onchange="D2Reader.applyUserSettings({ wordSpacing: this.value});"/>
+                </div>
+                <div class="range-slider">
+                    <label  style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Letter Spacing</label>
+                    <input class="range-slider__range_settings" type="range" min="0" max="0.5"
+                           step="0.0625"
+                           value="0" id="letterSpacing" name="letterSpacing"
+                           onchange="D2Reader.applyUserSettings({ letterSpacing: this.value });"/>
+                </div>
+                <div class="range-slider">
+                    <label  style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Page Margins</label>
+                    <input class="range-slider__range_settings" type="range" min="0.5" max="4" step="0.25"
+                           value="1" id="pageMargins" name="pageMargins"
+                           onchange="D2Reader.applyUserSettings({ pageMargins: this.value});"/>
+                </div>
+                <div class="range-slider">
+                    <label  style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Line Height</label>
+                    <input class="range-slider__range_settings"  type="range" min="1" max="2" step="0.25"
+                           value="1" id="lineHeight" name="lineHeight"
+                           onchange="D2Reader.applyUserSettings({ lineHeight: this.value});"/>
+                </div>
 
-                            <li class="reading-theme"><button id="day-theme" class="day-theme" role="menuitem" tabindex="-1" aria-label="Day mode enabled">Day<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                         class="checkedIcon" role="img" aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
-                            <li class="reading-theme"><button id="sepia-theme" class="sepia-theme" role="menuitem" tabindex="-1" aria-label="Sepia mode disabled">Sepia<svg xmlns="http://www.w3.org/2000/svg"
-                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
-                                         aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
-                            <li class="reading-theme"><button id="night-theme" class="night-theme" role="menuitem" tabindex="-1" aria-label="Night mode disabled">Night<svg xmlns="http://www.w3.org/2000/svg"
-                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
-                                         aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
-                        </ul>
-                    </li>
-
-                    <li id="container-view-scroll">
-                        <ul class="settings-options">
-
-                            <li class="reading-view"><button id="view-scroll" class="view-scroll" role="menuitem" tabindex="-1" aria-label="Scroll view enabled">Scroll<svg xmlns="http://www.w3.org/2000/svg"
-                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
-                                         aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
-                            <li class="reading-view"><button id="view-paginated" class="view-paginated" role="menuitem" tabindex="-1" aria-label="Paginated view disabled">Paginated<svg xmlns="http://www.w3.org/2000/svg"
-                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
-                                         aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
-
-                        </ul>
-                    </li>
-                    <li id="container-view-fontfamily">
-                        <ul class="settings-options">
-
-                            <li class="reading-style"><button id="publisher-font" class="publisher-font" role="menuitem" tabindex="-1" aria-label="Publisher font enabled">Publisher<svg xmlns="http://www.w3.org/2000/svg"
-                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
-                                         aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
-                            <li class="reading-style"><button id="serif-font" class="serif-font" role="menuitem" tabindex="-1" aria-label="Serif font disabled">Serif<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                         class="checkedIcon" role="img"
-                                         aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
-                            <li class="reading-style"><button id="sans-font" class="sans-font" role="menuitem" tabindex="-1" aria-label="Sans-serif font disabled">Sans-serif<svg xmlns="http://www.w3.org/2000/svg"
-                                         preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
-                                         aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
-                            <li class="reading-style"><button id="opendyslexic-font" class="opendyslexic-font" role="menuitem" tabindex="-1" aria-label="Open Dyslexic font disabled">Open
-                                    Dyslexic<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img" aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
-                        </ul>
-                    </li>
-
-                </ul>
             </div>
             <div id="container-view-note-input" class="dropdown-content notifications">
                 <ul class="note-menu" role="menu">
@@ -307,8 +422,8 @@
                     <span class="book-title"></span>
                 </div>
                 <div id="reader-info-bottom" class="info bottom">
-                    <div>
-                        <span class="chapter-position"></span>
+                    <div style="display: flex;justify-content: center;">
+                        <span class="chapter-position"></span>&nbsp;
                         <span class="chapter-title"></span>
                     </div>
                     <div class="scrubber">
@@ -395,14 +510,14 @@
     </div>
 
     <script>
-        var getURLQueryParams = function () {
-            var params = {};
-            var query = window.location.search;
+        let getURLQueryParams = function () {
+            let params = {};
+            let query = window.location.search;
             if (query && query.length) {
                 query = query.substring(1);
-                var keyParams = query.split('&');
-                for (var x = 0; x < keyParams.length; x++) {
-                    var keyVal = keyParams[x].split('=');
+                let keyParams = query.split('&');
+                for (let x = 0; x < keyParams.length; x++) {
+                    let keyVal = keyParams[x].split('=');
                     if (keyVal.length > 1) {
                         params[keyVal[0]] = decodeURIComponent(keyVal[1]);
                     }
@@ -410,10 +525,9 @@
             }
             return params;
         };
-        var urlParams = getURLQueryParams();
-        var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
-
-        var injectables = [
+        let urlParams = getURLQueryParams();
+        let upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
+        let injectables = [
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
@@ -424,7 +538,7 @@
             { type: 'style', url: '/viewer/injectables/footnotes/footnotes.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
-        var userSettings = {
+        let userSettings = {
             // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
             // fontFamily: "sans-serif", //Original, serif, sans-serif
             // textAlignment: "justify", //"auto", "justify", "start"
@@ -436,7 +550,7 @@
             // pageMargins: 2.0,
             // lineHeight: 1.0
         }
-        var selectionMenuItems = [
+        let selectionMenuItems = [
             {
                 id: 'anIcon',
                 callback: function (selection) {
@@ -452,6 +566,7 @@
                 margin: 120,
                 navHeight: 70,
                 iframePaddingTop: 20,
+                bottomInfoHeight: 60
             },
             rights: {
                 enableMaterial: true,
@@ -461,7 +576,7 @@
                 enableSearch: true,
                 enableTimeline: true,
                 enableContentProtection: true,
-                autoGeneratePositions: true
+                autoGeneratePositions: true,
             },
             material: {
                 settings: {
@@ -477,6 +592,10 @@
                     // lineHeight: true
                 },
             },
+            // services: {
+            //     positions: new URL("https://alice.dita.digital/positions.json"),
+            //     weight: new URL("https://alice.dita.digital/weight.json"),
+            // },
             tts: {
                 enableSplitter: true,
                 color: "orange",
@@ -484,7 +603,7 @@
                 voice: {
                     usePublication: false//, // true = will be used no matter if an initial language is set, false = ignore publicaiton language
                     // lang: "de_DE" // initial language, default system language will be used it this language can't be found
-                    // name: "Karen" // will be only used together with the lang, if lang is not given, name will be ignored 
+                    // name: "Karen" // will be only used together with the lang, if lang is not given, name will be ignored
                 },
                 api: {
                     started: function () {
@@ -517,33 +636,81 @@
                             resolve()
                         })
                     },
-                    // updateSettings: function (userSettings) {
-                    //     return new Promise(function (resolve, reject) {
-                    //         resolve(
-                    //             userSettings
-                    //         )
-                    //     })
-                    // }
+                    updateSettings: function (settings) {
+                        console.log("updateSettings")
+                        return new Promise(function (resolve, reject) {
+                            resolve(
+                                settings
+                            )
+                        })
+                    }
                 }
             },
             search: {
                 color: "#fce300",
-                current: "#ed7138"
+                current: "#ed7138",
+                api: {
+
+                }
             },
             highlighter: {
                 selectionMenuItems: selectionMenuItems,
                 api: {
                     selectionMenuOpen: function () {
                         console.log("selectionMenuOpen")
-                    }, 
+                    },
                     selectionMenuClose: function () {
                         console.log("selectionMenuClose")
-                    }, 
+                    },
                 }
             },
             annotations: {
                 initialAnnotationColor: "var(--RS__highlightColor)",
                 // initialAnnotationColor: "#ff8500",
+                api: {
+                    addAnnotation: function (highlight) {
+                        console.log("addAnnotation")
+                        return new Promise(function (resolve, reject) {
+                            highlight.id = Math.random()
+                            resolve(
+                                highlight
+                            )
+                        })
+                    },
+                    deleteAnnotation: function (highlight) {
+                        console.log("deleteAnnotation")
+                        return new Promise(function (resolve, reject) {
+                            resolve()
+                        })
+                    },
+                    selectedAnnotation: function (highlight) {
+                        console.log("selectedAnnotation")
+                        return new Promise(function (resolve, reject) {
+                            resolve()
+                        })
+                    }
+                }
+            },
+            bookmarks: {
+                api: {
+                    addBookmark: function (bookmark) {
+                        console.log("addBookmark")
+                        return new Promise(function (resolve, reject) {
+                            bookmark.id = Math.random()
+                            resolve(
+                                bookmark
+                            )
+                        })
+                    },
+                    deleteBookmark: function (bookmark) {
+                        console.log("deleteBookmark")
+                        return new Promise(function (resolve, reject) {
+                            resolve(
+                                bookmark
+                            )
+                        })
+                    }
+                }
             },
             protection: {
                 enforceSupportedBrowsers: true,
@@ -556,7 +723,7 @@
                 disableKeys: true,
                 disableContextMenu: true,
                 hideTargetUrl: true,
-                disableDrag: true,
+                disableDrag: false,
                 supportedBrowsers: [ // this will only be used if enforceSupportedBrowsers is true, and has nothing to do with the r2d2bc modules supported browsers
                     "Chrome", "ChromeAndroid", "Edge", "Firefox", "iOS", "Safari"
                 ],
@@ -570,6 +737,7 @@
             },
             api: {
                 getContent: function (href) {
+                    console.log("getContent")
                     return new Promise(function (resolve, reject) {
                         resolve(
                             // 'test, <a xmlns="http://www.w3.org/1999/xhtml" href="chapter_04.xhtml">Chapter 4</a>'
@@ -593,6 +761,14 @@
                     return new Promise(function (resolve, reject) {
                         resolve(
                             location
+                        )
+                    })
+                },
+                updateSettings: function (settings) {
+                    console.log("updateSettings")
+                    return new Promise(function (resolve, reject) {
+                        resolve(
+                            settings
                         )
                     })
                 }

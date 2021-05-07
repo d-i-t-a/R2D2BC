@@ -19,7 +19,6 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <title>D2 Reader</title>
     <meta charset="utf-8" />
@@ -33,10 +32,9 @@
 
     <script> var exports = {}; </script>
     <script src="reader.js"></script>
-
 </head>
-
 <body>
+
     <header id="sideMenu" style="position:fixed;top:0;right:10px;z-index: 2;">
         <div id="container-toc"></div>
         <div id="container-bookmarks"></div>
@@ -44,127 +42,10 @@
     </header>
 
     <div style="position:fixed;top:0;left:0;z-index: 1000;bottom: 0; overflow: scroll;">
-
-        <button onclick="javascript:D2Reader.search('frankenstein', true).then(
-            result => { 
-                console.log(JSON.stringify(result))
-            })">search in chapter</button><br>
-
-        <button onclick="javascript:D2Reader.search('frankenstein', false).then(
-            result => { 
-                console.log(JSON.stringify(result))
-            })">search in book</button><br>
-
-        <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 2, false)">go to index 2 in
-            chapter OEBPS/Text/intro.xhtml</button><br>
-        <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 3, false)">go to index 3 in
-            chapter OEBPS/Text/intro.xhtml</button><br>
-        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 10, false)">go to uuid 10 in chapter
-            OEBPS/Text/intro.xhtml</button><br>
-        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 11, false)">go to uuid 11 in chapter
-            OEBPS/Text/intro.xhtml</button><br>
-        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 2, false)">go to uuid 2 in chapter
-            OEBPS/Text/intro.xhtml</button><br>
-        <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 3, false)">go to uuid 3 in chapter
-            OEBPS/Text/intro.xhtml</button><br>
-        <button onclick="javascript:D2Reader.clearSearch()">clear search</button><br>
-
-        <button onclick="javascript:D2Reader.applyAtributes({margin:200})">applyAtributes</button><br>
-
-        <button onclick="javascript:D2Reader.startReadAloud()">read aloud from top</button><br>
-        <button onclick="javascript:D2Reader.stopReadAloud()">stop read aloud from top</button><br>
-        <button onclick="javascript:D2Reader.pauseReadAloud()">pause read aloud from top</button><br>
-        <button onclick="javascript:D2Reader.resumeReadAloud()">resume read aloud from top</button><br>
-        <button onclick="javascript:alert(D2Reader.publicationLanguage())">publicationLanguage</button><br>
-        <button onclick="javascript:alert(D2Reader.totalResources())">totalResources</button><br>
-        <button onclick="javascript:alert(D2Reader.currentResource())">currentResource</button><br>
-        <button
-                onclick="javascript:alert(D2Reader.mostRecentNavigatedTocItem())">mostRecentNavigatedTocItem</button><br>
-        <button onclick="javascript:D2Reader.currentLocator().then(
-            result => { 
-                alert(JSON.stringify(result))
-            })">currentProgressInfo</button><br>
-        <button onclick="javascript:D2Reader.positions().then(
-            result => { 
-                alert(JSON.stringify(result))
-            })">positions</button><br>
-
-        <button onclick="javascript:D2Reader.resetUserSettings()">reset user setting</button><br>
-        <button onclick="javascript:D2Reader.publisher(true)">publisher default</button><br>
-        <button onclick="javascript:D2Reader.publisher(false)">publisher default off</button><br>
-        <button onclick="javascript:D2Reader.increase('wordSpacing')">word spacing increase</button><br>
-        <button onclick="javascript:D2Reader.decrease('wordSpacing')">word spacing decrease</button><br>
-        <button onclick="javascript:D2Reader.increase('letterSpacing')">letter spacing increase</button><br>
-        <button onclick="javascript:D2Reader.decrease('letterSpacing')">letter spacing decrease</button><br>
-        <button onclick="javascript:D2Reader.increase('lineHeight')">line height increase</button><br>
-        <button onclick="javascript:D2Reader.decrease('lineHeight')">line height decrease</button><br>
-        <button onclick="javascript:D2Reader.increase('fontSize')">font increase</button><br>
-        <button onclick="javascript:D2Reader.decrease('fontSize')">font decrease</button><br>
-
-        <button onclick="javascript:D2Reader.applyUserSettings({appearance:'day'})">day</button><br>
-        <button
-                onclick="javascript:D2Reader.applyUserSettings({appearance:'day', verticalScroll:false, fontSize:100, fontFamily:'opendyslexic', letterSpacing:0.25, textAlignment:'justify'})">apply
-            multiple settings</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({appearance:'sepia'})">sepia</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({appearance:'night'})">night</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({fontSize:100})">font size 100</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({fontSize:150})">font size 150</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({fontSize:200})">font size 200</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'Courier'})">font family Courier</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'serif'})">font family serif</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'opendyslexic'})">font family
-            opendyslexic</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({wordSpacing:0.25})">word spacing 0.25</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({letterSpacing:0.25})">letter spacing 0.25</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'1'})">column 1</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'2'})">column 2</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'auto'})">column auto</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'auto'})">align auto</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'justify'})">align justify</button><br>
-        <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'start'})">align start</button><br>
-
-
-
-        <button onclick="javascript:D2Reader.decrease('pitch')">pitch decrease</button><br>
-        <button onclick="javascript:D2Reader.increase('pitch')">pitch increase</button><br>
-        <button onclick="javascript:D2Reader.decrease('rate')">rate decrease</button><br>
-        <button onclick="javascript:D2Reader.increase('rate')">rate increase</button><br>
-        <button onclick="javascript:D2Reader.decrease('volume')">volume decrease</button><br>
-        <button onclick="javascript:D2Reader.increase('volume')">volume increase</button><br>
-        <button onclick="javascript:D2Reader.ttsSet('color', '#ff66c4')">change tts color</button><br>
-        <button
-                onclick="javascript:D2Reader.ttsSet('voice', {usePublication: true,  name : 'Karen', lang : 'en-AU' })">change
-            voice to Karen AU</button><br>
-        <button
-                onclick="javascript:D2Reader.applyTTSSettings({ pitch:1.2, rate: 1.5, volume: 0.6, color: '#eb344c', voice: {usePublication: false}})">apply
-            multiple tts settings</button><br>
-        <button onclick="javascript:D2Reader.resetTTSSettings()">reset TTS setting</button><br>
-
-
-        <button onclick="javascript:D2Reader.previousResource()">previous resource</button><br>
-        <button onclick="javascript:D2Reader.nextResource()">next resource</button><br>
-        <button onclick="javascript:D2Reader.previousPage()">previous page</button><br>
-        <button onclick="javascript:D2Reader.nextPage()">next page</button><br>
-        <button onclick="javascript:D2Reader.scroll(true)">scroll</button><br>
-        <button onclick="javascript:D2Reader.scroll(false)">paginated</button><br>
-        <button
-                onclick="javascript:D2Reader.goTo({href:'OEBPS/Text/front.xhtml', title:'frontpage', locations:{progression:0}})">go
-            to frontpage</button><br>
-        <button
-                onclick="javascript:D2Reader.goTo({href:'OEBPS/Text/chapter_01.xhtml', title:'chapter 1', locations:{progression:0}})">go
-            to chapter 1</button><br>
-        <button onclick="javascript:D2Reader.saveBookmark().then(
-            result => { 
-                console.log(result);
-                D2Reader.bookmarks().then(
-                    res => { 
-                        console.log(res.length)
-                    })
-            }); ">add bookmark</button><br>
-        <button onclick="javascript:D2Reader.deleteBookmark({id:0.32616493991327755})">delete bookmark</button><br>
-
-        <button onclick="javascript:D2Reader.tableOfContents().then(
-            result => { 
+        <!--Navigate-->
+        <ul> <div>Navigate</div>
+            <button onclick="javascript:D2Reader.tableOfContents().then(
+            result => {
                 console.log(result)
                 console.log(result.length)
                 var container = document.getElementById('container-toc');
@@ -186,10 +67,49 @@
                 });
                 container.innerHTML = tocString
             })">show
-            TOC</button><br>
+                TOC</button><br>
+            <button onclick="javascript:D2Reader.previousResource()">previous resource</button><br>
+            <button onclick="javascript:D2Reader.nextResource()">next resource</button><br>
+            <button onclick="javascript:D2Reader.previousPage()">previous page</button><br>
+            <button onclick="javascript:D2Reader.nextPage()">next page</button><br>
+            <button
+                    onclick="javascript:D2Reader.goTo({href:'OEBPS/Text/front.xhtml', title:'frontpage', locations:{progression:0}})">go
+                to frontpage</button><br>
+            <button
+                    onclick="javascript:D2Reader.goTo({href:'OEBPS/Text/chapter_01.xhtml', title:'chapter 1', locations:{progression:0}})">go
+                to chapter 1</button><br>
+        </ul>
+        <!--Info-->
+        <ul> <div>Info</div>
 
-        <button onclick="javascript:D2Reader.bookmarks().then(
-                result => { 
+
+            <button onclick="javascript:alert(D2Reader.totalResources())">totalResources</button><br>
+            <button onclick="javascript:alert(D2Reader.currentResource())">currentResource</button><br>
+            <button
+                    onclick="javascript:alert(D2Reader.mostRecentNavigatedTocItem())">mostRecentNavigatedTocItem</button><br>
+            <button onclick="javascript:D2Reader.currentLocator().then(
+            result => {
+                alert(JSON.stringify(result))
+            })">currentProgressInfo</button><br>
+            <button onclick="javascript:D2Reader.positions().then(
+            result => {
+                alert(JSON.stringify(result))
+            })">positions</button><br>
+        </ul>
+        <!--Bookmarks-->
+        <ul> <div>Bookmarks</div>
+
+        <button onclick="javascript:D2Reader.saveBookmark().then(
+            result => {
+                console.log(result);
+                D2Reader.bookmarks().then(
+                    res => {
+                        console.log(res.length)
+                    })
+            }); ">add bookmark</button><br>
+        <button onclick="javascript:D2Reader.deleteBookmark({id:0.32616493991327755})">delete bookmark</button><br>
+            <button onclick="javascript:D2Reader.bookmarks().then(
+                result => {
                     console.log(result)
                     console.log(result.length)
                     var container = document.getElementById('container-bookmarks');
@@ -211,10 +131,11 @@
                     });
                     container.innerHTML = tocString
                 })">show
-            bookmarks</button><br>
-
+                bookmarks</button><br> </ul>
+        <!--Annotations-->
+        <ul> <div>Annotations</div>
         <button onclick="javascript:D2Reader.annotations().then(
-                    result => { 
+                    result => {
                         console.log(result)
                         console.log(result.length)
                         var container = document.getElementById('container-annotations');
@@ -237,14 +158,103 @@
                         container.innerHTML = tocString
                     })">show
             annotations</button><br>
+        </ul>
+        <!--Search-->
+        <ul> <div>Search</div>
 
-        <button onclick="javascript:D2Reader.currentSettings().then(
-            result => { 
-                console.log(result)
+            <button onclick="javascript:D2Reader.search('attractions', true).then(
+            result => {
+                console.log(JSON.stringify(result))
+            })">search in chapter</button><br>
+
+            <button onclick="javascript:D2Reader.search('attractions', false).then(
+            result => {
+                console.log(JSON.stringify(result))
+            })">search in book</button><br>
+
+            <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 2, false)">go to index 2 in
+                chapter OEBPS/Text/intro.xhtml</button><br>
+            <button onclick="javascript:D2Reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 3, false)">go to index 3 in
+                chapter OEBPS/Text/intro.xhtml</button><br>
+            <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 10, false)">go to uuid 10 in chapter
+                OEBPS/Text/intro.xhtml</button><br>
+            <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 11, false)">go to uuid 11 in chapter
+                OEBPS/Text/intro.xhtml</button><br>
+            <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 2, false)">go to uuid 2 in chapter
+                OEBPS/Text/intro.xhtml</button><br>
+            <button onclick="javascript:D2Reader.goToSearchID('OEBPS/Text/intro.xhtml', 3, false)">go to uuid 3 in chapter
+                OEBPS/Text/intro.xhtml</button><br>
+            <button onclick="javascript:D2Reader.clearSearch()">clear search</button><br>
+
+        </ul>
+        <!--TTS-->
+        <ul> <div>TTS</div>
+            <button onclick="javascript:D2Reader.startReadAloud()">read aloud from top</button><br>
+            <button onclick="javascript:D2Reader.stopReadAloud()">stop read aloud from top</button><br>
+            <button onclick="javascript:D2Reader.pauseReadAloud()">pause read aloud from top</button><br>
+            <button onclick="javascript:D2Reader.resumeReadAloud()">resume read aloud from top</button><br>
+            <button onclick="javascript:D2Reader.decrease('pitch')">pitch decrease</button><br>
+            <button onclick="javascript:D2Reader.increase('pitch')">pitch increase</button><br>
+            <button onclick="javascript:D2Reader.decrease('rate')">rate decrease</button><br>
+            <button onclick="javascript:D2Reader.increase('rate')">rate increase</button><br>
+            <button onclick="javascript:D2Reader.decrease('volume')">volume decrease</button><br>
+            <button onclick="javascript:D2Reader.increase('volume')">volume increase</button><br>
+            <button onclick="javascript:D2Reader.applyTTSSetting('color', '#ff66c4')">change tts color</button><br>
+            <button onclick="javascript:alert(D2Reader.publicationLanguage())">publicationLanguage</button><br>
+            <button
+                    onclick="javascript:D2Reader.applyTTSSetting('voice', {usePublication: true,  name : 'Karen', lang : 'en-AU' })">change
+                voice to Karen AU</button><br>
+            <button
+                    onclick="javascript:D2Reader.applyTTSSettings({ pitch:1.2, rate: 1.5, volume: 0.6, color: '#eb344c', voice: {usePublication: false}})">apply
+                multiple tts settings</button><br>
+            <button onclick="javascript:D2Reader.resetTTSSettings()">reset TTS setting</button><br>
+        </ul>
+        <!--User Settings-->
+        <ul> <div>User settings</div>
+            <button onclick="javascript:D2Reader.resetUserSettings()">reset user setting</button><br>
+            <button onclick="javascript:D2Reader.currentSettings().then(
+            result => {
+                alert(JSON.stringify(result))
             })">current usersettings</button><br>
+            <button
+                    onclick="javascript:D2Reader.applyUserSettings({appearance:'day', verticalScroll:false, fontSize:100, fontFamily:'opendyslexic', letterSpacing:0.25, textAlignment:'justify'})">apply
+                multiple settings</button><br>
+            <button onclick="javascript:D2Reader.publisher(true)">publisher default</button><br>
+            <button onclick="javascript:D2Reader.publisher(false)">publisher default off</button><br>
+            <button onclick="javascript:D2Reader.increase('wordSpacing')">word spacing increase</button><br>
+            <button onclick="javascript:D2Reader.decrease('wordSpacing')">word spacing decrease</button><br>
+            <button onclick="javascript:D2Reader.increase('letterSpacing')">letter spacing increase</button><br>
+            <button onclick="javascript:D2Reader.decrease('letterSpacing')">letter spacing decrease</button><br>
+            <button onclick="javascript:D2Reader.increase('lineHeight')">line height increase</button><br>
+            <button onclick="javascript:D2Reader.decrease('lineHeight')">line height decrease</button><br>
+            <button onclick="javascript:D2Reader.increase('fontSize')">font increase</button><br>
+            <button onclick="javascript:D2Reader.decrease('fontSize')">font decrease</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({appearance:'day'})">day</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({appearance:'sepia'})">sepia</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({appearance:'night'})">night</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({fontSize:100})">font size 100</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({fontSize:150})">font size 150</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({fontSize:200})">font size 200</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'Courier'})">font family Courier</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'serif'})">font family serif</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'opendyslexic'})">font family
+                opendyslexic</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({wordSpacing:0.25})">word spacing 0.25</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({letterSpacing:0.25})">letter spacing 0.25</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'1'})">column 1</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'2'})">column 2</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({columnCount:'auto'})">column auto</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'auto'})">align auto</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'justify'})">align justify</button><br>
+            <button onclick="javascript:D2Reader.applyUserSettings({textAlignment:'start'})">align start</button><br>
+            <button onclick="javascript:D2Reader.scroll(true)">vertical scroll</button><br>
+            <button onclick="javascript:D2Reader.scroll(false)">horizontal scroll (paginated)</button><br>
 
-
-
+        </ul>
+        <!--other-->
+        <ul> <div>other</div>
+            <button onclick="javascript:D2Reader.applyAttributes({margin:200})">applyAtributes (margin 200 for example)</button><br>
+        </ul>
     </div>
 
     <div class="content" id="root">
@@ -309,7 +319,6 @@
 
         </div>
     </div>
-
     <script>
         var getURLQueryParams = function () {
             var params = {};
@@ -419,16 +428,16 @@
             },
             protection: {
                 enforceSupportedBrowsers: true,
-                enableEncryption: true, // does nothing right now 
+                enableEncryption: true, // does nothing right now
                 enableObfuscation: true,
                 disablePrint:true,
                 disableCopy:true,
-                detectInspect: true, 
+                detectInspect: true,
                 clearOnInspect: false, // make sure detectInspect is true, otherwise this won't work
                 disableKeys: true,
                 disableContextMenu: true,
                 hideTargetUrl: true,
-                disableDrag: true,
+                disableDrag: false,
                 api: {
                     // make sure detectInspect is true, otherwise this won't be called
                     // this callback will be executed in a loop while inspect is visible
@@ -438,7 +447,7 @@
                 }
             },
             api: {
-            },           
+            },
             injectables: injectables,
             userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
@@ -449,7 +458,6 @@
         });
 
     </script>
-
     <noscript>
         <style>
             noscript {
@@ -468,6 +476,6 @@
         </style>
         <p class="warning">To use this viewer, please enable JavaScript.</p>
     </noscript>
-</body>
 
+</body>
 </html>

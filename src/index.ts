@@ -527,7 +527,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         await fetch(config.services?.positions.href)
           .then((r) => r.text())
           .then(async (content) => {
-            publication.positions = JSON.parse(content);
+            publication.positions = JSON.parse(content).positions;
           });
       }
       if (config.services?.weight) {

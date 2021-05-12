@@ -2180,7 +2180,10 @@ export default class IFrameNavigator implements Navigator {
   }
   currentLocator(): Locator {
     let position;
-    if (this.publication.positions) {
+    if (
+      (this.rights?.autoGeneratePositions ?? true) ||
+      this.publication.positions
+    ) {
       let positions = this.publication.positionsByHref(
         this.publication.getRelativeHref(this.currentChapterLink.href)
       );
@@ -2904,7 +2907,10 @@ export default class IFrameNavigator implements Navigator {
       }
 
       let position: ReadingPosition;
-      if (this.publication.positions) {
+      if (
+        (this.rights?.autoGeneratePositions ?? true) ||
+        this.publication.positions
+      ) {
         const positions = this.publication.positionsByHref(
           this.publication.getRelativeHref(tocItem.href)
         );

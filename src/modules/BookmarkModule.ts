@@ -199,7 +199,10 @@ export default class BookmarkModule implements ReaderModule {
       const progression = this.delegate.view.getCurrentPosition();
       const id: string = uuid();
       let bookmark: Bookmark;
-      if (this.publication.positions) {
+      if (
+        (this.rights?.autoGeneratePositions ?? true) ||
+        this.publication.positions
+      ) {
         const positions = this.publication.positionsByHref(
           this.publication.getRelativeHref(
             this.delegate.currentChapterLink.href

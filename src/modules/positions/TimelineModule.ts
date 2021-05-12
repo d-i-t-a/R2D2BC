@@ -66,7 +66,10 @@ export default class TimelineModule implements ReaderModule {
         "#positionSlider"
       ) as HTMLInputElement;
     }
-    if (!this.publication.positions) {
+    if (
+      !(this.delegate.rights?.autoGeneratePositions ?? true) &&
+      !this.publication.positions
+    ) {
       this.positionSlider.style.display = "none";
     }
   }
@@ -76,7 +79,11 @@ export default class TimelineModule implements ReaderModule {
       await (document as any).fonts.ready;
 
       let locator = this.delegate.currentLocator();
-      if (this.delegate.rights?.enableMaterial && this.publication.positions) {
+      if (
+        this.delegate.rights?.enableMaterial &&
+        ((this.delegate.rights?.autoGeneratePositions ?? true) ||
+          this.publication.positions)
+      ) {
         this.positionSlider.value = locator.locations.position.toString();
         this.positionSlider.max = (
           locator.locations.totalRemainingPositions + locator.locations.position
@@ -124,7 +131,10 @@ export default class TimelineModule implements ReaderModule {
           event.preventDefault();
           event.stopPropagation();
           var position;
-          if (this.publication.positions) {
+          if (
+            this.publication.positions ||
+            (this.delegate.rights?.autoGeneratePositions ?? true)
+          ) {
             position = {
               ...this.publication.positions.filter(
                 (el: Locator) => el.href === link.href

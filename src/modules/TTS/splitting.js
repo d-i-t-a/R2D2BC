@@ -275,9 +275,13 @@
           createElement(F, "whitespace", " ", preserveWhitespace)
         );
       } else {
-        allElements.push(
-          createElement(F, "whitespace", " ", preserveWhitespace)
-        );
+        // Don't create whitespace element where textNode is invalid
+        var isChildTextNodeInvalid = /table|thead|tbody|tfoot|tr/i.test(el.tagName);
+        if (!isChildTextNodeInvalid) {
+          allElements.push(
+            createElement(F, "whitespace", " ", preserveWhitespace)
+          );
+        }
       }
     });
 

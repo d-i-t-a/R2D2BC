@@ -2181,7 +2181,8 @@ export default class IFrameNavigator implements Navigator {
   currentLocator(): Locator {
     let position;
     if (
-      (this.rights?.autoGeneratePositions ?? true) ||
+      ((this.rights?.autoGeneratePositions ?? true) &&
+        this.publication.positions) ||
       this.publication.positions
     ) {
       let positions = this.publication.positionsByHref(
@@ -2908,7 +2909,8 @@ export default class IFrameNavigator implements Navigator {
 
       let position: ReadingPosition;
       if (
-        (this.rights?.autoGeneratePositions ?? true) ||
+        ((this.rights?.autoGeneratePositions ?? true) &&
+          this.publication.positions) ||
         this.publication.positions
       ) {
         const positions = this.publication.positionsByHref(

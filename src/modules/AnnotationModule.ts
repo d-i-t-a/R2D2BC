@@ -237,7 +237,8 @@ export default class AnnotationModule implements ReaderModule {
       const id: string = uuid();
       let annotation: Annotation;
       if (
-        (this.rights?.autoGeneratePositions ?? true) ||
+        ((this.rights?.autoGeneratePositions ?? true) &&
+          this.publication.positions) ||
         this.publication.positions
       ) {
         const positions = this.publication.positionsByHref(

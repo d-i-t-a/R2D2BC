@@ -244,6 +244,7 @@
       // Get the text to split, trimming out the whitespace
       /** @type {string} */
       var wholeText = next.wholeText || "";
+      wholeText = wholeText.replace(/\s+/g, " ");
       var contentsTrimmed = wholeText.trim();
 
       // If there's no text left after trimming whitespace, continue the loop

@@ -200,7 +200,8 @@ export default class BookmarkModule implements ReaderModule {
       const id: string = uuid();
       let bookmark: Bookmark;
       if (
-        (this.rights?.autoGeneratePositions ?? true) ||
+        ((this.rights?.autoGeneratePositions ?? true) &&
+          this.publication.positions) ||
         this.publication.positions
       ) {
         const positions = this.publication.positionsByHref(

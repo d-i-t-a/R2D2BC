@@ -244,15 +244,12 @@
       // Get the text to split, trimming out the whitespace
       /** @type {string} */
       var wholeText = next.wholeText || "";
+      wholeText = wholeText.replace(/\s+/g, " ");
       var contentsTrimmed = wholeText.trim();
-      // var contents = wholeText;
 
       // If there's no text left after trimming whitespace, continue the loop
       if (contentsTrimmed.length) {
         // insert leading space if there was one
-        allElements.push(
-          createElement(F, "whitespace", " ", preserveWhitespace)
-        );
         if (wholeText[0] === " ") {
           allElements.push(createText(" "));
         }
@@ -271,13 +268,9 @@
         if (wholeText[wholeText.length - 1] === " ") {
           allElements.push(createText(" "));
         }
-        allElements.push(
-          createElement(F, "whitespace", " ", preserveWhitespace)
-        );
-      } else {
-        allElements.push(
-          createElement(F, "whitespace", " ", preserveWhitespace)
-        );
+      } else if (wholeText.length && !contentsTrimmed.length) {
+        // add back missing whitespace
+        allElements.push(createText(" "));
       }
     });
 

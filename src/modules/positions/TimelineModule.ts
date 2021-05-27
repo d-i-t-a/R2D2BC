@@ -81,7 +81,8 @@ export default class TimelineModule implements ReaderModule {
       let locator = this.delegate.currentLocator();
       if (
         this.delegate.rights?.enableMaterial &&
-        ((this.delegate.rights?.autoGeneratePositions ?? true) ||
+        (((this.delegate.rights?.autoGeneratePositions ?? true) &&
+          this.publication.positions) ||
           this.publication.positions)
       ) {
         this.positionSlider.value = locator.locations.position.toString();
@@ -133,7 +134,8 @@ export default class TimelineModule implements ReaderModule {
           var position;
           if (
             this.publication.positions ||
-            (this.delegate.rights?.autoGeneratePositions ?? true)
+            ((this.delegate.rights?.autoGeneratePositions ?? true) &&
+              this.publication.positions)
           ) {
             position = {
               ...this.publication.positions.filter(

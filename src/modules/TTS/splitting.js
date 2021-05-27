@@ -244,11 +244,15 @@
       // Get the text to split, trimming out the whitespace
       /** @type {string} */
       var wholeText = next.wholeText || "";
+      wholeText = wholeText.replace(/\s+/g, " ");
       var contentsTrimmed = wholeText.trim();
 
       // If there's no text left after trimming whitespace, continue the loop
       if (contentsTrimmed.length) {
-        allElements.push(createText(" "));
+        // insert leading space if there was one
+        if (wholeText[0] === " ") {
+          allElements.push(createText(" "));
+        }
         // Concatenate the split text children back into the full array
         each(contentsTrimmed.split(splitOn), function (splitText, i) {
           if (i && preserveWhitespace) {
@@ -260,8 +264,12 @@
           elements.push(splitEl);
           allElements.push(splitEl);
         });
-        allElements.push(createText(" "));
-      } else {
+        // insert trailing space if there was one
+        if (wholeText[wholeText.length - 1] === " ") {
+          allElements.push(createText(" "));
+        }
+      } else if (wholeText.length && !contentsTrimmed.length) {
+        // add back missing whitespace
         allElements.push(createText(" "));
       }
     });

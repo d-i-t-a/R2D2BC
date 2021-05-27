@@ -245,17 +245,10 @@
       /** @type {string} */
       var wholeText = next.wholeText || "";
       var contentsTrimmed = wholeText.trim();
-      // var contents = wholeText;
 
       // If there's no text left after trimming whitespace, continue the loop
       if (contentsTrimmed.length) {
-        // insert leading space if there was one
-        allElements.push(
-          createElement(F, "whitespace", " ", preserveWhitespace)
-        );
-        if (wholeText[0] === " ") {
-          allElements.push(createText(" "));
-        }
+        allElements.push(createText(" "));
         // Concatenate the split text children back into the full array
         each(contentsTrimmed.split(splitOn), function (splitText, i) {
           if (i && preserveWhitespace) {
@@ -267,21 +260,9 @@
           elements.push(splitEl);
           allElements.push(splitEl);
         });
-        // insert trailing space if there was one
-        if (wholeText[wholeText.length - 1] === " ") {
-          allElements.push(createText(" "));
-        }
-        allElements.push(
-          createElement(F, "whitespace", " ", preserveWhitespace)
-        );
+        allElements.push(createText(" "));
       } else {
-        // Don't create whitespace element where textNode is invalid
-        var isChildTextNodeInvalid = /table|thead|tbody|tfoot|tr/i.test(el.tagName);
-        if (!isChildTextNodeInvalid) {
-          allElements.push(
-            createElement(F, "whitespace", " ", preserveWhitespace)
-          );
-        }
+        allElements.push(createText(" "));
       }
     });
 

@@ -423,7 +423,7 @@ export class UserSettings implements IUserSettings {
       "body"
     ) as HTMLBodyElement;
     if (
-      (this.view.delegate.publication.metadata.rendition?.Layout ??
+      (this.view.delegate.publication.metadata.rendition?.layout ??
         "unknown") !== "fixed"
     ) {
       // Apply font size
@@ -464,7 +464,7 @@ export class UserSettings implements IUserSettings {
       );
     }
     if (
-      (this.view.delegate.publication.metadata.rendition?.Layout ??
+      (this.view.delegate.publication.metadata.rendition?.layout ??
         "unknown") !== "fixed"
     ) {
       // Apply text alignment
@@ -542,7 +542,7 @@ export class UserSettings implements IUserSettings {
       HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
     }
     if (
-      (this.view.delegate.publication.metadata.rendition?.Layout ??
+      (this.view.delegate.publication.metadata.rendition?.layout ??
         "unknown") !== "fixed"
     ) {
       // Apply font family

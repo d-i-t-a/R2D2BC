@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -82,7 +82,7 @@
     "materialize-css": "^1.0.0",
     "minimist": ">=1.2.5",
     "mocha": "^8.3.2",
-    "node-sass": "^5.0.0",
+    "node-sass": "^6.0.0",
     "npm-force-resolutions": "0.0.10",
     "prettier": "^2.2.1",
     "process": "0.11.10",

@@ -158,6 +158,7 @@ export class UserSettings implements IUserSettings {
   view: BookView;
 
   private settingsChangeCallback: () => void = () => {};
+  private settingsColumnsChangeCallback: () => void = () => {};
   private viewChangeCallback: () => void = () => {};
 
   private settingsView: HTMLDivElement;
@@ -175,6 +176,7 @@ export class UserSettings implements IUserSettings {
       config.api,
       config.layout
     );
+    await settings.initialise();
 
     if (config.initialUserSettings) {
       var initialUserSettings = config.initialUserSettings;
@@ -258,7 +260,6 @@ export class UserSettings implements IUserSettings {
     this.headerMenu = headerMenu;
     this.material = material;
     this.api = api;
-    this.initialise();
   }
 
   async stop() {
@@ -412,20 +413,19 @@ export class UserSettings implements IUserSettings {
   }
 
   async applyProperties(): Promise<any> {
+    const html = HTMLUtilities.findRequiredIframeElement(
+      this.iframe.contentDocument,
+      "html"
+    ) as any;
+    const rootElement = document.documentElement;
+    const body = HTMLUtilities.findRequiredElement(
+      rootElement,
+      "body"
+    ) as HTMLBodyElement;
     if (
       (this.view.delegate.publication.metadata.rendition?.layout ??
         "unknown") !== "fixed"
     ) {
-      const html = HTMLUtilities.findRequiredIframeElement(
-        this.iframe.contentDocument,
-        "html"
-      ) as any;
-      const rootElement = document.documentElement;
-      const body = HTMLUtilities.findRequiredElement(
-        rootElement,
-        "body"
-      ) as HTMLBodyElement;
-
       // Apply font size
       if (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY)) {
         html.style.setProperty(
@@ -455,13 +455,18 @@ export class UserSettings implements IUserSettings {
           this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).toString()
         );
       }
-      // Apply column count
-      if (await this.getProperty(ReadiumCSS.COLUMN_COUNT_KEY)) {
-        html.style.setProperty(
-          ReadiumCSS.COLUMN_COUNT_KEY,
-          this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).toString()
-        );
-      }
+    }
+    // Apply column count
+    if (await this.getProperty(ReadiumCSS.COLUMN_COUNT_KEY)) {
+      html.style.setProperty(
+        ReadiumCSS.COLUMN_COUNT_KEY,
+        this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).toString()
+      );
+    }
+    if (
+      (this.view.delegate.publication.metadata.rendition?.layout ??
+        "unknown") !== "fixed"
+    ) {
       // Apply text alignment
       if (await this.getProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY)) {
         if (
@@ -483,6 +488,7 @@ export class UserSettings implements IUserSettings {
           );
         }
       }
+
       // Apply line height
       if (await this.getProperty(ReadiumCSS.LINE_HEIGHT_KEY)) {
         html.style.setProperty(
@@ -505,38 +511,40 @@ export class UserSettings implements IUserSettings {
           this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).toString()
         );
       }
+    }
 
-      // Apply appearance
-      if (await this.getProperty(ReadiumCSS.APPEARANCE_KEY)) {
-        html.style.setProperty(
-          ReadiumCSS.APPEARANCE_KEY,
-          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString()
-        );
-        if (
-          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value === 0
-        ) {
-          HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
-          HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
-        } else if (
-          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value === 1
-        ) {
-          HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "sepia");
-          HTMLUtilities.setAttr(body, "data-viewer-theme", "sepia");
-        } else if (
-          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value === 2
-        ) {
-          HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "night");
-          HTMLUtilities.setAttr(body, "data-viewer-theme", "night");
-        }
-      } else {
-        html.style.setProperty(
-          ReadiumCSS.APPEARANCE_KEY,
-          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString()
-        );
+    // Apply appearance
+    if (await this.getProperty(ReadiumCSS.APPEARANCE_KEY)) {
+      html.style.setProperty(
+        ReadiumCSS.APPEARANCE_KEY,
+        this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString()
+      );
+      if (this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value === 0) {
         HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
         HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
+      } else if (
+        this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value === 1
+      ) {
+        HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "sepia");
+        HTMLUtilities.setAttr(body, "data-viewer-theme", "sepia");
+      } else if (
+        this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value === 2
+      ) {
+        HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "night");
+        HTMLUtilities.setAttr(body, "data-viewer-theme", "night");
       }
-
+    } else {
+      html.style.setProperty(
+        ReadiumCSS.APPEARANCE_KEY,
+        this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).toString()
+      );
+      HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
+      HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
+    }
+    if (
+      (this.view.delegate.publication.metadata.rendition?.layout ??
+        "unknown") !== "fixed"
+    ) {
       // Apply font family
       if (await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY)) {
         html.style.setProperty(
@@ -745,6 +753,9 @@ export class UserSettings implements IUserSettings {
 
   public onSettingsChange(callback: () => void) {
     this.settingsChangeCallback = callback;
+  }
+  public onColumnSettingsChange(callback: () => void) {
+    this.settingsColumnsChangeCallback = callback;
   }
 
   public onViewChange(callback: () => void) {
@@ -1234,6 +1245,7 @@ export class UserSettings implements IUserSettings {
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF)
       );
+      this.settingsColumnsChangeCallback();
     }
 
     if (userSettings.textAlignment) {

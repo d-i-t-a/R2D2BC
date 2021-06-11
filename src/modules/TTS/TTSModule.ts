@@ -519,7 +519,8 @@ export default class TTSModule implements ReaderModule {
       config.headerMenu,
       config.rights,
       config.highlighter,
-      config as TTSModuleProperties
+      config as TTSModuleProperties,
+      config.api
     );
     await tts.start();
     return tts;
@@ -531,7 +532,8 @@ export default class TTSModule implements ReaderModule {
     headerMenu: HTMLElement,
     rights: ReaderRights,
     highlighter: TextHighlighter,
-    properties: TTSModuleProperties | null = null
+    properties: TTSModuleProperties | null = null,
+    api: TTSModuleAPI | null = null
   ) {
     this.delegate = delegate;
     this.tts = tts;
@@ -539,6 +541,7 @@ export default class TTSModule implements ReaderModule {
     this.rights = rights;
     this.highlighter = highlighter;
     this.properties = properties;
+    this.api = api;
   }
 
   protected async start(): Promise<void> {

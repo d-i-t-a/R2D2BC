@@ -17,7 +17,7 @@ module.exports = [
           loader: "ts-loader",
           options: {
             instance: "reader",
-            configFile: path.join(__dirname, "src/tsconfig.json"),
+            configFile: path.join(__dirname, "tsconfig.json"),
           },
         },
       ],

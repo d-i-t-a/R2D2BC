@@ -19,6 +19,7 @@
 
 {
   "include": ["src", "examples"],
+  "exclude": ["viewer"],
   "compileOnSave": true,
   "compilerOptions": {
     "experimentalDecorators": true,

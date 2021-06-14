@@ -9,8 +9,8 @@ reader.js
 reader.js.map
 examples/streamed/readers/viewer
 viewer/injectables
-viewer/index.js
-viewer/index.js.map
+viewer/index*.js
+viewer/index*.js.map
 settings.json
 .DS_Store
 yarn.lock

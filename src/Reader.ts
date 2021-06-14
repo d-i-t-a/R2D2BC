@@ -15,6 +15,9 @@ import IFrameNavigator, {
 import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
 
+/**
+ * Gets the HTML element and throws an error if it doesn't exist
+ */
 function getElement(id: string): HTMLElement {
   const elem = document.getElementById(id);
   if (!elem) throw new Error(`Missing required element with ID: ${id}`);
@@ -309,7 +312,7 @@ export default class Reader {
   applyUserSettings = async (userSettings) => {
     return await this.settings.applyUserSettings(userSettings);
   };
-  currentSettings = async () => {
+  currentSettings = () => {
     return this.settings.currentSettings();
   };
   scroll = async (value) => {
@@ -399,7 +402,6 @@ export default class Reader {
     this.navigator.previousResource();
   };
   nextPage = async () => {
-    console.log("next", this);
     this.navigator.nextPage();
   };
   previousPage = async () => {

@@ -238,7 +238,7 @@ export async function applyUserSettings(userSettings) {
   }
   R2Settings.applyUserSettings(userSettings);
 }
-export async function currentSettings() {
+export function currentSettings() {
   if (IS_DEV) {
     console.log("currentSettings");
   }

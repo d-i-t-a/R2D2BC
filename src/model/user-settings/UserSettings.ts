@@ -1134,7 +1134,7 @@ export class UserSettings implements IUserSettings {
     this.settingsChangeCallback();
   }
 
-  currentSettings() {
+  get currentSettings() {
     return {
       appearance:
         UserSettings.appearanceValues[

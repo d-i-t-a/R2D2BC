@@ -39,8 +39,8 @@ export interface UserSettingsConfig {
   store: Store;
   initialUserSettings: InitialUserSettings;
   headerMenu: HTMLElement;
-  material: ReaderUI;
-  api: NavigatorAPI;
+  material?: ReaderUI;
+  api?: NavigatorAPI;
   layout: string;
 }
 export interface UserSettingsUIConfig {

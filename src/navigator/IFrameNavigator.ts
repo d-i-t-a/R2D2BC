@@ -104,7 +104,7 @@ export interface IFrameNavigatorConfig {
   initialLastReadingPosition?: ReadingPosition;
   rights?: ReaderRights;
   material?: ReaderUI;
-  api: NavigatorAPI;
+  api?: NavigatorAPI;
   tts: TTSModuleConfig;
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;

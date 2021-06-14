@@ -18,6 +18,7 @@
  */
 
 {
+  "include": ["src", "examples"],
   "compileOnSave": true,
   "compilerOptions": {
     "experimentalDecorators": true,
@@ -39,6 +40,6 @@
     "strictNullChecks": false,
     "target": "es6",
     "skipLibCheck": true,
-    "jsx": "react"
+    "jsx": "react",
   },
 }

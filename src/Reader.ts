@@ -209,93 +209,93 @@ export default class Reader {
   /**
    * Read Aloud
    */
-  startReadAloud() {
+  startReadAloud = () => {
     return this.navigator.startReadAloud();
-  }
-  stopReadAloud() {
+  };
+  stopReadAloud = () => {
     return this.navigator.stopReadAloud();
-  }
-  pauseReadAloud() {
+  };
+  pauseReadAloud = () => {
     return this.navigator.pauseReadAloud();
-  }
-  resumeReadAloud() {
+  };
+  resumeReadAloud = () => {
     return this.navigator.resumeReadAloud();
-  }
+  };
 
   /**
    * Bookmarks and annotations
    */
-  async saveBookmark() {
+  saveBookmark = async () => {
     if (this.navigator.rights?.enableBookmarks) {
       return await this.bookmarkModule.saveBookmark();
     }
-  }
-  async deleteBookmark(bookmark) {
+  };
+  deleteBookmark = async (bookmark) => {
     if (this.navigator.rights?.enableBookmarks) {
       return await this.bookmarkModule.deleteBookmark(bookmark);
     }
-  }
-  async deleteAnnotation(highlight) {
+  };
+  deleteAnnotation = async (highlight) => {
     return await this.annotationModule?.deleteAnnotation(highlight);
-  }
-  async addAnnotation(highlight) {
+  };
+  addAnnotation = async (highlight) => {
     return await this.annotationModule?.addAnnotation(highlight);
-  }
-  async tableOfContents() {
+  };
+  tableOfContents = async () => {
     return await this.navigator.tableOfContents();
-  }
-  async readingOrder() {
+  };
+  readingOrder = async () => {
     return await this.navigator.readingOrder();
-  }
-  async bookmarks() {
+  };
+  bookmarks = async () => {
     if (this.navigator.rights?.enableBookmarks) {
       return await this.bookmarkModule.getBookmarks();
     } else {
       return [];
     }
-  }
-  async annotations() {
+  };
+  annotations = async () => {
     return (await this.annotationModule?.getAnnotations()) ?? [];
-  }
+  };
 
   /**
    * Search
    */
-  async search(term, current) {
+  search = async (term, current) => {
     if (this.navigator.rights?.enableSearch) {
       return await this.searchModule?.search(term, current);
     } else {
       return [];
     }
-  }
-  async goToSearchIndex(href, index, current) {
+  };
+  goToSearchIndex = async (href, index, current) => {
     if (this.navigator.rights?.enableSearch) {
       await this.searchModule?.goToSearchIndex(href, index, current);
     }
-  }
-  async goToSearchID(href, index, current) {
+  };
+  goToSearchID = async (href, index, current) => {
     if (this.navigator.rights?.enableSearch) {
       await this.searchModule?.goToSearchID(href, index, current);
     }
-  }
-  async clearSearch() {
+  };
+  clearSearch = async () => {
     if (this.navigator.rights?.enableSearch) {
       await this.searchModule?.clearSearch();
     }
-  }
+  };
 
   /**
    * Resources
    */
-  currentResource() {
+  currentResource = () => {
     return this.navigator.currentResource();
-  }
-  mostRecentNavigatedTocItem() {
+  };
+  mostRecentNavigatedTocItem = () => {
     return this.navigator.mostRecentNavigatedTocItem();
-  }
-  totalResources() {
+  };
+  totalResources = () => {
     return this.navigator.totalResources();
-  }
+  };
 
   /**
    * Settings
@@ -303,23 +303,23 @@ export default class Reader {
   get publicationLanguage() {
     return this.navigator.publication.metadata.language;
   }
-  async resetUserSettings() {
+  resetUserSettings = async () => {
     return await this.settings.resetUserSettings();
-  }
-  async applyUserSettings(userSettings) {
+  };
+  applyUserSettings = async (userSettings) => {
     return await this.settings.applyUserSettings(userSettings);
-  }
-  async currentSettings() {
+  };
+  currentSettings = async () => {
     return this.settings.currentSettings();
-  }
-  async scroll(value) {
+  };
+  scroll = async (value) => {
     return await this.settings.scroll(value);
-  }
+  };
 
   /**
    * pitch?
    */
-  increase(incremental) {
+  increase = (incremental) => {
     if (
       (incremental === "pitch" ||
         incremental === "rate" ||
@@ -330,8 +330,8 @@ export default class Reader {
     } else {
       this.settings.increase(incremental);
     }
-  }
-  decrease(incremental) {
+  };
+  decrease = (incremental) => {
     if (
       (incremental === "pitch" ||
         incremental === "rate" ||
@@ -342,39 +342,39 @@ export default class Reader {
     } else {
       this.settings.decrease(incremental);
     }
-  }
+  };
 
   /**
    * Publisher?
    */
-  publisher(on) {
+  publisher = (on) => {
     this.settings.publisher(on);
-  }
+  };
 
   /**
    * TTS Settings
    */
-  resetTTSSettings() {
+  resetTTSSettings = () => {
     if (this.navigator.rights?.enableTTS) {
       this.ttsSettings.resetTTSSettings();
     }
-  }
-  applyTTSSettings(ttsSettings) {
+  };
+  applyTTSSettings = (ttsSettings) => {
     if (this.navigator.rights?.enableTTS) {
       this.ttsSettings.applyTTSSettings(ttsSettings);
     }
-  }
+  };
 
-  applyTTSSetting(key, value) {
+  applyTTSSetting = (key, value) => {
     if (this.navigator.rights?.enableTTS) {
       this.ttsSettings.applyTTSSetting(key, value);
     }
-  }
-  applyPreferredVoice(value) {
+  };
+  applyPreferredVoice = (value) => {
     if (this.navigator.rights?.enableTTS) {
       this.ttsSettings.applyPreferredVoice(value);
     }
-  }
+  };
 
   /**
    * Navigation
@@ -386,45 +386,46 @@ export default class Reader {
   get positions() {
     return this.navigator.positions();
   }
-  async goTo(locator) {
+  goTo = async (locator) => {
     this.navigator.goTo(locator);
-  }
-  async goToPosition(value) {
+  };
+  goToPosition = async (value) => {
     return this.navigator.goToPosition(value);
-  }
-  async nextResource() {
+  };
+  nextResource = async () => {
     this.navigator.nextResource();
-  }
-  async previousResource() {
+  };
+  previousResource = async () => {
     this.navigator.previousResource();
-  }
-  async nextPage() {
+  };
+  nextPage = async () => {
+    console.log("next", this);
     this.navigator.nextPage();
-  }
-  async previousPage() {
+  };
+  previousPage = async () => {
     this.navigator.previousPage();
-  }
-  async atStart() {
+  };
+  atStart = async () => {
     return this.navigator.atStart();
-  }
-  async atEnd() {
+  };
+  atEnd = async () => {
     return this.navigator.atEnd();
-  }
-  async snapToElement(value) {
+  };
+  snapToElement = async (value) => {
     this.navigator.snapToElement(value);
-  }
+  };
 
   /**
    * ??
    */
-  applyAttributes(value) {
+  applyAttributes = (value) => {
     this.navigator.applyAttributes(value);
-  }
+  };
 
   /**
    * Destructor
    */
-  stop() {
+  stop = () => {
     document.body.onscroll = () => {};
     this.navigator.stop();
     this.settings.stop();
@@ -435,5 +436,5 @@ export default class Reader {
     this.searchModule?.stop();
     this.contentProtectionModule?.stop();
     this.timelineModule?.stop();
-  }
+  };
 }

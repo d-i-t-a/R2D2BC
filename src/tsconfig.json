@@ -36,7 +36,7 @@
     "sourceMap": true,
     "declaration": true,
     "preserveConstEnums": true,
-    "strictNullChecks": true,
+    "strictNullChecks": false,
     "target": "es6"
   },
 }

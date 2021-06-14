@@ -22,7 +22,7 @@
     "clean": "rimraf node_modules lib dist examples/streamed/readers/viewer",
     "start": "http-server viewer",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
-    "reader-class-example": "parcel examples/reader-class/index.html"
+    "example:reader-class": "parcel examples/reader-class/index.html"
   },
   "dependencies": {
     "browser-detect-devtools": "^1.0.4",

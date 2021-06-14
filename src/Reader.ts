@@ -46,6 +46,7 @@ export default class Reader {
    * @TODO :
    *  - browser support section
    *  - Code that updates/changes the config before we start using it
+   *  - Update the config typing so that it properly reflects what is required
    */
   static async build(config: ReaderConfig): Promise<Reader> {
     const mainElement = getElement("D2Reader-Container");

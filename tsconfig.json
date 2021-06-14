@@ -21,7 +21,7 @@
   "compileOnSave": true,
   "compilerOptions": {
     "experimentalDecorators": true,
-    "rootDir": ".",
+    "rootDir": "./src",
     "forceConsistentCasingInFileNames": true,
     "module": "es6",
     "noEmitOnError": true,
@@ -32,11 +32,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "moduleResolution": "node",
-    "outDir": "../dist/",
+    "outDir": "dist/",
     "sourceMap": true,
     "declaration": true,
     "preserveConstEnums": true,
     "strictNullChecks": false,
-    "target": "es6"
+    "target": "es6",
+    "skipLibCheck": true,
+    "jsx": "react"
   },
 }

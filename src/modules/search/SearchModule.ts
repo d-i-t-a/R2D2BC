@@ -33,12 +33,12 @@ import TextHighlighter from "../highlight/TextHighlighter";
 export interface SearchModuleAPI {}
 
 export interface SearchModuleProperties {
-  color: string;
-  current: string;
+  color?: string;
+  current?: string;
 }
 
 export interface SearchModuleConfig extends SearchModuleProperties {
-  api: SearchModuleAPI;
+  api?: SearchModuleAPI;
   publication: Publication;
   headerMenu: HTMLElement;
   delegate: IFrameNavigator;

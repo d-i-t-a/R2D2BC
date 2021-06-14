@@ -105,10 +105,10 @@ export interface IFrameNavigatorConfig {
   rights?: ReaderRights;
   material?: ReaderUI;
   api?: NavigatorAPI;
-  tts: TTSModuleConfig;
+  tts?: TTSModuleConfig;
   injectables: Array<Injectable>;
-  attributes: IFrameAttributes;
-  services: PublicationServices;
+  attributes?: IFrameAttributes;
+  services?: PublicationServices;
 }
 export interface PublicationServices {
   positions?: URL;
@@ -253,7 +253,9 @@ export default class IFrameNavigator implements Navigator {
   attributes: IFrameAttributes;
   services: PublicationServices;
 
-  public static async create(config: IFrameNavigatorConfig): Promise<any> {
+  public static async create(
+    config: IFrameNavigatorConfig
+  ): Promise<IFrameNavigator> {
     const navigator = new this(
       config.settings,
       config.annotator || null,

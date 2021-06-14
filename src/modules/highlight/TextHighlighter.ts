@@ -113,12 +113,12 @@ let bodyEventListenersSet = false;
 let _highlightsContainer: HTMLElement | null;
 
 export interface TextHighlighterProperties {
-  selectionMenuItems: Array<SelectionMenuItem>;
+  selectionMenuItems?: Array<SelectionMenuItem>;
 }
 
 export interface TextHighlighterConfig extends TextHighlighterProperties {
-  delegate: IFrameNavigator;
-  api: TextSelectorAPI;
+  delegate?: IFrameNavigator;
+  api?: TextSelectorAPI;
 }
 
 export default class TextHighlighter {

@@ -49,9 +49,9 @@ export class TTSREFS {
 
 export interface TTSSettingsConfig {
   store: Store;
-  initialTTSSettings: TTSModuleProperties;
+  initialTTSSettings?: TTSModuleProperties;
   headerMenu: HTMLElement;
-  api: TTSModuleAPI;
+  api?: TTSModuleAPI;
 }
 
 export interface TTSVoice {

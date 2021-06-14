@@ -51,10 +51,10 @@ export interface TTSModuleProperties {
 export interface TTSModuleConfig extends TTSModuleProperties {
   delegate: IFrameNavigator;
   headerMenu: HTMLElement;
-  rights: ReaderRights;
+  rights?: ReaderRights;
   tts: TTSSettings;
   highlighter: TextHighlighter;
-  api: TTSModuleAPI;
+  api?: TTSModuleAPI;
 }
 
 export default class TTSModule implements ReaderModule {

@@ -242,7 +242,7 @@ export function currentSettings() {
   if (IS_DEV) {
     console.log("currentSettings");
   }
-  return R2Settings.currentSettings();
+  return R2Settings.currentSettings;
 }
 export async function increase(incremental) {
   if (

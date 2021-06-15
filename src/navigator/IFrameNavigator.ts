@@ -470,12 +470,12 @@ export default class IFrameNavigator implements Navigator {
 
             secondSpread.appendChild(this.iframes[1]);
             this.firstSpread.style.clipPath =
-            "polygon(0% -20%, 100% -20%, 100% 120%, -20% 120%)";
+              "polygon(0% -20%, 100% -20%, 100% 120%, -20% 120%)";
             this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
             secondSpread.style.clipPath =
-            "polygon(0% -20%, 100% -20%, 120% 100%, 0% 120%)";
+              "polygon(0% -20%, 100% -20%, 120% 100%, 0% 120%)";
             secondSpread.style.boxShadow = "0 0 8px 2px #ccc";
-        } else {
+          } else {
             this.firstSpread.style.clipPath =
               "polygon(0% -20%, 100% -20%, 120% 100%, -20% 120%)";
             this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
@@ -1178,9 +1178,9 @@ export default class IFrameNavigator implements Navigator {
         } else {
           if (this.rights?.enableSearch) {
             for (const iframe of this.iframes) {
-            await this.highlighter.destroyAllhighlights(
+              await this.highlighter.destroyAllhighlights(
                 iframe.contentDocument
-            );
+              );
             }
             this.searchModule.drawSearch();
           }
@@ -1453,9 +1453,9 @@ export default class IFrameNavigator implements Navigator {
             this.publication.getAbsoluteHref(this.previousChapterLink.href);
           this.previousChapterAnchorElement.className =
             this.previousChapterAnchorElement.className.replace(
-            " disabled",
-            ""
-          );
+              " disabled",
+              ""
+            );
         } else {
           this.previousChapterAnchorElement.removeAttribute("href");
           this.previousChapterAnchorElement.className += " disabled";
@@ -1534,51 +1534,51 @@ export default class IFrameNavigator implements Navigator {
 
       for (const iframe of this.iframes) {
         const head = iframe.contentDocument.head;
-      if (head) {
-        head.insertBefore(
-          IFrameNavigator.createBase(this.currentChapterLink.href),
-          head.firstChild
-        );
+        if (head) {
+          head.insertBefore(
+            IFrameNavigator.createBase(this.currentChapterLink.href),
+            head.firstChild
+          );
 
-        this.injectables.forEach((injectable) => {
-          if (injectable.type === "style") {
-            if (injectable.fontFamily) {
-              // UserSettings.fontFamilyValues.push(injectable.fontFamily)
-              // this.settings.setupEvents()
-              this.settings.addFont(injectable.fontFamily);
-              if (!injectable.systemFont) {
+          this.injectables.forEach((injectable) => {
+            if (injectable.type === "style") {
+              if (injectable.fontFamily) {
+                // UserSettings.fontFamilyValues.push(injectable.fontFamily)
+                // this.settings.setupEvents()
+                this.settings.addFont(injectable.fontFamily);
+                if (!injectable.systemFont) {
                   head.appendChild(
                     IFrameNavigator.createCssLink(injectable.url)
                   );
+                }
+              } else if (injectable.r2before) {
+                head.insertBefore(
+                  IFrameNavigator.createCssLink(injectable.url),
+                  head.firstChild
+                );
+              } else if (injectable.r2default) {
+                head.insertBefore(
+                  IFrameNavigator.createCssLink(injectable.url),
+                  head.childNodes[1]
+                );
+              } else if (injectable.r2after) {
+                if (injectable.appearance) {
+                  this.settings.addAppearance(injectable.appearance);
+                }
+                head.appendChild(IFrameNavigator.createCssLink(injectable.url));
+              } else {
+                head.appendChild(IFrameNavigator.createCssLink(injectable.url));
               }
-            } else if (injectable.r2before) {
-              head.insertBefore(
-                IFrameNavigator.createCssLink(injectable.url),
-                head.firstChild
+            } else if (injectable.type === "script") {
+              head.appendChild(
+                IFrameNavigator.createJavascriptLink(
+                  injectable.url,
+                  injectable.async
+                )
               );
-            } else if (injectable.r2default) {
-              head.insertBefore(
-                IFrameNavigator.createCssLink(injectable.url),
-                head.childNodes[1]
-              );
-            } else if (injectable.r2after) {
-              if (injectable.appearance) {
-                this.settings.addAppearance(injectable.appearance);
-              }
-              head.appendChild(IFrameNavigator.createCssLink(injectable.url));
-            } else {
-              head.appendChild(IFrameNavigator.createCssLink(injectable.url));
             }
-          } else if (injectable.type === "script") {
-            head.appendChild(
-              IFrameNavigator.createJavascriptLink(
-                injectable.url,
-                injectable.async
-              )
-            );
-          }
-        });
-      }
+          });
+        }
       }
 
       if (this.highlighter !== undefined) {
@@ -1625,23 +1625,23 @@ export default class IFrameNavigator implements Navigator {
           setTimeout(() => {
             for (const iframe of this.iframes) {
               const body = iframe.contentDocument.body;
-            if (this.ttsModule !== undefined) {
-              this.ttsModule.initialize(body);
-            }
+              if (this.ttsModule !== undefined) {
+                this.ttsModule.initialize(body);
+              }
             }
           }, 200);
         }
         for (const iframe of this.iframes) {
           const body = iframe.contentDocument.body;
-        var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
-        for (var i = 0; i < pagebreaks.length; i++) {
-          var img = pagebreaks[i];
-          if (IS_DEV) console.log(img);
-          if (img.innerHTML.length === 0) {
-            img.innerHTML = img.getAttribute("title");
+          var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
+          for (var i = 0; i < pagebreaks.length; i++) {
+            var img = pagebreaks[i];
+            if (IS_DEV) console.log(img);
+            if (img.innerHTML.length === 0) {
+              img.innerHTML = img.getAttribute("title");
+            }
+            img.className = "epubPageBreak";
           }
-          img.className = "epubPageBreak";
-        }
         }
       }, 100);
 
@@ -1718,7 +1718,7 @@ export default class IFrameNavigator implements Navigator {
         (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
       ) {
         if (this.settings.columnCount !== 1) {
-        if (even) {
+          if (even) {
             this.currentSpreadLinks.left = {
               href: this.currentChapterLink.href,
             };
@@ -1726,107 +1726,14 @@ export default class IFrameNavigator implements Navigator {
             this.api
               ?.getContent(this.currentChapterLink.href)
               .then((content) => {
-            if (content === undefined) {
-              if (isSameOrigin) {
+                if (content === undefined) {
+                  if (isSameOrigin) {
                     this.iframes[0].src = this.currentChapterLink.href;
-              } else {
-                fetch(this.currentChapterLink.href)
-                  .then((r) => r.text())
-                  .then(async (content) => {
-                    writeIframeDoc.call(
-                      this,
-                      content,
-                      this.currentChapterLink.href
-                    );
-                  });
-              }
-            } else {
-                  writeIframeDoc.call(
-                    this,
-                    content,
-                    this.currentChapterLink.href
-                  );
-            }
-          });
-            if (this.iframes.length == 2) {
-            if (index < this.publication.readingOrder.length - 1) {
-              const next = this.publication.getNextSpineItem(
-                this.currentChapterLink.href
-              );
-                var href = this.publication.getAbsoluteHref(next.Href);
-                this.currentSpreadLinks.right = {
-                  href: href,
-                };
-
-              this.api?.getContent(href).then((content) => {
-                if (content === undefined) {
-                  if (isSameOrigin) {
-                      this.iframes[1].src = href;
-                  } else {
-                    fetch(href)
-                      .then((r) => r.text())
-                      .then(async (content) => {
-                        writeIframe2Doc.call(this, content, href);
-                          this.currentSpreadLinks.right = {
-                            href: href,
-                          };
-                      });
-                  }
-                } else {
-                  writeIframe2Doc.call(this, content, href);
-                }
-              });
-            } else {
-                this.iframes[1].src = "about:blank";
-            }
-          }
-        } else {
-          if (index > 0) {
-            const prev = this.publication.getPreviousSpineItem(
-              this.currentChapterLink.href
-            );
-              var href = this.publication.getAbsoluteHref(prev.Href);
-              this.currentSpreadLinks.left = {
-                href: href,
-              };
-            this.api?.getContent(href).then((content) => {
-              if (content === undefined) {
-                if (isSameOrigin) {
-                    this.iframes[0].src = href;
-                } else {
-                  fetch(href)
-                    .then((r) => r.text())
-                    .then(async (content) => {
-                      writeIframeDoc.call(this, content, href);
-                    });
-                }
-              } else {
-                writeIframeDoc.call(this, content, href);
-              }
-            });
-          } else {
-              this.iframes[0].src = "about:blank";
-          }
-          if (
-              this.iframes.length == 2 &&
-              (this.publication.Metadata.Rendition?.Layout ?? "unknown") ===
-              "fixed"
-          ) {
-              this.currentSpreadLinks.right = {
-                href: this.currentChapterLink.href,
-              };
-
-            this.api
-              .getContent(this.currentChapterLink.href)
-              .then((content) => {
-                if (content === undefined) {
-                  if (isSameOrigin) {
-                      this.iframes[1].src = this.currentChapterLink.href;
                   } else {
                     fetch(this.currentChapterLink.href)
                       .then((r) => r.text())
                       .then(async (content) => {
-                        writeIframe2Doc.call(
+                        writeIframeDoc.call(
                           this,
                           content,
                           this.currentChapterLink.href
@@ -1834,15 +1741,108 @@ export default class IFrameNavigator implements Navigator {
                       });
                   }
                 } else {
-                  writeIframe2Doc.call(
+                  writeIframeDoc.call(
                     this,
                     content,
                     this.currentChapterLink.href
                   );
                 }
               });
+            if (this.iframes.length == 2) {
+              if (index < this.publication.readingOrder.length - 1) {
+                const next = this.publication.getNextSpineItem(
+                  this.currentChapterLink.href
+                );
+                var href = this.publication.getAbsoluteHref(next.Href);
+                this.currentSpreadLinks.right = {
+                  href: href,
+                };
+
+                this.api?.getContent(href).then((content) => {
+                  if (content === undefined) {
+                    if (isSameOrigin) {
+                      this.iframes[1].src = href;
+                    } else {
+                      fetch(href)
+                        .then((r) => r.text())
+                        .then(async (content) => {
+                          writeIframe2Doc.call(this, content, href);
+                          this.currentSpreadLinks.right = {
+                            href: href,
+                          };
+                        });
+                    }
+                  } else {
+                    writeIframe2Doc.call(this, content, href);
+                  }
+                });
+              } else {
+                this.iframes[1].src = "about:blank";
+              }
+            }
+          } else {
+            if (index > 0) {
+              const prev = this.publication.getPreviousSpineItem(
+                this.currentChapterLink.href
+              );
+              var href = this.publication.getAbsoluteHref(prev.Href);
+              this.currentSpreadLinks.left = {
+                href: href,
+              };
+              this.api?.getContent(href).then((content) => {
+                if (content === undefined) {
+                  if (isSameOrigin) {
+                    this.iframes[0].src = href;
+                  } else {
+                    fetch(href)
+                      .then((r) => r.text())
+                      .then(async (content) => {
+                        writeIframeDoc.call(this, content, href);
+                      });
+                  }
+                } else {
+                  writeIframeDoc.call(this, content, href);
+                }
+              });
+            } else {
+              this.iframes[0].src = "about:blank";
+            }
+            if (
+              this.iframes.length == 2 &&
+              (this.publication.Metadata.Rendition?.Layout ?? "unknown") ===
+                "fixed"
+            ) {
+              this.currentSpreadLinks.right = {
+                href: this.currentChapterLink.href,
+              };
+
+              this.api
+                .getContent(this.currentChapterLink.href)
+                .then((content) => {
+                  if (content === undefined) {
+                    if (isSameOrigin) {
+                      this.iframes[1].src = this.currentChapterLink.href;
+                    } else {
+                      fetch(this.currentChapterLink.href)
+                        .then((r) => r.text())
+                        .then(async (content) => {
+                          writeIframe2Doc.call(
+                            this,
+                            content,
+                            this.currentChapterLink.href
+                          );
+                        });
+                    }
+                  } else {
+                    writeIframe2Doc.call(
+                      this,
+                      content,
+                      this.currentChapterLink.href
+                    );
+                  }
+                });
+            }
           }
-        }
         } else {
           this.currentSpreadLinks.left = {
             href: this.currentChapterLink.href,
@@ -1897,81 +1897,103 @@ export default class IFrameNavigator implements Navigator {
         (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
       ) {
         if (this.settings.columnCount !== 1) {
-        if (even) {
-          if (isSameOrigin) {
+          if (even) {
+            if (isSameOrigin) {
               this.iframes[0].src = this.currentChapterLink.href;
               this.currentSpreadLinks.left = {
                 href: this.currentChapterLink.href,
               };
 
               if (this.iframes.length == 2) {
-              if (index < this.publication.readingOrder.length - 1) {
-                const next = this.publication.getNextSpineItem(
-                  this.currentChapterLink.href
-                );
+                if (index < this.publication.readingOrder.length - 1) {
+                  const next = this.publication.getNextSpineItem(
+                    this.currentChapterLink.href
+                  );
                   var href = this.publication.getAbsoluteHref(next.Href);
                   this.iframes[1].src = href;
                   this.currentSpreadLinks.right = {
                     href: href,
                   };
-              } else {
+                } else {
                   this.iframes[1].src = "about:blank";
+                }
               }
-            }
-          } else {
-            fetch(this.currentChapterLink.href)
-              .then((r) => r.text())
-              .then(async (content) => {
-                writeIframeDoc.call(
-                  this,
-                  content,
-                  this.currentChapterLink.href
-                );
-              });
+            } else {
+              fetch(this.currentChapterLink.href)
+                .then((r) => r.text())
+                .then(async (content) => {
+                  writeIframeDoc.call(
+                    this,
+                    content,
+                    this.currentChapterLink.href
+                  );
+                });
               if (this.iframes.length == 2) {
-              if (index < this.publication.readingOrder.length - 1) {
-                const next = this.publication.getNextSpineItem(
-                  this.currentChapterLink.href
-                );
+                if (index < this.publication.readingOrder.length - 1) {
+                  const next = this.publication.getNextSpineItem(
+                    this.currentChapterLink.href
+                  );
                   var href = this.publication.getAbsoluteHref(next.Href);
                   this.currentSpreadLinks.right = {
                     href: href,
                   };
 
-                fetch(href)
-                  .then((r) => r.text())
-                  .then(async (content) => {
-                    writeIframe2Doc.call(this, content, href);
-                  });
-              } else {
+                  fetch(href)
+                    .then((r) => r.text())
+                    .then(async (content) => {
+                      writeIframe2Doc.call(this, content, href);
+                    });
+                } else {
                   this.iframes[1].src = "about:blank";
+                }
               }
             }
-          }
-        } else {
-          if (index > 0) {
-            const prev = this.publication.getPreviousSpineItem(
-              this.currentChapterLink.href
-            );
+          } else {
+            if (index > 0) {
+              const prev = this.publication.getPreviousSpineItem(
+                this.currentChapterLink.href
+              );
               var href = this.publication.getAbsoluteHref(prev.Href);
               this.currentSpreadLinks.left = {
                 href: href,
               };
-            if (isSameOrigin) {
+              if (isSameOrigin) {
                 this.iframes[0].src = href;
                 if (this.iframes.length == 2) {
                   this.iframes[1].src = this.currentChapterLink.href;
-              }
-            } else {
-              fetch(href)
-                .then((r) => r.text())
-                .then(async (content) => {
-                  writeIframeDoc.call(this, content, href);
-                });
+                }
+              } else {
+                fetch(href)
+                  .then((r) => r.text())
+                  .then(async (content) => {
+                    writeIframeDoc.call(this, content, href);
+                  });
                 if (this.iframes.length == 2) {
                   this.currentSpreadLinks.right = {
                     href: this.currentChapterLink.href,
                   };
+                  fetch(this.currentChapterLink.href)
+                    .then((r) => r.text())
+                    .then(async (content) => {
+                      writeIframe2Doc.call(
+                        this,
+                        content,
+                        this.currentChapterLink.href
+                      );
+                    });
+                }
+              }
+            } else {
+              this.iframes[0].src = "about:blank";
+            }
+            if (this.iframes.length == 2) {
+              this.currentSpreadLinks.right = {
+                href: this.currentChapterLink.href,
+              };
+
+              if (isSameOrigin) {
+                this.iframes[1].src = this.currentChapterLink.href;
+              } else {
                 fetch(this.currentChapterLink.href)
                   .then((r) => r.text())
                   .then(async (content) => {
@@ -1983,34 +2005,12 @@ export default class IFrameNavigator implements Navigator {
                   });
               }
             }
-          } else {
-              this.iframes[0].src = "about:blank";
           }
-            if (this.iframes.length == 2) {
-              this.currentSpreadLinks.right = {
-                href: this.currentChapterLink.href,
-              };
-
-            if (isSameOrigin) {
-                this.iframes[1].src = this.currentChapterLink.href;
-            } else {
-              fetch(this.currentChapterLink.href)
-                .then((r) => r.text())
-                .then(async (content) => {
-                  writeIframe2Doc.call(
-                    this,
-                    content,
-                    this.currentChapterLink.href
-                  );
-                });
-            }
-          }
-        }
-      } else {
+        } else {
           this.currentSpreadLinks.left = {
             href: href,
           };
-        if (isSameOrigin) {
+          if (isSameOrigin) {
             this.iframes[0].src = this.currentChapterLink.href;
           } else {
             fetch(this.currentChapterLink.href)
@@ -2370,7 +2370,7 @@ export default class IFrameNavigator implements Navigator {
   currentLocator(): Locator {
     let position;
     if (
-      ((this.rights?.autoGeneratePositions ?? true) &&
+      ((this.rights?.autoGeneratePositions ?? false) &&
         this.publication.positions) ||
       this.publication.positions
     ) {
@@ -2899,9 +2899,9 @@ export default class IFrameNavigator implements Navigator {
         if (this.newElementId) {
           for (const iframe of this.iframes) {
             const element = (iframe.contentDocument as any).getElementById(
-            this.newElementId
-          );
-          this.view.goToElement(element);
+              this.newElementId
+            );
+            this.view.goToElement(element);
           }
           this.newElementId = null;
         } else {
@@ -2932,9 +2932,9 @@ export default class IFrameNavigator implements Navigator {
               this.publication.getAbsoluteHref(this.previousChapterLink.href);
             this.previousChapterAnchorElement.className =
               this.previousChapterAnchorElement.className.replace(
-              " disabled",
-              ""
-            );
+                " disabled",
+                ""
+              );
           } else {
             this.previousChapterAnchorElement.removeAttribute("href");
             this.previousChapterAnchorElement.className += " disabled";
@@ -3051,9 +3051,9 @@ export default class IFrameNavigator implements Navigator {
           } else {
             if (this.rights?.enableSearch) {
               for (const iframe of this.iframes) {
-              await this.highlighter.destroyAllhighlights(
+                await this.highlighter.destroyAllhighlights(
                   iframe.contentDocument
-              );
+                );
               }
               this.searchModule.drawSearch();
             }
@@ -3190,7 +3190,7 @@ export default class IFrameNavigator implements Navigator {
 
       let position: ReadingPosition;
       if (
-        ((this.rights?.autoGeneratePositions ?? true) &&
+        ((this.rights?.autoGeneratePositions ?? false) &&
           this.publication.positions) ||
         this.publication.positions
       ) {

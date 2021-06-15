@@ -246,7 +246,6 @@ export class Publication extends R2Publication {
             locator.locations.position - 1 - (positions.length - 1)
           );
         });
-        this.positions = positions;
       }
     });
 
@@ -266,6 +265,8 @@ export class Publication extends R2Publication {
     // we need to wait for all of them to complete, meaning everything has bee
     // fetched and counted
     await Promise.all(promises);
+
+    this.positions = positions;
   }
 
   /**

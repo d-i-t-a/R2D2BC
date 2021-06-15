@@ -295,7 +295,9 @@ export default class SearchModule implements ReaderModule {
     var localSearchResultChapter: any = [];
 
     // clear search results // needs more works
-    this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument);
+    for (const iframe of this.delegate.iframes) {
+      this.highlighter.destroyAllhighlights(iframe.contentDocument);
+    }
     if (this.delegate.rights?.enableAnnotations) {
       this.delegate.annotationModule.drawHighlights();
     } else {
@@ -315,9 +317,9 @@ export default class SearchModule implements ReaderModule {
         // var doc = parser.parseFromString(data, "text/html");
         searchDocDomSeek(
           term,
-          this.delegate.iframe.contentDocument,
-          tocItem.href,
-          tocItem.title
+          this.delegate.iframes[0].contentDocument,
+          tocItem.Href,
+          tocItem.Title
         ).then((result) => {
           // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
           result.forEach((searchItem) => {
@@ -357,7 +359,9 @@ export default class SearchModule implements ReaderModule {
   clearSearch() {
     this.currentChapterSearchResult = [];
     this.currentHighlights = [];
-    this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument);
+    for (const iframe of this.delegate.iframes) {
+      this.highlighter.destroyAllhighlights(iframe.contentDocument);
+    }
     if (this.delegate.rights?.enableAnnotations) {
       this.delegate.annotationModule.drawHighlights();
     }
@@ -746,9 +750,9 @@ export default class SearchModule implements ReaderModule {
   }
 
   async handleResize() {
-    await this.highlighter.destroyAllhighlights(
-      this.delegate.iframe.contentDocument
-    );
+    for (const iframe of this.delegate.iframes) {
+      await this.highlighter.destroyAllhighlights(iframe.contentDocument);
+    }
     this.drawSearch();
   }
 

@@ -99,7 +99,7 @@ export default class TTSModule implements ReaderModule {
         addEventListenerOptional(this.body, "wheel", this.wheel.bind(this));
         addEventListenerOptional(document, "keydown", this.wheel.bind(this));
         addEventListenerOptional(
-          this.delegate.iframe.contentDocument,
+          this.delegate.iframes[0].contentDocument,
           "keydown",
           this.wheel.bind(this)
         );
@@ -584,7 +584,7 @@ export default class TTSModule implements ReaderModule {
     removeEventListenerOptional(this.body, "wheel", this.wheel.bind(this));
     removeEventListenerOptional(document, "keydown", this.wheel.bind(this));
     removeEventListenerOptional(
-      this.delegate.iframe.contentDocument,
+      this.delegate.iframes[0].contentDocument,
       "keydown",
       this.wheel.bind(this)
     );

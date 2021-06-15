@@ -156,7 +156,7 @@ export default class AnnotationModule implements ReaderModule {
     }
     var position = await this.annotator.getAnnotationPosition(
       id,
-      this.delegate.iframe.contentWindow as any
+      this.delegate.iframes[0].contentWindow as any
     );
     window.scrollTo(0, position - window.innerHeight / 3);
   }
@@ -229,7 +229,7 @@ export default class AnnotationModule implements ReaderModule {
       const bookmarkPosition = this.delegate.view.getCurrentPosition();
 
       const body = HTMLUtilities.findRequiredIframeElement(
-        this.delegate.iframe.contentDocument,
+        this.delegate.iframes[0].contentDocument,
         "body"
       ) as HTMLBodyElement;
       const progression = highlight.position
@@ -338,10 +338,10 @@ export default class AnnotationModule implements ReaderModule {
         if (
           this.highlighter &&
           highlights &&
-          this.delegate.iframe.contentDocument.readyState === "complete"
+          this.delegate.iframes[0].contentDocument.readyState === "complete"
         ) {
           await this.highlighter.destroyAllhighlights(
-            this.delegate.iframe.contentDocument
+            this.delegate.iframes[0].contentDocument
           );
 
           highlights.forEach(async (rangeRepresentation) => {
@@ -370,7 +370,7 @@ export default class AnnotationModule implements ReaderModule {
               this.highlighter.setColor(annotation.color);
 
               await this.highlighter.createHighlightDom(
-                this.delegate.iframe.contentWindow as any,
+                this.delegate.iframes[0].contentWindow as any,
                 rangeRepresentation.highlight
               );
             }
@@ -384,10 +384,10 @@ export default class AnnotationModule implements ReaderModule {
         if (
           this.highlighter &&
           highlights &&
-          this.delegate.iframe.contentDocument.readyState === "complete"
+          this.delegate.iframes[0].contentDocument.readyState === "complete"
         ) {
           await this.highlighter.destroyAllhighlights(
-            this.delegate.iframe.contentDocument
+            this.delegate.iframes[0].contentDocument
           );
 
           highlights.forEach(async (rangeRepresentation) => {
@@ -416,7 +416,7 @@ export default class AnnotationModule implements ReaderModule {
               this.highlighter.setColor(annotation.color);
 
               await this.highlighter.createHighlightDom(
-                this.delegate.iframe.contentWindow as any,
+                this.delegate.iframes[0].contentWindow as any,
                 rangeRepresentation.highlight
               );
             }

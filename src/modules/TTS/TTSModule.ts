@@ -283,7 +283,7 @@ export default class TTSModule implements ReaderModule {
     if (IS_DEV) console.log("initialVoice", initialVoice);
 
     var publicationVoiceHasHyphen =
-      self.delegate.publication.metadata.language[0].indexOf("-") !== -1;
+      self.delegate.publication.Metadata.Language[0].indexOf("-") !== -1;
     if (IS_DEV)
       console.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
     var publicationVoice;
@@ -294,10 +294,10 @@ export default class TTSModule implements ReaderModule {
               var lang = v.lang.replace("_", "-");
               return (
                 lang.startsWith(
-                  self.delegate.publication.metadata.language[0]
+                  self.delegate.publication.Metadata.Language[0]
                 ) ||
                 lang.endsWith(
-                  self.delegate.publication.metadata.language[0].toUpperCase()
+                  self.delegate.publication.Metadata.Language[0].toUpperCase()
                 )
               );
             })[0]
@@ -308,10 +308,10 @@ export default class TTSModule implements ReaderModule {
           ? this.voices.filter((v: any) => {
               return (
                 v.lang.startsWith(
-                  self.delegate.publication.metadata.language[0]
+                  self.delegate.publication.Metadata.Language[0]
                 ) ||
                 v.lang.endsWith(
-                  self.delegate.publication.metadata.language[0].toUpperCase()
+                  self.delegate.publication.Metadata.Language[0].toUpperCase()
                 )
               );
             })[0]
@@ -443,9 +443,8 @@ export default class TTSModule implements ReaderModule {
                   splittingWord.dataset.ttsCurrentWord = "false";
                   splittingWord.dataset.ttsCurrentLine = "false";
                 });
-                let whitespace = self.body.querySelectorAll(
-                  "[data-whitespace]"
-                );
+                let whitespace =
+                  self.body.querySelectorAll("[data-whitespace]");
                 whitespace.forEach((splittingWord) => {
                   splittingWord.dataset.ttsColor = self.tts.color;
                   splittingWord.dataset.ttsCurrentWord = "false";

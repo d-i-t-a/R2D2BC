@@ -334,9 +334,8 @@ export default class TextHighlighter {
   }): Array<any> {
     var order: any[] = [],
       chunks: any = {},
-      grouped:
-        | any
-        | { chunks: any; timestamp: any; toString: () => any }[] = [];
+      grouped: any | { chunks: any; timestamp: any; toString: () => any }[] =
+        [];
 
     highlights.forEach(function (hl) {
       let timestamp = hl.getAttribute(TIMESTAMP_ATTR);
@@ -741,14 +740,14 @@ export default class TextHighlighter {
               colorIconSymbol.style.backgroundColor = color;
             }
             if (highlightIcon.getElementsByTagName("span").length > 0) {
-              (highlightIcon.getElementsByTagName(
-                "span"
-              )[0] as HTMLSpanElement).style.background = self.getColor();
+              (
+                highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement
+              ).style.background = self.getColor();
             }
             if (underlineIcon.getElementsByTagName("span").length > 0) {
-              (underlineIcon.getElementsByTagName(
-                "span"
-              )[0] as HTMLSpanElement).style.borderBottomColor = self.getColor();
+              (
+                underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement
+              ).style.borderBottomColor = self.getColor();
             }
 
             self.toolboxMode("add");
@@ -934,9 +933,11 @@ export default class TextHighlighter {
             highlightIcon.style.display = "unset";
             if (colorIcon) {
               if (highlightIcon.getElementsByTagName("span").length > 0) {
-                (highlightIcon.getElementsByTagName(
+                (
+                  highlightIcon.getElementsByTagName(
                   "span"
-                )[0] as HTMLSpanElement).style.background = this.getColor();
+                  )[0] as HTMLSpanElement
+                ).style.background = this.getColor();
               }
             }
           }
@@ -944,9 +945,11 @@ export default class TextHighlighter {
             underlineIcon.style.display = "unset";
             if (colorIcon) {
               if (underlineIcon.getElementsByTagName("span").length > 0) {
-                (underlineIcon.getElementsByTagName(
+                (
+                  underlineIcon.getElementsByTagName(
                   "span"
-                )[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+                  )[0] as HTMLSpanElement
+                ).style.borderBottomColor = this.getColor();
               }
             }
           }

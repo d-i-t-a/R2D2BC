@@ -286,9 +286,9 @@ export class TTSSettings implements ITTSUserSettings {
       "click",
       (event: MouseEvent) => {
         if (IS_DEV) console.log(TTSREFS.RATE_REF);
-        (this.userProperties.getByRef(
-          TTSREFS.RATE_REF
-        ) as Incremental).decrement();
+        (
+          this.userProperties.getByRef(TTSREFS.RATE_REF) as Incremental
+        ).decrement();
         this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
         this.settingsChangeCallback();
         event.preventDefault();
@@ -299,9 +299,9 @@ export class TTSSettings implements ITTSUserSettings {
       "click",
       (event: MouseEvent) => {
         if (IS_DEV) console.log(TTSREFS.RATE_REF);
-        (this.userProperties.getByRef(
-          TTSREFS.RATE_REF
-        ) as Incremental).increment();
+        (
+          this.userProperties.getByRef(TTSREFS.RATE_REF) as Incremental
+        ).increment();
         this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
         this.settingsChangeCallback();
         event.preventDefault();
@@ -312,9 +312,9 @@ export class TTSSettings implements ITTSUserSettings {
       "click",
       (event: MouseEvent) => {
         if (IS_DEV) console.log(TTSREFS.PITCH_REF);
-        (this.userProperties.getByRef(
-          TTSREFS.PITCH_REF
-        ) as Incremental).decrement();
+        (
+          this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental
+        ).decrement();
         this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
         this.settingsChangeCallback();
         event.preventDefault();
@@ -325,9 +325,9 @@ export class TTSSettings implements ITTSUserSettings {
       "click",
       (event: MouseEvent) => {
         if (IS_DEV) console.log(TTSREFS.PITCH_REF);
-        (this.userProperties.getByRef(
-          TTSREFS.PITCH_REF
-        ) as Incremental).increment();
+        (
+          this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental
+        ).increment();
         this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
         this.settingsChangeCallback();
         event.preventDefault();
@@ -338,9 +338,9 @@ export class TTSSettings implements ITTSUserSettings {
       "click",
       (event: MouseEvent) => {
         if (IS_DEV) console.log(TTSREFS.VOLUME_REF);
-        (this.userProperties.getByRef(
-          TTSREFS.VOLUME_REF
-        ) as Incremental).decrement();
+        (
+          this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental
+        ).decrement();
         this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
         this.settingsChangeCallback();
         event.preventDefault();
@@ -351,9 +351,9 @@ export class TTSSettings implements ITTSUserSettings {
       "click",
       (event: MouseEvent) => {
         if (IS_DEV) console.log(TTSREFS.VOLUME_REF);
-        (this.userProperties.getByRef(
-          TTSREFS.VOLUME_REF
-        ) as Incremental).increment();
+        (
+          this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental
+        ).increment();
         this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
         this.settingsChangeCallback();
         event.preventDefault();
@@ -502,9 +502,8 @@ export class TTSSettings implements ITTSUserSettings {
     if (ttsSettings.autoScroll !== undefined) {
       if (IS_DEV) console.log("autoScroll " + this.autoScroll);
       this.autoScroll = ttsSettings.autoScroll;
-      this.userProperties.getByRef(
-        TTSREFS.AUTO_SCROLL_REF
-      ).value = this.autoScroll;
+      this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF).value =
+        this.autoScroll;
       await this.saveProperty(
         this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF)
       );
@@ -545,9 +544,8 @@ export class TTSSettings implements ITTSUserSettings {
       this.settingsChangeCallback();
     } else if (key === TTSREFS.AUTO_SCROLL_REF) {
       this.autoScroll = value;
-      this.userProperties.getByRef(
-        TTSREFS.AUTO_SCROLL_REF
-      ).value = this.autoScroll;
+      this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF).value =
+        this.autoScroll;
       await this.saveProperty(
         this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF)
       );
@@ -562,21 +560,21 @@ export class TTSSettings implements ITTSUserSettings {
 
   async increase(incremental: string): Promise<void> {
     if (incremental === "rate") {
-      (this.userProperties.getByRef(
-        TTSREFS.RATE_REF
-      ) as Incremental).increment();
+      (
+        this.userProperties.getByRef(TTSREFS.RATE_REF) as Incremental
+      ).increment();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
       this.settingsChangeCallback();
     } else if (incremental === "pitch") {
-      (this.userProperties.getByRef(
-        TTSREFS.PITCH_REF
-      ) as Incremental).increment();
+      (
+        this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental
+      ).increment();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
       this.settingsChangeCallback();
     } else if (incremental === "volume") {
-      (this.userProperties.getByRef(
-        TTSREFS.VOLUME_REF
-      ) as Incremental).increment();
+      (
+        this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental
+      ).increment();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
       this.settingsChangeCallback();
     }
@@ -584,21 +582,21 @@ export class TTSSettings implements ITTSUserSettings {
 
   async decrease(incremental: string): Promise<void> {
     if (incremental === "rate") {
-      (this.userProperties.getByRef(
-        TTSREFS.RATE_REF
-      ) as Incremental).decrement();
+      (
+        this.userProperties.getByRef(TTSREFS.RATE_REF) as Incremental
+      ).decrement();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
       this.settingsChangeCallback();
     } else if (incremental === "pitch") {
-      (this.userProperties.getByRef(
-        TTSREFS.PITCH_REF
-      ) as Incremental).decrement();
+      (
+        this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental
+      ).decrement();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
       this.settingsChangeCallback();
     } else if (incremental === "volume") {
-      (this.userProperties.getByRef(
-        TTSREFS.VOLUME_REF
-      ) as Incremental).decrement();
+      (
+        this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental
+      ).decrement();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
       this.settingsChangeCallback();
     }

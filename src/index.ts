@@ -23,7 +23,6 @@ import IFrameNavigator, {
   UpLinkConfig,
 } from "./navigator/IFrameNavigator";
 import LocalAnnotator from "./store/LocalAnnotator";
-import Publication from "./model/Publication";
 import BookmarkModule from "./modules/BookmarkModule";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
@@ -32,13 +31,16 @@ import { TTSSettings } from "./modules/TTS/TTSSettings";
 import SearchModule from "./modules/search/SearchModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
 import TextHighlighter from "./modules/highlight/TextHighlighter";
-import { Locator } from "./model/Locator";
 import TimelineModule from "./modules/positions/TimelineModule";
 import { getUserAgentRegExp } from "browserslist-useragent-regexp";
+import { Locator } from "./model/Locator";
+import { Publication } from "./model/Publication";
+import { Link } from "./model/Link";
+import { TaJsonDeserialize } from "./utils/JsonUtil";
 
-var R2Settings: UserSettings;
-var R2TTSSettings: TTSSettings;
-var R2Navigator: IFrameNavigator;
+var D2Settings: UserSettings;
+var D2TTSSettings: TTSSettings;
+var D2Navigator: IFrameNavigator;
 var D2Highlighter: TextHighlighter;
 var BookmarkModuleInstance: BookmarkModule;
 var AnnotationModuleInstance: AnnotationModule;
@@ -55,25 +57,25 @@ export async function unload() {
     console.log("unload reader");
   }
   document.body.onscroll = () => {};
-  R2Navigator.stop();
-  R2Settings.stop();
-  if (R2Navigator.rights?.enableTTS) {
-    R2TTSSettings.stop();
+  D2Navigator.stop();
+  D2Settings.stop();
+  if (D2Navigator.rights?.enableTTS) {
+    D2TTSSettings.stop();
     TTSModuleInstance.stop();
   }
-  if (R2Navigator.rights?.enableBookmarks) {
+  if (D2Navigator.rights?.enableBookmarks) {
     BookmarkModuleInstance.stop();
   }
-  if (R2Navigator.rights?.enableAnnotations) {
+  if (D2Navigator.rights?.enableAnnotations) {
     AnnotationModuleInstance.stop();
   }
-  if (R2Navigator.rights?.enableSearch) {
+  if (D2Navigator.rights?.enableSearch) {
     SearchModuleInstance.stop();
   }
-  if (R2Navigator.rights?.enableContentProtection) {
+  if (D2Navigator.rights?.enableContentProtection) {
     ContentProtectionModuleInstance.stop();
   }
-  if (R2Navigator.rights?.enableTimeline) {
+  if (D2Navigator.rights?.enableTimeline) {
     TimelineModuleInstance.stop();
   }
 }
@@ -81,29 +83,29 @@ export function startReadAloud() {
   if (IS_DEV) {
     console.log("startReadAloud");
   }
-  return R2Navigator.startReadAloud();
+  return D2Navigator.startReadAloud();
 }
 export function stopReadAloud() {
   if (IS_DEV) {
     console.log("stopReadAloud");
   }
-  return R2Navigator.stopReadAloud();
+  return D2Navigator.stopReadAloud();
 }
 export function pauseReadAloud() {
   if (IS_DEV) {
     console.log("pauseReadAloud");
   }
-  return R2Navigator.pauseReadAloud();
+  return D2Navigator.pauseReadAloud();
 }
 export function resumeReadAloud() {
   if (IS_DEV) {
     console.log("resumeReadAloud");
   }
-  return R2Navigator.resumeReadAloud();
+  return D2Navigator.resumeReadAloud();
 }
 
 export async function saveBookmark() {
-  if (R2Navigator.rights?.enableBookmarks) {
+  if (D2Navigator.rights?.enableBookmarks) {
     if (IS_DEV) {
       console.log("saveBookmark");
     }
@@ -111,7 +113,7 @@ export async function saveBookmark() {
   }
 }
 export async function deleteBookmark(bookmark) {
-  if (R2Navigator.rights?.enableBookmarks) {
+  if (D2Navigator.rights?.enableBookmarks) {
     if (IS_DEV) {
       console.log("deleteBookmark");
     }
@@ -119,7 +121,7 @@ export async function deleteBookmark(bookmark) {
   }
 }
 export async function deleteAnnotation(highlight) {
-  if (R2Navigator.rights?.enableAnnotations) {
+  if (D2Navigator.rights?.enableAnnotations) {
     if (IS_DEV) {
       console.log("deleteAnnotation");
     }
@@ -127,7 +129,7 @@ export async function deleteAnnotation(highlight) {
   }
 }
 export async function addAnnotation(highlight) {
-  if (R2Navigator.rights?.enableAnnotations) {
+  if (D2Navigator.rights?.enableAnnotations) {
     if (IS_DEV) {
       console.log("addAnnotation");
     }
@@ -138,16 +140,16 @@ export async function tableOfContents() {
   if (IS_DEV) {
     console.log("tableOfContents");
   }
-  return await R2Navigator.tableOfContents();
+  return await D2Navigator.tableOfContents();
 }
 export async function readingOrder() {
   if (IS_DEV) {
     console.log("readingOrder");
   }
-  return await R2Navigator.readingOrder();
+  return await D2Navigator.readingOrder();
 }
 export async function bookmarks() {
-  if (R2Navigator.rights?.enableBookmarks) {
+  if (D2Navigator.rights?.enableBookmarks) {
     if (IS_DEV) {
       console.log("bookmarks");
     }
@@ -157,7 +159,7 @@ export async function bookmarks() {
   }
 }
 export async function annotations() {
-  if (R2Navigator.rights?.enableAnnotations) {
+  if (D2Navigator.rights?.enableAnnotations) {
     if (IS_DEV) {
       console.log("annotations");
     }
@@ -168,7 +170,7 @@ export async function annotations() {
 }
 
 export async function search(term, current) {
-  if (R2Navigator.rights?.enableSearch) {
+  if (D2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
       console.log("search");
     }
@@ -178,7 +180,7 @@ export async function search(term, current) {
   }
 }
 export async function goToSearchIndex(href, index, current) {
-  if (R2Navigator.rights?.enableSearch) {
+  if (D2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
       console.log("goToSearchIndex");
     }
@@ -186,7 +188,7 @@ export async function goToSearchIndex(href, index, current) {
   }
 }
 export async function goToSearchID(href, index, current) {
-  if (R2Navigator.rights?.enableSearch) {
+  if (D2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
       console.log("goToSearchID");
     }
@@ -194,7 +196,7 @@ export async function goToSearchID(href, index, current) {
   }
 }
 export async function clearSearch() {
-  if (R2Navigator.rights?.enableSearch) {
+  if (D2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
       console.log("clearSearch");
     }
@@ -206,60 +208,60 @@ export function currentResource() {
   if (IS_DEV) {
     console.log("currentResource");
   }
-  return R2Navigator.currentResource();
+  return D2Navigator.currentResource();
 }
 export function mostRecentNavigatedTocItem() {
   if (IS_DEV) {
     console.log("mostRecentNavigatedTocItem");
   }
-  return R2Navigator.mostRecentNavigatedTocItem();
+  return D2Navigator.mostRecentNavigatedTocItem();
 }
 export function totalResources() {
   if (IS_DEV) {
     console.log("totalResources");
   }
-  return R2Navigator.totalResources();
+  return D2Navigator.totalResources();
 }
 export function publicationLanguage() {
   if (IS_DEV) {
     console.log("publicationLanguage");
   }
-  return R2Navigator.publication.metadata.language;
+  return D2Navigator.publication.Metadata.Language;
 }
 export async function resetUserSettings() {
   if (IS_DEV) {
     console.log("resetSettings");
   }
-  R2Settings.resetUserSettings();
+  D2Settings.resetUserSettings();
 }
 export async function applyUserSettings(userSettings) {
   if (IS_DEV) {
     console.log("applyUserSettings");
   }
-  R2Settings.applyUserSettings(userSettings);
+  D2Settings.applyUserSettings(userSettings);
 }
 export async function currentSettings() {
   if (IS_DEV) {
     console.log("currentSettings");
   }
-  return R2Settings.currentSettings();
+  return D2Settings.currentSettings();
 }
 export async function increase(incremental) {
   if (
     (incremental === "pitch" ||
       incremental === "rate" ||
       incremental === "volume") &&
-    R2Navigator.rights?.enableTTS
+    D2Navigator.rights?.enableTTS
   ) {
     if (IS_DEV) {
       console.log("increase " + incremental);
     }
-    R2TTSSettings.increase(incremental);
+    D2TTSSettings.increase(incremental);
   } else {
     if (IS_DEV) {
       console.log("increase " + incremental);
     }
-    R2Settings.increase(incremental);
+    D2Settings.increase(incremental);
   }
 }
 export async function decrease(incremental) {
@@ -267,53 +269,53 @@ export async function decrease(incremental) {
     (incremental === "pitch" ||
       incremental === "rate" ||
       incremental === "volume") &&
-    R2Navigator.rights?.enableTTS
+    D2Navigator.rights?.enableTTS
   ) {
     if (IS_DEV) {
       console.log("decrease " + incremental);
     }
-    R2TTSSettings.decrease(incremental);
+    D2TTSSettings.decrease(incremental);
   } else {
     if (IS_DEV) {
       console.log("decrease " + incremental);
     }
-    R2Settings.decrease(incremental);
+    D2Settings.decrease(incremental);
   }
 }
 export async function publisher(on) {
   if (IS_DEV) {
     console.log("publisher " + on);
   }
-  R2Settings.publisher(on);
+  D2Settings.publisher(on);
 }
 export async function resetTTSSettings() {
-  if (R2Navigator.rights?.enableTTS) {
+  if (D2Navigator.rights?.enableTTS) {
     if (IS_DEV) {
       console.log("resetSettings");
     }
-    R2TTSSettings.resetTTSSettings();
+    D2TTSSettings.resetTTSSettings();
   }
 }
 export async function applyTTSSettings(ttsSettings) {
-  if (R2Navigator.rights?.enableTTS) {
+  if (D2Navigator.rights?.enableTTS) {
     if (IS_DEV) {
       console.log("applyTTSSettings");
     }
-    R2TTSSettings.applyTTSSettings(ttsSettings);
+    D2TTSSettings.applyTTSSettings(ttsSettings);
   }
 }
 
 export async function applyTTSSetting(key, value) {
-  if (R2Navigator.rights?.enableTTS) {
+  if (D2Navigator.rights?.enableTTS) {
     if (IS_DEV) {
       console.log("set " + key + " value " + value);
     }
-    R2TTSSettings.applyTTSSetting(key, value);
+    D2TTSSettings.applyTTSSetting(key, value);
   }
 }
 export async function applyPreferredVoice(value) {
-  if (R2Navigator.rights?.enableTTS) {
-    R2TTSSettings.applyPreferredVoice(value);
+  if (D2Navigator.rights?.enableTTS) {
+    D2TTSSettings.applyPreferredVoice(value);
   }
 }
 
@@ -321,80 +323,80 @@ export async function goTo(locator) {
   if (IS_DEV) {
     console.log("goTo " + locator);
   }
-  R2Navigator.goTo(locator);
+  D2Navigator.goTo(locator);
 }
 export async function nextResource() {
   if (IS_DEV) {
     console.log("nextResource");
   }
-  R2Navigator.nextResource();
+  D2Navigator.nextResource();
 }
 export async function previousResource() {
   if (IS_DEV) {
     console.log("previousResource");
   }
-  R2Navigator.previousResource();
+  D2Navigator.previousResource();
 }
 export async function nextPage() {
   if (IS_DEV) {
     console.log("nextPage");
   }
-  R2Navigator.nextPage();
+  D2Navigator.nextPage();
 }
 export async function previousPage() {
   if (IS_DEV) {
     console.log("previousPage");
   }
-  R2Navigator.previousPage();
+  D2Navigator.previousPage();
 }
 export async function atStart() {
   if (IS_DEV) {
     console.log("atStart");
   }
-  return R2Navigator.atStart();
+  return D2Navigator.atStart();
 }
 export async function atEnd() {
   if (IS_DEV) {
     console.log("atEnd");
   }
-  return R2Navigator.atEnd();
+  return D2Navigator.atEnd();
 }
 export async function scroll(value) {
   if (IS_DEV) {
     console.log("scroll " + value);
   }
-  R2Settings.scroll(value);
+  D2Settings.scroll(value);
 }
 
 export async function currentLocator() {
   if (IS_DEV) {
     console.log("currentLocator");
   }
-  return R2Navigator.currentLocator();
+  return D2Navigator.currentLocator();
 }
 export async function positions() {
   if (IS_DEV) {
     console.log("positions");
   }
-  return R2Navigator.positions();
+  return D2Navigator.positions();
 }
 export async function goToPosition(value) {
   if (IS_DEV) {
     console.log("goToPosition");
   }
-  return R2Navigator.goToPosition(value);
+  return D2Navigator.goToPosition(value);
 }
 export async function applyAttributes(value) {
   if (IS_DEV) {
     console.log("applyAttributes");
   }
-  R2Navigator.applyAttributes(value);
+  D2Navigator.applyAttributes(value);
 }
 export async function snapToElement(value) {
   if (IS_DEV) {
     console.log("snapToElement");
   }
-  R2Navigator.snapToElement(value);
+  D2Navigator.snapToElement(value);
 }
 
 export async function load(config: ReaderConfig): Promise<any> {
@@ -434,12 +436,15 @@ export async function load(config: ReaderConfig): Promise<any> {
     if (config.upLinkUrl) {
       upLink = config.upLinkUrl;
     }
-    const publication: Publication = await Publication.getManifest(
-      webpubManifestUrl,
-      store
-    );
 
-    if ((publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
+    const response = await window.fetch(webpubManifestUrl.href, {
+      credentials: "same-origin",
+    });
+    const manifestJSON = await response.json();
+    let publication = TaJsonDeserialize<Publication>(manifestJSON, Publication);
+    publication.manifestUrl = webpubManifestUrl;
+
+    if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
       config.rights.enableAnnotations = false;
       config.rights.enableSearch = false;
       config.rights.enableTTS = false;
@@ -452,23 +457,24 @@ export async function load(config: ReaderConfig): Promise<any> {
       var positions = [];
       var weight = {};
       publication.readingOrder.map(async (link, index) => {
-        if ((publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
+        if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
           const locator: Locator = {
-            href: link.href,
+            href: link.Href,
             locations: {
               progression: 0,
               position: startPosition + 1,
             },
-            type: link.type,
+            type: link.TypeLink,
           };
           if (IS_DEV) console.log(locator);
           positions.push(locator);
           startPosition = startPosition + 1;
         } else {
-          var href = publication.getAbsoluteHref(link.href);
+          // TODO: USE ZIP ARCHIVE ENTRY LENGTH !!!!! ??
+          var href = publication.getAbsoluteHref(link.Href);
           await fetch(href).then(async (r) => {
             let length = (await r.blob()).size;
-            link.contentLength = length;
+            (link as Link).contentLength = length;
             totalContentLength += length;
             let positionLength = 1024;
             let positionCount = Math.max(1, Math.ceil(length / positionLength));
@@ -476,12 +482,12 @@ export async function load(config: ReaderConfig): Promise<any> {
             if (IS_DEV) console.log(positionCount + " Positions");
             Array.from(Array(positionCount).keys()).map((_, position) => {
               const locator: Locator = {
-                href: link.href,
+                href: link.Href,
                 locations: {
                   progression: position / positionCount,
                   position: startPosition + (position + 1),
                 },
-                type: link.type,
+                type: link.TypeLink,
               };
               if (IS_DEV) console.log(locator);
               positions.push(locator);
@@ -491,15 +497,15 @@ export async function load(config: ReaderConfig): Promise<any> {
         }
         if (index + 1 === publication.readingOrder.length) {
           if (
-            (publication.metadata.rendition?.layout ?? "unknown") !== "fixed"
+            (publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"
           ) {
             publication.readingOrder.map(async (link) => {
               if (IS_DEV) console.log(totalContentLength);
-              if (IS_DEV) console.log(link.contentLength);
-              link.contentWeight =
-                (100 / totalContentLength) * link.contentLength;
-              weight[link.href] = link.contentWeight;
-              if (IS_DEV) console.log(link.contentWeight);
+              if (IS_DEV) console.log((link as Link).contentLength);
+              (link as Link).contentWeight =
+                (100 / totalContentLength) * (link as Link).contentLength;
+              weight[link.Href] = (link as Link).contentWeight;
+              if (IS_DEV) console.log((link as Link).contentWeight);
             });
           }
           positions.map((locator, _index) => {
@@ -535,12 +541,12 @@ export async function load(config: ReaderConfig): Promise<any> {
           .then((r) => r.text())
           .then(async (content) => {
             if (
-              (publication.metadata.rendition?.layout ?? "unknown") !== "fixed"
+              (publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"
             ) {
               let weight = JSON.parse(content);
               publication.readingOrder.map(async (link) => {
-                link.contentWeight = weight[link.href];
-                if (IS_DEV) console.log(link.contentWeight);
+                (link as Link).contentWeight = weight[link.Href];
+                if (IS_DEV) console.log((link as Link).contentWeight);
               });
             }
           });
@@ -548,25 +554,25 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
 
     // Settings
-    R2Settings = await UserSettings.create({
+    D2Settings = await UserSettings.create({
       store: settingsStore,
       initialUserSettings: config.userSettings,
       headerMenu: headerMenu,
       material: config.material,
       api: config.api,
       layout:
-        (publication.metadata.rendition?.layout ?? "unknown") === "fixed"
+        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
           ? "fixed"
           : "reflowable",
     });
 
     // Navigator
-    R2Navigator = await IFrameNavigator.create({
+    D2Navigator = await IFrameNavigator.create({
       mainElement: mainElement,
       headerMenu: headerMenu,
       footerMenu: footerMenu,
       publication: publication,
-      settings: R2Settings,
+      settings: D2Settings,
       annotator: annotator,
       upLink: upLink,
       initialLastReadingPosition: config.lastReadingPosition,
@@ -575,17 +581,17 @@ export async function load(config: ReaderConfig): Promise<any> {
       rights: config.rights,
       tts: config.tts,
       injectables:
-        (publication.metadata.rendition?.layout ?? "unknown") === "fixed"
-          ? []
+        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          ? config.injectablesFixed
           : config.injectables,
       attributes: config.attributes,
       services: config.services,
     });
 
     // Highlighter
-    if ((publication.metadata.rendition?.layout ?? "unknown") !== "fixed") {
+    if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
       D2Highlighter = await TextHighlighter.create({
-        delegate: R2Navigator,
+        delegate: D2Navigator,
         ...config.highlighter,
       });
     }
@@ -597,7 +603,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         headerMenu: headerMenu,
         rights: config.rights,
         publication: publication,
-        delegate: R2Navigator,
+        delegate: D2Navigator,
         initialAnnotations: config.initialAnnotations,
         ...config.bookmarks,
       });
@@ -610,7 +616,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         headerMenu: headerMenu,
         rights: config.rights,
         publication: publication,
-        delegate: R2Navigator,
+        delegate: D2Navigator,
         initialAnnotations: config.initialAnnotations,
         highlighter: D2Highlighter,
         ...config.annotations,
@@ -619,15 +625,15 @@ export async function load(config: ReaderConfig): Promise<any> {
 
     // TTS Module
     if (config.rights?.enableTTS) {
-      R2TTSSettings = await TTSSettings.create({
+      D2TTSSettings = await TTSSettings.create({
         store: settingsStore,
         initialTTSSettings: config.tts,
         headerMenu: headerMenu,
         ...config.tts,
       });
       TTSModuleInstance = await TTSModule.create({
-        delegate: R2Navigator,
-        tts: R2TTSSettings,
+        delegate: D2Navigator,
+        tts: D2TTSSettings,
         headerMenu: headerMenu,
         rights: config.rights,
         highlighter: D2Highlighter,
@@ -639,7 +645,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     if (config.rights?.enableSearch) {
       SearchModule.create({
         headerMenu: headerMenu,
-        delegate: R2Navigator,
+        delegate: D2Navigator,
         publication: publication,
         highlighter: D2Highlighter,
         ...config.search,
@@ -651,7 +657,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     if (config.rights?.enableTimeline) {
       TimelineModule.create({
         publication: publication,
-        delegate: R2Navigator,
+        delegate: D2Navigator,
       }).then(function (timelineModule) {
         TimelineModuleInstance = timelineModule;
       });
@@ -660,16 +666,15 @@ export async function load(config: ReaderConfig): Promise<any> {
     // Content Protection Module
     if (config.rights?.enableContentProtection) {
       ContentProtectionModule.create({
-        delegate: R2Navigator,
+        delegate: D2Navigator,
         ...config.protection,
       }).then(function (contentProtectionModule) {
         ContentProtectionModuleInstance = contentProtectionModule;
       });
     }
-
-    return new Promise((resolve) => resolve(R2Navigator));
+    return new Promise((resolve) => resolve(D2Navigator));
   } else {
-    throw new Error("Browser not suppoorted");
+    throw new Error("Browser not supported");
   }
 }
 

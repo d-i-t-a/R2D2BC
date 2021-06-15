@@ -165,4 +165,132 @@ export class Publication extends R2Publication {
       ? this.positions.filter((el: Locator) => el.href === decodeURI(href))
       : undefined;
   }
+
+  /**
+   * Fetches the contents to build up the positions manually,
+   * at least for fluid layout pubs
+   */
+  async autoGeneratePositions() {
+    let startPosition = 0;
+    let totalContentLength = 0;
+    const positions = [];
+
+    /**
+     * For each item in the reading order, get its length and calculate
+     * the number of positions in it, then add them all up into the totals.
+     */
+    const promises = this.readingOrder.map(async (link, index) => {
+      // if it is fixed layout, there is no need to fetch, each item is
+      // just a single page.
+      // @aferditamuriqi is this comment correct?
+      if (this.metadata.rendition?.layout === "fixed") {
+        const locator: Locator = {
+          href: link.href,
+          locations: {
+            progression: 0,
+            position: startPosition + 1,
+          },
+          type: link.type,
+        };
+        positions.push(locator);
+        startPosition = startPosition + 1;
+      } else {
+        const href = this.getAbsoluteHref(link.href);
+        // Are we fetching every item in the readingOrder to generate positions?
+        // maybe in the future this can be done in the background?
+        const result = await fetch(href);
+        const length = (await result.blob()).size;
+        link.contentLength = length;
+        totalContentLength += length;
+        const positionLength = 1024;
+        const positionCount = Math.max(1, Math.ceil(length / positionLength));
+        Array.from(Array(positionCount).keys()).forEach((_, position) => {
+          const locator: Locator = {
+            href: link.href,
+            locations: {
+              progression: position / positionCount,
+              position: startPosition + (position + 1),
+            },
+            type: link.type,
+          };
+          positions.push(locator);
+        });
+        startPosition = startPosition + positionCount;
+      }
+
+      // If we are on the last item...
+      if (index + 1 === this.readingOrder.length) {
+        // for non fixed books, build up a dictionary of all the weights
+        // I am going to move this outside the map on readingOrder
+        // if (publication.metadata.rendition?.layout !== "fixed") {
+        //   publication.readingOrder.map(async (link) => {
+        //     link.contentWeight = (100 / totalContentLength) * link.contentLength;
+        //     weight[link.href] = link.contentWeight;
+        //   });
+        // }
+
+        // @aferditamuriqi what exactly does this do?
+        positions.map((locator, _index) => {
+          let resource = positions.filter(
+            (el: Locator) => el.href === decodeURI(locator.href)
+          );
+          let positionIndex = Math.ceil(
+            locator.locations.progression * (resource.length - 1)
+          );
+          locator.locations.totalProgression =
+            (locator.locations.position - 1) / positions.length;
+          locator.locations.remainingPositions = Math.abs(
+            positionIndex - (resource.length - 1)
+          );
+          locator.locations.totalRemainingPositions = Math.abs(
+            locator.locations.position - 1 - (positions.length - 1)
+          );
+        });
+        this.positions = positions;
+      }
+    });
+
+    // update the link.contentWeight to be a portion of the total and
+    // build up a map of link weights for non fixed layout publications
+    // @aferditamuriqi but what is the "weight" object ultimately used for?
+    const weight = {};
+    if (this.metadata.rendition?.layout !== "fixed") {
+      this.readingOrder.forEach((link) => {
+        // I don't totally know what this formula is saying haha, maybe we can
+        // add a comment
+        link.contentWeight = (100 / totalContentLength) * link.contentLength;
+        weight[link.href] = link.contentWeight;
+      });
+    }
+
+    // we need to wait for all of them to complete, meaning everything has bee
+    // fetched and counted
+    await Promise.all(promises);
+  }
+
+  /**
+   * Fetches the positions from a given service href
+   */
+  async fetchPositionsFromService(href: string) {
+    const result = await fetch(href);
+    const content = await result.json();
+    this.positions = content.positions;
+  }
+
+  /**
+   * Fetches weights from a given service href
+   */
+  async fetchWeightsFromService(href: string) {
+    if (this.metadata.rendition?.layout === "fixed") {
+      console.warn(
+        "Not fetching weights from service for fixed layout publication."
+      );
+      return;
+    }
+    const result = await fetch(href);
+    const weights = await result.json();
+    this.readingOrder.forEach((link) => {
+      link.contentWeight = weights[link.href];
+    });
+  }
 }

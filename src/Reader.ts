@@ -1,3 +1,4 @@
+import { Locator } from "./model/Locator";
 import Publication from "./model/Publication";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
@@ -23,6 +24,15 @@ function getElement(id: string): HTMLElement {
   if (!elem) throw new Error(`Missing required element with ID: ${id}`);
   return elem;
 }
+
+/**
+ * Default config to be merged with the passed in config.
+ */
+const defaultConfig: ReaderConfig = {
+  rights: {
+    autoGeneratePositions: true,
+  },
+};
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -51,28 +61,51 @@ export default class Reader {
    *  - Code that updates/changes the config before we start using it
    *  - Update the config typing so that it properly reflects what is required
    */
-  static async build(config: ReaderConfig): Promise<Reader> {
+  static async build(initialConfig: ReaderConfig): Promise<Reader> {
     const mainElement = getElement("D2Reader-Container");
+    // are the following elements necessary or not? They seem not to be,
+    // but we will have to change some types if they are allowed to be null
     const headerMenu = getElement("headerMenu");
     const footerMenu = getElement("footerMenu");
-    const webpubManifestUrl = config.url;
+
+    const webpubManifestUrl = initialConfig.url;
     const store = new LocalStorageStore({
       prefix: webpubManifestUrl.href,
-      useLocalStorage: config.useLocalStorage ?? false,
+      useLocalStorage: initialConfig.useLocalStorage ?? false,
     });
     const settingsStore = new LocalStorageStore({
       prefix: "r2d2bc-reader",
-      useLocalStorage: config.useLocalStorage ?? false,
+      useLocalStorage: initialConfig.useLocalStorage ?? false,
     });
 
     const annotator = new LocalAnnotator({ store: store });
 
-    const upLink: UpLinkConfig = config.upLinkUrl ?? undefined;
+    const upLink: UpLinkConfig = initialConfig.upLinkUrl ?? undefined;
 
     const publication: Publication = await Publication.getManifest(
       webpubManifestUrl,
       store
     );
+
+    // update our config based on what we know from the publication
+    const config = updateConfig(initialConfig, publication);
+
+    /**
+     * Set up publication positions and weights by either auto
+     * generating them or fetching them from provided services.
+     */
+    if (config.rights?.autoGeneratePositions ?? true) {
+      await publication.autoGeneratePositions();
+    } else {
+      if (config.services?.positions) {
+        await publication.fetchPositionsFromService(
+          config.services?.positions.href
+        );
+      }
+      if (config.services?.weight) {
+        await publication.fetchWeightsFromService(config.services?.weight.href);
+      }
+    }
 
     // Settings
     const settings = await UserSettings.create({
@@ -439,4 +472,20 @@ export default class Reader {
     this.contentProtectionModule?.stop();
     this.timelineModule?.stop();
   };
+}
+
+function updateConfig(
+  config: ReaderConfig,
+  publication: Publication
+): ReaderConfig {
+  // Some settings must be disabled for fixed-layout publications
+  // maybe we should warn the user we are disabling them here.
+  if (publication.metadata.rendition?.layout === "fixed") {
+    config.rights.enableAnnotations = false;
+    config.rights.enableSearch = false;
+    config.rights.enableTTS = false;
+    // config.protection.enableObfuscation = false;
+  }
+
+  return config;
 }

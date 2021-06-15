@@ -15,6 +15,7 @@ import IFrameNavigator, {
 } from "./navigator/IFrameNavigator";
 import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
+import { enforceSupportedBrowsers } from "./utils/BrowserUtilities";
 
 /**
  * Gets the HTML element and throws an error if it doesn't exist
@@ -26,20 +27,15 @@ function getElement(id: string): HTMLElement {
 }
 
 /**
- * Default config to be merged with the passed in config.
- */
-const defaultConfig: ReaderConfig = {
-  rights: {
-    autoGeneratePositions: true,
-  },
-};
-
-/**
  * A class that, once instantiated using the public `.build` method,
  * is the primary interface into the D2 Reader.
  *
  * @TODO :
+ *  - Type all function arguments
  *  - DEV logger
+ *  - Default config
+ *  - Different types for initial config and final config
+ *  - Testing
  */
 export default class Reader {
   private constructor(
@@ -56,12 +52,11 @@ export default class Reader {
   ) {}
   /**
    * The async builder.
-   * @TODO :
-   *  - browser support section
-   *  - Code that updates/changes the config before we start using it
-   *  - Update the config typing so that it properly reflects what is required
    */
   static async build(initialConfig: ReaderConfig): Promise<Reader> {
+    // will throw error if on unsupported browser
+    enforceSupportedBrowsers(initialConfig);
+
     const mainElement = getElement("D2Reader-Container");
     // are the following elements necessary or not? They seem not to be,
     // but we will have to change some types if they are allowed to be null

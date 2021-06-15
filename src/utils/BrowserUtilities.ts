@@ -1,3 +1,4 @@
+import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 /*
  * Copyright 2018-2020 DITA (AM Consulting LLC)
  *
@@ -17,6 +18,8 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
+import { ReaderConfig } from "../navigator/IFrameNavigator";
+
 /** Returns the current width of the document. */
 export function getWidth(): number {
   return document.documentElement.clientWidth;
@@ -30,4 +33,28 @@ export function getHeight(): number {
 /** Returns true if the browser is zoomed in with pinch-to-zoom on mobile. */
 export function isZoomed(): boolean {
   return getWidth() !== window.innerWidth;
+}
+
+/**
+ * If enforceSupportedBrowsers is true, will get supported browsers
+ * from the config and throw an error if the user is not on a supported
+ * browser.
+ */
+export function enforceSupportedBrowsers(config: ReaderConfig) {
+  if (!config.protection?.enforceSupportedBrowsers) {
+    return;
+  }
+
+  const browsers = (config.protection.supportedBrowsers ?? []).map(
+    (browser) => `last 1 ${browser} version`
+  );
+
+  const supportedBrowsers = getUserAgentRegExp({
+    browsers: browsers,
+    allowHigherVersions: true,
+  });
+
+  if (!supportedBrowsers.test(navigator.userAgent)) {
+    throw new Error("Browser not supported.");
+  }
 }

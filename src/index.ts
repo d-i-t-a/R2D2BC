@@ -673,9 +673,6 @@ export async function load(config: ReaderConfig): Promise<any> {
   }
 }
 
-exports.load = async function (config: ReaderConfig) {
-  load(config);
-};
 exports.unload = async function () {
   unload();
 };

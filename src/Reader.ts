@@ -1,4 +1,3 @@
-import { Locator } from "./model/Locator";
 import Publication from "./model/Publication";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";

@@ -26,7 +26,7 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { Locator, Locations } from "../../model/Locator";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import TextHighlighter from "../highlight/TextHighlighter";
 

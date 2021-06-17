@@ -214,7 +214,7 @@ export default class D2Reader {
         })
       : undefined;
 
-    return new Reader(
+    return new D2Reader(
       settings,
       ttsSettings,
       navigator,

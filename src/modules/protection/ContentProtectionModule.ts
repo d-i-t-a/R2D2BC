@@ -25,7 +25,7 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;

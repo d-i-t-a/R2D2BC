@@ -25,7 +25,7 @@ import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { icons as IconLib } from "../utils/IconLib";
 import { Bookmark, Locator } from "../model/Locator";
-import { IS_DEV } from "..";
+import { IS_DEV } from "../utils";
 import { toast } from "materialize-css";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";

@@ -18,7 +18,7 @@
  */
 
 import ReaderModule from "../ReaderModule";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { ISelectionInfo } from "../../model/Locator";
 import { TTSSettings, TTSVoice } from "./TTSSettings";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";

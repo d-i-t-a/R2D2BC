@@ -27,7 +27,7 @@ import {
 } from "./UserProperties";
 import { ReadiumCSS } from "./ReadiumCSS";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import { NavigatorAPI, ReaderUI } from "../../navigator/IFrameNavigator";
 import ReflowableBookView from "../../views/ReflowableBookView";

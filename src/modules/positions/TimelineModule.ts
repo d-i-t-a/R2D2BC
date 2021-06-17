@@ -17,8 +17,8 @@
  * Licensed to: Bibliotheca LLC, Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../..";
-import { Publication } from "../../model/Publication";
+import { IS_DEV } from "../../utils";
+import Publication from "../../model/Publication";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import ReaderModule from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";

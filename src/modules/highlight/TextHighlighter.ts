@@ -42,7 +42,7 @@ import {
 import { IReadiumIFrameWindow } from "./renderer/iframe/state";
 import { uniqueCssSelector } from "./renderer/common/cssselector2";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { icons } from "../../utils/IconLib";
 import IFrameNavigator, {
   SelectionMenuItem,

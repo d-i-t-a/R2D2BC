@@ -49,7 +49,7 @@ import AnnotationModule, {
   AnnotationModuleConfig,
 } from "../modules/AnnotationModule";
 import TTSModule, { TTSModuleConfig } from "../modules/TTS/TTSModule";
-import { goTo, IS_DEV } from "..";
+import { IS_DEV } from "..";
 import Splitting from "../modules/TTS/splitting";
 import SearchModule, {
   SearchModuleConfig,
@@ -778,7 +778,7 @@ export default class IFrameNavigator implements Navigator {
         }
       }
 
-      setTimeout(async () => {
+      setTimeout(() => {
         if (self.annotationModule !== undefined) {
           self.annotationModule.drawHighlights();
           // self.annotationModule.drawIndicators()
@@ -792,13 +792,13 @@ export default class IFrameNavigator implements Navigator {
         }
       }, 300);
 
-      return await this.loadManifest();
+      await this.loadManifest();
     } catch (err) {
       // There's a mismatch between the template and the selectors above,
       // or we weren't able to insert the template in the element.
       console.error(err);
       this.abortOnError();
-      return new Promise<void>((_, reject) => reject(err)).catch(() => {});
+      return Promise.reject(err);
     }
   }
 
@@ -1653,11 +1653,11 @@ export default class IFrameNavigator implements Navigator {
         }
       }, 100);
 
-      return new Promise<void>((resolve) => resolve());
+      return Promise.resolve();
     } catch (err) {
       console.error(err);
       this.abortOnError();
-      return new Promise<void>((_, reject) => reject(err)).catch(() => {});
+      return Promise.reject(err);
     }
   }
 
@@ -2416,7 +2416,7 @@ export default class IFrameNavigator implements Navigator {
       let locator = this.publication.positions.filter(
         (el: Locator) => el.locations.position === parseInt(String(position))
       )[0];
-      goTo(locator);
+      this.goTo(locator);
     }
   }
   snapToElement(element: HTMLElement) {
@@ -3053,7 +3053,7 @@ export default class IFrameNavigator implements Navigator {
           } else {
             if (this.rights?.enableSearch) {
               for (const iframe of this.iframes) {
-                await this.highlighter.destroyAllhighlights(
+                this.highlighter.destroyAllhighlights(
                   iframe.contentDocument
                 );
               }

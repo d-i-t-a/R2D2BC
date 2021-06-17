@@ -19,7 +19,7 @@
 
 {
   "include": ["src", "examples"],
-  "exclude": ["viewer"],
+  "exclude": ["viewer", "injectables"],
   "compileOnSave": true,
   "compilerOptions": {
     "experimentalDecorators": true,

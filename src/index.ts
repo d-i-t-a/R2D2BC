@@ -280,12 +280,12 @@ export async function decrease(incremental) {
     R2Settings.decrease(incremental);
   }
 }
-export async function publisher(on) {
-  if (IS_DEV) {
-    console.log("publisher " + on);
-  }
-  R2Settings.publisher(on);
-}
+// export async function publisher(on) {
+//   if (IS_DEV) {
+//     console.log("publisher " + on);
+//   }
+//   R2Settings.publisher(on);
+// }
 export async function resetTTSSettings() {
   if (R2Navigator.rights?.enableTTS) {
     if (IS_DEV) {

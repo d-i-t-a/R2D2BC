@@ -23,7 +23,7 @@ export class ReadiumCSS {
   static readonly FONT_OVERRIDE_REF = "fontOverride";
   static readonly APPEARANCE_REF = "appearance";
   static readonly SCROLL_REF = "scroll";
-  static readonly PUBLISHER_DEFAULT_REF = "advancedSettings";
+  // static readonly PUBLISHER_DEFAULT_REF = "advancedSettings";
   static readonly TEXT_ALIGNMENT_REF = "textAlign";
   static readonly COLUMN_COUNT_REF = "colCount";
   static readonly WORD_SPACING_REF = "wordSpacing";
@@ -36,8 +36,8 @@ export class ReadiumCSS {
   static readonly FONT_OVERRIDE_KEY = "--USER__" + ReadiumCSS.FONT_OVERRIDE_REF;
   static readonly APPEARANCE_KEY = "--USER__" + ReadiumCSS.APPEARANCE_REF;
   static readonly SCROLL_KEY = "--USER__" + ReadiumCSS.SCROLL_REF;
-  static readonly PUBLISHER_DEFAULT_KEY =
-    "--USER__" + ReadiumCSS.PUBLISHER_DEFAULT_REF;
+  // static readonly PUBLISHER_DEFAULT_KEY =
+  //   "--USER__" + ReadiumCSS.PUBLISHER_DEFAULT_REF;
   static readonly TEXT_ALIGNMENT_KEY =
     "--USER__" + ReadiumCSS.TEXT_ALIGNMENT_REF;
   static readonly COLUMN_COUNT_KEY = "--USER__" + ReadiumCSS.COLUMN_COUNT_REF;

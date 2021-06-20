@@ -49,7 +49,7 @@ export interface UserSettingsUIConfig {
   fontOverride: boolean;
   appearance?: boolean;
   scroll?: boolean;
-  advancedSettings: boolean;
+  // advancedSettings: boolean;
   textAlign?: boolean;
   colCount?: boolean;
   wordSpacing?: boolean;
@@ -69,7 +69,7 @@ export interface IUserSettings {
   verticalScroll: boolean;
 
   //Advanced settings
-  publisherDefaults: boolean;
+  // publisherDefaults: boolean;
   textAlignment: number;
   columnCount: number;
   wordSpacing: number;
@@ -96,7 +96,7 @@ export interface InitialUserSettings {
     | "paginated";
 
   //Advanced settings
-  publisherDefaults?: boolean | "readium-advanced-on" | "readium-advanced-on";
+  // publisherDefaults?: boolean | "readium-advanced-on" | "readium-advanced-off";
   textAlignment: number;
   columnCount: number;
   wordSpacing: number;
@@ -140,7 +140,7 @@ export class UserSettings implements IUserSettings {
   verticalScroll = true;
 
   //Advanced settings
-  publisherDefaults = true;
+  // publisherDefaults = true;
   textAlignment = 0;
   columnCount = 0;
   wordSpacing = 0.0;
@@ -179,7 +179,7 @@ export class UserSettings implements IUserSettings {
     await settings.initialise();
 
     if (config.initialUserSettings) {
-      var initialUserSettings = config.initialUserSettings;
+      let initialUserSettings = config.initialUserSettings;
       if (initialUserSettings.verticalScroll !== undefined) {
         settings.verticalScroll = this.parseScrollSetting(
           initialUserSettings.verticalScroll
@@ -232,7 +232,7 @@ export class UserSettings implements IUserSettings {
         await settings.saveProperty(
           settings.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF)
         );
-        settings.publisherDefaults = false;
+        // settings.publisherDefaults = false;
         if (IS_DEV) console.log(settings.textAlignment);
       }
       if (initialUserSettings.columnCount) {
@@ -253,7 +253,7 @@ export class UserSettings implements IUserSettings {
         await settings.saveProperty(
           settings.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
         );
-        settings.publisherDefaults = false;
+        // settings.publisherDefaults = false;
         if (IS_DEV) console.log(settings.wordSpacing);
       }
       if (initialUserSettings.letterSpacing) {
@@ -263,7 +263,7 @@ export class UserSettings implements IUserSettings {
         await settings.saveProperty(
           settings.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
         );
-        settings.publisherDefaults = false;
+        // settings.publisherDefaults = false;
         if (IS_DEV) console.log(settings.letterSpacing);
       }
       if (initialUserSettings.pageMargins) {
@@ -273,7 +273,7 @@ export class UserSettings implements IUserSettings {
         await settings.saveProperty(
           settings.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF)
         );
-        settings.publisherDefaults = false;
+        // settings.publisherDefaults = false;
         if (IS_DEV) console.log(settings.pageMargins);
       }
       if (initialUserSettings.lineHeight) {
@@ -283,7 +283,7 @@ export class UserSettings implements IUserSettings {
         await settings.saveProperty(
           settings.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF)
         );
-        settings.publisherDefaults = false;
+        // settings.publisherDefaults = false;
         if (IS_DEV) console.log(settings.lineHeight);
       }
       settings.userProperties = settings.getUserSettings();
@@ -336,14 +336,12 @@ export class UserSettings implements IUserSettings {
     if (this.fontFamily !== 0) {
       this.fontOverride = true;
     }
-    this.publisherDefaults =
-      (await this.getProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY)) != null
-        ? (
-            (await this.getProperty(
-              ReadiumCSS.PUBLISHER_DEFAULT_KEY
-            )) as Switchable
-          ).value
-        : this.publisherDefaults;
+    // this.publisherDefaults =
+    //   (await this.getProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY)) != null
+    //     ? ((await this.getProperty(
+    //         ReadiumCSS.PUBLISHER_DEFAULT_KEY
+    //       )) as Switchable).value
+    //     : this.publisherDefaults;
     this.textAlignment =
       (await this.getProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY)) != null
         ? (
@@ -397,7 +395,7 @@ export class UserSettings implements IUserSettings {
     this.fontFamily = 0;
 
     //Advanced settings
-    this.publisherDefaults = true;
+    // this.publisherDefaults = true;
     this.textAlignment = 0;
     this.columnCount = 0;
     this.wordSpacing = 0.0;
@@ -417,8 +415,8 @@ export class UserSettings implements IUserSettings {
       "body"
     ) as HTMLBodyElement;
 
-    // Apply publishers default
-    html.style.removeProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY);
+    // // Apply publishers default
+    // html.style.removeProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY);
     // Apply font size
     html.style.removeProperty(ReadiumCSS.FONT_SIZE_KEY);
     // Apply word spacing
@@ -468,6 +466,7 @@ export class UserSettings implements IUserSettings {
   }
 
   async applyProperties(): Promise<any> {
+    this.userProperties = this.getUserSettings();
     const html = HTMLUtilities.findRequiredIframeElement(
       this.iframe.contentDocument,
       "html"
@@ -490,10 +489,10 @@ export class UserSettings implements IUserSettings {
       }
       // Apply word spacing
       if (await this.getProperty(ReadiumCSS.WORD_SPACING_KEY)) {
-        html.style.setProperty(
-          ReadiumCSS.PUBLISHER_DEFAULT_KEY,
-          "readium-advanced-on"
-        );
+        // html.style.setProperty(
+        //   ReadiumCSS.PUBLISHER_DEFAULT_KEY,
+        //   "readium-advanced-on"
+        // );
         html.style.setProperty(
           ReadiumCSS.WORD_SPACING_KEY,
           this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).toString()
@@ -501,10 +500,10 @@ export class UserSettings implements IUserSettings {
       }
       // Apply letter spacing
       if (await this.getProperty(ReadiumCSS.LETTER_SPACING_KEY)) {
-        html.style.setProperty(
-          ReadiumCSS.PUBLISHER_DEFAULT_KEY,
-          "readium-advanced-on"
-        );
+        // html.style.setProperty(
+        //   ReadiumCSS.PUBLISHER_DEFAULT_KEY,
+        //   "readium-advanced-on"
+        // );
         html.style.setProperty(
           ReadiumCSS.LETTER_SPACING_KEY,
           this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).toString()
@@ -531,10 +530,10 @@ export class UserSettings implements IUserSettings {
         ) {
           html.style.removeProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY);
         } else {
-          html.style.setProperty(
-            ReadiumCSS.PUBLISHER_DEFAULT_KEY,
-            "readium-advanced-on"
-          );
+          // html.style.setProperty(
+          //   ReadiumCSS.PUBLISHER_DEFAULT_KEY,
+          //   "readium-advanced-on"
+          // );
           html.style.setProperty(
             ReadiumCSS.TEXT_ALIGNMENT_KEY,
             this.userProperties
@@ -546,10 +545,10 @@ export class UserSettings implements IUserSettings {
 
       // Apply line height
       if (await this.getProperty(ReadiumCSS.LINE_HEIGHT_KEY)) {
-        html.style.setProperty(
-          ReadiumCSS.PUBLISHER_DEFAULT_KEY,
-          "readium-advanced-on"
-        );
+        // html.style.setProperty(
+        //   ReadiumCSS.PUBLISHER_DEFAULT_KEY,
+        //   "readium-advanced-on"
+        // );
         html.style.setProperty(
           ReadiumCSS.LINE_HEIGHT_KEY,
           this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).toString()
@@ -557,10 +556,10 @@ export class UserSettings implements IUserSettings {
       }
       // Apply page margins
       if (await this.getProperty(ReadiumCSS.PAGE_MARGINS_KEY)) {
-        html.style.setProperty(
-          ReadiumCSS.PUBLISHER_DEFAULT_KEY,
-          "readium-advanced-on"
-        );
+        // html.style.setProperty(
+        //   ReadiumCSS.PUBLISHER_DEFAULT_KEY,
+        //   "readium-advanced-on"
+        // );
         html.style.setProperty(
           ReadiumCSS.PAGE_MARGINS_KEY,
           this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).toString()
@@ -666,27 +665,24 @@ export class UserSettings implements IUserSettings {
       }
 
       // Apply publishers default
-      if (await this.getProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY)) {
-        if (
-          this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF)
-            .value === true
-        ) {
-          html.style.setProperty(
-            "--USER__advancedSettings",
-            "readium-advanced-off"
-          );
-        } else {
-          html.style.setProperty(
-            "--USER__advancedSettings",
-            "readium-advanced-on"
-          );
-        }
-      } else {
-        html.style.setProperty(
-          "--USER__advancedSettings",
-          "readium-advanced-off"
-        );
-      }
+      // if (await this.getProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY)) {
+      //   if (
+      //     this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF)
+      //       .value === true
+      //   ) {
+      //     html.style.setProperty(
+      //       "--USER__advancedSettings",
+      //       "readium-advanced-off"
+      //     );
+      //   } else {
+      html.style.setProperty("--USER__advancedSettings", "readium-advanced-on");
+      // }
+      // } else {
+      //   html.style.setProperty(
+      //     "--USER__advancedSettings",
+      //     "readium-advanced-off"
+      //   );
+      // }
 
       this.isScrollMode().then((scroll) => {
         this.view.setMode(scroll);
@@ -1009,7 +1005,7 @@ export class UserSettings implements IUserSettings {
   }
 
   private async updateUserSettings() {
-    var userSettings = {
+    let userSettings = {
       fontFamily:
         UserSettings.fontFamilyValues[
           await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value
@@ -1032,9 +1028,9 @@ export class UserSettings implements IUserSettings {
         .value,
       letterSpacing: this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
         .value,
-      publisherDefault: this.userProperties.getByRef(
-        ReadiumCSS.PUBLISHER_DEFAULT_REF
-      ).value,
+      // publisherDefault: this.userProperties.getByRef(
+      //   ReadiumCSS.PUBLISHER_DEFAULT_REF
+      // ).value,
       verticalScroll: this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value,
     };
     if (this.api?.updateSettings) {
@@ -1047,15 +1043,15 @@ export class UserSettings implements IUserSettings {
   }
 
   private getUserSettings(): UserProperties {
-    var userProperties = new UserProperties();
+    let userProperties = new UserProperties();
     // Publisher default system
-    userProperties.addSwitchable(
-      "readium-advanced-off",
-      "readium-advanced-on",
-      this.publisherDefaults,
-      ReadiumCSS.PUBLISHER_DEFAULT_REF,
-      ReadiumCSS.PUBLISHER_DEFAULT_KEY
-    );
+    // userProperties.addSwitchable(
+    //   "readium-advanced-off",
+    //   "readium-advanced-on",
+    //   this.publisherDefaults,
+    //   ReadiumCSS.PUBLISHER_DEFAULT_REF,
+    //   ReadiumCSS.PUBLISHER_DEFAULT_KEY
+    // );
     // Font override
     userProperties.addSwitchable(
       "readium-font-on",
@@ -1219,7 +1215,7 @@ export class UserSettings implements IUserSettings {
 
   async applyUserSettings(userSettings: UserSettings): Promise<void> {
     if (userSettings.appearance) {
-      var a: string;
+      let a: string;
       if (
         userSettings.appearance === "day" ||
         userSettings.appearance === "readium-default-on"
@@ -1243,7 +1239,7 @@ export class UserSettings implements IUserSettings {
       );
       this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value =
         this.appearance;
-      this.storeProperty(
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)
       );
     }
@@ -1252,7 +1248,7 @@ export class UserSettings implements IUserSettings {
       this.fontSize = userSettings.fontSize;
       this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).value =
         this.fontSize;
-      this.storeProperty(
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
       );
     }
@@ -1263,7 +1259,7 @@ export class UserSettings implements IUserSettings {
       );
       this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value =
         this.fontFamily;
-      this.storeProperty(
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF)
       );
     }
@@ -1272,7 +1268,7 @@ export class UserSettings implements IUserSettings {
       this.letterSpacing = userSettings.letterSpacing;
       this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).value =
         this.letterSpacing;
-      this.storeProperty(
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
     }
@@ -1281,7 +1277,7 @@ export class UserSettings implements IUserSettings {
       this.wordSpacing = userSettings.wordSpacing;
       this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).value =
         this.wordSpacing;
-      this.storeProperty(
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
     }
@@ -1292,7 +1288,7 @@ export class UserSettings implements IUserSettings {
       );
       this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value =
         this.columnCount;
-      this.storeProperty(
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF)
       );
       this.settingsColumnsChangeCallback();
@@ -1304,7 +1300,7 @@ export class UserSettings implements IUserSettings {
       );
       this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value =
         this.textAlignment;
-      this.storeProperty(
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF)
       );
     }
@@ -1313,20 +1309,21 @@ export class UserSettings implements IUserSettings {
       this.lineHeight = userSettings.lineHeight;
       this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).value =
         this.lineHeight;
-      this.storeProperty(
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF)
       );
     }
 
     if (userSettings.pageMargins) {
+      // await this.enableAdvancedSettings();
       this.pageMargins = userSettings.pageMargins;
       this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).value =
         this.pageMargins;
-      this.storeProperty(
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF)
       );
     }
-    this.applyProperties();
+    await this.applyProperties();
     this.settingsChangeCallback();
 
     setTimeout(async () => {
@@ -1337,8 +1334,10 @@ export class UserSettings implements IUserSettings {
         );
         this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
           this.verticalScroll;
-        this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF));
-        this.applyProperties();
+        await this.saveProperty(
+          this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
+        );
+        await this.applyProperties();
         this.view.setMode(this.verticalScroll);
         this.view.goToPosition(position);
         this.viewChangeCallback();
@@ -1451,11 +1450,11 @@ export class UserSettings implements IUserSettings {
     this.settingsChangeCallback();
   }
 
-  async publisher(on): Promise<void> {
-    this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = on;
-    this.storeProperty(
-      this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF)
-    );
-    this.applyProperties();
-  }
+  // async publisher(on): Promise<void> {
+  //   this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF).value = on;
+  //   this.storeProperty(
+  //     this.userProperties.getByRef(ReadiumCSS.PUBLISHER_DEFAULT_REF)
+  //   );
+  //   this.applyProperties();
+  // }
 }

@@ -380,7 +380,22 @@ height: 50px;
                            value="1" id="lineHeight" name="lineHeight"
                            onchange="D2Reader.applyUserSettings({ lineHeight: this.value});"/>
                 </div>
+                <div id="reset" style="padding-bottom: 10px">
 
+                    <center>
+                        <button style="width: 100px;
+        background-color: white;
+    height: 50px;
+    border-radius: 25px 25px 25px 25px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt; text-transform: uppercase"
+                                onclick="D2Reader.resetUserSettings();">Reset
+                        </button>
+                    </center>
+                </div>
             </div>
             <div id="container-view-note-input" class="dropdown-content notifications">
                 <ul class="note-menu" role="menu">
@@ -799,7 +814,7 @@ height: 50px;
                 buttons[1].style.backgroundColor = '#d7dcdf'
                 buttons[0].style.backgroundColor = 'white'
                 buttons[2].style.backgroundColor = 'white'
-            } else if (columnCount == '2') {
+            } else if (columnCount === '2') {
                 buttons[2].style.backgroundColor = '#d7dcdf'
                 buttons[0].style.backgroundColor = 'white'
                 buttons[1].style.backgroundColor = 'white'
@@ -808,26 +823,26 @@ height: 50px;
 
         function setScroll(scroll) {
             let buttons = document.getElementById('scrollMode').getElementsByTagName('button');
-            if (scroll == 'true') {
+            if (scroll === 'true') {
                 buttons[0].style.backgroundColor = '#d7dcdf'
                 buttons[1].style.backgroundColor = 'white'
-            } else if (scroll == 'false') {
+            } else if (scroll === 'false') {
                 buttons[1].style.backgroundColor = '#d7dcdf'
                 buttons[0].style.backgroundColor = 'white'
             }
         }
 
-        function setAlignment(columnCount) {
+        function setAlignment(textAlignment) {
             let buttons = document.getElementById('textAlignment').getElementsByTagName('button');
-            if (columnCount == 'auto') {
+            if (textAlignment === 'auto') {
                 buttons[0].style.backgroundColor = '#d7dcdf'
                 buttons[1].style.backgroundColor = 'white'
                 buttons[2].style.backgroundColor = 'white'
-            } else if (columnCount == 'justify') {
+            } else if (textAlignment === 'justify') {
                 buttons[1].style.backgroundColor = '#d7dcdf'
                 buttons[0].style.backgroundColor = 'white'
                 buttons[2].style.backgroundColor = 'white'
-            } else if (columnCount == 'start') {
+            } else if (textAlignment === 'start') {
                 buttons[2].style.backgroundColor = '#d7dcdf'
                 buttons[0].style.backgroundColor = 'white'
                 buttons[1].style.backgroundColor = 'white'
@@ -844,30 +859,30 @@ height: 50px;
                     // document.getElementById("columnCount").value = result['columnCount'];
 
                     let buttons = document.getElementById('columnCount').getElementsByTagName('button');
-                    columnCount = result['columnCount']
-                    if (columnCount == 'auto') {
+                    let columnCount = result['columnCount']
+                    if (columnCount === 'auto') {
                         buttons[0].style.backgroundColor = '#d7dcdf'
-                    } else if (columnCount == '1') {
+                    } else if (columnCount === '1') {
                         buttons[1].style.backgroundColor = '#d7dcdf'
-                    } else if (columnCount == '2') {
+                    } else if (columnCount === '2') {
                         buttons[2].style.backgroundColor = '#d7dcdf'
                     }
 
                     let buttonsScroll = document.getElementById('scrollMode').getElementsByTagName('button');
-                    scrollMode = result['verticalScroll']
-                    if (scrollMode == true) {
+                    let scrollMode = result['verticalScroll']
+                    if (scrollMode === true) {
                         buttonsScroll[0].style.backgroundColor = '#d7dcdf'
-                    } else if (scrollMode == false) {
+                    } else if (scrollMode === false) {
                         buttonsScroll[1].style.backgroundColor = '#d7dcdf'
                     }
 
                     let buttonsAlignment = document.getElementById('textAlignment').getElementsByTagName('button');
-                    columnCount = result['textAlignment']
-                    if (columnCount == 'auto') {
+                    let textAlignment = result['textAlignment']
+                    if (textAlignment === 'auto') {
                         buttonsAlignment[0].style.backgroundColor = '#d7dcdf'
-                    } else if (columnCount == 'justify') {
+                    } else if (textAlignment === 'justify') {
                         buttonsAlignment[1].style.backgroundColor = '#d7dcdf'
-                    } else if (columnCount == 'start') {
+                    } else if (textAlignment === 'start') {
                         buttonsAlignment[2].style.backgroundColor = '#d7dcdf'
                     }
 
@@ -879,7 +894,6 @@ height: 50px;
                 })
 
         }
-
     </script>
 
 

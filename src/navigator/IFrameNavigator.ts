@@ -2440,7 +2440,7 @@ export default class IFrameNavigator implements Navigator {
   }
 
   positions(): any {
-    return this.publication.positions;
+    return this.publication.positions ? this.publication.positions : [];
   }
   goToPosition(position: number) {
     if (this.publication.positions) {

@@ -87,6 +87,13 @@ export async function unload() {
     MediaOverlayModuleInstance.stop();
   }
 }
+export function hasMediaOverlays() {
+  if (IS_DEV) {
+    console.log("hasMediaOverlays");
+  }
+  return D2Navigator.hasMediaOverlays;
+}
+
 export function startReadAloud() {
   if (IS_DEV) {
     console.log("startReadAloud");

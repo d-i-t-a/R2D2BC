@@ -45,6 +45,74 @@
     background-color: var(--RS__underlineHoverColor) !important;
 }
 
+:root[style] .r2-mo-active,
+:root .r2-mo-active {
+    background-color: yellow !important;
+    color: black !important;
+}
+:root[style*="readium-night-on"] .r2-mo-active {
+    background-color: #333333 !important;
+    color: white !important;
+}
+:root[style*="readium-sepia-on"] .r2-mo-active {
+    background-color: silver !important;
+    color: black !important;
+}
+
+.orange {
+    background: rgba(255, 165, 0, 0.5) !important;
+    border-bottom: solid 2px rgb(255, 165, 0) !important;
+    z-index: 2;
+    position: relative;
+}
+.red {
+    background: rgba(255,0,0,0.5) !important;
+    border-bottom: solid 2px rgb(255,0,0) !important;
+    z-index: 2;
+    position: relative;
+}
+.blue {
+    background: rgba(0,0,255,0.5) !important;
+    border-bottom: solid 2px rgb(0,0,255) !important;
+    z-index: 2;
+    position: relative;
+}
+.purple {
+    background: rgba(102,0,153,0.5) !important;
+    border-bottom: solid 2px rgb(102,0,153) !important;
+    z-index: 2;
+    position: relative;
+}
+.green {
+    background: rgba(0,102,0,0.5) !important;
+    border-bottom: solid 2px rgb(0,102,0) !important;
+    z-index: 2;
+    position: relative;
+}
+.gray {
+    background: rgba(85,85,85,0.5) !important;
+    border-bottom: solid 2px rgb(85,85,85) !important;
+    z-index: 2;
+    position: relative;
+}
+.orangetext {
+    color: rgb(255, 165, 0) !important;
+}
+.redtext {
+    color: rgb(255,0,0) !important;
+}
+.bluetext {
+    color: rgb(0,0,255) !important;
+}
+.purpletext {
+    color: rgb(102,0,153) !important;
+}
+.greentext {
+    color: rgb(0,102,0) !important;
+}
+.graytext {
+    color:  rgb(85,85,85) !important;
+}
 [data-tts-current-word="true"][data-tts-color="orange"] {
     background: rgba(255, 165, 0, 0.5) !important;
     border-bottom: solid 2px rgb(255, 165, 0) !important;

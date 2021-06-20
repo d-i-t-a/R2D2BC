@@ -400,7 +400,7 @@
                 enableTTS: true,
                 enableSearch: true,
                 enableTimeline: true,
-                enableContentProtection: true,
+                enableContentProtection: false,
             },
             tts: {
                 enableSplitter: true,
@@ -414,6 +414,46 @@
                 //         name : "Daniel",
                 //         lang : "en-GB",
                 //     }
+                api: {
+                    started: function () {
+                        console.log("started")
+                        return new Promise(function (resolve, reject) {
+                            resolve
+                        })
+                    },
+                    stopped: function () {
+                        console.log("stopped")
+                        return new Promise(function (resolve, reject) {
+                            resolve()
+                        })
+                    },
+                    paused: function () {
+                        console.log("paused")
+                        return new Promise(function (resolve, reject) {
+                            resolve()
+                        })
+                    },
+                    resumed: function () {
+                        console.log("resumed")
+                        return new Promise(function (resolve, reject) {
+                            resolve()
+                        })
+                    },
+                    finished: function () {
+                        console.log("finished")
+                        return new Promise(function (resolve, reject) {
+                            resolve()
+                        })
+                    },
+                    updateSettings: function (settings) {
+                        console.log("updateSettings")
+                        return new Promise(function (resolve, reject) {
+                            resolve(
+                                settings
+                            )
+                        })
+                    }
+                }
             },
             search: {
                 color: "#fce300",

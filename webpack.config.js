@@ -43,8 +43,13 @@ module.exports = [
     ],
     output: {
       filename: "[name].js",
-      library: "D2Reader",
+      library: {
+        name: "D2Reader",
+        export: "default",
+        type: "var",
+      },
       path: path.resolve(__dirname, "dist"),
+      iife: true,
     },
   },
   {

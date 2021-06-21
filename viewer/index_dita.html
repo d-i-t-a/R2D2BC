@@ -30,7 +30,6 @@
     <!-- R2 Reader CSS -->
     <link rel="stylesheet" href="reader.css" />
 
-    <script> var exports = {}; </script>
     <script src="reader.js"></script>
 
     <!-- Material Icons-->
@@ -102,32 +101,32 @@
 
                 <center style="display: flex;
     justify-content: center;">
-                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="D2Reader.startReadAloud()"><i
+                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="d2reader.startReadAloud()"><i
                             class="material-icons">play_arrow</i>PLAY
                     </button>
-                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="D2Reader.stopReadAloud()"><i
+                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="d2reader.stopReadAloud()"><i
                             class="material-icons">stop</i>STOP
                     </button>
-                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="D2Reader.pauseReadAloud()"><i
+                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="d2reader.pauseReadAloud()"><i
                             class="material-icons">pause</i>PAUSE
                     </button>
-                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="D2Reader.resumeReadAloud()"><i
+                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="d2reader.resumeReadAloud()"><i
                             class="material-icons">play_arrow</i>RESUME
                     </button>
                 </center>
                 <center style="display: flex;
     justify-content: center;">
-                    <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'orange' })"><i
+                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'orange' })"><i
                             class="material-icons" style="color: rgba(250, 96, 0, 0.5);font-size: 24pt;">lense</i></button>
-                    <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'red' })"><i
+                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'red' })"><i
                             class="material-icons"
                             style="color: indianred;font-size: 24pt;">lense</i></button>
-                    <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'gray' })"><i
+                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'gray' })"><i
                             class="material-icons"
                             style="color: lightslategrey;font-size: 24pt;">lense</i></button>
-                    <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'purple' })"><i
+                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'purple' })"><i
                             class="material-icons" style="color: mediumpurple;font-size: 24pt;">lense</i></button>
-                    <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'green' })"><i
+                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'green' })"><i
                             class="material-icons"
                             style="color: lightgreen;font-size: 24pt;">lense</i></button>
                 </center>
@@ -138,7 +137,7 @@
     align-items: center;">
                         <label style="margin-right: 10px;">Auto Scroll</label>
                         <input type="checkbox" class="filled" id="autoScroll" name="autoScroll"
-                               onchange="D2Reader.applyTTSSettings({ autoScroll: this.checked })">
+                               onchange="d2reader.applyTTSSettings({ autoScroll: this.checked })">
                     </center>
                 </div>
 
@@ -147,7 +146,7 @@
     text-align: center;
     line-height: 12pt;height: 0px;">Language</label>
                     <center>
-                        <select style="width: 80%;" onchange="D2Reader.applyPreferredVoice(value)"
+                        <select style="width: 80%;" onchange="d2reader.applyPreferredVoice(value)"
                                 id="preferred-languages">
                             <option value="" disabled selected>Choose language</option>
                         </select>
@@ -159,7 +158,7 @@
     line-height: 12pt;height: 0px;">Rate</label>
                     <input class="range-slider__range_settings" type="range" min="0.1" max="10" step="0.1"
                            value="1" id="speechRate" name="speechRate"
-                           onchange="D2Reader.applyTTSSettings({ rate: this.value })"/>
+                           onchange="d2reader.applyTTSSettings({ rate: this.value })"/>
                 </div>
                 <div class="range-slider">
                     <label style="display: block;
@@ -167,7 +166,7 @@
     line-height: 12pt;height: 0px;">Pitch</label>
                     <input class="range-slider__range_settings" type="range" min="0.1" max="2" step="0.1"
                            value="1" id="speechPitch" name="speechPitch"
-                           onchange="D2Reader.applyTTSSettings({ pitch: this.value })"/>
+                           onchange="d2reader.applyTTSSettings({ pitch: this.value })"/>
                 </div>
                 <div class="range-slider">
                     <label style="display: block;
@@ -175,7 +174,7 @@
     line-height: 12pt;height: 0px;">Volume</label>
                     <input class="range-slider__range_settings" type="range" min="0.1" max="1" step="0.1"
                            value="1" id="speechVolume" name="speechVolume"
-                           onchange="D2Reader.applyTTSSettings({ volume: this.value })"/>
+                           onchange="d2reader.applyTTSSettings({ volume: this.value })"/>
                 </div>
 
 
@@ -188,7 +187,7 @@
     line-height: 12pt;height: 0px;">Fontsize</label>
                     <input class="range-slider__range_settings" type="range" min="100" max="300" step="25"
                            value="100" id="fontSize" name="fontSize"
-                           onchange="D2Reader.applyUserSettings({ fontSize: this.value })"/>
+                           onchange="d2reader.applyUserSettings({ fontSize: this.value })"/>
                 </div>
 
                 <div>
@@ -196,7 +195,7 @@
     text-align: center;
     line-height: 12pt;height: 0px;">Font</label>
                     <center>
-                        <select style="width: 80%;" onchange="D2Reader.applyUserSettings({fontFamily:value});reload();"
+                        <select style="width: 80%;" onchange="d2reader.applyUserSettings({fontFamily:value});reload();"
                                 id="fontFamily">
                             <option value="Original">Publisher</option>
                             <option value="serif">Serif</option>
@@ -215,7 +214,7 @@
     border-width: 1px;
     border-style: solid;
     color: black;
-    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'day'})">DAY
+    font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({appearance:'day'})">DAY
                         </button><button style="width: 30%;
     background-color: wheat;
     height: 50px;
@@ -224,7 +223,7 @@
     border-width: 1px;
     border-style: solid;
     color: black;
-    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'sepia'})">SEPIA
+    font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({appearance:'sepia'})">SEPIA
                     </button><button style="width: 30%;
     background-color: black;
     height: 50px;
@@ -233,7 +232,7 @@
     border-width: 1px;
     border-style: solid;
     color: white;
-    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'night'})">NIGHT
+    font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({appearance:'night'})">NIGHT
                     </button>
                     </center>
                 </div>
@@ -253,7 +252,7 @@ height: 50px;
     border-style: solid;
     color: black;
     font-size: 9pt; text-transform: uppercase"
-                                onclick="D2Reader.applyUserSettings({verticalScroll:true});setScroll('true')">Scroll
+                                onclick="d2reader.applyUserSettings({verticalScroll:true});setScroll('true')">Scroll
                         </button><button style="width: 100px;
         background-color: white;
 height: 50px;
@@ -263,7 +262,7 @@ height: 50px;
     border-style: solid;
     color: black;
     font-size: 9pt;text-transform: uppercase"
-                                         onclick="D2Reader.applyUserSettings({verticalScroll:false});setScroll('false')">
+                                         onclick="d2reader.applyUserSettings({verticalScroll:false});setScroll('false')">
                         Paginated
                     </button>
                     </center>
@@ -282,7 +281,7 @@ height: 50px;
     border-style: solid;
     color: black;
     font-size: 9pt;text-transform: uppercase"
-                                onclick="D2Reader.applyUserSettings({textAlignment:'auto'});setAlignment('auto')">Auto
+                                onclick="d2reader.applyUserSettings({textAlignment:'auto'});setAlignment('auto')">Auto
                         </button><button style="width: 30%;
         background-color: white;
 height: 50px;
@@ -292,7 +291,7 @@ height: 50px;
     border-style: solid;
     color: black;
     font-size: 9pt;text-transform: uppercase"
-                                         onclick="D2Reader.applyUserSettings({textAlignment:'justify'});setAlignment('justify')">
+                                         onclick="d2reader.applyUserSettings({textAlignment:'justify'});setAlignment('justify')">
                         justify
                     </button><button style="width: 30%;
         background-color: white;
@@ -303,7 +302,7 @@ height: 50px;
     border-style: solid;
     color: black;
     font-size: 9pt;text-transform: uppercase"
-                                     onclick="D2Reader.applyUserSettings({textAlignment:'start'});setAlignment('start')">
+                                     onclick="d2reader.applyUserSettings({textAlignment:'start'});setAlignment('start')">
                         start
                     </button>
                     </center>
@@ -322,7 +321,7 @@ height: 50px;
     border-style: solid;
     color: black;
     font-size: 9pt;text-transform: uppercase"
-                                onclick="D2Reader.applyUserSettings({columnCount:'auto'});setColor('auto')">Auto
+                                onclick="d2reader.applyUserSettings({columnCount:'auto'});setColor('auto')">Auto
                         </button><button style="width: 30%;
         background-color: white;
 height: 50px;
@@ -331,7 +330,7 @@ height: 50px;
     border-width: 1px;
     border-style: solid;
     color: black;
-    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({columnCount:'1'});setColor('1')">
+    font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({columnCount:'1'});setColor('1')">
                         Single
                     </button><button style="width: 30%;
         background-color: white;
@@ -341,7 +340,7 @@ height: 50px;
     border-width: 1px;
     border-style: solid;
     color: black;
-    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({columnCount:'2'});setColor('2')">
+    font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({columnCount:'2'});setColor('2')">
                         Double
                     </button>
                     </center>
@@ -353,7 +352,7 @@ height: 50px;
     line-height: 12pt;height: 0px;">Word Spacing</label>
                     <input class="range-slider__range_settings"  type="range" min="0" max="1" step="0.25"
                            value="0" id="wordSpacing" name="wordSpacing"
-                           onchange="D2Reader.applyUserSettings({ wordSpacing: this.value});"/>
+                           onchange="d2reader.applyUserSettings({ wordSpacing: this.value});"/>
                 </div>
                 <div class="range-slider">
                     <label  style="display: block;
@@ -362,7 +361,7 @@ height: 50px;
                     <input class="range-slider__range_settings" type="range" min="0" max="0.5"
                            step="0.0625"
                            value="0" id="letterSpacing" name="letterSpacing"
-                           onchange="D2Reader.applyUserSettings({ letterSpacing: this.value });"/>
+                           onchange="d2reader.applyUserSettings({ letterSpacing: this.value });"/>
                 </div>
                 <div class="range-slider">
                     <label  style="display: block;
@@ -370,7 +369,7 @@ height: 50px;
     line-height: 12pt;height: 0px;">Page Margins</label>
                     <input class="range-slider__range_settings" type="range" min="0.5" max="4" step="0.25"
                            value="1" id="pageMargins" name="pageMargins"
-                           onchange="D2Reader.applyUserSettings({ pageMargins: this.value});"/>
+                           onchange="d2reader.applyUserSettings({ pageMargins: this.value});"/>
                 </div>
                 <div class="range-slider">
                     <label  style="display: block;
@@ -378,7 +377,7 @@ height: 50px;
     line-height: 12pt;height: 0px;">Line Height</label>
                     <input class="range-slider__range_settings"  type="range" min="1" max="2" step="0.25"
                            value="1" id="lineHeight" name="lineHeight"
-                           onchange="D2Reader.applyUserSettings({ lineHeight: this.value});"/>
+                           onchange="d2reader.applyUserSettings({ lineHeight: this.value});"/>
                 </div>
                 <div id="reset" style="padding-bottom: 10px">
 
@@ -442,7 +441,7 @@ height: 50px;
                         <span class="chapter-title"></span>
                     </div>
                     <div class="scrubber">
-                        <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="javascript:D2Reader.goToPosition( this.value )" />
+                        <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="javascript:d2reader.goToPosition( this.value )" />
                     </div>
                     <div>
                         <span class="remaining-positions"></span>
@@ -525,6 +524,7 @@ height: 50px;
     </div>
 
     <script>
+
         let getURLQueryParams = function () {
             let params = {};
             let query = window.location.search;
@@ -577,7 +577,9 @@ height: 50px;
             }
         ]
 
-        D2Reader.load({
+        let d2reader;
+            console.log(D2Reader)
+        D2Reader.build({
             upLinkUrl: upLink,
             url: new URL(urlParams['url']),
             attributes: {
@@ -796,11 +798,12 @@ height: 50px;
             userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {
-            console.log("D2Reader loaded ", instance);
+            console.log("D2reader instance ready", instance);
+            d2reader = instance;
             // console.log("instance.bookmarkModule ", instance.bookmarkModule)
             // console.log("instance.annotationModule ", instance.annotationModule)
         }).catch(error => {
-            console.error("error.message ", error.message);
+            console.error(error)
             document.getElementById("reader-error").innerText = error.message
         });
 

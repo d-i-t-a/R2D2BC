@@ -68,9 +68,8 @@ export default class D2Reader {
 
     const upLink: UpLinkConfig = initialConfig.upLinkUrl ?? undefined;
 
-    const publication: Publication = await Publication.getManifest(
-      webpubManifestUrl,
-      store
+    const publication: Publication = await Publication.fromUrl(
+      webpubManifestUrl
     );
 
     // update our config based on what we know from the publication
@@ -130,7 +129,7 @@ export default class D2Reader {
 
     // Highlighter
     const highligherEnabled =
-      (publication.metadata.rendition?.layout ?? "unknown") !== "fixed";
+      (publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed";
     const highlighter = highligherEnabled
       ? await TextHighlighter.create({
           delegate: navigator,
@@ -369,9 +368,9 @@ export default class D2Reader {
   /**
    * Publisher?
    */
-  publisher = (on) => {
-    this.settings.publisher(on);
-  };
+  // publisher = (on) => {
+  //   this.settings.publisher(on);
+  // };
 
   /**
    * TTS Settings
@@ -466,7 +465,7 @@ function updateConfig(
 ): ReaderConfig {
   // Some settings must be disabled for fixed-layout publications
   // maybe we should warn the user we are disabling them here.
-  if (publication.metadata.rendition?.layout === "fixed") {
+  if (publication.isFixedLayout) {
     config.rights.enableAnnotations = false;
     config.rights.enableSearch = false;
     config.rights.enableTTS = false;

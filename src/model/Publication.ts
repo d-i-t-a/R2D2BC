@@ -22,9 +22,10 @@ import { Link } from "./Link";
 import { Publication as R2Publication } from "r2-shared-js/dist/es6-es2015/src/models/publication";
 import { Link as R2Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
 import { JsonObject } from "ta-json-x";
+import { TaJsonDeserialize } from "../utils/JsonUtil";
 
 @JsonObject()
-export class Publication extends R2Publication {
+export default class Publication extends R2Publication {
   manifestUrl: URL;
   public positions: Array<Locator>;
 
@@ -39,6 +40,9 @@ export class Publication extends R2Publication {
   }
   get pageList() {
     return this.PageList;
+  }
+  get isFixedLayout() {
+    return this.Metadata.Rendition?.Layout === "fixed";
   }
 
   public getStartLink(): Link | null {
@@ -293,5 +297,15 @@ export class Publication extends R2Publication {
     this.readingOrder.forEach((link) => {
       link.contentWeight = weights[link.href];
     });
+  }
+
+  static async fromUrl(url: URL): Promise<Publication> {
+    const response = await fetch(url.href, {
+      credentials: "same-origin",
+    });
+    const manifestJSON = await response.json();
+    let publication = TaJsonDeserialize<Publication>(manifestJSON, Publication);
+    publication.manifestUrl = url;
+    return publication;
   }
 }

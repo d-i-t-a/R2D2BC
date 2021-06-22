@@ -99,10 +99,7 @@ export default class D2Reader {
       headerMenu: headerMenu,
       material: config.material,
       api: config.api,
-      layout:
-        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-          ? "fixed"
-          : "reflowable",
+      layout: publication.layout,
     });
 
     // Navigator
@@ -119,17 +116,15 @@ export default class D2Reader {
       api: config.api,
       rights: config.rights,
       tts: config.tts,
-      injectables:
-        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-          ? config.injectablesFixed
-          : config.injectables,
+      injectables: publication.isFixedLayout
+        ? config.injectablesFixed
+        : config.injectables,
       attributes: config.attributes,
       services: config.services,
     });
 
     // Highlighter
-    const highligherEnabled =
-      (publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed";
+    const highligherEnabled = publication.isReflowable;
     const highlighter = highligherEnabled
       ? await TextHighlighter.create({
           delegate: navigator,

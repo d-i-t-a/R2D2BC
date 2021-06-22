@@ -458,9 +458,7 @@ export default class IFrameNavigator implements Navigator {
         this.spreads.appendChild(this.firstSpread);
         this.firstSpread.appendChild(this.iframes[0]);
 
-        if (
-          (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-        ) {
+        if (this.publication.isFixedLayout) {
           if (this.settings.columnCount !== 1) {
             let secondSpread = document.createElement("div");
             this.spreads.appendChild(secondSpread);
@@ -488,9 +486,7 @@ export default class IFrameNavigator implements Navigator {
         }
       }
 
-      if (
-        (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-      ) {
+      if (this.publication.isFixedLayout) {
         var wrapper = HTMLUtilities.findRequiredElement(
           mainElement,
           "main#iframe-wrapper"
@@ -759,11 +755,7 @@ export default class IFrameNavigator implements Navigator {
           if (!this.rights?.enableSearch) {
             menuSearch.parentElement.style.removeProperty("display");
           }
-          if (
-            menuSearch &&
-            (this.view.delegate.publication.Metadata.Rendition?.Layout ??
-              "unknown") === "fixed"
-          ) {
+          if (menuSearch && this.view.delegate.publication.isFixedLayout) {
             menuSearch.parentElement.style.setProperty("display", "none");
           }
         }
@@ -811,8 +803,7 @@ export default class IFrameNavigator implements Navigator {
   reload = async () => {
     let lastReadingPosition: ReadingPosition | null = null;
     if (this.annotator) {
-      lastReadingPosition =
-        (await this.annotator.getLastReadingPosition()) as ReadingPosition | null;
+      lastReadingPosition = (await this.annotator.getLastReadingPosition()) as ReadingPosition | null;
     }
 
     if (lastReadingPosition) {
@@ -1013,22 +1004,28 @@ export default class IFrameNavigator implements Navigator {
           if (this.remainingPositions)
             this.remainingPositions.style.display = "inline";
           if (this.eventHandler) {
-            this.eventHandler.onInternalLink =
-              this.handleInternalLink.bind(this);
-            this.eventHandler.onClickThrough =
-              this.handleClickThrough.bind(this);
+            this.eventHandler.onInternalLink = this.handleInternalLink.bind(
+              this
+            );
+            this.eventHandler.onClickThrough = this.handleClickThrough.bind(
+              this
+            );
           }
           if (this.touchEventHandler) {
-            this.touchEventHandler.onBackwardSwipe =
-              this.handlePreviousPageClick.bind(this);
-            this.touchEventHandler.onForwardSwipe =
-              this.handleNextPageClick.bind(this);
+            this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(
+              this
+            );
+            this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(
+              this
+            );
           }
           if (this.keyboardEventHandler) {
-            this.keyboardEventHandler.onBackwardSwipe =
-              this.handlePreviousPageClick.bind(this);
-            this.keyboardEventHandler.onForwardSwipe =
-              this.handleNextPageClick.bind(this);
+            this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(
+              this
+            );
+            this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(
+              this
+            );
           }
           if (!IFrameNavigator.isDisplayed(this.linksBottom)) {
             this.toggleDisplay(this.linksBottom);
@@ -1147,22 +1144,28 @@ export default class IFrameNavigator implements Navigator {
           if (this.remainingPositions)
             this.remainingPositions.style.display = "none";
           if (this.eventHandler) {
-            this.eventHandler.onInternalLink =
-              this.handleInternalLink.bind(this);
-            this.eventHandler.onClickThrough =
-              this.handleClickThrough.bind(this);
+            this.eventHandler.onInternalLink = this.handleInternalLink.bind(
+              this
+            );
+            this.eventHandler.onClickThrough = this.handleClickThrough.bind(
+              this
+            );
           }
           if (this.touchEventHandler) {
-            this.touchEventHandler.onBackwardSwipe =
-              this.handlePreviousPageClick.bind(this);
-            this.touchEventHandler.onForwardSwipe =
-              this.handleNextPageClick.bind(this);
+            this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(
+              this
+            );
+            this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(
+              this
+            );
           }
           if (this.keyboardEventHandler) {
-            this.keyboardEventHandler.onBackwardSwipe =
-              this.handlePreviousPageClick.bind(this);
-            this.keyboardEventHandler.onForwardSwipe =
-              this.handleNextPageClick.bind(this);
+            this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(
+              this
+            );
+            this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(
+              this
+            );
           }
           if (!IFrameNavigator.isDisplayed(this.linksBottom)) {
             this.toggleDisplay(this.linksBottom);
@@ -1365,8 +1368,7 @@ export default class IFrameNavigator implements Navigator {
 
       let lastReadingPosition: ReadingPosition | null = null;
       if (this.annotator) {
-        lastReadingPosition =
-          (await this.annotator.getLastReadingPosition()) as ReadingPosition | null;
+        lastReadingPosition = (await this.annotator.getLastReadingPosition()) as ReadingPosition | null;
       }
 
       const startLink = this.publication.getStartLink();
@@ -1424,9 +1426,8 @@ export default class IFrameNavigator implements Navigator {
       let currentLocation = this.currentChapterLink.href;
       setTimeout(() => {
         if (this.newElementId) {
-          const element = (
-            this.iframes[0].contentDocument as any
-          ).getElementById(this.newElementId);
+          const element = (this.iframes[0]
+            .contentDocument as any).getElementById(this.newElementId);
           this.view.goToElement(element);
           this.newElementId = null;
         } else {
@@ -1451,13 +1452,13 @@ export default class IFrameNavigator implements Navigator {
       }
       if (this.previousChapterAnchorElement) {
         if (this.previousChapterLink) {
-          this.previousChapterAnchorElement.href =
-            this.publication.getAbsoluteHref(this.previousChapterLink.href);
-          this.previousChapterAnchorElement.className =
-            this.previousChapterAnchorElement.className.replace(
-              " disabled",
-              ""
-            );
+          this.previousChapterAnchorElement.href = this.publication.getAbsoluteHref(
+            this.previousChapterLink.href
+          );
+          this.previousChapterAnchorElement.className = this.previousChapterAnchorElement.className.replace(
+            " disabled",
+            ""
+          );
         } else {
           this.previousChapterAnchorElement.removeAttribute("href");
           this.previousChapterAnchorElement.className += " disabled";
@@ -1478,8 +1479,10 @@ export default class IFrameNavigator implements Navigator {
           this.nextChapterAnchorElement.href = this.publication.getAbsoluteHref(
             this.nextChapterLink.href
           );
-          this.nextChapterAnchorElement.className =
-            this.nextChapterAnchorElement.className.replace(" disabled", "");
+          this.nextChapterAnchorElement.className = this.nextChapterAnchorElement.className.replace(
+            " disabled",
+            ""
+          );
         } else {
           this.nextChapterAnchorElement.removeAttribute("href");
           this.nextChapterAnchorElement.className += " disabled";
@@ -1716,9 +1719,7 @@ export default class IFrameNavigator implements Navigator {
       window.location.hostname === link.hostname;
 
     if (this.api?.getContent) {
-      if (
-        (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-      ) {
+      if (this.publication.isFixedLayout) {
         if (this.settings.columnCount !== 1) {
           if (even) {
             this.currentSpreadLinks.left = {
@@ -1809,11 +1810,7 @@ export default class IFrameNavigator implements Navigator {
             } else {
               this.iframes[0].src = "about:blank";
             }
-            if (
-              this.iframes.length == 2 &&
-              (this.publication.Metadata.Rendition?.Layout ?? "unknown") ===
-                "fixed"
-            ) {
+            if (this.iframes.length == 2 && this.publication.isFixedLayout) {
               this.currentSpreadLinks.right = {
                 href: this.currentChapterLink.href,
               };
@@ -1895,9 +1892,7 @@ export default class IFrameNavigator implements Navigator {
         });
       }
     } else {
-      if (
-        (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-      ) {
+      if (this.publication.isFixedLayout) {
         if (this.settings.columnCount !== 1) {
           if (even) {
             if (isSameOrigin) {
@@ -2041,9 +2036,7 @@ export default class IFrameNavigator implements Navigator {
         }
       }
     }
-    if (
-      (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-    ) {
+    if (this.publication.isFixedLayout) {
       setTimeout(() => {
         let height = getComputedStyle(
           index === 0 && this.iframes.length == 2
@@ -2508,7 +2501,7 @@ export default class IFrameNavigator implements Navigator {
 
   private handleNumberOfIframes(): void {
     if (
-      (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+      this.publication.isFixedLayout
     ) {
       if (this.settings.columnCount !== 1) {
         if (this.iframes.length === 1) {
@@ -2547,9 +2540,7 @@ export default class IFrameNavigator implements Navigator {
       return;
     }
 
-    if (
-      (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-    ) {
+    if (this.publication.isFixedLayout) {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
       var wrapper = HTMLUtilities.findRequiredElement(
         this.mainElement,
@@ -2930,13 +2921,13 @@ export default class IFrameNavigator implements Navigator {
         }
         if (this.previousChapterAnchorElement) {
           if (this.previousChapterLink) {
-            this.previousChapterAnchorElement.href =
-              this.publication.getAbsoluteHref(this.previousChapterLink.href);
-            this.previousChapterAnchorElement.className =
-              this.previousChapterAnchorElement.className.replace(
-                " disabled",
-                ""
-              );
+            this.previousChapterAnchorElement.href = this.publication.getAbsoluteHref(
+              this.previousChapterLink.href
+            );
+            this.previousChapterAnchorElement.className = this.previousChapterAnchorElement.className.replace(
+              " disabled",
+              ""
+            );
           } else {
             this.previousChapterAnchorElement.removeAttribute("href");
             this.previousChapterAnchorElement.className += " disabled";
@@ -2955,10 +2946,13 @@ export default class IFrameNavigator implements Navigator {
 
         if (this.nextChapterAnchorElement) {
           if (this.nextChapterLink) {
-            this.nextChapterAnchorElement.href =
-              this.publication.getAbsoluteHref(this.nextChapterLink.href);
-            this.nextChapterAnchorElement.className =
-              this.nextChapterAnchorElement.className.replace(" disabled", "");
+            this.nextChapterAnchorElement.href = this.publication.getAbsoluteHref(
+              this.nextChapterLink.href
+            );
+            this.nextChapterAnchorElement.className = this.nextChapterAnchorElement.className.replace(
+              " disabled",
+              ""
+            );
           } else {
             this.nextChapterAnchorElement.removeAttribute("href");
             this.nextChapterAnchorElement.className += " disabled";
@@ -2973,8 +2967,7 @@ export default class IFrameNavigator implements Navigator {
 
         if (this.publication.Metadata.Title) {
           if (this.bookTitle)
-            this.bookTitle.innerHTML =
-              this.publication.Metadata.Title.toString();
+            this.bookTitle.innerHTML = this.publication.Metadata.Title.toString();
         }
 
         const spineItem = this.publication.getSpineItem(currentLocation);
@@ -3053,9 +3046,7 @@ export default class IFrameNavigator implements Navigator {
           } else {
             if (this.rights?.enableSearch) {
               for (const iframe of this.iframes) {
-                this.highlighter.destroyAllhighlights(
-                  iframe.contentDocument
-                );
+                this.highlighter.destroyAllhighlights(iframe.contentDocument);
               }
               this.searchModule.drawSearch();
             }

@@ -44,6 +44,12 @@ export default class Publication extends R2Publication {
   get isFixedLayout() {
     return this.Metadata.Rendition?.Layout === "fixed";
   }
+  get isReflowable() {
+    return !this.isFixedLayout;
+  }
+  get layout(): "fixed" | "reflowable" {
+    return this.isFixedLayout ? "fixed" : "reflowable";
+  }
 
   public getStartLink(): Link | null {
     if (this.readingOrder.length > 0) {

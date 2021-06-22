@@ -107,18 +107,15 @@ export interface InitialUserSettings {
 
 export class UserSettings implements IUserSettings {
   async isPaginated() {
-    let scroll =
-      (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
-        ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
-        : this.verticalScroll;
+    let scroll = await this.getPropertyAndFallback<Switchable>(
+      "verticalScroll",
+      ReadiumCSS.SCROLL_KEY
+    );
+
     return scroll === false;
   }
   async isScrollMode() {
-    let scroll =
-      (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
-        ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
-        : this.verticalScroll;
-    return scroll === true;
+    return !(await this.isPaginated());
   }
 
   private readonly store: Store;
@@ -319,20 +316,20 @@ export class UserSettings implements IUserSettings {
   }
 
   private async initialise() {
-    this.appearance =
-      (await this.getProperty(ReadiumCSS.APPEARANCE_KEY)) != null
-        ? ((await this.getProperty(ReadiumCSS.APPEARANCE_KEY)) as Enumerable)
-            .value
-        : this.appearance;
-    this.verticalScroll =
-      (await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null
-        ? ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) as Switchable).value
-        : this.verticalScroll;
-    this.fontFamily =
-      (await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY)) != null
-        ? ((await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY)) as Enumerable)
-            .value
-        : this.fontFamily;
+    this.appearance = await this.getPropertyAndFallback<Enumerable>(
+      "appearance",
+      ReadiumCSS.APPEARANCE_KEY
+    );
+
+    this.verticalScroll = await this.getPropertyAndFallback<Switchable>(
+      "verticalScroll",
+      ReadiumCSS.SCROLL_KEY
+    );
+    this.fontFamily = await this.getPropertyAndFallback<Enumerable>(
+      "fontFamily",
+      ReadiumCSS.FONT_FAMILY_KEY
+    );
+
     if (this.fontFamily !== 0) {
       this.fontOverride = true;
     }
@@ -342,49 +339,36 @@ export class UserSettings implements IUserSettings {
     //         ReadiumCSS.PUBLISHER_DEFAULT_KEY
     //       )) as Switchable).value
     //     : this.publisherDefaults;
-    this.textAlignment =
-      (await this.getProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY)) != null
-        ? (
-            (await this.getProperty(
-              ReadiumCSS.TEXT_ALIGNMENT_KEY
-            )) as Enumerable
-          ).value
-        : this.textAlignment;
-    this.columnCount =
-      (await this.getProperty(ReadiumCSS.COLUMN_COUNT_KEY)) != null
-        ? ((await this.getProperty(ReadiumCSS.COLUMN_COUNT_KEY)) as Enumerable)
-            .value
-        : this.columnCount;
+    this.textAlignment = await this.getPropertyAndFallback<Enumerable>(
+      "textAlignment",
+      ReadiumCSS.TEXT_ALIGNMENT_KEY
+    );
+    this.columnCount = await this.getPropertyAndFallback<Enumerable>(
+      "columnCount",
+      ReadiumCSS.COLUMN_COUNT_KEY
+    );
 
-    this.fontSize =
-      (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY)) != null
-        ? ((await this.getProperty(ReadiumCSS.FONT_SIZE_KEY)) as Incremental)
-            .value
-        : this.fontSize;
-    this.wordSpacing =
-      (await this.getProperty(ReadiumCSS.WORD_SPACING_KEY)) != null
-        ? ((await this.getProperty(ReadiumCSS.WORD_SPACING_KEY)) as Incremental)
-            .value
-        : this.wordSpacing;
-    this.letterSpacing =
-      (await this.getProperty(ReadiumCSS.LETTER_SPACING_KEY)) != null
-        ? (
-            (await this.getProperty(
-              ReadiumCSS.LETTER_SPACING_KEY
-            )) as Incremental
-          ).value
-        : this.letterSpacing;
-    this.pageMargins =
-      (await this.getProperty(ReadiumCSS.PAGE_MARGINS_KEY)) != null
-        ? ((await this.getProperty(ReadiumCSS.PAGE_MARGINS_KEY)) as Incremental)
-            .value
-        : this.pageMargins;
-    this.lineHeight =
-      (await this.getProperty(ReadiumCSS.LINE_HEIGHT_KEY)) != null
-        ? ((await this.getProperty(ReadiumCSS.LINE_HEIGHT_KEY)) as Incremental)
-            .value
-        : this.lineHeight;
-    this.userProperties = this.getUserSettings();
+    this.fontSize = await this.getPropertyAndFallback<Incremental>(
+      "fontSize",
+      ReadiumCSS.FONT_SIZE_KEY
+    );
+
+    this.wordSpacing = await this.getPropertyAndFallback<Incremental>(
+      "wordSpacing",
+      ReadiumCSS.WORD_SPACING_KEY
+    );
+    this.letterSpacing = await this.getPropertyAndFallback<Incremental>(
+      "letterSpacing",
+      ReadiumCSS.LETTER_SPACING_KEY
+    );
+    this.pageMargins = await this.getPropertyAndFallback<Incremental>(
+      "pageMargins",
+      ReadiumCSS.PAGE_MARGINS_KEY
+    );
+    this.lineHeight = await this.getPropertyAndFallback<Incremental>(
+      "lineHeight",
+      ReadiumCSS.LINE_HEIGHT_KEY
+    );
   }
 
   private async reset() {
@@ -450,8 +434,9 @@ export class UserSettings implements IUserSettings {
         "#container-view-settings"
       ) as HTMLDivElement;
     if ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null) {
-      (await this.getProperty(ReadiumCSS.SCROLL_KEY)).value =
-        this.verticalScroll;
+      (
+        await this.getProperty(ReadiumCSS.SCROLL_KEY)
+      ).value = this.verticalScroll;
     } else {
       await this.saveProperty(
         new Switchable(
@@ -819,11 +804,9 @@ export class UserSettings implements IUserSettings {
         this.fontSizeButtons["decrease"],
         "click",
         async (event: MouseEvent) => {
-          (
-            this.userProperties.getByRef(
-              ReadiumCSS.FONT_SIZE_REF
-            ) as Incremental
-          ).decrement();
+          (this.userProperties.getByRef(
+            ReadiumCSS.FONT_SIZE_REF
+          ) as Incremental).decrement();
           await this.storeProperty(
             this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
           );
@@ -836,11 +819,9 @@ export class UserSettings implements IUserSettings {
         this.fontSizeButtons["increase"],
         "click",
         async (event: MouseEvent) => {
-          (
-            this.userProperties.getByRef(
-              ReadiumCSS.FONT_SIZE_REF
-            ) as Incremental
-          ).increment();
+          (this.userProperties.getByRef(
+            ReadiumCSS.FONT_SIZE_REF
+          ) as Incremental).increment();
           await this.storeProperty(
             this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
           );
@@ -860,8 +841,9 @@ export class UserSettings implements IUserSettings {
         const button = this.fontButtons[index];
         if (button) {
           addEventListenerOptional(button, "click", (event: MouseEvent) => {
-            this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value =
-              index;
+            this.userProperties.getByRef(
+              ReadiumCSS.FONT_FAMILY_REF
+            ).value = index;
             this.storeProperty(
               this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF)
             );
@@ -883,8 +865,9 @@ export class UserSettings implements IUserSettings {
         const button = this.themeButtons[index];
         if (button) {
           addEventListenerOptional(button, "click", (event: MouseEvent) => {
-            this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value =
-              index;
+            this.userProperties.getByRef(
+              ReadiumCSS.APPEARANCE_REF
+            ).value = index;
             this.storeProperty(
               this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)
             );
@@ -987,8 +970,9 @@ export class UserSettings implements IUserSettings {
         const button = this.fontButtons[index];
         if (button) {
           addEventListenerOptional(button, "click", (event: MouseEvent) => {
-            this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value =
-              index;
+            this.userProperties.getByRef(
+              ReadiumCSS.FONT_FAMILY_REF
+            ).value = index;
             this.storeProperty(
               this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF)
             );
@@ -1167,7 +1151,9 @@ export class UserSettings implements IUserSettings {
     return new Promise((resolve) => resolve(property));
   }
 
-  async getProperty(name: string): Promise<UserProperty> {
+  async getProperty<T extends UserProperty = UserProperty>(
+    name: string
+  ): Promise<T | null> {
     let array = await this.store.get(this.USERSETTINGS);
     if (array) {
       let properties = JSON.parse(array) as Array<UserProperty>;
@@ -1175,9 +1161,19 @@ export class UserSettings implements IUserSettings {
       if (properties.length === 0) {
         return null;
       }
-      return properties[0];
+      return properties[0] as T | null;
     }
     return null;
+  }
+
+  /**
+   * If the property doesn't exist in the store, will fall back to the value on this
+   */
+  async getPropertyAndFallback<T extends UserProperty = UserProperty>(
+    name: keyof this,
+    key: string
+  ): Promise<T["value"]> {
+    return (await this.getProperty(key))?.value ?? this[name];
   }
 
   async resetUserSettings(): Promise<void> {
@@ -1237,8 +1233,9 @@ export class UserSettings implements IUserSettings {
       this.appearance = UserSettings.appearanceValues.findIndex(
         (el: any) => el === a
       );
-      this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value =
-        this.appearance;
+      this.userProperties.getByRef(
+        ReadiumCSS.APPEARANCE_REF
+      ).value = this.appearance;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)
       );
@@ -1246,8 +1243,9 @@ export class UserSettings implements IUserSettings {
 
     if (userSettings.fontSize) {
       this.fontSize = userSettings.fontSize;
-      this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).value =
-        this.fontSize;
+      this.userProperties.getByRef(
+        ReadiumCSS.FONT_SIZE_REF
+      ).value = this.fontSize;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
       );
@@ -1257,8 +1255,9 @@ export class UserSettings implements IUserSettings {
       this.fontFamily = UserSettings.fontFamilyValues.findIndex(
         (el: any) => el === userSettings.fontFamily
       );
-      this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value =
-        this.fontFamily;
+      this.userProperties.getByRef(
+        ReadiumCSS.FONT_FAMILY_REF
+      ).value = this.fontFamily;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF)
       );
@@ -1266,8 +1265,9 @@ export class UserSettings implements IUserSettings {
 
     if (userSettings.letterSpacing) {
       this.letterSpacing = userSettings.letterSpacing;
-      this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).value =
-        this.letterSpacing;
+      this.userProperties.getByRef(
+        ReadiumCSS.LETTER_SPACING_REF
+      ).value = this.letterSpacing;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
@@ -1275,8 +1275,9 @@ export class UserSettings implements IUserSettings {
 
     if (userSettings.wordSpacing) {
       this.wordSpacing = userSettings.wordSpacing;
-      this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).value =
-        this.wordSpacing;
+      this.userProperties.getByRef(
+        ReadiumCSS.WORD_SPACING_REF
+      ).value = this.wordSpacing;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
@@ -1286,8 +1287,9 @@ export class UserSettings implements IUserSettings {
       this.columnCount = UserSettings.columnCountValues.findIndex(
         (el: any) => el === userSettings.columnCount
       );
-      this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value =
-        this.columnCount;
+      this.userProperties.getByRef(
+        ReadiumCSS.COLUMN_COUNT_REF
+      ).value = this.columnCount;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF)
       );
@@ -1298,8 +1300,9 @@ export class UserSettings implements IUserSettings {
       this.textAlignment = UserSettings.textAlignmentValues.findIndex(
         (el: any) => el === userSettings.textAlignment
       );
-      this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value =
-        this.textAlignment;
+      this.userProperties.getByRef(
+        ReadiumCSS.TEXT_ALIGNMENT_REF
+      ).value = this.textAlignment;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF)
       );
@@ -1307,8 +1310,9 @@ export class UserSettings implements IUserSettings {
 
     if (userSettings.lineHeight) {
       this.lineHeight = userSettings.lineHeight;
-      this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).value =
-        this.lineHeight;
+      this.userProperties.getByRef(
+        ReadiumCSS.LINE_HEIGHT_REF
+      ).value = this.lineHeight;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF)
       );
@@ -1317,8 +1321,9 @@ export class UserSettings implements IUserSettings {
     if (userSettings.pageMargins) {
       // await this.enableAdvancedSettings();
       this.pageMargins = userSettings.pageMargins;
-      this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).value =
-        this.pageMargins;
+      this.userProperties.getByRef(
+        ReadiumCSS.PAGE_MARGINS_REF
+      ).value = this.pageMargins;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF)
       );
@@ -1332,8 +1337,9 @@ export class UserSettings implements IUserSettings {
         this.verticalScroll = UserSettings.parseScrollSetting(
           userSettings.verticalScroll
         );
-        this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
-          this.verticalScroll;
+        this.userProperties.getByRef(
+          ReadiumCSS.SCROLL_REF
+        ).value = this.verticalScroll;
         await this.saveProperty(
           this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
         );
@@ -1366,8 +1372,9 @@ export class UserSettings implements IUserSettings {
   async scroll(scroll: boolean): Promise<void> {
     const position = this.view.getCurrentPosition();
     this.verticalScroll = scroll;
-    this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
-      this.verticalScroll;
+    this.userProperties.getByRef(
+      ReadiumCSS.SCROLL_REF
+    ).value = this.verticalScroll;
     this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF));
     this.applyProperties();
     if (this.material?.settings.scroll) {
@@ -1380,32 +1387,30 @@ export class UserSettings implements IUserSettings {
 
   async increase(incremental): Promise<void> {
     if (incremental === "fontSize") {
-      (
-        this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental
-      ).increment();
+      (this.userProperties.getByRef(
+        ReadiumCSS.FONT_SIZE_REF
+      ) as Incremental).increment();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
       );
     } else if (incremental === "letterSpacing") {
-      (
-        this.userProperties.getByRef(
-          ReadiumCSS.LETTER_SPACING_REF
-        ) as Incremental
-      ).increment();
+      (this.userProperties.getByRef(
+        ReadiumCSS.LETTER_SPACING_REF
+      ) as Incremental).increment();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
     } else if (incremental === "wordSpacing") {
-      (
-        this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF) as Incremental
-      ).increment();
+      (this.userProperties.getByRef(
+        ReadiumCSS.WORD_SPACING_REF
+      ) as Incremental).increment();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
     } else if (incremental === "lineHeight") {
-      (
-        this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF) as Incremental
-      ).increment();
+      (this.userProperties.getByRef(
+        ReadiumCSS.LINE_HEIGHT_REF
+      ) as Incremental).increment();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF)
       );
@@ -1416,32 +1421,30 @@ export class UserSettings implements IUserSettings {
 
   async decrease(incremental): Promise<void> {
     if (incremental === "fontSize") {
-      (
-        this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental
-      ).decrement();
+      (this.userProperties.getByRef(
+        ReadiumCSS.FONT_SIZE_REF
+      ) as Incremental).decrement();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
       );
     } else if (incremental === "letterSpacing") {
-      (
-        this.userProperties.getByRef(
-          ReadiumCSS.LETTER_SPACING_REF
-        ) as Incremental
-      ).decrement();
+      (this.userProperties.getByRef(
+        ReadiumCSS.LETTER_SPACING_REF
+      ) as Incremental).decrement();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
     } else if (incremental === "wordSpacing") {
-      (
-        this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF) as Incremental
-      ).decrement();
+      (this.userProperties.getByRef(
+        ReadiumCSS.WORD_SPACING_REF
+      ) as Incremental).decrement();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
     } else if (incremental === "lineHeight") {
-      (
-        this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF) as Incremental
-      ).decrement();
+      (this.userProperties.getByRef(
+        ReadiumCSS.LINE_HEIGHT_REF
+      ) as Incremental).decrement();
       this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF)
       );

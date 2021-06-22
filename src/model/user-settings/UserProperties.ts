@@ -114,6 +114,7 @@ export class Incremental extends UserProperty {
   }
 }
 export class Switchable extends UserProperty {
+  value: boolean;
   onValue: string;
   offValue: string;
 

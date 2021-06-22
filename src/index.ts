@@ -72,8 +72,7 @@ export default class D2Reader {
       webpubManifestUrl
     );
 
-    // update our config based on what we know from the publication
-    const config = updateConfig(initialConfig, publication);
+    const config = updateConfigForFixedLayout(initialConfig, publication);
 
     /**
      * Set up publication positions and weights by either auto
@@ -454,7 +453,7 @@ export default class D2Reader {
   };
 }
 
-function updateConfig(
+function updateConfigForFixedLayout(
   config: ReaderConfig,
   publication: Publication
 ): ReaderConfig {

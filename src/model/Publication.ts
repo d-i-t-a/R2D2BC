@@ -108,11 +108,11 @@ export default class Publication extends R2Publication {
   }
   public getRelativeHref(href: string): string | null {
     const manifest = this.manifestUrl.href.replace("/manifest.json", ""); //new URL(this.manifestUrl.href, this.manifestUrl.href).href;
-    var href = href.replace(manifest, "");
-    if (href.charAt(0) === "/") {
-      href = href.substring(1);
+    const hrefWithoutRoot = href.replace(manifest, "");
+    if (hrefWithoutRoot.charAt(0) === "/") {
+      return hrefWithoutRoot.substring(1);
     }
-    return href;
+    return hrefWithoutRoot;
   }
 
   public getTOCItemAbsolute(href: string): Link | null {

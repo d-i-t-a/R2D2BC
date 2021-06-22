@@ -16,6 +16,12 @@ module.exports = {
   },
   rules: {
     // allow unused vars and params that start with an underscore: _unused
+    "prettier/prettier": [
+      "error",
+      {
+        endOfLine: "auto",
+      },
+    ],
     "@typescript-eslint/no-unused-vars": [
       "error",
       {

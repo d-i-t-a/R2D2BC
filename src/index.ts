@@ -29,7 +29,6 @@ import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
  * is the primary interface into the D2 Reader.
  *
  * @TODO :
- *  - Type all function arguments
  *  - DEV logger
  *  - Default config
  *  - Different types for initial config and final config
@@ -56,8 +55,6 @@ export default class D2Reader {
     enforceSupportedBrowsers(initialConfig);
 
     const mainElement = findRequiredElement(document, "#D2Reader-Container");
-    // are the following elements necessary or not? They seem not to be,
-    // but we will have to change some types if they are allowed to be null
     const headerMenu = findElement(document, "#headerMenu");
     const footerMenu = findElement(document, "#footerMenu");
 

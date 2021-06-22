@@ -23,7 +23,6 @@
   "compileOnSave": true,
   "compilerOptions": {
     "experimentalDecorators": true,
-    "rootDir": "./src",
     "forceConsistentCasingInFileNames": true,
     "module": "es6",
     "noEmitOnError": true,

@@ -40,7 +40,7 @@ const App = () => {
     } as any).then(setReader);
   }, []);
 
-  const isScrolling = reader?.currentSettings().verticalScroll ?? false;
+  const isScrolling = reader?.currentSettings.verticalScroll ?? false;
 
   return (
     <div>

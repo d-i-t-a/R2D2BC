@@ -498,7 +498,7 @@ export default class IFrameNavigator implements Navigator {
           .parentElement as HTMLElement;
         iframeParent.style.height = minHeight + 40 + "px";
       } else {
-        if (this.iframes.length == 2) {
+        if (this.iframes.length === 2) {
           this.iframes.pop();
         }
       }
@@ -1751,7 +1751,7 @@ export default class IFrameNavigator implements Navigator {
                   );
                 }
               });
-            if (this.iframes.length == 2) {
+            if (this.iframes.length === 2) {
               if (index < this.publication.readingOrder.length - 1) {
                 const next = this.publication.getNextSpineItem(
                   this.currentChapterLink.href
@@ -1810,7 +1810,7 @@ export default class IFrameNavigator implements Navigator {
             } else {
               this.iframes[0].src = "about:blank";
             }
-            if (this.iframes.length == 2 && this.publication.isFixedLayout) {
+            if (this.iframes.length === 2 && this.publication.isFixedLayout) {
               this.currentSpreadLinks.right = {
                 href: this.currentChapterLink.href,
               };
@@ -1901,7 +1901,7 @@ export default class IFrameNavigator implements Navigator {
                 href: this.currentChapterLink.href,
               };
 
-              if (this.iframes.length == 2) {
+              if (this.iframes.length === 2) {
                 if (index < this.publication.readingOrder.length - 1) {
                   const next = this.publication.getNextSpineItem(
                     this.currentChapterLink.href
@@ -1925,7 +1925,7 @@ export default class IFrameNavigator implements Navigator {
                     this.currentChapterLink.href
                   );
                 });
-              if (this.iframes.length == 2) {
+              if (this.iframes.length === 2) {
                 if (index < this.publication.readingOrder.length - 1) {
                   const next = this.publication.getNextSpineItem(
                     this.currentChapterLink.href
@@ -1956,7 +1956,7 @@ export default class IFrameNavigator implements Navigator {
               };
               if (isSameOrigin) {
                 this.iframes[0].src = href;
-                if (this.iframes.length == 2) {
+                if (this.iframes.length === 2) {
                   this.iframes[1].src = this.currentChapterLink.href;
                 }
               } else {
@@ -1965,7 +1965,7 @@ export default class IFrameNavigator implements Navigator {
                   .then(async (content) => {
                     writeIframeDoc.call(this, content, href);
                   });
-                if (this.iframes.length == 2) {
+                if (this.iframes.length === 2) {
                   this.currentSpreadLinks.right = {
                     href: this.currentChapterLink.href,
                   };
@@ -1983,7 +1983,7 @@ export default class IFrameNavigator implements Navigator {
             } else {
               this.iframes[0].src = "about:blank";
             }
-            if (this.iframes.length == 2) {
+            if (this.iframes.length === 2) {
               this.currentSpreadLinks.right = {
                 href: this.currentChapterLink.href,
               };
@@ -2039,12 +2039,12 @@ export default class IFrameNavigator implements Navigator {
     if (this.publication.isFixedLayout) {
       setTimeout(() => {
         let height = getComputedStyle(
-          index === 0 && this.iframes.length == 2
+          index === 0 && this.iframes.length === 2
             ? this.iframes[1].contentDocument.body
             : this.iframes[0].contentDocument.body
         ).height;
         let width = getComputedStyle(
-          index === 0 && this.iframes.length == 2
+          index === 0 && this.iframes.length === 2
             ? this.iframes[1].contentDocument.body
             : this.iframes[0].contentDocument.body
         ).width;
@@ -2054,7 +2054,7 @@ export default class IFrameNavigator implements Navigator {
           parseInt(width.replace("px", "")) === 0
         ) {
           const head = HTMLUtilities.findRequiredIframeElement(
-            index === 0 && this.iframes.length == 2
+            index === 0 && this.iframes.length === 2
               ? this.iframes[1].contentDocument
               : this.iframes[0].contentDocument,
             "head"
@@ -2081,12 +2081,12 @@ export default class IFrameNavigator implements Navigator {
         }
 
         var iframeParent =
-          index === 0 && this.iframes.length == 2
+          index === 0 && this.iframes.length === 2
             ? this.iframes[1].parentElement.parentElement
             : (this.iframes[0].parentElement.parentElement as HTMLElement);
         var widthRatio =
           (parseInt(getComputedStyle(iframeParent).width) - 100) /
-          (this.iframes.length == 2
+          (this.iframes.length === 2
             ? parseInt(width.replace("px", "")) * 2 + 200
             : parseInt(width.replace("px", "")));
         var heightRatio =
@@ -2520,7 +2520,7 @@ export default class IFrameNavigator implements Navigator {
           "polygon(0% -20%, 100% -20%, 120% 100%, 0% 120%)";
         secondSpread.style.boxShadow = "0 0 8px 2px #ccc";
       } else {
-        if (this.iframes.length == 2) {
+        if (this.iframes.length === 2) {
           this.iframes.pop();
           this.spreads.removeChild(this.spreads.lastChild);
           // this.iframe2 = undefined;
@@ -2549,24 +2549,24 @@ export default class IFrameNavigator implements Navigator {
       wrapper.style.height = minHeight + 40 + "px";
 
       var iframeParent =
-        index === 0 && this.iframes.length == 2
+        index === 0 && this.iframes.length === 2
           ? this.iframes[1].parentElement.parentElement
           : (this.iframes[0].parentElement.parentElement as HTMLElement);
       iframeParent.style.height = minHeight + 40 + "px";
 
       let height = getComputedStyle(
-        index === 0 && this.iframes.length == 2
+        index === 0 && this.iframes.length === 2
           ? this.iframes[1].contentDocument.body
           : this.iframes[0].contentDocument.body
       ).height;
       let width = getComputedStyle(
-        index === 0 && this.iframes.length == 2
+        index === 0 && this.iframes.length === 2
           ? this.iframes[1].contentDocument.body
           : this.iframes[0].contentDocument.body
       ).width;
 
       const head = HTMLUtilities.findRequiredIframeElement(
-        index === 0 && this.iframes.length == 2
+        index === 0 && this.iframes.length === 2
           ? this.iframes[1].contentDocument
           : this.iframes[0].contentDocument,
         "head"
@@ -2592,7 +2592,7 @@ export default class IFrameNavigator implements Navigator {
 
       var widthRatio =
         (parseInt(getComputedStyle(iframeParent).width) - 100) /
-        (this.iframes.length == 2
+        (this.iframes.length === 2
           ? parseInt(width.replace("px", "")) * 2 + 200
           : parseInt(width.replace("px", "")));
       var heightRatio =

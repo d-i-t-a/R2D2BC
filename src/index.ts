@@ -452,7 +452,9 @@ export default class D2Reader {
   };
 
   /**
-   * Destructor
+   * Destructor:
+   * Only used in react applications because when they re-visit the page
+   * it tried to create a new reader, which interfered with the first one.
    */
   stop = () => {
     document.body.onscroll = () => {};

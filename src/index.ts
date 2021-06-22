@@ -363,7 +363,7 @@ export default class D2Reader {
   /**
    * Publisher?
    */
-  // publisher = (on) => {
+  // publisher = (on: boolean) => {
   //   this.settings.publisher(on);
   // };
 

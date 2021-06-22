@@ -27,9 +27,23 @@ import { TaJsonDeserialize } from "../utils/JsonUtil";
 @JsonObject()
 export default class Publication extends R2Publication {
   manifestUrl: URL;
+
   public positions: Array<Locator>;
 
-  get readingOrder() {
+  /**
+   * Initialize a publication from a manifest URL
+   */
+  static async fromUrl(url: URL): Promise<Publication> {
+    const response = await fetch(url.href, {
+      credentials: "same-origin",
+    });
+    const manifestJSON = await response.json();
+    let publication = TaJsonDeserialize<Publication>(manifestJSON, Publication);
+    publication.manifestUrl = url;
+    return publication;
+  }
+
+  get readingOrder(): Link[] {
     return this.Spine;
   }
   get tableOfContents() {
@@ -189,23 +203,22 @@ export default class Publication extends R2Publication {
      * For each item in the reading order, get its length and calculate
      * the number of positions in it, then add them all up into the totals.
      */
-    const promises = this.readingOrder.map(async (link, index) => {
+    const promises = this.readingOrder.map(async (link) => {
       // if it is fixed layout, there is no need to fetch, each item is
       // just a single page.
-      // @aferditamuriqi is this comment correct?
-      if (this.metadata.rendition?.layout === "fixed") {
+      if (this.isFixedLayout) {
         const locator: Locator = {
-          href: link.href,
+          href: link.Href,
           locations: {
             progression: 0,
             position: startPosition + 1,
           },
-          type: link.type,
+          type: link.TypeLink,
         };
         positions.push(locator);
         startPosition = startPosition + 1;
       } else {
-        const href = this.getAbsoluteHref(link.href);
+        const href = this.getAbsoluteHref(link.Href);
         // Are we fetching every item in the readingOrder to generate positions?
         // maybe in the future this can be done in the background?
         const result = await fetch(href);
@@ -216,59 +229,48 @@ export default class Publication extends R2Publication {
         const positionCount = Math.max(1, Math.ceil(length / positionLength));
         Array.from(Array(positionCount).keys()).forEach((_, position) => {
           const locator: Locator = {
-            href: link.href,
+            href: link.Href,
             locations: {
               progression: position / positionCount,
               position: startPosition + (position + 1),
             },
-            type: link.type,
+            type: link.TypeLink,
           };
           positions.push(locator);
         });
         startPosition = startPosition + positionCount;
       }
+    });
 
-      // If we are on the last item...
-      if (index + 1 === this.readingOrder.length) {
-        // for non fixed books, build up a dictionary of all the weights
-        // I am going to move this outside the map on readingOrder
-        // if (publication.metadata.rendition?.layout !== "fixed") {
-        //   publication.readingOrder.map(async (link) => {
-        //     link.contentWeight = (100 / totalContentLength) * link.contentLength;
-        //     weight[link.href] = link.contentWeight;
-        //   });
-        // }
-
-        // @aferditamuriqi what exactly does this do?
-        positions.map((locator, _index) => {
-          let resource = positions.filter(
-            (el: Locator) => el.href === decodeURI(locator.href)
-          );
-          let positionIndex = Math.ceil(
-            locator.locations.progression * (resource.length - 1)
-          );
-          locator.locations.totalProgression =
-            (locator.locations.position - 1) / positions.length;
-          locator.locations.remainingPositions = Math.abs(
-            positionIndex - (resource.length - 1)
-          );
-          locator.locations.totalRemainingPositions = Math.abs(
-            locator.locations.position - 1 - (positions.length - 1)
-          );
-        });
-      }
+    // Once you have all the positions, you can update all the progressions and total progressions and remaining.
+    positions.map((locator, _index) => {
+      const resource = positions.filter(
+        (el: Locator) => el.href === decodeURI(locator.href)
+      );
+      const positionIndex = Math.ceil(
+        locator.locations.progression * (resource.length - 1)
+      );
+      locator.locations.totalProgression =
+        (locator.locations.position - 1) / positions.length;
+      locator.locations.remainingPositions = Math.abs(
+        positionIndex - (resource.length - 1)
+      );
+      locator.locations.totalRemainingPositions = Math.abs(
+        locator.locations.position - 1 - (positions.length - 1)
+      );
+      return locator;
     });
 
     // update the link.contentWeight to be a portion of the total and
     // build up a map of link weights for non fixed layout publications
     // @aferditamuriqi but what is the "weight" object ultimately used for?
     const weight = {};
-    if (this.metadata.rendition?.layout !== "fixed") {
+    if (this.isReflowable) {
       this.readingOrder.forEach((link) => {
         // I don't totally know what this formula is saying haha, maybe we can
         // add a comment
         link.contentWeight = (100 / totalContentLength) * link.contentLength;
-        weight[link.href] = link.contentWeight;
+        weight[link.Href] = link.contentWeight;
       });
     }
 
@@ -292,7 +294,7 @@ export default class Publication extends R2Publication {
    * Fetches weights from a given service href
    */
   async fetchWeightsFromService(href: string) {
-    if (this.metadata.rendition?.layout === "fixed") {
+    if (this.isFixedLayout) {
       console.warn(
         "Not fetching weights from service for fixed layout publication."
       );
@@ -301,17 +303,7 @@ export default class Publication extends R2Publication {
     const result = await fetch(href);
     const weights = await result.json();
     this.readingOrder.forEach((link) => {
-      link.contentWeight = weights[link.href];
+      link.contentWeight = weights[link.Href];
     });
-  }
-
-  static async fromUrl(url: URL): Promise<Publication> {
-    const response = await fetch(url.href, {
-      credentials: "same-origin",
-    });
-    const manifestJSON = await response.json();
-    let publication = TaJsonDeserialize<Publication>(manifestJSON, Publication);
-    publication.manifestUrl = url;
-    return publication;
   }
 }

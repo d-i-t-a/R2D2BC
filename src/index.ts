@@ -332,9 +332,9 @@ export default class D2Reader {
   applyUserSettings = async (userSettings: UserSettings) => {
     return await this.settings.applyUserSettings(userSettings);
   };
-  currentSettings = () => {
-    return this.settings.currentSettings();
-  };
+  get currentSettings() {
+    return this.settings.currentSettings;
+  }
   scroll = async (value: boolean) => {
     return await this.settings.scroll(value);
   };

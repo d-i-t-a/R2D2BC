@@ -2,14 +2,14 @@ import "react-app-polyfill/ie11";
 import "regenerator-runtime/runtime";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import Reader from "../../src/Reader";
+import D2Reader from "../../src";
 
 const App = () => {
-  const [reader, setReader] = React.useState<Reader | null>(null);
+  const [reader, setReader] = React.useState<D2Reader | null>(null);
 
   React.useEffect(() => {
     const url = new URL("https://alice.dita.digital/manifest.json");
-    Reader.build({
+    D2Reader.build({
       url,
       injectables: injectables as any,
 

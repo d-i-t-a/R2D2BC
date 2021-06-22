@@ -19,7 +19,7 @@
 
 import Navigator from "./Navigator";
 import Annotator from "../store/Annotator";
-import { Publication } from "../model/Publication";
+import Publication from "../model/Publication";
 import EventHandler, {
   addEventListenerOptional,
   removeEventListenerOptional,
@@ -776,7 +776,7 @@ export default class IFrameNavigator implements Navigator {
           // self.annotationModule.drawIndicators()
         } else {
           if (this.rights?.enableSearch) {
-            await this.highlighter.destroyAllhighlights(
+            this.highlighter.destroyAllhighlights(
               this.iframes[0].contentDocument
             );
             self.searchModule.drawSearch();
@@ -2500,9 +2500,7 @@ export default class IFrameNavigator implements Navigator {
   }
 
   private handleNumberOfIframes(): void {
-    if (
-      this.publication.isFixedLayout
-    ) {
+    if (this.publication.isFixedLayout) {
       if (this.settings.columnCount !== 1) {
         if (this.iframes.length === 1) {
           var iframe = document.createElement("iframe");

@@ -20,7 +20,7 @@
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
 import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
-import { Publication } from "../model/Publication";
+import Publication from "../model/Publication";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { icons as IconLib } from "../utils/IconLib";
@@ -349,8 +349,9 @@ export default class BookmarkModule implements ReaderModule {
               if (link.Href && locator.href.endsWith(href)) {
                 let bookmarkItem: HTMLLIElement = document.createElement("li");
                 bookmarkItem.className = "annotation-item";
-                let bookmarkLink: HTMLAnchorElement =
-                  document.createElement("a");
+                let bookmarkLink: HTMLAnchorElement = document.createElement(
+                  "a"
+                );
                 bookmarkLink.setAttribute("href", locator.href);
 
                 if (type === AnnotationType.Bookmark) {
@@ -389,8 +390,9 @@ export default class BookmarkModule implements ReaderModule {
                     self.delegate.rights?.enableMaterial) ||
                   !self.delegate.rights?.enableMaterial
                 ) {
-                  let bookmarkDeleteLink: HTMLElement =
-                    document.createElement("button");
+                  let bookmarkDeleteLink: HTMLElement = document.createElement(
+                    "button"
+                  );
                   bookmarkDeleteLink.className = "delete";
                   bookmarkDeleteLink.innerHTML = IconLib.delete;
 

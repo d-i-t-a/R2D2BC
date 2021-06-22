@@ -24,6 +24,7 @@ import {
   Switchable,
   UserProperties,
   UserProperty,
+  UserSettingsIncrementable,
 } from "./UserProperties";
 import { ReadiumCSS } from "./ReadiumCSS";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
@@ -1376,7 +1377,7 @@ export class UserSettings implements IUserSettings {
     this.viewChangeCallback();
   }
 
-  async increase(incremental): Promise<void> {
+  async increase(incremental: UserSettingsIncrementable): Promise<void> {
     if (incremental === "fontSize") {
       (this.userProperties.getByRef(
         ReadiumCSS.FONT_SIZE_REF

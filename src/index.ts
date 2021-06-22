@@ -1,4 +1,6 @@
+import { Annotation, Bookmark, Locator } from "./model/Locator";
 import Publication from "./model/Publication";
+import { UserSettingsIncrementable } from "./model/user-settings/UserProperties";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
 import BookmarkModule from "./modules/BookmarkModule";
@@ -7,8 +9,13 @@ import TimelineModule from "./modules/positions/TimelineModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
 import SearchModule from "./modules/search/SearchModule";
 import TTSModule from "./modules/TTS/TTSModule";
-import { TTSSettings } from "./modules/TTS/TTSSettings";
+import {
+  ITTSUserSettings,
+  TTSIncrementable,
+  TTSSettings,
+} from "./modules/TTS/TTSSettings";
 import IFrameNavigator, {
+  IFrameAttributes,
   ReaderConfig,
   UpLinkConfig,
 } from "./navigator/IFrameNavigator";
@@ -86,6 +93,10 @@ export default class D2Reader {
           config.services?.positions.href
         );
       }
+      /**
+       * The weight tells each resource how large it is relative to total size,
+       * used to show a the timeline with resources sized relative to weight
+       */
       if (config.services?.weight) {
         await publication.fetchWeightsFromService(config.services?.weight.href);
       }
@@ -245,15 +256,15 @@ export default class D2Reader {
       return await this.bookmarkModule.saveBookmark();
     }
   };
-  deleteBookmark = async (bookmark) => {
+  deleteBookmark = async (bookmark: Bookmark) => {
     if (this.navigator.rights?.enableBookmarks) {
       return await this.bookmarkModule.deleteBookmark(bookmark);
     }
   };
-  deleteAnnotation = async (highlight) => {
+  deleteAnnotation = async (highlight: Annotation) => {
     return await this.annotationModule?.deleteAnnotation(highlight);
   };
-  addAnnotation = async (highlight) => {
+  addAnnotation = async (highlight: Annotation) => {
     return await this.annotationModule?.addAnnotation(highlight);
   };
   tableOfContents = async () => {
@@ -276,26 +287,26 @@ export default class D2Reader {
   /**
    * Search
    */
-  search = async (term, current) => {
+  search = async (term: string, current: boolean) => {
     if (this.navigator.rights?.enableSearch) {
       return await this.searchModule?.search(term, current);
     } else {
       return [];
     }
   };
-  goToSearchIndex = async (href, index, current) => {
+  goToSearchIndex = async (href: string, index: number, current: boolean) => {
     if (this.navigator.rights?.enableSearch) {
       await this.searchModule?.goToSearchIndex(href, index, current);
     }
   };
-  goToSearchID = async (href, index, current) => {
+  goToSearchID = async (href: string, index: number, current: boolean) => {
     if (this.navigator.rights?.enableSearch) {
       await this.searchModule?.goToSearchID(href, index, current);
     }
   };
-  clearSearch = async () => {
+  clearSearch = () => {
     if (this.navigator.rights?.enableSearch) {
-      await this.searchModule?.clearSearch();
+      this.searchModule?.clearSearch();
     }
   };
 
@@ -316,55 +327,58 @@ export default class D2Reader {
    * Settings
    */
   get publicationLanguage() {
-    return this.navigator.publication.metadata.language;
+    return this.navigator.publication.Metadata.Language;
   }
   resetUserSettings = async () => {
     return await this.settings.resetUserSettings();
   };
-  applyUserSettings = async (userSettings) => {
+  applyUserSettings = async (userSettings: UserSettings) => {
     return await this.settings.applyUserSettings(userSettings);
   };
   currentSettings = () => {
     return this.settings.currentSettings();
   };
-  scroll = async (value) => {
+  scroll = async (value: boolean) => {
     return await this.settings.scroll(value);
   };
 
+  private isTTSIncrementable(
+    incremental: UserSettingsIncrementable | TTSIncrementable
+  ): incremental is TTSIncrementable {
+    return (
+      incremental === "pitch" ||
+      incremental === "rate" ||
+      incremental === "volume"
+    );
+  }
+
   /**
-   * pitch?
+   * Used to increase anything that can be increased,
+   * such as pitch, rate, volume, fontSize
    */
-  increase = (incremental) => {
-    if (
-      (incremental === "pitch" ||
-        incremental === "rate" ||
-        incremental === "volume") &&
-      this.navigator.rights?.enableTTS
-    ) {
-      this.ttsSettings.increase(incremental);
+  increase = (incremental: UserSettingsIncrementable | TTSIncrementable) => {
+    if (this.isTTSIncrementable(incremental)) {
+      if (this.navigator.rights?.enableTTS) {
+        this.ttsSettings.increase(incremental);
+      }
     } else {
       this.settings.increase(incremental);
     }
   };
-  decrease = (incremental) => {
-    if (
-      (incremental === "pitch" ||
-        incremental === "rate" ||
-        incremental === "volume") &&
-      this.navigator.rights?.enableTTS
-    ) {
-      this.ttsSettings.decrease(incremental);
+
+  /**
+   * Used to decrease anything that can be decreased,
+   * such as pitch, rate, volume, fontSize
+   */
+  decrease = (incremental: UserSettingsIncrementable | TTSIncrementable) => {
+    if (this.isTTSIncrementable(incremental)) {
+      if (this.navigator.rights?.enableTTS) {
+        this.ttsSettings.decrease(incremental);
+      }
     } else {
       this.settings.decrease(incremental);
     }
   };
-
-  /**
-   * Publisher?
-   */
-  // publisher = (on: boolean) => {
-  //   this.settings.publisher(on);
-  // };
 
   /**
    * TTS Settings
@@ -374,18 +388,18 @@ export default class D2Reader {
       this.ttsSettings.resetTTSSettings();
     }
   };
-  applyTTSSettings = (ttsSettings) => {
+  applyTTSSettings = (ttsSettings: ITTSUserSettings) => {
     if (this.navigator.rights?.enableTTS) {
       this.ttsSettings.applyTTSSettings(ttsSettings);
     }
   };
 
-  applyTTSSetting = (key, value) => {
+  applyTTSSetting = (key: string, value) => {
     if (this.navigator.rights?.enableTTS) {
       this.ttsSettings.applyTTSSetting(key, value);
     }
   };
-  applyPreferredVoice = (value) => {
+  applyPreferredVoice = (value: string) => {
     if (this.navigator.rights?.enableTTS) {
       this.ttsSettings.applyPreferredVoice(value);
     }
@@ -401,10 +415,10 @@ export default class D2Reader {
   get positions() {
     return this.navigator.positions();
   }
-  goTo = async (locator) => {
+  goTo = async (locator: Locator) => {
     this.navigator.goTo(locator);
   };
-  goToPosition = async (value) => {
+  goToPosition = async (value: number) => {
     return this.navigator.goToPosition(value);
   };
   nextResource = async () => {
@@ -425,14 +439,15 @@ export default class D2Reader {
   atEnd = async () => {
     return this.navigator.atEnd();
   };
-  snapToElement = async (value) => {
+  snapToElement = async (value: HTMLElement) => {
     this.navigator.snapToElement(value);
   };
 
   /**
-   * ??
+   * You have attributes in the reader when you initialize it. You can set margin, navigationHeight etc...
+   * This is in case you change the attributes after initializing the reader.
    */
-  applyAttributes = (value) => {
+  applyAttributes = (value: IFrameAttributes) => {
     this.navigator.applyAttributes(value);
   };
 

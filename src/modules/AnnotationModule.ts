@@ -20,7 +20,7 @@
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
 import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
-import { Publication } from "../model/Publication";
+import Publication from "../model/Publication";
 import TextHighlighter, { _highlights } from "./highlight/TextHighlighter";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
@@ -496,8 +496,9 @@ export default class AnnotationModule implements ReaderModule {
               if (link.Href && locator.href.endsWith(href)) {
                 let bookmarkItem: HTMLLIElement = document.createElement("li");
                 bookmarkItem.className = "annotation-item";
-                let bookmarkLink: HTMLAnchorElement =
-                  document.createElement("a");
+                let bookmarkLink: HTMLAnchorElement = document.createElement(
+                  "a"
+                );
                 bookmarkLink.setAttribute("href", locator.href);
 
                 if (type === AnnotationType.Annotation) {
@@ -532,16 +533,15 @@ export default class AnnotationModule implements ReaderModule {
                         (locator as Annotation).color
                       );
                     } else {
-                      marker.style.backgroundColor = (
-                        locator as Annotation
-                      ).color;
+                      marker.style.backgroundColor = (locator as Annotation).color;
                     }
                   }
                   title.appendChild(marker);
                   bookmarkLink.appendChild(title);
 
-                  let subtitle: HTMLSpanElement =
-                    document.createElement("span");
+                  let subtitle: HTMLSpanElement = document.createElement(
+                    "span"
+                  );
                   let formattedProgression =
                     Math.round(locator.locations.progression!! * 100) +
                     "% " +
@@ -574,8 +574,9 @@ export default class AnnotationModule implements ReaderModule {
                     self.delegate.rights?.enableMaterial) ||
                   !self.delegate.rights?.enableMaterial
                 ) {
-                  let bookmarkDeleteLink: HTMLElement =
-                    document.createElement("button");
+                  let bookmarkDeleteLink: HTMLElement = document.createElement(
+                    "button"
+                  );
                   bookmarkDeleteLink.className = "delete";
                   bookmarkDeleteLink.innerHTML = IconLib.delete;
 

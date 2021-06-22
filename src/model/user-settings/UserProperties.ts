@@ -72,6 +72,12 @@ export class Enumerable extends UserProperty {
   }
 }
 
+export type UserSettingsIncrementable =
+  | "fontSize"
+  | "letterSpacing"
+  | "lineHeight"
+  | "wordSpacing";
+
 export class Incremental extends UserProperty {
   min: number;
   max: number;

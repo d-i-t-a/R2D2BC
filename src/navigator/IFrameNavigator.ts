@@ -2127,7 +2127,7 @@ export default class IFrameNavigator implements Navigator {
     return this.publication.readingOrder.length;
   }
   mostRecentNavigatedTocItem(): string {
-    return this.publication.getRelativeHref(this.currentTOCRawLink);
+    return this.currentTOCRawLink;
   }
   currentResource(): number {
     let currentLocation = this.currentChapterLink.href;
@@ -2186,13 +2186,14 @@ export default class IFrameNavigator implements Navigator {
       this.publication.positions
     ) {
       let positions = this.publication.positionsByHref(
-        this.publication.getRelativeHref(this.currentChapterLink.href)
+        this.currentChapterLink.href
       );
       let positionIndex = Math.ceil(
         this.view.getCurrentPosition() * (positions.length - 1)
       );
       position = positions[positionIndex];
-    } else {
+    }
+    if (!position) {
       var tocItem = this.publication.getTOCItem(this.currentChapterLink.href);
       if (this.currentTocUrl !== null) {
         tocItem = this.publication.getTOCItem(this.currentTocUrl);
@@ -2913,9 +2914,7 @@ export default class IFrameNavigator implements Navigator {
           this.publication.positions) ||
         this.publication.positions
       ) {
-        const positions = this.publication.positionsByHref(
-          this.publication.getRelativeHref(tocItem.href)
-        );
+        const positions = this.publication.positionsByHref(tocItem.href);
         const positionIndex = Math.ceil(
           locations.progression * (positions.length - 1)
         );

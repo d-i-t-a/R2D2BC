@@ -28,9 +28,7 @@ export class UserProperty {
 }
 
 export class Stringable extends UserProperty {
-  value: string;
-
-  constructor(value: string, ref: string, name: string) {
+  constructor(value: any, ref: string, name: string) {
     super();
     this.value = value;
     this.ref = ref;
@@ -43,8 +41,6 @@ export class Stringable extends UserProperty {
 }
 
 export class JSONable extends UserProperty {
-  value: string;
-
   constructor(value: string, ref: string, name: string) {
     super();
     this.value = value;
@@ -118,7 +114,6 @@ export class Incremental extends UserProperty {
   }
 }
 export class Switchable extends UserProperty {
-  value: boolean;
   onValue: string;
   offValue: string;
 

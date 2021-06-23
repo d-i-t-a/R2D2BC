@@ -165,4 +165,11 @@ export class Publication extends R2Publication {
       ? this.positions.filter((el: Locator) => el.href === decodeURI(href))
       : undefined;
   }
+
+  get hasMediaOverlays(): boolean {
+    return this.readingOrder
+      ? this.readingOrder.filter((el: Link) => el.Properties?.MediaOverlay)
+          .length > 0
+      : false;
+  }
 }

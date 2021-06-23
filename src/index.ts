@@ -33,21 +33,25 @@ import ContentProtectionModule from "./modules/protection/ContentProtectionModul
 import TextHighlighter from "./modules/highlight/TextHighlighter";
 import TimelineModule from "./modules/positions/TimelineModule";
 import { getUserAgentRegExp } from "browserslist-useragent-regexp";
+import MediaOverlayModule from "./modules/mediaoverlays/MediaOverlayModule";
 import { Locator } from "./model/Locator";
 import { Publication } from "./model/Publication";
 import { Link } from "./model/Link";
 import { TaJsonDeserialize } from "./utils/JsonUtil";
+import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
 
 var D2Settings: UserSettings;
 var D2TTSSettings: TTSSettings;
 var D2Navigator: IFrameNavigator;
 var D2Highlighter: TextHighlighter;
+var D2MediaOverlaySettings: MediaOverlaySettings;
 var BookmarkModuleInstance: BookmarkModule;
 var AnnotationModuleInstance: AnnotationModule;
 var TTSModuleInstance: TTSModule;
 var SearchModuleInstance: SearchModule;
 var ContentProtectionModuleInstance: ContentProtectionModule;
 var TimelineModuleInstance: TimelineModule;
+var MediaOverlayModuleInstance: MediaOverlayModule;
 
 export const IS_DEV =
   process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
@@ -78,7 +82,18 @@ export async function unload() {
   if (D2Navigator.rights?.enableTimeline) {
     TimelineModuleInstance.stop();
   }
+  if (D2Navigator.rights?.enableMediaOverlays) {
+    D2MediaOverlaySettings.stop();
+    MediaOverlayModuleInstance.stop();
+  }
 }
+export function hasMediaOverlays() {
+  if (IS_DEV) {
+    console.log("hasMediaOverlays");
+  }
+  return D2Navigator.hasMediaOverlays;
+}
+
 export function startReadAloud() {
   if (IS_DEV) {
     console.log("startReadAloud");
@@ -316,6 +331,23 @@ export async function applyTTSSetting(key, value) {
 export async function applyPreferredVoice(value) {
   if (D2Navigator.rights?.enableTTS) {
     D2TTSSettings.applyPreferredVoice(value);
+  }
+}
+
+export async function resetSyncSettings() {
+  if (D2Navigator.rights?.enableMediaOverlays) {
+    if (IS_DEV) {
+      console.log("resetSyncSettings");
+    }
+    D2MediaOverlaySettings.resetMediaOverlaySettings();
+  }
+}
+export async function applyMediaOverlaySettings(setting) {
+  if (D2Navigator.rights?.enableMediaOverlays) {
+    if (IS_DEV) {
+      console.log("applyMediaOverlaySettings");
+    }
+    D2MediaOverlaySettings.applyMediaOverlaySettings(setting);
   }
 }
 
@@ -676,6 +708,23 @@ export async function load(config: ReaderConfig): Promise<any> {
         ContentProtectionModuleInstance = contentProtectionModule;
       });
     }
+
+    // MediaOverlay Module
+    if (config.rights?.enableMediaOverlays) {
+      D2MediaOverlaySettings = await MediaOverlaySettings.create({
+        store: settingsStore,
+        initialMediaOverlaySettings: config.mediaOverlays,
+        headerMenu: headerMenu,
+        ...config.mediaOverlays,
+      });
+      MediaOverlayModuleInstance = await MediaOverlayModule.create({
+        publication: publication,
+        settings: D2MediaOverlaySettings,
+        delegate: D2Navigator,
+        ...config.mediaOverlays,
+      });
+    }
+
     return new Promise((resolve) => resolve(D2Navigator));
   } else {
     throw new Error("Browser not supported");

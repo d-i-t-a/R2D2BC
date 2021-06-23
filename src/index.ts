@@ -560,6 +560,10 @@ export async function load(config: ReaderConfig): Promise<any> {
       headerMenu: headerMenu,
       material: config.material,
       api: config.api,
+      injectables:
+        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          ? config.injectablesFixed
+          : config.injectables,
       layout:
         (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
           ? "fixed"

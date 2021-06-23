@@ -1545,7 +1545,8 @@ export default class IFrameNavigator implements Navigator {
               if (injectable.fontFamily) {
                 // UserSettings.fontFamilyValues.push(injectable.fontFamily)
                 // this.settings.setupEvents()
-                this.settings.addFont(injectable.fontFamily);
+                // this.settings.addFont(injectable.fontFamily);
+                this.settings.initAddedFont();
                 if (!injectable.systemFont) {
                   head.appendChild(
                     IFrameNavigator.createCssLink(injectable.url)
@@ -1563,7 +1564,8 @@ export default class IFrameNavigator implements Navigator {
                 );
               } else if (injectable.r2after) {
                 if (injectable.appearance) {
-                  this.settings.addAppearance(injectable.appearance);
+                  // this.settings.addAppearance(injectable.appearance);
+                  this.settings.initAddedAppearance();
                 }
                 head.appendChild(IFrameNavigator.createCssLink(injectable.url));
               } else {

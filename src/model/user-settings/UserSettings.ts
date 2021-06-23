@@ -29,7 +29,11 @@ import { ReadiumCSS } from "./ReadiumCSS";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { IS_DEV } from "../..";
 import { addEventListenerOptional } from "../../utils/EventHandler";
-import { NavigatorAPI, ReaderUI } from "../../navigator/IFrameNavigator";
+import {
+  Injectable,
+  NavigatorAPI,
+  ReaderUI,
+} from "../../navigator/IFrameNavigator";
 import ReflowableBookView from "../../views/ReflowableBookView";
 import FixedBookView from "../../views/FixedBookView";
 import BookView from "../../views/BookView";
@@ -41,6 +45,7 @@ export interface UserSettingsConfig {
   headerMenu: HTMLElement;
   material: ReaderUI;
   api: NavigatorAPI;
+  injectables: Array<Injectable>;
   layout: string;
 }
 export interface UserSettingsUIConfig {
@@ -162,6 +167,7 @@ export class UserSettings implements IUserSettings {
   private readonly headerMenu: HTMLElement;
   private material: ReaderUI | null = null;
   api: NavigatorAPI;
+  injectables: Array<Injectable>;
 
   private iframe: HTMLIFrameElement;
 
@@ -171,6 +177,7 @@ export class UserSettings implements IUserSettings {
       config.headerMenu,
       config.material,
       config.api,
+      config.injectables,
       config.layout
     );
     await settings.initialise();
@@ -295,6 +302,7 @@ export class UserSettings implements IUserSettings {
     headerMenu: HTMLElement,
     material: ReaderUI,
     api: NavigatorAPI,
+    injectables: Array<Injectable>,
     layout: string
   ) {
     this.store = store;
@@ -307,6 +315,18 @@ export class UserSettings implements IUserSettings {
     this.headerMenu = headerMenu;
     this.material = material;
     this.api = api;
+    this.injectables = injectables;
+
+    this.injectables.forEach((injectable) => {
+      if (injectable.type === "style") {
+        if (injectable.fontFamily) {
+          this.addFont(injectable.fontFamily);
+        }
+        if (injectable.appearance) {
+          this.addAppearance(injectable.appearance);
+        }
+      }
+    });
   }
 
   async stop() {
@@ -951,41 +971,47 @@ export class UserSettings implements IUserSettings {
   }
 
   addAppearance(appearance: string): any {
-    UserSettings.appearanceValues.push(appearance);
+    if (!UserSettings.appearanceValues.includes(appearance)) {
+      UserSettings.appearanceValues.push(appearance);
+    }
+  }
+
+  initAddedAppearance(): any {
     this.applyProperties();
   }
-  addFont(fontFamily: string): any {
-    if (UserSettings.fontFamilyValues.includes(fontFamily)) {
-      // ignore
-    } else {
-      UserSettings.fontFamilyValues.push(fontFamily);
-      this.applyProperties();
 
-      if (this.settingsView && this.material?.settings.fontFamily) {
-        const index = UserSettings.fontFamilyValues.length - 1;
-        this.fontButtons[index] = HTMLUtilities.findElement(
-          this.settingsView,
-          "#" + fontFamily + "-font"
-        ) as HTMLButtonElement;
-        const button = this.fontButtons[index];
-        if (button) {
-          addEventListenerOptional(button, "click", (event: MouseEvent) => {
-            this.userProperties.getByRef(
-              ReadiumCSS.FONT_FAMILY_REF
-            ).value = index;
-            this.storeProperty(
-              this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF)
-            );
-            this.applyProperties();
-            this.updateFontButtons();
-            this.settingsChangeCallback();
-            event.preventDefault();
-          });
-        }
-        this.updateFontButtons();
-        this.updateViewButtons();
-      }
+  addFont(fontFamily: string): any {
+    if (!UserSettings.fontFamilyValues.includes(fontFamily)) {
+      UserSettings.fontFamilyValues.push(fontFamily);
     }
+  }
+
+  initAddedFont(): any {
+    this.applyProperties();
+    // TODO: revisit this.
+    // if (this.settingsView && this.material?.settings.fontFamily) {
+    //   const index = UserSettings.fontFamilyValues.length - 1;
+    //   this.fontButtons[index] = HTMLUtilities.findElement(
+    //     this.settingsView,
+    //     "#" + fontFamily + "-font"
+    //   ) as HTMLButtonElement;
+    //   const button = this.fontButtons[index];
+    //   if (button) {
+    //     addEventListenerOptional(button, "click", (event: MouseEvent) => {
+    //       this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value =
+    //         index;
+    //       this.storeProperty(
+    //         this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF)
+    //       );
+    //       this.applyProperties();
+    //       this.updateFontButtons();
+    //       this.settingsChangeCallback();
+    //       event.preventDefault();
+    //     });
+    //   }
+    //   this.updateFontButtons();
+    //   this.updateViewButtons();
+    // }
   }
 
   private async updateUserSettings() {

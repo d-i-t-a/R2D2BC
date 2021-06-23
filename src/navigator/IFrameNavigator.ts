@@ -762,7 +762,8 @@ export default class IFrameNavigator implements Navigator {
               menuTTS.parentElement.style.setProperty("display", "none");
           }
           if (!this.rights?.enableSearch) {
-            menuSearch.parentElement.style.removeProperty("display");
+            if (menuSearch)
+              menuSearch.parentElement.style.removeProperty("display");
           }
           if (
             menuSearch &&
@@ -1552,7 +1553,8 @@ export default class IFrameNavigator implements Navigator {
               if (injectable.fontFamily) {
                 // UserSettings.fontFamilyValues.push(injectable.fontFamily)
                 // this.settings.setupEvents()
-                this.settings.addFont(injectable.fontFamily);
+                // this.settings.addFont(injectable.fontFamily);
+                this.settings.initAddedFont();
                 if (!injectable.systemFont) {
                   head.appendChild(
                     IFrameNavigator.createCssLink(injectable.url)
@@ -1570,7 +1572,8 @@ export default class IFrameNavigator implements Navigator {
                 );
               } else if (injectable.r2after) {
                 if (injectable.appearance) {
-                  this.settings.addAppearance(injectable.appearance);
+                  // this.settings.addAppearance(injectable.appearance);
+                  this.settings.initAddedAppearance();
                 }
                 head.appendChild(IFrameNavigator.createCssLink(injectable.url));
               } else {

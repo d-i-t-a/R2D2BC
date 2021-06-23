@@ -53,8 +53,6 @@
                         <ul id="nav-mobile-right" class="right">
                             <li style="display:none"><a class="saveBookmark" id="menu-button-bookmark"><i
                                        class="material-icons ">bookmark</i></a></li>
-                            <li><a data-target="container-view-tts-settings" class="dropdown-trigger "
-                                   id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>
                             <li><a data-target="container-view-settings" class="dropdown-trigger "
                                    id="menu-button-settings"><i class="material-icons ">settings</i></a></li>
                         </ul>
@@ -91,164 +89,81 @@
                     </ul>
                 </li>
             </ul>
-            <div id="container-view-tts-settings" class="dropdown-content settings-view notifications">
-                <ul class="settings-menu" role="menu" tabindex="0">
-
-                    <li id="container-view-rate">
-                        <ul class="settings-options">
-
-                            <li class="rate-setting"><button id="decrease-rate" class="decrease" role="menuitem"
-                                        tabindex="-1">Rate decrease</button></li>
-
-                            <li class="rate-setting"><button id="increase-rate" class="increase" role="menuitem"
-                                        tabindex="-1">Rate increase</button></li>
-
-                        </ul>
-                    </li>
-                    <li id="container-view-pitch">
-                        <ul class="settings-options">
-
-                            <li class="pitch-setting"><button id="decrease-pitch" class="decrease" role="menuitem"
-                                        tabindex="-1">Pitch decrease</button></li>
-
-                            <li class="pitch-setting"><button id="increase-pitch" class="increase" role="menuitem"
-                                        tabindex="-1">Pitch increase</button></li>
-
-                        </ul>
-                    </li>
-                    <li id="container-view-volume">
-                        <ul class="settings-options">
-
-                            <li class="volume-setting"><button id="decrease-volume" class="decrease" role="menuitem"
-                                        tabindex="-1">Volume decrease</button></li>
-
-                            <li class="volume-setting"><button id="increase-volume" class="increase" role="menuitem"
-                                        tabindex="-1">Volume increase</button></li>
-
-                        </ul>
-                    </li>
-                </ul>
-            </div>
             <div id="container-view-settings" class="dropdown-content settings-view notifications">
                 <ul class="settings-menu" role="menu" tabindex="0">
-
                     <li id="container-view-fontsize">
                         <ul class="settings-options">
-
                             <li class="font-setting"><button id="decrease-font" class="decrease" role="menuitem"
-                                        tabindex="-1">A-</button></li>
-
+                                        tabindex="-1" onclick="javascript:D2Reader.decrease('fontSize')">A-</button></li>
                             <li class="font-setting"><button id="increase-font" class="increase" role="menuitem"
-                                        tabindex="-1">A+</button></li>
-
+                                        tabindex="-1" onclick="javascript:D2Reader.increase('fontSize')">A+</button></li>
                         </ul>
                     </li>
-
                     <li id="container-view-appearance">
                         <ul class="settings-options">
-
-                            <li class="reading-theme"><button id="day-theme" class="day-theme" role="menuitem"
+                            <li class="reading-theme"><button onclick="javascript:D2Reader.applyUserSettings({appearance:'day'})" id="day-theme" class="day-theme" role="menuitem"
                                         tabindex="-1" aria-label="Day mode enabled">Day<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
-
-                            <li class="reading-theme"><button id="sepia-theme" class="sepia-theme" role="menuitem"
+                            <li class="reading-theme"><button onclick="javascript:D2Reader.applyUserSettings({appearance:'sepia'})" id="sepia-theme" class="sepia-theme" role="menuitem"
                                         tabindex="-1" aria-label="Sepia mode disabled">Sepia<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
-
-                            <li class="reading-theme"><button id="night-theme" class="night-theme" role="menuitem"
+                            <li class="reading-theme"><button onclick="javascript:D2Reader.applyUserSettings({appearance:'night'})" id="night-theme" class="night-theme" role="menuitem"
                                         tabindex="-1" aria-label="Night mode disabled">Night<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
-
                         </ul>
                     </li>
-
                     <li id="container-view-scroll">
                         <ul class="settings-options">
-
-                            <li class="reading-view"><button id="view-scroll" class="view-scroll" role="menuitem"
-                                        tabindex="-1" aria-label="Scroll view enabled">Scroll<svg
+                            <li class="reading-view"><button onclick="javascript:D2Reader.scroll(true)" id="view-scroll" class="view-scroll" role="menuitem"
+                                        tabindex="-1" aria-label="Scroll view enabled" >Scroll<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-view"><button id="view-paginated" class="view-paginated" role="menuitem"
+                            <li class="reading-view"><button onclick="javascript:D2Reader.scroll(false)" id="view-paginated" class="view-paginated" role="menuitem"
                                         tabindex="-1" aria-label="Paginated view disabled">Paginated<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
-
-
                         </ul>
                     </li>
-
-                    <!-- <li>
-                        <ul class="settings-options">
-
-                            <li class="reading-style"><button id="scrolling-book-view" class="scrolling-book-view" role="menuitem"
-                                    tabindex="-1" aria-label="Scrolling mode enabled">Scrolling<svg xmlns="http://www.w3.org/2000/svg"
-                                        preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
-                                        aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
-                            <li class="reading-style"><button id="columns-paginated-view" class="columns-paginated-view" role="menuitem"
-                                    tabindex="-1" aria-label="Paginated mode disabled">Paginated<svg xmlns="http://www.w3.org/2000/svg"
-                                        preserveAspectRatio="xMidYMid meet" class="checkedIcon" role="img"
-                                        aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
-                        </ul>
-                    </li> -->
-
-
-
-
                     <li id="container-view-fontfamily">
                         <ul class="settings-options">
 
-                            <li class="reading-style"><button id="publisher-font" class="publisher-font" role="menuitem"
+                            <li class="reading-style"><button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'Original'})" id="publisher-font" class="publisher-font" role="menuitem"
                                         tabindex="-1" aria-label="Publisher font enabled">Publisher<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-style"><button id="serif-font" class="serif-font" role="menuitem"
+                            <li class="reading-style"><button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'serif'})" id="serif-font" class="serif-font" role="menuitem"
                                         tabindex="-1" aria-label="Serif font disabled">Serif<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-style"><button id="sans-font" class="sans-font" role="menuitem"
+                            <li class="reading-style"><button onclick="javascript:D2Reader.applyUserSettings({fontFamily:'sans-serif'})" id="sans-font" class="sans-font" role="menuitem"
                                         tabindex="-1" aria-label="Sans-serif font disabled">Sans-serif<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-style"><button id="opendyslexic-font" class="opendyslexic-font"
-                                        role="menuitem" tabindex="-1" aria-label="Open Dyslexic font disabled">Open
-                                    Dyslexic<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
-                                         class="checkedIcon" role="img" aria-labelledby="check-icon">
-                                        <use xlink:href="#check-icon"></use>
-                                    </svg></button></li>
-
                         </ul>
                     </li>
-
                 </ul>
             </div>
         </header>
@@ -260,13 +175,12 @@
                 <div id="reader-info-top" class="info top">
                     <span class="book-title"></span>
                 </div>
-                <iframe allowtransparency="true" title="ePub Reader" SCROLLING="no" style="border: 0px; display: block;"
-                        width="100%" height="100%"></iframe>
                 <div id="reader-info-bottom-flex" class="info bottom">
                     <span class="chapter-position"></span>
                     <span class="chapter-title"></span>
                 </div>
             </main>
+
             <div id="container-view-security" class="security"></div>
 
             <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
@@ -366,7 +280,7 @@
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
             { type: 'style', url: '/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
-            { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
+            // { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
             { type: 'script', url: '/viewer/injectables/footnotes/footnotes.js' },
             { type: 'style', url: '/viewer/injectables/footnotes/footnotes.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
@@ -382,21 +296,8 @@
                 enableContentProtection: true,
             },
             attributes: {
-                margin: 120,
-            },
-            material: {
-                settings: {
-                    fontSize: true,
-                    fontFamily: true,
-                    appearance: true,
-                    scroll: true,
-                    // textAlign: true,
-                    // colCount: true,
-                    // wordSpacing: true,
-                    // letterSpacing: true,
-                    // pageMargins: true,
-                    // lineHeight: true
-                },
+                margin: 60,
+                iframePaddingTop: 20,
             },
             tts: {
                 enableSplitter: false,
@@ -457,7 +358,6 @@
         });
 
     </script>
-
 
     <!-- START Material Scripts -->
     <!-- Compiled and minified Materialize JavaScript -->

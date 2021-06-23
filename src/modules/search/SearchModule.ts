@@ -134,7 +134,7 @@ export default class SearchModule implements ReaderModule {
         this.headerMenu,
         "#menu-button-search"
       ) as HTMLLinkElement;
-      menuSearch.parentElement.style.removeProperty("display");
+      if (menuSearch) menuSearch.parentElement.style.removeProperty("display");
     }
   }
 

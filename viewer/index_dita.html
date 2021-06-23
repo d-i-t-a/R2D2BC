@@ -542,6 +542,7 @@ height: 50px;
             { type: 'style', url: '/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
+            { type: 'style', fontFamily: 'Courier', systemFont: true },
             { type: 'script', url: '/viewer/injectables/footnotes/footnotes.js' },
             { type: 'style', url: '/viewer/injectables/footnotes/footnotes.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
@@ -589,20 +590,6 @@ height: 50px;
                 enableContentProtection: false,
                 enableMediaOverlays: true,
                 autoGeneratePositions: true,
-            },
-            material: {
-                settings: {
-                    fontSize: true,
-                    fontFamily: true,
-                    appearance: true,
-                    scroll: true,
-                    // textAlign: true,
-                    // colCount: true,
-                    // wordSpacing: true,
-                    // letterSpacing: true,
-                    // pageMargins: true,
-                    // lineHeight: true
-                },
             },
             // services: {
             //     positions: new URL("https://alice.dita.digital/positions.json"),

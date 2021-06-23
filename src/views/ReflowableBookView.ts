@@ -58,7 +58,7 @@ export default class ReflowableBookView implements BookView {
     // }
     this.scrollMode = scroll;
 
-    if (scroll) {
+    if (scroll === true) {
       this.name = "readium-scroll-on";
       this.label = "Scrolling";
       const head = HTMLUtilities.findRequiredIframeElement(
@@ -88,11 +88,6 @@ export default class ReflowableBookView implements BookView {
       this.label = "Paginated";
       // any is necessary because CSSStyleDeclaration type does not include
       // all the vendor-prefixed attributes.
-      this.setSize();
-      const viewportElement = document.createElement("meta");
-      viewportElement.name = "viewport";
-      viewportElement.content =
-        "width=device-width, initial-scale=1, maximum-scale=1";
 
       this.checkForFixedScrollWidth();
 
@@ -101,6 +96,8 @@ export default class ReflowableBookView implements BookView {
         "html"
       ) as any;
       html.style.setProperty("--USER__scroll", "readium-scroll-off");
+      this.setSize();
+      this.setIframeHeight(this.iframe);
     }
     if (this.delegate.rights?.enableContentProtection) {
       this.delegate.contentProtectionModule.recalculate();
@@ -355,8 +352,8 @@ export default class ReflowableBookView implements BookView {
     if (this.isScrollMode()) {
       const leftHeight = document.scrollingElement.scrollTop;
       const height = this.getScreenHeight();
-      const scrollHeight = this.iframe.contentDocument.scrollingElement
-        .scrollHeight;
+      const scrollHeight =
+        this.iframe.contentDocument.scrollingElement.scrollHeight;
       const offset = leftHeight + height;
       if (offset < scrollHeight) {
         document.scrollingElement.scrollTop = offset;
@@ -366,8 +363,8 @@ export default class ReflowableBookView implements BookView {
     } else {
       const leftWidth = this.getLeftColumnsWidth();
       const width = this.getColumnWidth();
-      const scrollWidth = this.iframe.contentDocument.scrollingElement
-        .scrollWidth;
+      const scrollWidth =
+        this.iframe.contentDocument.scrollingElement.scrollWidth;
       const offset = leftWidth + width;
       if (offset < scrollWidth) {
         this.setLeftColumnsWidth(offset);
@@ -539,8 +536,8 @@ export default class ReflowableBookView implements BookView {
   /** Returns the total width of the columns that are currently
      positioned to the right of the iframe viewport. */
   private getRightColumnsWidth(): number {
-    const scrollWidth = this.iframe.contentDocument.scrollingElement
-      .scrollWidth;
+    const scrollWidth =
+      this.iframe.contentDocument.scrollingElement.scrollWidth;
     const width = this.getColumnWidth();
     let rightWidth = scrollWidth - width;
     if (this.hasFixedScrollWidth) {

@@ -28,7 +28,8 @@ export class UserProperty {
 }
 
 export class Stringable extends UserProperty {
-  constructor(value: any, ref: string, name: string) {
+  value: string;
+  constructor(value: string, ref: string, name: string) {
     super();
     this.value = value;
     this.ref = ref;
@@ -41,6 +42,7 @@ export class Stringable extends UserProperty {
 }
 
 export class JSONable extends UserProperty {
+  value: any;
   constructor(value: string, ref: string, name: string) {
     super();
     this.value = value;
@@ -73,13 +75,14 @@ export class Enumerable extends UserProperty {
 }
 
 export class Incremental extends UserProperty {
+  value: number;
   min: number;
   max: number;
   step: number;
   suffix: string;
 
   constructor(
-    value: any,
+    value: number,
     min: number,
     max: number,
     step: number,
@@ -114,6 +117,7 @@ export class Incremental extends UserProperty {
   }
 }
 export class Switchable extends UserProperty {
+  value: boolean;
   onValue: string;
   offValue: string;
 
@@ -185,7 +189,7 @@ export class UserProperties {
   }
 
   getByRef(ref: string) {
-    var result = this.properties.filter((el: any) => el.ref === ref);
+    let result = this.properties.filter((el: any) => el.ref === ref);
     if (result.length > 0) {
       return result[0];
     }
@@ -193,7 +197,7 @@ export class UserProperties {
   }
 
   getByKey(key: string) {
-    var result = this.properties.filter((el: any) => el.key === key);
+    let result = this.properties.filter((el: any) => el.key === key);
     if (result.length > 0) {
       return result[0];
     }

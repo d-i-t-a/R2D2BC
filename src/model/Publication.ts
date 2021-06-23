@@ -64,6 +64,12 @@ export default class Publication extends R2Publication {
   get layout(): "fixed" | "reflowable" {
     return this.isFixedLayout ? "fixed" : "reflowable";
   }
+  get hasMediaOverlays(): boolean {
+    return this.readingOrder
+      ? this.readingOrder.filter((el: Link) => el.Properties?.MediaOverlay)
+          .length > 0
+      : false;
+  }
 
   public getStartLink(): Link | null {
     if (this.readingOrder.length > 0) {

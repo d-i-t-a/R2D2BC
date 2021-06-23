@@ -5,6 +5,8 @@ import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
 import BookmarkModule from "./modules/BookmarkModule";
 import TextHighlighter from "./modules/highlight/TextHighlighter";
+import MediaOverlayModule from "./modules/mediaoverlays/MediaOverlayModule";
+import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
 import TimelineModule from "./modules/positions/TimelineModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
 import SearchModule from "./modules/search/SearchModule";
@@ -45,7 +47,8 @@ export default class D2Reader {
     readonly ttsModule?: TTSModule,
     readonly searchModule?: SearchModule,
     readonly contentProtectionModule?: ContentProtectionModule,
-    readonly timelineModule?: TimelineModule
+    readonly timelineModule?: TimelineModule,
+    readonly mediaOverlayModule?: MediaOverlayModule
   ) {}
   /**
    * The async builder.
@@ -106,6 +109,9 @@ export default class D2Reader {
       headerMenu: headerMenu,
       material: config.material,
       api: config.api,
+      injectables: publication.isFixedLayout
+        ? config.injectablesFixed
+        : config.injectables,
       layout: publication.layout,
     });
 
@@ -215,6 +221,25 @@ export default class D2Reader {
         })
       : undefined;
 
+    // Media Overlay Module
+    let mediaOverlaySettings: MediaOverlaySettings | undefined = undefined;
+    let mediaOverlayModule: MediaOverlayModule | undefined = undefined;
+
+    if (config.rights?.enableMediaOverlays) {
+      mediaOverlaySettings = await MediaOverlaySettings.create({
+        store: settingsStore,
+        initialMediaOverlaySettings: config.mediaOverlays,
+        headerMenu: headerMenu,
+        ...config.mediaOverlays,
+      });
+      mediaOverlayModule = await MediaOverlayModule.create({
+        publication: publication,
+        settings: mediaOverlaySettings,
+        delegate: navigator,
+        ...config.mediaOverlays,
+      });
+    }
+
     return new D2Reader(
       settings,
       ttsSettings,
@@ -225,7 +250,8 @@ export default class D2Reader {
       ttsModule,
       searchModule,
       contentProtectionModule,
-      timelineModule
+      timelineModule,
+      mediaOverlayModule
     );
   }
 

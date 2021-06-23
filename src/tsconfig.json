@@ -18,8 +18,6 @@
  */
 
 {
-  "include": ["src", "examples"],
-  "exclude": ["viewer", "injectables"],
   "compileOnSave": true,
   "compilerOptions": {
     "experimentalDecorators": true,
@@ -34,6 +32,7 @@
     "noUnusedParameters": true,
     "moduleResolution": "node",
     "outDir": "dist/",
+    "rootDir": "./",
     "sourceMap": true,
     "declaration": true,
     "preserveConstEnums": true,

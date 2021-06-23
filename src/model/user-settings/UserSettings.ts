@@ -152,11 +152,6 @@ export class UserSettings implements IUserSettings {
 
   userProperties: UserProperties;
 
-  private fontButtons: { [key: string]: HTMLButtonElement };
-  private fontSizeButtons: { [key: string]: HTMLButtonElement };
-  private themeButtons: { [key: string]: HTMLButtonElement };
-  private viewButtons: { [key: string]: HTMLButtonElement };
-
   view: BookView;
 
   private settingsChangeCallback: () => void = () => {};
@@ -165,7 +160,6 @@ export class UserSettings implements IUserSettings {
 
   private settingsView: HTMLDivElement;
   private readonly headerMenu: HTMLElement;
-  private material: ReaderUI | null = null;
   api: NavigatorAPI;
   injectables: Array<Injectable>;
 
@@ -175,7 +169,6 @@ export class UserSettings implements IUserSettings {
     const settings = new this(
       config.store,
       config.headerMenu,
-      config.material,
       config.api,
       config.injectables,
       config.layout
@@ -199,7 +192,7 @@ export class UserSettings implements IUserSettings {
         settings.appearance = UserSettings.appearanceValues.findIndex(
           (el: any) => el === initialUserSettings.appearance
         );
-        await settings.storeProperty(
+        await settings.saveProperty(
           settings.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)
         );
         if (IS_DEV) console.log(settings.appearance);
@@ -300,7 +293,6 @@ export class UserSettings implements IUserSettings {
   protected constructor(
     store: Store,
     headerMenu: HTMLElement,
-    material: ReaderUI,
     api: NavigatorAPI,
     injectables: Array<Injectable>,
     layout: string
@@ -313,7 +305,6 @@ export class UserSettings implements IUserSettings {
         : new ReflowableBookView(this.store);
 
     this.headerMenu = headerMenu;
-    this.material = material;
     this.api = api;
     this.injectables = injectables;
 
@@ -447,27 +438,13 @@ export class UserSettings implements IUserSettings {
     html.style.setProperty(ReadiumCSS.FONT_OVERRIDE_KEY, "readium-font-off");
   }
 
+  // TODO not really needed
   private async initializeSelections(): Promise<void> {
     if (this.headerMenu)
       this.settingsView = HTMLUtilities.findElement(
         this.headerMenu,
         "#container-view-settings"
       ) as HTMLDivElement;
-    if ((await this.getProperty(ReadiumCSS.SCROLL_KEY)) != null) {
-      (
-        await this.getProperty(ReadiumCSS.SCROLL_KEY)
-      ).value = this.verticalScroll;
-    } else {
-      await this.saveProperty(
-        new Switchable(
-          "readium-scroll-on",
-          "readium-scroll-off",
-          this.verticalScroll,
-          ReadiumCSS.SCROLL_REF,
-          ReadiumCSS.SCROLL_KEY
-        )
-      );
-    }
   }
 
   async applyProperties(): Promise<any> {
@@ -702,101 +679,6 @@ export class UserSettings implements IUserSettings {
   }
 
   private renderControls(element: HTMLElement): void {
-    if (this.material?.settings.fontSize) {
-      this.fontSizeButtons = {};
-      for (const fontSizeName of ["decrease", "increase"]) {
-        this.fontSizeButtons[fontSizeName] = HTMLUtilities.findElement(
-          element,
-          "#" + fontSizeName + "-font"
-        ) as HTMLButtonElement;
-      }
-    } else {
-      HTMLUtilities.findElement(element, "#container-view-fontsize")?.remove();
-    }
-    if (this.material?.settings.fontFamily) {
-      this.fontButtons = {};
-      this.fontButtons[0] = HTMLUtilities.findElement(
-        element,
-        "#publisher-font"
-      ) as HTMLButtonElement;
-      this.fontButtons[1] = HTMLUtilities.findElement(
-        element,
-        "#serif-font"
-      ) as HTMLButtonElement;
-      this.fontButtons[2] = HTMLUtilities.findElement(
-        element,
-        "#sans-font"
-      ) as HTMLButtonElement;
-      if (UserSettings.fontFamilyValues.length > 3) {
-        for (
-          let index = 3;
-          index < UserSettings.fontFamilyValues.length;
-          index++
-        ) {
-          this.fontButtons[index] = HTMLUtilities.findElement(
-            element,
-            "#" + UserSettings.fontFamilyValues[index] + "-font"
-          ) as HTMLButtonElement;
-        }
-      }
-      this.updateFontButtons();
-    } else {
-      HTMLUtilities.findElement(
-        element,
-        "#container-view-fontfamily"
-      )?.remove();
-    }
-
-    if (this.material?.settings.appearance) {
-      this.themeButtons = {};
-      this.themeButtons[0] = HTMLUtilities.findElement(
-        element,
-        "#day-theme"
-      ) as HTMLButtonElement;
-      this.themeButtons[1] = HTMLUtilities.findElement(
-        element,
-        "#sepia-theme"
-      ) as HTMLButtonElement;
-      this.themeButtons[2] = HTMLUtilities.findElement(
-        element,
-        "#night-theme"
-      ) as HTMLButtonElement;
-      if (UserSettings.appearanceValues.length > 3) {
-        for (
-          let index = 3;
-          index < UserSettings.appearanceValues.length;
-          index++
-        ) {
-          this.themeButtons[index] = HTMLUtilities.findElement(
-            element,
-            "#" + UserSettings.appearanceValues[index] + "-theme"
-          ) as HTMLButtonElement;
-        }
-      }
-    } else {
-      HTMLUtilities.findElement(
-        element,
-        "#container-view-appearance"
-      )?.remove();
-    }
-
-    if (this.material?.settings.scroll) {
-      this.viewButtons = {};
-      this.viewButtons[0] = HTMLUtilities.findElement(
-        element,
-        "#view-scroll"
-      ) as HTMLButtonElement;
-      this.viewButtons[1] = HTMLUtilities.findElement(
-        element,
-        "#view-paginated"
-      ) as HTMLButtonElement;
-      this.updateViewButtons();
-    } else {
-      HTMLUtilities.findElement(element, "#container-view-scroll")?.remove();
-    }
-
-    this.setupEvents();
-
     // Clicking the settings view outside the ul hides it, but clicking inside the ul keeps it up.
     addEventListenerOptional(
       HTMLUtilities.findElement(element, "ul"),
@@ -818,156 +700,9 @@ export class UserSettings implements IUserSettings {
     this.viewChangeCallback = callback;
   }
 
-  private async setupEvents(): Promise<void> {
-    if (this.material?.settings.fontSize) {
-      addEventListenerOptional(
-        this.fontSizeButtons["decrease"],
-        "click",
-        async (event: MouseEvent) => {
-          (this.userProperties.getByRef(
-            ReadiumCSS.FONT_SIZE_REF
-          ) as Incremental).decrement();
-          await this.storeProperty(
-            this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
-          );
-          this.applyProperties();
-          this.settingsChangeCallback();
-          event.preventDefault();
-        }
-      );
-      addEventListenerOptional(
-        this.fontSizeButtons["increase"],
-        "click",
-        async (event: MouseEvent) => {
-          (this.userProperties.getByRef(
-            ReadiumCSS.FONT_SIZE_REF
-          ) as Incremental).increment();
-          await this.storeProperty(
-            this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
-          );
-          this.applyProperties();
-          this.settingsChangeCallback();
-          event.preventDefault();
-        }
-      );
-    }
-
-    if (this.material?.settings.fontFamily) {
-      for (
-        let index = 0;
-        index < UserSettings.fontFamilyValues.length;
-        index++
-      ) {
-        const button = this.fontButtons[index];
-        if (button) {
-          addEventListenerOptional(button, "click", (event: MouseEvent) => {
-            this.userProperties.getByRef(
-              ReadiumCSS.FONT_FAMILY_REF
-            ).value = index;
-            this.storeProperty(
-              this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF)
-            );
-            this.applyProperties();
-            this.updateFontButtons();
-            this.settingsChangeCallback();
-            event.preventDefault();
-          });
-        }
-      }
-    }
-
-    if (this.material?.settings.appearance) {
-      for (
-        let index = 0;
-        index < UserSettings.appearanceValues.length;
-        index++
-      ) {
-        const button = this.themeButtons[index];
-        if (button) {
-          addEventListenerOptional(button, "click", (event: MouseEvent) => {
-            this.userProperties.getByRef(
-              ReadiumCSS.APPEARANCE_REF
-            ).value = index;
-            this.storeProperty(
-              this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)
-            );
-            this.applyProperties();
-            this.settingsChangeCallback();
-            event.preventDefault();
-          });
-        }
-      }
-    }
-
-    if (this.material?.settings.scroll) {
-      for (let index = 0; index < 2; index++) {
-        const button = this.viewButtons[index];
-        if (button) {
-          addEventListenerOptional(button, "click", (event: MouseEvent) => {
-            const position = this.view.getCurrentPosition();
-            this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
-              index === 0;
-            this.storeProperty(
-              this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
-            );
-            this.applyProperties();
-            this.updateViewButtons();
-            this.view.setMode(index === 0);
-            this.view.goToPosition(position);
-            event.preventDefault();
-            this.viewChangeCallback();
-          });
-        }
-      }
-    }
-  }
-
-  private async updateFontButtons(): Promise<void> {
-    if (this.material?.settings.fontFamily) {
-      for (
-        let index = 0;
-        index < UserSettings.fontFamilyValues.length;
-        index++
-      ) {
-        this.fontButtons[index].className = this.fontButtons[
-          index
-        ].className.replace(" active", "");
-      }
-      if (this.userProperties) {
-        if (
-          this.fontButtons[
-            await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value
-          ]
-        )
-          this.fontButtons[
-            await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value
-          ].className += " active";
-      }
-    }
-  }
-
-  private async updateViewButtons(): Promise<void> {
-    if (this.material?.settings.scroll) {
-      for (let index = 0; index < 2; index++) {
-        this.viewButtons[index].className = this.viewButtons[
-          index
-        ].className.replace(" active", "");
-      }
-
-      if (this.userProperties) {
-        const index =
-          this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value === true
-            ? 0
-            : 1;
-        if (this.viewButtons[index])
-          this.viewButtons[index].className += " active";
-      }
-    }
-  }
-
   private async storeProperty(property: UserProperty): Promise<void> {
-    this.updateUserSettings();
-    this.saveProperty(property);
+    await this.updateUserSettings();
+    await this.saveProperty(property);
   }
 
   addAppearance(appearance: string): any {
@@ -988,30 +723,6 @@ export class UserSettings implements IUserSettings {
 
   initAddedFont(): any {
     this.applyProperties();
-    // TODO: revisit this.
-    // if (this.settingsView && this.material?.settings.fontFamily) {
-    //   const index = UserSettings.fontFamilyValues.length - 1;
-    //   this.fontButtons[index] = HTMLUtilities.findElement(
-    //     this.settingsView,
-    //     "#" + fontFamily + "-font"
-    //   ) as HTMLButtonElement;
-    //   const button = this.fontButtons[index];
-    //   if (button) {
-    //     addEventListenerOptional(button, "click", (event: MouseEvent) => {
-    //       this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value =
-    //         index;
-    //       this.storeProperty(
-    //         this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF)
-    //       );
-    //       this.applyProperties();
-    //       this.updateFontButtons();
-    //       this.settingsChangeCallback();
-    //       event.preventDefault();
-    //     });
-    //   }
-    //   this.updateFontButtons();
-    //   this.updateViewButtons();
-    // }
   }
 
   private async updateUserSettings() {
@@ -1259,9 +970,8 @@ export class UserSettings implements IUserSettings {
       this.appearance = UserSettings.appearanceValues.findIndex(
         (el: any) => el === a
       );
-      this.userProperties.getByRef(
-        ReadiumCSS.APPEARANCE_REF
-      ).value = this.appearance;
+      this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value =
+        this.appearance;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)
       );
@@ -1269,9 +979,8 @@ export class UserSettings implements IUserSettings {
 
     if (userSettings.fontSize) {
       this.fontSize = userSettings.fontSize;
-      this.userProperties.getByRef(
-        ReadiumCSS.FONT_SIZE_REF
-      ).value = this.fontSize;
+      this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).value =
+        this.fontSize;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
       );
@@ -1281,9 +990,8 @@ export class UserSettings implements IUserSettings {
       this.fontFamily = UserSettings.fontFamilyValues.findIndex(
         (el: any) => el === userSettings.fontFamily
       );
-      this.userProperties.getByRef(
-        ReadiumCSS.FONT_FAMILY_REF
-      ).value = this.fontFamily;
+      this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value =
+        this.fontFamily;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF)
       );
@@ -1291,9 +999,8 @@ export class UserSettings implements IUserSettings {
 
     if (userSettings.letterSpacing) {
       this.letterSpacing = userSettings.letterSpacing;
-      this.userProperties.getByRef(
-        ReadiumCSS.LETTER_SPACING_REF
-      ).value = this.letterSpacing;
+      this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF).value =
+        this.letterSpacing;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
@@ -1301,9 +1008,8 @@ export class UserSettings implements IUserSettings {
 
     if (userSettings.wordSpacing) {
       this.wordSpacing = userSettings.wordSpacing;
-      this.userProperties.getByRef(
-        ReadiumCSS.WORD_SPACING_REF
-      ).value = this.wordSpacing;
+      this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF).value =
+        this.wordSpacing;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
@@ -1313,9 +1019,8 @@ export class UserSettings implements IUserSettings {
       this.columnCount = UserSettings.columnCountValues.findIndex(
         (el: any) => el === userSettings.columnCount
       );
-      this.userProperties.getByRef(
-        ReadiumCSS.COLUMN_COUNT_REF
-      ).value = this.columnCount;
+      this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value =
+        this.columnCount;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF)
       );
@@ -1326,9 +1031,8 @@ export class UserSettings implements IUserSettings {
       this.textAlignment = UserSettings.textAlignmentValues.findIndex(
         (el: any) => el === userSettings.textAlignment
       );
-      this.userProperties.getByRef(
-        ReadiumCSS.TEXT_ALIGNMENT_REF
-      ).value = this.textAlignment;
+      this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value =
+        this.textAlignment;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF)
       );
@@ -1336,9 +1040,8 @@ export class UserSettings implements IUserSettings {
 
     if (userSettings.lineHeight) {
       this.lineHeight = userSettings.lineHeight;
-      this.userProperties.getByRef(
-        ReadiumCSS.LINE_HEIGHT_REF
-      ).value = this.lineHeight;
+      this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF).value =
+        this.lineHeight;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF)
       );
@@ -1347,9 +1050,8 @@ export class UserSettings implements IUserSettings {
     if (userSettings.pageMargins) {
       // await this.enableAdvancedSettings();
       this.pageMargins = userSettings.pageMargins;
-      this.userProperties.getByRef(
-        ReadiumCSS.PAGE_MARGINS_REF
-      ).value = this.pageMargins;
+      this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF).value =
+        this.pageMargins;
       await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF)
       );
@@ -1363,9 +1065,8 @@ export class UserSettings implements IUserSettings {
         this.verticalScroll = UserSettings.parseScrollSetting(
           userSettings.verticalScroll
         );
-        this.userProperties.getByRef(
-          ReadiumCSS.SCROLL_REF
-        ).value = this.verticalScroll;
+        this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
+          this.verticalScroll;
         await this.saveProperty(
           this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
         );
@@ -1398,84 +1099,113 @@ export class UserSettings implements IUserSettings {
   async scroll(scroll: boolean): Promise<void> {
     const position = this.view.getCurrentPosition();
     this.verticalScroll = scroll;
-    this.userProperties.getByRef(
-      ReadiumCSS.SCROLL_REF
-    ).value = this.verticalScroll;
-    this.saveProperty(this.userProperties.getByRef(ReadiumCSS.SCROLL_REF));
-    this.applyProperties();
-    if (this.material?.settings.scroll) {
-      this.updateViewButtons();
-    }
-    this.view.setMode(scroll);
+    this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
+      this.verticalScroll;
+    await this.storeProperty(
+      this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
+    );
+    await this.applyProperties();
+    // if (this.material?.settings.scroll) {
+    //   this.updateViewButtons();
+    // }
+    this.view.setMode(this.verticalScroll);
     this.view.goToPosition(position);
     this.viewChangeCallback();
   }
 
   async increase(incremental): Promise<void> {
     if (incremental === "fontSize") {
-      (this.userProperties.getByRef(
+      (
+        this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental
+      ).increment();
+      this.fontSize = this.userProperties.getByRef(
         ReadiumCSS.FONT_SIZE_REF
-      ) as Incremental).increment();
-      this.storeProperty(
+      ).value;
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
       );
     } else if (incremental === "letterSpacing") {
-      (this.userProperties.getByRef(
+      (
+        this.userProperties.getByRef(
+          ReadiumCSS.LETTER_SPACING_REF
+        ) as Incremental
+      ).increment();
+      this.letterSpacing = this.userProperties.getByRef(
         ReadiumCSS.LETTER_SPACING_REF
-      ) as Incremental).increment();
-      this.storeProperty(
+      ).value;
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
     } else if (incremental === "wordSpacing") {
-      (this.userProperties.getByRef(
+      (
+        this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF) as Incremental
+      ).increment();
+      this.wordSpacing = this.userProperties.getByRef(
         ReadiumCSS.WORD_SPACING_REF
-      ) as Incremental).increment();
-      this.storeProperty(
+      ).value;
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
     } else if (incremental === "lineHeight") {
-      (this.userProperties.getByRef(
+      (
+        this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF) as Incremental
+      ).increment();
+      this.lineHeight = this.userProperties.getByRef(
         ReadiumCSS.LINE_HEIGHT_REF
-      ) as Incremental).increment();
-      this.storeProperty(
+      ).value;
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF)
       );
     }
-    this.applyProperties();
+    await this.applyProperties();
     this.settingsChangeCallback();
   }
 
   async decrease(incremental): Promise<void> {
     if (incremental === "fontSize") {
-      (this.userProperties.getByRef(
+      (
+        this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental
+      ).decrement();
+      this.fontSize = this.userProperties.getByRef(
         ReadiumCSS.FONT_SIZE_REF
-      ) as Incremental).decrement();
-      this.storeProperty(
+      ).value;
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF)
       );
     } else if (incremental === "letterSpacing") {
-      (this.userProperties.getByRef(
+      (
+        this.userProperties.getByRef(
+          ReadiumCSS.LETTER_SPACING_REF
+        ) as Incremental
+      ).decrement();
+      this.letterSpacing = this.userProperties.getByRef(
         ReadiumCSS.LETTER_SPACING_REF
-      ) as Incremental).decrement();
-      this.storeProperty(
+      ).value;
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LETTER_SPACING_REF)
       );
     } else if (incremental === "wordSpacing") {
-      (this.userProperties.getByRef(
+      (
+        this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF) as Incremental
+      ).decrement();
+      this.wordSpacing = this.userProperties.getByRef(
         ReadiumCSS.WORD_SPACING_REF
-      ) as Incremental).decrement();
-      this.storeProperty(
+      ).value;
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
       );
     } else if (incremental === "lineHeight") {
-      (this.userProperties.getByRef(
+      (
+        this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF) as Incremental
+      ).decrement();
+      this.wordSpacing = this.userProperties.getByRef(
         ReadiumCSS.LINE_HEIGHT_REF
-      ) as Incremental).decrement();
-      this.storeProperty(
+      ).value;
+      await this.storeProperty(
         this.userProperties.getByRef(ReadiumCSS.LINE_HEIGHT_REF)
       );
     }
-    this.applyProperties();
+    await this.applyProperties();
     this.settingsChangeCallback();
   }
 

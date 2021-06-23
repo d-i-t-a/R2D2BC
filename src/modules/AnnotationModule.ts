@@ -20,7 +20,7 @@
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
 import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
-import Publication, { Link } from "../model/Publication";
+import { Publication } from "../model/Publication";
 import TextHighlighter, { _highlights } from "./highlight/TextHighlighter";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
@@ -35,6 +35,7 @@ import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from "uuid";
+import { Link } from "../model/Link";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
 
@@ -155,7 +156,7 @@ export default class AnnotationModule implements ReaderModule {
     }
     var position = await this.annotator.getAnnotationPosition(
       id,
-      this.delegate.iframe.contentWindow as any
+      this.delegate.iframes[0].contentWindow as any
     );
     window.scrollTo(0, position - window.innerHeight / 3);
   }
@@ -228,7 +229,7 @@ export default class AnnotationModule implements ReaderModule {
       const bookmarkPosition = this.delegate.view.getCurrentPosition();
 
       const body = HTMLUtilities.findRequiredIframeElement(
-        this.delegate.iframe.contentDocument,
+        this.delegate.iframes[0].contentDocument,
         "body"
       ) as HTMLBodyElement;
       const progression = highlight.position
@@ -252,7 +253,7 @@ export default class AnnotationModule implements ReaderModule {
         annotation = {
           ...locator,
           id: id,
-          href: tocItem.href,
+          href: tocItem.Href,
           created: new Date(),
           title: this.delegate.currentChapterLink.title,
           highlight: highlight,
@@ -265,7 +266,7 @@ export default class AnnotationModule implements ReaderModule {
       } else {
         annotation = {
           id: id,
-          href: tocItem.href,
+          href: tocItem.Href,
           locations: {
             progression: progression,
           },
@@ -337,10 +338,10 @@ export default class AnnotationModule implements ReaderModule {
         if (
           this.highlighter &&
           highlights &&
-          this.delegate.iframe.contentDocument.readyState === "complete"
+          this.delegate.iframes[0].contentDocument.readyState === "complete"
         ) {
           await this.highlighter.destroyAllhighlights(
-            this.delegate.iframe.contentDocument
+            this.delegate.iframes[0].contentDocument
           );
 
           highlights.forEach(async (rangeRepresentation) => {
@@ -365,11 +366,11 @@ export default class AnnotationModule implements ReaderModule {
               );
             }
 
-            if (annotation.href === tocItem.href) {
+            if (annotation.href === tocItem.Href) {
               this.highlighter.setColor(annotation.color);
 
               await this.highlighter.createHighlightDom(
-                this.delegate.iframe.contentWindow as any,
+                this.delegate.iframes[0].contentWindow as any,
                 rangeRepresentation.highlight
               );
             }
@@ -383,10 +384,10 @@ export default class AnnotationModule implements ReaderModule {
         if (
           this.highlighter &&
           highlights &&
-          this.delegate.iframe.contentDocument.readyState === "complete"
+          this.delegate.iframes[0].contentDocument.readyState === "complete"
         ) {
           await this.highlighter.destroyAllhighlights(
-            this.delegate.iframe.contentDocument
+            this.delegate.iframes[0].contentDocument
           );
 
           highlights.forEach(async (rangeRepresentation) => {
@@ -411,11 +412,11 @@ export default class AnnotationModule implements ReaderModule {
               );
             }
 
-            if (annotation.href === tocItem.href) {
+            if (annotation.href === tocItem.Href) {
               this.highlighter.setColor(annotation.color);
 
               await this.highlighter.createHighlightDom(
-                this.delegate.iframe.contentWindow as any,
+                this.delegate.iframes[0].contentWindow as any,
                 rangeRepresentation.highlight
               );
             }
@@ -452,14 +453,14 @@ export default class AnnotationModule implements ReaderModule {
             const spanElement: HTMLSpanElement = document.createElement("span");
             linkElement.tabIndex = -1;
             linkElement.className = "chapter-link";
-            if (link.href) {
-              const linkHref = this.publication.getAbsoluteHref(link.href);
+            if (link.Href) {
+              const linkHref = this.publication.getAbsoluteHref(link.Href);
               const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
               linkElement.href = linkHref;
-              linkElement.innerHTML = tocItemAbs.title || "";
+              linkElement.innerHTML = tocItemAbs.Title || "";
               chapterHeader.appendChild(linkElement);
             } else {
-              spanElement.innerHTML = link.title || "";
+              spanElement.innerHTML = link.Title || "";
               spanElement.className = "chapter-title";
               chapterHeader.appendChild(spanElement);
             }
@@ -476,7 +477,7 @@ export default class AnnotationModule implements ReaderModule {
                   locations: {
                     progression: 0,
                   },
-                  type: link.type,
+                  type: link.TypeLink,
                   title: linkElement.title,
                 };
 
@@ -488,16 +489,15 @@ export default class AnnotationModule implements ReaderModule {
             const bookmarkList: HTMLUListElement = document.createElement("ol");
             annotations.forEach(function (locator: any) {
               const href =
-                link.href.indexOf("#") !== -1
-                  ? link.href.slice(0, link.href.indexOf("#"))
-                  : link.href;
+                link.Href.indexOf("#") !== -1
+                  ? link.Href.slice(0, link.Href.indexOf("#"))
+                  : link.Href;
 
-              if (link.href && locator.href.endsWith(href)) {
+              if (link.Href && locator.href.endsWith(href)) {
                 let bookmarkItem: HTMLLIElement = document.createElement("li");
                 bookmarkItem.className = "annotation-item";
-                let bookmarkLink: HTMLAnchorElement = document.createElement(
-                  "a"
-                );
+                let bookmarkLink: HTMLAnchorElement =
+                  document.createElement("a");
                 bookmarkLink.setAttribute("href", locator.href);
 
                 if (type === AnnotationType.Annotation) {
@@ -532,15 +532,16 @@ export default class AnnotationModule implements ReaderModule {
                         (locator as Annotation).color
                       );
                     } else {
-                      marker.style.backgroundColor = (locator as Annotation).color;
+                      marker.style.backgroundColor = (
+                        locator as Annotation
+                      ).color;
                     }
                   }
                   title.appendChild(marker);
                   bookmarkLink.appendChild(title);
 
-                  let subtitle: HTMLSpanElement = document.createElement(
-                    "span"
-                  );
+                  let subtitle: HTMLSpanElement =
+                    document.createElement("span");
                   let formattedProgression =
                     Math.round(locator.locations.progression!! * 100) +
                     "% " +
@@ -573,9 +574,8 @@ export default class AnnotationModule implements ReaderModule {
                     self.delegate.rights?.enableMaterial) ||
                   !self.delegate.rights?.enableMaterial
                 ) {
-                  let bookmarkDeleteLink: HTMLElement = document.createElement(
-                    "button"
-                  );
+                  let bookmarkDeleteLink: HTMLElement =
+                    document.createElement("button");
                   bookmarkDeleteLink.className = "delete";
                   bookmarkDeleteLink.innerHTML = IconLib.delete;
 
@@ -605,8 +605,8 @@ export default class AnnotationModule implements ReaderModule {
             if (chapterList.children.length > 0) {
               parentElement.appendChild(chapterList);
             }
-            if (link.children && link.children.length > 0) {
-              createAnnotationTree(parentElement, link.children);
+            if (link.Children && link.Children.length > 0) {
+              createAnnotationTree(parentElement, link.Children);
             }
           }
         };

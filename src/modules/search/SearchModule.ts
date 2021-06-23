@@ -18,7 +18,7 @@
  */
 
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import Publication from "../../model/Publication";
+import { Publication } from "../../model/Publication";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import ReaderModule from "../ReaderModule";
 import {
@@ -134,7 +134,7 @@ export default class SearchModule implements ReaderModule {
         this.headerMenu,
         "#menu-button-search"
       ) as HTMLLinkElement;
-      menuSearch.parentElement.style.removeProperty("display");
+      if (menuSearch) menuSearch.parentElement.style.removeProperty("display");
     }
   }
 
@@ -191,7 +191,7 @@ export default class SearchModule implements ReaderModule {
           const linkElement: HTMLAnchorElement = document.createElement("a");
           const element = paginated.data[index];
           linkElement.className = "collection-item";
-          linkElement.href = spineItem.href;
+          linkElement.href = spineItem.Href;
           linkElement.innerHTML =
             "..." +
             element.textBefore +
@@ -286,7 +286,7 @@ export default class SearchModule implements ReaderModule {
     callback: (result: any) => any
   ) {
     const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder[this.delegate.currentResource()].href
+      this.publication.readingOrder[this.delegate.currentResource()].Href
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
@@ -295,7 +295,9 @@ export default class SearchModule implements ReaderModule {
     var localSearchResultChapter: any = [];
 
     // clear search results // needs more works
-    this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument);
+    for (const iframe of this.delegate.iframes) {
+      this.highlighter.destroyAllhighlights(iframe.contentDocument);
+    }
     if (this.delegate.rights?.enableAnnotations) {
       this.delegate.annotationModule.drawHighlights();
     } else {
@@ -305,7 +307,7 @@ export default class SearchModule implements ReaderModule {
     }
     var i = 0;
 
-    var href = this.publication.getAbsoluteHref(tocItem.href);
+    var href = this.publication.getAbsoluteHref(tocItem.Href);
     await fetch(href)
       .then((r) => r.text())
       .then(async (_data) => {
@@ -315,9 +317,9 @@ export default class SearchModule implements ReaderModule {
         // var doc = parser.parseFromString(data, "text/html");
         searchDocDomSeek(
           term,
-          this.delegate.iframe.contentDocument,
-          tocItem.href,
-          tocItem.title
+          this.delegate.iframes[0].contentDocument,
+          tocItem.Href,
+          tocItem.Title
         ).then((result) => {
           // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
           result.forEach((searchItem) => {
@@ -357,7 +359,9 @@ export default class SearchModule implements ReaderModule {
   clearSearch() {
     this.currentChapterSearchResult = [];
     this.currentHighlights = [];
-    this.highlighter.destroyAllhighlights(this.delegate.iframe.contentDocument);
+    for (const iframe of this.delegate.iframes) {
+      this.highlighter.destroyAllhighlights(iframe.contentDocument);
+    }
     if (this.delegate.rights?.enableAnnotations) {
       this.delegate.annotationModule.drawHighlights();
     }
@@ -669,20 +673,20 @@ export default class SearchModule implements ReaderModule {
     var localSearchResultBook: any = [];
     for (let index = 0; index < this.publication.readingOrder.length; index++) {
       const linkHref = this.publication.getAbsoluteHref(
-        this.publication.readingOrder[index].href
+        this.publication.readingOrder[index].Href
       );
       let tocItem = this.publication.getTOCItem(linkHref);
       if (tocItem === null) {
         tocItem = this.publication.readingOrder[index];
       }
-      var href = this.publication.getAbsoluteHref(tocItem.href);
+      var href = this.publication.getAbsoluteHref(tocItem.Href);
       await fetch(href)
         .then((r) => r.text())
         .then(async (data) => {
           // ({ data, tocItem });
           var parser = new DOMParser();
           var doc = parser.parseFromString(data, "application/xhtml+xml");
-          searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
+          searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
             (result) => {
               result.forEach((searchItem) => {
                 localSearchResultBook.push(searchItem);
@@ -700,20 +704,20 @@ export default class SearchModule implements ReaderModule {
   async searchChapter(term: string): Promise<any> {
     var localSearchResultBook: any = [];
     const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder[this.delegate.currentResource()].href
+      this.publication.readingOrder[this.delegate.currentResource()].Href
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
       tocItem = this.publication.readingOrder[this.delegate.currentResource()];
     }
-    var href = this.publication.getAbsoluteHref(tocItem.href);
+    var href = this.publication.getAbsoluteHref(tocItem.Href);
     await fetch(href)
       .then((r) => r.text())
       .then(async (data) => {
         // ({ data, tocItem });
         var parser = new DOMParser();
         var doc = parser.parseFromString(data, "application/xhtml+xml");
-        searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
+        searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
           (result) => {
             result.forEach((searchItem) => {
               localSearchResultBook.push(searchItem);
@@ -746,9 +750,9 @@ export default class SearchModule implements ReaderModule {
   }
 
   async handleResize() {
-    await this.highlighter.destroyAllhighlights(
-      this.delegate.iframe.contentDocument
-    );
+    for (const iframe of this.delegate.iframes) {
+      await this.highlighter.destroyAllhighlights(iframe.contentDocument);
+    }
     this.drawSearch();
   }
 

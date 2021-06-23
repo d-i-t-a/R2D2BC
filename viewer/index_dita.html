@@ -53,7 +53,10 @@
                         <ul id="nav-mobile-right" class="right">
                             <li style="display:none"><a data-target="container-view-note-input" class="dropdown-trigger " id="menu-button-note"><i class="material-icons">speaker_notes</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
+                            <li><a id="menu-button-play" onclick="D2Reader.startReadAloud()"><i class="material-icons">play_arrow</i></a></li>
+                            <li><a id="menu-button-pause" onclick="D2Reader.pauseReadAloud()" style="display: none"><i class="material-icons">pause</i></a></li>
                             <li><a data-target="container-view-tts-settings" class="dropdown-trigger " id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>
+                            <li><a data-target="container-view-mediaoverlay-settings" class="dropdown-trigger " id="menu-button-mediaoverlay"><i class="material-icons ">record_voice_over</i></a></li>
                             <li><a data-target="container-view-settings-custom" class="dropdown-trigger " id="menu-button-settings" onclick="reload()"><i class="material-icons">settings</i></a></li>
                             <li style="display:none"><a data-target="container-view-search" class="dropdown-trigger " id="menu-button-search"><i class="material-icons">search</i></a></li>
                         </ul>
@@ -99,7 +102,6 @@
                 </li>
             </ul>
             <div id="container-view-tts-settings" class="dropdown-content settings">
-
                 <center style="display: flex;
     justify-content: center;">
                     <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="D2Reader.startReadAloud()"><i
@@ -115,8 +117,7 @@
                             class="material-icons">play_arrow</i>RESUME
                     </button>
                 </center>
-                <center style="display: flex;
-    justify-content: center;">
+                <center style="display: flex;justify-content: center;">
                     <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'orange' })"><i
                             class="material-icons" style="color: rgba(250, 96, 0, 0.5);font-size: 24pt;">lense</i></button>
                     <button style="background-color:#f4f4f4;width: 40px" onclick="D2Reader.applyTTSSettings({ color: 'red' })"><i
@@ -131,21 +132,15 @@
                             class="material-icons"
                             style="color: lightgreen;font-size: 24pt;">lense</i></button>
                 </center>
-
                 <div>
-                    <center style="display: flex;
-    justify-content: center;
-    align-items: center;">
+                    <center style="display: flex;justify-content: center;align-items: center;">
                         <label style="margin-right: 10px;">Auto Scroll</label>
                         <input type="checkbox" class="filled" id="autoScroll" name="autoScroll"
                                onchange="D2Reader.applyTTSSettings({ autoScroll: this.checked })">
                     </center>
                 </div>
-
                 <div>
-                    <label style="display: block;
-    text-align: center;
-    line-height: 12pt;height: 0px;">Language</label>
+                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Language</label>
                     <center>
                         <select style="width: 80%;" onchange="D2Reader.applyPreferredVoice(value)"
                                 id="preferred-languages">
@@ -154,34 +149,43 @@
                     </center>
                 </div>
                 <div class="range-slider">
-                    <label style="display: block;
-    text-align: center;
-    line-height: 12pt;height: 0px;">Rate</label>
+                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Rate</label>
                     <input class="range-slider__range_settings" type="range" min="0.1" max="10" step="0.1"
                            value="1" id="speechRate" name="speechRate"
                            onchange="D2Reader.applyTTSSettings({ rate: this.value })"/>
                 </div>
                 <div class="range-slider">
-                    <label style="display: block;
-    text-align: center;
-    line-height: 12pt;height: 0px;">Pitch</label>
+                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Pitch</label>
                     <input class="range-slider__range_settings" type="range" min="0.1" max="2" step="0.1"
                            value="1" id="speechPitch" name="speechPitch"
                            onchange="D2Reader.applyTTSSettings({ pitch: this.value })"/>
                 </div>
                 <div class="range-slider">
-                    <label style="display: block;
-    text-align: center;
-    line-height: 12pt;height: 0px;">Volume</label>
+                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Volume</label>
                     <input class="range-slider__range_settings" type="range" min="0.1" max="1" step="0.1"
                            value="1" id="speechVolume" name="speechVolume"
                            onchange="D2Reader.applyTTSSettings({ volume: this.value })"/>
                 </div>
-
-
+            </div>
+            <div id="container-view-mediaoverlay-settings" class="dropdown-content settings">
+                <center tabindex="0" style="display: flex;justify-content: space-around;">
+                    <div style="display: flex;align-items: center;">
+                        <label style="margin-right: 10px;">Auto Scroll</label>
+                        <input type="checkbox" class="filled" id="mediaOverlayAutoScroll" name="mediaOverlayAutoScroll" onchange="D2Reader.applyMediaOverlaySettings({ autoScroll: this.checked })">
+                    </div>
+                    <div style="display: flex;align-items: center;">
+                        <label style="margin-right: 10px;">Auto Page Turn</label>
+                        <input type="checkbox" class="filled" id="mediaOverlayAutoTurn" name="mediaOverlayAutoTurn" onchange="D2Reader.applyMediaOverlaySettings({ autoTurn: this.checked })">
+                    </div>
+                </center>
+                <div class="range-slider">
+                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Volume</label>
+                    <input class="range-slider__range_settings" type="range" min="0.1" max="1" step="0.1"
+                           value="1" id="mediaOverlayVolume" name="mediaOverlayVolume"
+                           onchange="D2Reader.applyMediaOverlaySettings({ volume: this.value })"/>
+                </div>
             </div>
             <div id="container-view-settings-custom" class="dropdown-content settings-view settings">
-
                 <div class="range-slider">
                     <label style="display: block;
     text-align: center;
@@ -190,7 +194,6 @@
                            value="100" id="fontSize" name="fontSize"
                            onchange="D2Reader.applyUserSettings({ fontSize: this.value })"/>
                 </div>
-
                 <div>
                     <label style="display: block;
     text-align: center;
@@ -238,8 +241,6 @@
                     </center>
                 </div>
                 <div id="scrollMode" style="padding-bottom: 10px">
-
-
                     <label style="display: block;
                                text-align: center;
                                line-height: 12pt;">Layout</label>
@@ -346,7 +347,6 @@ height: 50px;
                     </button>
                     </center>
                 </div>
-
                 <div class="range-slider">
                     <label  style="display: block;
     text-align: center;
@@ -405,7 +405,6 @@ height: 50px;
                             <span>save note</span>
                         </button>
                     </li>
-
                 </ul>
             </div>
             <div id="container-view-search" class="dropdown-content dropdown-tabbed notifications">
@@ -451,7 +450,6 @@ height: 50px;
             </main>
             <div id="container-view-security" class="security"></div>
             <div id="container-view-timeline" class="timeline" style="top: 5rem;bottom: 2.5rem;"></div>
-
             <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
                style="top: 65px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
                 <i class="material-icons black-text" style="left: calc(50% - 12px);
@@ -461,10 +459,7 @@ height: 50px;
                 <i class="material-icons black-text" style="left: calc(50% - 12px);
                 position: relative;">keyboard_arrow_down</i>
             </a>
-
-            <div class="left-gutter" id="left-gutter">
-            </div>
-
+            <div class="left-gutter" id="left-gutter"></div>
         </div>
 
         <span id="highlight-toolbox" class="highlight-toolbox">
@@ -507,7 +502,6 @@ height: 50px;
                 <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons" style="color:gray">delete</i></button>
             </div>
         </span>
-
     </div>
 
     <footer id="footerMenu">
@@ -522,7 +516,6 @@ height: 50px;
                         position: relative;">keyboard_arrow_right</i>
         </a>
     </footer>
-    </div>
 
     <script>
         let getURLQueryParams = function () {
@@ -549,21 +542,25 @@ height: 50px;
             { type: 'style', url: '/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
+            { type: 'style', fontFamily: 'Courier', systemFont: true },
             { type: 'script', url: '/viewer/injectables/footnotes/footnotes.js' },
             { type: 'style', url: '/viewer/injectables/footnotes/footnotes.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
+        let injectablesFixed = [
+            { type: 'style', url: '/viewer/injectables/style/style.css' },
+        ]
         let userSettings = {
             // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
-            // fontFamily: "sans-serif", //Original, serif, sans-serif
-            // textAlignment: "justify", //"auto", "justify", "start"
-            // columnCount: "auto", // "auto", "1", "2"
+            // fontFamily: "serif", //Original, serif, sans-serif
+            // textAlignment: "start", //"auto", "justify", "start"
+            // columnCount: "1", // "auto", "1", "2"
             // verticalScroll: "readium-scroll-off", //readium-scroll-on, readium-scroll-off,
-            // fontSize: 100.0,
-            // wordSpacing: 0.0,
-            // letterSpacing: 0.0,
-            // pageMargins: 2.0,
-            // lineHeight: 1.0
+            // fontSize: 300,
+            // wordSpacing: 4.0,
+            // letterSpacing: 4.0,
+            // pageMargins: 4.0,
+            // lineHeight: 4.0
         }
         let selectionMenuItems = [
             {
@@ -590,27 +587,24 @@ height: 50px;
                 enableTTS: true,
                 enableSearch: true,
                 enableTimeline: true,
-                enableContentProtection: true,
+                enableContentProtection: false,
+                enableMediaOverlays: true,
                 autoGeneratePositions: true,
-            },
-            material: {
-                settings: {
-                    fontSize: true,
-                    fontFamily: true,
-                    appearance: true,
-                    scroll: true,
-                    // textAlign: true,
-                    // colCount: true,
-                    // wordSpacing: true,
-                    // letterSpacing: true,
-                    // pageMargins: true,
-                    // lineHeight: true
-                },
             },
             // services: {
             //     positions: new URL("https://alice.dita.digital/positions.json"),
             //     weight: new URL("https://alice.dita.digital/weight.json"),
             // },
+            mediaOverlays: {
+                autoScroll: true,
+                autoTurn: true,
+                // color: "redtext",
+                volume: 0.7,
+                wait: 1,
+                api: {
+
+                }
+            },
             tts: {
                 enableSplitter: true,
                 color: "orange",
@@ -761,6 +755,7 @@ height: 50px;
                 },
                 resourceReady: function () {
                     console.log("resourceReady")
+                    // D2Reader.applyUserSettings({fontFamily: 'opendyslexic'})
                 },
                 resourceAtStart:function () {
                     console.log("resourceAtStart")
@@ -789,6 +784,7 @@ height: 50px;
                 }
             },
             injectables: injectables,
+            injectablesFixed: injectablesFixed,
             userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {
@@ -891,7 +887,6 @@ height: 50px;
 
         }
     </script>
-
 
     <!-- START Material Scripts -->
     <!-- Compiled and minified Materialize JavaScript -->

@@ -18,12 +18,13 @@
  */
 
 import { IS_DEV } from "../..";
-import { Locator } from "../../model/Locator";
-import Publication from "../../model/Publication";
+import { Publication } from "../../model/Publication";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
-import { addEventListenerOptional } from "../../utils/EventHandler";
 import ReaderModule from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import { addEventListenerOptional } from "../../utils/EventHandler";
+import { Locator } from "../../model/Locator";
+import { Link } from "../../model/Link";
 
 export interface TimelineModuleConfig {
   publication: Publication;
@@ -93,13 +94,12 @@ export default class TimelineModule implements ReaderModule {
 
       this.timelineContainer.innerHTML = "";
       this.publication.readingOrder.forEach((link) => {
-        if (IS_DEV) console.log(link.contentWeight);
-        const linkHref = this.publication.getAbsoluteHref(link.href);
+        const linkHref = this.publication.getAbsoluteHref(link.Href);
         const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
         const tocHref =
-          tocItemAbs.href.indexOf("#") !== -1
-            ? tocItemAbs.href.slice(0, tocItemAbs.href.indexOf("#"))
-            : tocItemAbs.href;
+          tocItemAbs.Href.indexOf("#") !== -1
+            ? tocItemAbs.Href.slice(0, tocItemAbs.Href.indexOf("#"))
+            : tocItemAbs.Href;
         const tocHrefAbs = this.publication.getAbsoluteHref(tocHref);
 
         var chapterHeight;
@@ -107,8 +107,8 @@ export default class TimelineModule implements ReaderModule {
           this.publication.positions &&
           this.delegate.view.layout !== "fixed"
         ) {
-          if (link.contentWeight) {
-            chapterHeight = link.contentWeight;
+          if ((link as Link).contentWeight) {
+            chapterHeight = (link as Link).contentWeight;
           } else {
             chapterHeight = 1;
           }
@@ -121,9 +121,9 @@ export default class TimelineModule implements ReaderModule {
         chapter.style.width = "100%";
         chapter.className = "chapter";
 
-        if (tocItemAbs.title !== undefined) {
+        if (tocItemAbs.Title !== undefined) {
           var tooltip = document.createElement("span");
-          tooltip.innerHTML = tocItemAbs.title;
+          tooltip.innerHTML = tocItemAbs.Title;
           tooltip.className = "chapter-tooltip";
           chapter.appendChild(tooltip);
         }
@@ -139,7 +139,7 @@ export default class TimelineModule implements ReaderModule {
           ) {
             position = {
               ...this.publication.positions.filter(
-                (el: Locator) => el.href === link.href
+                (el: Locator) => el.href === link.Href
               )[0],
             };
             position.href = this.publication.getAbsoluteHref(position.href);
@@ -149,8 +149,8 @@ export default class TimelineModule implements ReaderModule {
               locations: {
                 progression: 0,
               },
-              type: link.type,
-              title: link.title,
+              type: link.TypeLink,
+              title: link.Title,
             };
           }
           if (IS_DEV) console.log(position);

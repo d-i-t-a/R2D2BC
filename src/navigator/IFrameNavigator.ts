@@ -755,7 +755,8 @@ export default class IFrameNavigator implements Navigator {
               menuTTS.parentElement.style.setProperty("display", "none");
           }
           if (!this.rights?.enableSearch) {
-            menuSearch.parentElement.style.removeProperty("display");
+            if (menuSearch)
+              menuSearch.parentElement.style.removeProperty("display");
           }
           if (
             menuSearch &&

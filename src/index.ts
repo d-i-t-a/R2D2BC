@@ -36,7 +36,7 @@ import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 import MediaOverlayModule from "./modules/mediaoverlays/MediaOverlayModule";
 import { Locator } from "./model/Locator";
 import { Publication } from "./model/Publication";
-import { Link } from "./model/Link";
+import { convertAndCamel, Link } from "./model/Link";
 import { TaJsonDeserialize } from "./utils/JsonUtil";
 import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
 
@@ -183,7 +183,7 @@ export async function tableOfContents() {
   if (IS_DEV) {
     console.log("tableOfContents");
   }
-  return await D2Navigator.tableOfContents();
+  return await convertAndCamel(D2Navigator.tableOfContents());
 }
 exports.tableOfContents = function () {
   return tableOfContents();
@@ -192,7 +192,7 @@ export async function readingOrder() {
   if (IS_DEV) {
     console.log("readingOrder");
   }
-  return await D2Navigator.readingOrder();
+  return await convertAndCamel(D2Navigator.readingOrder());
 }
 exports.readingOrder = async function () {
   return readingOrder();

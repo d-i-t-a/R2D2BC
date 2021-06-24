@@ -40,18 +40,18 @@ import { Link } from "./model/Link";
 import { TaJsonDeserialize } from "./utils/JsonUtil";
 import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
 
-var D2Settings: UserSettings;
-var D2TTSSettings: TTSSettings;
-var D2Navigator: IFrameNavigator;
-var D2Highlighter: TextHighlighter;
-var D2MediaOverlaySettings: MediaOverlaySettings;
-var BookmarkModuleInstance: BookmarkModule;
-var AnnotationModuleInstance: AnnotationModule;
-var TTSModuleInstance: TTSModule;
-var SearchModuleInstance: SearchModule;
-var ContentProtectionModuleInstance: ContentProtectionModule;
-var TimelineModuleInstance: TimelineModule;
-var MediaOverlayModuleInstance: MediaOverlayModule;
+let D2Settings: UserSettings;
+let D2TTSSettings: TTSSettings;
+let D2MediaOverlaySettings: MediaOverlaySettings;
+let D2Navigator: IFrameNavigator;
+let D2Highlighter: TextHighlighter;
+let BookmarkModuleInstance: BookmarkModule;
+let AnnotationModuleInstance: AnnotationModule;
+let TTSModuleInstance: TTSModule;
+let SearchModuleInstance: SearchModule;
+let ContentProtectionModuleInstance: ContentProtectionModule;
+let TimelineModuleInstance: TimelineModule;
+let MediaOverlayModuleInstance: MediaOverlayModule;
 
 export const IS_DEV =
   process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
@@ -61,64 +61,80 @@ export async function unload() {
     console.log("unload reader");
   }
   document.body.onscroll = () => {};
-  D2Navigator.stop();
-  D2Settings.stop();
+  await D2Navigator.stop();
+  await D2Settings.stop();
   if (D2Navigator.rights?.enableTTS) {
-    D2TTSSettings.stop();
-    TTSModuleInstance.stop();
+    await D2TTSSettings.stop();
+    await TTSModuleInstance.stop();
   }
   if (D2Navigator.rights?.enableBookmarks) {
-    BookmarkModuleInstance.stop();
+    await BookmarkModuleInstance.stop();
   }
   if (D2Navigator.rights?.enableAnnotations) {
-    AnnotationModuleInstance.stop();
+    await AnnotationModuleInstance.stop();
   }
   if (D2Navigator.rights?.enableSearch) {
-    SearchModuleInstance.stop();
+    await SearchModuleInstance.stop();
   }
   if (D2Navigator.rights?.enableContentProtection) {
-    ContentProtectionModuleInstance.stop();
+    await ContentProtectionModuleInstance.stop();
   }
   if (D2Navigator.rights?.enableTimeline) {
-    TimelineModuleInstance.stop();
+    await TimelineModuleInstance.stop();
   }
   if (D2Navigator.rights?.enableMediaOverlays) {
-    D2MediaOverlaySettings.stop();
-    MediaOverlayModuleInstance.stop();
+    await D2MediaOverlaySettings.stop();
+    await MediaOverlayModuleInstance.stop();
   }
 }
+exports.unload = async function () {
+  await unload();
+};
 export function hasMediaOverlays() {
   if (IS_DEV) {
     console.log("hasMediaOverlays");
   }
   return D2Navigator.hasMediaOverlays;
 }
-
+exports.hasMediaOverlays = function () {
+  return hasMediaOverlays();
+};
 export function startReadAloud() {
   if (IS_DEV) {
     console.log("startReadAloud");
   }
   return D2Navigator.startReadAloud();
 }
+exports.startReadAloud = function () {
+  return startReadAloud();
+};
 export function stopReadAloud() {
   if (IS_DEV) {
     console.log("stopReadAloud");
   }
   return D2Navigator.stopReadAloud();
 }
+exports.stopReadAloud = function () {
+  return stopReadAloud();
+};
 export function pauseReadAloud() {
   if (IS_DEV) {
     console.log("pauseReadAloud");
   }
   return D2Navigator.pauseReadAloud();
 }
+exports.pauseReadAloud = function () {
+  return pauseReadAloud();
+};
 export function resumeReadAloud() {
   if (IS_DEV) {
     console.log("resumeReadAloud");
   }
   return D2Navigator.resumeReadAloud();
 }
-
+exports.resumeReadAloud = function () {
+  return resumeReadAloud();
+};
 export async function saveBookmark() {
   if (D2Navigator.rights?.enableBookmarks) {
     if (IS_DEV) {
@@ -127,6 +143,9 @@ export async function saveBookmark() {
     return await BookmarkModuleInstance.saveBookmark();
   }
 }
+exports.saveBookmark = function () {
+  return saveBookmark();
+};
 export async function deleteBookmark(bookmark) {
   if (D2Navigator.rights?.enableBookmarks) {
     if (IS_DEV) {
@@ -135,6 +154,9 @@ export async function deleteBookmark(bookmark) {
     return await BookmarkModuleInstance.deleteBookmark(bookmark);
   }
 }
+exports.deleteBookmark = async function (bookmark) {
+  return deleteBookmark(bookmark);
+};
 export async function deleteAnnotation(highlight) {
   if (D2Navigator.rights?.enableAnnotations) {
     if (IS_DEV) {
@@ -143,6 +165,9 @@ export async function deleteAnnotation(highlight) {
     return await AnnotationModuleInstance.deleteAnnotation(highlight);
   }
 }
+exports.deleteAnnotation = async function (highlight) {
+  return deleteAnnotation(highlight);
+};
 export async function addAnnotation(highlight) {
   if (D2Navigator.rights?.enableAnnotations) {
     if (IS_DEV) {
@@ -151,18 +176,27 @@ export async function addAnnotation(highlight) {
     return await AnnotationModuleInstance.addAnnotation(highlight);
   }
 }
+exports.addAnnotation = async function (highlight) {
+  return addAnnotation(highlight);
+};
 export async function tableOfContents() {
   if (IS_DEV) {
     console.log("tableOfContents");
   }
   return await D2Navigator.tableOfContents();
 }
+exports.tableOfContents = function () {
+  return tableOfContents();
+};
 export async function readingOrder() {
   if (IS_DEV) {
     console.log("readingOrder");
   }
   return await D2Navigator.readingOrder();
 }
+exports.readingOrder = async function () {
+  return readingOrder();
+};
 export async function bookmarks() {
   if (D2Navigator.rights?.enableBookmarks) {
     if (IS_DEV) {
@@ -173,6 +207,9 @@ export async function bookmarks() {
     return [];
   }
 }
+exports.bookmarks = async function () {
+  return bookmarks();
+};
 export async function annotations() {
   if (D2Navigator.rights?.enableAnnotations) {
     if (IS_DEV) {
@@ -183,7 +220,9 @@ export async function annotations() {
     return [];
   }
 }
-
+exports.annotations = async function () {
+  return annotations();
+};
 export async function search(term, current) {
   if (D2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
@@ -194,6 +233,9 @@ export async function search(term, current) {
     return [];
   }
 }
+exports.search = async function (term, current) {
+  return search(term, current);
+};
 export async function goToSearchIndex(href, index, current) {
   if (D2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
@@ -202,6 +244,9 @@ export async function goToSearchIndex(href, index, current) {
     await SearchModuleInstance.goToSearchIndex(href, index, current);
   }
 }
+exports.goToSearchIndex = async function (href, index, current) {
+  await goToSearchIndex(href, index, current);
+};
 export async function goToSearchID(href, index, current) {
   if (D2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
@@ -210,6 +255,9 @@ export async function goToSearchID(href, index, current) {
     await SearchModuleInstance.goToSearchID(href, index, current);
   }
 }
+exports.goToSearchID = async function (href, index, current) {
+  await goToSearchID(href, index, current);
+};
 export async function clearSearch() {
   if (D2Navigator.rights?.enableSearch) {
     if (IS_DEV) {
@@ -218,49 +266,72 @@ export async function clearSearch() {
     await SearchModuleInstance.clearSearch();
   }
 }
-
+exports.clearSearch = async function () {
+  await clearSearch();
+};
 export function currentResource() {
   if (IS_DEV) {
     console.log("currentResource");
   }
   return D2Navigator.currentResource();
 }
+exports.currentResource = function () {
+  return currentResource();
+};
 export function mostRecentNavigatedTocItem() {
   if (IS_DEV) {
     console.log("mostRecentNavigatedTocItem");
   }
   return D2Navigator.mostRecentNavigatedTocItem();
 }
+exports.mostRecentNavigatedTocItem = function () {
+  return mostRecentNavigatedTocItem();
+};
 export function totalResources() {
   if (IS_DEV) {
     console.log("totalResources");
   }
   return D2Navigator.totalResources();
 }
+exports.totalResources = function () {
+  return totalResources();
+};
 export function publicationLanguage() {
   if (IS_DEV) {
     console.log("publicationLanguage");
   }
   return D2Navigator.publication.Metadata.Language;
 }
+exports.publicationLanguage = function () {
+  return publicationLanguage();
+};
 export async function resetUserSettings() {
   if (IS_DEV) {
     console.log("resetSettings");
   }
-  D2Settings.resetUserSettings();
+  await D2Settings.resetUserSettings();
 }
+exports.resetUserSettings = async function () {
+  await resetUserSettings();
+};
 export async function applyUserSettings(userSettings) {
   if (IS_DEV) {
     console.log("applyUserSettings");
   }
-  D2Settings.applyUserSettings(userSettings);
+  await D2Settings.applyUserSettings(userSettings);
 }
+exports.applyUserSettings = async function (userSettings) {
+  await applyUserSettings(userSettings);
+};
 export async function currentSettings() {
   if (IS_DEV) {
     console.log("currentSettings");
   }
   return D2Settings.currentSettings();
 }
+exports.currentSettings = async function () {
+  return currentSettings();
+};
 export async function increase(incremental) {
   if (
     (incremental === "pitch" ||
@@ -271,14 +342,17 @@ export async function increase(incremental) {
     if (IS_DEV) {
       console.log("increase " + incremental);
     }
-    D2TTSSettings.increase(incremental);
+    await D2TTSSettings.increase(incremental);
   } else {
     if (IS_DEV) {
       console.log("increase " + incremental);
     }
-    D2Settings.increase(incremental);
+    await D2Settings.increase(incremental);
   }
 }
+exports.increase = async function (incremental) {
+  await increase(incremental);
+};
 export async function decrease(incremental) {
   if (
     (incremental === "pitch" ||
@@ -289,14 +363,17 @@ export async function decrease(incremental) {
     if (IS_DEV) {
       console.log("decrease " + incremental);
     }
-    D2TTSSettings.decrease(incremental);
+    await D2TTSSettings.decrease(incremental);
   } else {
     if (IS_DEV) {
       console.log("decrease " + incremental);
     }
-    D2Settings.decrease(incremental);
+    await D2Settings.decrease(incremental);
   }
 }
+exports.decrease = async function (incremental) {
+  await decrease(incremental);
+};
 // export async function publisher(on) {
 //   if (IS_DEV) {
 //     console.log("publisher " + on);
@@ -308,131 +385,184 @@ export async function resetTTSSettings() {
     if (IS_DEV) {
       console.log("resetSettings");
     }
-    D2TTSSettings.resetTTSSettings();
+    await D2TTSSettings.resetTTSSettings();
   }
 }
+exports.resetTTSSettings = async function () {
+  await resetTTSSettings();
+};
 export async function applyTTSSettings(ttsSettings) {
   if (D2Navigator.rights?.enableTTS) {
     if (IS_DEV) {
       console.log("applyTTSSettings");
     }
-    D2TTSSettings.applyTTSSettings(ttsSettings);
+    await D2TTSSettings.applyTTSSettings(ttsSettings);
   }
 }
-
+exports.applyTTSSettings = async function (ttsSettings) {
+  await applyTTSSettings(ttsSettings);
+};
 export async function applyTTSSetting(key, value) {
   if (D2Navigator.rights?.enableTTS) {
     if (IS_DEV) {
       console.log("set " + key + " value " + value);
     }
-    D2TTSSettings.applyTTSSetting(key, value);
+    await D2TTSSettings.applyTTSSetting(key, value);
   }
 }
+exports.applyTTSSetting = async function (key, value) {
+  await applyTTSSetting(key, value);
+};
 export async function applyPreferredVoice(value) {
   if (D2Navigator.rights?.enableTTS) {
-    D2TTSSettings.applyPreferredVoice(value);
+    await D2TTSSettings.applyPreferredVoice(value);
   }
 }
-
-export async function resetSyncSettings() {
+exports.applyPreferredVoice = async function (value) {
+  await applyPreferredVoice(value);
+};
+export async function resetMediaOverlaySettings() {
   if (D2Navigator.rights?.enableMediaOverlays) {
     if (IS_DEV) {
-      console.log("resetSyncSettings");
+      console.log("resetMediaOverlaySettings");
     }
-    D2MediaOverlaySettings.resetMediaOverlaySettings();
+    await D2MediaOverlaySettings.resetMediaOverlaySettings();
   }
 }
+exports.resetMediaOverlaySettings = async function () {
+  await resetMediaOverlaySettings();
+};
 export async function applyMediaOverlaySettings(setting) {
   if (D2Navigator.rights?.enableMediaOverlays) {
     if (IS_DEV) {
       console.log("applyMediaOverlaySettings");
     }
-    D2MediaOverlaySettings.applyMediaOverlaySettings(setting);
+    await D2MediaOverlaySettings.applyMediaOverlaySettings(setting);
   }
 }
-
-export async function goTo(locator) {
+exports.applyMediaOverlaySettings = async function (setting) {
+  await applyMediaOverlaySettings(setting);
+};
+export function goTo(locator) {
   if (IS_DEV) {
     console.log("goTo " + locator);
   }
   D2Navigator.goTo(locator);
 }
-export async function nextResource() {
+exports.goTo = function (locator) {
+  goTo(locator);
+};
+export function nextResource() {
   if (IS_DEV) {
     console.log("nextResource");
   }
   D2Navigator.nextResource();
 }
-export async function previousResource() {
+exports.nextResource = function () {
+  nextResource();
+};
+export function previousResource() {
   if (IS_DEV) {
     console.log("previousResource");
   }
   D2Navigator.previousResource();
 }
-export async function nextPage() {
+exports.previousResource = function () {
+  previousResource();
+};
+export function nextPage() {
   if (IS_DEV) {
     console.log("nextPage");
   }
   D2Navigator.nextPage();
 }
-export async function previousPage() {
+exports.nextPage = function () {
+  nextPage();
+};
+export function previousPage() {
   if (IS_DEV) {
     console.log("previousPage");
   }
   D2Navigator.previousPage();
 }
-export async function atStart() {
+exports.previousPage = function () {
+  previousPage();
+};
+export function atStart() {
   if (IS_DEV) {
     console.log("atStart");
   }
   return D2Navigator.atStart();
 }
-export async function atEnd() {
+exports.atStart = function () {
+  return atStart();
+};
+export function atEnd() {
   if (IS_DEV) {
     console.log("atEnd");
   }
   return D2Navigator.atEnd();
 }
+exports.atEnd = function () {
+  return atEnd();
+};
 export async function scroll(value) {
   if (IS_DEV) {
     console.log("scroll " + value);
   }
-  D2Settings.scroll(value);
+  await D2Settings.scroll(value);
 }
-
-export async function currentLocator() {
+exports.scroll = async function (value) {
+  await scroll(value);
+};
+export function currentLocator() {
   if (IS_DEV) {
     console.log("currentLocator");
   }
   return D2Navigator.currentLocator();
 }
-export async function positions() {
+exports.currentLocator = function () {
+  return currentLocator();
+};
+export function positions() {
   if (IS_DEV) {
     console.log("positions");
   }
   return D2Navigator.positions();
 }
-export async function goToPosition(value) {
+exports.positions = function () {
+  return positions();
+};
+export function goToPosition(value) {
   if (IS_DEV) {
     console.log("goToPosition");
   }
   return D2Navigator.goToPosition(value);
 }
-export async function applyAttributes(value) {
+exports.goToPosition = function (value) {
+  goToPosition(value);
+};
+export function applyAttributes(value) {
   if (IS_DEV) {
     console.log("applyAttributes");
   }
   D2Navigator.applyAttributes(value);
 }
-export async function snapToElement(value) {
+exports.applyAttributes = function (value) {
+  applyAttributes(value);
+};
+// currently not used or functional
+export function snapToElement(value) {
   if (IS_DEV) {
     console.log("snapToElement");
   }
   D2Navigator.snapToElement(value);
 }
-
+exports.snapToElement = function (value) {
+  snapToElement(value);
+};
 export async function load(config: ReaderConfig): Promise<any> {
-  var browsers: string[] = [];
+  let browsers: string[] = [];
 
   if (config.protection?.enforceSupportedBrowsers) {
     (config.protection?.supportedBrowsers ?? []).forEach((browser: string) => {
@@ -449,22 +579,22 @@ export async function load(config: ReaderConfig): Promise<any> {
       supportedBrowsers.test(navigator.userAgent)) ||
     !config.protection?.enforceSupportedBrowsers
   ) {
-    var mainElement = document.getElementById("D2Reader-Container");
-    var headerMenu = document.getElementById("headerMenu");
-    var footerMenu = document.getElementById("footerMenu");
-    var webpubManifestUrl = config.url;
-    var store = new LocalStorageStore({
+    let mainElement = document.getElementById("D2Reader-Container");
+    let headerMenu = document.getElementById("headerMenu");
+    let footerMenu = document.getElementById("footerMenu");
+    let webpubManifestUrl = config.url;
+    let store = new LocalStorageStore({
       prefix: webpubManifestUrl.href,
       useLocalStorage: config.useLocalStorage,
     });
-    var settingsStore = new LocalStorageStore({
+    let settingsStore = new LocalStorageStore({
       prefix: "r2d2bc-reader",
       useLocalStorage: config.useLocalStorage,
     });
 
-    var annotator = new LocalAnnotator({ store: store });
+    let annotator = new LocalAnnotator({ store: store });
 
-    var upLink: UpLinkConfig;
+    let upLink: UpLinkConfig;
     if (config.upLinkUrl) {
       upLink = config.upLinkUrl;
     }
@@ -484,10 +614,10 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
 
     if (config.rights?.autoGeneratePositions ?? true) {
-      var startPosition = 0;
-      var totalContentLength = 0;
-      var positions = [];
-      var weight = {};
+      let startPosition = 0;
+      let totalContentLength = 0;
+      let positions = [];
+      let weight = {};
       publication.readingOrder.map(async (link, index) => {
         if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
           const locator: Locator = {
@@ -503,7 +633,7 @@ export async function load(config: ReaderConfig): Promise<any> {
           startPosition = startPosition + 1;
         } else {
           // TODO: USE ZIP ARCHIVE ENTRY LENGTH !!!!! ??
-          var href = publication.getAbsoluteHref(link.Href);
+          let href = publication.getAbsoluteHref(link.Href);
           await fetch(href).then(async (r) => {
             let length = (await r.blob()).size;
             (link as Link).contentLength = length;
@@ -730,3 +860,6 @@ export async function load(config: ReaderConfig): Promise<any> {
     throw new Error("Browser not supported");
   }
 }
+exports.load = async function (config: ReaderConfig) {
+  return load(config);
+};

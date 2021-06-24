@@ -55,7 +55,6 @@ export async function unload() {
     console.log("unload reader");
   }
   document.body.onscroll = () => {};
-
   await D2Navigator.stop();
   await D2Settings.stop();
   if (D2Navigator.rights?.enableTTS) {

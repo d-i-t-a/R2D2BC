@@ -49,7 +49,7 @@ import AnnotationModule, {
   AnnotationModuleConfig,
 } from "../modules/AnnotationModule";
 import TTSModule, { TTSModuleConfig } from "../modules/TTS/TTSModule";
-import { goTo, IS_DEV } from "..";
+import { IS_DEV } from "..";
 import Splitting from "../modules/TTS/splitting";
 import SearchModule, {
   SearchModuleConfig,
@@ -2225,7 +2225,7 @@ export default class IFrameNavigator implements Navigator {
       let locator = this.publication.positions.filter(
         (el: Locator) => el.locations.position === parseInt(String(position))
       )[0];
-      goTo(locator);
+      this.goTo(locator);
     }
   }
   snapToElement(element: HTMLElement) {

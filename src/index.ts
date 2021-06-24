@@ -135,7 +135,7 @@ export async function deleteBookmark(bookmark) {
     return await BookmarkModuleInstance.deleteBookmark(bookmark);
   }
 }
-exports.deleteBookmark = function (bookmark) {
+exports.deleteBookmark = async function (bookmark) {
   return deleteBookmark(bookmark);
 };
 export async function deleteAnnotation(highlight) {
@@ -146,7 +146,7 @@ export async function deleteAnnotation(highlight) {
     return await AnnotationModuleInstance.deleteAnnotation(highlight);
   }
 }
-exports.deleteAnnotation = function (highlight) {
+exports.deleteAnnotation = async function (highlight) {
   return deleteAnnotation(highlight);
 };
 export async function addAnnotation(highlight) {
@@ -157,7 +157,7 @@ export async function addAnnotation(highlight) {
     return await AnnotationModuleInstance.addAnnotation(highlight);
   }
 }
-exports.addAnnotation = function (highlight) {
+exports.addAnnotation = async function (highlight) {
   return addAnnotation(highlight);
 };
 export async function tableOfContents() {
@@ -175,7 +175,7 @@ export async function readingOrder() {
   }
   return await D2Navigator.readingOrder();
 }
-exports.readingOrder = function () {
+exports.readingOrder = async function () {
   return readingOrder();
 };
 export async function bookmarks() {
@@ -188,7 +188,7 @@ export async function bookmarks() {
     return [];
   }
 }
-exports.bookmarks = function () {
+exports.bookmarks = async function () {
   return bookmarks();
 };
 export async function annotations() {
@@ -201,7 +201,7 @@ export async function annotations() {
     return [];
   }
 }
-exports.annotations = function () {
+exports.annotations = async function () {
   return annotations();
 };
 export async function search(term, current) {
@@ -214,7 +214,7 @@ export async function search(term, current) {
     return [];
   }
 }
-exports.search = function (term, current) {
+exports.search = async function (term, current) {
   return search(term, current);
 };
 export async function goToSearchIndex(href, index, current) {
@@ -310,7 +310,7 @@ export async function currentSettings() {
   }
   return D2Settings.currentSettings();
 }
-exports.currentSettings = function () {
+exports.currentSettings = async function () {
   return currentSettings();
 };
 export async function increase(incremental) {
@@ -402,52 +402,52 @@ export async function applyPreferredVoice(value) {
 exports.applyPreferredVoice = async function (value) {
   await applyPreferredVoice(value);
 };
-export async function goTo(locator) {
+export function goTo(locator) {
   if (IS_DEV) {
     console.log("goTo " + locator);
   }
   D2Navigator.goTo(locator);
 }
-exports.goTo = async function (locator) {
-  await goTo(locator);
+exports.goTo = function (locator) {
+  goTo(locator);
 };
-export async function nextResource() {
+export function nextResource() {
   if (IS_DEV) {
     console.log("nextResource");
   }
   D2Navigator.nextResource();
 }
-exports.nextResource = async function () {
-  await nextResource();
+exports.nextResource = function () {
+  nextResource();
 };
-export async function previousResource() {
+export function previousResource() {
   if (IS_DEV) {
     console.log("previousResource");
   }
   D2Navigator.previousResource();
 }
-exports.previousResource = async function () {
-  await previousResource();
+exports.previousResource = function () {
+  previousResource();
 };
-export async function nextPage() {
+export function nextPage() {
   if (IS_DEV) {
     console.log("nextPage");
   }
   D2Navigator.nextPage();
 }
-exports.nextPage = async function () {
-  await nextPage();
+exports.nextPage = function () {
+  nextPage();
 };
-export async function previousPage() {
+export function previousPage() {
   if (IS_DEV) {
     console.log("previousPage");
   }
   D2Navigator.previousPage();
 }
-exports.previousPage = async function () {
-  await previousPage();
+exports.previousPage = function () {
+  previousPage();
 };
-export async function atStart() {
+export function atStart() {
   if (IS_DEV) {
     console.log("atStart");
   }
@@ -456,7 +456,7 @@ export async function atStart() {
 exports.atStart = function () {
   return atStart();
 };
-export async function atEnd() {
+export function atEnd() {
   if (IS_DEV) {
     console.log("atEnd");
   }
@@ -474,7 +474,7 @@ export async function scroll(value) {
 exports.scroll = async function (value) {
   await scroll(value);
 };
-export async function currentLocator() {
+export function currentLocator() {
   if (IS_DEV) {
     console.log("currentLocator");
   }
@@ -483,7 +483,7 @@ export async function currentLocator() {
 exports.currentLocator = function () {
   return currentLocator();
 };
-export async function positions() {
+export function positions() {
   if (IS_DEV) {
     console.log("positions");
   }
@@ -492,16 +492,16 @@ export async function positions() {
 exports.positions = function () {
   return positions();
 };
-export async function goToPosition(value) {
+export function goToPosition(value) {
   if (IS_DEV) {
     console.log("goToPosition");
   }
   return D2Navigator.goToPosition(value);
 }
-exports.goToPosition = async function (value) {
-  await goToPosition(value);
+exports.goToPosition = function (value) {
+  goToPosition(value);
 };
-export async function applyAttributes(value) {
+export function applyAttributes(value) {
   if (IS_DEV) {
     console.log("applyAttributes");
   }
@@ -510,14 +510,15 @@ export async function applyAttributes(value) {
 exports.applyAttributes = function (value) {
   applyAttributes(value);
 };
-export async function snapToElement(value) {
+// currently not used or functional
+export function snapToElement(value) {
   if (IS_DEV) {
     console.log("snapToElement");
   }
   D2Navigator.snapToElement(value);
 }
-exports.snapToElement = async function (value) {
-  await snapToElement(value);
+exports.snapToElement = function (value) {
+  snapToElement(value);
 };
 export async function load(config: ReaderConfig): Promise<any> {
   let browsers: string[] = [];

@@ -68,6 +68,30 @@
                 container.innerHTML = tocString
             })">show
                 TOC</button><br>
+            <button onclick="javascript:D2Reader.readingOrder().then(
+            result => {
+                console.log(result)
+                console.log(result.length)
+                var container = document.getElementById('container-toc');
+                var tocString = ''
+                result.forEach(function (item, index) {
+                    if (index == 0) {
+                        console.log('first')
+                        console.log(index)
+                        tocString += '<ul><li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.href + '</li>'
+                    } else if (index == result.length - 1) {
+                        console.log('last')
+                        console.log(index)
+                        tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.href + '</li></ul>'
+                    } else {
+                        console.log('middle')
+                        console.log(index)
+                        tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.href + '</li>'
+                    }
+                });
+                container.innerHTML = tocString
+            })">show
+                ReadingOrder</button><br>
             <button onclick="javascript:D2Reader.previousResource()">previous resource</button><br>
             <button onclick="javascript:D2Reader.nextResource()">next resource</button><br>
             <button onclick="javascript:D2Reader.previousPage()">previous page</button><br>

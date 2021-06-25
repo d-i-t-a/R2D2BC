@@ -508,3 +508,6 @@ function updateConfigForFixedLayout(
 
   return config;
 }
+exports.load = async function (config: ReaderConfig) {
+  return load(config);
+};

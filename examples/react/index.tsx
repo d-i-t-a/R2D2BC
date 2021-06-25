@@ -3,13 +3,17 @@ import "regenerator-runtime/runtime";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import D2Reader from "../../src";
-// import "../../src/styles/sass/reader.scss";
 import readiumBefore from "url:./readium-css/ReadiumCSS-before.css";
 import readiumAfter from "url:./readium-css/ReadiumCSS-after.css";
 import readiumDefault from "url:./readium-css/ReadiumCSS-default.css";
 
 const App = () => {
   const [reader, setReader] = React.useState<D2Reader | null>(null);
+  const [_state, setState] = React.useState(0);
+
+  function didUpdate() {
+    setState((state) => state + 1);
+  }
 
   React.useEffect(() => {
     const url = new URL("https://alice.dita.digital/manifest.json");
@@ -19,6 +23,15 @@ const App = () => {
       injectablesFixed: [],
     }).then(setReader);
   }, []);
+
+  function scroll() {
+    reader.scroll(true);
+    didUpdate();
+  }
+  function paginate() {
+    reader.scroll(false);
+    didUpdate();
+  }
 
   const isScrolling = reader?.currentSettings.verticalScroll ?? false;
 
@@ -32,9 +45,9 @@ const App = () => {
             <button onClick={reader.previousPage}>Prev Page</button>
             <button onClick={reader.nextPage}>Next Page</button>
             {isScrolling ? (
-              <button onClick={() => reader.scroll(false)}>Paginate</button>
+              <button onClick={paginate}>Paginate</button>
             ) : (
-              <button onClick={() => reader.scroll(true)}>Scroll</button>
+              <button onClick={scroll}>Scroll</button>
             )}
           </div>
         )}

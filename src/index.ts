@@ -240,7 +240,7 @@ export default class D2Reader {
       });
     }
 
-    return new D2Reader(
+    const reader = new D2Reader(
       settings,
       ttsSettings,
       navigator,
@@ -253,6 +253,7 @@ export default class D2Reader {
       timelineModule,
       mediaOverlayModule
     );
+    return reader;
   }
 
   /**
@@ -508,6 +509,3 @@ function updateConfigForFixedLayout(
 
   return config;
 }
-exports.load = async function (config: ReaderConfig) {
-  return load(config);
-};

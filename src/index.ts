@@ -451,23 +451,27 @@ export async function load(config: ReaderConfig): Promise<any> {
       var totalContentLength = 0;
       var positions = [];
       var weight = {};
-      publication.readingOrder.map(async (link, index) => {
-        if ((publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
-          const locator: Locator = {
-            href: link.href,
-            locations: {
-              progression: 0,
-              position: startPosition + 1,
-            },
-            type: link.type,
-          };
-          if (IS_DEV) console.log(locator);
-          positions.push(locator);
-          startPosition = startPosition + 1;
-        } else {
-          var href = publication.getAbsoluteHref(link.href);
-          await fetch(href).then(async (r) => {
-            let length = (await r.blob()).size;
+      await Promise.all(
+        publication.readingOrder.map(async (link) => {
+          if (
+            (publication.metadata.rendition?.layout ?? "unknown") === "fixed"
+          ) {
+            const locator: Locator = {
+              href: link.href,
+              locations: {
+                progression: 0,
+                position: startPosition + 1,
+              },
+              type: link.type,
+            };
+            if (IS_DEV) console.log(locator);
+            positions.push(locator);
+            startPosition = startPosition + 1;
+          } else {
+            var href = publication.getAbsoluteHref(link.href);
+            const r = await fetch(href);
+            const b = await r.blob();
+            let length = b.size;
             link.contentLength = length;
             totalContentLength += length;
             let positionLength = 1024;
@@ -487,41 +491,36 @@ export async function load(config: ReaderConfig): Promise<any> {
               positions.push(locator);
             });
             startPosition = startPosition + positionCount;
-          });
-        }
-        if (index + 1 === publication.readingOrder.length) {
-          if (
-            (publication.metadata.rendition?.layout ?? "unknown") !== "fixed"
-          ) {
-            publication.readingOrder.map(async (link) => {
-              if (IS_DEV) console.log(totalContentLength);
-              if (IS_DEV) console.log(link.contentLength);
-              link.contentWeight =
-                (100 / totalContentLength) * link.contentLength;
-              weight[link.href] = link.contentWeight;
-              if (IS_DEV) console.log(link.contentWeight);
-            });
           }
-          positions.map((locator, _index) => {
-            let resource = positions.filter(
-              (el: Locator) => el.href === decodeURI(locator.href)
-            );
-            let positionIndex = Math.ceil(
-              locator.locations.progression * (resource.length - 1)
-            );
-            locator.locations.totalProgression =
-              (locator.locations.position - 1) / positions.length;
-            locator.locations.remainingPositions = Math.abs(
-              positionIndex - (resource.length - 1)
-            );
-            locator.locations.totalRemainingPositions = Math.abs(
-              locator.locations.position - 1 - (positions.length - 1)
-            );
-          });
-          publication.positions = positions;
-          if (IS_DEV) console.log(positions);
-        }
+        })
+      );
+      if ((publication.metadata.rendition?.layout ?? "unknown") !== "fixed") {
+        publication.readingOrder.map(async (link) => {
+          if (IS_DEV) console.log(totalContentLength);
+          if (IS_DEV) console.log(link.contentLength);
+          link.contentWeight = (100 / totalContentLength) * link.contentLength;
+          weight[link.href] = link.contentWeight;
+          if (IS_DEV) console.log(link.contentWeight);
+        });
+      }
+      positions.map((locator, _index) => {
+        let resource = positions.filter(
+          (el: Locator) => el.href === decodeURI(locator.href)
+        );
+        let positionIndex = Math.ceil(
+          locator.locations.progression * (resource.length - 1)
+        );
+        locator.locations.totalProgression =
+          (locator.locations.position - 1) / positions.length;
+        locator.locations.remainingPositions = Math.abs(
+          positionIndex - (resource.length - 1)
+        );
+        locator.locations.totalRemainingPositions = Math.abs(
+          locator.locations.position - 1 - (positions.length - 1)
+        );
       });
+      publication.positions = positions;
+      if (IS_DEV) console.log(positions);
     } else {
       if (config.services?.positions) {
         await fetch(config.services?.positions.href)

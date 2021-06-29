@@ -41,7 +41,11 @@ export function isZoomed(): boolean {
  * browser.
  */
 export function enforceSupportedBrowsers(config: ReaderConfig) {
-  if (!config.protection?.enforceSupportedBrowsers) {
+  if (
+    (config.rights?.enableContentProtection &&
+      !config.protection?.enforceSupportedBrowsers) ||
+    !config.rights?.enableContentProtection
+  ) {
     return;
   }
 

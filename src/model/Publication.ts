@@ -43,7 +43,7 @@ export default class Publication extends R2Publication {
     return publication;
   }
 
-  get readingOrder(): Link[] {
+  get readingOrder() {
     return this.Spine;
   }
   get tableOfContents() {
@@ -209,7 +209,7 @@ export default class Publication extends R2Publication {
      * For each item in the reading order, get its length and calculate
      * the number of positions in it, then add them all up into the totals.
      */
-    const promises = this.readingOrder.map(async (link) => {
+    const promises = this.readingOrder.map(async (link, index) => {
       // if it is fixed layout, there is no need to fetch, each item is
       // just a single page.
       if (this.isFixedLayout) {
@@ -229,7 +229,7 @@ export default class Publication extends R2Publication {
         // maybe in the future this can be done in the background?
         const result = await fetch(href);
         const length = (await result.blob()).size;
-        link.contentLength = length;
+        (link as Link).contentLength = length;
         totalContentLength += length;
         const positionLength = 1024;
         const positionCount = Math.max(1, Math.ceil(length / positionLength));
@@ -246,45 +246,47 @@ export default class Publication extends R2Publication {
         });
         startPosition = startPosition + positionCount;
       }
-    });
 
-    // Once you have all the positions, you can update all the progressions and total progressions and remaining.
-    positions.map((locator, _index) => {
-      const resource = positions.filter(
-        (el: Locator) => el.href === decodeURI(locator.href)
-      );
-      const positionIndex = Math.ceil(
-        locator.locations.progression * (resource.length - 1)
-      );
-      locator.locations.totalProgression =
-        (locator.locations.position - 1) / positions.length;
-      locator.locations.remainingPositions = Math.abs(
-        positionIndex - (resource.length - 1)
-      );
-      locator.locations.totalRemainingPositions = Math.abs(
-        locator.locations.position - 1 - (positions.length - 1)
-      );
-      return locator;
-    });
+      if (index + 1 === this.readingOrder.length) {
+        // update the link.contentWeight to be a portion of the total and
+        // build up a map of link weights for non fixed layout publications
+        var totalweight = 0;
+        if (this.isReflowable) {
+          this.readingOrder.map(async (link) => {
+            // I don't totally know what this formula is saying haha, maybe we can
+            // add a comment
+            (link as Link).contentWeight =
+              (100 / totalContentLength) * (link as Link).contentLength;
+            totalweight = totalweight + (link as Link).contentWeight;
+          });
+        }
 
-    // update the link.contentWeight to be a portion of the total and
-    // build up a map of link weights for non fixed layout publications
-    // @aferditamuriqi but what is the "weight" object ultimately used for?
-    const weight = {};
-    if (this.isReflowable) {
-      this.readingOrder.forEach((link) => {
-        // I don't totally know what this formula is saying haha, maybe we can
-        // add a comment
-        link.contentWeight = (100 / totalContentLength) * link.contentLength;
-        weight[link.Href] = link.contentWeight;
-      });
-    }
+        // Once you have all the positions, you can update all the progressions and total progressions and remaining.
+        positions.map((locator, _index) => {
+          const resource = positions.filter(
+            (el: Locator) => el.href === decodeURI(locator.href)
+          );
+          const positionIndex = Math.ceil(
+            locator.locations.progression * (resource.length - 1)
+          );
+          locator.locations.totalProgression =
+            (locator.locations.position - 1) / positions.length;
+          locator.locations.remainingPositions = Math.abs(
+            positionIndex - (resource.length - 1)
+          );
+          locator.locations.totalRemainingPositions = Math.abs(
+            locator.locations.position - 1 - (positions.length - 1)
+          );
+          return locator;
+        });
+
+        this.positions = positions;
+      }
+    });
 
     // we need to wait for all of them to complete, meaning everything has bee
     // fetched and counted
     await Promise.all(promises);
-
-    this.positions = positions;
   }
 
   /**
@@ -309,7 +311,7 @@ export default class Publication extends R2Publication {
     const result = await fetch(href);
     const weights = await result.json();
     this.readingOrder.forEach((link) => {
-      link.contentWeight = weights[link.Href];
+      (link as Link).contentWeight = weights[link.Href];
     });
   }
 }

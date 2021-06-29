@@ -152,7 +152,7 @@ export class TTSSettings implements ITTSUserSettings {
 
   enableSplitter?: boolean;
 
-  async stop() {
+  stop() {
     if (IS_DEV) {
       console.log("tts settings stop");
     }
@@ -589,19 +589,21 @@ export class TTSSettings implements ITTSUserSettings {
       (this.userProperties.getByRef(
         TTSREFS.RATE_REF
       ) as Incremental).decrement();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
+      await this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
       this.settingsChangeCallback();
     } else if (incremental === "pitch") {
       (this.userProperties.getByRef(
         TTSREFS.PITCH_REF
       ) as Incremental).decrement();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
+      await this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
       this.settingsChangeCallback();
     } else if (incremental === "volume") {
       (this.userProperties.getByRef(
         TTSREFS.VOLUME_REF
       ) as Incremental).decrement();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
+      await this.storeProperty(
+        this.userProperties.getByRef(TTSREFS.VOLUME_REF)
+      );
       this.settingsChangeCallback();
     }
   }

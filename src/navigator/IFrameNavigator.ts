@@ -327,7 +327,7 @@ export default class IFrameNavigator implements Navigator {
     this.services = services;
   }
 
-  async stop() {
+  stop() {
     if (IS_DEV) {
       console.log("Iframe navigator stop");
     }

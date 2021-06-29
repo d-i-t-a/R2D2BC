@@ -473,6 +473,8 @@ export default class IFrameNavigator implements Navigator {
             iframe2.setAttribute("SCROLLING", "no");
             iframe2.setAttribute("allowtransparency", "true");
             iframe2.style.opacity = "1";
+            iframe2.style.border = "none";
+            iframe2.style.overflow = "hidden";
             this.iframes.push(iframe2);
 
             secondSpread.appendChild(this.iframes[1]);
@@ -2543,6 +2545,8 @@ export default class IFrameNavigator implements Navigator {
           iframe.setAttribute("SCROLLING", "no");
           iframe.setAttribute("allowtransparency", "true");
           iframe.style.opacity = "1";
+          iframe.style.border = "none";
+          iframe.style.overflow = "hidden";
           this.iframes.push(iframe);
         }
         let secondSpread = document.createElement("div");
@@ -2643,8 +2647,7 @@ export default class IFrameNavigator implements Navigator {
       }
     }
 
-    const selectedView = this.view;
-    const oldPosition = selectedView.getCurrentPosition();
+    const oldPosition = this.view.getCurrentPosition();
 
     this.settings.applyProperties();
 
@@ -2701,7 +2704,7 @@ export default class IFrameNavigator implements Navigator {
       }
     }, 100);
     setTimeout(() => {
-      selectedView.goToPosition(oldPosition);
+      this.view.goToPosition(oldPosition);
       this.updatePositionInfo();
       if (this.annotationModule !== undefined) {
         this.annotationModule.handleResize();
@@ -3166,6 +3169,8 @@ export default class IFrameNavigator implements Navigator {
       if (!this.isBeingStyled) {
         this.iframes.forEach((iframe) => {
           iframe.style.opacity = "1";
+          iframe.style.border = "none";
+          iframe.style.overflow = "hidden";
         });
       }
     }, 150);
@@ -3183,6 +3188,8 @@ export default class IFrameNavigator implements Navigator {
     this.isBeingStyled = true;
     this.iframes.forEach((iframe) => {
       iframe.style.opacity = "0";
+      iframe.style.border = "none";
+      iframe.style.overflow = "hidden";
     });
   }
 

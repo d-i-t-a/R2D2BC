@@ -334,8 +334,9 @@ export default class TextHighlighter {
   }): Array<any> {
     var order: any[] = [],
       chunks: any = {},
-      grouped: any | { chunks: any; timestamp: any; toString: () => any }[] =
-        [];
+      grouped:
+        | any
+        | { chunks: any; timestamp: any; toString: () => any }[] = [];
 
     highlights.forEach(function (hl) {
       let timestamp = hl.getAttribute(TIMESTAMP_ATTR);
@@ -740,14 +741,14 @@ export default class TextHighlighter {
               colorIconSymbol.style.backgroundColor = color;
             }
             if (highlightIcon.getElementsByTagName("span").length > 0) {
-              (
-                highlightIcon.getElementsByTagName("span")[0] as HTMLSpanElement
-              ).style.background = self.getColor();
+              (highlightIcon.getElementsByTagName(
+                "span"
+              )[0] as HTMLSpanElement).style.background = self.getColor();
             }
             if (underlineIcon.getElementsByTagName("span").length > 0) {
-              (
-                underlineIcon.getElementsByTagName("span")[0] as HTMLSpanElement
-              ).style.borderBottomColor = self.getColor();
+              (underlineIcon.getElementsByTagName(
+                "span"
+              )[0] as HTMLSpanElement).style.borderBottomColor = self.getColor();
             }
 
             self.toolboxMode("add");
@@ -923,6 +924,12 @@ export default class TextHighlighter {
     if (toolbox) {
       if (getComputedStyle(toolbox).display === "none") {
         toolbox.style.display = "block";
+        const paginated = this.delegate.view.isPaginated();
+        if (paginated) {
+          toolbox.style.position = "absolute";
+        } else {
+          toolbox.style.position = "relative";
+        }
         this.selectionMenuOpened();
 
         var self = this;
@@ -937,11 +944,9 @@ export default class TextHighlighter {
             highlightIcon.style.display = "unset";
             if (colorIcon) {
               if (highlightIcon.getElementsByTagName("span").length > 0) {
-                (
-                  highlightIcon.getElementsByTagName(
-                    "span"
-                  )[0] as HTMLSpanElement
-                ).style.background = this.getColor();
+                (highlightIcon.getElementsByTagName(
+                  "span"
+                )[0] as HTMLSpanElement).style.background = this.getColor();
               }
             }
           }
@@ -949,11 +954,9 @@ export default class TextHighlighter {
             underlineIcon.style.display = "unset";
             if (colorIcon) {
               if (underlineIcon.getElementsByTagName("span").length > 0) {
-                (
-                  underlineIcon.getElementsByTagName(
-                    "span"
-                  )[0] as HTMLSpanElement
-                ).style.borderBottomColor = this.getColor();
+                (underlineIcon.getElementsByTagName(
+                  "span"
+                )[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
               }
             }
           }
@@ -1816,7 +1819,7 @@ export default class TextHighlighter {
         `.${CLASS_HIGHLIGHT_AREA}`
       );
       for (const highlightFragment of highlightFragments) {
-        const withRect = highlightFragment as unknown as IWithRect;
+        const withRect = (highlightFragment as unknown) as IWithRect;
         const left = withRect.rect.left + xOffset; // (paginated ? withRect.xOffset : xOffset);
         const top = withRect.rect.top + yOffset; // (paginated ? withRect.yOffset : yOffset);
         if (
@@ -1920,6 +1923,12 @@ export default class TextHighlighter {
 
         if (getComputedStyle(toolbox).display === "none") {
           toolbox.style.display = "block";
+          const paginated = this.delegate.view.isPaginated();
+          if (paginated) {
+            toolbox.style.position = "absolute";
+          } else {
+            toolbox.style.position = "relative";
+          }
 
           this.toolboxMode("edit");
 
@@ -1970,6 +1979,12 @@ export default class TextHighlighter {
           this.selectionMenuClosed();
           void toolbox.offsetWidth;
           toolbox.style.display = "block";
+          const paginated = this.delegate.view.isPaginated();
+          if (paginated) {
+            toolbox.style.position = "absolute";
+          } else {
+            toolbox.style.position = "relative";
+          }
         }
         // }
       }
@@ -2088,11 +2103,9 @@ export default class TextHighlighter {
         highlight
       );
       highlight.position = parseInt(
-        (
-          (highlightDom.hasChildNodes
-            ? highlightDom.childNodes[0]
-            : highlightDom) as HTMLDivElement
-        ).style.top.replace("px", "")
+        ((highlightDom.hasChildNodes
+          ? highlightDom.childNodes[0]
+          : highlightDom) as HTMLDivElement).style.top.replace("px", "")
       );
       return highlight;
     } catch (e) {
@@ -2128,11 +2141,9 @@ export default class TextHighlighter {
 
       let highlightDom = this.createHighlightDom(win, highlight);
       highlight.position = parseInt(
-        (
-          (highlightDom.hasChildNodes
-            ? highlightDom.childNodes[0]
-            : highlightDom) as HTMLDivElement
-        ).style.top.replace("px", "")
+        ((highlightDom.hasChildNodes
+          ? highlightDom.childNodes[0]
+          : highlightDom) as HTMLDivElement).style.top.replace("px", "")
       );
 
       return highlight;

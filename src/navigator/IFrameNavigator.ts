@@ -424,6 +424,11 @@ export default class IFrameNavigator implements Navigator {
     this.headerMenu = headerMenu;
     this.mainElement = mainElement;
     try {
+      var wrapper = HTMLUtilities.findRequiredElement(
+        mainElement,
+        "main#iframe-wrapper"
+      ) as HTMLElement;
+      wrapper.style.overflow = "overlay";
       let iframe = HTMLUtilities.findElement(
         mainElement,
         "main#iframe-wrapper iframe"
@@ -445,6 +450,7 @@ export default class IFrameNavigator implements Navigator {
           mainElement,
           "main#iframe-wrapper"
         ) as HTMLElement;
+        wrapper.style.overflow = "overlay";
         let iframe = document.createElement("iframe");
         iframe.setAttribute("SCROLLING", "no");
         iframe.setAttribute("allowtransparency", "true");
@@ -455,12 +461,12 @@ export default class IFrameNavigator implements Navigator {
         this.spreads.style.display = "flex";
         this.spreads.style.alignItems = "center";
         this.spreads.style.justifyContent = "center";
-        let info = document.getElementById("reader-info-bottom");
-        if (info) {
-          wrapper.insertBefore(this.spreads, info);
-        } else {
-          wrapper.appendChild(this.spreads);
-        }
+        // let info = document.getElementById("reader-info-bottom");
+        // if (info) {
+        //   wrapper.insertBefore(this.spreads, info);
+        // } else {
+        wrapper.appendChild(this.spreads);
+        // }
 
         this.spreads.appendChild(this.firstSpread);
         this.firstSpread.appendChild(this.iframes[0]);
@@ -496,13 +502,8 @@ export default class IFrameNavigator implements Navigator {
       }
 
       if (this.publication.isFixedLayout) {
-        var wrapper = HTMLUtilities.findRequiredElement(
-          mainElement,
-          "main#iframe-wrapper"
-        ) as HTMLElement;
-        const minHeight =
-          BrowserUtilities.getHeight() - 40 - this.attributes.margin;
-        wrapper.style.height = minHeight + 40 + "px";
+        const minHeight = wrapper.clientHeight;
+        // wrapper.style.height = minHeight + 40 + "px";
         var iframeParent = this.iframes[0].parentElement
           .parentElement as HTMLElement;
         iframeParent.style.height = minHeight + 40 + "px";
@@ -1082,8 +1083,13 @@ export default class IFrameNavigator implements Navigator {
             this.isScrolling = false;
           }, 200);
 
+          const wrapper = HTMLUtilities.findRequiredElement(
+            document,
+            "#iframe-wrapper"
+          ) as HTMLDivElement;
+
           // document.body.style.overflow = "auto";
-          document.body.onscroll = () => {
+          wrapper.onscroll = () => {
             this.isScrolling = true;
             this.saveCurrentReadingPosition();
             if (this.view.atEnd()) {

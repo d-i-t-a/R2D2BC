@@ -26,7 +26,7 @@ import {
   addEventListenerOptional,
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
-import * as sanitize from "sanitize-html";
+import sanitize from "sanitize-html";
 import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
 import TextHighlighter from "../highlight/TextHighlighter";
 
@@ -443,8 +443,9 @@ export default class TTSModule implements ReaderModule {
                   splittingWord.dataset.ttsCurrentWord = "false";
                   splittingWord.dataset.ttsCurrentLine = "false";
                 });
-                let whitespace =
-                  self.body.querySelectorAll("[data-whitespace]");
+                let whitespace = self.body.querySelectorAll(
+                  "[data-whitespace]"
+                );
                 whitespace.forEach((splittingWord) => {
                   splittingWord.dataset.ttsColor = self.tts.color;
                   splittingWord.dataset.ttsCurrentWord = "false";

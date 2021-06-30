@@ -16,7 +16,7 @@
   "scripts": {
     "prepare": "npm run build",
     "examples": "node --loader ts-node/esm examples/server.ts",
-    "clean": "rimraf node_modules lib dist parcel-dist .parcel-cache",
+    "clean": "rimraf node_modules dist parcel-dist .parcel-cache",
     "dev": "ts-node -T build.ts -w",
     "build": "ts-node -T build.ts",
     "streamed": "node \"./examples/streamed/server/server-cli.inlinesourcemap.js\" ./examples/streamed/epubs/",

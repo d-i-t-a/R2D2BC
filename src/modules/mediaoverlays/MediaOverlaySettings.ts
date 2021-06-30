@@ -26,7 +26,7 @@ import {
   Incremental,
 } from "../../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import {
   MediaOverlayModuleAPI,
@@ -143,20 +143,16 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   private async initialise() {
     this.autoScroll =
       (await this.getProperty(MEDIAOVERLAYREFS.AUTO_SCROLL_KEY)) != null
-        ? (
-            (await this.getProperty(
-              MEDIAOVERLAYREFS.AUTO_SCROLL_KEY
-            )) as Switchable
-          ).value
+        ? ((await this.getProperty(
+            MEDIAOVERLAYREFS.AUTO_SCROLL_KEY
+          )) as Switchable).value
         : this.autoScroll;
 
     this.autoTurn =
       (await this.getProperty(MEDIAOVERLAYREFS.AUTO_TURN_KEY)) != null
-        ? (
-            (await this.getProperty(
-              MEDIAOVERLAYREFS.AUTO_TURN_KEY
-            )) as Switchable
-          ).value
+        ? ((await this.getProperty(
+            MEDIAOVERLAYREFS.AUTO_TURN_KEY
+          )) as Switchable).value
         : this.autoTurn;
 
     this.color =
@@ -248,11 +244,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       "click",
       (event: MouseEvent) => {
         if (IS_DEV) console.log(MEDIAOVERLAYREFS.VOLUME_REF);
-        (
-          this.userProperties.getByRef(
-            MEDIAOVERLAYREFS.VOLUME_REF
-          ) as Incremental
-        ).decrement();
+        (this.userProperties.getByRef(
+          MEDIAOVERLAYREFS.VOLUME_REF
+        ) as Incremental).decrement();
         this.storeProperty(
           this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
         );
@@ -265,11 +259,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       "click",
       (event: MouseEvent) => {
         if (IS_DEV) console.log(MEDIAOVERLAYREFS.VOLUME_REF);
-        (
-          this.userProperties.getByRef(
-            MEDIAOVERLAYREFS.VOLUME_REF
-          ) as Incremental
-        ).increment();
+        (this.userProperties.getByRef(
+          MEDIAOVERLAYREFS.VOLUME_REF
+        ) as Incremental).increment();
         this.storeProperty(
           this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
         );
@@ -377,8 +369,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   ): Promise<void> {
     if (mediaOverlaySettings.color) {
       this.color = mediaOverlaySettings.color;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF).value =
-        this.color;
+      this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.COLOR_REF
+      ).value = this.color;
       await this.saveProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF)
       );
@@ -387,8 +380,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
     if (mediaOverlaySettings.autoScroll !== undefined) {
       if (IS_DEV) console.log("autoScroll " + this.autoScroll);
       this.autoScroll = mediaOverlaySettings.autoScroll;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF).value =
-        this.autoScroll;
+      this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.AUTO_SCROLL_REF
+      ).value = this.autoScroll;
       await this.saveProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF)
       );
@@ -397,8 +391,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
     if (mediaOverlaySettings.autoTurn !== undefined) {
       if (IS_DEV) console.log("autoTurn " + this.autoTurn);
       this.autoTurn = mediaOverlaySettings.autoTurn;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF).value =
-        this.autoTurn;
+      this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.AUTO_TURN_REF
+      ).value = this.autoTurn;
       await this.saveProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF)
       );
@@ -407,8 +402,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
     if (mediaOverlaySettings.volume) {
       if (IS_DEV) console.log("volume " + this.volume);
       this.volume = mediaOverlaySettings.volume;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF).value =
-        this.volume;
+      this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.VOLUME_REF
+      ).value = this.volume;
       await this.saveProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
       );
@@ -419,24 +415,27 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   async applyMediaOverlaySetting(key: any, value: any) {
     if (key === MEDIAOVERLAYREFS.COLOR_REF) {
       this.color = value;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF).value =
-        this.color;
+      this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.COLOR_REF
+      ).value = this.color;
       await this.saveProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF)
       );
       this.settingsChangeCallback();
     } else if (key === MEDIAOVERLAYREFS.AUTO_SCROLL_REF) {
       this.autoScroll = value;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF).value =
-        this.autoScroll;
+      this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.AUTO_SCROLL_REF
+      ).value = this.autoScroll;
       await this.saveProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF)
       );
       this.settingsChangeCallback();
     } else if (key === MEDIAOVERLAYREFS.AUTO_TURN_REF) {
       this.autoTurn = value;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF).value =
-        this.autoTurn;
+      this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.AUTO_TURN_REF
+      ).value = this.autoTurn;
       await this.saveProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF)
       );
@@ -445,9 +444,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   }
   async increase(incremental: string): Promise<void> {
     if (incremental === "volume") {
-      (
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF) as Incremental
-      ).increment();
+      (this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.VOLUME_REF
+      ) as Incremental).increment();
       this.storeProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
       );
@@ -457,9 +456,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
 
   async decrease(incremental: string): Promise<void> {
     if (incremental === "volume") {
-      (
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF) as Incremental
-      ).decrement();
+      (this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.VOLUME_REF
+      ) as Incremental).decrement();
       this.storeProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
       );

@@ -33,8 +33,7 @@ module.exports = [
       //         - install 'url'
       // If you don't want to include a polyfill, you can use an empty module like this:
       //         resolve.fallback: { "url": false }
-      fallback: { url: false },
-      fallback: { util: false },
+      fallback: { url: false, util: false },
     },
     plugins: [
       new webpack.ProvidePlugin({
@@ -43,8 +42,13 @@ module.exports = [
     ],
     output: {
       filename: "[name].js",
-      library: "D2Reader",
+      library: {
+        name: "D2Reader",
+        export: "default",
+        type: "var",
+      },
       path: path.resolve(__dirname, "dist"),
+      iife: true,
     },
   },
   {

@@ -17,8 +17,8 @@
  * Licensed to: Bibliotheca LLC under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../..";
-import { Publication } from "../../model/Publication";
+import { IS_DEV } from "../../utils";
+import Publication from "../../model/Publication";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import ReaderModule from "../ReaderModule";
 import { Link } from "../../model/Link";
@@ -181,7 +181,7 @@ export default class MediaOverlayModule implements ReaderModule {
       if (this.audioElement) {
         await this.audioElement.pause();
       }
-      if (this.currentLinks.length > 1 && this.currentLinkIndex == 0) {
+      if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
         this.currentLinkIndex++;
         await this.playLink();
       } else {
@@ -367,7 +367,7 @@ export default class MediaOverlayModule implements ReaderModule {
         if (IS_DEV) console.log("mediaOverlaysNext() - navLeftOrRight()");
         this.mediaOverlaysStop();
 
-        if (this.currentLinks.length > 1 && this.currentLinkIndex == 0) {
+        if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
           this.currentLinkIndex++;
           this.playLink();
         } else {
@@ -415,7 +415,7 @@ export default class MediaOverlayModule implements ReaderModule {
       if (IS_DEV) console.log("mediaOverlaysNext() - navLeftOrRight() 2");
       this.mediaOverlaysStop();
 
-      if (this.currentLinks.length > 1 && this.currentLinkIndex == 0) {
+      if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
         this.currentLinkIndex++;
         this.playLink();
       } else {
@@ -523,7 +523,7 @@ export default class MediaOverlayModule implements ReaderModule {
 
     if (!hasBegin && !hasEnd) {
       if (urlObjFull.hash) {
-        const matches = urlObjFull.hash.match(/t=([0-9\.]+)(,([0-9\.]+))?/);
+        const matches = urlObjFull.hash.match(/t=([0-9.]+)(,([0-9.]+))?/);
         if (matches && matches.length >= 1) {
           const b = matches[1];
           try {
@@ -706,7 +706,7 @@ export default class MediaOverlayModule implements ReaderModule {
 
       const onended = async (_ev: Event) => {
         if (IS_DEV) console.log("onended");
-        if (this.currentLinks.length > 1 && this.currentLinkIndex == 0) {
+        if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
           this.currentLinkIndex++;
           await this.playLink();
         } else {
@@ -779,10 +779,9 @@ export default class MediaOverlayModule implements ReaderModule {
     if (!classActive) {
       classActive = this.settings.color;
     }
-    const styleAttr =
-      this.delegate.iframes[0].contentDocument.documentElement.getAttribute(
-        "style"
-      );
+    const styleAttr = this.delegate.iframes[0].contentDocument.documentElement.getAttribute(
+      "style"
+    );
     const isNight = styleAttr
       ? styleAttr.indexOf("readium-night-on") > 0
       : false;

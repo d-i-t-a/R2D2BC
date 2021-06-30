@@ -25,7 +25,7 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;
@@ -43,9 +43,9 @@ export interface ContentProtectionModuleProperties {
 }
 
 export interface ContentProtectionModuleConfig
-  extends ContentProtectionModuleProperties {
+  extends Partial<ContentProtectionModuleProperties> {
   delegate: IFrameNavigator;
-  api: ContentProtectionModuleAPI;
+  api?: ContentProtectionModuleAPI;
 }
 
 export interface ContentProtectionModuleAPI {

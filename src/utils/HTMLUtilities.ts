@@ -22,7 +22,7 @@
 export function findElement(
   parentElement: Element | Document,
   selector: string
-): Element | null {
+): HTMLElement | null {
   return parentElement.querySelector(selector);
 }
 
@@ -31,7 +31,7 @@ export function findElement(
 export function findRequiredElement(
   parentElement: Element | Document,
   selector: string
-): Element {
+): HTMLElement {
   const element = findElement(parentElement, selector);
   if (!element) {
     throw "required element " + selector + " not found";

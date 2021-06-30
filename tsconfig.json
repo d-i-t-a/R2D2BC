@@ -18,6 +18,8 @@
  */
 
 {
+  "include": ["src", "build.ts"],
+  "exclude": ["examples", "injectables", "viewer"],
   "compileOnSave": true,
   "compilerOptions": {
     "experimentalDecorators": true,
@@ -28,8 +30,6 @@
     "noImplicitAny": false,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "moduleResolution": "node",
     "outDir": "../dist",
     "rootDir": ".",
@@ -40,5 +40,13 @@
     "target": "es6",
     "skipLibCheck": true,
     "jsx": "react",
+    "esModuleInterop": true
   },
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "CommonJS",
+      "target": "ESNext",
+    }
+  }
 }

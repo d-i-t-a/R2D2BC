@@ -510,3 +510,6 @@ function updateConfig(
 
   return config;
 }
+
+// for interop with <script> based usage
+export const build = D2Reader.build;

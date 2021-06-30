@@ -37,7 +37,8 @@ async function buildTs(
 ) {
   const config: BuildOptions = {
     bundle: true,
-    target: "es6",
+    // what browsers we want to support, this is basically all >1% usage
+    target: ["chrome89", "firefox88", "safari14", "edge90"],
     sourcemap: true,
     // we include some node.js polyfills
     inject: ["./polyfills.js"],

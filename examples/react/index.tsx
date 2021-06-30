@@ -37,11 +37,11 @@ const App = () => {
 
   return (
     <div>
-      <div style={{ height: "100vh", overflow: "hidden" }}>
+      <div>
         {!reader ? (
           <strong>Loading reader...</strong>
         ) : (
-          <div>
+          <div style={{ position: "fixed", top: "0px", zIndex: 2 }}>
             <button onClick={reader.previousPage}>Prev Page</button>
             <button onClick={reader.nextPage}>Next Page</button>
             {isScrolling ? (
@@ -54,18 +54,15 @@ const App = () => {
         <div
           id="D2Reader-Container"
           style={{
-            width: "100%",
-            height: "100%",
-            position: "relative",
-            overflow: "scroll",
+            border: "solid 5px rebeccapurple",
           }}
         >
-          <div id="headerMenu" />
-          <div id="footerMenu" />
           <main
-            style={{ overflow: "hidden" }}
             tabIndex={-1}
             id="iframe-wrapper"
+            style={{
+              height: "calc(100vh - 10px)",
+            }}
           >
             <div id="reader-loading" className="loading"></div>
             <div id="reader-error" className="error"></div>

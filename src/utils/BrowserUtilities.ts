@@ -19,15 +19,26 @@ import { getUserAgentRegExp } from "browserslist-useragent-regexp";
  */
 
 import { ReaderConfig } from "../navigator/IFrameNavigator";
+import * as HTMLUtilities from "./HTMLUtilities";
 
 /** Returns the current width of the document. */
 export function getWidth(): number {
-  return document.documentElement.clientWidth;
+  const wrapper = HTMLUtilities.findRequiredElement(
+    document,
+    "#iframe-wrapper"
+  ) as HTMLDivElement;
+
+  return wrapper.clientWidth;
 }
 
 /** Returns the current height of the document. */
 export function getHeight(): number {
-  return document.documentElement.clientHeight;
+  const wrapper = HTMLUtilities.findRequiredElement(
+    document,
+    "#iframe-wrapper"
+  ) as HTMLDivElement;
+
+  return wrapper.clientHeight;
 }
 
 /** Returns true if the browser is zoomed in with pinch-to-zoom on mobile. */
@@ -41,7 +52,11 @@ export function isZoomed(): boolean {
  * browser.
  */
 export function enforceSupportedBrowsers(config: ReaderConfig) {
-  if (!config.protection?.enforceSupportedBrowsers) {
+  if (
+    (config.rights?.enableContentProtection &&
+      !config.protection?.enforceSupportedBrowsers) ||
+    !config.rights?.enableContentProtection
+  ) {
     return;
   }
 

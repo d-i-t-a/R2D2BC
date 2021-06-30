@@ -16,21 +16,21 @@
  * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
- 
+
 :root {
     -webkit-text-size-adjust: 100%;
     zoom: reset;
   }
-  
+
   body {
     margin: 0 auto;
   }
-  
+
   ul li,
   ol li {
     list-style: none;
   }
-  
+
   button {
     background: $ui-white;
     border: 0;
@@ -39,27 +39,27 @@
     margin: 0;
     -webkit-appearance: none;
   }
-  
+
   a {
     color: $ui-dark-gray;
     text-decoration: none;
   }
-  
+
   .inactive {
     opacity: 0;
     z-index: -3000;
   }
-  
+
   .active {
     opacity: 1;
     z-index: 3000;
   }
-  
+
   #viewer {
     padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
     box-sizing: border-box;
   }
-  
+
   #reader-info-bottom-flex {
       bottom: 0px;
       position: fixed;
@@ -79,24 +79,24 @@
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
-  
+
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
     cursor: default;
-  
+
     &.top {
       line-height: 3;
       padding-top: env(safe-area-inset-top);
       min-height: 3.6rem;
     }
-  
+
     &.bottom {
       line-height: 2;
       padding-bottom: env(safe-area-inset-bottom);
     }
-  
+
     .chapter-position,
     .chapter-title,
     .remaining-positions {
@@ -104,50 +104,50 @@
       font-variant-numeric: lining-nums tabular-nums;
     }
   }
-  
+
   #iframe-wrapper iframe {
       border: none;
-      overflow: hidden;
-      opacity: 0; 
-  } 
-  
+      overflow: overlay;
+      opacity: 0;
+  }
+
   [data-viewer-theme="day"] {
     background-color: $ui-white;
-  }  
+  }
 
   [data-viewer-theme="sepia"] {
     background-color: $sepia-bg;
-  
+
     button {
       background: $sepia-bg;
       color: $ui-dark-gray;
     }
-  
+
     a {
       color: $ui-dark-gray;
     }
-  
+
     .info {
       color: $ui-dark-gray;
     }
-  
+
   }
-  
+
   [data-viewer-theme="night"] {
     background-color: $night-bg;
     color: $ui-white;
-  
+
     button {
       background: $night-bg;
       color: $ui-light-gray;
     }
-  
+
     a {
       color: $ui-light-gray;
     }
-  
+
     .info {
       color: $ui-light-gray;
     }
-  
+
   }

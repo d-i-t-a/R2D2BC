@@ -97,7 +97,7 @@ export default class BookmarkModule implements ReaderModule {
     this.api = api;
   }
 
-  async stop() {
+  stop() {
     if (IS_DEV) {
       console.log("Bookmark module stop");
     }

@@ -321,7 +321,7 @@ export class UserSettings implements IUserSettings {
     });
   }
 
-  async stop() {
+  stop() {
     if (IS_DEV) {
       console.log("book settings stop");
     }

@@ -22,6 +22,7 @@ import IFrameNavigator, {
   IFrameAttributes,
 } from "../navigator/IFrameNavigator";
 import BookView from "./BookView";
+import * as HTMLUtilities from "../utils/HTMLUtilities";
 
 export default class FixedBookView implements BookView {
   layout = "fixed";
@@ -42,6 +43,14 @@ export default class FixedBookView implements BookView {
 
   getCurrentPosition(): number {
     return 0;
+  }
+
+  getScreenHeight(): number {
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
+    return wrapper.clientHeight;
   }
 
   goToPosition(_position: number): void {}

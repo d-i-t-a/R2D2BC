@@ -4,7 +4,8 @@
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
-  "main": "dist/reader.js",
+  "module": "dist/index.mjs",
+  "browser": "dist/index.js",
   "typings": "dist/index.d.ts",
   "engines": {
     "node": ">8.0.0"
@@ -14,19 +15,18 @@
   },
   "scripts": {
     "prepare": "npm run build",
-    "build": "webpack --mode=production && npm run sass && cpx \"injectables/**/*.{css,js}\" dist/injectables/",
-    "dev": "webpack --mode=development && npm run sass && cpx \"injectables/**/*.{css,js}\" dist/injectables/",
-    "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
     "examples": "node --loader ts-node/esm examples/server.ts",
     "clean": "rimraf node_modules lib dist parcel-dist .parcel-cache",
-    "start": "http-server viewer",
+    "dev": "ts-node -T build.ts -w",
+    "build": "ts-node -T build.ts",
+    "streamed": "node \"./examples/streamed/server/server-cli.inlinesourcemap.js\" ./examples/streamed/epubs/",
+    "start": "node dev-server.js",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
     "example:react": "parcel examples/react/index.html --dist-dir parcel-dist"
   },
   "dependencies": {
     "browserslist-useragent": "^3.0.3",
     "cssesc": "^3.0.0",
-    "debounce": "^1.2.1",
     "detect-browser": "^5.2.0",
     "devtools-detector": "^2.0.3",
     "jscrypto": "0.0.1",
@@ -34,6 +34,7 @@
     "promise-polyfill": "^8.2.0",
     "r2-shared-js": "^1.0.51",
     "sanitize-html": "^2.3.3",
+    "util": "^0.12.4",
     "whatwg-fetch": "^3.6.2"
   },
   "browserslist": {
@@ -52,6 +53,8 @@
     "@parcel/transformer-sass": "^2.0.0-beta.2",
     "@parcel/transformer-typescript-tsc": "^2.0.0-beta.1",
     "@types/chai": "^4.2.15",
+    "@types/chokidar": "^2.1.3",
+    "@types/copy": "^0.3.1",
     "@types/cssesc": "^3.0.0",
     "@types/debounce": "^3.0.0",
     "@types/express": "^4.17.12",
@@ -59,11 +62,13 @@
     "@types/mark.js": "^8.11.5",
     "@types/materialize-css": "^1.0.8",
     "@types/mocha": "^8.2.2",
+    "@types/node-sass": "^4.11.1",
     "@types/pako": "^1.0.1",
     "@types/parse5": "^6.0.0",
     "@types/promise-polyfill": "^6.0.3",
     "@types/react": "^17.0.11",
     "@types/react-dom": "^17.0.7",
+    "@types/rimraf": "^3.0.0",
     "@types/sanitize-html": "^1.27.1",
     "@types/uuid": "^8.3.0",
     "@typescript-eslint/eslint-plugin": "^4.21.0",
@@ -72,8 +77,13 @@
     "braces": ">=3.0.2",
     "browserslist-useragent-regexp": "^3.0.0",
     "chai": "^4.3.4",
+    "chalk": "^4.1.1",
+    "chokidar": "^1.7.0",
+    "copy": "^0.3.2",
     "cpx": "^1.2.1",
     "dita-streamer-js": "^1.1.1",
+    "debounce": "^1.2.1",
+    "esbuild": "^0.12.11",
     "eslint": "^7.23.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-config-react-app": "^6.0.0",
@@ -88,11 +98,11 @@
     "materialize-css": "^1.0.0",
     "minimist": ">=1.2.5",
     "mocha": "^8.3.2",
-    "node-sass": "^6.0.0",
+    "node-sass": "^6.0.1",
     "npm-force-resolutions": "0.0.10",
     "parcel": "^2.0.0-beta.2",
     "prettier": "^2.2.1",
-    "process": "0.11.10",
+    "process": "^0.11.10",
     "rangy": "^1.3.0",
     "react": "^17.0.2",
     "react-app-polyfill": "^2.0.0",
@@ -108,7 +118,7 @@
     "webpack-cli": "^4.5.0"
   },
   "files": [
-    "dist/*"
+    "dist"
   ],
   "resolutions": {
     "braces": "3.0.2"

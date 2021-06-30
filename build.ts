@@ -15,11 +15,6 @@ const isWatchEnabled = process.argv[2] === "-w";
 const isProduction = !isWatchEnabled;
 
 /**
- * TO DO:
- *  - Different production and dev bundles when building
- */
-
-/**
  * Generates TS Declarations using tsc. Is pretty slow : /.
  */
 async function generateDts() {

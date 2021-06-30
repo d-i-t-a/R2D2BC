@@ -11,6 +11,8 @@ const exec = util.promisify(require("child_process").exec);
 const sass = util.promisify(require("node-sass").render);
 
 const isWatchEnabled = process.argv[2] === "-w";
+// for now we bundle for production whenever we aren't in watch mode
+const isProduction = !isWatchEnabled;
 
 /**
  * TO DO:
@@ -31,9 +33,9 @@ async function generateDts() {
 }
 
 /**
- * Builds Typescript using ESBuild. Super fast and easy.
+ * Builds Typescript (or JS) using ESBuild. Super fast and easy.
  */
-async function build(
+async function buildTs(
   options: BuildOptions,
   successMsg: string,
   filename: string
@@ -42,25 +44,28 @@ async function build(
     bundle: true,
     target: "es6",
     sourcemap: true,
+    // we include some node.js polyfills
     inject: ["./polyfills.js"],
     define: {
-      "process.env.NODE_ENV": isWatchEnabled ? "'development'" : "'production'",
+      // note these need to be double quoted if we want to define string constants
+      "process.env.NODE_ENV": isProduction ? "'production'" : "'development'",
+      // the Node.js util polyfill uses "global" instead of "window" annoyingly
       global: "window",
     },
     tsconfig: "tsconfig.json",
-    // minify whenever we aren't in watch mode
-    minify: !isWatchEnabled,
+    minify: isProduction,
     outdir: "dist",
     ...options,
   };
 
+  // bundle ES Modules with the ".mjs" extension
   if (config.format === "esm") {
     config.outExtension = { ".js": ".mjs" };
   }
 
   try {
     const r = await esbuild(config);
-    bundled(successMsg, filename);
+    logBundled(successMsg, filename);
     return r;
   } catch (e) {
     return Promise.reject(e.stdout);
@@ -82,7 +87,7 @@ async function compileCss(input: string, filename: string) {
     const p1 = fs.writeFile(`${fullPath}.css`, result.css);
     const p2 = fs.writeFile(`${fullPath}.map.css`, result.map);
     await Promise.all([p1, p2]);
-    bundled("Compiled SASS", `${fullPath}.css`);
+    logBundled("Compiled SASS", `${fullPath}.css`);
   } catch (e) {
     err(`CSS Error (${input})`, e);
   }
@@ -91,7 +96,7 @@ async function compileCss(input: string, filename: string) {
 async function copyCssInjectables() {
   try {
     await copy("injectables/**/*.css", "dist/injectables");
-    bundled("Copied CSS injectables", "dist/injectables/**/*.css");
+    logBundled("Copied CSS injectables", "dist/injectables/**/*.css");
   } catch (e) {
     err("CSS Copy Error: ", e);
   }
@@ -106,6 +111,9 @@ async function copyCssInjectables() {
  *  - generate TS declarations
  *  - Build iife version of injectables to dist
  *  - copy injectables css to dist
+ *
+ *  Do all of this in parallel and wait for it all to finish.
+ *  Optionally watch for changes!
  */
 async function buildAll() {
   await rimraf("dist/");
@@ -113,14 +121,14 @@ async function buildAll() {
   console.log("🧹 Cleaned output folder -", chalk.blue("dist/"));
 
   // build the main entrypoint as an IIFE file
-  const p1 = build(
+  const p1 = buildTs(
     { format: "iife", entryPoints: ["src/index.ts"], globalName: "D2Reader" },
     "Compiled IIFE (for <script> tags)",
     "dist/index.js"
   );
 
   // build the main entrypoint as an ES Module
-  const p2 = build(
+  const p2 = buildTs(
     { format: "esm", entryPoints: ["src/index.ts"] },
     "Compiled ESM (for 'import D2Reader' uses)",
     "dist/index.mjs"
@@ -128,11 +136,11 @@ async function buildAll() {
 
   // generate type declarations
   const p3 = generateDts()
-    .then(() => bundled("Generated TS Declarations", "dist/index.d.ts"))
+    .then(() => logBundled("Generated TS Declarations", "dist/index.d.ts"))
     .catch((e) => err("TS Error", e));
 
   // compile the injectables separately with their own tsconfig
-  const p4 = build(
+  const p4 = buildTs(
     {
       format: "iife",
       entryPoints: [
@@ -158,9 +166,11 @@ async function buildAll() {
   console.log("🔥 Build finished.");
 }
 
-// we debounce it so it only runs once ever 100ms
+// debounce the build command so that it only ever runs once every 100ms
+// in watch mode
 const debouncedBuildAll = debounce(buildAll, 1000);
 
+// starts chokidar to watch the directory for changes
 async function startWatcher() {
   const ignored = [
     "parcel-dist",
@@ -172,10 +182,7 @@ async function startWatcher() {
     "viewer",
   ];
   const watchPaths = ["."];
-  console.log(
-    "👀 Watching for changes in",
-    watchPaths.map((v) => '"' + v + '"').join(" | ")
-  );
+  console.log("👀 Watching for changes...");
   const watcher = watch(watchPaths, {
     ignoreInitial: true,
     ignorePermissionErrors: true,
@@ -194,7 +201,7 @@ async function startWatcher() {
 const log = (msg: string, file?: string) => console.log(msg, chalk.blue(file));
 const err = (title: string, e: string) =>
   console.error(chalk.red(`❌ ${title}:`), e);
-const bundled = (msg: string, file: string) => log(`📦 ${msg} -`, file);
+const logBundled = (msg: string, file: string) => log(`📦 ${msg} -`, file);
 
 /**
  * The main entrypoint for the script

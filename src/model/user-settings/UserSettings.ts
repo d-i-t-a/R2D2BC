@@ -175,6 +175,10 @@ export class UserSettings implements IUserSettings {
     );
     await settings.initialise();
 
+    // TODO: fix bug by trying to extract this into a method (called maybe setInitialUserSettings) that is called in IFrameNavigator
+    // once IFrameNavigator has called settings.applyProperties in start() -> handleIFrameLoad.
+    // Probably If settings.userProperies === undefined && settings.hasInitialSettinsOnReaderConfig()
+    // settings.applyProperties() THEN call this new function "setInitialUserSettings"
     if (config.initialUserSettings) {
       let initialUserSettings = config.initialUserSettings;
       if (initialUserSettings.verticalScroll !== undefined) {

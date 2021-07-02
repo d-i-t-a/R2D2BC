@@ -13,121 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
+ * Developed on behalf of: DITA
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import Store from "../store/Store";
 import { Locator } from "./Locator";
+import { Link } from "./Link";
+import { Publication as R2Publication } from "r2-shared-js/dist/es6-es2015/src/models/publication";
+import { Link as R2Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
+import { JsonObject } from "ta-json-x";
 
-export interface Metadata {
-  title?: string;
-  author?: string;
-  identifier?: string;
-  language?: string;
-  modified?: string;
-  rendition?: any;
-}
-
-export interface Link {
-  //  The link destination
-  href?: string;
-  /// MIME type of resource.
-  type?: string;
-  /// Indicates the relationship between the resource and its containing collection.
-  rel?: Array<string>;
-  /// Indicates the height of the linked resource in pixels.
-  height?: number;
-  /// Indicates the width of the linked resource in pixels.
-  width?: number;
-
-  title?: string;
-  /// Properties associated to the linked resource.
-  // properties: Properties;
-  /// Indicates the length of the linked resource in seconds.
-  duration?: number;
-  /// Indicates that the linked resource is a URI template.
-  templated?: boolean;
-  /// Indicate the bitrate for the link resource.
-  bitrate?: number;
-
-  //  The underlying nodes in a tree structure of Links
-  children?: Array<Link>;
-  //  The MediaOverlays associated to the resource of the Link
-  // mediaOverlays?: MediaOverlays;
-
-  contentLength?: number;
-  contentWeight?: number;
-}
-
-export default class Publication {
-  public readonly metadata: Metadata;
-  public readonly links: Array<Link>;
-  public readonly readingOrder: Array<Link>;
-  public readonly resources: Array<Link>;
-  public readonly tableOfContents: Array<Link>;
-  public readonly landmarks: Array<Link>;
-  public readonly pageList: Array<Link>;
-  public readonly images: Array<Link>;
+@JsonObject()
+export class Publication extends R2Publication {
+  manifestUrl: URL;
   public positions: Array<Locator>;
 
-  private readonly manifestUrl: URL;
-
-  public static async getManifest(
-    manifestUrl: URL,
-    store?: Store
-  ): Promise<Publication> {
-    const fetchManifest = async (): Promise<Publication> => {
-      const response = await window.fetch(manifestUrl.href, {
-        credentials: "same-origin",
-      });
-      const manifestJSON = await response.json();
-      if (store) {
-        await store.set("manifest", JSON.stringify(manifestJSON));
-      }
-      return new Publication(manifestJSON, manifestUrl);
-    };
-
-    const tryToUpdateManifestButIgnoreResult = async (): Promise<void> => {
-      try {
-        await fetchManifest();
-      } catch (err) {
-        // Ignore errors.
-      }
-      return new Promise<void>((resolve) => resolve());
-    };
-
-    // Respond immediately with the manifest from the store, if possible.
-    if (store) {
-      const manifestString = await store.get("manifest");
-      if (manifestString) {
-        // Kick off a fetch to update the store for next time,
-        // but don't await it.
-        tryToUpdateManifestButIgnoreResult();
-        const manifestJSON = JSON.parse(manifestString);
-        return new Publication(manifestJSON, manifestUrl);
-      }
-    }
-
-    return fetchManifest();
+  get readingOrder() {
+    return this.Spine;
   }
-
-  public constructor(manifestJSON: any, manifestUrl: URL) {
-    this.metadata = manifestJSON.metadata || {};
-    this.links = manifestJSON.links || [];
-    this.readingOrder = manifestJSON.spine || manifestJSON.readingOrder || [];
-    this.resources = manifestJSON.resources || [];
-    this.tableOfContents = manifestJSON.toc || [];
-    this.landmarks = manifestJSON.landmarks || [];
-    // this.pageList = manifestJSON.parse("page-list") || [];
-    this.pageList = manifestJSON["page-list"] || manifestJSON.pageList || [];
-
-    this.manifestUrl = manifestUrl;
+  get tableOfContents() {
+    return this.TOC;
+  }
+  get landmarks() {
+    return this.Landmarks;
+  }
+  get pageList() {
+    return this.PageList;
   }
 
   public getStartLink(): Link | null {
     if (this.readingOrder.length > 0) {
-      return this.readingOrder[0];
+      return this.readingOrder[0] as Link;
     }
     return null;
   }
@@ -135,7 +51,7 @@ export default class Publication {
   public getPreviousSpineItem(href: string): Link | null {
     const index = this.getSpineIndex(href);
     if (index !== null && index > 0) {
-      return this.readingOrder[index - 1];
+      return this.readingOrder[index - 1] as Link;
     }
     return null;
   }
@@ -143,7 +59,7 @@ export default class Publication {
   public getNextSpineItem(href: string): Link | null {
     const index = this.getSpineIndex(href);
     if (index !== null && index < this.readingOrder.length - 1) {
-      return this.readingOrder[index + 1];
+      return this.readingOrder[index + 1] as Link;
     }
     return null;
   }
@@ -151,7 +67,7 @@ export default class Publication {
   public getSpineItem(href: string): Link | null {
     const index = this.getSpineIndex(href);
     if (index !== null) {
-      return this.readingOrder[index];
+      return this.readingOrder[index] as Link;
     }
     return null;
   }
@@ -159,7 +75,7 @@ export default class Publication {
   public getSpineIndex(href: string): number | null {
     return this.readingOrder.findIndex(
       (item) =>
-        item.href && new URL(item.href, this.manifestUrl.href).href === href
+        item.Href && new URL(item.Href, this.manifestUrl.href).href === href
     );
   }
 
@@ -169,21 +85,21 @@ export default class Publication {
 
   public getTOCItemAbsolute(href: string): Link | null {
     const absolute = this.getAbsoluteHref(href);
-    const findItem = (href: string, links: Array<Link>): Link | null => {
+    const findItem = (href: string, links: Array<R2Link>): Link | null => {
       for (let index = 0; index < links.length; index++) {
-        const item = links[index];
-        if (item.href) {
+        const item = links[index] as Link;
+        if (item.Href) {
           const hrefAbsolutre =
-            item.href.indexOf("#") !== -1
-              ? item.href.slice(0, item.href.indexOf("#"))
-              : item.href;
+            item.Href.indexOf("#") !== -1
+              ? item.Href.slice(0, item.Href.indexOf("#"))
+              : item.Href;
           const itemUrl = new URL(hrefAbsolutre, this.manifestUrl.href).href;
           if (itemUrl === href) {
             return item;
           }
         }
-        if (item.children) {
-          const childItem = findItem(href, item.children);
+        if (item.Children) {
+          const childItem = findItem(href, item.Children);
           if (childItem !== null) {
             return childItem;
           }
@@ -199,17 +115,17 @@ export default class Publication {
   }
 
   public getTOCItem(href: string): Link | null {
-    const findItem = (href: string, links: Array<Link>): Link | null => {
+    const findItem = (href: string, links: Array<R2Link>): Link | null => {
       for (let index = 0; index < links.length; index++) {
-        const item = links[index];
-        if (item.href) {
-          const itemUrl = new URL(item.href, this.manifestUrl.href).href;
+        const item = links[index] as Link;
+        if (item.Href) {
+          const itemUrl = new URL(item.Href, this.manifestUrl.href).href;
           if (itemUrl === href) {
             return item;
           }
         }
-        if (item.children) {
-          const childItem = findItem(href, item.children);
+        if (item.Children) {
+          const childItem = findItem(href, item.Children);
           if (childItem !== null) {
             return childItem;
           }
@@ -239,5 +155,12 @@ export default class Publication {
   public positionsByHref(href: string): Locator[] {
     const decodedHref = decodeURI(href) ?? "";
     return this.positions.filter((p: Locator) => decodedHref.includes(p.href));
+  }
+
+  get hasMediaOverlays(): boolean {
+    return this.readingOrder
+      ? this.readingOrder.filter((el: Link) => el.Properties?.MediaOverlay)
+          .length > 0
+      : false;
   }
 }

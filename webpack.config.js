@@ -34,6 +34,7 @@ module.exports = [
       // If you don't want to include a polyfill, you can use an empty module like this:
       //         resolve.fallback: { "url": false }
       fallback: { url: false },
+      fallback: { util: false },
     },
     plugins: [
       new webpack.ProvidePlugin({

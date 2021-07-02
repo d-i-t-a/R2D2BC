@@ -58,7 +58,7 @@ async function start() {
    * Serve our sample publications
    */
   const publicationURLs = server.addPublications([
-    path.join(__dirname, "./sample-pubs/epubs/call-of-the-wild.epub"),
+    path.join(__dirname, "./epubs/call-of-the-wild.epub"),
   ]);
 
   console.log("Publications: ", publicationURLs);

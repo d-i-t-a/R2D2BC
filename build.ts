@@ -2,7 +2,7 @@ import { build as esbuild, BuildOptions } from "esbuild";
 import util from "util";
 import chalk from "chalk";
 import { Options as SassOptions } from "node-sass";
-import fs from "fs/promises";
+import { promises as fs } from "fs";
 import { watch } from "chokidar";
 import { debounce } from "debounce";
 const copy = util.promisify(require("copy"));

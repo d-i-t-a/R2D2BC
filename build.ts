@@ -20,7 +20,7 @@ const isProduction = !isWatchEnabled;
 async function generateDts() {
   try {
     return await exec(
-      `tsc --declaration --emitDeclarationOnly --declarationDir dist`
+      `tsc --declaration --emitDeclarationOnly --declarationDir dist/types`
     );
   } catch (e) {
     return Promise.reject(e.stdout);

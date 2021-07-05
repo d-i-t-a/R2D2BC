@@ -40,7 +40,8 @@ async function start() {
   });
 
   /**
-   * Serve our viewer examples
+   * Serve our viewer examples, and allow unresolved requests to fall through
+   * to the following static handler from /dist
    */
   server.expressUse(
     "/viewer",
@@ -51,7 +52,7 @@ async function start() {
   /**
    * Serve our built application bundles from /dist
    */
-  //@ts-ignore
+  // @ts-ignore
   server.expressUse("/viewer", express.static(path.join(__dirname, "../dist")));
 
   /**

@@ -45,14 +45,14 @@ async function start() {
   server.expressUse(
     "/viewer",
     //@ts-ignore
-    express.static(path.join(__dirname, "../viewer"))
+    express.static(path.join(__dirname, "../viewer"), { fallthrough: true })
   );
 
   /**
    * Serve our built application bundles from /dist
    */
   //@ts-ignore
-  server.expressUse("/dist", express.static(path.join(__dirname, "../dist")));
+  server.expressUse("/viewer", express.static(path.join(__dirname, "../dist")));
 
   /**
    * Serve our sample publications

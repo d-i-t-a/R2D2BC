@@ -189,17 +189,11 @@ export default class ReflowableBookView implements BookView {
   }
 
   goToPosition(position: number): void {
-    console.error(position);
     const wrapper = HTMLUtilities.findRequiredElement(
       document,
       "#iframe-wrapper"
     ) as HTMLDivElement;
     if (this.isScrollMode()) {
-      console.error(this.iframe.contentDocument.scrollingElement.scrollHeight);
-      console.error(
-        this.iframe.contentDocument.scrollingElement.scrollHeight * position
-      );
-
       wrapper.scrollTop =
         this.iframe.contentDocument.scrollingElement.scrollHeight * position;
     } else {

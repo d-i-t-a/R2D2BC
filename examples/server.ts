@@ -2,6 +2,7 @@
 import { Server } from "r2-streamer-js";
 import express from "express";
 import path from "path";
+import fs from "fs/promises";
 
 async function start() {
   // Constructor parameter is optional:
@@ -56,13 +57,16 @@ async function start() {
   server.expressUse("/viewer", express.static(path.join(__dirname, "../dist")));
 
   /**
-   * Serve our sample publications
+   * Serve our sample EPUBS from /examples/epubs
    */
-  const publicationURLs = server.addPublications([
-    path.join(__dirname, "./epubs/call-of-the-wild.epub"),
-  ]);
+  const epubsPath = path.join(__dirname, "./epubs");
+  const files = await fs.readdir(epubsPath);
+  const filePaths = files.map((fileName) =>
+    path.join(__dirname, "./epubs", fileName)
+  );
+  const publicationURLs = server.addPublications(filePaths);
 
-  console.log("Publications: ", publicationURLs);
+  console.log("Local Publications: ", publicationURLs);
 
   const data = await server.start(4444, false);
 

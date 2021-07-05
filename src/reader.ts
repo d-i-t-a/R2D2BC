@@ -16,7 +16,9 @@
  * Developed on behalf of: NYPL, Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
  * Licensed to: NYPL, Bokbasen AS and CAST under one or more contributor license agreements.
  */
+import { Locator } from "./model/Locator";
 import Publication from "./model/Publication";
+import { UserSettingsIncrementable } from "./model/user-settings/UserProperties";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
 import BookmarkModule from "./modules/BookmarkModule";
@@ -27,8 +29,13 @@ import TimelineModule from "./modules/positions/TimelineModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
 import SearchModule from "./modules/search/SearchModule";
 import TTSModule from "./modules/TTS/TTSModule";
-import { TTSSettings } from "./modules/TTS/TTSSettings";
+import {
+  ITTSUserSettings,
+  TTSIncrementable,
+  TTSSettings,
+} from "./modules/TTS/TTSSettings";
 import IFrameNavigator, {
+  IFrameAttributes,
   ReaderConfig,
   UpLinkConfig,
 } from "./navigator/IFrameNavigator";
@@ -334,19 +341,19 @@ export default class D2Reader {
   /**
    * Search
    */
-  search = async (term, current) => {
+  search = async (term: string, current: boolean) => {
     if (this.navigator.rights?.enableSearch) {
       return await this.searchModule?.search(term, current);
     } else {
       return [];
     }
   };
-  goToSearchIndex = async (href, index, current) => {
+  goToSearchIndex = async (href: string, index: number, current: boolean) => {
     if (this.navigator.rights?.enableSearch) {
       await this.searchModule?.goToSearchIndex(href, index, current);
     }
   };
-  goToSearchID = async (href, index, current) => {
+  goToSearchID = async (href: string, index: number, current: boolean) => {
     if (this.navigator.rights?.enableSearch) {
       await this.searchModule?.goToSearchID(href, index, current);
     }
@@ -379,41 +386,55 @@ export default class D2Reader {
   resetUserSettings = async () => {
     return await this.settings.resetUserSettings();
   };
-  applyUserSettings = async (userSettings) => {
+  applyUserSettings = async (userSettings: Partial<UserSettings>) => {
     return await this.settings.applyUserSettings(userSettings);
   };
   currentSettings = () => {
     return this.settings.currentSettings;
   };
-  scroll = async (value) => {
+  scroll = async (value: boolean) => {
     return await this.settings.scroll(value);
   };
 
+  private isTTSIncrementable(
+    incremental: UserSettingsIncrementable | TTSIncrementable
+  ): incremental is TTSIncrementable {
+    return (
+      incremental === "pitch" ||
+      incremental === "rate" ||
+      incremental === "volume"
+    );
+  }
+
   /**
-   * pitch?
+   * Used to increase anything that can be increased,
+   * such as pitch, rate, volume, fontSize
    */
-  increase = (incremental) => {
-    if (
-      (incremental === "pitch" ||
-        incremental === "rate" ||
-        incremental === "volume") &&
-      this.navigator.rights?.enableTTS
-    ) {
-      this.ttsSettings.increase(incremental);
+  increase = async (
+    incremental: UserSettingsIncrementable | TTSIncrementable
+  ) => {
+    if (this.isTTSIncrementable(incremental)) {
+      if (this.navigator.rights?.enableTTS) {
+        await this.ttsSettings.increase(incremental);
+      }
     } else {
-      this.settings.increase(incremental);
+      await this.settings.increase(incremental);
     }
   };
-  decrease = (incremental) => {
-    if (
-      (incremental === "pitch" ||
-        incremental === "rate" ||
-        incremental === "volume") &&
-      this.navigator.rights?.enableTTS
-    ) {
-      this.ttsSettings.decrease(incremental);
+
+  /**
+   * Used to decrease anything that can be decreased,
+   * such as pitch, rate, volume, fontSize
+   */
+  decrease = async (
+    incremental: UserSettingsIncrementable | TTSIncrementable
+  ) => {
+    if (this.isTTSIncrementable(incremental)) {
+      if (this.navigator.rights?.enableTTS) {
+        await this.ttsSettings.decrease(incremental);
+      }
     } else {
-      this.settings.decrease(incremental);
+      await this.settings.decrease(incremental);
     }
   };
 
@@ -433,20 +454,31 @@ export default class D2Reader {
       this.ttsSettings.resetTTSSettings();
     }
   };
-  applyTTSSettings = (ttsSettings) => {
+  applyTTSSettings = (ttsSettings: ITTSUserSettings) => {
     if (this.navigator.rights?.enableTTS) {
       this.ttsSettings.applyTTSSettings(ttsSettings);
     }
   };
 
-  applyTTSSetting = (key, value) => {
+  applyTTSSetting = (key: string, value: any) => {
     if (this.navigator.rights?.enableTTS) {
       this.ttsSettings.applyTTSSetting(key, value);
     }
   };
-  applyPreferredVoice = (value) => {
+  applyPreferredVoice = (value: string) => {
     if (this.navigator.rights?.enableTTS) {
       this.ttsSettings.applyPreferredVoice(value);
+    }
+  };
+
+  resetMediaOverlaySettings = async () => {
+    if (this.navigator.rights?.enableMediaOverlays) {
+      await this.mediaOverlaySettings.resetMediaOverlaySettings();
+    }
+  };
+  applyMediaOverlaySettings = async (settings: IMediaOverlayUserSettings) => {
+    if (this.navigator.rights?.enableMediaOverlays) {
+      await this.mediaOverlaySettings.applyMediaOverlaySettings(settings);
     }
   };
 
@@ -460,10 +492,10 @@ export default class D2Reader {
   get positions() {
     return this.navigator.positions();
   }
-  goTo = async (locator) => {
+  goTo = async (locator: Locator) => {
     this.navigator.goTo(locator);
   };
-  goToPosition = async (value) => {
+  goToPosition = async (value: number) => {
     return this.navigator.goToPosition(value);
   };
   nextResource = async () => {
@@ -484,31 +516,37 @@ export default class D2Reader {
   atEnd = async () => {
     return this.navigator.atEnd();
   };
-  snapToElement = async (value) => {
+  // currently not used or functional
+  snapToElement = async (value: HTMLElement) => {
     this.navigator.snapToElement(value);
   };
 
   /**
-   * ??
+   * You have attributes in the reader when you initialize it. You can set margin, navigationHeight etc...
+   * This is in case you change the attributes after initializing the reader.
    */
-  applyAttributes = (value) => {
+  applyAttributes = (value: IFrameAttributes) => {
     this.navigator.applyAttributes(value);
   };
 
   /**
-   * Destructor
+   * Destructor:
+   * Only used in react applications because when they re-visit the page
+   * it tried to create a new reader, which interfered with the first one.
    */
   stop = () => {
     document.body.onscroll = () => {};
     this.navigator.stop();
     this.settings.stop();
-    this.ttsSettings.stop();
+    this.ttsSettings?.stop();
     this.ttsModule?.stop();
-    this.bookmarkModule.stop();
+    this.bookmarkModule?.stop();
     this.annotationModule?.stop();
     this.searchModule?.stop();
     this.contentProtectionModule?.stop();
     this.timelineModule?.stop();
+    this.mediaOverlaySettings?.stop();
+    this.mediaOverlayModule?.stop();
   };
 }
 

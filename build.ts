@@ -20,7 +20,7 @@ const isProduction = !isWatchEnabled;
 async function generateDts() {
   try {
     return await exec(
-      `tsc --declaration --emitDeclarationOnly --outFile dist/index.d.ts`
+      `tsc --declaration --emitDeclarationOnly --declarationDir dist`
     );
   } catch (e) {
     return Promise.reject(e.stdout);
@@ -76,6 +76,7 @@ async function compileCss(input: string, filename: string) {
     file: input,
     sourceMap: true,
     outFile: `dist/${filename}.css`,
+    bundle: false,
   };
   try {
     const result = await sass(options);

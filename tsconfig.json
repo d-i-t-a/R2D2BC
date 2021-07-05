@@ -18,7 +18,7 @@
  */
 
 {
-  "include": ["src", "build.ts"],
+  "include": ["src"],
   "exclude": ["examples", "injectables", "viewer"],
   "compileOnSave": true,
   "compilerOptions": {
@@ -32,7 +32,6 @@
     "noImplicitThis": true,
     "moduleResolution": "node",
     "outDir": "../dist",
-    "rootDir": ".",
     "sourceMap": true,
     "declaration": true,
     "preserveConstEnums": true,

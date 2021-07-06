@@ -59,6 +59,16 @@ Contributions are always welcomed! Please see [CONTRIBUTING](CONTRIBUTING.md) fo
 
 [![DepShield Badge](https://depshield.sonatype.org/badges/d-i-t-a/R2D2BC/depshield.svg)](https://depshield.github.io)
 
+# Get Started
+
+Download ebook examples here: https://standardebooks.org/ebooks and copy them to `./examples/streamed/epubs`. Then:
+
+```
+npm install
+
+npm run build && npm run examples && npm run streamed
+```
+Then visit `http://localhost:4444/`. Follow the prompts to view example apps. The most up-to-date example is "D2 Reader" /viewer/index_dita.html.
 
 ## Supporters
 [<img src="https://dita.digital/jetbrains.png" width="60">](https://www.jetbrains.com/?from=R2D2BC)

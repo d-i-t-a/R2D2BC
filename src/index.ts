@@ -60,7 +60,7 @@ export async function unload() {
   if (IS_DEV) {
     console.log("unload reader");
   }
-  document.body.onscroll = () => { };
+  document.body.onscroll = () => {};
   await D2Navigator.stop();
   await D2Settings.stop();
   if (D2Navigator.rights?.enableTTS) {
@@ -618,49 +618,51 @@ export async function load(config: ReaderConfig): Promise<any> {
       let totalContentLength = 0;
       let positions = [];
       let weight = {};
-      await Promise.all(publication.readingOrder.map(async (link) => {
-        if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
-          const locator: Locator = {
-            href: link.Href,
-            locations: {
-              progression: 0,
-              position: startPosition + 1,
-            },
-            type: link.TypeLink,
-          };
-          if (IS_DEV) console.log(locator);
-          positions.push(locator);
-          startPosition = startPosition + 1;
-        } else {
-          // TODO: USE ZIP ARCHIVE ENTRY LENGTH !!!!! ??
-          let href = publication.getAbsoluteHref(link.Href);
-          const r = await fetch(href);
-          const b = await r.blob();
-          let length = b.size;
-          (link as Link).contentLength = length;
-          totalContentLength += length;
-          let positionLength = 1024;
-          let positionCount = Math.max(1, Math.ceil(length / positionLength));
-          if (IS_DEV) console.log(length + " Bytes");
-          if (IS_DEV) console.log(positionCount + " Positions");
-          Array.from(Array(positionCount).keys()).map((_, position) => {
+      await Promise.all(
+        publication.readingOrder.map(async (link) => {
+          if (
+            (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          ) {
             const locator: Locator = {
               href: link.Href,
               locations: {
-                progression: position / positionCount,
-                position: startPosition + (position + 1),
+                progression: 0,
+                position: startPosition + 1,
               },
               type: link.TypeLink,
             };
             if (IS_DEV) console.log(locator);
             positions.push(locator);
-          });
-          startPosition = startPosition + positionCount;
-        }
-      }));
-      if (
-        (publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"
-      ) {
+            startPosition = startPosition + 1;
+          } else {
+            // TODO: USE ZIP ARCHIVE ENTRY LENGTH !!!!! ??
+            let href = publication.getAbsoluteHref(link.Href);
+            const r = await fetch(href);
+            const b = await r.blob();
+            let length = b.size;
+            (link as Link).contentLength = length;
+            totalContentLength += length;
+            let positionLength = 1024;
+            let positionCount = Math.max(1, Math.ceil(length / positionLength));
+            if (IS_DEV) console.log(length + " Bytes");
+            if (IS_DEV) console.log(positionCount + " Positions");
+            Array.from(Array(positionCount).keys()).map((_, position) => {
+              const locator: Locator = {
+                href: link.Href,
+                locations: {
+                  progression: position / positionCount,
+                  position: startPosition + (position + 1),
+                },
+                type: link.TypeLink,
+              };
+              if (IS_DEV) console.log(locator);
+              positions.push(locator);
+            });
+            startPosition = startPosition + positionCount;
+          }
+        })
+      );
+      if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
         publication.readingOrder.map(async (link) => {
           if (IS_DEV) console.log(totalContentLength);
           if (IS_DEV) console.log((link as Link).contentLength);

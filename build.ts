@@ -49,15 +49,8 @@ async function buildTs(
       global: "window",
     },
     tsconfig: "tsconfig.json",
-    minify: isProduction,
-    outdir: "dist",
     ...options,
   };
-
-  // bundle ES Modules with the ".mjs" extension
-  if (config.format === "esm") {
-    config.outExtension = { ".js": ".mjs" };
-  }
 
   try {
     const r = await esbuild(config);
@@ -117,18 +110,32 @@ async function buildAll() {
   await fs.mkdir("dist");
   console.log("🧹 Cleaned output folder -", chalk.blue("dist/"));
 
-  // build the main entrypoint as an IIFE file
+  // build the main entrypoint as an IIFE module for use in a
+  // <script> tag
   const p1 = buildTs(
-    { format: "iife", entryPoints: ["src/index.ts"], globalName: "D2Reader" },
+    {
+      format: "iife",
+      entryPoints: ["src/index.ts"],
+      globalName: "D2Reader",
+      outdir: "dist/iife",
+      minify: isProduction,
+    },
     "Compiled IIFE (for <script> tags)",
-    "dist/index.js"
+    "dist/iife/index.js"
   );
 
-  // build the main entrypoint as an ES Module
+  // build the main entrypoint as an ES Module.
+  // This one doesn't need to be minified because it will
+  // be rebundled by the consumer's bundler
   const p2 = buildTs(
-    { format: "esm", entryPoints: ["src/index.ts"] },
+    {
+      format: "esm",
+      entryPoints: ["src/index.ts"],
+      outdir: "dist/esm",
+      minify: false,
+    },
     "Compiled ESM (for 'import D2Reader' uses)",
-    "dist/index.mjs"
+    "dist/esm/index.js"
   );
 
   // generate type declarations
@@ -147,6 +154,7 @@ async function buildAll() {
       ],
       outbase: ".",
       tsconfig: "injectables/tsconfig.json",
+      outdir: "dist",
     },
     "Compiled injectables",
     "dist/injectables/"

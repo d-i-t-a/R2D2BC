@@ -380,7 +380,7 @@ export default class D2Reader {
   resetUserSettings = async () => {
     return await this.settings.resetUserSettings();
   };
-  applyUserSettings = async (userSettings: UserSettings) => {
+  applyUserSettings = async (userSettings: Partial<UserSettings>) => {
     return await this.settings.applyUserSettings(userSettings);
   };
   get currentSettings() {

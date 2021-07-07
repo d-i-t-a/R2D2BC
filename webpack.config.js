@@ -45,7 +45,7 @@ module.exports = [
       library: {
         name: "D2Reader",
         export: "default",
-        type: "var",
+        type: "umd",
       },
       path: path.resolve(__dirname, "dist"),
       iife: true,

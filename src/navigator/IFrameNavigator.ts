@@ -67,10 +67,12 @@ import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 import BookView from "../views/BookView";
 
 export type GetContent = (href: string) => Promise<string>;
+export type GetContentBytesLength = (href: string) => Promise<number>;
+
 export interface NavigatorAPI {
   updateSettings: any;
   getContent: GetContent;
-
+  getContentBytesLength: GetContentBytesLength;
   resourceReady: any;
   resourceAtStart: any;
   resourceAtEnd: any;

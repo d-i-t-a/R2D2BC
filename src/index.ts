@@ -60,7 +60,7 @@ export async function unload() {
   if (IS_DEV) {
     console.log("unload reader");
   }
-  document.body.onscroll = () => {};
+  document.body.onscroll = () => { };
   await D2Navigator.stop();
   await D2Settings.stop();
   if (D2Navigator.rights?.enableTTS) {
@@ -618,7 +618,7 @@ export async function load(config: ReaderConfig): Promise<any> {
       let totalContentLength = 0;
       let positions = [];
       let weight = {};
-      publication.readingOrder.map(async (link, index) => {
+      await Promise.all(publication.readingOrder.map(async (link) => {
         if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
           const locator: Locator = {
             href: link.Href,
@@ -634,62 +634,60 @@ export async function load(config: ReaderConfig): Promise<any> {
         } else {
           // TODO: USE ZIP ARCHIVE ENTRY LENGTH !!!!! ??
           let href = publication.getAbsoluteHref(link.Href);
-          await fetch(href).then(async (r) => {
-            let length = (await r.blob()).size;
-            (link as Link).contentLength = length;
-            totalContentLength += length;
-            let positionLength = 1024;
-            let positionCount = Math.max(1, Math.ceil(length / positionLength));
-            if (IS_DEV) console.log(length + " Bytes");
-            if (IS_DEV) console.log(positionCount + " Positions");
-            Array.from(Array(positionCount).keys()).map((_, position) => {
-              const locator: Locator = {
-                href: link.Href,
-                locations: {
-                  progression: position / positionCount,
-                  position: startPosition + (position + 1),
-                },
-                type: link.TypeLink,
-              };
-              if (IS_DEV) console.log(locator);
-              positions.push(locator);
-            });
-            startPosition = startPosition + positionCount;
+          const r = await fetch(href);
+          const b = await r.blob();
+          let length = b.size;
+          (link as Link).contentLength = length;
+          totalContentLength += length;
+          let positionLength = 1024;
+          let positionCount = Math.max(1, Math.ceil(length / positionLength));
+          if (IS_DEV) console.log(length + " Bytes");
+          if (IS_DEV) console.log(positionCount + " Positions");
+          Array.from(Array(positionCount).keys()).map((_, position) => {
+            const locator: Locator = {
+              href: link.Href,
+              locations: {
+                progression: position / positionCount,
+                position: startPosition + (position + 1),
+              },
+              type: link.TypeLink,
+            };
+            if (IS_DEV) console.log(locator);
+            positions.push(locator);
           });
+          startPosition = startPosition + positionCount;
         }
-        if (index + 1 === publication.readingOrder.length) {
-          if (
-            (publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"
-          ) {
-            publication.readingOrder.map(async (link) => {
-              if (IS_DEV) console.log(totalContentLength);
-              if (IS_DEV) console.log((link as Link).contentLength);
-              (link as Link).contentWeight =
-                (100 / totalContentLength) * (link as Link).contentLength;
-              weight[link.Href] = (link as Link).contentWeight;
-              if (IS_DEV) console.log((link as Link).contentWeight);
-            });
-          }
-          positions.map((locator, _index) => {
-            let resource = positions.filter(
-              (el: Locator) => el.href === decodeURI(locator.href)
-            );
-            let positionIndex = Math.ceil(
-              locator.locations.progression * (resource.length - 1)
-            );
-            locator.locations.totalProgression =
-              (locator.locations.position - 1) / positions.length;
-            locator.locations.remainingPositions = Math.abs(
-              positionIndex - (resource.length - 1)
-            );
-            locator.locations.totalRemainingPositions = Math.abs(
-              locator.locations.position - 1 - (positions.length - 1)
-            );
-          });
-          publication.positions = positions;
-          if (IS_DEV) console.log(positions);
-        }
+      }));
+      if (
+        (publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"
+      ) {
+        publication.readingOrder.map(async (link) => {
+          if (IS_DEV) console.log(totalContentLength);
+          if (IS_DEV) console.log((link as Link).contentLength);
+          (link as Link).contentWeight =
+            (100 / totalContentLength) * (link as Link).contentLength;
+          weight[link.Href] = (link as Link).contentWeight;
+          if (IS_DEV) console.log((link as Link).contentWeight);
+        });
+      }
+      positions.map((locator, _index) => {
+        let resource = positions.filter(
+          (el: Locator) => el.href === decodeURI(locator.href)
+        );
+        let positionIndex = Math.ceil(
+          locator.locations.progression * (resource.length - 1)
+        );
+        locator.locations.totalProgression =
+          (locator.locations.position - 1) / positions.length;
+        locator.locations.remainingPositions = Math.abs(
+          positionIndex - (resource.length - 1)
+        );
+        locator.locations.totalRemainingPositions = Math.abs(
+          locator.locations.position - 1 - (positions.length - 1)
+        );
       });
+      publication.positions = positions;
+      if (IS_DEV) console.log(positions);
     } else {
       if (config.services?.positions) {
         await fetch(config.services?.positions.href)

@@ -1635,7 +1635,6 @@ export default class IFrameNavigator implements Navigator {
     ) => {
       const loadPromise = new Promise<boolean>((resolve) => {
         injectable.onload = () => {
-          console.log("Injectable loaded...");
           resolve(true);
         };
       });
@@ -1706,7 +1705,6 @@ export default class IFrameNavigator implements Navigator {
     }
 
     await Promise.all(injectablesToLoad);
-    console.log("DONE!")
   }
 
   private abortOnError() {

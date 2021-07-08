@@ -135,33 +135,38 @@ export function createOrderedRange(
   endNode: Node,
   endOffset: number
 ): Range | undefined {
-  const range = new Range(); // document.createRange()
-  range.setStart(startNode, startOffset);
-  range.setEnd(endNode, endOffset);
-  if (!range.collapsed) {
-    if (IS_DEV) {
-      console.log(">>> createOrderedRange RANGE OK");
+  try {
+    const range = new Range(); // document.createRange()
+    range.setStart(startNode, startOffset);
+    range.setEnd(endNode, endOffset);
+    if (!range.collapsed) {
+      if (IS_DEV) {
+        console.log(">>> createOrderedRange RANGE OK");
+      }
+      return range;
     }
-    return range;
-  }
 
-  if (IS_DEV) {
-    console.log(">>> createOrderedRange COLLAPSED ... RANGE REVERSE?");
-  }
-  const rangeReverse = new Range(); // document.createRange()
-  rangeReverse.setStart(endNode, endOffset);
-  rangeReverse.setEnd(startNode, startOffset);
-  if (!rangeReverse.collapsed) {
     if (IS_DEV) {
-      console.log(">>> createOrderedRange RANGE REVERSE OK.");
+      console.log(">>> createOrderedRange COLLAPSED ... RANGE REVERSE?");
     }
-    return range;
-  }
+    const rangeReverse = new Range(); // document.createRange()
+    rangeReverse.setStart(endNode, endOffset);
+    rangeReverse.setEnd(startNode, startOffset);
+    if (!rangeReverse.collapsed) {
+      if (IS_DEV) {
+        console.log(">>> createOrderedRange RANGE REVERSE OK.");
+      }
+      return range;
+    }
 
-  if (IS_DEV) {
-    console.log(">>> createOrderedRange RANGE REVERSE ALSO COLLAPSED?!");
+    if (IS_DEV) {
+      console.log(">>> createOrderedRange RANGE REVERSE ALSO COLLAPSED?!");
+    }
+    return undefined;
+  } catch (err) {
+    console.warn(err.message);
+    return undefined;
   }
-  return undefined;
 }
 
 export function convertRange(

@@ -176,6 +176,9 @@ export class UserSettings implements IUserSettings {
     await settings.initialise();
 
     if (config.initialUserSettings) {
+      if (!settings.userProperties) {
+        settings.userProperties = settings.getUserSettings();
+      }
       let initialUserSettings = config.initialUserSettings;
       if (initialUserSettings.verticalScroll !== undefined) {
         settings.verticalScroll = this.parseScrollSetting(

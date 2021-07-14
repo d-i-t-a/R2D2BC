@@ -806,7 +806,7 @@ export default class IFrameNavigator implements Navigator {
       // or we weren't able to insert the template in the element.
       console.error(err);
       this.abortOnError();
-      return new Promise<void>((_, reject) => reject(err)).catch(() => {});
+      return new Promise<void>((_, reject) => reject(err)).catch(() => { });
     }
   }
 
@@ -1006,7 +1006,7 @@ export default class IFrameNavigator implements Navigator {
           this.view.height =
             BrowserUtilities.getHeight() - 40 - this.attributes.margin;
           if (this.infoBottom) this.infoBottom.style.removeProperty("display");
-          document.body.onscroll = () => {};
+          document.body.onscroll = () => { };
           if (this.nextChapterBottomAnchorElement)
             this.nextChapterBottomAnchorElement.style.display = "none";
           if (this.previousChapterTopAnchorElement)
@@ -1408,7 +1408,7 @@ export default class IFrameNavigator implements Navigator {
     } catch (err) {
       console.error(err);
       this.abortOnError();
-      return new Promise<void>((_, reject) => reject(err)).catch(() => {});
+      return new Promise<void>((_, reject) => reject(err)).catch(() => { });
     }
   }
 
@@ -1534,64 +1534,13 @@ export default class IFrameNavigator implements Navigator {
           this.chapterTitle.innerHTML = "(Current Chapter)";
       }
 
+      await this.injectInjectablesIntoIframeHead();
+
       if (this.annotator) {
         await this.saveCurrentReadingPosition();
       }
       this.hideLoadingMessage();
       this.showIframeContents();
-
-      // Inject Readium CSS into Iframe Head
-
-      for (const iframe of this.iframes) {
-        const head = iframe.contentDocument.head;
-        if (head) {
-          head.insertBefore(
-            IFrameNavigator.createBase(this.currentChapterLink.href),
-            head.firstChild
-          );
-
-          this.injectables.forEach((injectable) => {
-            if (injectable.type === "style") {
-              if (injectable.fontFamily) {
-                // UserSettings.fontFamilyValues.push(injectable.fontFamily)
-                // this.settings.setupEvents()
-                // this.settings.addFont(injectable.fontFamily);
-                this.settings.initAddedFont();
-                if (!injectable.systemFont) {
-                  head.appendChild(
-                    IFrameNavigator.createCssLink(injectable.url)
-                  );
-                }
-              } else if (injectable.r2before) {
-                head.insertBefore(
-                  IFrameNavigator.createCssLink(injectable.url),
-                  head.firstChild
-                );
-              } else if (injectable.r2default) {
-                head.insertBefore(
-                  IFrameNavigator.createCssLink(injectable.url),
-                  head.childNodes[1]
-                );
-              } else if (injectable.r2after) {
-                if (injectable.appearance) {
-                  // this.settings.addAppearance(injectable.appearance);
-                  this.settings.initAddedAppearance();
-                }
-                head.appendChild(IFrameNavigator.createCssLink(injectable.url));
-              } else {
-                head.appendChild(IFrameNavigator.createCssLink(injectable.url));
-              }
-            } else if (injectable.type === "script") {
-              head.appendChild(
-                IFrameNavigator.createJavascriptLink(
-                  injectable.url,
-                  injectable.async
-                )
-              );
-            }
-          });
-        }
-      }
 
       if (this.highlighter !== undefined) {
         await this.highlighter.initialize();
@@ -1673,8 +1622,89 @@ export default class IFrameNavigator implements Navigator {
     } catch (err) {
       console.error(err);
       this.abortOnError();
-      return new Promise<void>((_, reject) => reject(err)).catch(() => {});
+      return new Promise<void>((_, reject) => reject(err)).catch(() => { });
     }
+  }
+
+  private async injectInjectablesIntoIframeHead(): Promise<void> {
+    // Inject Readium CSS into Iframe Head
+    const injectablesToLoad: Promise<boolean>[] = [];
+
+    const addLoadingInjectable = (
+      injectable: HTMLLinkElement | HTMLScriptElement
+    ) => {
+      const loadPromise = new Promise<boolean>((resolve) => {
+        injectable.onload = () => {
+          resolve(true);
+        };
+      });
+      injectablesToLoad.push(loadPromise);
+    };
+
+    for (const iframe of this.iframes) {
+      const head = iframe.contentDocument.head;
+      if (head) {
+        head.insertBefore(
+          IFrameNavigator.createBase(this.currentChapterLink.href),
+          head.firstChild
+        );
+
+        this.injectables.forEach((injectable) => {
+          if (injectable.type === "style") {
+            if (injectable.fontFamily) {
+              // UserSettings.fontFamilyValues.push(injectable.fontFamily)
+              // this.settings.setupEvents()
+              // this.settings.addFont(injectable.fontFamily);
+              this.settings.initAddedFont();
+              if (!injectable.systemFont) {
+                const link = IFrameNavigator.createCssLink(injectable.url);
+                head.appendChild(link);
+                addLoadingInjectable(link);
+              }
+            } else if (injectable.r2before) {
+              const link = IFrameNavigator.createCssLink(injectable.url);
+              head.insertBefore(
+                link,
+                head.firstChild
+              );
+              addLoadingInjectable(link);
+            } else if (injectable.r2default) {
+              const link = IFrameNavigator.createCssLink(injectable.url);
+              head.insertBefore(
+                link,
+                head.childNodes[1]
+              );
+              addLoadingInjectable(link);
+            } else if (injectable.r2after) {
+              if (injectable.appearance) {
+                // this.settings.addAppearance(injectable.appearance);
+                this.settings.initAddedAppearance();
+              }
+              const link = IFrameNavigator.createCssLink(injectable.url);
+              head.appendChild(link);
+              addLoadingInjectable(link);
+            } else {
+              const link = IFrameNavigator.createCssLink(injectable.url);
+              head.appendChild(link);
+              addLoadingInjectable(link);
+            }
+          } else if (injectable.type === "script") {
+            const script = IFrameNavigator.createJavascriptLink(
+              injectable.url,
+              injectable.async
+            );
+            head.appendChild(script);
+            addLoadingInjectable(script);
+          }
+        });
+      }
+    }
+
+    if (injectablesToLoad.length === 0) {
+      return;
+    }
+
+    await Promise.all(injectablesToLoad);
   }
 
   private abortOnError() {
@@ -1828,7 +1858,7 @@ export default class IFrameNavigator implements Navigator {
             if (
               this.iframes.length == 2 &&
               (this.publication.Metadata.Rendition?.Layout ?? "unknown") ===
-                "fixed"
+              "fixed"
             ) {
               this.currentSpreadLinks.right = {
                 href: this.currentChapterLink.href,
@@ -2151,7 +2181,7 @@ export default class IFrameNavigator implements Navigator {
         if (
           openIcon &&
           (openIcon.getAttribute("class") || "").indexOf(" inactive-icon") ===
-            -1
+          -1
         ) {
           const newIconClass =
             (openIcon.getAttribute("class") || "") + " inactive-icon";
@@ -2205,7 +2235,7 @@ export default class IFrameNavigator implements Navigator {
         if (
           closeIcon &&
           (closeIcon.getAttribute("class") || "").indexOf(" inactive-icon") ===
-            -1
+          -1
         ) {
           const newIconClass =
             (closeIcon.getAttribute("class") || "") + " inactive-icon";

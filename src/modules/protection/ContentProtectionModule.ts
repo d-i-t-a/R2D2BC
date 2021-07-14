@@ -338,28 +338,19 @@ export default class ContentProtectionModule implements ReaderModule {
   private setupEvents(): void {
     var self = this;
     if (this.properties?.detectInspect) {
-      var checkStatus = "off";
-      var div = document.createElement("div");
-      Object.defineProperty(div, "id", {
-        get: function () {
-          checkStatus = "on";
-          throw new Error("Dev tools checker");
-        },
-      });
-      requestAnimationFrame(function check() {
-        checkStatus = "off";
-        console.log(div);
-        if (checkStatus === "on") {
-          if (self.properties?.clearOnInspect) {
-            console.clear();
-            window.localStorage.clear();
-            window.sessionStorage.clear();
-            window.location.replace(window.location.origin);
-          }
+      var devtools = function() {};
+      devtools.toString = function() {
+        if (self.properties?.clearOnInspect) {
+          console.clear();
+          window.localStorage.clear();
+          window.sessionStorage.clear();
+          window.location.replace(window.location.origin);
+        } else {
           self.api?.inspectDetected();
         }
-        requestAnimationFrame(check);
-      });
+        return "";
+      }
+      console.log("%c", devtools);
     }
 
     if (this.properties?.disableKeys) {

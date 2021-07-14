@@ -613,6 +613,15 @@ export async function load(config: ReaderConfig): Promise<any> {
       // config.protection.enableObfuscation = false;
     }
 
+    const getContentBytesLength = async (href: string): Promise<number> => {
+      if (config.api?.getContentBytesLength) {
+        return config.api.getContentBytesLength(href);
+      }
+      const r = await fetch(href);
+      const b = await r.blob();
+      return b.size;
+    };
+
     if (config.rights?.autoGeneratePositions ?? true) {
       let startPosition = 0;
       let totalContentLength = 0;
@@ -635,11 +644,8 @@ export async function load(config: ReaderConfig): Promise<any> {
             positions.push(locator);
             startPosition = startPosition + 1;
           } else {
-            // TODO: USE ZIP ARCHIVE ENTRY LENGTH !!!!! ??
             let href = publication.getAbsoluteHref(link.Href);
-            const r = await fetch(href);
-            const b = await r.blob();
-            let length = b.size;
+            let length = await getContentBytesLength(href);
             (link as Link).contentLength = length;
             totalContentLength += length;
             let positionLength = 1024;

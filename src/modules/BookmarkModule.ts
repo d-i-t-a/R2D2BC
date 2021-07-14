@@ -20,7 +20,7 @@
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
 import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
-import Publication, { Link } from "../model/Publication";
+import { Publication } from "../model/Publication";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { icons as IconLib } from "../utils/IconLib";
@@ -28,6 +28,7 @@ import { Bookmark, Locator } from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 import { v4 as uuid } from "uuid";
+import { Link } from "../model/Link";
 
 export interface BookmarkModuleAPI {
   addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
@@ -212,14 +213,14 @@ export default class BookmarkModule implements ReaderModule {
         bookmark = {
           ...locator,
           id: id,
-          href: tocItem.href,
+          href: tocItem.Href,
           created: new Date(),
           title: this.delegate.currentChapterLink.title,
         };
       } else {
         bookmark = {
           id: id,
-          href: tocItem.href,
+          href: tocItem.Href,
           locations: {
             progression: progression,
           },
@@ -306,14 +307,14 @@ export default class BookmarkModule implements ReaderModule {
             const spanElement: HTMLSpanElement = document.createElement("span");
             linkElement.tabIndex = -1;
             linkElement.className = "chapter-link";
-            if (link.href) {
-              const linkHref = this.publication.getAbsoluteHref(link.href);
+            if (link.Href) {
+              const linkHref = this.publication.getAbsoluteHref(link.Href);
               const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
               linkElement.href = linkHref;
-              linkElement.innerHTML = tocItemAbs.title || "";
+              linkElement.innerHTML = tocItemAbs.Title || "";
               chapterHeader.appendChild(linkElement);
             } else {
-              spanElement.innerHTML = link.title || "";
+              spanElement.innerHTML = link.Title || "";
               spanElement.className = "chapter-title";
               chapterHeader.appendChild(spanElement);
             }
@@ -330,7 +331,7 @@ export default class BookmarkModule implements ReaderModule {
                   locations: {
                     progression: 0,
                   },
-                  type: link.type,
+                  type: link.TypeLink,
                   title: linkElement.title,
                 };
 
@@ -342,16 +343,15 @@ export default class BookmarkModule implements ReaderModule {
             const bookmarkList: HTMLUListElement = document.createElement("ol");
             annotations.forEach(function (locator: any) {
               const href =
-                link.href.indexOf("#") !== -1
-                  ? link.href.slice(0, link.href.indexOf("#"))
-                  : link.href;
+                link.Href.indexOf("#") !== -1
+                  ? link.Href.slice(0, link.Href.indexOf("#"))
+                  : link.Href;
 
-              if (link.href && locator.href.endsWith(href)) {
+              if (link.Href && locator.href.endsWith(href)) {
                 let bookmarkItem: HTMLLIElement = document.createElement("li");
                 bookmarkItem.className = "annotation-item";
-                let bookmarkLink: HTMLAnchorElement = document.createElement(
-                  "a"
-                );
+                let bookmarkLink: HTMLAnchorElement =
+                  document.createElement("a");
                 bookmarkLink.setAttribute("href", locator.href);
 
                 if (type === AnnotationType.Bookmark) {
@@ -390,9 +390,8 @@ export default class BookmarkModule implements ReaderModule {
                     self.delegate.rights?.enableMaterial) ||
                   !self.delegate.rights?.enableMaterial
                 ) {
-                  let bookmarkDeleteLink: HTMLElement = document.createElement(
-                    "button"
-                  );
+                  let bookmarkDeleteLink: HTMLElement =
+                    document.createElement("button");
                   bookmarkDeleteLink.className = "delete";
                   bookmarkDeleteLink.innerHTML = IconLib.delete;
 
@@ -422,8 +421,8 @@ export default class BookmarkModule implements ReaderModule {
             if (chapterList.children.length > 0) {
               parentElement.appendChild(chapterList);
             }
-            if (link.children && link.children.length > 0) {
-              createAnnotationTree(parentElement, link.children);
+            if (link.Children && link.Children.length > 0) {
+              createAnnotationTree(parentElement, link.Children);
             }
           }
         };

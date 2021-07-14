@@ -99,7 +99,7 @@ export default class TTSModule implements ReaderModule {
         addEventListenerOptional(this.body, "wheel", this.wheel.bind(this));
         addEventListenerOptional(document, "keydown", this.wheel.bind(this));
         addEventListenerOptional(
-          this.delegate.iframe.contentDocument,
+          this.delegate.iframes[0].contentDocument,
           "keydown",
           this.wheel.bind(this)
         );
@@ -153,16 +153,14 @@ export default class TTSModule implements ReaderModule {
   }
 
   cancel() {
-    if (window.speechSynthesis.speaking) {
-      if (this.api?.stopped) this.api?.stopped();
-      this.userScrolled = false;
-      window.speechSynthesis.cancel();
-      if (this.splittingResult && this.delegate.tts?.enableSplitter) {
-        this.splittingResult.forEach((splittingWord) => {
-          splittingWord.dataset.ttsCurrentWord = "false";
-          splittingWord.dataset.ttsCurrentLine = "false";
-        });
-      }
+    if (this.api?.stopped) this.api?.stopped();
+    this.userScrolled = false;
+    window.speechSynthesis.cancel();
+    if (this.splittingResult && this.delegate.tts?.enableSplitter) {
+      this.splittingResult.forEach((splittingWord) => {
+        splittingWord.dataset.ttsCurrentWord = "false";
+        splittingWord.dataset.ttsCurrentLine = "false";
+      });
     }
   }
 
@@ -283,7 +281,7 @@ export default class TTSModule implements ReaderModule {
     if (IS_DEV) console.log("initialVoice", initialVoice);
 
     var publicationVoiceHasHyphen =
-      self.delegate.publication.metadata.language[0].indexOf("-") !== -1;
+      self.delegate.publication.Metadata.Language[0].indexOf("-") !== -1;
     if (IS_DEV)
       console.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
     var publicationVoice;
@@ -294,10 +292,10 @@ export default class TTSModule implements ReaderModule {
               var lang = v.lang.replace("_", "-");
               return (
                 lang.startsWith(
-                  self.delegate.publication.metadata.language[0]
+                  self.delegate.publication.Metadata.Language[0]
                 ) ||
                 lang.endsWith(
-                  self.delegate.publication.metadata.language[0].toUpperCase()
+                  self.delegate.publication.Metadata.Language[0].toUpperCase()
                 )
               );
             })[0]
@@ -308,10 +306,10 @@ export default class TTSModule implements ReaderModule {
           ? this.voices.filter((v: any) => {
               return (
                 v.lang.startsWith(
-                  self.delegate.publication.metadata.language[0]
+                  self.delegate.publication.Metadata.Language[0]
                 ) ||
                 v.lang.endsWith(
-                  self.delegate.publication.metadata.language[0].toUpperCase()
+                  self.delegate.publication.Metadata.Language[0].toUpperCase()
                 )
               );
             })[0]
@@ -351,7 +349,7 @@ export default class TTSModule implements ReaderModule {
       if (IS_DEV) console.log("defaultVoice");
       utterance.voice = defaultVoice;
     }
-    if (utterance.voice !== undefined) {
+    if (utterance.voice !== undefined && utterance.voice !== null) {
       utterance.lang = utterance.voice.lang;
       if (IS_DEV) console.log("utterance.voice.lang", utterance.voice.lang);
       if (IS_DEV) console.log("utterance.lang", utterance.lang);
@@ -443,9 +441,8 @@ export default class TTSModule implements ReaderModule {
                   splittingWord.dataset.ttsCurrentWord = "false";
                   splittingWord.dataset.ttsCurrentLine = "false";
                 });
-                let whitespace = self.body.querySelectorAll(
-                  "[data-whitespace]"
-                );
+                let whitespace =
+                  self.body.querySelectorAll("[data-whitespace]");
                 whitespace.forEach((splittingWord) => {
                   splittingWord.dataset.ttsColor = self.tts.color;
                   splittingWord.dataset.ttsCurrentWord = "false";
@@ -585,7 +582,7 @@ export default class TTSModule implements ReaderModule {
     removeEventListenerOptional(this.body, "wheel", this.wheel.bind(this));
     removeEventListenerOptional(document, "keydown", this.wheel.bind(this));
     removeEventListenerOptional(
-      this.delegate.iframe.contentDocument,
+      this.delegate.iframes[0].contentDocument,
       "keydown",
       this.wheel.bind(this)
     );

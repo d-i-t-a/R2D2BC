@@ -23,7 +23,6 @@ import IFrameNavigator, {
   UpLinkConfig,
 } from "./navigator/IFrameNavigator";
 import LocalAnnotator from "./store/LocalAnnotator";
-import Publication from "./model/Publication";
 import BookmarkModule from "./modules/BookmarkModule";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
@@ -32,12 +31,18 @@ import { TTSSettings } from "./modules/TTS/TTSSettings";
 import SearchModule from "./modules/search/SearchModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
 import TextHighlighter from "./modules/highlight/TextHighlighter";
-import { Locator } from "./model/Locator";
 import TimelineModule from "./modules/positions/TimelineModule";
 import { getUserAgentRegExp } from "browserslist-useragent-regexp";
+import MediaOverlayModule from "./modules/mediaoverlays/MediaOverlayModule";
+import { Locator } from "./model/Locator";
+import { Publication } from "./model/Publication";
+import { convertAndCamel, Link } from "./model/Link";
+import { TaJsonDeserialize } from "./utils/JsonUtil";
+import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
 
 let D2Settings: UserSettings;
 let D2TTSSettings: TTSSettings;
+let D2MediaOverlaySettings: MediaOverlaySettings;
 let D2Navigator: IFrameNavigator;
 let D2Highlighter: TextHighlighter;
 let BookmarkModuleInstance: BookmarkModule;
@@ -46,6 +51,7 @@ let TTSModuleInstance: TTSModule;
 let SearchModuleInstance: SearchModule;
 let ContentProtectionModuleInstance: ContentProtectionModule;
 let TimelineModuleInstance: TimelineModule;
+let MediaOverlayModuleInstance: MediaOverlayModule;
 
 export const IS_DEV =
   process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
@@ -76,9 +82,22 @@ export async function unload() {
   if (D2Navigator.rights?.enableTimeline) {
     await TimelineModuleInstance.stop();
   }
+  if (D2Navigator.rights?.enableMediaOverlays) {
+    await D2MediaOverlaySettings.stop();
+    await MediaOverlayModuleInstance.stop();
+  }
 }
 exports.unload = async function () {
   await unload();
+};
+export function hasMediaOverlays() {
+  if (IS_DEV) {
+    console.log("hasMediaOverlays");
+  }
+  return D2Navigator.hasMediaOverlays;
+}
+exports.hasMediaOverlays = function () {
+  return hasMediaOverlays();
 };
 export function startReadAloud() {
   if (IS_DEV) {
@@ -164,7 +183,7 @@ export async function tableOfContents() {
   if (IS_DEV) {
     console.log("tableOfContents");
   }
-  return await D2Navigator.tableOfContents();
+  return await convertAndCamel(D2Navigator.tableOfContents());
 }
 exports.tableOfContents = function () {
   return tableOfContents();
@@ -173,7 +192,7 @@ export async function readingOrder() {
   if (IS_DEV) {
     console.log("readingOrder");
   }
-  return await D2Navigator.readingOrder();
+  return await convertAndCamel(D2Navigator.readingOrder());
 }
 exports.readingOrder = async function () {
   return readingOrder();
@@ -281,7 +300,7 @@ export function publicationLanguage() {
   if (IS_DEV) {
     console.log("publicationLanguage");
   }
-  return D2Navigator.publication.metadata.language;
+  return D2Navigator.publication.Metadata.Language;
 }
 exports.publicationLanguage = function () {
   return publicationLanguage();
@@ -401,6 +420,28 @@ export async function applyPreferredVoice(value) {
 }
 exports.applyPreferredVoice = async function (value) {
   await applyPreferredVoice(value);
+};
+export async function resetMediaOverlaySettings() {
+  if (D2Navigator.rights?.enableMediaOverlays) {
+    if (IS_DEV) {
+      console.log("resetMediaOverlaySettings");
+    }
+    await D2MediaOverlaySettings.resetMediaOverlaySettings();
+  }
+}
+exports.resetMediaOverlaySettings = async function () {
+  await resetMediaOverlaySettings();
+};
+export async function applyMediaOverlaySettings(setting) {
+  if (D2Navigator.rights?.enableMediaOverlays) {
+    if (IS_DEV) {
+      console.log("applyMediaOverlaySettings");
+    }
+    await D2MediaOverlaySettings.applyMediaOverlaySettings(setting);
+  }
+}
+exports.applyMediaOverlaySettings = async function (setting) {
+  await applyMediaOverlaySettings(setting);
 };
 export function goTo(locator) {
   if (IS_DEV) {
@@ -557,42 +598,55 @@ export async function load(config: ReaderConfig): Promise<any> {
     if (config.upLinkUrl) {
       upLink = config.upLinkUrl;
     }
-    const publication: Publication = await Publication.getManifest(
-      webpubManifestUrl,
-      store
-    );
 
-    if ((publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
+    const response = await window.fetch(webpubManifestUrl.href, {
+      credentials: "same-origin",
+    });
+    const manifestJSON = await response.json();
+    let publication = TaJsonDeserialize<Publication>(manifestJSON, Publication);
+    publication.manifestUrl = webpubManifestUrl;
+
+    if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
       config.rights.enableAnnotations = false;
       config.rights.enableSearch = false;
       config.rights.enableTTS = false;
       // config.protection.enableObfuscation = false;
     }
 
+    const getContentBytesLength = async (href: string): Promise<number> => {
+      if (config.api?.getContentBytesLength) {
+        return config.api.getContentBytesLength(href);
+      }
+      const r = await fetch(href);
+      const b = await r.blob();
+      return b.size;
+    };
+
     if (config.rights?.autoGeneratePositions ?? true) {
       let startPosition = 0;
       let totalContentLength = 0;
       let positions = [];
       let weight = {};
-      publication.readingOrder.map(async (link, index) => {
-        if ((publication.metadata.rendition?.layout ?? "unknown") === "fixed") {
-          const locator: Locator = {
-            href: link.href,
-            locations: {
-              progression: 0,
-              position: startPosition + 1,
-            },
-            type: link.type,
-          };
-          if (IS_DEV) console.log(locator);
-          positions.push(locator);
-          startPosition = startPosition + 1;
-        } else {
-          // TODO: USE ZIP ARCHIVE ENTRY LENGTH !!!!! ??
-          let href = publication.getAbsoluteHref(link.href);
-          await fetch(href).then(async (r) => {
-            let length = (await r.blob()).size;
-            link.contentLength = length;
+      await Promise.all(
+        publication.readingOrder.map(async (link) => {
+          if (
+            (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          ) {
+            const locator: Locator = {
+              href: link.Href,
+              locations: {
+                progression: 0,
+                position: startPosition + 1,
+              },
+              type: link.TypeLink,
+            };
+            if (IS_DEV) console.log(locator);
+            positions.push(locator);
+            startPosition = startPosition + 1;
+          } else {
+            let href = publication.getAbsoluteHref(link.Href);
+            let length = await getContentBytesLength(href);
+            (link as Link).contentLength = length;
             totalContentLength += length;
             let positionLength = 1024;
             let positionCount = Math.max(1, Math.ceil(length / positionLength));
@@ -600,52 +654,48 @@ export async function load(config: ReaderConfig): Promise<any> {
             if (IS_DEV) console.log(positionCount + " Positions");
             Array.from(Array(positionCount).keys()).map((_, position) => {
               const locator: Locator = {
-                href: link.href,
+                href: link.Href,
                 locations: {
                   progression: position / positionCount,
                   position: startPosition + (position + 1),
                 },
-                type: link.type,
+                type: link.TypeLink,
               };
               if (IS_DEV) console.log(locator);
               positions.push(locator);
             });
             startPosition = startPosition + positionCount;
-          });
-        }
-        if (index + 1 === publication.readingOrder.length) {
-          if (
-            (publication.metadata.rendition?.layout ?? "unknown") !== "fixed"
-          ) {
-            publication.readingOrder.map(async (link) => {
-              if (IS_DEV) console.log(totalContentLength);
-              if (IS_DEV) console.log(link.contentLength);
-              link.contentWeight =
-                (100 / totalContentLength) * link.contentLength;
-              weight[link.href] = link.contentWeight;
-              if (IS_DEV) console.log(link.contentWeight);
-            });
           }
-          positions.map((locator, _index) => {
-            let resource = positions.filter(
-              (el: Locator) => el.href === decodeURI(locator.href)
-            );
-            let positionIndex = Math.ceil(
-              locator.locations.progression * (resource.length - 1)
-            );
-            locator.locations.totalProgression =
-              (locator.locations.position - 1) / positions.length;
-            locator.locations.remainingPositions = Math.abs(
-              positionIndex - (resource.length - 1)
-            );
-            locator.locations.totalRemainingPositions = Math.abs(
-              locator.locations.position - 1 - (positions.length - 1)
-            );
-          });
-          publication.positions = positions;
-          if (IS_DEV) console.log(positions);
-        }
+        })
+      );
+      if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
+        publication.readingOrder.map(async (link) => {
+          if (IS_DEV) console.log(totalContentLength);
+          if (IS_DEV) console.log((link as Link).contentLength);
+          (link as Link).contentWeight =
+            (100 / totalContentLength) * (link as Link).contentLength;
+          weight[link.Href] = (link as Link).contentWeight;
+          if (IS_DEV) console.log((link as Link).contentWeight);
+        });
+      }
+      positions.map((locator, _index) => {
+        let resource = positions.filter(
+          (el: Locator) => el.href === decodeURI(locator.href)
+        );
+        let positionIndex = Math.ceil(
+          locator.locations.progression * (resource.length - 1)
+        );
+        locator.locations.totalProgression =
+          (locator.locations.position - 1) / positions.length;
+        locator.locations.remainingPositions = Math.abs(
+          positionIndex - (resource.length - 1)
+        );
+        locator.locations.totalRemainingPositions = Math.abs(
+          locator.locations.position - 1 - (positions.length - 1)
+        );
       });
+      publication.positions = positions;
+      if (IS_DEV) console.log(positions);
     } else {
       if (config.services?.positions) {
         await fetch(config.services?.positions.href)
@@ -659,12 +709,12 @@ export async function load(config: ReaderConfig): Promise<any> {
           .then((r) => r.text())
           .then(async (content) => {
             if (
-              (publication.metadata.rendition?.layout ?? "unknown") !== "fixed"
+              (publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"
             ) {
               let weight = JSON.parse(content);
               publication.readingOrder.map(async (link) => {
-                link.contentWeight = weight[link.href];
-                if (IS_DEV) console.log(link.contentWeight);
+                (link as Link).contentWeight = weight[link.Href];
+                if (IS_DEV) console.log((link as Link).contentWeight);
               });
             }
           });
@@ -678,8 +728,12 @@ export async function load(config: ReaderConfig): Promise<any> {
       headerMenu: headerMenu,
       material: config.material,
       api: config.api,
+      injectables:
+        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          ? config.injectablesFixed
+          : config.injectables,
       layout:
-        (publication.metadata.rendition?.layout ?? "unknown") === "fixed"
+        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
           ? "fixed"
           : "reflowable",
     });
@@ -699,15 +753,15 @@ export async function load(config: ReaderConfig): Promise<any> {
       rights: config.rights,
       tts: config.tts,
       injectables:
-        (publication.metadata.rendition?.layout ?? "unknown") === "fixed"
-          ? []
+        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          ? config.injectablesFixed
           : config.injectables,
       attributes: config.attributes,
       services: config.services,
     });
 
     // Highlighter
-    if ((publication.metadata.rendition?.layout ?? "unknown") !== "fixed") {
+    if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
       D2Highlighter = await TextHighlighter.create({
         delegate: D2Navigator,
         ...config.highlighter,
@@ -788,6 +842,22 @@ export async function load(config: ReaderConfig): Promise<any> {
         ...config.protection,
       }).then(function (contentProtectionModule) {
         ContentProtectionModuleInstance = contentProtectionModule;
+      });
+    }
+
+    // MediaOverlay Module
+    if (config.rights?.enableMediaOverlays) {
+      D2MediaOverlaySettings = await MediaOverlaySettings.create({
+        store: settingsStore,
+        initialMediaOverlaySettings: config.mediaOverlays,
+        headerMenu: headerMenu,
+        ...config.mediaOverlays,
+      });
+      MediaOverlayModuleInstance = await MediaOverlayModule.create({
+        publication: publication,
+        settings: D2MediaOverlaySettings,
+        delegate: D2Navigator,
+        ...config.mediaOverlays,
       });
     }
 

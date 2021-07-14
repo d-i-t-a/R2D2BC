@@ -133,24 +133,14 @@ export default class ContentProtectionModule implements ReaderModule {
         "keydown",
         this.disableSave
       );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "keydown",
-        this.disableSave
-      );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "keydown",
-        this.disableSave
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
         removeEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
+          iframe.contentDocument,
           "keydown",
           this.disableSave
         );
         removeEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
+          iframe.contentWindow,
           "keydown",
           this.disableSave
         );
@@ -170,28 +160,19 @@ export default class ContentProtectionModule implements ReaderModule {
         "copy",
         this.preventCopy
       );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "copy",
-        this.preventCopy
-      );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "copy",
-        this.preventCopy
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
         removeEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
+          iframe.contentDocument,
           "copy",
           this.preventCopy
         );
         removeEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
+          iframe.contentWindow,
           "copy",
           this.preventCopy
         );
       }
+
       removeEventListenerOptional(window, "copy", this.preventCopy);
       removeEventListenerOptional(document, "copy", this.preventCopy);
       removeEventListenerOptional(
@@ -204,24 +185,14 @@ export default class ContentProtectionModule implements ReaderModule {
         "cut",
         this.preventCopy
       );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "cut",
-        this.preventCopy
-      );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "cut",
-        this.preventCopy
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
         removeEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
+          iframe.contentDocument,
           "cut",
           this.preventCopy
         );
         removeEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
+          iframe.contentWindow,
           "cut",
           this.preventCopy
         );
@@ -240,24 +211,14 @@ export default class ContentProtectionModule implements ReaderModule {
         "beforeprint",
         this.beforePrint.bind(this)
       );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "beforeprint",
-        this.beforePrint
-      );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "beforeprint",
-        this.beforePrint
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
         removeEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
+          iframe.contentDocument,
           "beforeprint",
           this.beforePrint
         );
         removeEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
+          iframe.contentWindow,
           "beforeprint",
           this.beforePrint
         );
@@ -274,24 +235,14 @@ export default class ContentProtectionModule implements ReaderModule {
         "afterprint",
         this.afterPrint.bind(this)
       );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "afterprint",
-        this.afterPrint.bind(this)
-      );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "afterprint",
-        this.afterPrint.bind(this)
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
         removeEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
+          iframe.contentDocument,
           "afterprint",
           this.afterPrint.bind(this)
         );
         removeEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
+          iframe.contentWindow,
           "afterprint",
           this.afterPrint.bind(this)
         );
@@ -318,24 +269,14 @@ export default class ContentProtectionModule implements ReaderModule {
         "contextmenu",
         this.disableContext
       );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "contextmenu",
-        this.disableContext
-      );
-      removeEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "contextmenu",
-        this.disableContext
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
         removeEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
+          iframe.contentDocument,
           "contextmenu",
           this.disableContext
         );
         removeEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
+          iframe.contentWindow,
           "contextmenu",
           this.disableContext
         );
@@ -382,14 +323,16 @@ export default class ContentProtectionModule implements ReaderModule {
   public async activate() {
     if (this.properties?.enableObfuscation) {
       this.observe();
-      const body = HTMLUtilities.findRequiredIframeElement(
-        this.delegate.iframe.contentDocument,
-        "body"
-      ) as HTMLBodyElement;
-      this.rects = this.findRects(body);
-      this.rects.forEach((rect) =>
-        this.toggleRect(rect, this.securityContainer, this.isHacked)
-      );
+      for (const iframe of this.delegate.iframes) {
+        const body = HTMLUtilities.findRequiredIframeElement(
+          iframe.contentDocument,
+          "body"
+        ) as HTMLBodyElement;
+        this.rects = this.findRects(body);
+        this.rects.forEach((rect) =>
+          this.toggleRect(rect, this.securityContainer, this.isHacked)
+        );
+      }
     }
   }
   private setupEvents(): void {
@@ -430,49 +373,25 @@ export default class ContentProtectionModule implements ReaderModule {
         "keydown",
         this.disableSave
       );
-      addEventListenerOptional(
-        this.delegate.iframe,
-        "keydown",
-        this.disableSave
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.ownerDocument,
-        "keydown",
-        this.disableSave
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "keydown",
-        this.disableSave
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "keydown",
-        this.disableSave
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow.document,
-        "keydown",
-        this.disableSave
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
+        addEventListenerOptional(iframe, "keydown", this.disableSave);
         addEventListenerOptional(
-          this.delegate.iframe2.ownerDocument,
+          iframe.ownerDocument,
           "keydown",
           this.disableSave
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
+          iframe.contentDocument,
           "keydown",
           this.disableSave
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
+          iframe.contentWindow,
           "keydown",
           this.disableSave
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentWindow.document,
+          iframe.contentWindow.document,
           "keydown",
           this.disableSave
         );
@@ -491,45 +410,25 @@ export default class ContentProtectionModule implements ReaderModule {
         "copy",
         this.preventCopy
       );
-      addEventListenerOptional(this.delegate.iframe, "copy", this.preventCopy);
-      addEventListenerOptional(
-        this.delegate.iframe.ownerDocument,
-        "copy",
-        this.preventCopy
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "copy",
-        this.preventCopy
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "copy",
-        this.preventCopy
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow.document,
-        "copy",
-        this.preventCopy
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
+        addEventListenerOptional(iframe, "copy", this.preventCopy);
         addEventListenerOptional(
-          this.delegate.iframe2.ownerDocument,
+          iframe.ownerDocument,
           "copy",
           this.preventCopy
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
+          iframe.contentDocument,
           "copy",
           this.preventCopy
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
+          iframe.contentWindow,
           "copy",
           this.preventCopy
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentWindow.document,
+          iframe.contentWindow.document,
           "copy",
           this.preventCopy
         );
@@ -547,49 +446,22 @@ export default class ContentProtectionModule implements ReaderModule {
         "cut",
         this.preventCopy
       );
-      addEventListenerOptional(this.delegate.iframe, "cut", this.preventCopy);
-      addEventListenerOptional(
-        this.delegate.iframe.ownerDocument,
-        "cut",
-        this.preventCopy
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "cut",
-        this.preventCopy
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "cut",
-        this.preventCopy
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow.document,
-        "cut",
-        this.preventCopy
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
+        addEventListenerOptional(iframe, "cut", this.preventCopy);
+        addEventListenerOptional(iframe.ownerDocument, "cut", this.preventCopy);
         addEventListenerOptional(
-          this.delegate.iframe2.ownerDocument,
+          iframe.contentDocument,
           "cut",
           this.preventCopy
         );
+        addEventListenerOptional(iframe.contentWindow, "cut", this.preventCopy);
         addEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
-          "cut",
-          this.preventCopy
-        );
-        addEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
-          "cut",
-          this.preventCopy
-        );
-        addEventListenerOptional(
-          this.delegate.iframe2.contentWindow.document,
+          iframe.contentWindow.document,
           "cut",
           this.preventCopy
         );
       }
+
       addEventListenerOptional(window, "cut", this.preventCopy);
       addEventListenerOptional(document, "cut", this.preventCopy);
     }
@@ -605,49 +477,29 @@ export default class ContentProtectionModule implements ReaderModule {
         "beforeprint",
         this.beforePrint
       );
-      addEventListenerOptional(
-        this.delegate.iframe,
-        "beforeprint",
-        this.beforePrint.bind(this)
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.ownerDocument,
-        "beforeprint",
-        this.beforePrint.bind(this)
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "beforeprint",
-        this.beforePrint.bind(this)
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "beforeprint",
-        this.beforePrint.bind(this)
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow.document,
-        "beforeprint",
-        this.beforePrint.bind(this)
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
         addEventListenerOptional(
-          this.delegate.iframe2.ownerDocument,
+          iframe,
           "beforeprint",
           this.beforePrint.bind(this)
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
+          iframe.ownerDocument,
           "beforeprint",
           this.beforePrint.bind(this)
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
+          iframe.contentDocument,
           "beforeprint",
           this.beforePrint.bind(this)
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentWindow.document,
+          iframe.contentWindow,
+          "beforeprint",
+          this.beforePrint.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.contentWindow.document,
           "beforeprint",
           this.beforePrint.bind(this)
         );
@@ -673,49 +525,29 @@ export default class ContentProtectionModule implements ReaderModule {
         "afterprint",
         this.afterPrint
       );
-      addEventListenerOptional(
-        this.delegate.iframe,
-        "afterprint",
-        this.afterPrint.bind(this)
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.ownerDocument,
-        "afterprint",
-        this.afterPrint.bind(this)
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "afterprint",
-        this.afterPrint.bind(this)
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "afterprint",
-        this.afterPrint.bind(this)
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow.document,
-        "afterprint",
-        this.afterPrint.bind(this)
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
         addEventListenerOptional(
-          this.delegate.iframe2.ownerDocument,
+          iframe,
           "afterprint",
           this.afterPrint.bind(this)
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
+          iframe.ownerDocument,
           "afterprint",
           this.afterPrint.bind(this)
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
+          iframe.contentDocument,
           "afterprint",
           this.afterPrint.bind(this)
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentWindow.document,
+          iframe.contentWindow,
+          "afterprint",
+          this.afterPrint.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.contentWindow.document,
           "afterprint",
           this.afterPrint.bind(this)
         );
@@ -742,49 +574,25 @@ export default class ContentProtectionModule implements ReaderModule {
         "contextmenu",
         this.disableContext
       );
-      addEventListenerOptional(
-        this.delegate.iframe,
-        "contextmenu",
-        this.disableContext
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.ownerDocument,
-        "contextmenu",
-        this.disableContext
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentDocument,
-        "contextmenu",
-        this.disableContext
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow,
-        "contextmenu",
-        this.disableContext
-      );
-      addEventListenerOptional(
-        this.delegate.iframe.contentWindow.document,
-        "contextmenu",
-        this.disableContext
-      );
-      if (this.delegate.iframe2) {
+      for (const iframe of this.delegate.iframes) {
+        addEventListenerOptional(iframe, "contextmenu", this.disableContext);
         addEventListenerOptional(
-          this.delegate.iframe2.ownerDocument,
+          iframe.ownerDocument,
           "contextmenu",
           this.disableContext
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentDocument,
+          iframe.contentDocument,
           "contextmenu",
           this.disableContext
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentWindow,
+          iframe.contentWindow,
           "contextmenu",
           this.disableContext
         );
         addEventListenerOptional(
-          this.delegate.iframe2.contentWindow.document,
+          iframe.contentWindow.document,
           "contextmenu",
           this.disableContext
         );
@@ -807,30 +615,32 @@ export default class ContentProtectionModule implements ReaderModule {
     if (this.properties?.enableObfuscation) {
       return new Promise<void>(async (resolve) => {
         await (document as any).fonts.ready;
-        const body = HTMLUtilities.findRequiredIframeElement(
-          this.delegate.iframe.contentDocument,
-          "body"
-        ) as HTMLBodyElement;
+        for (const iframe of this.delegate.iframes) {
+          const body = HTMLUtilities.findRequiredIframeElement(
+            iframe.contentDocument,
+            "body"
+          ) as HTMLBodyElement;
 
-        this.observe();
+          this.observe();
 
-        setTimeout(() => {
-          this.rects = this.findRects(body);
-          this.rects.forEach((rect) =>
-            this.toggleRect(rect, this.securityContainer, this.isHacked)
-          );
-
-          this.setupEvents();
-          if (!this.hasEventListener) {
-            this.hasEventListener = true;
-            addEventListenerOptional(
-              window,
-              "scroll",
-              this.handleScroll.bind(this)
+          setTimeout(() => {
+            this.rects = this.findRects(body);
+            this.rects.forEach((rect) =>
+              this.toggleRect(rect, this.securityContainer, this.isHacked)
             );
-          }
-          resolve();
-        }, 10);
+
+            this.setupEvents();
+            if (!this.hasEventListener) {
+              this.hasEventListener = true;
+              addEventListenerOptional(
+                window,
+                "scroll",
+                this.handleScroll.bind(this)
+              );
+            }
+            resolve();
+          }, 10);
+        }
       });
     }
   }
@@ -936,34 +746,8 @@ export default class ContentProtectionModule implements ReaderModule {
       aElement.setAttribute("href", href);
       aElement.click();
     }
-    const aElements = this.delegate.iframe.contentDocument.querySelectorAll(
-      "a"
-    );
-
-    aElements.forEach((aElement) => {
-      const dataHref = aElement.getAttribute("data-href");
-      if (!dataHref) {
-        aElement.setAttribute("data-href", aElement.getAttribute("href"));
-        aElement.setAttribute("data-href-resolved", aElement.href);
-      }
-    });
-
-    if (activate) {
-      aElements.forEach((aElement) => {
-        aElement.setAttribute("href", "");
-        aElement.addEventListener("click", onAElementClick);
-      });
-    } else {
-      aElements.forEach((aElement) => {
-        aElement.setAttribute("href", aElement.getAttribute("data-href"));
-        aElement.removeEventListener("click", onAElementClick);
-      });
-    }
-
-    if (this.delegate.iframe2) {
-      const aElements = this.delegate.iframe2.contentDocument.querySelectorAll(
-        "a"
-      );
+    for (const iframe of this.delegate.iframes) {
+      const aElements = iframe.contentDocument.querySelectorAll("a");
 
       aElements.forEach((aElement) => {
         const dataHref = aElement.getAttribute("data-href");
@@ -993,48 +777,21 @@ export default class ContentProtectionModule implements ReaderModule {
     const onDragstart = (evt) => {
       evt.preventDefault();
     };
-    const bodyStyle =
-      this.delegate.iframe.contentDocument.body.getAttribute("style") || "";
-
-    if (activate) {
-      this.delegate.iframe.contentDocument.body.addEventListener(
-        "dragstart",
-        onDragstart
-      );
-      this.delegate.iframe.contentDocument.body.setAttribute(
-        "style",
-        bodyStyle + dragStyle
-      );
-    } else {
-      this.delegate.iframe.contentDocument.body.removeEventListener(
-        "dragstart",
-        onDragstart
-      );
-      this.delegate.iframe.contentDocument.body.setAttribute(
-        "style",
-        bodyStyle.replace(dragStyle, "")
-      );
-    }
-
-    if (this.delegate.iframe2) {
-      const bodyStyle =
-        this.delegate.iframe2.contentDocument.body.getAttribute("style") || "";
+    for (const iframe of this.delegate.iframes) {
+      const bodyStyle = iframe.contentDocument.body.getAttribute("style") || "";
 
       if (activate) {
-        this.delegate.iframe2.contentDocument.body.addEventListener(
-          "dragstart",
-          onDragstart
-        );
-        this.delegate.iframe2.contentDocument.body.setAttribute(
+        iframe.contentDocument.body.addEventListener("dragstart", onDragstart);
+        iframe.contentDocument.body.setAttribute(
           "style",
           bodyStyle + dragStyle
         );
       } else {
-        this.delegate.iframe2.contentDocument.body.removeEventListener(
+        iframe.contentDocument.body.removeEventListener(
           "dragstart",
           onDragstart
         );
-        this.delegate.iframe2.contentDocument.body.setAttribute(
+        iframe.contentDocument.body.setAttribute(
           "style",
           bodyStyle.replace(dragStyle, "")
         );

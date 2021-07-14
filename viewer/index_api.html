@@ -68,6 +68,30 @@
                 container.innerHTML = tocString
             })">show
                 TOC</button><br>
+            <button onclick="javascript:D2Reader.readingOrder().then(
+            result => {
+                console.log(result)
+                console.log(result.length)
+                var container = document.getElementById('container-toc');
+                var tocString = ''
+                result.forEach(function (item, index) {
+                    if (index == 0) {
+                        console.log('first')
+                        console.log(index)
+                        tocString += '<ul><li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.href + '</li>'
+                    } else if (index == result.length - 1) {
+                        console.log('last')
+                        console.log(index)
+                        tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.href + '</li></ul>'
+                    } else {
+                        console.log('middle')
+                        console.log(index)
+                        tocString += '<li onclick=\'javascript:D2Reader.goTo(' + JSON.stringify(item) + ')\'>' + item.href + '</li>'
+                    }
+                });
+                container.innerHTML = tocString
+            })">show
+                ReadingOrder</button><br>
             <button onclick="javascript:D2Reader.previousResource()">previous resource</button><br>
             <button onclick="javascript:D2Reader.nextResource()">next resource</button><br>
             <button onclick="javascript:D2Reader.previousPage()">previous page</button><br>
@@ -219,8 +243,8 @@
             <button
                     onclick="javascript:D2Reader.applyUserSettings({appearance:'day', verticalScroll:false, fontSize:100, fontFamily:'opendyslexic', letterSpacing:0.25, textAlignment:'justify'})">apply
                 multiple settings</button><br>
-            <button onclick="javascript:D2Reader.publisher(true)">publisher default</button><br>
-            <button onclick="javascript:D2Reader.publisher(false)">publisher default off</button><br>
+<!--            <button onclick="javascript:D2Reader.publisher(true)">publisher default</button><br>-->
+<!--            <button onclick="javascript:D2Reader.publisher(false)">publisher default off</button><br>-->
             <button onclick="javascript:D2Reader.increase('wordSpacing')">word spacing increase</button><br>
             <button onclick="javascript:D2Reader.decrease('wordSpacing')">word spacing decrease</button><br>
             <button onclick="javascript:D2Reader.increase('letterSpacing')">letter spacing increase</button><br>
@@ -400,7 +424,7 @@
                 enableTTS: true,
                 enableSearch: true,
                 enableTimeline: true,
-                enableContentProtection: true,
+                enableContentProtection: false,
             },
             tts: {
                 enableSplitter: true,
@@ -414,6 +438,46 @@
                 //         name : "Daniel",
                 //         lang : "en-GB",
                 //     }
+                api: {
+                    started: function () {
+                        console.log("started")
+                        return new Promise(function (resolve, reject) {
+                            resolve
+                        })
+                    },
+                    stopped: function () {
+                        console.log("stopped")
+                        return new Promise(function (resolve, reject) {
+                            resolve()
+                        })
+                    },
+                    paused: function () {
+                        console.log("paused")
+                        return new Promise(function (resolve, reject) {
+                            resolve()
+                        })
+                    },
+                    resumed: function () {
+                        console.log("resumed")
+                        return new Promise(function (resolve, reject) {
+                            resolve()
+                        })
+                    },
+                    finished: function () {
+                        console.log("finished")
+                        return new Promise(function (resolve, reject) {
+                            resolve()
+                        })
+                    },
+                    updateSettings: function (settings) {
+                        console.log("updateSettings")
+                        return new Promise(function (resolve, reject) {
+                            resolve(
+                                settings
+                            )
+                        })
+                    }
+                }
             },
             search: {
                 color: "#fce300",

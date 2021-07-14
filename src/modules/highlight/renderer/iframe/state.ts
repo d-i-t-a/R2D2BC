@@ -18,7 +18,7 @@
  */
 
 import { IEventPayload_R2_EVENT_READING_LOCATION } from "../../common/events";
-import { Link } from "../../../../model/Publication";
+import { Link } from "../../../../model/Link";
 
 export interface IReadiumIFrameWindowState {
   hashElement: Element | null;

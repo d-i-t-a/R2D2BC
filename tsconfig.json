@@ -20,6 +20,7 @@
 {
   "include": ["src/**/*"],
   "compilerOptions": {
+    "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "module": "CommonJS",
     "noEmitOnError": true,

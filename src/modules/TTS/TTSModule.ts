@@ -153,16 +153,14 @@ export default class TTSModule implements ReaderModule {
   }
 
   cancel() {
-    if (window.speechSynthesis.speaking) {
-      if (this.api?.stopped) this.api?.stopped();
-      this.userScrolled = false;
-      window.speechSynthesis.cancel();
-      if (this.splittingResult && this.delegate.tts?.enableSplitter) {
-        this.splittingResult.forEach((splittingWord) => {
-          splittingWord.dataset.ttsCurrentWord = "false";
-          splittingWord.dataset.ttsCurrentLine = "false";
-        });
-      }
+    if (this.api?.stopped) this.api?.stopped();
+    this.userScrolled = false;
+    window.speechSynthesis.cancel();
+    if (this.splittingResult && this.delegate.tts?.enableSplitter) {
+      this.splittingResult.forEach((splittingWord) => {
+        splittingWord.dataset.ttsCurrentWord = "false";
+        splittingWord.dataset.ttsCurrentLine = "false";
+      });
     }
   }
 
@@ -351,7 +349,7 @@ export default class TTSModule implements ReaderModule {
       if (IS_DEV) console.log("defaultVoice");
       utterance.voice = defaultVoice;
     }
-    if (utterance.voice !== undefined) {
+    if (utterance.voice !== undefined && utterance.voice !== null) {
       utterance.lang = utterance.voice.lang;
       if (IS_DEV) console.log("utterance.voice.lang", utterance.voice.lang);
       if (IS_DEV) console.log("utterance.lang", utterance.lang);

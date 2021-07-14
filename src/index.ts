@@ -496,7 +496,7 @@ export function goToPosition(value) {
   if (IS_DEV) {
     console.log("goToPosition");
   }
-  return D2Navigator.goToPosition(value);
+  D2Navigator.goToPosition(value);
 }
 exports.goToPosition = function (value) {
   goToPosition(value);

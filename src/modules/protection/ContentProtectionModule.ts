@@ -17,7 +17,6 @@
  * Licensed to: Bluefire Productions, LLC, Bibliotheca LLC, Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { addListener, launch } from 'devtools-detector';
 import ReaderModule from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
@@ -68,7 +67,6 @@ export default class ContentProtectionModule implements ReaderModule {
   private rects: Array<ContentProtectionRect>;
   private delegate: IFrameNavigator;
   private properties: ContentProtectionModuleProperties;
-  private api: ContentProtectionModuleAPI;
   private hasEventListener: boolean = false;
   private isHacked: boolean = false;
   private securityContainer: HTMLDivElement;
@@ -77,8 +75,7 @@ export default class ContentProtectionModule implements ReaderModule {
   public static async create(config: ContentProtectionModuleConfig) {
     const security = new this(
       config.delegate,
-      config as ContentProtectionModuleProperties,
-      config.api
+      config as ContentProtectionModuleProperties
     );
     await security.start();
     return security;
@@ -86,12 +83,10 @@ export default class ContentProtectionModule implements ReaderModule {
 
   public constructor(
     delegate: IFrameNavigator,
-    properties: ContentProtectionModuleProperties | null = null,
-    api: ContentProtectionModuleAPI | null = null
+    properties: ContentProtectionModuleProperties | null = null
   ) {
     this.delegate = delegate;
     this.properties = properties;
-    this.api = api;
   }
 
   protected async start(): Promise<void> {
@@ -337,23 +332,6 @@ export default class ContentProtectionModule implements ReaderModule {
     }
   }
   private setupEvents(): void {
-    var self = this;
-    if (this.properties?.detectInspect) {
-      addListener(
-        function() {
-          if (self.properties?.clearOnInspect) {
-            console.clear();
-            window.localStorage.clear();
-            window.sessionStorage.clear();
-            window.location.replace(window.location.origin);
-          } else {
-            self.api?.inspectDetected();
-          }
-        }
-      );
-      launch();
-    }
-
     if (this.properties?.disableKeys) {
       addEventListenerOptional(
         this.delegate.mainElement,
@@ -873,7 +851,7 @@ export default class ContentProtectionModule implements ReaderModule {
       const { top, height, left, width } = this.measureTextNode(node);
       const scrambled =
         node.parentElement.nodeName === "option" ||
-        node.parentElement.nodeName === "script"
+          node.parentElement.nodeName === "script"
           ? node.textContent
           : this.obfuscateText(node.textContent);
       return {

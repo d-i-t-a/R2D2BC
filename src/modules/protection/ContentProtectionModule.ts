@@ -17,6 +17,7 @@
  * Licensed to: Bluefire Productions, LLC, Bibliotheca LLC, Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
+import { addListener, launch } from 'devtools-detector';
 import ReaderModule from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
@@ -338,19 +339,19 @@ export default class ContentProtectionModule implements ReaderModule {
   private setupEvents(): void {
     var self = this;
     if (this.properties?.detectInspect) {
-      var devtools = function() {};
-      devtools.toString = function() {
-        if (self.properties?.clearOnInspect) {
-          console.clear();
-          window.localStorage.clear();
-          window.sessionStorage.clear();
-          window.location.replace(window.location.origin);
-        } else {
-          self.api?.inspectDetected();
+      addListener(
+        function() {
+          if (self.properties?.clearOnInspect) {
+            console.clear();
+            window.localStorage.clear();
+            window.sessionStorage.clear();
+            window.location.replace(window.location.origin);
+          } else {
+            self.api?.inspectDetected();
+          }
         }
-        return "";
-      }
-      console.log("%c", devtools);
+      );
+      launch();
     }
 
     if (this.properties?.disableKeys) {

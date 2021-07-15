@@ -32,6 +32,7 @@
     "cssesc": "^3.0.0",
     "debounce": "^1.2.1",
     "detect-browser": "^5.2.0",
+    "devtools-detector": "^2.0.3",
     "jscrypto": "0.0.1",
     "mark.js": "^8.11.1",
     "materialize-css": "^1.0.0",

@@ -72,10 +72,12 @@ import MediaOverlayModule, {
 import { D2Link, Link } from "../model/Link";
 
 export type GetContent = (href: string) => Promise<string>;
+export type GetContentBytesLength = (href: string) => Promise<number>;
+
 export interface NavigatorAPI {
   updateSettings: any;
   getContent: GetContent;
-
+  getContentBytesLength: GetContentBytesLength;
   resourceReady: any;
   resourceAtStart: any;
   resourceAtEnd: any;

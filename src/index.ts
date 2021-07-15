@@ -537,7 +537,7 @@ export function goToPosition(value) {
   if (IS_DEV) {
     console.log("goToPosition");
   }
-  return D2Navigator.goToPosition(value);
+  D2Navigator.goToPosition(value);
 }
 exports.goToPosition = function (value) {
   goToPosition(value);
@@ -644,9 +644,9 @@ export async function load(config: ReaderConfig): Promise<any> {
             positions.push(locator);
             startPosition = startPosition + 1;
           } else {
-            var href = publication.getAbsoluteHref(link.href);
+            let href = publication.getAbsoluteHref(link.Href);
             let length = await getContentBytesLength(href);
-            link.contentLength = length;
+            (link as Link).contentLength = length;
             totalContentLength += length;
             let positionLength = 1024;
             let positionCount = Math.max(1, Math.ceil(length / positionLength));

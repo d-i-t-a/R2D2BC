@@ -38,6 +38,7 @@ import { Locator } from "./model/Locator";
 import { Publication } from "./model/Publication";
 import { convertAndCamel, Link } from "./model/Link";
 import { TaJsonDeserialize } from "./utils/JsonUtil";
+import { delay } from "./utils";
 import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
 import InspectorProtectionModule from "./modules/protection/InspectorProtectionModule";
 
@@ -585,6 +586,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         api: config.protection?.api ?? {},
         clearOnInspect: config.protection?.clearOnInspect ?? false,
       });
+      await delay(1500);
     }
 
     let mainElement = document.getElementById("D2Reader-Container");

@@ -38,7 +38,9 @@ import { Locator } from "./model/Locator";
 import { Publication } from "./model/Publication";
 import { convertAndCamel, Link } from "./model/Link";
 import { TaJsonDeserialize } from "./utils/JsonUtil";
+import { delay } from "./utils";
 import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
+import InspectorProtectionModule from "./modules/protection/InspectorProtectionModule";
 
 let D2Settings: UserSettings;
 let D2TTSSettings: TTSSettings;
@@ -579,6 +581,14 @@ export async function load(config: ReaderConfig): Promise<any> {
       supportedBrowsers.test(navigator.userAgent)) ||
     !config.protection?.enforceSupportedBrowsers
   ) {
+    if (config.protection?.detectInspect) {
+      InspectorProtectionModule.start({
+        api: config.protection?.api ?? {},
+        clearOnInspect: config.protection?.clearOnInspect ?? false,
+      });
+      await delay(1200);
+    }
+
     let mainElement = document.getElementById("D2Reader-Container");
     let headerMenu = document.getElementById("headerMenu");
     let footerMenu = document.getElementById("footerMenu");

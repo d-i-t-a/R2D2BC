@@ -234,21 +234,20 @@ export default class BookmarkModule implements ReaderModule {
         !(await this.annotator.locatorExists(bookmark, AnnotationType.Bookmark))
       ) {
         if (this.api?.addBookmark) {
-          this.api.addBookmark(bookmark).then(async (bookmark) => {
-            if (IS_DEV) console.log(bookmark);
-            var saved = await this.annotator.saveBookmark(bookmark);
+          await this.api.addBookmark(bookmark);
+          if (IS_DEV) console.log(bookmark);
+          let saved = await this.annotator.saveBookmark(bookmark);
 
-            if (IS_DEV) {
-              console.log("Bookmark added " + JSON.stringify(saved));
-            }
-            if (this.delegate.rights?.enableMaterial) {
-              toast({ html: "bookmark added" });
-            }
-            await this.showBookmarks();
-            return saved;
-          });
+          if (IS_DEV) {
+            console.log("Bookmark added " + JSON.stringify(saved));
+          }
+          if (this.delegate.rights?.enableMaterial) {
+            toast({ html: "bookmark added" });
+          }
+          await this.showBookmarks();
+          return saved;
         } else {
-          var saved = await this.annotator.saveBookmark(bookmark);
+          let saved = await this.annotator.saveBookmark(bookmark);
 
           if (IS_DEV) {
             console.log("Bookmark added " + JSON.stringify(saved));

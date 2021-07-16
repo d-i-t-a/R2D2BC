@@ -39,6 +39,8 @@ import { Publication } from "./model/Publication";
 import { convertAndCamel, Link } from "./model/Link";
 import { TaJsonDeserialize } from "./utils/JsonUtil";
 import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
+import InspectorProtectionModule from "./modules/protection/InspectorProtectionModule";
+import { delay } from "./utils";
 
 let D2Settings: UserSettings;
 let D2TTSSettings: TTSSettings;
@@ -60,7 +62,7 @@ export async function unload() {
   if (IS_DEV) {
     console.log("unload reader");
   }
-  document.body.onscroll = () => {};
+  document.body.onscroll = () => { };
   await D2Navigator.stop();
   await D2Settings.stop();
   if (D2Navigator.rights?.enableTTS) {
@@ -579,6 +581,14 @@ export async function load(config: ReaderConfig): Promise<any> {
       supportedBrowsers.test(navigator.userAgent)) ||
     !config.protection?.enforceSupportedBrowsers
   ) {
+    if (config.protection?.detectInspect) {
+      InspectorProtectionModule.start({
+        api: config.protection.api ?? {},
+        clearOnInspect: config.protection.clearOnInspect ?? false,
+      });
+      await delay(config.protection.detectInspectInitDelay ?? 100);
+    }
+
     let mainElement = document.getElementById("D2Reader-Container");
     let headerMenu = document.getElementById("headerMenu");
     let footerMenu = document.getElementById("footerMenu");

@@ -586,7 +586,7 @@ export async function load(config: ReaderConfig): Promise<any> {
         api: config.protection?.api ?? {},
         clearOnInspect: config.protection?.clearOnInspect ?? false,
       });
-      await delay(1500);
+      await delay(1200);
     }
 
     let mainElement = document.getElementById("D2Reader-Container");

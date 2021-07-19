@@ -36,7 +36,7 @@ export interface BookmarkModuleAPI {
   getBookmarks: Array<any>;
 }
 
-export interface BookmarkModuleProperties {}
+export interface BookmarkModuleProperties { }
 
 export interface BookmarkModuleConfig {
   annotator: Annotator;
@@ -153,20 +153,19 @@ export default class BookmarkModule implements ReaderModule {
   async deleteBookmark(bookmark: Bookmark): Promise<any> {
     if (this.annotator) {
       if (this.api?.deleteBookmark) {
-        this.api?.deleteBookmark(bookmark).then(async (_result) => {
-          var deleted = await this.annotator.deleteBookmark(bookmark);
+        await this.api?.deleteBookmark(bookmark);
+        let deleted = await this.annotator.deleteBookmark(bookmark);
 
-          if (IS_DEV) {
-            console.log("Bookmark deleted " + JSON.stringify(deleted));
-          }
-          await this.showBookmarks();
-          if (this.delegate.rights?.enableMaterial) {
-            toast({ html: "bookmark deleted" });
-          }
-          return deleted;
-        });
+        if (IS_DEV) {
+          console.log("Bookmark deleted " + JSON.stringify(deleted));
+        }
+        await this.showBookmarks();
+        if (this.delegate.rights?.enableMaterial) {
+          toast({ html: "bookmark deleted" });
+        }
+        return deleted;
       } else {
-        var deleted = await this.annotator.deleteBookmark(bookmark);
+        let deleted = await this.annotator.deleteBookmark(bookmark);
 
         if (IS_DEV) {
           console.log("Bookmark deleted " + JSON.stringify(deleted));

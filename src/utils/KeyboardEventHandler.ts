@@ -26,8 +26,12 @@ export default class KeyboardEventHandler {
   public onForwardSwipe: (event: UIEvent) => void = () => {};
 
   public setupEvents = (element: HTMLElement | Document): void => {
-    var self = this;
+    this.focusin(element);
+    this.keydown(element);
+  };
 
+  public focusin = (element: HTMLElement | Document): void => {
+    const self = this;
     element.addEventListener(
       "focusin",
       function (event: KeyboardEvent) {
@@ -35,7 +39,10 @@ export default class KeyboardEventHandler {
       },
       true
     );
+  };
 
+  public keydown = (element: HTMLElement | Document): void => {
+    const self = this;
     element.addEventListener(
       "keydown",
       function (event: KeyboardEvent) {

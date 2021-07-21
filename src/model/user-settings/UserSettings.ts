@@ -94,11 +94,11 @@ export interface InitialUserSettings {
   fontFamily: number;
   appearance: any;
   verticalScroll?:
-    | boolean
-    | "readium-scroll-on"
-    | "readium-scroll-off"
-    | "scroll"
-    | "paginated";
+  | boolean
+  | "readium-scroll-on"
+  | "readium-scroll-off"
+  | "scroll"
+  | "paginated";
 
   //Advanced settings
   // publisherDefaults?: boolean | "readium-advanced-on" | "readium-advanced-off";
@@ -154,9 +154,9 @@ export class UserSettings implements IUserSettings {
 
   view: BookView;
 
-  private settingsChangeCallback: () => void = () => {};
-  private settingsColumnsChangeCallback: () => void = () => {};
-  private viewChangeCallback: () => void = () => {};
+  private settingsChangeCallback: () => void = () => { };
+  private settingsColumnsChangeCallback: () => void = () => { };
+  private viewChangeCallback: () => void = () => { };
 
   private settingsView: HTMLDivElement;
   private readonly headerMenu: HTMLElement;
@@ -732,21 +732,21 @@ export class UserSettings implements IUserSettings {
     let userSettings = {
       fontFamily:
         UserSettings.fontFamilyValues[
-          await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value
+        await this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value
         ],
       fontSize: this.userProperties.getByRef(ReadiumCSS.FONT_SIZE_REF).value,
       appearance:
         UserSettings.appearanceValues[
-          await this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value
+        await this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value
         ],
       textAlignment:
         UserSettings.textAlignmentValues[
-          await this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF)
-            .value
+        await this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF)
+          .value
         ],
       columnCount:
         UserSettings.columnCountValues[
-          await this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value
+        await this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value
         ],
       wordSpacing: this.userProperties.getByRef(ReadiumCSS.WORD_SPACING_REF)
         .value,
@@ -926,19 +926,19 @@ export class UserSettings implements IUserSettings {
     return {
       appearance:
         UserSettings.appearanceValues[
-          this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value
+        this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value
         ], //readium-default-on, readium-night-on, readium-sepia-on
       fontFamily:
         UserSettings.fontFamilyValues[
-          this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value
+        this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF).value
         ], //Original, serif, sans-serif
       textAlignment:
         UserSettings.textAlignmentValues[
-          this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value
+        this.userProperties.getByRef(ReadiumCSS.TEXT_ALIGNMENT_REF).value
         ], //"auto", "justify", "start"
       columnCount:
         UserSettings.columnCountValues[
-          this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value
+        this.userProperties.getByRef(ReadiumCSS.COLUMN_COUNT_REF).value
         ], // "auto", "1", "2"
       verticalScroll: this.verticalScroll,
       fontSize: this.fontSize,
@@ -1062,23 +1062,23 @@ export class UserSettings implements IUserSettings {
     await this.applyProperties();
     this.settingsChangeCallback();
 
-    setTimeout(async () => {
-      if (userSettings.verticalScroll !== undefined) {
-        const position = this.view.getCurrentPosition();
-        this.verticalScroll = UserSettings.parseScrollSetting(
-          userSettings.verticalScroll
-        );
-        this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
-          this.verticalScroll;
-        await this.saveProperty(
-          this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
-        );
-        await this.applyProperties();
-        this.view.setMode(this.verticalScroll);
-        this.view.goToPosition(position);
-        this.viewChangeCallback();
-      }
-    }, 10);
+    if (userSettings.verticalScroll !== undefined) {
+      const position = this.view.getCurrentPosition();
+      this.verticalScroll = UserSettings.parseScrollSetting(
+        userSettings.verticalScroll
+      );
+      this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
+        this.verticalScroll;
+      await this.saveProperty(
+        this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
+      );
+      await this.applyProperties();
+      this.view.setMode(this.verticalScroll);
+      this.view.goToPosition(position);
+      this.viewChangeCallback();
+    }
+    // setTimeout(async () => {
+    // }, 10);
   }
 
   /**

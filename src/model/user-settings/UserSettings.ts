@@ -1077,8 +1077,6 @@ export class UserSettings implements IUserSettings {
       this.view.goToPosition(position);
       this.viewChangeCallback();
     }
-    // setTimeout(async () => {
-    // }, 10);
   }
 
   /**

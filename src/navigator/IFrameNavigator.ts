@@ -1570,7 +1570,7 @@ export default class IFrameNavigator implements Navigator {
             this.keyboardEventHandler.setupEvents(iframe.contentDocument);
           }
           this.keyboardEventHandler.delegate = this;
-          this.keyboardEventHandler.setupEvents(document);
+          this.keyboardEventHandler.keydown(document);
         }
         if (this.view.layout !== "fixed") {
           if (this.view?.isScrollMode()) {

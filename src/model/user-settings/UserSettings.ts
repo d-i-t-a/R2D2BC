@@ -939,7 +939,7 @@ export class UserSettings implements IUserSettings {
     };
   }
 
-  async applyUserSettings(userSettings: UserSettings): Promise<void> {
+  async applyUserSettings(userSettings: Partial<UserSettings>): Promise<void> {
     if (userSettings.appearance) {
       let a: string;
       if (

@@ -1,8 +1,8 @@
 // ES5 import (assuming node_modules/r2-streamer-js/):
-import { Server } from "r2-streamer-js";
-import express from "express";
-import path from "path";
-import fs from "fs/promises";
+import { Server } from "dita-streamer-js";
+import * as express from "express";
+import * as path from "path";
+import * as fs from "fs";
 
 async function start() {
   // Constructor parameter is optional:
@@ -60,7 +60,7 @@ async function start() {
    * Serve our sample EPUBS from /examples/epubs
    */
   const epubsPath = path.join(__dirname, "./epubs");
-  const files = await fs.readdir(epubsPath);
+  const files = await fs.promises.readdir(epubsPath);
   const filePaths = files.map((fileName) =>
     path.join(__dirname, "./epubs", fileName)
   );

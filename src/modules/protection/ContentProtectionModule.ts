@@ -26,6 +26,9 @@ import {
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
 import { IS_DEV } from "../..";
+import { delay } from "../../utils";
+import { addListener, launch } from 'devtools-detector';
+import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;
@@ -45,7 +48,7 @@ export interface ContentProtectionModuleProperties {
 
 export interface ContentProtectionModuleConfig
   extends ContentProtectionModuleProperties {
-  delegate: IFrameNavigator;
+  delegate?: IFrameNavigator;
   api: ContentProtectionModuleAPI;
 }
 
@@ -64,6 +67,12 @@ interface ContentProtectionRect {
   isObfuscated: boolean;
 }
 
+export interface InspectorProtectionConfig {
+  clearOnInspect: boolean;
+  detectInspectInitDelay: number;
+  api: { inspectDetected?: () => void };
+}
+
 export default class ContentProtectionModule implements ReaderModule {
   private rects: Array<ContentProtectionRect>;
   private delegate: IFrameNavigator;
@@ -72,6 +81,20 @@ export default class ContentProtectionModule implements ReaderModule {
   private isHacked: boolean = false;
   private securityContainer: HTMLDivElement;
   private mutationObserver: MutationObserver;
+
+  public static async setupPreloadProtection(config: ContentProtectionModuleConfig): Promise<void> {
+    if (this.isCurrentBrowserSupported(config)) {
+      if (config.detectInspect) {
+        await this.startInspectorProtection({
+            api: config.api ?? {},
+            clearOnInspect: config.clearOnInspect ?? false,
+            detectInspectInitDelay: config.detectInspectInitDelay ?? 50,
+        });
+      }
+    } else {
+      throw new Error("Browser not supported");
+    }
+  }
 
   public static async create(config: ContentProtectionModuleConfig) {
     const security = new this(
@@ -88,6 +111,39 @@ export default class ContentProtectionModule implements ReaderModule {
   ) {
     this.delegate = delegate;
     this.properties = properties;
+  }
+
+  private static async startInspectorProtection(config: InspectorProtectionConfig): Promise<void> {
+    const onInspectorOpened = (): void => {
+      if (config.clearOnInspect) {
+        console.clear();
+        window.localStorage.clear();
+        window.sessionStorage.clear();
+        window.location.replace(window.location.origin);
+      } else if (typeof config.api?.inspectDetected === "function") {
+        config.api.inspectDetected();
+      }
+    };
+    addListener(onInspectorOpened);
+    launch();
+    await delay(config.detectInspectInitDelay);
+  }
+
+  private static isCurrentBrowserSupported(config: ContentProtectionModuleConfig): boolean {
+    if (!config.enforceSupportedBrowsers) {
+      return true;
+    }
+    let browsers: string[] = [];
+    
+    (config.supportedBrowsers ?? []).forEach((browser: string) => {
+      browsers.push("last 1 " + browser + " version");
+    });
+    
+    const supportedBrowsers = getUserAgentRegExp({
+      browsers: browsers,
+      allowHigherVersions: true,
+    });
+    return supportedBrowsers.test(navigator.userAgent);
   }
 
   protected async start(): Promise<void> {

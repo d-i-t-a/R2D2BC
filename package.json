@@ -17,7 +17,7 @@
     "build": "webpack --mode=production && npm run sass",
     "dev": "webpack --mode=development && npm run sass",
     "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
-    "examples": "ts-node examples/server.ts",
+    "examples": "node --loader ts-node/esm examples/server.ts",
     "clean": "rimraf node_modules lib dist",
     "start": "http-server viewer",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",

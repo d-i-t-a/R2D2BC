@@ -1059,8 +1059,6 @@ export class UserSettings implements IUserSettings {
         this.userProperties.getByRef(ReadiumCSS.PAGE_MARGINS_REF)
       );
     }
-    await this.applyProperties();
-    this.settingsChangeCallback();
 
     if (userSettings.verticalScroll !== undefined) {
       const position = this.view.getCurrentPosition();
@@ -1072,11 +1070,16 @@ export class UserSettings implements IUserSettings {
       await this.saveProperty(
         this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
       );
-      await this.applyProperties();
-      this.view.setMode(this.verticalScroll);
-      this.view.goToPosition(position);
-      this.viewChangeCallback();
+      
+      setTimeout(async () => {
+        this.view.setMode(this.verticalScroll);
+        this.view.goToPosition(position);
+        this.viewChangeCallback();
+      }, 10);
     }
+
+    await this.applyProperties();
+    this.settingsChangeCallback();
   }
 
   /**

@@ -1,0 +1,57 @@
+/*
+ * Copyright 2018-2020 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
+ * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ */
+
+ {
+  // see https://www.typescriptlang.org/tsconfig to better understand tsconfigs
+  "include": ["."],
+  "compilerOptions": {
+    "module": "es2015",
+    // set target to es5 so we can use class get/set
+    "target": "es5",
+    "lib": ["dom", "esnext", "WebWorker"],
+    "importHelpers": true,
+    // output .d.ts declaration files for consumers
+    "declaration": true,
+    // output .js.map sourcemap files for consumers
+    "sourceMap": true,
+    // stricter type-checking for stronger correctness. Recommended by TS
+    "strict": false,
+    "noImplicitAny": false,
+    // linter checks for common issues
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    // noUnused* overlap with @typescript-eslint/no-unused-vars, can disable if duplicative
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    // use Node's module resolution algorithm, instead of the legacy TS one
+    "moduleResolution": "node",
+    // transpile JSX to React.createElement
+    "jsx": "react",
+    // interop between ESM and CJS modules. Recommended by TS
+    "esModuleInterop": true,
+    // significant perf increase by skipping checking .d.ts files, particularly those in node_modules. Recommended by TS
+    "skipLibCheck": true,
+    // error out if import and file system have a casing mismatch. Recommended by TS
+    "forceConsistentCasingInFileNames": true,
+    // `tsdx build` ignores this option, but it is commonly used when type-checking separately with `tsc`
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true
+  }
+}

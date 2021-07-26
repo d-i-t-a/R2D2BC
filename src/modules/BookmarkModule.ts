@@ -236,7 +236,10 @@ export default class BookmarkModule implements ReaderModule {
         !(await this.annotator.locatorExists(bookmark, AnnotationType.Bookmark))
       ) {
         if (this.api?.addBookmark) {
-          await this.api.addBookmark(bookmark);
+          const result = await this.api.addBookmark(bookmark);
+          if (result) {
+            bookmark = result;
+          }
           if (IS_DEV) console.log(bookmark);
           let saved = await this.annotator.saveBookmark(bookmark);
 

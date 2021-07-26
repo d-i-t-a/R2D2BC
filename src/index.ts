@@ -561,7 +561,7 @@ exports.snapToElement = function (value) {
   snapToElement(value);
 };
 export async function load(config: ReaderConfig): Promise<any> {
-  if (config.rights.enableContentProtection) {
+  if (config.rights?.enableContentProtection) {
     await ContentProtectionModule.setupPreloadProtection(config.protection);
   }
 

@@ -59,7 +59,7 @@ export async function unload() {
   if (IS_DEV) {
     console.log("unload reader");
   }
-  document.body.onscroll = () => { };
+  document.body.onscroll = () => {};
   await D2Navigator.stop();
   await D2Settings.stop();
   if (D2Navigator.rights?.enableTTS) {
@@ -570,12 +570,12 @@ export async function load(config: ReaderConfig): Promise<any> {
 
   let footerMenu = document.getElementById("footerMenu");
   let webpubManifestUrl = config.url;
-  
+
   let store = new LocalStorageStore({
     prefix: webpubManifestUrl.href,
     useLocalStorage: config.useLocalStorage,
   });
-  
+
   let settingsStore = new LocalStorageStore({
     prefix: "r2d2bc-reader",
     useLocalStorage: config.useLocalStorage,
@@ -618,9 +618,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     let weight = {};
     await Promise.all(
       publication.readingOrder.map(async (link) => {
-        if (
-          (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-        ) {
+        if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
           const locator: Locator = {
             href: link.Href,
             locations: {

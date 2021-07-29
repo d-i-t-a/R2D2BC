@@ -21,7 +21,7 @@
 <html lang="en">
 
 <head>
-    <title>D2 Reader</title>
+    <title>Dita Reader</title>
     <meta charset="utf-8" />
     <meta name="author" content="Aferdita Muriqi" />
     <meta name="description" content="A viewer application for EPUB files." />
@@ -69,7 +69,7 @@
                 </nav>
             </div>
             <ul id="sidenav-left" class="sidenav">
-                <li><a href="#" class="logo-container ">D2 Reader<i class="material-icons  left" style="margin-right: 15px">
+                <li><a href="#" class="logo-container ">Dita Reader<i class="material-icons  left" style="margin-right: 15px">
                             import_contacts
                         </i><i class="material-icons right  editAnnotations" id="expand-menu">unfold_more</i></a></li>
                 <li class="no-padding ">
@@ -595,6 +595,11 @@ height: 50px;
             //     positions: new URL("https://alice.dita.digital/positions.json"),
             //     weight: new URL("https://alice.dita.digital/weight.json"),
             // },
+            sample: {
+                isSampleRead: true,
+                limit: 10, // in percent e.g. 5%
+                popup: "You can borrow the book to continue reading."
+            },
             mediaOverlays: {
                 autoScroll: true,
                 autoTurn: true,

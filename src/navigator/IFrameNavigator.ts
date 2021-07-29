@@ -115,10 +115,16 @@ export interface IFrameNavigatorConfig {
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;
   services: PublicationServices;
+  sample?: SampleRead;
 }
 export interface PublicationServices {
   positions?: URL;
   weight?: URL;
+}
+export interface SampleRead {
+  isSampleRead?: boolean;
+  limit?: number;
+  popup?: string;
 }
 export interface Injectable {
   type: string;
@@ -172,6 +178,7 @@ export interface ReaderConfig {
   useLocalStorage?: boolean;
   attributes?: IFrameAttributes;
   services?: PublicationServices;
+  sample?: SampleRead;
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -261,6 +268,7 @@ export default class IFrameNavigator implements Navigator {
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;
   services: PublicationServices;
+  sample: SampleRead;
 
   public static async create(config: IFrameNavigatorConfig): Promise<any> {
     const navigator = new this(
@@ -278,7 +286,8 @@ export default class IFrameNavigator implements Navigator {
       config.tts,
       config.injectables,
       config.attributes || { margin: 0 },
-      config.services
+      config.services,
+      config.sample
     );
 
     await navigator.start(
@@ -304,7 +313,8 @@ export default class IFrameNavigator implements Navigator {
     tts: TTSModuleConfig,
     injectables: Array<Injectable>,
     attributes: IFrameAttributes,
-    services: PublicationServices
+    services: PublicationServices,
+    sample: SampleRead
   ) {
     this.settings = settings;
     this.annotator = annotator;
@@ -325,6 +335,7 @@ export default class IFrameNavigator implements Navigator {
     this.injectables = injectables;
     this.attributes = attributes || { margin: 0 };
     this.services = services;
+    this.sample = sample;
   }
 
   async stop() {
@@ -3231,6 +3242,37 @@ export default class IFrameNavigator implements Navigator {
     }, 150);
   }
 
+  visible = false;
+  enforceSampleRead = debounce((position) => {
+    let progress = Math.round(position.locations.totalProgression * 100);
+    let valid = progress <= this.sample.limit;
+    console.log(
+      "Current % " +
+        progress +
+        " allowed % " +
+        this.sample.limit +
+        "  sample still good " +
+        valid
+    );
+    let popup = document.createElement("div");
+    if (!valid) {
+      popup.style.display = "block";
+      popup.style.position = "absolute";
+      popup.style.height = "100vh%";
+      popup.style.width = "100%";
+      popup.innerHTML = this.sample.popup;
+      if (this.errorMessage) {
+        this.errorMessage.style.display = "block";
+        this.errorMessage.innerHTML = this.sample.popup;
+      }
+    } else {
+      popup.style.display = "none";
+      if (this.errorMessage) {
+        this.errorMessage.style.display = "none";
+      }
+    }
+  }, 300);
+
   private async saveCurrentReadingPosition(): Promise<void> {
     if (this.annotator) {
       var tocItem = this.publication.getTOCItem(this.currentChapterLink.href);
@@ -3284,6 +3326,10 @@ export default class IFrameNavigator implements Navigator {
           type: this.currentChapterLink.type,
           title: this.currentChapterLink.title,
         };
+      }
+
+      if (this.sample.isSampleRead) {
+        this.enforceSampleRead(position);
       }
 
       if (this.api?.updateCurrentLocation) {

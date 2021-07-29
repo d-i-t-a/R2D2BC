@@ -22,18 +22,53 @@ import { Link } from "./Link";
 import { Publication as R2Publication } from "r2-shared-js/dist/es6-es2015/src/models/publication";
 import { Link as R2Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
 import { JsonObject } from "ta-json-x";
+import { SampleRead } from "../navigator/IFrameNavigator";
 
 @JsonObject()
 export class Publication extends R2Publication {
   manifestUrl: URL;
   public positions: Array<Locator>;
 
+  sample: SampleRead;
   get readingOrder() {
     return this.Spine;
   }
   get tableOfContents() {
+    if (this.sample.isSampleRead) {
+      return this.limitedTOC();
+    }
     return this.TOC;
   }
+
+  private limitedTOC() {
+    function disableChildren(item) {
+      for (let index = 0; index < item.Children.length; index++) {
+        let child = item.Children[index];
+        child.Href = undefined;
+        if (child.Children) {
+          disableChildren(child);
+        }
+      }
+    }
+
+    let toc = this.TOC.map((item) => {
+      if (item.Href) {
+        const positions = this.positionsByHref(this.getRelativeHref(item.Href));
+        const locator = positions[0];
+        let progress = Math.round(locator.locations.totalProgression * 100);
+        let valid = progress <= this.sample.limit;
+        if (!valid) {
+          item.Href = undefined;
+          if (item.Children) {
+            disableChildren(item);
+          }
+        }
+      }
+      return item;
+    });
+    return toc;
+  }
+
   get landmarks() {
     return this.Landmarks;
   }

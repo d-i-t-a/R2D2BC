@@ -905,7 +905,7 @@ export default class ContentProtectionModule implements ReaderModule {
       const { top, height, left, width } = this.measureTextNode(node);
       const scrambled =
         node.parentElement.nodeName === "option" ||
-          node.parentElement.nodeName === "script"
+        node.parentElement.nodeName === "script"
           ? node.textContent
           : this.obfuscateText(node.textContent);
       return {

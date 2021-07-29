@@ -857,12 +857,12 @@ export default class IFrameNavigator implements Navigator {
     addEventListenerOptional(
       this.previousChapterAnchorElement,
       "click",
-      this.handlePreviousChapterClick.bind(this)
+      this.handlePreviousPageClick.bind(this)
     );
     addEventListenerOptional(
       this.nextChapterAnchorElement,
       "click",
-      this.handleNextChapterClick.bind(this)
+      this.handleNextPageClick.bind(this)
     );
 
     addEventListenerOptional(

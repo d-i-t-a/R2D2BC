@@ -70,14 +70,16 @@ const _getCssSelectorOptions = {
   },
 };
 
-const getCssSelector_ = (doc: Document) => (element: Element): string => {
-  try {
-    return uniqueCssSelector(element, doc, _getCssSelectorOptions);
-  } catch (err) {
-    console.error("uniqueCssSelector:", err);
-    return "";
-  }
-};
+const getCssSelector_ =
+  (doc: Document) =>
+  (element: Element): string => {
+    try {
+      return uniqueCssSelector(element, doc, _getCssSelectorOptions);
+    } catch (err) {
+      console.error("uniqueCssSelector:", err);
+      return "";
+    }
+  };
 
 export async function searchDocDomSeek(
   searchInput: string,

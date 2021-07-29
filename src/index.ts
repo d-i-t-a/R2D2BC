@@ -616,8 +616,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     let totalContentLength = 0;
     let positions = [];
     let weight = {};
-    await Promise.all(
-      publication.readingOrder.map(async (link) => {
+    for (const link of publication.readingOrder) {
         if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
           const locator: Locator = {
             href: link.Href,
@@ -653,8 +652,8 @@ export async function load(config: ReaderConfig): Promise<any> {
           });
           startPosition = startPosition + positionCount;
         }
-      })
-    );
+    }
+
     if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
       publication.readingOrder.map(async (link) => {
         if (IS_DEV) console.log(totalContentLength);

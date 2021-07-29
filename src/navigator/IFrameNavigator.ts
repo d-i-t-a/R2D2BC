@@ -95,6 +95,7 @@ export interface IFrameAttributes {
   navHeight?: number;
   iframePaddingTop?: number;
   bottomInfoHeight?: number;
+  sideNavPosition?: "left" | "right";
 }
 export interface IFrameNavigatorConfig {
   mainElement: HTMLElement;
@@ -723,7 +724,7 @@ export default class IFrameNavigator implements Navigator {
         let elements = document.querySelectorAll(".sidenav");
         if (elements) {
           self.mSidenav = Sidenav.init(elements, {
-            edge: "left",
+            edge: this.attributes?.sideNavPosition ?? "left",
           });
         }
         let collapsible = document.querySelectorAll(".collapsible");

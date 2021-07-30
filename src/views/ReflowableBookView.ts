@@ -169,9 +169,14 @@ export default class ReflowableBookView implements BookView {
   }
 
   getCurrentPosition(): number {
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
+
     if (this.isScrollMode()) {
       return (
-        document.scrollingElement.scrollTop /
+        wrapper.scrollTop /
         this.iframe.contentDocument.scrollingElement.scrollHeight
       );
     } else {
@@ -184,8 +189,12 @@ export default class ReflowableBookView implements BookView {
   }
 
   goToPosition(position: number): void {
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
     if (this.isScrollMode()) {
-      document.scrollingElement.scrollTop =
+      wrapper.scrollTop =
         this.iframe.contentDocument.scrollingElement.scrollHeight * position;
     } else {
       // If the window has changed size since the columns were set up,
@@ -256,10 +265,15 @@ export default class ReflowableBookView implements BookView {
   }
 
   goToElement(element: HTMLElement | null, relative?: boolean): void {
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
+
     if (this.isScrollMode()) {
       if (element) {
         // Put the element as close to the top as possible.
-        document.scrollingElement.scrollTop = element.offsetTop;
+        wrapper.scrollTop = element.offsetTop;
       }
     } else {
       if (element) {
@@ -297,7 +311,12 @@ export default class ReflowableBookView implements BookView {
   // at top in scrollmode
   atStart(): boolean {
     if (this.isScrollMode()) {
-      return document.scrollingElement.scrollTop === 0;
+      const wrapper = HTMLUtilities.findRequiredElement(
+        document,
+        "#iframe-wrapper"
+      ) as HTMLDivElement;
+
+      return wrapper.scrollTop === 0;
     } else {
       const leftWidth = this.getLeftColumnsWidth();
       return leftWidth <= 0;
@@ -307,10 +326,14 @@ export default class ReflowableBookView implements BookView {
   // at bottom in scrollmode
   atEnd(): boolean {
     if (this.isScrollMode()) {
+      const wrapper = HTMLUtilities.findRequiredElement(
+        document,
+        "#iframe-wrapper"
+      ) as HTMLDivElement;
       return (
         Math.ceil(
           this.iframe.contentDocument.scrollingElement.scrollHeight -
-            document.scrollingElement.scrollTop
+            wrapper.scrollTop
         ) -
           1 <=
         BrowserUtilities.getHeight()
@@ -323,14 +346,19 @@ export default class ReflowableBookView implements BookView {
   }
 
   goToPreviousPage(): void {
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
+
     if (this.isScrollMode()) {
-      const leftHeight = document.scrollingElement.scrollTop;
+      const leftHeight = wrapper.scrollTop;
       const height = this.getScreenHeight();
       const offset = leftHeight - height;
       if (offset >= 0) {
-        document.scrollingElement.scrollTop = offset;
+        wrapper.scrollTop = offset;
       } else {
-        document.scrollingElement.scrollTop = 0;
+        wrapper.scrollTop = 0;
       }
     } else {
       const leftWidth = this.getLeftColumnsWidth();
@@ -349,22 +377,27 @@ export default class ReflowableBookView implements BookView {
   }
 
   goToNextPage(): void {
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
+
     if (this.isScrollMode()) {
-      const leftHeight = document.scrollingElement.scrollTop;
+      const leftHeight = wrapper.scrollTop;
       const height = this.getScreenHeight();
-      const scrollHeight =
-        this.iframe.contentDocument.scrollingElement.scrollHeight;
+      const scrollHeight = this.iframe.contentDocument.scrollingElement
+        .scrollHeight;
       const offset = leftHeight + height;
       if (offset < scrollHeight) {
-        document.scrollingElement.scrollTop = offset;
+        wrapper.scrollTop = offset;
       } else {
-        document.scrollingElement.scrollTop = scrollHeight;
+        wrapper.scrollTop = scrollHeight;
       }
     } else {
       const leftWidth = this.getLeftColumnsWidth();
       const width = this.getColumnWidth();
-      const scrollWidth =
-        this.iframe.contentDocument.scrollingElement.scrollWidth;
+      const scrollWidth = this.iframe.contentDocument.scrollingElement
+        .scrollWidth;
       const offset = leftWidth + width;
       if (offset < scrollWidth) {
         this.setLeftColumnsWidth(offset);
@@ -438,10 +471,12 @@ export default class ReflowableBookView implements BookView {
 
   // scrolling functions
 
-  private getScreenHeight(): number {
-    const windowTop = window.scrollY;
-    const windowBottom = windowTop + window.innerHeight;
-    return windowBottom - windowTop - 40 - this.attributes.margin;
+  getScreenHeight(): number {
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
+    return wrapper.clientHeight;
   }
 
   setIframeHeight(iframe: any) {
@@ -451,7 +486,7 @@ export default class ReflowableBookView implements BookView {
           iframe.contentWindow || iframe.contentDocument.parentWindow;
         if (iframeWin.document.body) {
           const minHeight =
-            BrowserUtilities.getHeight() - 40 - this.attributes.margin;
+            BrowserUtilities.getHeight() - this.attributes.margin;
           const bodyHeight =
             iframeWin.document.documentElement.scrollHeight ||
             iframeWin.document.body.scrollHeight;
@@ -536,8 +571,8 @@ export default class ReflowableBookView implements BookView {
   /** Returns the total width of the columns that are currently
      positioned to the right of the iframe viewport. */
   private getRightColumnsWidth(): number {
-    const scrollWidth =
-      this.iframe.contentDocument.scrollingElement.scrollWidth;
+    const scrollWidth = this.iframe.contentDocument.scrollingElement
+      .scrollWidth;
     const width = this.getColumnWidth();
     let rightWidth = scrollWidth - width;
     if (this.hasFixedScrollWidth) {

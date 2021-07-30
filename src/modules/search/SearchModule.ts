@@ -18,7 +18,7 @@
  */
 
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { Publication } from "../../model/Publication";
+import Publication from "../../model/Publication";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import ReaderModule from "../ReaderModule";
 import {
@@ -26,19 +26,19 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { Locator, Locations } from "../../model/Locator";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import TextHighlighter from "../highlight/TextHighlighter";
 
 export interface SearchModuleAPI {}
 
 export interface SearchModuleProperties {
-  color: string;
-  current: string;
+  color?: string;
+  current?: string;
 }
 
 export interface SearchModuleConfig extends SearchModuleProperties {
-  api: SearchModuleAPI;
+  api?: SearchModuleAPI;
   publication: Publication;
   headerMenu: HTMLElement;
   delegate: IFrameNavigator;
@@ -366,7 +366,7 @@ export default class SearchModule implements ReaderModule {
       this.delegate.annotationModule.drawHighlights();
     }
   }
-  async search(term: any, current: boolean): Promise<any> {
+  async search(term: string, current: boolean): Promise<any> {
     this.currentChapterSearchResult = [];
     this.currentHighlights = [];
     this.bookSearchResult = [];
@@ -383,7 +383,7 @@ export default class SearchModule implements ReaderModule {
       return book;
     }
   }
-  async goToSearchID(href: any, index: number, current: boolean) {
+  async goToSearchID(href: string, index: number, current: boolean) {
     var filteredIndex = index;
     var item;
     let currentLocation = this.delegate.currentChapterLink.href;
@@ -435,7 +435,7 @@ export default class SearchModule implements ReaderModule {
     }
   }
 
-  async goToSearchIndex(href: any, index: number, current: boolean) {
+  async goToSearchIndex(href: string, index: number, current: boolean) {
     var filteredIndex = index;
     var item;
     let currentLocation = this.delegate.currentChapterLink.href;

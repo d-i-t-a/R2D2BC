@@ -22,13 +22,29 @@ import { Link } from "./Link";
 import { Publication as R2Publication } from "r2-shared-js/dist/es6-es2015/src/models/publication";
 import { Link as R2Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
 import { JsonObject } from "ta-json-x";
+import { TaJsonDeserialize } from "../utils/JsonUtil";
+import { GetContentBytesLength } from "../navigator/IFrameNavigator";
 
 @JsonObject()
-export class Publication extends R2Publication {
+export default class Publication extends R2Publication {
   manifestUrl: URL;
+
   public positions: Array<Locator>;
 
-  get readingOrder() {
+  /**
+   * Initialize a publication from a manifest URL
+   */
+  static async fromUrl(url: URL): Promise<Publication> {
+    const response = await fetch(url.href, {
+      credentials: "same-origin",
+    });
+    const manifestJSON = await response.json();
+    let publication = TaJsonDeserialize<Publication>(manifestJSON, Publication);
+    publication.manifestUrl = url;
+    return publication;
+  }
+
+  get readingOrder(): Link[] | undefined {
     return this.Spine;
   }
   get tableOfContents() {
@@ -39,6 +55,21 @@ export class Publication extends R2Publication {
   }
   get pageList() {
     return this.PageList;
+  }
+  get isFixedLayout() {
+    return this.Metadata.Rendition?.Layout === "fixed";
+  }
+  get isReflowable() {
+    return !this.isFixedLayout;
+  }
+  get layout(): "fixed" | "reflowable" {
+    return this.isFixedLayout ? "fixed" : "reflowable";
+  }
+  get hasMediaOverlays(): boolean {
+    return this.readingOrder
+      ? this.readingOrder.filter((el: Link) => el.Properties?.MediaOverlay)
+          .length > 0
+      : false;
   }
 
   public getStartLink(): Link | null {
@@ -79,16 +110,16 @@ export class Publication extends R2Publication {
     );
   }
 
-  public getAbsoluteHref(href: string): string | null {
+  public getAbsoluteHref(href: string): string {
     return new URL(href, this.manifestUrl.href).href;
   }
   public getRelativeHref(href: string): string | null {
     const manifest = this.manifestUrl.href.replace("/manifest.json", ""); //new URL(this.manifestUrl.href, this.manifestUrl.href).href;
-    var href = href.replace(manifest, "");
-    if (href.charAt(0) === "/") {
-      href = href.substring(1);
+    const hrefWithoutRoot = href.replace(manifest, "");
+    if (hrefWithoutRoot.charAt(0) === "/") {
+      return hrefWithoutRoot.substring(1);
     }
-    return href;
+    return hrefWithoutRoot;
   }
 
   public getTOCItemAbsolute(href: string): Link | null {
@@ -166,10 +197,126 @@ export class Publication extends R2Publication {
       : undefined;
   }
 
-  get hasMediaOverlays(): boolean {
-    return this.readingOrder
-      ? this.readingOrder.filter((el: Link) => el.Properties?.MediaOverlay)
-          .length > 0
-      : false;
+  /**
+   * Fetches the contents to build up the positions manually,
+   * at least for fluid layout pubs
+   */
+  async autoGeneratePositions(
+    // allows passing in custom login to get length of resource, but defaults
+    // to fetching the resource
+    getContentBytesLength: GetContentBytesLength = fetchContentBytesLength
+  ) {
+    let startPosition = 0;
+    let totalContentLength = 0;
+    const positions: Locator[] = [];
+
+    /**
+     * For each item in the reading order, get its length and calculate
+     * the number of positions in it, then add them all up into the totals.
+     */
+    for (const link of this.readingOrder) {
+      // if it is fixed layout, there is no need to fetch, each item is
+      // just a single page.
+      if (this.isFixedLayout) {
+        const locator: Locator = {
+          href: link.Href,
+          locations: {
+            progression: 0,
+            position: startPosition + 1,
+          },
+          type: link.TypeLink,
+        };
+        positions.push(locator);
+        startPosition = startPosition + 1;
+      } else {
+        let href = this.getAbsoluteHref(link.Href);
+        let length = await getContentBytesLength(href);
+        link.contentLength = length;
+        totalContentLength += length;
+        let positionLength = 1024;
+        let positionCount = Math.max(1, Math.ceil(length / positionLength));
+        // create a locator for every position and push it into the positions array
+        for (let position = 0; position < positionCount; position++) {
+          const locator: Locator = {
+            href: link.Href,
+            locations: {
+              progression: position / positionCount,
+              position: startPosition + (position + 1),
+            },
+            type: link.TypeLink,
+          };
+          positions.push(locator);
+        }
+        startPosition = startPosition + positionCount;
+      }
+    }
+
+    // update the link.contentWeight to be a portion of the total and
+    // build up a map of link weights for non fixed layout publications
+    var totalweight = 0;
+    if (this.isReflowable) {
+      for (const link of this.readingOrder) {
+        // bail out if the link is missing it's content length somehow
+        if (!link.contentLength) {
+          console.error("Link is missing contentLength", link);
+          return;
+        }
+        // I (Kristo) don't totally know what this formula is saying...
+        link.contentWeight = (100 / totalContentLength) * link.contentLength;
+        totalweight = totalweight + link.contentWeight;
+      }
+    }
+
+    // Once you have all the positions, you can update all the progressions and total progressions and remaining.
+    for (const locator of positions) {
+      const resource = positions.filter(
+        (el: Locator) => el.href === decodeURI(locator.href)
+      );
+      const positionIndex = Math.ceil(
+        locator.locations.progression * (resource.length - 1)
+      );
+      locator.locations.totalProgression =
+        (locator.locations.position - 1) / positions.length;
+      locator.locations.remainingPositions = Math.abs(
+        positionIndex - (resource.length - 1)
+      );
+      locator.locations.totalRemainingPositions = Math.abs(
+        locator.locations.position - 1 - (positions.length - 1)
+      );
+    }
+
+    this.positions = positions;
+  }
+
+  /**
+   * Fetches the positions from a given service href
+   */
+  async fetchPositionsFromService(href: string) {
+    const result = await fetch(href);
+    const content = await result.json();
+    this.positions = content.positions;
+  }
+
+  /**
+   * Fetches weights from a given service href
+   */
+  async fetchWeightsFromService(href: string) {
+    if (this.isFixedLayout) {
+      console.warn(
+        "Not fetching weights from service for fixed layout publication."
+      );
+      return;
+    }
+    const result = await fetch(href);
+    const weights = await result.json();
+    this.readingOrder.forEach((link) => {
+      (link as Link).contentWeight = weights[link.Href];
+    });
   }
 }
+
+const fetchContentBytesLength = async (href: string): Promise<number> => {
+  const r = await fetch(href);
+  const b = await r.blob();
+  return b.size;
+};

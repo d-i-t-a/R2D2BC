@@ -1,3 +1,4 @@
+import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 /*
  * Copyright 2018-2020 DITA (AM Consulting LLC)
  *
@@ -17,14 +18,27 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
+import { ReaderConfig } from "../navigator/IFrameNavigator";
+import * as HTMLUtilities from "./HTMLUtilities";
+
 /** Returns the current width of the document. */
 export function getWidth(): number {
-  return document.documentElement.clientWidth;
+  const wrapper = HTMLUtilities.findRequiredElement(
+    document,
+    "#iframe-wrapper"
+  ) as HTMLDivElement;
+
+  return wrapper.clientWidth;
 }
 
 /** Returns the current height of the document. */
 export function getHeight(): number {
-  return document.documentElement.clientHeight;
+  const wrapper = HTMLUtilities.findRequiredElement(
+    document,
+    "#iframe-wrapper"
+  ) as HTMLDivElement;
+
+  return wrapper.clientHeight;
 }
 
 /** Returns true if the browser is zoomed in with pinch-to-zoom on mobile. */

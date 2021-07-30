@@ -31,7 +31,6 @@
     <!-- R2 Reader CSS -->
     <link rel="stylesheet" href="reader.css" />
 
-    <script> var exports = {}; </script>
     <script src="reader.js"></script>
 
 </head>
@@ -39,18 +38,18 @@
 <body>
     <div style="position:fixed;top:0;left:0;z-index: 1000;bottom: 0; overflow: scroll;">
 
-        <button onclick="javascript:D2Reader.previousResource()">previous resource</button><br>
-        <button onclick="javascript:D2Reader.nextResource()">next resource</button><br>
-        <button onclick="javascript:D2Reader.previousPage()">previous page</button><br>
-        <button onclick="javascript:D2Reader.nextPage()">next page</button><br>
-        <button onclick="javascript:D2Reader.scroll(true)">scroll</button><br>
-        <button onclick="javascript:D2Reader.scroll(false)">paginated</button><br>
+        <button onclick="javascript:d2reader.previousResource()">previous resource</button><br>
+        <button onclick="javascript:d2reader.nextResource()">next resource</button><br>
+        <button onclick="javascript:d2reader.previousPage()">previous page</button><br>
+        <button onclick="javascript:d2reader.nextPage()">next page</button><br>
+        <button onclick="javascript:d2reader.scroll(true)">scroll</button><br>
+        <button onclick="javascript:d2reader.scroll(false)">paginated</button><br>
 
     </div>
 
     <div class="content" id="root">
-        <div id="D2Reader-Container" style="width: 100%; height: 100%; position: relative;">
-            <main style="overflow: hidden" tabindex=-1 id="iframe-wrapper">
+        <div id="D2Reader-Container" style="border: solid 5px rebeccapurple">
+            <main style="height: calc(100vh - 10px)" tabindex=-1 id="iframe-wrapper">
                 <div id="reader-loading" class="loading"></div>
                 <div id="reader-error" class="error"></div>
             </main>
@@ -83,10 +82,12 @@
 
 
         var urlParams = getURLQueryParams();
-
-        D2Reader.load({
+        let d2reader = undefined;
+        D2Reader.build({
             url: new URL(urlParams['url']),
             injectables: injectables,
+        }).then(instance => {
+            d2reader = instance
         });
 
     </script>

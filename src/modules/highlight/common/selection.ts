@@ -17,7 +17,7 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../../..";
+import { IS_DEV } from "../../../utils";
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Selection
 // https://developer.mozilla.org/en-US/docs/Web/API/Range

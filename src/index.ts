@@ -40,11 +40,12 @@ export default class D2Reader {
     readonly contentProtectionModule?: ContentProtectionModule,
     readonly timelineModule?: TimelineModule
   ) {}
+
   /**
    * The async builder.
    */
   static async build(initialConfig: ReaderConfig): Promise<D2Reader> {
-    // will throw error if on unsupported browser
+    // Enforces supported browsers
     if (
       initialConfig.rights?.enableContentProtection &&
       initialConfig.protection
@@ -376,7 +377,7 @@ export default class D2Reader {
 
   /**
    * Publisher?
-   * // disabled
+   * Disabled
    */
   // publisher = (on) => {
   //   this.settings.publisher(on);
@@ -476,6 +477,7 @@ function updateConfig(
   // Some settings must be disabled for fixed-layout publications
   // maybe we should warn the user we are disabling them here.
   if (publication.isFixedLayout) {
+    if (!config.rights) config.rights = {};
     config.rights.enableAnnotations = false;
     config.rights.enableSearch = false;
     config.rights.enableTTS = false;

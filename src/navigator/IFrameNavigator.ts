@@ -1001,7 +1001,6 @@ export default class IFrameNavigator implements Navigator {
     }
   }
   isScrolling: boolean;
-
   private updateBookView(): void {
     if (this.view.layout === "fixed") {
       if (this.nextPageAnchorElement)
@@ -1581,6 +1580,7 @@ export default class IFrameNavigator implements Navigator {
             this.touchEventHandler.setupEvents(iframe.contentDocument);
             this.keyboardEventHandler.setupEvents(iframe.contentDocument);
           }
+          this.touchEventHandler.setupEvents(this.errorMessage);
           this.keyboardEventHandler.delegate = this;
           this.keyboardEventHandler.keydown(document);
         }
@@ -2522,20 +2522,29 @@ export default class IFrameNavigator implements Navigator {
   }
 
   private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
-    this.stopReadAloud(true);
-    if (this.view.layout === "fixed") {
-      this.handleNextChapterClick(event);
-    } else {
-      if (this.view.atEnd()) {
+    let valid = true;
+    if (this.sample.isSampleRead) {
+      const locator = this.currentLocator();
+      let progress = Math.round(locator.locations.totalProgression * 100);
+      valid = progress <= this.sample.limit;
+    }
+
+    if ((valid && this.sample.isSampleRead) || !this.sample.isSampleRead) {
+      this.stopReadAloud(true);
+      if (this.view.layout === "fixed") {
         this.handleNextChapterClick(event);
       } else {
-        this.view.goToNextPage();
-        this.updatePositionInfo();
-        this.saveCurrentReadingPosition();
-      }
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
+        if (this.view.atEnd()) {
+          this.handleNextChapterClick(event);
+        } else {
+          this.view.goToNextPage();
+          this.updatePositionInfo();
+          this.saveCurrentReadingPosition();
+        }
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
       }
     }
   }
@@ -3243,10 +3252,114 @@ export default class IFrameNavigator implements Navigator {
     }, 150);
   }
 
-  visible = false;
   enforceSampleRead = debounce((position) => {
     let progress = Math.round(position.locations.totalProgression * 100);
     let valid = progress <= this.sample.limit;
+
+    // left: 37, up: 38, right: 39, down: 40,
+    // spacebar: 32, pageup: 33, pagedown: 34, end: 35, home: 36
+    let keys = {
+      37: 1,
+      38: 0,
+      39: 1,
+      40: 1,
+      32: 1,
+      33: 1,
+      34: 1,
+      35: 1,
+      36: 1,
+    };
+
+    function preventDefault(e) {
+      e.preventDefault();
+    }
+
+    function preventDefaultForScrollKeys(e) {
+      console.log(e.keyCode);
+      console.log(keys[e.keyCode]);
+      console.log(valid);
+      if (keys[e.keyCode] && !valid) {
+        preventDefault(e);
+      }
+    }
+
+    // modern Chrome requires { passive: false } when adding event
+    let supportsPassive = false;
+    try {
+      window.addEventListener(
+        "test",
+        null,
+        Object.defineProperty({}, "passive", {
+          get: function () {
+            supportsPassive = true;
+          },
+        })
+      );
+    } catch (e) {}
+
+    let wheelOpt = supportsPassive ? { passive: false } : false;
+    // let wheelEvent =
+    //   "onwheel" in document.createElement("div") ? "wheel" : "mousewheel";
+
+    function MouseWheelHandler(e) {
+      // cross-browser wheel delta
+      e = e || window.event; // old IE support
+      let delta = Math.max(-1, Math.min(1, e.wheelDelta || -e.detail));
+
+      if (delta == 1) {
+        // move up
+      }
+      if (delta == -1 && !valid) {
+        // move down
+        e.preventDefault();
+        // e.stopPropagation();
+        return false;
+      }
+      return false;
+    }
+
+    let lastY;
+
+    function TouchMoveHandler(e) {
+      e = e || window.event;
+      let target = e.target || e.srcElement;
+
+      let currentY = e.touches[0].clientY;
+      if (currentY > lastY) {
+        // move up
+      } else if (currentY < lastY && !valid) {
+        // move down
+        if (!target.className.match(/\baltNav\b/)) {
+          e.returnValue = false;
+          if (e.cancelable) {
+            e.cancelBubble = true;
+          }
+          if (e.preventDefault && e.cancelable) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+        return false;
+      }
+      lastY = currentY;
+      return false;
+    }
+    function TouchStartHandler(e) {
+      e = e || window.event;
+      lastY = e.touches[0].clientY;
+      return false;
+    }
+
+    // IE9, Chrome, Safari, Opera
+    console.log("add sample event handlers");
+    window.addEventListener("mousewheel", MouseWheelHandler, wheelOpt);
+    // Firefox
+    window.addEventListener("DOMMouseScroll", MouseWheelHandler, wheelOpt);
+    // window.addEventListener(wheelEvent, preventDefault, wheelOpt); // modern desktop
+    window.addEventListener("keydown", preventDefaultForScrollKeys, wheelOpt);
+    window.addEventListener("touchmove", TouchMoveHandler, wheelOpt);
+    window.addEventListener("touchstart", TouchStartHandler, wheelOpt);
+
     console.log(
       "Current % " +
         progress +
@@ -3255,19 +3368,15 @@ export default class IFrameNavigator implements Navigator {
         "  sample still good " +
         valid
     );
-    let popup = document.createElement("div");
+
     if (!valid) {
-      popup.style.display = "block";
-      popup.style.position = "absolute";
-      popup.style.height = "100vh%";
-      popup.style.width = "100%";
-      popup.innerHTML = this.sample.popup;
+      this.iframes[0].blur();
       if (this.errorMessage) {
         this.errorMessage.style.display = "block";
         this.errorMessage.innerHTML = this.sample.popup;
       }
     } else {
-      popup.style.display = "none";
+      this.iframes[0].focus();
       if (this.errorMessage) {
         this.errorMessage.style.display = "none";
       }

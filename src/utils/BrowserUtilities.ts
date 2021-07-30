@@ -1,3 +1,4 @@
+import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 /*
  * Copyright 2018-2020 DITA (AM Consulting LLC)
  *

@@ -14,3 +14,5 @@ viewer/index.js.map
 settings.json
 .DS_Store
 yarn.lock
+.parcel-cache
+parcel-dist

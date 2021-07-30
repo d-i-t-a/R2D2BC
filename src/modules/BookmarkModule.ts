@@ -20,12 +20,12 @@
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
 import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
-import { Publication } from "../model/Publication";
+import Publication from "../model/Publication";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { icons as IconLib } from "../utils/IconLib";
 import { Bookmark, Locator } from "../model/Locator";
-import { IS_DEV } from "..";
+import { IS_DEV } from "../utils";
 import { toast } from "materialize-css";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
@@ -45,8 +45,8 @@ export interface BookmarkModuleConfig {
   publication: Publication;
   delegate: IFrameNavigator;
   initialAnnotations?: any;
-  properties: BookmarkModuleProperties;
-  api: BookmarkModuleAPI;
+  properties?: BookmarkModuleProperties;
+  api?: BookmarkModuleAPI;
 }
 
 export default class BookmarkModule implements ReaderModule {
@@ -97,7 +97,7 @@ export default class BookmarkModule implements ReaderModule {
     this.api = api;
   }
 
-  async stop() {
+  stop() {
     if (IS_DEV) {
       console.log("Bookmark module stop");
     }
@@ -273,12 +273,8 @@ export default class BookmarkModule implements ReaderModule {
     }
   }
 
-  async getBookmarks(): Promise<any> {
-    let bookmarks: Array<any> = [];
-    if (this.annotator) {
-      bookmarks = (await this.annotator.getBookmarks()) as Array<any>;
-    }
-    return bookmarks;
+  async getBookmarks() {
+    return this.annotator?.getBookmarks();
   }
   public async showBookmarks(): Promise<void> {
     let bookmarks: Array<any> = [];
@@ -354,8 +350,9 @@ export default class BookmarkModule implements ReaderModule {
               if (link.Href && locator.href.endsWith(href)) {
                 let bookmarkItem: HTMLLIElement = document.createElement("li");
                 bookmarkItem.className = "annotation-item";
-                let bookmarkLink: HTMLAnchorElement =
-                  document.createElement("a");
+                let bookmarkLink: HTMLAnchorElement = document.createElement(
+                  "a"
+                );
                 bookmarkLink.setAttribute("href", locator.href);
 
                 if (type === AnnotationType.Bookmark) {
@@ -394,8 +391,9 @@ export default class BookmarkModule implements ReaderModule {
                     self.delegate.rights?.enableMaterial) ||
                   !self.delegate.rights?.enableMaterial
                 ) {
-                  let bookmarkDeleteLink: HTMLElement =
-                    document.createElement("button");
+                  let bookmarkDeleteLink: HTMLElement = document.createElement(
+                    "button"
+                  );
                   bookmarkDeleteLink.className = "delete";
                   bookmarkDeleteLink.innerHTML = IconLib.delete;
 

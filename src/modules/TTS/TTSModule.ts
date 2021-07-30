@@ -18,7 +18,7 @@
  */
 
 import ReaderModule from "../ReaderModule";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { ISelectionInfo } from "../../model/Locator";
 import { TTSSettings, TTSVoice } from "./TTSSettings";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
@@ -51,10 +51,10 @@ export interface TTSModuleProperties {
 export interface TTSModuleConfig extends TTSModuleProperties {
   delegate: IFrameNavigator;
   headerMenu: HTMLElement;
-  rights: ReaderRights;
+  rights?: ReaderRights;
   tts: TTSSettings;
   highlighter: TextHighlighter;
-  api: TTSModuleAPI;
+  api?: TTSModuleAPI;
 }
 
 export default class TTSModule implements ReaderModule {

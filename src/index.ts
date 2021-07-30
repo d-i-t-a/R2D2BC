@@ -616,45 +616,44 @@ export async function load(config: ReaderConfig): Promise<any> {
     let totalContentLength = 0;
     let positions = [];
     let weight = {};
-    await Promise.all(
-      publication.readingOrder.map(async (link) => {
-        if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
+    for (const link of publication.readingOrder) {
+      if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
+        const locator: Locator = {
+          href: link.Href,
+          locations: {
+            progression: 0,
+            position: startPosition + 1,
+          },
+          type: link.TypeLink,
+        };
+        if (IS_DEV) console.log(locator);
+        positions.push(locator);
+        startPosition = startPosition + 1;
+      } else {
+        let href = publication.getAbsoluteHref(link.Href);
+        let length = await getContentBytesLength(href);
+        (link as Link).contentLength = length;
+        totalContentLength += length;
+        let positionLength = 1024;
+        let positionCount = Math.max(1, Math.ceil(length / positionLength));
+        if (IS_DEV) console.log(length + " Bytes");
+        if (IS_DEV) console.log(positionCount + " Positions");
+        Array.from(Array(positionCount).keys()).map((_, position) => {
           const locator: Locator = {
             href: link.Href,
             locations: {
-              progression: 0,
-              position: startPosition + 1,
+              progression: position / positionCount,
+              position: startPosition + (position + 1),
             },
             type: link.TypeLink,
           };
           if (IS_DEV) console.log(locator);
           positions.push(locator);
-          startPosition = startPosition + 1;
-        } else {
-          let href = publication.getAbsoluteHref(link.Href);
-          let length = await getContentBytesLength(href);
-          (link as Link).contentLength = length;
-          totalContentLength += length;
-          let positionLength = 1024;
-          let positionCount = Math.max(1, Math.ceil(length / positionLength));
-          if (IS_DEV) console.log(length + " Bytes");
-          if (IS_DEV) console.log(positionCount + " Positions");
-          Array.from(Array(positionCount).keys()).map((_, position) => {
-            const locator: Locator = {
-              href: link.Href,
-              locations: {
-                progression: position / positionCount,
-                position: startPosition + (position + 1),
-              },
-              type: link.TypeLink,
-            };
-            if (IS_DEV) console.log(locator);
-            positions.push(locator);
-          });
-          startPosition = startPosition + positionCount;
-        }
-      })
-    );
+        });
+        startPosition = startPosition + positionCount;
+      }
+    }
+
     if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
       publication.readingOrder.map(async (link) => {
         if (IS_DEV) console.log(totalContentLength);

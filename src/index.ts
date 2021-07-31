@@ -3,6 +3,8 @@ import { UserSettings } from "./model/user-settings/UserSettings";
 import AnnotationModule from "./modules/AnnotationModule";
 import BookmarkModule from "./modules/BookmarkModule";
 import TextHighlighter from "./modules/highlight/TextHighlighter";
+import MediaOverlayModule from "./modules/mediaoverlays/MediaOverlayModule";
+import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
 import TimelineModule from "./modules/positions/TimelineModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
 import SearchModule from "./modules/search/SearchModule";
@@ -38,7 +40,8 @@ export default class D2Reader {
     readonly ttsModule?: TTSModule,
     readonly searchModule?: SearchModule,
     readonly contentProtectionModule?: ContentProtectionModule,
-    readonly timelineModule?: TimelineModule
+    readonly timelineModule?: TimelineModule,
+    readonly mediaOverlayModule?: MediaOverlayModule
   ) {}
 
   /**
@@ -223,6 +226,26 @@ export default class D2Reader {
         })
       : undefined;
 
+    const enableMediaOverlays = config.rights?.enableMediaOverlays ?? false;
+
+    const mediaOverlaySettings = enableMediaOverlays
+      ? await MediaOverlaySettings.create({
+          store: settingsStore,
+          initialMediaOverlaySettings: config.mediaOverlays,
+          headerMenu: headerMenu,
+          ...config.mediaOverlays,
+        })
+      : undefined;
+
+    const mediaOverlayModule = enableMediaOverlays
+      ? await MediaOverlayModule.create({
+          publication: publication,
+          settings: mediaOverlaySettings,
+          delegate: navigator,
+          ...config.mediaOverlays,
+        })
+      : undefined;
+
     return new D2Reader(
       settings,
       ttsSettings,
@@ -233,7 +256,8 @@ export default class D2Reader {
       ttsModule,
       searchModule,
       contentProtectionModule,
-      timelineModule
+      timelineModule,
+      mediaOverlayModule
     );
   }
 
@@ -467,6 +491,7 @@ export default class D2Reader {
     this.searchModule?.stop();
     this.contentProtectionModule?.stop();
     this.timelineModule?.stop();
+    this.mediaOverlayModule?.stop();
   };
 }
 

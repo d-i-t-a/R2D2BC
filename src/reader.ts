@@ -24,7 +24,10 @@ import AnnotationModule from "./modules/AnnotationModule";
 import BookmarkModule from "./modules/BookmarkModule";
 import TextHighlighter from "./modules/highlight/TextHighlighter";
 import MediaOverlayModule from "./modules/mediaoverlays/MediaOverlayModule";
-import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
+import {
+  MediaOverlaySettings,
+  IMediaOverlayUserSettings,
+} from "./modules/mediaoverlays/MediaOverlaySettings";
 import TimelineModule from "./modules/positions/TimelineModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
 import SearchModule from "./modules/search/SearchModule";
@@ -66,6 +69,7 @@ export default class D2Reader {
     readonly searchModule?: SearchModule,
     readonly contentProtectionModule?: ContentProtectionModule,
     readonly timelineModule?: TimelineModule,
+    readonly mediaOverlaySettings?: MediaOverlaySettings,
     readonly mediaOverlayModule?: MediaOverlayModule
   ) {}
 
@@ -282,6 +286,7 @@ export default class D2Reader {
       searchModule,
       contentProtectionModule,
       timelineModule,
+      mediaOverlaySettings,
       mediaOverlayModule
     );
   }

@@ -57,8 +57,7 @@ export default class D2Reader {
         initialConfig.protection
       );
     }
-
-    const mainElement = findRequiredElement(document, "D2Reader-Container");
+    const mainElement = findRequiredElement(document, "#D2Reader-Container");
     // are the following elements necessary or not? They seem not to be,
     // but we will have to change some types if they are allowed to be null
     const headerMenu = findElement(document, "headerMenu");

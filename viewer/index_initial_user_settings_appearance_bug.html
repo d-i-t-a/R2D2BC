@@ -79,11 +79,16 @@
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
-            { type: 'style', url: '/viewer/custom-css/clusive-reader-theme-sepia.min.css', r2after: true, appearance: 'clusive-sepia'},
+            {type: 'style', systemFont: true, fontFamily: 'Comic Sans MS, sans-serif'}            
         ];
 
         var userSettings = {
-            appearance: 'readium-night-on'
+            // Expected - the reader's initial appearance should use the sepia theme
+            // Actual result - the reader's initial appearance is set to the default 'readium-default-on' theme
+            appearance: 'readium-sepia-on',
+            // Compare - setting initial font family works
+            fontFamily: 'Comic Sans MS, sans-serif'            
+
         };
 
         var urlParams = getURLQueryParams();

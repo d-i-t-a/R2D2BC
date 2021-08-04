@@ -26,6 +26,9 @@ import {
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
 import { IS_DEV } from "../..";
+import { delay } from "../../utils";
+import { addListener, launch } from "devtools-detector";
+import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;
@@ -35,6 +38,7 @@ export interface ContentProtectionModuleProperties {
   disableCopy: boolean;
   detectInspect: boolean;
   clearOnInspect: boolean;
+  detectInspectInitDelay: number;
   disableKeys: boolean;
   disableContextMenu: boolean;
   hideTargetUrl: boolean;
@@ -44,12 +48,12 @@ export interface ContentProtectionModuleProperties {
 
 export interface ContentProtectionModuleConfig
   extends ContentProtectionModuleProperties {
-  delegate: IFrameNavigator;
+  delegate?: IFrameNavigator;
   api: ContentProtectionModuleAPI;
 }
 
 export interface ContentProtectionModuleAPI {
-  inspectDetected: any;
+  inspectDetected: () => void;
 }
 
 interface ContentProtectionRect {
@@ -67,17 +71,27 @@ export default class ContentProtectionModule implements ReaderModule {
   private rects: Array<ContentProtectionRect>;
   private delegate: IFrameNavigator;
   private properties: ContentProtectionModuleProperties;
-  private api: ContentProtectionModuleAPI;
   private hasEventListener: boolean = false;
   private isHacked: boolean = false;
   private securityContainer: HTMLDivElement;
   private mutationObserver: MutationObserver;
 
+  public static async setupPreloadProtection(
+    config: ContentProtectionModuleConfig
+  ): Promise<void> {
+    if (this.isCurrentBrowserSupported(config)) {
+      if (config.detectInspect) {
+        await this.startInspectorProtection(config);
+      }
+    } else {
+      throw new Error("Browser not supported");
+    }
+  }
+
   public static async create(config: ContentProtectionModuleConfig) {
     const security = new this(
       config.delegate,
-      config as ContentProtectionModuleProperties,
-      config.api
+      config as ContentProtectionModuleProperties
     );
     await security.start();
     return security;
@@ -85,12 +99,48 @@ export default class ContentProtectionModule implements ReaderModule {
 
   public constructor(
     delegate: IFrameNavigator,
-    properties: ContentProtectionModuleProperties | null = null,
-    api: ContentProtectionModuleAPI | null = null
+    properties: ContentProtectionModuleProperties | null = null
   ) {
     this.delegate = delegate;
     this.properties = properties;
-    this.api = api;
+  }
+
+  private static async startInspectorProtection(
+    config: Partial<ContentProtectionModuleConfig>
+  ): Promise<void> {
+    const onInspectorOpened = (): void => {
+      if (config.clearOnInspect) {
+        console.clear();
+        window.localStorage.clear();
+        window.sessionStorage.clear();
+        window.location.replace(window.location.origin);
+      }
+      if (typeof config.api?.inspectDetected === "function") {
+        config.api.inspectDetected();
+      }
+    };
+    addListener(onInspectorOpened);
+    launch();
+    await delay(config.detectInspectInitDelay ?? 50);
+  }
+
+  private static isCurrentBrowserSupported(
+    config: ContentProtectionModuleConfig
+  ): boolean {
+    if (!config.enforceSupportedBrowsers) {
+      return true;
+    }
+    let browsers: string[] = [];
+
+    (config.supportedBrowsers ?? []).forEach((browser: string) => {
+      browsers.push("last 1 " + browser + " version");
+    });
+
+    const supportedBrowsers = getUserAgentRegExp({
+      browsers: browsers,
+      allowHigherVersions: true,
+    });
+    return supportedBrowsers.test(navigator.userAgent);
   }
 
   protected async start(): Promise<void> {
@@ -336,32 +386,6 @@ export default class ContentProtectionModule implements ReaderModule {
     }
   }
   private setupEvents(): void {
-    var self = this;
-    if (this.properties?.detectInspect) {
-      var checkStatus = "off";
-      var div = document.createElement("div");
-      Object.defineProperty(div, "id", {
-        get: function () {
-          checkStatus = "on";
-          throw new Error("Dev tools checker");
-        },
-      });
-      requestAnimationFrame(function check() {
-        checkStatus = "off";
-        console.log(div);
-        if (checkStatus === "on") {
-          if (self.properties?.clearOnInspect) {
-            console.clear();
-            window.localStorage.clear();
-            window.sessionStorage.clear();
-            window.location.replace(window.location.origin);
-          }
-          self.api?.inspectDetected();
-        }
-        requestAnimationFrame(check);
-      });
-    }
-
     if (this.properties?.disableKeys) {
       addEventListenerOptional(
         this.delegate.mainElement,

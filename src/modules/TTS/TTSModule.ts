@@ -441,8 +441,9 @@ export default class TTSModule implements ReaderModule {
                   splittingWord.dataset.ttsCurrentWord = "false";
                   splittingWord.dataset.ttsCurrentLine = "false";
                 });
-                let whitespace =
-                  self.body.querySelectorAll("[data-whitespace]");
+                let whitespace = self.body.querySelectorAll(
+                  "[data-whitespace]"
+                );
                 whitespace.forEach((splittingWord) => {
                   splittingWord.dataset.ttsColor = self.tts.color;
                   splittingWord.dataset.ttsCurrentWord = "false";

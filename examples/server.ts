@@ -18,10 +18,6 @@ async function start() {
     maxPrefetchLinks: 5, // Link HTTP header, with rel = prefetch, see server.ts MAX_PREFETCH_LINKS (default = 10)
     readers: [
       {
-        title: "Default Example",
-        getUrl: (url) => `/viewer/index.html?url=${url}`,
-      },
-      {
         title: "Dita Example",
         getUrl: (url) => `/viewer/index_dita.html?url=${url}`,
       },
@@ -31,7 +27,7 @@ async function start() {
       },
       {
         title: "API Example",
-        getUrl: (url) => `/viewer/index_minimal.html?url=${url}`,
+        getUrl: (url) => `/viewer/index_api.html?url=${url}`,
       },
       {
         title: "Material Example",

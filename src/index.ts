@@ -60,8 +60,8 @@ export default class D2Reader {
     const mainElement = findRequiredElement(document, "#D2Reader-Container");
     // are the following elements necessary or not? They seem not to be,
     // but we will have to change some types if they are allowed to be null
-    const headerMenu = findElement(document, "headerMenu");
-    const footerMenu = findElement(document, "footerMenu");
+    const headerMenu = findElement(document, "#headerMenu");
+    const footerMenu = findElement(document, "#footerMenu");
 
     const webpubManifestUrl = initialConfig.url;
     const store = new LocalStorageStore({

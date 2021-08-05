@@ -446,6 +446,21 @@
                         <span class="remaining-positions"></span>
                     </div>
                 </div>
+            </main>
+            <div id="container-view-security" class="security"></div>
+            <div id="container-view-timeline" class="timeline" style="top: 5rem;bottom: 2.5rem;"></div>
+            <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
+               style="top: 65px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
+                <i class="material-icons black-text" style="left: calc(50% - 12px);
+                position: relative;">keyboard_arrow_up</i>
+            </a>
+            <a id="next-chapter" rel="next" role="button" aria-labelledby="next-label" style="bottom: 0;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
+                <i class="material-icons black-text" style="left: calc(50% - 12px);
+                position: relative;">keyboard_arrow_down</i>
+            </a>
+            <div class="left-gutter" id="left-gutter"></div>
+        </div>
+
                 <span id="highlight-toolbox" class="highlight-toolbox">
                     <div id="highlight-toolbox-mode-colors">
                         <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons" style="color:gray">close</i></button>
@@ -486,19 +501,6 @@
                         <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons" style="color:gray">delete</i></button>
                     </div>
                 </span>
-                <div id="container-view-security" class="security"></div>
-                <div id="container-view-timeline" class="timeline" style="top: 5rem;"></div>
-                <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
-                   style="top: 65px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
-                    <i class="material-icons black-text" style="left: calc(50% - 12px);
-                position: relative;">keyboard_arrow_up</i>
-                </a>
-                <a id="next-chapter" rel="next" role="button" aria-labelledby="next-label" style="bottom: 0;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
-                    <i class="material-icons black-text" style="left: calc(50% - 12px);
-                position: relative;">keyboard_arrow_down</i>
-                </a>
-                <div class="left-gutter" id="left-gutter"></div>
-            </main>
         </div>
 
                 <span id="highlight-toolbox" class="highlight-toolbox">
@@ -557,7 +559,6 @@
         </footer>
 
     <script>
-
         let getURLQueryParams = function () {
             let params = {};
             let query = window.location.search;

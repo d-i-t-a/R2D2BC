@@ -111,17 +111,18 @@ async function buildAll() {
   console.log("🧹 Cleaned output folder -", chalk.blue("dist/"));
 
   // build the main entrypoint as an IIFE module for use in a
-  // <script> tag
+  // <script> tag. This is built at dist/reader.js for backwards
+  // compatibility
   const p1 = buildTs(
     {
       format: "iife",
       entryPoints: ["src/index.ts"],
       globalName: "D2Reader",
-      outdir: "dist/iife",
+      outfile: "dist/reader.js",
       minify: isProduction,
     },
     "Compiled IIFE (for <script> tags)",
-    "dist/iife/index.js"
+    "dist/reader.js"
   );
 
   // build the main entrypoint as an ES Module.

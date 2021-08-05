@@ -103,40 +103,40 @@
 
 
                 <center>
-                    <button style="width:24%" onclick="javascript:D2Reader.startReadAloud()"><i class="material-icons">play_arrow</i>PLAY</button>
-                    <button style="width:24%" onclick="javascript:D2Reader.stopReadAloud()"><i class="material-icons">stop</i>STOP</button>
-                    <button style="width:24%" onclick="javascript:D2Reader.pauseReadAloud()"><i class="material-icons">pause</i>PAUSE</button>
-                    <button style="width:24%" onclick="javascript:D2Reader.resumeReadAloud()"><i class="material-icons">play_arrow</i>RESUME</button>
+                    <button style="width:24%" onclick="javascript:d2Reader.startReadAloud()"><i class="material-icons">play_arrow</i>PLAY</button>
+                    <button style="width:24%" onclick="javascript:d2Reader.stopReadAloud()"><i class="material-icons">stop</i>STOP</button>
+                    <button style="width:24%" onclick="javascript:d2Reader.pauseReadAloud()"><i class="material-icons">pause</i>PAUSE</button>
+                    <button style="width:24%" onclick="javascript:d2Reader.resumeReadAloud()"><i class="material-icons">play_arrow</i>RESUME</button>
                 </center>
                 <center>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'orange' })"><i class="material-icons" style="color: rgba(250, 96, 0, 0.5);">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'red' })"><i class="material-icons" style="color: indianred;">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'gray' })"><i class="material-icons" style="color: lightslategrey;">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'purple' })"><i class="material-icons" style="color: mediumpurple;">lense</i></button>
-                    <button onclick="javascript:D2Reader.applyTTSSettings({ color: 'green' })"><i class="material-icons" style="color: lightgreen;">lense</i></button>
+                    <button onclick="javascript:d2Reader.applyTTSSettings({ color: 'orange' })"><i class="material-icons" style="color: rgba(250, 96, 0, 0.5);">lense</i></button>
+                    <button onclick="javascript:d2Reader.applyTTSSettings({ color: 'red' })"><i class="material-icons" style="color: indianred;">lense</i></button>
+                    <button onclick="javascript:d2Reader.applyTTSSettings({ color: 'gray' })"><i class="material-icons" style="color: lightslategrey;">lense</i></button>
+                    <button onclick="javascript:d2Reader.applyTTSSettings({ color: 'purple' })"><i class="material-icons" style="color: mediumpurple;">lense</i></button>
+                    <button onclick="javascript:d2Reader.applyTTSSettings({ color: 'green' })"><i class="material-icons" style="color: lightgreen;">lense</i></button>
                 </center>
 
                 <div>
                     <span style="width: 30%; display: inline-block;">Auto Scroll</span>
-                    <input type="checkbox" class="filled" id="autoScroll" name="autoScroll" onchange="javascript:D2Reader.applyTTSSettings({ autoScroll: this.checked })">
+                    <input type="checkbox" class="filled" id="autoScroll" name="autoScroll" onchange="javascript:d2Reader.applyTTSSettings({ autoScroll: this.checked })">
                 </div>
                 <div>
                     <label style="margin-right: 20px;">Language</label>
-                    <select style="width: 70%;" onchange="javascript:D2Reader.applyPreferredVoice(value)" id="preferred-languages">
+                    <select style="width: 70%;" onchange="javascript:d2Reader.applyPreferredVoice(value)" id="preferred-languages">
                         <option value="" disabled selected>Choose language</option>
                     </select>
                 </div>
                 <div class="range-slider">
                     <span style="width: 20%; display: inline-block;">Rate</span>
-                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="10" step="0.1" value="1" id="speechRate" name="speechRate" onchange="javascript:D2Reader.applyTTSSettings({ rate: this.value })" />
+                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="10" step="0.1" value="1" id="speechRate" name="speechRate" onchange="javascript:d2Reader.applyTTSSettings({ rate: this.value })" />
                 </div>
                 <div class="range-slider">
                     <label style="width: 20%; display: inline-block;">Pitch</label>
-                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="2" step="0.1" value="1" id="speechPitch" name="speechPitch" onchange="javascript:D2Reader.applyTTSSettings({ pitch: this.value })" />
+                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="2" step="0.1" value="1" id="speechPitch" name="speechPitch" onchange="javascript:d2Reader.applyTTSSettings({ pitch: this.value })" />
                 </div>
                 <div class="range-slider">
                     <label style="width: 20%; display: inline-block;">Volume</label>
-                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="1" step="0.1" value="1" id="speechVolume" name="speechVolume" onchange="javascript:D2Reader.applyTTSSettings({ volume: this.value })" />
+                    <input class="range-slider__range" style="width:70%" type="range" min="0.1" max="1" step="0.1" value="1" id="speechVolume" name="speechVolume" onchange="javascript:d2Reader.applyTTSSettings({ volume: this.value })" />
                 </div>
 
                 <!-- userProperties.addIncremental(this.rate, 0.1, 10, 0.1, "", TTSREFS.RATE_REF, TTSREFS.RATE_KEY)
@@ -312,7 +312,7 @@
                         <span class="chapter-title"></span>
                     </div>
                     <div class="scrubber">
-                        <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="javascript:D2Reader.goToPosition( this.value )" />
+                        <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="javascript:d2Reader.goToPosition( this.value )" />
                     </div>
                     <div>
                         <span class="remaining-positions"></span>
@@ -446,7 +446,8 @@
         ]
         const url = new URL("https://alice.dita.digital/manifest.json");
 
-        D2Reader.load({
+        let d2Reader;
+        D2Reader.build({
             upLinkUrl: upLink,
             url: url,
             // url: new URL(urlParams['url']),
@@ -604,8 +605,7 @@
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {
             console.log("D2Reader loaded ", instance);
-            // console.log("instance.bookmarkModule ", instance.bookmarkModule)
-            // console.log("instance.annotationModule ", instance.annotationModule)
+            d2Reader = instance;
         }).catch(error => {
             console.error("error.message ", error.message);
             document.getElementById("reader-error").innerText = error.message

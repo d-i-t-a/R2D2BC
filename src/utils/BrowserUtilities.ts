@@ -1,4 +1,3 @@
-import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 /*
  * Copyright 2018-2020 DITA (AM Consulting LLC)
  *
@@ -18,7 +17,6 @@ import { getUserAgentRegExp } from "browserslist-useragent-regexp";
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { ReaderConfig } from "../navigator/IFrameNavigator";
 import * as HTMLUtilities from "./HTMLUtilities";
 
 /** Returns the current width of the document. */

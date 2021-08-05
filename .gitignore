@@ -1,16 +1,6 @@
 node_modules
 dist
-examples/streamed/epubs
-material.css
-material.css.map
-reader.css
-reader.css.map
-reader.js
-reader.js.map
-examples/streamed/readers/viewer
-viewer/injectables
-viewer/index.js
-viewer/index.js.map
+examples/epubs
 settings.json
 .DS_Store
 yarn.lock

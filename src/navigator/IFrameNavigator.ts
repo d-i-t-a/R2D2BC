@@ -347,12 +347,12 @@ export default class IFrameNavigator implements Navigator {
     removeEventListenerOptional(
       this.previousChapterAnchorElement,
       "click",
-      this.handlePreviousChapterClick.bind(this)
+      this.handlePreviousPageClick.bind(this)
     );
     removeEventListenerOptional(
       this.nextChapterAnchorElement,
       "click",
-      this.handleNextChapterClick.bind(this)
+      this.handleNextPageClick.bind(this)
     );
 
     removeEventListenerOptional(
@@ -2545,6 +2545,12 @@ export default class IFrameNavigator implements Navigator {
           event.preventDefault();
           event.stopPropagation();
         }
+      }
+    }
+    if (!valid && this.sample.isSampleRead) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
       }
     }
   }

@@ -54,13 +54,15 @@ export class Publication extends R2Publication {
     let toc = this.TOC.map((item) => {
       if (item.Href) {
         const positions = this.positionsByHref(this.getRelativeHref(item.Href));
-        const locator = positions[0];
-        let progress = Math.round(locator.locations.totalProgression * 100);
-        let valid = progress <= this.sample.limit;
-        if (!valid) {
-          item.Href = undefined;
-          if (item.Children) {
-            disableChildren(item);
+        if (positions.length > 0) {
+          const locator = positions[0];
+          let progress = Math.round(locator.locations.totalProgression * 100);
+          let valid = progress <= this.sample.limit;
+          if (!valid) {
+            item.Href = undefined;
+            if (item.Children) {
+              disableChildren(item);
+            }
           }
         }
       }

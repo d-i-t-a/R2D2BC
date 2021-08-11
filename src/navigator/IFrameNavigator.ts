@@ -2051,7 +2051,7 @@ export default class IFrameNavigator implements Navigator {
           }
         } else {
           this.currentSpreadLinks.left = {
-            href: href,
+            href: this.currentChapterLink.href,
           };
           if (isSameOrigin) {
             this.iframes[0].src = this.currentChapterLink.href;

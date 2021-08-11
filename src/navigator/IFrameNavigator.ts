@@ -3383,12 +3383,14 @@ export default class IFrameNavigator implements Navigator {
       this.iframes[0].blur();
       if (this.errorMessage) {
         this.errorMessage.style.display = "block";
+        this.errorMessage.style.backgroundColor = "rgb(255, 255, 255)";
         this.errorMessage.innerHTML = this.sample.popup;
       }
     } else {
       this.iframes[0].focus();
       if (this.errorMessage) {
         this.errorMessage.style.display = "none";
+        this.errorMessage.style.removeProperty("background-color");
       }
     }
   }, 300);

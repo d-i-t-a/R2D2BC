@@ -195,7 +195,10 @@ export default class BookmarkModule implements ReaderModule {
           this.delegate.currentChapterLink.href
         );
       }
-
+      let href = tocItem.Href;
+      if (href.indexOf("#") > 0) {
+        href = href.slice(0, href.indexOf("#"));
+      }
       const progression = this.delegate.view.getCurrentPosition();
       const id: string = uuid();
       let bookmark: Bookmark;
@@ -215,14 +218,14 @@ export default class BookmarkModule implements ReaderModule {
         bookmark = {
           ...locator,
           id: id,
-          href: tocItem.Href,
+          href: href,
           created: new Date(),
           title: this.delegate.currentChapterLink.title,
         };
       } else {
         bookmark = {
           id: id,
-          href: tocItem.Href,
+          href: href,
           locations: {
             progression: progression,
           },

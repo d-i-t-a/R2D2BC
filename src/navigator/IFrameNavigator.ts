@@ -2526,18 +2526,18 @@ export default class IFrameNavigator implements Navigator {
 
   private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
     let valid = true;
-    if (this.sample.isSampleRead) {
+    if (this.sample?.isSampleRead) {
       const locator = this.currentLocator();
       let progress = Math.round(locator.locations.totalProgression * 100);
-      valid = progress <= this.sample.limit;
+      valid = progress <= this.sample?.limit;
       if (this.view.layout === "fixed") {
-        if (!valid && locator.locations.position <= this.sample.minimum) {
+        if (!valid && locator.locations.position <= this.sample?.minimum) {
           valid = true;
         }
       }
     }
 
-    if ((valid && this.sample.isSampleRead) || !this.sample.isSampleRead) {
+    if ((valid && this.sample?.isSampleRead) || !this.sample?.isSampleRead) {
       this.stopReadAloud(true);
       if (this.view.layout === "fixed") {
         this.handleNextChapterClick(event);
@@ -2555,7 +2555,7 @@ export default class IFrameNavigator implements Navigator {
         }
       }
     }
-    if (!valid && this.sample.isSampleRead) {
+    if (!valid && this.sample?.isSampleRead) {
       if (event) {
         event.preventDefault();
         event.stopPropagation();
@@ -3268,9 +3268,9 @@ export default class IFrameNavigator implements Navigator {
 
   enforceSampleRead = debounce((position) => {
     let progress = Math.round(position.locations.totalProgression * 100);
-    let valid = progress <= this.sample.limit;
+    let valid = progress <= this.sample?.limit;
     if (this.view.layout === "fixed") {
-      if (!valid && position.locations.position <= this.sample.minimum) {
+      if (!valid && position.locations.position <= this.sample?.minimum) {
         valid = true;
       }
     }
@@ -3384,7 +3384,7 @@ export default class IFrameNavigator implements Navigator {
       if (this.errorMessage) {
         this.errorMessage.style.display = "block";
         this.errorMessage.style.backgroundColor = "rgb(255, 255, 255)";
-        this.errorMessage.innerHTML = this.sample.popup;
+        this.errorMessage.innerHTML = this.sample?.popup;
       }
     } else {
       this.iframes[0].focus();
@@ -3450,7 +3450,7 @@ export default class IFrameNavigator implements Navigator {
         };
       }
 
-      if (this.sample.isSampleRead) {
+      if (this.sample?.isSampleRead) {
         this.enforceSampleRead(position);
       }
 

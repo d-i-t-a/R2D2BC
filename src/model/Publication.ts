@@ -34,7 +34,7 @@ export class Publication extends R2Publication {
     return this.Spine;
   }
   get tableOfContents() {
-    if (this.sample.isSampleRead) {
+    if (this.sample?.isSampleRead) {
       return this.limitedTOC();
     }
     return this.TOC;
@@ -57,7 +57,7 @@ export class Publication extends R2Publication {
         if (positions.length > 0) {
           const locator = positions[0];
           let progress = Math.round(locator.locations.totalProgression * 100);
-          let valid = progress <= this.sample.limit;
+          let valid = progress <= this.sample?.limit;
           if (!valid) {
             item.Href = undefined;
             if (item.Children) {

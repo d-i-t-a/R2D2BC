@@ -2607,13 +2607,8 @@ export default class IFrameNavigator implements Navigator {
 
     if (this.publication.isFixedLayout) {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
-      var wrapper = HTMLUtilities.findRequiredElement(
-        this.mainElement,
-        "main#iframe-wrapper"
-      ) as HTMLElement;
       const minHeight =
         BrowserUtilities.getHeight() - 40 - this.attributes.margin;
-      wrapper.style.height = minHeight + 40 + "px";
 
       var iframeParent =
         index === 0 && this.iframes.length === 2

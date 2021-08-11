@@ -70,6 +70,7 @@ import MediaOverlayModule, {
   MediaOverlayModuleConfig,
 } from "../modules/mediaoverlays/MediaOverlayModule";
 import { D2Link, Link } from "../model/Link";
+import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -222,6 +223,7 @@ export default class IFrameNavigator implements Navigator {
   private readonly eventHandler: EventHandler;
   private readonly touchEventHandler: TouchEventHandler;
   private readonly keyboardEventHandler: KeyboardEventHandler;
+  private readonly sampleReadEventHandler: SampleReadEventHandler;
   private readonly upLinkConfig: UpLinkConfig | null;
   private upLink: HTMLAnchorElement | null = null;
 
@@ -250,7 +252,7 @@ export default class IFrameNavigator implements Navigator {
   private linksMiddle: HTMLUListElement;
   private tocView: HTMLDivElement;
   private loadingMessage: HTMLDivElement;
-  private errorMessage: HTMLDivElement;
+  errorMessage: HTMLDivElement;
   private tryAgainButton: HTMLButtonElement;
   private goBackButton: HTMLButtonElement;
   private infoTop: HTMLDivElement;
@@ -316,7 +318,8 @@ export default class IFrameNavigator implements Navigator {
     injectables: Array<Injectable>,
     attributes: IFrameAttributes,
     services: PublicationServices,
-    sample: SampleRead
+    sample: SampleRead,
+    sampleReadEventHandler: SampleReadEventHandler | null = null
   ) {
     this.settings = settings;
     this.annotator = annotator;
@@ -338,6 +341,8 @@ export default class IFrameNavigator implements Navigator {
     this.attributes = attributes || { margin: 0 };
     this.services = services;
     this.sample = sample;
+    this.sampleReadEventHandler =
+      sampleReadEventHandler || new SampleReadEventHandler(this);
   }
 
   async stop() {
@@ -3266,135 +3271,6 @@ export default class IFrameNavigator implements Navigator {
     }, 150);
   }
 
-  enforceSampleRead = debounce((position) => {
-    let progress = Math.round(position.locations.totalProgression * 100);
-    let valid = progress <= this.sample?.limit;
-    if (this.view.layout === "fixed") {
-      if (!valid && position.locations.position <= this.sample?.minimum) {
-        valid = true;
-      }
-    }
-
-    // left: 37, up: 38, right: 39, down: 40,
-    // spacebar: 32, pageup: 33, pagedown: 34, end: 35, home: 36
-    let keys = {
-      37: 1,
-      38: 0,
-      39: 1,
-      40: 1,
-      32: 1,
-      33: 1,
-      34: 1,
-      35: 1,
-      36: 1,
-    };
-
-    function preventDefault(e) {
-      e.preventDefault();
-    }
-
-    function preventDefaultForScrollKeys(e) {
-      console.log(e.keyCode);
-      console.log(keys[e.keyCode]);
-      console.log(valid);
-      if (keys[e.keyCode] && !valid) {
-        preventDefault(e);
-      }
-    }
-
-    // modern Chrome requires { passive: false } when adding event
-    let supportsPassive = false;
-    try {
-      window.addEventListener(
-        "test",
-        null,
-        Object.defineProperty({}, "passive", {
-          get: function () {
-            supportsPassive = true;
-          },
-        })
-      );
-    } catch (e) {}
-
-    let wheelOpt = supportsPassive ? { passive: false } : false;
-    // let wheelEvent =
-    //   "onwheel" in document.createElement("div") ? "wheel" : "mousewheel";
-
-    function MouseWheelHandler(e) {
-      // cross-browser wheel delta
-      e = e || window.event; // old IE support
-      let delta = Math.max(-1, Math.min(1, e.wheelDelta || -e.detail));
-
-      if (delta == 1) {
-        // move up
-      }
-      if (delta == -1 && !valid) {
-        // move down
-        e.preventDefault();
-        // e.stopPropagation();
-        return false;
-      }
-      return false;
-    }
-
-    let lastY;
-
-    function TouchMoveHandler(e) {
-      e = e || window.event;
-      let target = e.target || e.srcElement;
-
-      let currentY = e.touches[0].clientY;
-      if (currentY > lastY) {
-        // move up
-      } else if (currentY < lastY && !valid) {
-        // move down
-        if (!target.className.match(/\baltNav\b/)) {
-          e.returnValue = false;
-          if (e.cancelable) {
-            e.cancelBubble = true;
-          }
-          if (e.preventDefault && e.cancelable) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }
-        return false;
-      }
-      lastY = currentY;
-      return false;
-    }
-    function TouchStartHandler(e) {
-      e = e || window.event;
-      lastY = e.touches[0].clientY;
-      return false;
-    }
-
-    // IE9, Chrome, Safari, Opera
-    console.log("add sample event handlers");
-    window.addEventListener("mousewheel", MouseWheelHandler, wheelOpt);
-    // Firefox
-    window.addEventListener("DOMMouseScroll", MouseWheelHandler, wheelOpt);
-    // window.addEventListener(wheelEvent, preventDefault, wheelOpt); // modern desktop
-    window.addEventListener("keydown", preventDefaultForScrollKeys, wheelOpt);
-    window.addEventListener("touchmove", TouchMoveHandler, wheelOpt);
-    window.addEventListener("touchstart", TouchStartHandler, wheelOpt);
-
-    if (!valid) {
-      this.iframes[0].blur();
-      if (this.errorMessage) {
-        this.errorMessage.style.display = "block";
-        this.errorMessage.style.backgroundColor = "rgb(255, 255, 255)";
-        this.errorMessage.innerHTML = this.sample?.popup;
-      }
-    } else {
-      this.iframes[0].focus();
-      if (this.errorMessage) {
-        this.errorMessage.style.display = "none";
-        this.errorMessage.style.removeProperty("background-color");
-      }
-    }
-  }, 300);
-
   private async saveCurrentReadingPosition(): Promise<void> {
     if (this.annotator) {
       var tocItem = this.publication.getTOCItem(this.currentChapterLink.href);
@@ -3451,7 +3327,7 @@ export default class IFrameNavigator implements Navigator {
       }
 
       if (this.sample?.isSampleRead) {
-        this.enforceSampleRead(position);
+        this.sampleReadEventHandler?.enforceSampleRead(position);
       }
 
       if (this.api?.updateCurrentLocation) {

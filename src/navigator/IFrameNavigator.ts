@@ -426,7 +426,7 @@ export default class IFrameNavigator implements Navigator {
     this.headerMenu = headerMenu;
     this.mainElement = mainElement;
     try {
-      let wrapper = HTMLUtilities.findRequiredElement(
+      const wrapper = HTMLUtilities.findRequiredElement(
         mainElement,
         "main#iframe-wrapper"
       ) as HTMLElement;
@@ -1802,7 +1802,7 @@ export default class IFrameNavigator implements Navigator {
                 const next = this.publication.getNextSpineItem(
                   this.currentChapterLink.href
                 );
-                var href = this.publication.getAbsoluteHref(next.Href);
+                const href = this.publication.getAbsoluteHref(next.Href);
                 this.currentSpreadLinks.right = {
                   href: href,
                 };
@@ -1834,7 +1834,7 @@ export default class IFrameNavigator implements Navigator {
               const prev = this.publication.getPreviousSpineItem(
                 this.currentChapterLink.href
               );
-              var href = this.publication.getAbsoluteHref(prev.Href);
+              const href = this.publication.getAbsoluteHref(prev.Href);
               this.currentSpreadLinks.left = {
                 href: href,
               };
@@ -1952,7 +1952,7 @@ export default class IFrameNavigator implements Navigator {
                   const next = this.publication.getNextSpineItem(
                     this.currentChapterLink.href
                   );
-                  var href = this.publication.getAbsoluteHref(next.Href);
+                  const href = this.publication.getAbsoluteHref(next.Href);
                   this.iframes[1].src = href;
                   this.currentSpreadLinks.right = {
                     href: href,
@@ -1976,7 +1976,7 @@ export default class IFrameNavigator implements Navigator {
                   const next = this.publication.getNextSpineItem(
                     this.currentChapterLink.href
                   );
-                  var href = this.publication.getAbsoluteHref(next.Href);
+                  const href = this.publication.getAbsoluteHref(next.Href);
                   this.currentSpreadLinks.right = {
                     href: href,
                   };
@@ -1996,7 +1996,7 @@ export default class IFrameNavigator implements Navigator {
               const prev = this.publication.getPreviousSpineItem(
                 this.currentChapterLink.href
               );
-              var href = this.publication.getAbsoluteHref(prev.Href);
+              const href = this.publication.getAbsoluteHref(prev.Href);
               this.currentSpreadLinks.left = {
                 href: href,
               };
@@ -2784,10 +2784,10 @@ export default class IFrameNavigator implements Navigator {
     event: MouseEvent | TouchEvent | KeyboardEvent
   ): void {
     if (this.view.layout === "fixed" && this.settings.columnCount !== 1) {
-      var index = this.publication.getSpineIndex(this.currentChapterLink.href);
+      let index = this.publication.getSpineIndex(this.currentChapterLink.href);
       index = index - 2;
       if (index < 0) index = 0;
-      var previous = this.publication.readingOrder[index];
+      const previous = this.publication.readingOrder[index];
       const position: Locator = {
         href: this.publication.getAbsoluteHref(previous.Href),
         locations: {
@@ -2824,11 +2824,11 @@ export default class IFrameNavigator implements Navigator {
     event: MouseEvent | TouchEvent | KeyboardEvent
   ): void {
     if (this.view.layout === "fixed" && this.settings.columnCount !== 1) {
-      var index = this.publication.getSpineIndex(this.currentChapterLink.href);
+      let index = this.publication.getSpineIndex(this.currentChapterLink.href);
       index = index + 2;
       if (index >= this.publication.readingOrder.length - 1)
         index = this.publication.readingOrder.length - 1;
-      var next = this.publication.readingOrder[index];
+      const next = this.publication.readingOrder[index];
       const position: Locator = {
         href: this.publication.getAbsoluteHref(next.Href),
         locations: {

@@ -2519,7 +2519,7 @@ export default class IFrameNavigator implements Navigator {
 
   private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
     let valid = true;
-    if (this.sample?.isSampleRead) {
+    if (this.sample?.isSampleRead && this.publication.positions) {
       const locator = this.currentLocator();
       let progress = Math.round(locator.locations.totalProgression * 100);
       valid = progress <= this.sample?.limit;
@@ -2530,7 +2530,11 @@ export default class IFrameNavigator implements Navigator {
       }
     }
 
-    if ((valid && this.sample?.isSampleRead) || !this.sample?.isSampleRead) {
+    if (
+      (valid && this.sample?.isSampleRead && this.publication.positions) ||
+      !this.sample?.isSampleRead ||
+      !this.publication.positions
+    ) {
       this.stopReadAloud(true);
       if (this.view.layout === "fixed") {
         this.handleNextChapterClick(event);
@@ -2548,7 +2552,7 @@ export default class IFrameNavigator implements Navigator {
         }
       }
     }
-    if (!valid && this.sample?.isSampleRead) {
+    if (!valid && this.sample?.isSampleRead && this.publication.positions) {
       if (event) {
         event.preventDefault();
         event.stopPropagation();

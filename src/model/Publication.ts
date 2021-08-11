@@ -34,7 +34,7 @@ export class Publication extends R2Publication {
     return this.Spine;
   }
   get tableOfContents() {
-    if (this.sample?.isSampleRead) {
+    if (this.sample?.isSampleRead && this.positions?.length > 0) {
       return this.limitedTOC();
     }
     return this.TOC;
@@ -54,7 +54,7 @@ export class Publication extends R2Publication {
     let toc = this.TOC.map((item) => {
       if (item.Href) {
         const positions = this.positionsByHref(this.getRelativeHref(item.Href));
-        if (positions.length > 0) {
+        if (positions?.length > 0) {
           const locator = positions[0];
           let progress = Math.round(locator.locations.totalProgression * 100);
           let valid = progress <= this.sample?.limit;
@@ -202,7 +202,7 @@ export class Publication extends R2Publication {
    */
   public positionsByHref(href: string) {
     const decodedHref = decodeURI(href) ?? "";
-    return this.positions.filter((p: Locator) => decodedHref.includes(p.href));
+    return this.positions?.filter((p: Locator) => decodedHref.includes(p.href));
   }
 
   get hasMediaOverlays(): boolean {

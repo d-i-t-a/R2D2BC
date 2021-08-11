@@ -3314,7 +3314,7 @@ export default class IFrameNavigator implements Navigator {
         };
       }
 
-      if (this.sample?.isSampleRead) {
+      if (this.sample?.isSampleRead && this.publication.positions) {
         this.sampleReadEventHandler?.enforceSampleRead(position);
       }
 

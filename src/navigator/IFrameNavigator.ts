@@ -426,7 +426,7 @@ export default class IFrameNavigator implements Navigator {
     this.headerMenu = headerMenu;
     this.mainElement = mainElement;
     try {
-      var wrapper = HTMLUtilities.findRequiredElement(
+      let wrapper = HTMLUtilities.findRequiredElement(
         mainElement,
         "main#iframe-wrapper"
       ) as HTMLElement;
@@ -448,10 +448,6 @@ export default class IFrameNavigator implements Navigator {
       }
 
       if (this.iframes.length === 0) {
-        var wrapper = HTMLUtilities.findRequiredElement(
-          mainElement,
-          "main#iframe-wrapper"
-        ) as HTMLElement;
         wrapper.style.overflow = "overlay";
         let iframe = document.createElement("iframe");
         iframe.setAttribute("SCROLLING", "no");

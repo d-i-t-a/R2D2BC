@@ -786,16 +786,16 @@ export default class SearchModule implements ReaderModule {
   }
 
   paginate(items: Array<any>, page: number, per_page: number) {
-    var page = page || 1,
-      per_page = per_page || 10,
-      offset = (page - 1) * per_page,
-      paginatedItems = items.slice(offset).slice(0, per_page),
-      total_pages = Math.ceil(items.length / per_page);
+    let _page = page || 1,
+      _per_page = per_page || 10,
+      offset = (_page - 1) * _per_page,
+      paginatedItems = items.slice(offset).slice(0, _per_page),
+      total_pages = Math.ceil(items.length / _per_page);
     return {
-      page: page,
-      per_page: per_page,
-      pre_page: page - 1 ? page - 1 : null,
-      next_page: total_pages > page ? page + 1 : null,
+      page: _page,
+      per_page: _per_page,
+      pre_page: _page - 1 ? _page - 1 : null,
+      next_page: total_pages > _page ? _page + 1 : null,
       total: items.length,
       total_pages: total_pages,
       data: paginatedItems,

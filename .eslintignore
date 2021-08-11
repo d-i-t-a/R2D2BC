@@ -17,3 +17,5 @@ yarn.lock
 *.html
 *.inlinesourcemap.js
 package-lock.json
+.parcel-cache
+parcel-dist

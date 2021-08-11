@@ -36,6 +36,7 @@
     "declaration": true,
     "preserveConstEnums": true,
     "strictNullChecks": false,
-    "target": "es6"
+    "target": "es6",
+    "esModuleInterop": true
   },
 }

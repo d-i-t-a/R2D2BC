@@ -197,7 +197,7 @@ export class UserSettings implements IUserSettings {
           (el: any) => el === initialUserSettings.appearance
         );
         settings.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value =
-          settings.appearance;        
+          settings.appearance;
         await settings.saveProperty(
           settings.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)
         );

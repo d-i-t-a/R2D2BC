@@ -105,9 +105,6 @@ export interface IFrameNavigatorConfig {
   publication: Publication;
   settings: UserSettings;
   annotator?: Annotator;
-  eventHandler?: EventHandler;
-  touchEventHandler?: TouchEventHandler;
-  keyboardEventHandler?: KeyboardEventHandler;
   upLink?: UpLinkConfig;
   initialLastReadingPosition?: ReadingPosition;
   rights?: ReaderRights;
@@ -278,9 +275,6 @@ export default class IFrameNavigator implements Navigator {
     const navigator = new this(
       config.settings,
       config.annotator || null,
-      config.eventHandler || null,
-      config.touchEventHandler || null,
-      config.keyboardEventHandler || null,
       config.upLink || null,
       config.initialLastReadingPosition || null,
       config.publication,
@@ -305,9 +299,6 @@ export default class IFrameNavigator implements Navigator {
   protected constructor(
     settings: UserSettings,
     annotator: Annotator | null = null,
-    eventHandler: EventHandler | null = null,
-    touchEventHandler: TouchEventHandler | null = null,
-    keyboardEventHandler: KeyboardEventHandler | null = null,
     upLinkConfig: UpLinkConfig | null = null,
     initialLastReadingPosition: ReadingPosition | null = null,
     publication: Publication,
@@ -318,18 +309,16 @@ export default class IFrameNavigator implements Navigator {
     injectables: Array<Injectable>,
     attributes: IFrameAttributes,
     services: PublicationServices,
-    sample: SampleRead,
-    sampleReadEventHandler: SampleReadEventHandler | null = null
+    sample: SampleRead
   ) {
     this.settings = settings;
     this.annotator = annotator;
     this.view = settings.view;
     this.view.attributes = attributes;
     this.view.delegate = this;
-    this.eventHandler = eventHandler || new EventHandler();
-    this.touchEventHandler = touchEventHandler || new TouchEventHandler();
-    this.keyboardEventHandler =
-      keyboardEventHandler || new KeyboardEventHandler();
+    this.eventHandler = new EventHandler();
+    this.touchEventHandler = new TouchEventHandler();
+    this.keyboardEventHandler = new KeyboardEventHandler();
     this.upLinkConfig = upLinkConfig;
     this.initialLastReadingPosition = initialLastReadingPosition;
     this.publication = publication;
@@ -341,8 +330,7 @@ export default class IFrameNavigator implements Navigator {
     this.attributes = attributes || { margin: 0 };
     this.services = services;
     this.sample = sample;
-    this.sampleReadEventHandler =
-      sampleReadEventHandler || new SampleReadEventHandler(this);
+    this.sampleReadEventHandler = new SampleReadEventHandler(this);
   }
 
   async stop() {

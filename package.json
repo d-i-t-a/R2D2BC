@@ -17,7 +17,6 @@
     "clean": "rimraf node_modules dist parcel-dist .parcel-cache",
     "dev": "ts-node -T build.ts -w",
     "build": "ts-node -T build.ts",
-    "streamed": "node \"./examples/streamed/server/server-cli.inlinesourcemap.js\" ./examples/streamed/epubs/",
     "start": "node dev-server.js",
     "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
     "examples": "node --loader ts-node/esm examples/server.ts",

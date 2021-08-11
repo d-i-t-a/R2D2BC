@@ -126,6 +126,7 @@ export interface SampleRead {
   isSampleRead?: boolean;
   limit?: number;
   popup?: string;
+  minimum?: number;
 }
 export interface Injectable {
   type: string;
@@ -451,7 +452,9 @@ export default class IFrameNavigator implements Navigator {
       if (iframe2) {
         this.iframes.push(iframe2);
       }
-
+      if (window.matchMedia("screen and (max-width: 600px)").matches) {
+        this.settings.columnCount = 1;
+      }
       if (this.iframes.length === 0) {
         var wrapper = HTMLUtilities.findRequiredElement(
           mainElement,
@@ -2527,6 +2530,11 @@ export default class IFrameNavigator implements Navigator {
       const locator = this.currentLocator();
       let progress = Math.round(locator.locations.totalProgression * 100);
       valid = progress <= this.sample.limit;
+      if (this.view.layout === "fixed") {
+        if (!valid && locator.locations.position <= this.sample.minimum) {
+          valid = true;
+        }
+      }
     }
 
     if ((valid && this.sample.isSampleRead) || !this.sample.isSampleRead) {
@@ -3261,6 +3269,11 @@ export default class IFrameNavigator implements Navigator {
   enforceSampleRead = debounce((position) => {
     let progress = Math.round(position.locations.totalProgression * 100);
     let valid = progress <= this.sample.limit;
+    if (this.view.layout === "fixed") {
+      if (!valid && position.locations.position <= this.sample.minimum) {
+        valid = true;
+      }
+    }
 
     // left: 37, up: 38, right: 39, down: 40,
     // spacebar: 32, pageup: 33, pagedown: 34, end: 35, home: 36
@@ -3365,15 +3378,6 @@ export default class IFrameNavigator implements Navigator {
     window.addEventListener("keydown", preventDefaultForScrollKeys, wheelOpt);
     window.addEventListener("touchmove", TouchMoveHandler, wheelOpt);
     window.addEventListener("touchstart", TouchStartHandler, wheelOpt);
-
-    console.log(
-      "Current % " +
-        progress +
-        " allowed % " +
-        this.sample.limit +
-        "  sample still good " +
-        valid
-    );
 
     if (!valid) {
       this.iframes[0].blur();

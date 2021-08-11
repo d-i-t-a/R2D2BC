@@ -164,9 +164,8 @@ export class Publication extends R2Publication {
    * positionsByHref
    */
   public positionsByHref(href: string) {
-    return this.positions
-      ? this.positions.filter((el: Locator) => el.href === decodeURI(href))
-      : undefined;
+    const decodedHref = decodeURI(href) ?? "";
+    return this.positions.filter((p: Locator) => decodedHref.includes(p.href));
   }
 
   get hasMediaOverlays(): boolean {

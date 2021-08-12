@@ -529,13 +529,13 @@ export class TTSSettings implements ITTSUserSettings {
     var lang =
       value.indexOf(":") !== -1 ? value.slice(value.indexOf(":") + 1) : value;
     if (name !== undefined && lang !== undefined) {
-      this.applyTTSSetting("voice", {
+      await this.applyTTSSetting("voice", {
         usePublication: true,
         name: name,
         lang: lang,
       });
     } else if (lang !== undefined && name === undefined) {
-      this.applyTTSSetting("voice", { usePublication: true, lang: lang });
+      await this.applyTTSSetting("voice", { usePublication: true, lang: lang });
     }
   }
 
@@ -567,19 +567,21 @@ export class TTSSettings implements ITTSUserSettings {
       (this.userProperties.getByRef(
         TTSREFS.RATE_REF
       ) as Incremental).increment();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
+      await this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
       this.settingsChangeCallback();
     } else if (incremental === "pitch") {
       (this.userProperties.getByRef(
         TTSREFS.PITCH_REF
       ) as Incremental).increment();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
+      await this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
       this.settingsChangeCallback();
     } else if (incremental === "volume") {
       (this.userProperties.getByRef(
         TTSREFS.VOLUME_REF
       ) as Incremental).increment();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
+      await this.storeProperty(
+        this.userProperties.getByRef(TTSREFS.VOLUME_REF)
+      );
       this.settingsChangeCallback();
     }
   }

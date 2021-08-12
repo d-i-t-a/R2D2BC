@@ -27,6 +27,7 @@ import MediaOverlayModule from "./modules/mediaoverlays/MediaOverlayModule";
 import {
   MediaOverlaySettings,
   IMediaOverlayUserSettings,
+  MediaOverlaySIncrementable,
 } from "./modules/mediaoverlays/MediaOverlaySettings";
 import TimelineModule from "./modules/positions/TimelineModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
@@ -402,8 +403,23 @@ export default class D2Reader {
   };
 
   private isTTSIncrementable(
-    incremental: UserSettingsIncrementable | TTSIncrementable
+    incremental:
+      | UserSettingsIncrementable
+      | TTSIncrementable
+      | MediaOverlaySIncrementable
   ): incremental is TTSIncrementable {
+    return (
+      incremental === "pitch" ||
+      incremental === "rate" ||
+      incremental === "volume"
+    );
+  }
+  private isMOIncrementable(
+    incremental:
+      | UserSettingsIncrementable
+      | TTSIncrementable
+      | MediaOverlaySIncrementable
+  ): incremental is MediaOverlaySIncrementable {
     return (
       incremental === "pitch" ||
       incremental === "rate" ||
@@ -416,11 +432,18 @@ export default class D2Reader {
    * such as pitch, rate, volume, fontSize
    */
   increase = async (
-    incremental: UserSettingsIncrementable | TTSIncrementable
+    incremental:
+      | UserSettingsIncrementable
+      | TTSIncrementable
+      | MediaOverlaySIncrementable
   ) => {
     if (this.isTTSIncrementable(incremental)) {
       if (this.navigator.rights?.enableTTS) {
         await this.ttsSettings.increase(incremental);
+      }
+    } else if (this.isMOIncrementable(incremental)) {
+      if (this.navigator.rights?.enableMediaOverlays) {
+        await this.mediaOverlaySettings.increase(incremental);
       }
     } else {
       await this.settings.increase(incremental);
@@ -432,11 +455,18 @@ export default class D2Reader {
    * such as pitch, rate, volume, fontSize
    */
   decrease = async (
-    incremental: UserSettingsIncrementable | TTSIncrementable
+    incremental:
+      | UserSettingsIncrementable
+      | TTSIncrementable
+      | MediaOverlaySIncrementable
   ) => {
     if (this.isTTSIncrementable(incremental)) {
       if (this.navigator.rights?.enableTTS) {
         await this.ttsSettings.decrease(incremental);
+      }
+    } else if (this.isMOIncrementable(incremental)) {
+      if (this.navigator.rights?.enableMediaOverlays) {
+        await this.mediaOverlaySettings.decrease(incremental);
       }
     } else {
       await this.settings.decrease(incremental);

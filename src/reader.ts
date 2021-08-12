@@ -27,7 +27,7 @@ import MediaOverlayModule from "./modules/mediaoverlays/MediaOverlayModule";
 import {
   MediaOverlaySettings,
   IMediaOverlayUserSettings,
-  MediaOverlaySIncrementable,
+  MediaOverlayIncrementable,
 } from "./modules/mediaoverlays/MediaOverlaySettings";
 import TimelineModule from "./modules/positions/TimelineModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
@@ -406,7 +406,7 @@ export default class D2Reader {
     incremental:
       | UserSettingsIncrementable
       | TTSIncrementable
-      | MediaOverlaySIncrementable
+      | MediaOverlayIncrementable
   ): incremental is TTSIncrementable {
     return (
       incremental === "pitch" ||
@@ -418,8 +418,8 @@ export default class D2Reader {
     incremental:
       | UserSettingsIncrementable
       | TTSIncrementable
-      | MediaOverlaySIncrementable
-  ): incremental is MediaOverlaySIncrementable {
+      | MediaOverlayIncrementable
+  ): incremental is MediaOverlayIncrementable {
     return (
       incremental === "pitch" ||
       incremental === "rate" ||
@@ -435,7 +435,7 @@ export default class D2Reader {
     incremental:
       | UserSettingsIncrementable
       | TTSIncrementable
-      | MediaOverlaySIncrementable
+      | MediaOverlayIncrementable
   ) => {
     if (this.isTTSIncrementable(incremental)) {
       if (this.navigator.rights?.enableTTS) {
@@ -458,7 +458,7 @@ export default class D2Reader {
     incremental:
       | UserSettingsIncrementable
       | TTSIncrementable
-      | MediaOverlaySIncrementable
+      | MediaOverlayIncrementable
   ) => {
     if (this.isTTSIncrementable(incremental)) {
       if (this.navigator.rights?.enableTTS) {

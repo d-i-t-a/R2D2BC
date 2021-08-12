@@ -1162,7 +1162,6 @@ export default class IFrameNavigator implements Navigator {
               this
             );
           }
-
         }
       });
       setTimeout(async () => {
@@ -2244,7 +2243,6 @@ export default class IFrameNavigator implements Navigator {
     IFrameNavigator.hideElement(modal, control);
   }
 
-
   private handleEditClick(event: MouseEvent): void {
     var element = event.target as HTMLElement;
     var sidenav = HTMLUtilities.findElement(
@@ -2561,6 +2559,7 @@ export default class IFrameNavigator implements Navigator {
       return;
     }
 
+    const oldPosition = this.view.getCurrentPosition();
     if (this.publication.isFixedLayout) {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
       const minHeight =
@@ -2626,18 +2625,13 @@ export default class IFrameNavigator implements Navigator {
       }
     }
 
-    const oldPosition = this.view.getCurrentPosition();
-
     this.settings.applyProperties();
 
     // If the links are hidden, show them temporarily
     // to determine the top and bottom heights.
 
-
-
     if (this.infoTop) this.infoTop.style.height = 0 + "px";
     if (this.infoTop) this.infoTop.style.minHeight = 0 + "px";
-
 
     // TODO paginator page info
     // 0 = hide , 40 = show
@@ -2645,7 +2639,6 @@ export default class IFrameNavigator implements Navigator {
       this.infoBottom.style.height = this.attributes.bottomInfoHeight
         ? this.attributes.bottomInfoHeight + "px"
         : 40 + "px";
-
 
     if (this.view.layout !== "fixed") {
       this.settings.isPaginated().then((paginated) => {
@@ -2683,7 +2676,7 @@ export default class IFrameNavigator implements Navigator {
           this.contentProtectionModule.handleResize();
         }
       }
-    }, 100);
+    }, 150);
   }
 
   updatePositionInfo() {

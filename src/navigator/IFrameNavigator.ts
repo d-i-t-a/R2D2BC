@@ -341,12 +341,12 @@ export default class IFrameNavigator implements Navigator {
     removeEventListenerOptional(
       this.previousChapterAnchorElement,
       "click",
-      this.handlePreviousPageClick.bind(this)
+      this.handlePreviousChapterClick.bind(this)
     );
     removeEventListenerOptional(
       this.nextChapterAnchorElement,
       "click",
-      this.handleNextPageClick.bind(this)
+      this.handleNextChapterClick.bind(this)
     );
 
     removeEventListenerOptional(
@@ -854,12 +854,12 @@ export default class IFrameNavigator implements Navigator {
     addEventListenerOptional(
       this.previousChapterAnchorElement,
       "click",
-      this.handlePreviousPageClick.bind(this)
+      this.handlePreviousChapterClick.bind(this)
     );
     addEventListenerOptional(
       this.nextChapterAnchorElement,
       "click",
-      this.handleNextPageClick.bind(this)
+      this.handleNextChapterClick.bind(this)
     );
 
     addEventListenerOptional(

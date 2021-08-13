@@ -1036,13 +1036,6 @@ export default class IFrameNavigator implements Navigator {
               this
             );
           }
-          if (!IFrameNavigator.isDisplayed(this.linksBottom)) {
-            this.toggleDisplay(this.linksBottom);
-          }
-
-          if (!IFrameNavigator.isDisplayed(this.linksMiddle)) {
-            this.toggleDisplay(this.linksMiddle);
-          }
         } else {
           if (this.infoBottom) this.infoBottom.style.display = "none";
           if (this.nextPageAnchorElement)
@@ -1093,21 +1086,9 @@ export default class IFrameNavigator implements Navigator {
             if (this.view.atEnd()) {
               // Bring up the bottom nav when you get to the bottom,
               // if it wasn't already displayed.
-              if (!IFrameNavigator.isDisplayed(this.linksBottom)) {
-                this.toggleDisplay(this.linksBottom);
-              }
-              if (!IFrameNavigator.isDisplayed(this.linksMiddle)) {
-                this.toggleDisplay(this.linksMiddle);
-              }
             } else {
               // Remove the bottom nav when you scroll back up,
               // if it was displayed because you were at the bottom.
-              if (
-                IFrameNavigator.isDisplayed(this.linksBottom) &&
-                !IFrameNavigator.isDisplayed(this.links)
-              ) {
-                this.toggleDisplay(this.linksBottom);
-              }
             }
             if (this.view.layout === "fixed") {
               if (this.nextChapterBottomAnchorElement)
@@ -1180,13 +1161,6 @@ export default class IFrameNavigator implements Navigator {
             this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(
               this
             );
-          }
-          if (!IFrameNavigator.isDisplayed(this.linksBottom)) {
-            this.toggleDisplay(this.linksBottom);
-          }
-
-          if (!IFrameNavigator.isDisplayed(this.linksMiddle)) {
-            this.toggleDisplay(this.linksMiddle);
           }
         }
       });
@@ -2269,26 +2243,6 @@ export default class IFrameNavigator implements Navigator {
     IFrameNavigator.hideElement(modal, control);
   }
 
-  private toggleDisplay(
-    element: HTMLDivElement | HTMLUListElement,
-    control?: HTMLAnchorElement | HTMLButtonElement
-  ): void {
-    if (!IFrameNavigator.isDisplayed(element)) {
-      IFrameNavigator.showElement(element, control);
-    } else {
-      IFrameNavigator.hideElement(element, control);
-    }
-    if (element === this.linksMiddle) {
-      if (this.view.layout !== "fixed") {
-        if (this.view?.isScrollMode()) {
-          IFrameNavigator.showElement(element, control);
-        } else {
-          IFrameNavigator.hideElement(element, control);
-        }
-      }
-    }
-  }
-
   private handleEditClick(event: MouseEvent): void {
     var element = event.target as HTMLElement;
     var sidenav = HTMLUtilities.findElement(
@@ -2605,6 +2559,7 @@ export default class IFrameNavigator implements Navigator {
       return;
     }
 
+    const oldPosition = this.view.getCurrentPosition();
     if (this.publication.isFixedLayout) {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
       const minHeight =
@@ -2670,40 +2625,20 @@ export default class IFrameNavigator implements Navigator {
       }
     }
 
-    const oldPosition = this.view.getCurrentPosition();
-
     this.settings.applyProperties();
 
     // If the links are hidden, show them temporarily
     // to determine the top and bottom heights.
 
-    const linksHidden = !IFrameNavigator.isDisplayed(this.links);
-
-    if (linksHidden) {
-      this.toggleDisplay(this.links);
-    }
-
     if (this.infoTop) this.infoTop.style.height = 0 + "px";
     if (this.infoTop) this.infoTop.style.minHeight = 0 + "px";
 
-    if (linksHidden) {
-      this.toggleDisplay(this.links);
-    }
-
-    const linksBottomHidden = !IFrameNavigator.isDisplayed(this.linksBottom);
-    if (linksBottomHidden) {
-      this.toggleDisplay(this.linksBottom);
-    }
     // TODO paginator page info
     // 0 = hide , 40 = show
     if (this.infoBottom)
       this.infoBottom.style.height = this.attributes.bottomInfoHeight
         ? this.attributes.bottomInfoHeight + "px"
         : 40 + "px";
-
-    if (linksBottomHidden) {
-      this.toggleDisplay(this.linksBottom);
-    }
 
     if (this.view.layout !== "fixed") {
       this.settings.isPaginated().then((paginated) => {
@@ -2741,7 +2676,7 @@ export default class IFrameNavigator implements Navigator {
           this.contentProtectionModule.handleResize();
         }
       }
-    }, 100);
+    }, 150);
   }
 
   updatePositionInfo() {

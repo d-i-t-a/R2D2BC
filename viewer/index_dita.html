@@ -442,9 +442,6 @@
                     <div class="scrubber">
                         <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="javascript:d2reader.goToPosition( this.value )" />
                     </div>
-                    <div>
-                        <span class="remaining-positions"></span>
-                    </div>
                 </div>
                 <div style="height: 0px">
                     <div id="highlight-toolbox" class="highlight-toolbox" >
@@ -769,7 +766,7 @@
                     console.log("resourceFitsScreen")
                 },
                 updateCurrentLocation: function (location) {
-                    console.log("updateCurrentLocation")
+                    console.log("updateCurrentLocation " + location.locations.progression)
                     return new Promise(function (resolve, reject) {
                         resolve(
                             location

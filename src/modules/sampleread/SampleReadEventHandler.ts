@@ -57,9 +57,6 @@ export default class SampleReadEventHandler {
     }
 
     function preventDefaultForScrollKeys(e) {
-      console.log(e.keyCode);
-      console.log(keys[e.keyCode]);
-      console.log(valid);
       if (keys[e.keyCode] && !valid) {
         preventDefault(e);
       }
@@ -133,7 +130,6 @@ export default class SampleReadEventHandler {
     }
 
     // IE9, Chrome, Safari, Opera
-    console.log("add sample event handlers");
     window.addEventListener("mousewheel", MouseWheelHandler, wheelOpt);
     // Firefox
     window.addEventListener("DOMMouseScroll", MouseWheelHandler, wheelOpt);

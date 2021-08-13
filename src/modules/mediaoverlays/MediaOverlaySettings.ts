@@ -65,7 +65,7 @@ export interface IMediaOverlayUserSettings {
   wait?: number;
 }
 
-export type MediaOverlayIncrementable = "volume";
+export type MediaOverlayIncrementable = "mo_volume";
 
 export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   private readonly store: Store;
@@ -445,7 +445,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
     }
   }
   async increase(incremental: MediaOverlayIncrementable): Promise<void> {
-    if (incremental === "volume") {
+    if (incremental === "mo_volume") {
       (this.userProperties.getByRef(
         MEDIAOVERLAYREFS.VOLUME_REF
       ) as Incremental).increment();
@@ -457,7 +457,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   }
 
   async decrease(incremental: MediaOverlayIncrementable): Promise<void> {
-    if (incremental === "volume") {
+    if (incremental === "mo_volume") {
       (this.userProperties.getByRef(
         MEDIAOVERLAYREFS.VOLUME_REF
       ) as Incremental).decrement();

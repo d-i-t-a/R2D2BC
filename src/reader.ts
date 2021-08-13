@@ -420,11 +420,7 @@ export default class D2Reader {
       | TTSIncrementable
       | MediaOverlayIncrementable
   ): incremental is MediaOverlayIncrementable {
-    return (
-      incremental === "pitch" ||
-      incremental === "rate" ||
-      incremental === "volume"
-    );
+    return incremental === "mo_volume";
   }
 
   /**

@@ -426,7 +426,7 @@ export default class IFrameNavigator implements Navigator {
     this.headerMenu = headerMenu;
     this.mainElement = mainElement;
     try {
-      let wrapper = HTMLUtilities.findRequiredElement(
+      const wrapper = HTMLUtilities.findRequiredElement(
         mainElement,
         "main#iframe-wrapper"
       ) as HTMLElement;
@@ -1036,13 +1036,6 @@ export default class IFrameNavigator implements Navigator {
               this
             );
           }
-          if (!IFrameNavigator.isDisplayed(this.linksBottom)) {
-            this.toggleDisplay(this.linksBottom);
-          }
-
-          if (!IFrameNavigator.isDisplayed(this.linksMiddle)) {
-            this.toggleDisplay(this.linksMiddle);
-          }
         } else {
           if (this.infoBottom) this.infoBottom.style.display = "none";
           if (this.nextPageAnchorElement)
@@ -1093,21 +1086,9 @@ export default class IFrameNavigator implements Navigator {
             if (this.view.atEnd()) {
               // Bring up the bottom nav when you get to the bottom,
               // if it wasn't already displayed.
-              if (!IFrameNavigator.isDisplayed(this.linksBottom)) {
-                this.toggleDisplay(this.linksBottom);
-              }
-              if (!IFrameNavigator.isDisplayed(this.linksMiddle)) {
-                this.toggleDisplay(this.linksMiddle);
-              }
             } else {
               // Remove the bottom nav when you scroll back up,
               // if it was displayed because you were at the bottom.
-              if (
-                IFrameNavigator.isDisplayed(this.linksBottom) &&
-                !IFrameNavigator.isDisplayed(this.links)
-              ) {
-                this.toggleDisplay(this.linksBottom);
-              }
             }
             if (this.view.layout === "fixed") {
               if (this.nextChapterBottomAnchorElement)
@@ -1180,13 +1161,6 @@ export default class IFrameNavigator implements Navigator {
             this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(
               this
             );
-          }
-          if (!IFrameNavigator.isDisplayed(this.linksBottom)) {
-            this.toggleDisplay(this.linksBottom);
-          }
-
-          if (!IFrameNavigator.isDisplayed(this.linksMiddle)) {
-            this.toggleDisplay(this.linksMiddle);
           }
         }
       });
@@ -1802,7 +1776,7 @@ export default class IFrameNavigator implements Navigator {
                 const next = this.publication.getNextSpineItem(
                   this.currentChapterLink.href
                 );
-                var href = this.publication.getAbsoluteHref(next.Href);
+                const href = this.publication.getAbsoluteHref(next.Href);
                 this.currentSpreadLinks.right = {
                   href: href,
                 };
@@ -1834,7 +1808,7 @@ export default class IFrameNavigator implements Navigator {
               const prev = this.publication.getPreviousSpineItem(
                 this.currentChapterLink.href
               );
-              var href = this.publication.getAbsoluteHref(prev.Href);
+              const href = this.publication.getAbsoluteHref(prev.Href);
               this.currentSpreadLinks.left = {
                 href: href,
               };
@@ -1952,7 +1926,7 @@ export default class IFrameNavigator implements Navigator {
                   const next = this.publication.getNextSpineItem(
                     this.currentChapterLink.href
                   );
-                  var href = this.publication.getAbsoluteHref(next.Href);
+                  const href = this.publication.getAbsoluteHref(next.Href);
                   this.iframes[1].src = href;
                   this.currentSpreadLinks.right = {
                     href: href,
@@ -1976,7 +1950,7 @@ export default class IFrameNavigator implements Navigator {
                   const next = this.publication.getNextSpineItem(
                     this.currentChapterLink.href
                   );
-                  var href = this.publication.getAbsoluteHref(next.Href);
+                  const href = this.publication.getAbsoluteHref(next.Href);
                   this.currentSpreadLinks.right = {
                     href: href,
                   };
@@ -1996,7 +1970,7 @@ export default class IFrameNavigator implements Navigator {
               const prev = this.publication.getPreviousSpineItem(
                 this.currentChapterLink.href
               );
-              var href = this.publication.getAbsoluteHref(prev.Href);
+              const href = this.publication.getAbsoluteHref(prev.Href);
               this.currentSpreadLinks.left = {
                 href: href,
               };
@@ -2051,7 +2025,7 @@ export default class IFrameNavigator implements Navigator {
           }
         } else {
           this.currentSpreadLinks.left = {
-            href: href,
+            href: this.currentChapterLink.href,
           };
           if (isSameOrigin) {
             this.iframes[0].src = this.currentChapterLink.href;
@@ -2267,26 +2241,6 @@ export default class IFrameNavigator implements Navigator {
     if (this.infoTop) this.infoTop.setAttribute("aria-hidden", "false");
     if (this.infoBottom) this.infoBottom.setAttribute("aria-hidden", "false");
     IFrameNavigator.hideElement(modal, control);
-  }
-
-  private toggleDisplay(
-    element: HTMLDivElement | HTMLUListElement,
-    control?: HTMLAnchorElement | HTMLButtonElement
-  ): void {
-    if (!IFrameNavigator.isDisplayed(element)) {
-      IFrameNavigator.showElement(element, control);
-    } else {
-      IFrameNavigator.hideElement(element, control);
-    }
-    if (element === this.linksMiddle) {
-      if (this.view.layout !== "fixed") {
-        if (this.view?.isScrollMode()) {
-          IFrameNavigator.showElement(element, control);
-        } else {
-          IFrameNavigator.hideElement(element, control);
-        }
-      }
-    }
   }
 
   private handleEditClick(event: MouseEvent): void {
@@ -2605,15 +2559,11 @@ export default class IFrameNavigator implements Navigator {
       return;
     }
 
+    const oldPosition = this.view.getCurrentPosition();
     if (this.publication.isFixedLayout) {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
-      var wrapper = HTMLUtilities.findRequiredElement(
-        this.mainElement,
-        "main#iframe-wrapper"
-      ) as HTMLElement;
       const minHeight =
         BrowserUtilities.getHeight() - 40 - this.attributes.margin;
-      wrapper.style.height = minHeight + 40 + "px";
 
       var iframeParent =
         index === 0 && this.iframes.length === 2
@@ -2675,40 +2625,20 @@ export default class IFrameNavigator implements Navigator {
       }
     }
 
-    const oldPosition = this.view.getCurrentPosition();
-
     this.settings.applyProperties();
 
     // If the links are hidden, show them temporarily
     // to determine the top and bottom heights.
 
-    const linksHidden = !IFrameNavigator.isDisplayed(this.links);
-
-    if (linksHidden) {
-      this.toggleDisplay(this.links);
-    }
-
     if (this.infoTop) this.infoTop.style.height = 0 + "px";
     if (this.infoTop) this.infoTop.style.minHeight = 0 + "px";
 
-    if (linksHidden) {
-      this.toggleDisplay(this.links);
-    }
-
-    const linksBottomHidden = !IFrameNavigator.isDisplayed(this.linksBottom);
-    if (linksBottomHidden) {
-      this.toggleDisplay(this.linksBottom);
-    }
     // TODO paginator page info
     // 0 = hide , 40 = show
     if (this.infoBottom)
       this.infoBottom.style.height = this.attributes.bottomInfoHeight
         ? this.attributes.bottomInfoHeight + "px"
         : 40 + "px";
-
-    if (linksBottomHidden) {
-      this.toggleDisplay(this.linksBottom);
-    }
 
     if (this.view.layout !== "fixed") {
       this.settings.isPaginated().then((paginated) => {
@@ -2746,7 +2676,7 @@ export default class IFrameNavigator implements Navigator {
           this.contentProtectionModule.handleResize();
         }
       }
-    }, 100);
+    }, 150);
   }
 
   updatePositionInfo() {
@@ -2789,10 +2719,10 @@ export default class IFrameNavigator implements Navigator {
     event: MouseEvent | TouchEvent | KeyboardEvent
   ): void {
     if (this.view.layout === "fixed" && this.settings.columnCount !== 1) {
-      var index = this.publication.getSpineIndex(this.currentChapterLink.href);
+      let index = this.publication.getSpineIndex(this.currentChapterLink.href);
       index = index - 2;
       if (index < 0) index = 0;
-      var previous = this.publication.readingOrder[index];
+      const previous = this.publication.readingOrder[index];
       const position: Locator = {
         href: this.publication.getAbsoluteHref(previous.Href),
         locations: {
@@ -2829,11 +2759,11 @@ export default class IFrameNavigator implements Navigator {
     event: MouseEvent | TouchEvent | KeyboardEvent
   ): void {
     if (this.view.layout === "fixed" && this.settings.columnCount !== 1) {
-      var index = this.publication.getSpineIndex(this.currentChapterLink.href);
+      let index = this.publication.getSpineIndex(this.currentChapterLink.href);
       index = index + 2;
       if (index >= this.publication.readingOrder.length - 1)
         index = this.publication.readingOrder.length - 1;
-      var next = this.publication.readingOrder[index];
+      const next = this.publication.readingOrder[index];
       const position: Locator = {
         href: this.publication.getAbsoluteHref(next.Href),
         locations: {

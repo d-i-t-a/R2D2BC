@@ -65,6 +65,8 @@ export interface IMediaOverlayUserSettings {
   wait?: number;
 }
 
+export type MediaOverlayIncrementable = "mo_volume";
+
 export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   private readonly store: Store;
   private readonly MEDIAOVERLAYSETTINGS = "mediaOverlaySetting";
@@ -442,24 +444,24 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       this.settingsChangeCallback();
     }
   }
-  async increase(incremental: string): Promise<void> {
-    if (incremental === "volume") {
+  async increase(incremental: MediaOverlayIncrementable): Promise<void> {
+    if (incremental === "mo_volume") {
       (this.userProperties.getByRef(
         MEDIAOVERLAYREFS.VOLUME_REF
       ) as Incremental).increment();
-      this.storeProperty(
+      await this.storeProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
       );
       this.settingsChangeCallback();
     }
   }
 
-  async decrease(incremental: string): Promise<void> {
-    if (incremental === "volume") {
+  async decrease(incremental: MediaOverlayIncrementable): Promise<void> {
+    if (incremental === "mo_volume") {
       (this.userProperties.getByRef(
         MEDIAOVERLAYREFS.VOLUME_REF
       ) as Incremental).decrement();
-      this.storeProperty(
+      await this.storeProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
       );
       this.settingsChangeCallback();

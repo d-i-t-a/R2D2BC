@@ -913,8 +913,13 @@ export default class TextHighlighter {
     var toolbox = document.getElementById("highlight-toolbox");
 
     if (toolbox) {
-      toolbox.style.top =
-        rect.top + (this.delegate.attributes?.navHeight ?? 0) + "px";
+      const paginated = this.delegate.view.isPaginated();
+      if (paginated) {
+        toolbox.style.top =
+          rect.top + (this.delegate.attributes?.navHeight ?? 0) + "px";
+      } else {
+        toolbox.style.top = rect.top + "px";
+      }
       toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
     }
   }

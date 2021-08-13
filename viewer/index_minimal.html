@@ -85,6 +85,7 @@
         D2Reader.build({
             url: new URL(urlParams['url']),
             injectables: injectables,
+            injectablesFixed: [],
         }).then(instance => {
             d2reader = instance
         });

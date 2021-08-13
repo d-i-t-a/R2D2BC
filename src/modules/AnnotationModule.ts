@@ -350,7 +350,7 @@ export default class AnnotationModule implements ReaderModule {
             this.delegate.iframes[0].contentDocument
           );
 
-          highlights.forEach(async (rangeRepresentation) => {
+          for (const rangeRepresentation of highlights) {
             rangeRepresentation.highlight.marker = rangeRepresentation.marker;
 
             _highlights.push(rangeRepresentation.highlight);
@@ -385,7 +385,7 @@ export default class AnnotationModule implements ReaderModule {
                 rangeRepresentation.highlight
               );
             }
-          });
+          }
         }
       } else {
         let highlights: Array<any> = [];

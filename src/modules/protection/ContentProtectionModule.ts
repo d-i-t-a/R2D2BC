@@ -74,6 +74,7 @@ export default class ContentProtectionModule implements ReaderModule {
   private isHacked: boolean = false;
   private securityContainer: HTMLDivElement;
   private mutationObserver: MutationObserver;
+  private wrapper: HTMLDivElement;
 
   public static async setupPreloadProtection(
     config: ContentProtectionModuleConfig
@@ -146,6 +147,11 @@ export default class ContentProtectionModule implements ReaderModule {
     this.delegate.contentProtectionModule = this;
 
     if (this.properties?.enableObfuscation) {
+      this.wrapper = HTMLUtilities.findRequiredElement(
+        document,
+        "#iframe-wrapper"
+      ) as HTMLDivElement;
+
       this.securityContainer = HTMLUtilities.findElement(
         document,
         "#container-view-security"
@@ -340,7 +346,11 @@ export default class ContentProtectionModule implements ReaderModule {
       this.preventDrag(false);
     }
 
-    removeEventListenerOptional(window, "scroll", this.handleScroll.bind(this));
+    removeEventListenerOptional(
+      this.wrapper,
+      "scroll",
+      this.handleScroll.bind(this)
+    );
   }
 
   observe(): any {
@@ -656,7 +666,7 @@ export default class ContentProtectionModule implements ReaderModule {
             if (!this.hasEventListener) {
               this.hasEventListener = true;
               addEventListenerOptional(
-                window,
+                this.wrapper,
                 "scroll",
                 this.handleScroll.bind(this)
               );
@@ -956,12 +966,12 @@ export default class ContentProtectionModule implements ReaderModule {
   }
 
   isOutsideViewport(rect: ContentProtectionRect): boolean {
-    const windowLeft = window.scrollX;
-    const windowRight = windowLeft + window.innerWidth;
+    const windowLeft = this.wrapper.scrollLeft;
+    const windowRight = windowLeft + this.wrapper.clientWidth;
     const right = rect.left + rect.width;
     const bottom = rect.top + rect.height;
-    const windowTop = window.scrollY;
-    const windowBottom = windowTop + window.innerHeight;
+    const windowTop = this.wrapper.scrollTop;
+    const windowBottom = windowTop + this.wrapper.clientHeight;
 
     const isAbove = bottom < windowTop;
     const isBelow = rect.top > windowBottom;

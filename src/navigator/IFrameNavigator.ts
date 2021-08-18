@@ -806,7 +806,7 @@ export default class IFrameNavigator implements Navigator {
       // or we weren't able to insert the template in the element.
       console.error(err);
       this.abortOnError();
-      return new Promise<void>((_, reject) => reject(err)).catch(() => { });
+      return new Promise<void>((_, reject) => reject(err)).catch(() => {});
     }
   }
 
@@ -1005,7 +1005,7 @@ export default class IFrameNavigator implements Navigator {
           this.view.height =
             BrowserUtilities.getHeight() - 40 - this.attributes.margin;
           if (this.infoBottom) this.infoBottom.style.removeProperty("display");
-          document.body.onscroll = () => { };
+          document.body.onscroll = () => {};
           if (this.nextChapterBottomAnchorElement)
             this.nextChapterBottomAnchorElement.style.display = "none";
           if (this.previousChapterTopAnchorElement)
@@ -1418,7 +1418,7 @@ export default class IFrameNavigator implements Navigator {
     } catch (err) {
       console.error(err);
       this.abortOnError();
-      return new Promise<void>((_, reject) => reject(err)).catch(() => { });
+      return new Promise<void>((_, reject) => reject(err)).catch(() => {});
     }
   }
 
@@ -1633,7 +1633,7 @@ export default class IFrameNavigator implements Navigator {
     } catch (err) {
       console.error(err);
       this.abortOnError();
-      return new Promise<void>((_, reject) => reject(err)).catch(() => { });
+      return new Promise<void>((_, reject) => reject(err)).catch(() => {});
     }
   }
 
@@ -1674,17 +1674,11 @@ export default class IFrameNavigator implements Navigator {
               }
             } else if (injectable.r2before) {
               const link = IFrameNavigator.createCssLink(injectable.url);
-              head.insertBefore(
-                link,
-                head.firstChild
-              );
+              head.insertBefore(link, head.firstChild);
               addLoadingInjectable(link);
             } else if (injectable.r2default) {
               const link = IFrameNavigator.createCssLink(injectable.url);
-              head.insertBefore(
-                link,
-                head.childNodes[1]
-              );
+              head.insertBefore(link, head.childNodes[1]);
               addLoadingInjectable(link);
             } else if (injectable.r2after) {
               if (injectable.appearance) {
@@ -1869,7 +1863,7 @@ export default class IFrameNavigator implements Navigator {
             if (
               this.iframes.length == 2 &&
               (this.publication.Metadata.Rendition?.Layout ?? "unknown") ===
-              "fixed"
+                "fixed"
             ) {
               this.currentSpreadLinks.right = {
                 href: this.currentChapterLink.href,
@@ -2192,7 +2186,7 @@ export default class IFrameNavigator implements Navigator {
         if (
           openIcon &&
           (openIcon.getAttribute("class") || "").indexOf(" inactive-icon") ===
-          -1
+            -1
         ) {
           const newIconClass =
             (openIcon.getAttribute("class") || "") + " inactive-icon";
@@ -2246,7 +2240,7 @@ export default class IFrameNavigator implements Navigator {
         if (
           closeIcon &&
           (closeIcon.getAttribute("class") || "").indexOf(" inactive-icon") ===
-          -1
+            -1
         ) {
           const newIconClass =
             (closeIcon.getAttribute("class") || "") + " inactive-icon";

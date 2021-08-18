@@ -237,6 +237,12 @@ export default class AnnotationModule implements ReaderModule {
         : bookmarkPosition;
       const id: string = uuid();
       let annotation: Annotation;
+
+      let href = tocItem.Href;
+      if (href.indexOf("#") > 0) {
+        href = href.slice(0, href.indexOf("#"));
+      }
+
       if (
         ((this.rights?.autoGeneratePositions ?? true) &&
           this.publication.positions) ||
@@ -250,7 +256,7 @@ export default class AnnotationModule implements ReaderModule {
         annotation = {
           ...locator,
           id: id,
-          href: tocItem.Href,
+          href: href,
           created: new Date(),
           title: this.delegate.currentChapterLink.title,
           highlight: highlight,
@@ -263,7 +269,7 @@ export default class AnnotationModule implements ReaderModule {
       } else {
         annotation = {
           id: id,
-          href: tocItem.Href,
+          href: href,
           locations: {
             progression: progression,
           },
@@ -363,7 +369,12 @@ export default class AnnotationModule implements ReaderModule {
               );
             }
 
-            if (annotation.href === tocItem.Href) {
+            let href = tocItem.Href;
+            if (href.indexOf("#") > 0) {
+              href = href.slice(0, href.indexOf("#"));
+            }
+
+            if (annotation.href === href) {
               this.highlighter.setColor(annotation.color);
 
               await this.highlighter.createHighlightDom(
@@ -409,7 +420,12 @@ export default class AnnotationModule implements ReaderModule {
               );
             }
 
-            if (annotation.href === tocItem.Href) {
+            let href = tocItem.Href;
+            if (href.indexOf("#") > 0) {
+              href = href.slice(0, href.indexOf("#"));
+            }
+
+            if (annotation.href === href) {
               this.highlighter.setColor(annotation.color);
 
               await this.highlighter.createHighlightDom(

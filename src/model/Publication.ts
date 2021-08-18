@@ -82,6 +82,17 @@ export class Publication extends R2Publication {
   public getAbsoluteHref(href: string): string | null {
     return new URL(href, this.manifestUrl.href).href;
   }
+  public getRelativeHref(href: string): string | null {
+    const manifest = this.manifestUrl.href.replace("/manifest.json", ""); //new URL(this.manifestUrl.href, this.manifestUrl.href).href;
+    let h = href.replace(manifest, "");
+    if (h.indexOf("#") > 0) {
+      h = h.slice(0, h.indexOf("#"));
+    }
+    if (h.charAt(0) === "/") {
+      h = h.substring(1);
+    }
+    return h;
+  }
 
   public getTOCItemAbsolute(href: string): Link | null {
     const absolute = this.getAbsoluteHref(href);
@@ -152,7 +163,7 @@ export class Publication extends R2Publication {
   /**
    * positionsByHref
    */
-  public positionsByHref(href: string): Locator[] {
+  public positionsByHref(href: string) {
     const decodedHref = decodeURI(href) ?? "";
     return this.positions.filter((p: Locator) => decodedHref.includes(p.href));
   }
@@ -160,7 +171,7 @@ export class Publication extends R2Publication {
   get hasMediaOverlays(): boolean {
     return this.readingOrder
       ? this.readingOrder.filter((el: Link) => el.Properties?.MediaOverlay)
-          .length > 0
+        .length > 0
       : false;
   }
 }

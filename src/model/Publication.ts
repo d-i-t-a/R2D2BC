@@ -85,6 +85,7 @@ export class Publication extends R2Publication {
   public getRelativeHref(href: string): string | null {
     const manifest = this.manifestUrl.href.replace("/manifest.json", ""); //new URL(this.manifestUrl.href, this.manifestUrl.href).href;
     let h = href.replace(manifest, "");
+    console.log("the relative href => ", h);
     if (h.indexOf("#") > 0) {
       h = h.slice(0, h.indexOf("#"));
     }

@@ -207,8 +207,11 @@ export default class BookmarkModule implements ReaderModule {
           this.publication.positions) ||
         this.publication.positions
       ) {
-        const chptHref: string = this.delegate.currentChapterLink.href;
-        const positions = this.publication.positionsByHref(chptHref);
+        const positions = this.publication.positionsByHref(
+          this.publication.getRelativeHref(
+            this.delegate.currentChapterLink.href
+          )
+        );
         const positionIndex = Math.ceil(progression * (positions.length - 1));
         const locator = positions[positionIndex];
 

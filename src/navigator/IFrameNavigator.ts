@@ -2935,8 +2935,6 @@ export default class IFrameNavigator implements Navigator {
       }
       if (isCurrentLoaded) {
         console.log("is currently loaded");
-        console.log(locator.href);
-        console.log(this.currentChapterLink.href);
         if (locator.href.indexOf("#") !== -1) {
           const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
           locator.locations = {
@@ -3064,7 +3062,7 @@ export default class IFrameNavigator implements Navigator {
             this.chapterTitle.innerHTML = "(Current Chapter)";
         }
 
-        await this.savePosition();
+        await this.updatePositionInfo();
       } else {
         if (this.searchModule !== undefined) {
           this.searchModule.clearSearch();

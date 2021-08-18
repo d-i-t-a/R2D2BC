@@ -827,7 +827,7 @@ export default class IFrameNavigator implements Navigator {
       if (IS_DEV) console.log(lastReadingPosition.href);
       if (IS_DEV) console.log(linkHref);
       lastReadingPosition.href = linkHref;
-      this.navigate(lastReadingPosition);
+      await this.navigate(lastReadingPosition);
     }
   };
 
@@ -2104,11 +2104,8 @@ export default class IFrameNavigator implements Navigator {
                 obj[key] = isNaN(Number(value)) ? value : +value;
                 return obj;
               }, {});
-              console.log("## " + obj);
               height = obj["height"] + "px";
               width = obj["width"] + "px";
-              console.log("## " + height);
-              console.log("## " + width);
             }
           }
         }
@@ -2900,8 +2897,6 @@ export default class IFrameNavigator implements Navigator {
   }
 
   async navigate(locator: Locator): Promise<void> {
-    console.log("################");
-    console.log("navigate");
     const exists = this.publication.getTOCItem(locator.href);
     if (exists) {
       var isCurrentLoaded = false;
@@ -2934,7 +2929,6 @@ export default class IFrameNavigator implements Navigator {
         }
       }
       if (isCurrentLoaded) {
-        console.log("is currently loaded");
         if (locator.href.indexOf("#") !== -1) {
           const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
           locator.locations = {
@@ -3216,8 +3210,6 @@ export default class IFrameNavigator implements Navigator {
         this.loadingMessage.classList.remove("is-loading");
       }
       if (this.view.layout !== "fixed") {
-        console.log("hideLoadingMessage");
-        // this.checkResourcePosition();
         if (this.view.atStart() && this.view.atEnd()) {
           if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
         } else if (this.view.atEnd()) {

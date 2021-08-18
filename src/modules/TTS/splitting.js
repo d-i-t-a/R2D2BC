@@ -226,7 +226,6 @@
         next.tagName === "input" ||
         next.tagName === "option" ||
         next.tagName === "textarea" ||
-        next.tagName === "script"
         next.tagName === "script" ||
         // mathml tags
         next.tagName === "maction" ||

@@ -481,32 +481,33 @@ export default class ReflowableBookView implements BookView {
     if (this.isPaginated()) {
       // any is necessary because CSSStyleDeclaration type does not include
       // all the vendor-prefixed attributes.
-      const body = HTMLUtilities.findRequiredIframeElement(
-        this.iframe.contentDocument,
-        "body"
-      ) as any;
 
       (this.iframe.contentDocument as any).documentElement.style.height =
         this.height + "px";
       this.iframe.height = this.height + "px";
       this.iframe.width = BrowserUtilities.getWidth() + "px";
 
-      const images = body.querySelectorAll("img");
+      const body = HTMLUtilities.findRequiredIframeElement(
+        this.iframe.contentDocument,
+        "body"
+      ) as any;
+      const images = Array.prototype.slice.call(body.querySelectorAll("img"));
       for (const image of images) {
-        image.style.width = image.width + "px";
+        if (image.hasAttribute("width")) {
+          image.style.width = image.width + "px";
+        }
       }
     } else {
       // Remove previous iframe height so body scroll height will be accurate.
       this.iframe.height = "0";
       this.iframe.width = BrowserUtilities.getWidth() + "px";
 
+      const width = BrowserUtilities.getWidth() - this.sideMargin * 2 + "px";
+
       const body = HTMLUtilities.findRequiredIframeElement(
         this.iframe.contentDocument,
         "body"
       ) as HTMLBodyElement;
-
-      const width = BrowserUtilities.getWidth() - this.sideMargin * 2 + "px";
-
       const images = Array.prototype.slice.call(body.querySelectorAll("img"));
       for (const image of images) {
         if (image.hasAttribute("width")) {

@@ -797,7 +797,6 @@ export default class IFrameNavigator implements Navigator {
         }
       }
 
-
       return await this.loadManifest();
     } catch (err) {
       // There's a mismatch between the template and the selectors above,
@@ -1082,9 +1081,9 @@ export default class IFrameNavigator implements Navigator {
           }, 200);
 
           // document.body.style.overflow = "auto";
-          document.body.onscroll = () => {
+          document.body.onscroll = async () => {
             this.isScrolling = true;
-            this.saveCurrentReadingPosition();
+            await this.savePosition();
             if (this.view.atEnd()) {
               // Bring up the bottom nav when you get to the bottom,
               // if it wasn't already displayed.
@@ -1180,9 +1179,8 @@ export default class IFrameNavigator implements Navigator {
         }
       });
       setTimeout(async () => {
-        this.updatePositionInfo();
         if (this.annotationModule !== undefined) {
-          this.annotationModule.drawHighlights();
+          await this.annotationModule.drawHighlights();
         } else {
           if (
             this.rights?.enableSearch &&
@@ -1427,7 +1425,6 @@ export default class IFrameNavigator implements Navigator {
 
       await this.settings.applyProperties();
 
-
       let currentLocation = this.currentChapterLink.href;
 
       const previous = this.publication.getPreviousSpineItem(currentLocation);
@@ -1517,7 +1514,6 @@ export default class IFrameNavigator implements Navigator {
 
       await this.injectInjectablesIntoIframeHead();
 
-
       if (this.highlighter !== undefined) {
         await this.highlighter.initialize();
       }
@@ -1605,7 +1601,7 @@ export default class IFrameNavigator implements Navigator {
 
         this.hideLoadingMessage();
         this.showIframeContents();
-        this.updatePositionInfo();
+        await this.updatePositionInfo();
       }, 200);
 
       return new Promise<void>((resolve) => resolve());
@@ -2489,8 +2485,8 @@ export default class IFrameNavigator implements Navigator {
         this.handlePreviousChapterClick(event);
       } else {
         this.view.goToPreviousPage();
-        this.updatePositionInfo();
-        await this.saveCurrentReadingPosition();
+        await this.updatePositionInfo();
+        await this.savePosition();
       }
       if (event) {
         event.preventDefault();
@@ -2510,8 +2506,8 @@ export default class IFrameNavigator implements Navigator {
         await this.handleNextChapterClick(event);
       } else {
         this.view.goToNextPage();
-        this.updatePositionInfo();
-        await this.saveCurrentReadingPosition();
+        await this.updatePositionInfo();
+        await this.savePosition();
       }
       if (event) {
         event.preventDefault();
@@ -2727,14 +2723,14 @@ export default class IFrameNavigator implements Navigator {
         }
       }
     }, 100);
-    setTimeout(() => {
+    setTimeout(async () => {
       selectedView.goToPosition(oldPosition);
-      this.updatePositionInfo();
+      await this.updatePositionInfo(false);
       if (this.annotationModule !== undefined) {
         this.annotationModule.handleResize();
       } else {
         if (this.rights?.enableSearch) {
-          this.searchModule.handleResize();
+          await this.searchModule.handleResize();
         }
       }
       if (this.rights?.enableContentProtection) {
@@ -2745,7 +2741,7 @@ export default class IFrameNavigator implements Navigator {
     }, 100);
   }
 
-  async updatePositionInfo() {
+  async updatePositionInfo(save: boolean = true) {
     if (this.view.layout === "fixed") {
       if (this.chapterPosition) this.chapterPosition.innerHTML = "";
       if (this.remainingPositions) this.remainingPositions.innerHTML = "";
@@ -2776,10 +2772,16 @@ export default class IFrameNavigator implements Navigator {
         if (this.remainingPositions) this.remainingPositions.innerHTML = "";
       }
     }
+    if (save) {
+      await this.savePosition();
+    }
+  }
+
+  savePosition = debounce(async () => {
     if (this.annotator) {
       await this.saveCurrentReadingPosition();
     }
-  }
+  }, 200);
 
   private handlePreviousChapterClick(
     event: MouseEvent | TouchEvent | KeyboardEvent
@@ -2898,7 +2900,7 @@ export default class IFrameNavigator implements Navigator {
   }
 
   async navigate(locator: Locator): Promise<void> {
-    console.log("################")
+    console.log("################");
     console.log("navigate");
     const exists = this.publication.getTOCItem(locator.href);
     if (exists) {
@@ -2971,7 +2973,6 @@ export default class IFrameNavigator implements Navigator {
         }
 
         let currentLocation = this.currentChapterLink.href;
-        await this.updatePositionInfo();
 
         const previous = this.publication.getPreviousSpineItem(currentLocation);
         if (previous && previous.Href) {
@@ -3063,9 +3064,7 @@ export default class IFrameNavigator implements Navigator {
             this.chapterTitle.innerHTML = "(Current Chapter)";
         }
 
-        if (this.annotator) {
-          await this.saveCurrentReadingPosition();
-        }
+        await this.savePosition();
       } else {
         if (this.searchModule !== undefined) {
           this.searchModule.clearSearch();

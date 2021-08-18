@@ -2471,9 +2471,9 @@ export default class IFrameNavigator implements Navigator {
     this.handleResize();
   }
 
-  private async handlePreviousPageClick(
+  private handlePreviousPageClick(
     event: MouseEvent | TouchEvent | KeyboardEvent
-  ): Promise<void> {
+  ): void {
     this.stopReadAloud(true);
     if (this.view.layout === "fixed") {
       this.handlePreviousChapterClick(event);
@@ -2482,8 +2482,8 @@ export default class IFrameNavigator implements Navigator {
         this.handlePreviousChapterClick(event);
       } else {
         this.view.goToPreviousPage();
-        await this.updatePositionInfo();
-        await this.savePosition();
+        this.updatePositionInfo();
+        this.savePosition();
       }
       if (event) {
         event.preventDefault();
@@ -2492,19 +2492,19 @@ export default class IFrameNavigator implements Navigator {
     }
   }
 
-  private async handleNextPageClick(
+  private handleNextPageClick(
     event: MouseEvent | TouchEvent | KeyboardEvent
-  ): Promise<void> {
+  ): void {
     this.stopReadAloud(true);
     if (this.view.layout === "fixed") {
-      await this.handleNextChapterClick(event);
+      this.handleNextChapterClick(event);
     } else {
       if (this.view.atEnd()) {
-        await this.handleNextChapterClick(event);
+        this.handleNextChapterClick(event);
       } else {
         this.view.goToNextPage();
-        await this.updatePositionInfo();
-        await this.savePosition();
+        this.updatePositionInfo();
+        this.savePosition();
       }
       if (event) {
         event.preventDefault();
@@ -2820,9 +2820,9 @@ export default class IFrameNavigator implements Navigator {
     }
   }
 
-  private async handleNextChapterClick(
+  private handleNextChapterClick(
     event: MouseEvent | TouchEvent | KeyboardEvent
-  ): Promise<void> {
+  ): void {
     if (this.view.layout === "fixed" && this.settings.columnCount !== 1) {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
       index = index + 2;
@@ -2839,7 +2839,7 @@ export default class IFrameNavigator implements Navigator {
       };
 
       this.stopReadAloud(true);
-      await this.navigate(position);
+      this.navigate(position);
     } else {
       if (this.nextChapterLink) {
         const position: Locator = {
@@ -2852,7 +2852,7 @@ export default class IFrameNavigator implements Navigator {
         };
 
         this.stopReadAloud(true);
-        await this.navigate(position);
+        this.navigate(position);
       }
     }
     if (event) {

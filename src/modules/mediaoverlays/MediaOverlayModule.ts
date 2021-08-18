@@ -71,6 +71,10 @@ export default class MediaOverlayModule implements ReaderModule {
     document,
     "#menu-button-pause"
   ) as HTMLLinkElement;
+  private menu: HTMLLinkElement = HTMLUtilities.findElement(
+    document,
+    "#menu-button-mediaoverlay"
+  ) as HTMLLinkElement;
 
   private currentAudioBegin: number | undefined;
   private currentAudioEnd: number | undefined;
@@ -111,6 +115,12 @@ export default class MediaOverlayModule implements ReaderModule {
   protected async start(): Promise<void> {
     this.delegate.mediaOverlayModule = this;
     if (IS_DEV) console.log("MediaOverlay module start");
+
+    if (!this.delegate.hasMediaOverlays) {
+      this.play.parentElement.style.setProperty("display", "none");
+      this.pause.parentElement.style.setProperty("display", "none");
+      this.menu.parentElement.style.setProperty("display", "none");
+    }
   }
 
   async initialize() {

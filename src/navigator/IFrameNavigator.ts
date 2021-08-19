@@ -726,7 +726,21 @@ export default class IFrameNavigator implements Navigator {
           this.headerMenu,
           "#menu-button-bookmark"
         ) as HTMLLinkElement;
+
+        var play = HTMLUtilities.findElement(
+          this.headerMenu,
+          "#menu-button-play"
+        ) as HTMLLinkElement;
+        var pause = HTMLUtilities.findElement(
+          this.headerMenu,
+          "#menu-button-pause"
+        ) as HTMLLinkElement;
+        var menu = HTMLUtilities.findElement(
+          this.headerMenu,
+          "#menu-button-mediaoverlay"
+        ) as HTMLLinkElement;
       }
+
       if (this.rights?.enableMaterial) {
         let elements = document.querySelectorAll(".sidenav");
         if (elements) {
@@ -784,7 +798,7 @@ export default class IFrameNavigator implements Navigator {
           }
           if (!this.rights?.enableSearch) {
             if (menuSearch)
-              menuSearch.parentElement.style.removeProperty("display");
+              menuSearch.parentElement.style.setProperty("display", "none");
           }
           if (
             menuSearch &&
@@ -803,6 +817,16 @@ export default class IFrameNavigator implements Navigator {
           if (menuBookmark)
             menuBookmark.parentElement.style.setProperty("display", "none");
         }
+      }
+
+      if (this.hasMediaOverlays) {
+        if (play) play.parentElement.style.setProperty("display", "block");
+        if (pause) pause.parentElement.style.setProperty("display", "block");
+        if (menu) menu.parentElement.style.setProperty("display", "block");
+      } else {
+        if (play) play.parentElement.style.setProperty("display", "none");
+        if (pause) pause.parentElement.style.setProperty("display", "none");
+        if (menu) menu.parentElement.style.setProperty("display", "none");
       }
 
       return await this.loadManifest();

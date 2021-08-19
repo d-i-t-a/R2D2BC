@@ -84,11 +84,14 @@ export class Publication extends R2Publication {
   }
   public getRelativeHref(href: string): string | null {
     const manifest = this.manifestUrl.href.replace("/manifest.json", ""); //new URL(this.manifestUrl.href, this.manifestUrl.href).href;
-    var href = href.replace(manifest, "");
-    if (href.charAt(0) === "/") {
-      href = href.substring(1);
+    let h = href.replace(manifest, "");
+    if (h.indexOf("#") > 0) {
+      h = h.slice(0, h.indexOf("#"));
     }
-    return href;
+    if (h.charAt(0) === "/") {
+      h = h.substring(1);
+    }
+    return h;
   }
 
   public getTOCItemAbsolute(href: string): Link | null {
@@ -161,9 +164,8 @@ export class Publication extends R2Publication {
    * positionsByHref
    */
   public positionsByHref(href: string) {
-    return this.positions
-      ? this.positions.filter((el: Locator) => el.href === decodeURI(href))
-      : undefined;
+    const decodedHref = decodeURI(href) ?? "";
+    return this.positions.filter((p: Locator) => decodedHref.includes(p.href));
   }
 
   get hasMediaOverlays(): boolean {

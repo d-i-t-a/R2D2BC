@@ -454,20 +454,20 @@ export default class IFrameNavigator implements Navigator {
         iframe.setAttribute("allowtransparency", "true");
         this.iframes.push(iframe);
 
-        this.spreads = document.createElement("div");
-        this.firstSpread = document.createElement("div");
-        this.spreads.style.display = "flex";
-        this.spreads.style.alignItems = "center";
-        this.spreads.style.justifyContent = "center";
-        // let info = document.getElementById("reader-info-bottom");
-        // if (info) {
-        //   wrapper.insertBefore(this.spreads, info);
-        // } else {
-        wrapper.appendChild(this.spreads);
-        // }
-
-        this.spreads.appendChild(this.firstSpread);
-        this.firstSpread.appendChild(this.iframes[0]);
+        if (this.publication.isFixedLayout) {
+          this.spreads = document.createElement("div");
+          this.firstSpread = document.createElement("div");
+          this.spreads.style.display = "flex";
+          this.spreads.style.alignItems = "center";
+          this.spreads.style.justifyContent = "center";
+          this.spreads.appendChild(this.firstSpread);
+          this.firstSpread.appendChild(this.iframes[0]);
+          wrapper.appendChild(this.spreads);
+        } else {
+          iframe.setAttribute("height", "100%");
+          iframe.setAttribute("width", "100%");
+          wrapper.appendChild(this.iframes[0]);
+        }
 
         if (this.publication.isFixedLayout) {
           if (this.settings.columnCount !== 1) {
@@ -779,21 +779,7 @@ export default class IFrameNavigator implements Navigator {
         }
       }
 
-      setTimeout(() => {
-        if (self.annotationModule !== undefined) {
-          self.annotationModule.drawHighlights();
-          // self.annotationModule.drawIndicators()
-        } else {
-          if (this.rights?.enableSearch) {
-            this.highlighter.destroyAllhighlights(
-              this.iframes[0].contentDocument
-            );
-            self.searchModule.drawSearch();
-          }
-        }
-      }, 300);
-
-      await this.loadManifest();
+      return await this.loadManifest();
     } catch (err) {
       // There's a mismatch between the template and the selectors above,
       // or we weren't able to insert the template in the element.
@@ -822,7 +808,7 @@ export default class IFrameNavigator implements Navigator {
       if (IS_DEV) console.log(lastReadingPosition.href);
       if (IS_DEV) console.log(linkHref);
       lastReadingPosition.href = linkHref;
-      this.navigate(lastReadingPosition);
+      await this.navigate(lastReadingPosition);
     }
   };
 
@@ -1080,9 +1066,9 @@ export default class IFrameNavigator implements Navigator {
           ) as HTMLDivElement;
 
           // document.body.style.overflow = "auto";
-          wrapper.onscroll = () => {
+          wrapper.onscroll = async () => {
             this.isScrolling = true;
-            this.saveCurrentReadingPosition();
+            await this.savePosition();
             if (this.view.atEnd()) {
               // Bring up the bottom nav when you get to the bottom,
               // if it wasn't already displayed.
@@ -1165,11 +1151,14 @@ export default class IFrameNavigator implements Navigator {
         }
       });
       setTimeout(async () => {
-        this.updatePositionInfo();
         if (this.annotationModule !== undefined) {
-          this.annotationModule.drawHighlights();
+          await this.annotationModule.drawHighlights();
         } else {
-          if (this.rights?.enableSearch) {
+          if (
+            this.rights?.enableSearch &&
+            this.searchModule !== undefined &&
+            this.highlighter !== undefined
+          ) {
             for (const iframe of this.iframes) {
               await this.highlighter.destroyAllhighlights(
                 iframe.contentDocument
@@ -1372,7 +1361,7 @@ export default class IFrameNavigator implements Navigator {
         if (IS_DEV) console.log(lastReadingPosition.href);
         if (IS_DEV) console.log(linkHref);
         lastReadingPosition.href = linkHref;
-        this.navigate(lastReadingPosition);
+        await this.navigate(lastReadingPosition);
       } else if (startUrl) {
         const position: ReadingPosition = {
           href: startUrl,
@@ -1383,7 +1372,7 @@ export default class IFrameNavigator implements Navigator {
           title: startLink.Title,
         };
 
-        this.navigate(position);
+        await this.navigate(position);
       }
 
       return new Promise<void>((resolve) => resolve());
@@ -1405,30 +1394,9 @@ export default class IFrameNavigator implements Navigator {
       this.handleResize();
       this.updateBookView();
 
-      this.settings.applyProperties();
-
-      setTimeout(() => {
-        this.view.goToPosition(bookViewPosition);
-      }, 200);
+      await this.settings.applyProperties();
 
       let currentLocation = this.currentChapterLink.href;
-      setTimeout(() => {
-        if (this.newElementId) {
-          const element = (this.iframes[0]
-            .contentDocument as any).getElementById(this.newElementId);
-          this.view.goToElement(element);
-          this.newElementId = null;
-        } else {
-          if (this.newPosition && (this.newPosition as Annotation).highlight) {
-            this.view.goToCssSelector(
-              (this.newPosition as Annotation).highlight.selectionInfo.rangeInfo
-                .startContainerElementCssSelector
-            );
-          }
-        }
-        this.newPosition = null;
-        this.updatePositionInfo();
-      }, 200);
 
       const previous = this.publication.getPreviousSpineItem(currentLocation);
       if (previous && previous.Href) {
@@ -1519,87 +1487,94 @@ export default class IFrameNavigator implements Navigator {
 
       await this.injectInjectablesIntoIframeHead();
 
-      if (this.annotator) {
-        await this.saveCurrentReadingPosition();
-      }
-      this.hideLoadingMessage();
-      this.showIframeContents();
-
       if (this.highlighter !== undefined) {
         await this.highlighter.initialize();
       }
-      setTimeout(() => {
-        const body = this.iframes[0].contentDocument.body;
-        if (this.rights?.enableTTS && this.tts?.enableSplitter) {
-          Splitting({
-            target: body,
-            by: "lines",
-          });
+      const body = this.iframes[0].contentDocument.body;
+      if (this.rights?.enableTTS && this.tts?.enableSplitter) {
+        Splitting({
+          target: body,
+          by: "lines",
+        });
+      }
+      if (this.rights?.enableContentProtection) {
+        if (this.contentProtectionModule !== undefined) {
+          await this.contentProtectionModule.initialize();
         }
-        if (this.rights?.enableContentProtection) {
-          setTimeout(async () => {
-            if (this.contentProtectionModule !== undefined) {
-              await this.contentProtectionModule.initialize();
-            }
-          }, 50);
-        }
-      }, 50);
+      }
 
-      setTimeout(() => {
-        if (this.eventHandler) {
+      if (this.eventHandler) {
+        for (const iframe of this.iframes) {
+          this.eventHandler.setupEvents(iframe.contentDocument);
+          this.touchEventHandler.setupEvents(iframe.contentDocument);
+          this.keyboardEventHandler.setupEvents(iframe.contentDocument);
+        }
+        this.keyboardEventHandler.delegate = this;
+        this.keyboardEventHandler.keydown(document);
+      }
+      if (this.view.layout !== "fixed") {
+        if (this.view?.isScrollMode()) {
           for (const iframe of this.iframes) {
-            this.eventHandler.setupEvents(iframe.contentDocument);
-            this.touchEventHandler.setupEvents(iframe.contentDocument);
-            this.keyboardEventHandler.setupEvents(iframe.contentDocument);
-          }
-          this.keyboardEventHandler.delegate = this;
-          this.keyboardEventHandler.keydown(document);
-        }
-        if (this.view.layout !== "fixed") {
-          if (this.view?.isScrollMode()) {
-            for (const iframe of this.iframes) {
-              this.view.setIframeHeight(iframe);
-            }
+            this.view.setIframeHeight(iframe);
           }
         }
-        if (this.annotationModule !== undefined) {
-          this.annotationModule.initialize();
-        }
-        if (this.rights?.enableTTS) {
-          setTimeout(() => {
-            for (const iframe of this.iframes) {
-              const body = iframe.contentDocument.body;
-              if (this.ttsModule !== undefined) {
-                this.ttsModule.initialize(body);
-              }
-            }
-          }, 200);
-        }
+      }
+      if (this.annotationModule !== undefined) {
+        await this.annotationModule.initialize();
+      }
+      if (this.rights?.enableTTS) {
         for (const iframe of this.iframes) {
           const body = iframe.contentDocument.body;
-          var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
-          for (var i = 0; i < pagebreaks.length; i++) {
-            var img = pagebreaks[i];
-            if (IS_DEV) console.log(img);
-            if (img.innerHTML.length === 0) {
-              img.innerHTML = img.getAttribute("title");
-            }
-            img.className = "epubPageBreak";
+          if (this.ttsModule !== undefined) {
+            await this.ttsModule.initialize(body);
           }
         }
-      }, 100);
+      }
+      for (const iframe of this.iframes) {
+        const body = iframe.contentDocument.body;
+        var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
+        for (var i = 0; i < pagebreaks.length; i++) {
+          var img = pagebreaks[i];
+          if (IS_DEV) console.log(img);
+          if (img.innerHTML.length === 0) {
+            img.innerHTML = img.getAttribute("title");
+          }
+          img.className = "epubPageBreak";
+        }
+      }
+
+      if (this.timelineModule !== undefined) {
+        await this.timelineModule.initialize();
+      }
+
+      if (this.mediaOverlayModule !== undefined) {
+        await this.mediaOverlayModule.initialize();
+      }
 
       setTimeout(async () => {
-        if (this.timelineModule !== undefined) {
-          await this.timelineModule.initialize();
+        if (this.newElementId) {
+          const element = (this.iframes[0]
+            .contentDocument as any).getElementById(this.newElementId);
+          this.view.goToElement(element);
+          this.newElementId = null;
+        } else if (
+          this.newPosition &&
+          (this.newPosition as Annotation).highlight
+        ) {
+          this.view.goToCssSelector(
+            (this.newPosition as Annotation).highlight.selectionInfo.rangeInfo
+              .startContainerElementCssSelector
+          );
+        } else if (bookViewPosition > 0) {
+          this.view.goToPosition(bookViewPosition);
         }
-      }, 100);
 
-      setTimeout(async () => {
-        if (this.mediaOverlayModule !== undefined) {
-          await this.mediaOverlayModule.initialize();
-        }
-      }, 100);
+        this.newPosition = null;
+
+        this.hideLoadingMessage();
+        this.showIframeContents();
+        await this.updatePositionInfo();
+      }, 200);
 
       return Promise.resolve();
     } catch (err) {
@@ -2091,11 +2066,8 @@ export default class IFrameNavigator implements Navigator {
                 obj[key] = isNaN(Number(value)) ? value : +value;
                 return obj;
               }, {});
-              console.log("## " + obj);
               height = obj["height"] + "px";
               width = obj["width"] + "px";
-              console.log("## " + height);
-              console.log("## " + width);
             }
           }
         }
@@ -2453,7 +2425,7 @@ export default class IFrameNavigator implements Navigator {
       } else {
         this.view.goToPreviousPage();
         this.updatePositionInfo();
-        this.saveCurrentReadingPosition();
+        this.savePosition();
       }
       if (event) {
         event.preventDefault();
@@ -2462,7 +2434,9 @@ export default class IFrameNavigator implements Navigator {
     }
   }
 
-  private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
+  private handleNextPageClick(
+    event: MouseEvent | TouchEvent | KeyboardEvent
+  ): void {
     this.stopReadAloud(true);
     if (this.view.layout === "fixed") {
       this.handleNextChapterClick(event);
@@ -2472,7 +2446,7 @@ export default class IFrameNavigator implements Navigator {
       } else {
         this.view.goToNextPage();
         this.updatePositionInfo();
-        this.saveCurrentReadingPosition();
+        this.savePosition();
       }
       if (event) {
         event.preventDefault();
@@ -2661,14 +2635,14 @@ export default class IFrameNavigator implements Navigator {
         }
       }
     }, 100);
-    setTimeout(() => {
+    setTimeout(async () => {
       this.view.goToPosition(oldPosition);
-      this.updatePositionInfo();
+      await this.updatePositionInfo(false);
       if (this.annotationModule !== undefined) {
         this.annotationModule.handleResize();
       } else {
         if (this.rights?.enableSearch) {
-          this.searchModule.handleResize();
+          await this.searchModule.handleResize();
         }
       }
       if (this.rights?.enableContentProtection) {
@@ -2679,7 +2653,7 @@ export default class IFrameNavigator implements Navigator {
     }, 150);
   }
 
-  updatePositionInfo() {
+  async updatePositionInfo(save: boolean = true) {
     if (this.view.layout === "fixed") {
       if (this.chapterPosition) this.chapterPosition.innerHTML = "";
       if (this.remainingPositions) this.remainingPositions.innerHTML = "";
@@ -2710,10 +2684,16 @@ export default class IFrameNavigator implements Navigator {
         if (this.remainingPositions) this.remainingPositions.innerHTML = "";
       }
     }
-    if (this.annotator) {
-      this.saveCurrentReadingPosition();
+    if (save) {
+      await this.savePosition();
     }
   }
+
+  savePosition = debounce(async () => {
+    if (this.annotator) {
+      await this.saveCurrentReadingPosition();
+    }
+  }, 200);
 
   private handlePreviousChapterClick(
     event: MouseEvent | TouchEvent | KeyboardEvent
@@ -2831,7 +2811,7 @@ export default class IFrameNavigator implements Navigator {
     }
   }
 
-  navigate(locator: Locator): void {
+  async navigate(locator: Locator): Promise<void> {
     const exists = this.publication.getTOCItem(locator.href);
     if (exists) {
       var isCurrentLoaded = false;
@@ -2864,9 +2844,6 @@ export default class IFrameNavigator implements Navigator {
         }
       }
       if (isCurrentLoaded) {
-        console.log("is currently loaded");
-        console.log(locator.href);
-        console.log(this.currentChapterLink.href);
         if (locator.href.indexOf("#") !== -1) {
           const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
           locator.locations = {
@@ -2903,7 +2880,6 @@ export default class IFrameNavigator implements Navigator {
         }
 
         let currentLocation = this.currentChapterLink.href;
-        this.updatePositionInfo();
 
         const previous = this.publication.getPreviousSpineItem(currentLocation);
         if (previous && previous.Href) {
@@ -2997,12 +2973,17 @@ export default class IFrameNavigator implements Navigator {
             this.chapterTitle.innerHTML = "(Current Chapter)";
         }
 
-        if (this.annotator) {
-          this.saveCurrentReadingPosition();
-        }
+        await this.updatePositionInfo();
       } else {
         if (this.searchModule !== undefined) {
           this.searchModule.clearSearch();
+        }
+        if (locator.locations.fragment === undefined) {
+          this.currentTocUrl = null;
+        } else {
+          this.newElementId = locator.locations.fragment;
+          this.currentTocUrl =
+            this.currentChapterLink.href + "#" + this.newElementId;
         }
 
         this.hideIframeContents();
@@ -3017,78 +2998,69 @@ export default class IFrameNavigator implements Navigator {
 
         this.precessContentForIframe();
 
-        if (locator.locations.fragment === undefined) {
-          this.currentTocUrl = null;
-        } else {
-          this.newElementId = locator.locations.fragment;
-          this.currentTocUrl =
-            this.currentChapterLink.href + "#" + this.newElementId;
+        if (this.rights?.enableContentProtection) {
+          await this.contentProtectionModule.initializeResource();
         }
-        setTimeout(async () => {
-          if (this.rights?.enableContentProtection) {
-            this.contentProtectionModule.initializeResource();
-          }
-        }, 200);
 
-        setTimeout(async () => {
-          if (this.rights?.enableContentProtection) {
-            this.contentProtectionModule.recalculate(300);
-          }
-          if (this.annotationModule !== undefined) {
-            this.annotationModule.drawHighlights();
-            this.annotationModule.showHighlights();
-          } else {
-            if (this.rights?.enableSearch) {
-              for (const iframe of this.iframes) {
-                this.highlighter.destroyAllhighlights(iframe.contentDocument);
-              }
-              this.searchModule.drawSearch();
+        if (
+          this.rights?.enableMediaOverlays &&
+          this.mediaOverlayModule !== undefined
+        ) {
+          await this.mediaOverlayModule.initializeResource(this.currentLink());
+        }
+        if (this.rights?.enableContentProtection) {
+          this.contentProtectionModule.recalculate(300);
+        }
+        if (this.annotationModule !== undefined) {
+          await this.annotationModule.drawHighlights();
+          await this.annotationModule.showHighlights();
+        } else {
+          if (
+            this.rights?.enableSearch &&
+            this.searchModule !== undefined &&
+            this.highlighter !== undefined
+          ) {
+            for (const iframe of this.iframes) {
+              await this.highlighter.destroyAllhighlights(
+                iframe.contentDocument
+              );
             }
+            this.searchModule.drawSearch();
           }
-          if (this.view.layout === "fixed") {
-            if (this.nextChapterBottomAnchorElement)
-              this.nextChapterBottomAnchorElement.style.display = "none";
-            if (this.previousChapterTopAnchorElement)
-              this.previousChapterTopAnchorElement.style.display = "none";
-            if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
-          } else {
-            this.settings.isPaginated().then((paginated) => {
-              if (!paginated) {
-                if (this.view.atStart() && this.view.atEnd()) {
-                  if (this.nextChapterBottomAnchorElement)
-                    this.nextChapterBottomAnchorElement.style.display = "unset";
-                  if (this.previousChapterTopAnchorElement)
-                    this.previousChapterTopAnchorElement.style.display =
-                      "unset";
-                } else if (this.view.atEnd()) {
-                  if (this.previousChapterTopAnchorElement)
-                    this.previousChapterTopAnchorElement.style.display = "none";
-                  if (this.nextChapterBottomAnchorElement)
-                    this.nextChapterBottomAnchorElement.style.display = "unset";
-                } else if (this.view.atStart()) {
-                  if (this.nextChapterBottomAnchorElement)
-                    this.nextChapterBottomAnchorElement.style.display = "none";
-                  if (this.previousChapterTopAnchorElement)
-                    this.previousChapterTopAnchorElement.style.display =
-                      "unset";
-                } else {
-                  if (this.nextChapterBottomAnchorElement)
-                    this.nextChapterBottomAnchorElement.style.display = "none";
-                  if (this.previousChapterTopAnchorElement)
-                    this.previousChapterTopAnchorElement.style.display = "none";
-                }
+        }
+        if (this.view.layout === "fixed") {
+          if (this.nextChapterBottomAnchorElement)
+            this.nextChapterBottomAnchorElement.style.display = "none";
+          if (this.previousChapterTopAnchorElement)
+            this.previousChapterTopAnchorElement.style.display = "none";
+          if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
+        } else {
+          this.settings.isPaginated().then((paginated) => {
+            if (!paginated) {
+              if (this.view.atStart() && this.view.atEnd()) {
+                if (this.nextChapterBottomAnchorElement)
+                  this.nextChapterBottomAnchorElement.style.display = "unset";
+                if (this.previousChapterTopAnchorElement)
+                  this.previousChapterTopAnchorElement.style.display = "unset";
+              } else if (this.view.atEnd()) {
+                if (this.previousChapterTopAnchorElement)
+                  this.previousChapterTopAnchorElement.style.display = "none";
+                if (this.nextChapterBottomAnchorElement)
+                  this.nextChapterBottomAnchorElement.style.display = "unset";
+              } else if (this.view.atStart()) {
+                if (this.nextChapterBottomAnchorElement)
+                  this.nextChapterBottomAnchorElement.style.display = "none";
+                if (this.previousChapterTopAnchorElement)
+                  this.previousChapterTopAnchorElement.style.display = "unset";
+              } else {
+                if (this.nextChapterBottomAnchorElement)
+                  this.nextChapterBottomAnchorElement.style.display = "none";
+                if (this.previousChapterTopAnchorElement)
+                  this.previousChapterTopAnchorElement.style.display = "none";
               }
-            });
-            this.checkResourcePosition();
-          }
-          if (this.api?.resourceReady) this.api?.resourceReady();
-        }, 300);
-
-        setTimeout(async () => {
-          if (this.rights?.enableMediaOverlays) {
-            this.mediaOverlayModule.initializeResource(this.currentLink());
-          }
-        }, 200);
+            }
+          });
+        }
       }
     } else {
       const startLink = this.publication.getStartLink();
@@ -3105,7 +3077,7 @@ export default class IFrameNavigator implements Navigator {
           created: new Date(),
           title: startLink.Title,
         };
-        this.navigate(position);
+        await this.navigate(position);
       }
     }
   }
@@ -3158,6 +3130,16 @@ export default class IFrameNavigator implements Navigator {
         this.loadingMessage.style.display = "none";
         this.loadingMessage.classList.remove("is-loading");
       }
+      if (this.view.layout !== "fixed") {
+        if (this.view.atStart() && this.view.atEnd()) {
+          if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
+        } else if (this.view.atEnd()) {
+          if (this.api?.resourceAtEnd) this.api?.resourceAtEnd();
+        } else if (this.view.atStart()) {
+          if (this.api?.resourceAtStart) this.api?.resourceAtStart();
+        }
+      }
+      if (this.api?.resourceReady) this.api?.resourceReady();
     }, 150);
   }
 

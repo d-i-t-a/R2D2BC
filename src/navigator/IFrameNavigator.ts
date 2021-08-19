@@ -2393,11 +2393,12 @@ export default class IFrameNavigator implements Navigator {
     this.handleNextChapterClick(null);
   }
   goTo(locator: Locator): any {
-    let locations: Locations = locator.locations;
+    let locations: Locations = locator.locations ?? { progression: 0 };
     if (locator.href.indexOf("#") !== -1) {
       const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
       if (elementId !== null) {
         locations = {
+          ...locations,
           fragment: elementId,
         };
       }

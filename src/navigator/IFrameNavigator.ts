@@ -1734,6 +1734,7 @@ export default class IFrameNavigator implements Navigator {
     const self = this;
     var index = this.publication.getSpineIndex(this.currentChapterLink.href);
     var even: boolean = index % 2 === 1;
+    this.showLoadingMessageAfterDelay();
 
     function writeIframeDoc(content: string, href: string) {
       const parser = new DOMParser();

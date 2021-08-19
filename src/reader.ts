@@ -46,6 +46,7 @@ import IFrameNavigator, {
 import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
+import { convertAndCamel } from "./model/Link";
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -328,10 +329,10 @@ export default class D2Reader {
     return await this.annotationModule?.addAnnotation(highlight);
   };
   tableOfContents = async () => {
-    return await this.navigator.tableOfContents();
+    return await convertAndCamel(this.navigator.tableOfContents());
   };
   readingOrder = async () => {
-    return await this.navigator.readingOrder();
+    return await convertAndCamel(this.navigator.readingOrder());
   };
   bookmarks = async () => {
     if (this.navigator.rights?.enableBookmarks) {

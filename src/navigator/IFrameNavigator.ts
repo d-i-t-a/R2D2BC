@@ -3081,7 +3081,10 @@ export default class IFrameNavigator implements Navigator {
 
         this.precessContentForIframe();
 
-        if (this.rights?.enableContentProtection) {
+        if (
+          this.rights?.enableContentProtection &&
+          this.contentProtectionModule !== undefined
+        ) {
           await this.contentProtectionModule.initializeResource();
         }
 
@@ -3091,7 +3094,10 @@ export default class IFrameNavigator implements Navigator {
         ) {
           await this.mediaOverlayModule.initializeResource(this.currentLink());
         }
-        if (this.rights?.enableContentProtection) {
+        if (
+          this.rights?.enableContentProtection &&
+          this.contentProtectionModule !== undefined
+        ) {
           this.contentProtectionModule.recalculate(300);
         }
         if (this.annotationModule !== undefined) {

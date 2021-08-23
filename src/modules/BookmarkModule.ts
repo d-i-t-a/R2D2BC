@@ -195,7 +195,10 @@ export default class BookmarkModule implements ReaderModule {
           this.delegate.currentChapterLink.href
         );
       }
-
+      let href = tocItem.Href;
+      if (href.indexOf("#") > 0) {
+        href = href.slice(0, href.indexOf("#"));
+      }
       const progression = this.delegate.view.getCurrentPosition();
       const id: string = uuid();
       let bookmark: Bookmark;
@@ -204,22 +207,25 @@ export default class BookmarkModule implements ReaderModule {
           this.publication.positions) ||
         this.publication.positions
       ) {
-        const chptHref: string = this.delegate.currentChapterLink.href;
-        const positions = this.publication.positionsByHref(chptHref);
+        const positions = this.publication.positionsByHref(
+          this.publication.getRelativeHref(
+            this.delegate.currentChapterLink.href
+          )
+        );
         const positionIndex = Math.ceil(progression * (positions.length - 1));
         const locator = positions[positionIndex];
 
         bookmark = {
           ...locator,
           id: id,
-          href: tocItem.Href,
+          href: href,
           created: new Date(),
           title: this.delegate.currentChapterLink.title,
         };
       } else {
         bookmark = {
           id: id,
-          href: tocItem.Href,
+          href: href,
           locations: {
             progression: progression,
           },
@@ -233,7 +239,10 @@ export default class BookmarkModule implements ReaderModule {
         !(await this.annotator.locatorExists(bookmark, AnnotationType.Bookmark))
       ) {
         if (this.api?.addBookmark) {
-          await this.api.addBookmark(bookmark);
+          const result = await this.api.addBookmark(bookmark);
+          if (result) {
+            bookmark = result;
+          }
           if (IS_DEV) console.log(bookmark);
           let saved = await this.annotator.saveBookmark(bookmark);
 

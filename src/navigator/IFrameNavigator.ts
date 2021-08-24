@@ -2815,14 +2815,19 @@ export default class IFrameNavigator implements Navigator {
       this.navigate(position);
     } else {
       if (this.previousChapterLink) {
+        const link = this.publication.getTOCItemAbsolute(this.previousChapterLink.href);
         const position: Locator = {
-          href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
+          href: this.publication.getAbsoluteHref(link.Href),
           locations: {
             progression: 1,
           },
           type: this.previousChapterLink.type,
           title: this.previousChapterLink.title,
         };
+
+        if (this.publication.hasFragment(position.href)) {
+          this.publication.addFragmentToLocator(position);
+        }
 
         this.stopReadAloud(true);
         this.navigate(position);
@@ -2857,7 +2862,7 @@ export default class IFrameNavigator implements Navigator {
     } else {
       if (this.nextChapterLink) {
         const link = this.publication.getTOCItemAbsolute(this.nextChapterLink.href);
-        console.log(link);
+        console.log("Found link", link);
         const position: Locator = {
           href: this.publication.getAbsoluteHref(link.Href),
           locations: {
@@ -2867,17 +2872,11 @@ export default class IFrameNavigator implements Navigator {
           title: this.nextChapterLink.title,
         };
 
-        if (position.href.indexOf("#") !== -1) {
-          const elementId = position.href.slice(position.href.indexOf("#") + 1);
-          if (elementId !== null) {
-            position.locations = {
-              ...position.locations,
-              fragment: elementId,
-            };
-          }
+        if (this.publication.hasFragment(position.href)) {
+          this.publication.addFragmentToLocator(position);
         }
 
-        console.log("Going to ", position);
+        console.log("Going now to ", position);
 
         this.stopReadAloud(true);
         this.navigate(position);
@@ -2888,7 +2887,7 @@ export default class IFrameNavigator implements Navigator {
       event.stopPropagation();
     }
   }
-
+  
   private hideBookmarksOnEscape(event: KeyboardEvent) {
     const ESCAPE_KEY = 27;
     if (

@@ -83,6 +83,28 @@ export class Publication extends R2Publication {
     return new URL(href, this.manifestUrl.href).href;
   }
 
+  public hasFragment(href: string): boolean {
+    return href.indexOf("#") !== -1;
+  }
+
+  public extractFragment(href: string) {
+    return href.slice(href.indexOf("#") + 1);
+  }
+
+  public addFragmentToLocator(locator: Locator): Locator {
+    const elementId: string = this.extractFragment(locator.href);
+    if (!locator.locations) {
+      locator.locations = { progression: 0 };
+    }
+    if (elementId !== null) {
+      locator.locations = {
+        ...locator.locations,
+        fragment: elementId,
+      };
+    }
+    return locator;
+  }
+
   public getRelativeHref(href: string): string | null {
     let h = href;
     if (h.indexOf("#") > 0) {

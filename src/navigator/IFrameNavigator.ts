@@ -2856,14 +2856,28 @@ export default class IFrameNavigator implements Navigator {
       this.navigate(position);
     } else {
       if (this.nextChapterLink) {
+        const link = this.publication.getTOCItemAbsolute(this.nextChapterLink.href);
+        console.log(link);
         const position: Locator = {
-          href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
+          href: this.publication.getAbsoluteHref(link.Href),
           locations: {
             progression: 0,
           },
           type: this.nextChapterLink.type,
           title: this.nextChapterLink.title,
         };
+
+        if (position.href.indexOf("#") !== -1) {
+          const elementId = position.href.slice(position.href.indexOf("#") + 1);
+          if (elementId !== null) {
+            position.locations = {
+              ...position.locations,
+              fragment: elementId,
+            };
+          }
+        }
+
+        console.log("Going to ", position);
 
         this.stopReadAloud(true);
         this.navigate(position);

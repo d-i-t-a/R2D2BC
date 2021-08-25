@@ -1536,11 +1536,6 @@ export default class IFrameNavigator implements Navigator {
           by: "lines",
         });
       }
-      if (this.rights?.enableContentProtection) {
-        if (this.contentProtectionModule !== undefined) {
-          await this.contentProtectionModule.initialize();
-        }
-      }
 
       if (this.eventHandler) {
         for (const iframe of this.iframes) {
@@ -1614,6 +1609,13 @@ export default class IFrameNavigator implements Navigator {
         this.hideLoadingMessage();
         this.showIframeContents();
         await this.updatePositionInfo();
+
+        if (this.rights?.enableContentProtection) {
+          if (this.contentProtectionModule !== undefined) {
+            await this.contentProtectionModule.initialize();
+          }
+        }
+
       }, 200);
 
       return new Promise<void>((resolve) => resolve());

@@ -1607,7 +1607,6 @@ export default class IFrameNavigator implements Navigator {
         } else if (bookViewPosition > 0) {
           this.view.goToPosition(bookViewPosition);
         }
-        
         this.newPosition = null;
 
         if (this.rights?.enableContentProtection) {

@@ -1618,7 +1618,6 @@ export default class IFrameNavigator implements Navigator {
         this.hideLoadingMessage();
         this.showIframeContents();
         await this.updatePositionInfo();
-
       }, 200);
 
       return new Promise<void>((resolve) => resolve());

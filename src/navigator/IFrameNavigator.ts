@@ -261,6 +261,7 @@ export default class IFrameNavigator implements Navigator {
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;
   services: PublicationServices;
+  private didInitKeyboardEventHandler: boolean = false;
 
   public static async create(config: IFrameNavigatorConfig): Promise<any> {
     const navigator = new this(
@@ -1543,8 +1544,11 @@ export default class IFrameNavigator implements Navigator {
           this.touchEventHandler.setupEvents(iframe.contentDocument);
           this.keyboardEventHandler.setupEvents(iframe.contentDocument);
         }
-        this.keyboardEventHandler.delegate = this;
-        this.keyboardEventHandler.keydown(document);
+        if (!this.didInitKeyboardEventHandler) {
+          this.keyboardEventHandler.delegate = this;
+          this.keyboardEventHandler.keydown(document);
+          this.didInitKeyboardEventHandler = true;
+        }
       }
       if (this.view.layout !== "fixed") {
         if (this.view?.isScrollMode()) {
@@ -1586,7 +1590,7 @@ export default class IFrameNavigator implements Navigator {
       }
 
       setTimeout(async () => {
-        if (this.newElementId) {
+        if (this.newElementId && bookViewPosition === 0) {
           const element = (
             this.iframes[0].contentDocument as any
           ).getElementById(this.newElementId);
@@ -2816,14 +2820,19 @@ export default class IFrameNavigator implements Navigator {
       this.navigate(position);
     } else {
       if (this.previousChapterLink) {
+        const link = this.publication.getTOCItemAbsolute(this.previousChapterLink.href);
         const position: Locator = {
-          href: this.publication.getAbsoluteHref(this.previousChapterLink.href),
+          href: this.publication.getAbsoluteHref(link.Href),
           locations: {
             progression: 1,
           },
           type: this.previousChapterLink.type,
           title: this.previousChapterLink.title,
         };
+
+        if (this.publication.hasFragment(position.href)) {
+          this.publication.addFragmentToLocator(position);
+        }
 
         this.stopReadAloud(true);
         this.navigate(position);
@@ -2857,14 +2866,19 @@ export default class IFrameNavigator implements Navigator {
       this.navigate(position);
     } else {
       if (this.nextChapterLink) {
+        const link = this.publication.getTOCItemAbsolute(this.nextChapterLink.href);
         const position: Locator = {
-          href: this.publication.getAbsoluteHref(this.nextChapterLink.href),
+          href: this.publication.getAbsoluteHref(link.Href),
           locations: {
             progression: 0,
           },
           type: this.nextChapterLink.type,
           title: this.nextChapterLink.title,
         };
+
+        if (this.publication.hasFragment(position.href)) {
+          this.publication.addFragmentToLocator(position);
+        }
 
         this.stopReadAloud(true);
         this.navigate(position);

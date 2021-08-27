@@ -1537,11 +1537,6 @@ export default class IFrameNavigator implements Navigator {
           by: "lines",
         });
       }
-      if (this.rights?.enableContentProtection) {
-        if (this.contentProtectionModule !== undefined) {
-          await this.contentProtectionModule.initialize();
-        }
-      }
 
       if (this.eventHandler) {
         for (const iframe of this.iframes) {
@@ -1612,8 +1607,13 @@ export default class IFrameNavigator implements Navigator {
         } else if (bookViewPosition > 0) {
           this.view.goToPosition(bookViewPosition);
         }
-
         this.newPosition = null;
+
+        if (this.rights?.enableContentProtection) {
+          if (this.contentProtectionModule !== undefined) {
+            await this.contentProtectionModule.initialize();
+          }
+        }
 
         this.hideLoadingMessage();
         this.showIframeContents();

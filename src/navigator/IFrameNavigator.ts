@@ -1603,18 +1603,17 @@ export default class IFrameNavigator implements Navigator {
         } else if (bookViewPosition > 0) {
           this.view.goToPosition(bookViewPosition);
         }
-
         this.newPosition = null;
-
-        this.hideLoadingMessage();
-        this.showIframeContents();
-        await this.updatePositionInfo();
 
         if (this.rights?.enableContentProtection) {
           if (this.contentProtectionModule !== undefined) {
             await this.contentProtectionModule.initialize();
           }
         }
+
+        this.hideLoadingMessage();
+        this.showIframeContents();
+        await this.updatePositionInfo();
 
       }, 200);
 

@@ -46,6 +46,20 @@ export default class KeyboardEventHandler {
     element.addEventListener(
       "keydown",
       function (event: KeyboardEvent) {
+        // Ignore input elements
+        const eventTarget = event.target as HTMLElement;
+        if (/input|select|option|textarea/i.test(eventTarget.tagName)) {
+          return;
+        }
+
+        // Ignore when active text selection
+        const ownerDocument = (eventTarget.ownerDocument || eventTarget) as HTMLDocument;
+        const ownerWindow = ownerDocument.defaultView as Window;
+        const selection = ownerWindow.getSelection() as Selection;
+        if (!selection.isCollapsed) {
+          return;
+        }
+
         const key = event.key;
         switch (key) {
           case "ArrowRight":

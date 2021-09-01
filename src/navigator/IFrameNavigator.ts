@@ -70,6 +70,7 @@ import MediaOverlayModule, {
   MediaOverlayModuleConfig,
 } from "../modules/mediaoverlays/MediaOverlayModule";
 import { D2Link, Link } from "../model/Link";
+import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -95,6 +96,7 @@ export interface IFrameAttributes {
   navHeight?: number;
   iframePaddingTop?: number;
   bottomInfoHeight?: number;
+  sideNavPosition?: "left" | "right";
 }
 export interface IFrameNavigatorConfig {
   mainElement: HTMLElement;
@@ -103,9 +105,6 @@ export interface IFrameNavigatorConfig {
   publication: Publication;
   settings: UserSettings;
   annotator?: Annotator;
-  eventHandler?: EventHandler;
-  touchEventHandler?: TouchEventHandler;
-  keyboardEventHandler?: KeyboardEventHandler;
   upLink?: UpLinkConfig;
   initialLastReadingPosition?: ReadingPosition;
   rights?: ReaderRights;
@@ -115,10 +114,17 @@ export interface IFrameNavigatorConfig {
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;
   services: PublicationServices;
+  sample?: SampleRead;
 }
 export interface PublicationServices {
   positions?: URL;
   weight?: URL;
+}
+export interface SampleRead {
+  isSampleRead?: boolean;
+  limit?: number;
+  popup?: string;
+  minimum?: number;
 }
 export interface Injectable {
   type: string;
@@ -172,6 +178,7 @@ export interface ReaderConfig {
   useLocalStorage?: boolean;
   attributes?: IFrameAttributes;
   services?: PublicationServices;
+  sample?: SampleRead;
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -213,6 +220,7 @@ export default class IFrameNavigator implements Navigator {
   private readonly eventHandler: EventHandler;
   private readonly touchEventHandler: TouchEventHandler;
   private readonly keyboardEventHandler: KeyboardEventHandler;
+  private readonly sampleReadEventHandler: SampleReadEventHandler;
   private readonly upLinkConfig: UpLinkConfig | null;
   private upLink: HTMLAnchorElement | null = null;
 
@@ -241,7 +249,7 @@ export default class IFrameNavigator implements Navigator {
   private linksMiddle: HTMLUListElement;
   private tocView: HTMLDivElement;
   private loadingMessage: HTMLDivElement;
-  private errorMessage: HTMLDivElement;
+  errorMessage: HTMLDivElement;
   private tryAgainButton: HTMLButtonElement;
   private goBackButton: HTMLButtonElement;
   private infoTop: HTMLDivElement;
@@ -261,14 +269,13 @@ export default class IFrameNavigator implements Navigator {
   injectables: Array<Injectable>;
   attributes: IFrameAttributes;
   services: PublicationServices;
+  sample: SampleRead;
+  private didInitKeyboardEventHandler: boolean = false;
 
   public static async create(config: IFrameNavigatorConfig): Promise<any> {
     const navigator = new this(
       config.settings,
       config.annotator || null,
-      config.eventHandler || null,
-      config.touchEventHandler || null,
-      config.keyboardEventHandler || null,
       config.upLink || null,
       config.initialLastReadingPosition || null,
       config.publication,
@@ -278,7 +285,8 @@ export default class IFrameNavigator implements Navigator {
       config.tts,
       config.injectables,
       config.attributes || { margin: 0 },
-      config.services
+      config.services,
+      config.sample
     );
 
     await navigator.start(
@@ -292,9 +300,6 @@ export default class IFrameNavigator implements Navigator {
   protected constructor(
     settings: UserSettings,
     annotator: Annotator | null = null,
-    eventHandler: EventHandler | null = null,
-    touchEventHandler: TouchEventHandler | null = null,
-    keyboardEventHandler: KeyboardEventHandler | null = null,
     upLinkConfig: UpLinkConfig | null = null,
     initialLastReadingPosition: ReadingPosition | null = null,
     publication: Publication,
@@ -304,17 +309,17 @@ export default class IFrameNavigator implements Navigator {
     tts: TTSModuleConfig,
     injectables: Array<Injectable>,
     attributes: IFrameAttributes,
-    services: PublicationServices
+    services: PublicationServices,
+    sample: SampleRead
   ) {
     this.settings = settings;
     this.annotator = annotator;
     this.view = settings.view;
     this.view.attributes = attributes;
     this.view.delegate = this;
-    this.eventHandler = eventHandler || new EventHandler();
-    this.touchEventHandler = touchEventHandler || new TouchEventHandler();
-    this.keyboardEventHandler =
-      keyboardEventHandler || new KeyboardEventHandler();
+    this.eventHandler = new EventHandler();
+    this.touchEventHandler = new TouchEventHandler();
+    this.keyboardEventHandler = new KeyboardEventHandler();
     this.upLinkConfig = upLinkConfig;
     this.initialLastReadingPosition = initialLastReadingPosition;
     this.publication = publication;
@@ -325,6 +330,8 @@ export default class IFrameNavigator implements Navigator {
     this.injectables = injectables;
     this.attributes = attributes || { margin: 0 };
     this.services = services;
+    this.sample = sample;
+    this.sampleReadEventHandler = new SampleReadEventHandler(this);
   }
 
   async stop() {
@@ -439,7 +446,9 @@ export default class IFrameNavigator implements Navigator {
       if (iframe2) {
         this.iframes.push(iframe2);
       }
-
+      if (window.matchMedia("screen and (max-width: 600px)").matches) {
+        this.settings.columnCount = 1;
+      }
       if (this.iframes.length === 0) {
         var wrapper = HTMLUtilities.findRequiredElement(
           mainElement,
@@ -718,12 +727,26 @@ export default class IFrameNavigator implements Navigator {
           this.headerMenu,
           "#menu-button-bookmark"
         ) as HTMLLinkElement;
+
+        var play = HTMLUtilities.findElement(
+          this.headerMenu,
+          "#menu-button-play"
+        ) as HTMLLinkElement;
+        var pause = HTMLUtilities.findElement(
+          this.headerMenu,
+          "#menu-button-pause"
+        ) as HTMLLinkElement;
+        var menu = HTMLUtilities.findElement(
+          this.headerMenu,
+          "#menu-button-mediaoverlay"
+        ) as HTMLLinkElement;
       }
+
       if (this.rights?.enableMaterial) {
         let elements = document.querySelectorAll(".sidenav");
         if (elements) {
           self.mSidenav = Sidenav.init(elements, {
-            edge: "left",
+            edge: this.attributes?.sideNavPosition ?? "left",
           });
         }
         let collapsible = document.querySelectorAll(".collapsible");
@@ -776,7 +799,7 @@ export default class IFrameNavigator implements Navigator {
           }
           if (!this.rights?.enableSearch) {
             if (menuSearch)
-              menuSearch.parentElement.style.removeProperty("display");
+              menuSearch.parentElement.style.setProperty("display", "none");
           }
           if (
             menuSearch &&
@@ -795,6 +818,16 @@ export default class IFrameNavigator implements Navigator {
           if (menuBookmark)
             menuBookmark.parentElement.style.setProperty("display", "none");
         }
+      }
+
+      if (this.hasMediaOverlays) {
+        if (play) play.parentElement.style.setProperty("display", "block");
+        if (pause) pause.parentElement.style.setProperty("display", "block");
+        if (menu) menu.parentElement.style.setProperty("display", "block");
+      } else {
+        if (play) play.parentElement.style.setProperty("display", "none");
+        if (pause) pause.parentElement.style.setProperty("display", "none");
+        if (menu) menu.parentElement.style.setProperty("display", "none");
       }
 
       return await this.loadManifest();
@@ -986,7 +1019,6 @@ export default class IFrameNavigator implements Navigator {
     }
   }
   isScrolling: boolean;
-
   private updateBookView(): void {
     if (this.view.layout === "fixed") {
       if (this.nextPageAnchorElement)
@@ -1536,8 +1568,12 @@ export default class IFrameNavigator implements Navigator {
           this.touchEventHandler.setupEvents(iframe.contentDocument);
           this.keyboardEventHandler.setupEvents(iframe.contentDocument);
         }
-        this.keyboardEventHandler.delegate = this;
-        this.keyboardEventHandler.keydown(document);
+        this.touchEventHandler.setupEvents(this.errorMessage);
+        if (!this.didInitKeyboardEventHandler) {
+          this.keyboardEventHandler.delegate = this;
+          this.keyboardEventHandler.keydown(document);
+          this.didInitKeyboardEventHandler = true;
+        }
       }
       if (this.view.layout !== "fixed") {
         if (this.view?.isScrollMode()) {
@@ -1702,6 +1738,7 @@ export default class IFrameNavigator implements Navigator {
     const self = this;
     var index = this.publication.getSpineIndex(this.currentChapterLink.href);
     var even: boolean = index % 2 === 1;
+    this.showLoadingMessageAfterDelay();
 
     function writeIframeDoc(content: string, href: string) {
       const parser = new DOMParser();
@@ -2393,11 +2430,12 @@ export default class IFrameNavigator implements Navigator {
     this.handleNextChapterClick(null);
   }
   goTo(locator: Locator): any {
-    let locations: Locations = locator.locations;
+    let locations: Locations = locator.locations ?? { progression: 0 };
     if (locator.href.indexOf("#") !== -1) {
       const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
       if (elementId !== null) {
         locations = {
+          ...locations,
           fragment: elementId,
         };
       }
@@ -2492,20 +2530,42 @@ export default class IFrameNavigator implements Navigator {
     }
   }
 
-  private handleNextPageClick(
-    event: MouseEvent | TouchEvent | KeyboardEvent
-  ): void {
-    this.stopReadAloud(true);
-    if (this.view.layout === "fixed") {
-      this.handleNextChapterClick(event);
-    } else {
-      if (this.view.atEnd()) {
+  private handleNextPageClick(event: MouseEvent | TouchEvent | KeyboardEvent) {
+    let valid = true;
+    if (this.sample?.isSampleRead && this.publication.positions) {
+      const locator = this.currentLocator();
+      let progress = Math.round(locator.locations.totalProgression * 100);
+      valid = progress <= this.sample?.limit;
+      if (this.view.layout === "fixed") {
+        if (!valid && locator.locations.position <= this.sample?.minimum) {
+          valid = true;
+        }
+      }
+    }
+
+    if (
+      (valid && this.sample?.isSampleRead && this.publication.positions) ||
+      !this.sample?.isSampleRead ||
+      !this.publication.positions
+    ) {
+      this.stopReadAloud(true);
+      if (this.view.layout === "fixed") {
         this.handleNextChapterClick(event);
       } else {
-        this.view.goToNextPage();
-        this.updatePositionInfo();
-        this.savePosition();
+        if (this.view.atEnd()) {
+          this.handleNextChapterClick(event);
+        } else {
+          this.view.goToNextPage();
+          this.updatePositionInfo();
+          this.savePosition();
+        }
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
       }
+    }
+    if (!valid && this.sample?.isSampleRead && this.publication.positions) {
       if (event) {
         event.preventDefault();
         event.stopPropagation();
@@ -3281,6 +3341,10 @@ export default class IFrameNavigator implements Navigator {
           type: this.currentChapterLink.type,
           title: this.currentChapterLink.title,
         };
+      }
+
+      if (this.sample?.isSampleRead && this.publication.positions) {
+        this.sampleReadEventHandler?.enforceSampleRead(position);
       }
 
       if (this.api?.updateCurrentLocation) {

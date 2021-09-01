@@ -1,0 +1,509 @@
+<!--
+ * Copyright 2018-2020 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Developed on behalf of: DITA
+ * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Dita Reader</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Aferdita Muriqi" />
+    <meta name="description" content="A viewer application for EPUB files." />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+
+    <!-- R2 Reader CSS -->
+    <link rel="stylesheet" href="reader.css" />
+
+    <script> var exports = {}; </script>
+    <script src="reader.js"></script>
+
+    <!-- Material Icons-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- START Material CSS -->
+    <!-- Material header and footer CSS  - uncomment if  custom header an d footer is provided-->
+    <link rel="stylesheet" href="material.css" />
+    <!-- END Material CSS -->
+
+</head>
+
+<body>
+
+    <div class="content" id="root">
+        <header id="headerMenu">
+            <div class="navbar-fixed">
+                <nav class="navbar">
+                    <div class="nav-wrapper"><span class="brand-logo  hide-on-med-and-down " id="book-title"></span>
+                        <ul id="nav-mobile-right" class="right">
+                            <li><a style="padding-left: 7px; padding-right: 7px;" onclick="javascript:D2Reader.previousPage()"><i class="material-icons show-on-large">arrow_back_ios</i></a></li>
+                            <li><a style="padding-left: 7px; padding-right: 7px;" onclick="javascript:D2Reader.nextPage()"><i class="material-icons show-on-large">arrow_forward_ios</i></a></li>
+                            <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
+                            <li><a data-target="container-view-settings-custom" class="dropdown-trigger " id="menu-button-settings" onclick="reload()"><i class="material-icons">settings</i></a></li>
+                            <li><a href="#!" data-target="sidenav-left" class="sidenav-trigger left"><i class="material-icons  show-on-large">menu</i></a></li>
+                        </ul>
+                        <ul id="nav-mobile-left" class="left">
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+            <ul id="sidenav-left" class="sidenav">
+                <li><a href="#" class="logo-container ">Dita Reader<i class="material-icons  left" style="margin-right: 15px">
+                            import_contacts
+                        </i><i class="material-icons right  editAnnotations" id="expand-menu">unfold_more</i></a></li>
+                <li class="no-padding ">
+                    <ul class="collapsible collapsible-accordion">
+                        <li style="padding-left: 16px" id="sidenav-section-gotopage">
+                            Go To Page: <input type="text" style="width:100px;" id="goToPageNumberInput" /><button id="goToPageNumberButton">Go</button>
+                        </li>
+                        <li class="bold" id="sidenav-section-toc"><a class="collapsible-header ">Table of Contents<i class="material-icons chevron purple-yellow-text">chevron_left</i></a>
+                            <div id="container-view-toc" class="contents-view collapsible-body active" style="background-color : #ffffff">
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+            <div id="container-view-settings-custom" class="dropdown-content settings-view settings">
+                <div class="range-slider">
+                    <label style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Fontsize</label>
+                    <input class="range-slider__range_settings" type="range" min="100" max="300" step="25"
+                           value="100" id="fontSize" name="fontSize"
+                           onchange="D2Reader.applyUserSettings({ fontSize: this.value })"/>
+                </div>
+                <div>
+                    <label style="display: block;
+    text-align: center;
+    line-height: 12pt;height: 0px;">Font</label>
+                    <center>
+                        <select style="width: 80%;" onchange="D2Reader.applyUserSettings({fontFamily:value});reload();"
+                                id="fontFamily">
+                            <option value="Original">Publisher</option>
+                            <option value="serif">Serif</option>
+                            <option value="sans-serif">Sans-serif</option>
+                            <option value="opendyslexic">Open Dyslexic</option>
+                        </select>
+                    </center>
+                </div>
+                <div>
+                    <center>
+                        <button style="width: 30%;
+    background-color: white;
+    height: 50px;
+    border-radius: 25px 0px 0px 25px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'day'})">DAY
+                        </button><button style="width: 30%;
+    background-color: wheat;
+    height: 50px;
+    /*border-radius: 25px;*/
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'sepia'})">SEPIA
+                    </button><button style="width: 30%;
+    background-color: black;
+    height: 50px;
+    border-radius: 0px 25px 25px 0px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: white;
+    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'night'})">NIGHT
+                    </button>
+                    </center>
+                </div>
+                <div id="scrollMode" style="padding-bottom: 10px">
+                    <label style="display: block;
+                               text-align: center;
+                               line-height: 12pt;">Layout</label>
+                    <center>
+                        <button style="width: 100px;
+        background-color: white;
+height: 50px;
+    border-radius: 25px 0px 0px 25px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt; text-transform: uppercase"
+                                onclick="D2Reader.applyUserSettings({verticalScroll:true});setScroll('true')">Scroll
+                        </button><button style="width: 100px;
+        background-color: white;
+height: 50px;
+    border-radius: 0px 25px 25px 0px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase"
+                                         onclick="D2Reader.applyUserSettings({verticalScroll:false});setScroll('false')">
+                        Paginated
+                    </button>
+                    </center>
+                </div>
+                <div id="reset" style="padding-bottom: 10px">
+
+                    <center>
+                        <button style="width: 100px;
+        background-color: white;
+    height: 50px;
+    border-radius: 25px 25px 25px 25px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt; text-transform: uppercase"
+                                onclick="D2Reader.resetUserSettings();">Reset
+                        </button>
+                    </center>
+                </div>
+            </div>
+        </header>
+
+        <div id="D2Reader-Container" style="width: 100%; height: 100%; position: relative;">
+            <main style="overflow: hidden" tabindex=-1 id="iframe-wrapper">
+                <div id="reader-loading" class="loading"></div>
+                <div id="reader-error" class="error"></div>
+                <div id="reader-info-top" class="info top">
+                    <span class="book-title"></span>
+                </div>
+                <div id="reader-info-bottom" class="info bottom">
+                    <div style="display: flex;justify-content: center;">
+                        <span class="chapter-position"></span>&nbsp;
+                        <span class="chapter-title"></span>
+                    </div>
+                    <div class="scrubber">
+                        <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="javascript:D2Reader.goToPosition( this.value )" />
+                    </div>
+                    <div>
+                        <span class="remaining-positions"></span>
+                    </div>
+                </div>
+            </main>
+            <div id="container-view-security" class="security"></div>
+            <div id="container-view-timeline" class="timeline" style="top: 5rem;bottom: 2.5rem;"></div>
+            <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
+               style="top: 65px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
+                <i class="material-icons black-text" style="left: calc(50% - 12px);
+                position: relative;">keyboard_arrow_up</i>
+            </a>
+            <a id="next-chapter" rel="next" role="button" aria-labelledby="next-label" style="bottom: 0;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
+                <i class="material-icons black-text" style="left: calc(50% - 12px);
+                position: relative;">keyboard_arrow_down</i>
+            </a>
+            <div class="left-gutter" id="left-gutter"></div>
+        </div>
+
+    </div>
+
+    <footer id="footerMenu">
+        <a rel="prev" class="disabled" role="button" aria-labelledby="previous-label" style="top: 50%;left:0;position: fixed;height: 100px;
+                    background: #d3d3d33b;">
+            <i class="material-icons black-text" style="top: calc(50% - 12px);
+                        position: relative;">keyboard_arrow_left</i>
+        </a>
+        <a rel="next" class="disabled" role="button" aria-labelledby="next-label" style="top: 50%;right:0;position: fixed;height: 100px;
+                    background: #d3d3d33b;">
+            <i class="material-icons black-text" style="top: calc(50% - 12px);
+                        position: relative;">keyboard_arrow_right</i>
+        </a>
+    </footer>
+
+    <script>
+        let getURLQueryParams = function () {
+            let params = {};
+            let query = window.location.search;
+            if (query && query.length) {
+                query = query.substring(1);
+                let keyParams = query.split('&');
+                for (let x = 0; x < keyParams.length; x++) {
+                    let keyVal = keyParams[x].split('=');
+                    if (keyVal.length > 1) {
+                        params[keyVal[0]] = decodeURIComponent(keyVal[1]);
+                    }
+                }
+            }
+            return params;
+        };
+        let urlParams = getURLQueryParams();
+        let upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
+        let injectables = [
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            { type: 'style', url: '/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
+            { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
+            { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
+            { type: 'style', fontFamily: 'Courier', systemFont: true },
+            { type: 'script', url: '/viewer/injectables/footnotes/footnotes.js' },
+            { type: 'style', url: '/viewer/injectables/footnotes/footnotes.css' },
+            { type: 'style', url: '/viewer/injectables/style/style.css' },
+        ]
+        let injectablesFixed = [
+            { type: 'style', url: '/viewer/injectables/style/style.css' },
+        ]
+        let userSettings = {
+            // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
+            // fontFamily: "serif", //Original, serif, sans-serif
+            // textAlignment: "start", //"auto", "justify", "start"
+            // columnCount: "1", // "auto", "1", "2"
+            // verticalScroll: "readium-scroll-off", //readium-scroll-on, readium-scroll-off,
+            // fontSize: 300,
+            // wordSpacing: 4.0,
+            // letterSpacing: 4.0,
+            // pageMargins: 4.0,
+            // lineHeight: 4.0
+        }
+        let selectionMenuItems = [
+            {
+                id: 'anIcon',
+                callback: function (selection) {
+                    alert(selection)
+                }
+            }
+        ]
+
+        D2Reader.load({
+            upLinkUrl: upLink,
+            url: new URL(urlParams['url']),
+            attributes: {
+                margin: 120,
+                navHeight: 70,
+                iframePaddingTop: 20,
+                bottomInfoHeight: 60,
+                sideNavPosition: 'right'
+            },
+            rights: {
+                enableMaterial: true,
+                enableBookmarks: true,
+                enableAnnotations: false,
+                enableTTS: false,
+                enableSearch: false,
+                enableTimeline: false,
+                enableContentProtection: false,
+                enableMediaOverlays: false,
+                autoGeneratePositions: true,
+            },
+            sample: {
+                isSampleRead: true,
+                limit: 10, // in percent e.g. 5%
+                minimum: 5, // in pages
+                popup: "You can borrow the book to continue reading."
+            },
+            highlighter: {
+                selectionMenuItems: selectionMenuItems,
+                api: {
+                    selectionMenuOpen: function () {
+                        console.log("selectionMenuOpen")
+                    },
+                    selectionMenuClose: function () {
+                        console.log("selectionMenuClose")
+                    },
+                }
+            },
+            bookmarks: {
+                api: {
+                    addBookmark: function (bookmark) {
+                        console.log("addBookmark")
+                        return new Promise(function (resolve, reject) {
+                            bookmark.id = Math.random()
+                            resolve(
+                                bookmark
+                            )
+                        })
+                    },
+                    deleteBookmark: function (bookmark) {
+                        console.log("deleteBookmark")
+                        return new Promise(function (resolve, reject) {
+                            resolve(
+                                bookmark
+                            )
+                        })
+                    }
+                }
+            },
+            protection: {
+                enforceSupportedBrowsers: true,
+                enableEncryption: true,
+                enableObfuscation: true,
+                disablePrint: true,
+                disableCopy: true,
+                detectInspect: false,
+                clearOnInspect: true, // make sure detectInspect is true, otherwise this won't work
+                disableKeys: true,
+                disableContextMenu: true,
+                hideTargetUrl: true,
+                disableDrag: false,
+                supportedBrowsers: [ // this will only be used if enforceSupportedBrowsers is true, and has nothing to do with the r2d2bc modules supported browsers
+                    "Chrome", "ChromeAndroid", "Edge", "Firefox", "iOS", "Safari"
+                ],
+                api: {
+                    // make sure detectInspect is true, otherwise this won't be called
+                    // this callback will be executed in a loop while inspect is visible
+                    inspectDetected: function () {
+                        console.log("inspect detected")
+                    }
+                }
+            },
+            api: {
+                getContent: function (href) {
+                    console.log("getContent")
+                    return new Promise(function (resolve, reject) {
+                        resolve(
+                            // 'test, <a xmlns="http://www.w3.org/1999/xhtml" href="chapter_04.xhtml">Chapter 4</a>'
+                        )
+                    })
+                },
+                resourceReady: function () {
+                    console.log("resourceReady")
+                    // D2Reader.applyUserSettings({fontFamily: 'opendyslexic'})
+                },
+                resourceAtStart:function () {
+                    console.log("resourceAtStart")
+                },
+                resourceAtEnd:function () {
+                    console.log("resourceAtEnd")
+                },
+                resourceFitsScreen:function () {
+                    console.log("resourceFitsScreen")
+                },
+                updateCurrentLocation: function (location) {
+                    console.log("updateCurrentLocation")
+                    return new Promise(function (resolve, reject) {
+                        resolve(
+                            location
+                        )
+                    })
+                },
+                updateSettings: function (settings) {
+                    console.log("updateSettings")
+                    return new Promise(function (resolve, reject) {
+                        resolve(
+                            settings
+                        )
+                    })
+                }
+            },
+            injectables: injectables,
+            injectablesFixed: injectablesFixed,
+            userSettings: userSettings,
+            useLocalStorage: true // true = uses local storage, false = uses session storage (default)
+        }).then(instance => {
+            console.log("D2Reader loaded ", instance);
+            // console.log("instance.bookmarkModule ", instance.bookmarkModule)
+            // console.log("instance.annotationModule ", instance.annotationModule)
+        }).catch(error => {
+            console.error("error.message ", error.message);
+            document.getElementById("reader-error").innerText = error.message
+        });
+
+        function setColor(columnCount) {
+            let buttons = document.getElementById('columnCount').getElementsByTagName('button');
+            if (columnCount == 'auto') {
+                buttons[0].style.backgroundColor = '#d7dcdf'
+                buttons[1].style.backgroundColor = 'white'
+                buttons[2].style.backgroundColor = 'white'
+            } else if (columnCount == '1') {
+                buttons[1].style.backgroundColor = '#d7dcdf'
+                buttons[0].style.backgroundColor = 'white'
+                buttons[2].style.backgroundColor = 'white'
+            } else if (columnCount === '2') {
+                buttons[2].style.backgroundColor = '#d7dcdf'
+                buttons[0].style.backgroundColor = 'white'
+                buttons[1].style.backgroundColor = 'white'
+            }
+        }
+
+        function setScroll(scroll) {
+            let buttons = document.getElementById('scrollMode').getElementsByTagName('button');
+            if (scroll === 'true') {
+                buttons[0].style.backgroundColor = '#d7dcdf'
+                buttons[1].style.backgroundColor = 'white'
+            } else if (scroll === 'false') {
+                buttons[1].style.backgroundColor = '#d7dcdf'
+                buttons[0].style.backgroundColor = 'white'
+            }
+        }
+
+        function setAlignment(textAlignment) {
+            let buttons = document.getElementById('textAlignment').getElementsByTagName('button');
+            if (textAlignment === 'auto') {
+                buttons[0].style.backgroundColor = '#d7dcdf'
+                buttons[1].style.backgroundColor = 'white'
+                buttons[2].style.backgroundColor = 'white'
+            } else if (textAlignment === 'justify') {
+                buttons[1].style.backgroundColor = '#d7dcdf'
+                buttons[0].style.backgroundColor = 'white'
+                buttons[2].style.backgroundColor = 'white'
+            } else if (textAlignment === 'start') {
+                buttons[2].style.backgroundColor = '#d7dcdf'
+                buttons[0].style.backgroundColor = 'white'
+                buttons[1].style.backgroundColor = 'white'
+            }
+        }
+        function reload() {
+            D2Reader.currentSettings().then(
+                result => {
+                    console.log(JSON.stringify(result))
+                    document.getElementById("fontSize").value = result['fontSize'];
+                    document.getElementById("fontFamily").value = result['fontFamily'];
+
+                    let buttonsScroll = document.getElementById('scrollMode').getElementsByTagName('button');
+                    let scrollMode = result['verticalScroll']
+                    if (scrollMode === true) {
+                        buttonsScroll[0].style.backgroundColor = '#d7dcdf'
+                    } else if (scrollMode === false) {
+                        buttonsScroll[1].style.backgroundColor = '#d7dcdf'
+                    }
+
+                })
+
+        }
+    </script>
+
+    <!-- START Material Scripts -->
+    <!-- Compiled and minified Materialize JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <noscript>
+        <style>
+            noscript {
+                width: 100%;
+                height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .warning {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+        </style>
+        <p class="warning">To use this viewer, please enable JavaScript.</p>
+    </noscript>
+</body>
+
+</html>

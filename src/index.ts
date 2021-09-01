@@ -594,6 +594,7 @@ export async function load(config: ReaderConfig): Promise<any> {
   const manifestJSON = await response.json();
   let publication = TaJsonDeserialize<Publication>(manifestJSON, Publication);
   publication.manifestUrl = webpubManifestUrl;
+  publication.sample = config.sample;
 
   if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
     config.rights.enableAnnotations = false;
@@ -738,6 +739,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     api: config.api,
     rights: config.rights,
     tts: config.tts,
+    sample: config.sample,
     injectables:
       (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
         ? config.injectablesFixed

@@ -270,6 +270,7 @@ export default class IFrameNavigator implements Navigator {
   attributes: IFrameAttributes;
   services: PublicationServices;
   sample: SampleRead;
+  private didInitKeyboardEventHandler: boolean = false;
 
   public static async create(config: IFrameNavigatorConfig): Promise<any> {
     const navigator = new this(
@@ -1568,8 +1569,11 @@ export default class IFrameNavigator implements Navigator {
           this.keyboardEventHandler.setupEvents(iframe.contentDocument);
         }
         this.touchEventHandler.setupEvents(this.errorMessage);
-        this.keyboardEventHandler.delegate = this;
-        this.keyboardEventHandler.keydown(document);
+        if (!this.didInitKeyboardEventHandler) {
+          this.keyboardEventHandler.delegate = this;
+          this.keyboardEventHandler.keydown(document);
+          this.didInitKeyboardEventHandler = true;
+        }
       }
       if (this.view.layout !== "fixed") {
         if (this.view?.isScrollMode()) {

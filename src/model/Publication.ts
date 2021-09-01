@@ -112,15 +112,16 @@ export class Publication extends R2Publication {
   public getSpineIndex(href: string): number | null {
     return this.readingOrder.findIndex(
       (item) =>
-        item.Href && new URL(item.Href, this.manifestUrl.href).href === href
+        item.Href && this.getAbsoluteHref(item.Href) === href
     );
   }
 
   public getAbsoluteHref(href: string): string | null {
     return new URL(href, this.manifestUrl.href).href;
   }
+
   public getRelativeHref(href: string): string | null {
-    const manifest = this.manifestUrl.href.replace("/manifest.json", ""); //new URL(this.manifestUrl.href, this.manifestUrl.href).href;
+    const manifest = this.manifestUrl.href.replace("/manifest.json", "");
     let h = href.replace(manifest, "");
     if (h.indexOf("#") > 0) {
       h = h.slice(0, h.indexOf("#"));
@@ -141,7 +142,7 @@ export class Publication extends R2Publication {
             item.Href.indexOf("#") !== -1
               ? item.Href.slice(0, item.Href.indexOf("#"))
               : item.Href;
-          const itemUrl = new URL(hrefAbsolutre, this.manifestUrl.href).href;
+          const itemUrl = this.getAbsoluteHref(hrefAbsolutre);
           if (itemUrl === href) {
             return item;
           }
@@ -167,7 +168,7 @@ export class Publication extends R2Publication {
       for (let index = 0; index < links.length; index++) {
         const item = links[index] as Link;
         if (item.Href) {
-          const itemUrl = new URL(item.Href, this.manifestUrl.href).href;
+          const itemUrl = this.getAbsoluteHref(item.Href);
           if (itemUrl === href) {
             return item;
           }

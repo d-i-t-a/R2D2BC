@@ -24,12 +24,14 @@ import { Link as R2Link } from "r2-shared-js/dist/es6-es2015/src/models/publicat
 import { JsonObject } from "ta-json-x";
 import { TaJsonDeserialize } from "../utils/JsonUtil";
 import { GetContentBytesLength } from "../navigator/IFrameNavigator";
+import { SampleRead } from "../navigator/IFrameNavigator";
 
 @JsonObject()
 export default class Publication extends R2Publication {
   manifestUrl: URL;
 
   public positions: Array<Locator>;
+  sample: SampleRead;
 
   /**
    * Initialize a publication from a manifest URL
@@ -48,8 +50,43 @@ export default class Publication extends R2Publication {
     return this.Spine;
   }
   get tableOfContents() {
+    if (this.sample?.isSampleRead && this.positions?.length > 0) {
+      return this.limitedTOC();
+    }
     return this.TOC;
   }
+
+  private limitedTOC() {
+    function disableChildren(item) {
+      for (let index = 0; index < item.Children.length; index++) {
+        let child = item.Children[index];
+        child.Href = undefined;
+        if (child.Children) {
+          disableChildren(child);
+        }
+      }
+    }
+
+    let toc = this.TOC.map((item) => {
+      if (item.Href) {
+        const positions = this.positionsByHref(this.getRelativeHref(item.Href));
+        if (positions?.length > 0) {
+          const locator = positions[0];
+          let progress = Math.round(locator.locations.totalProgression * 100);
+          let valid = progress <= this.sample?.limit;
+          if (!valid) {
+            item.Href = undefined;
+            if (item.Children) {
+              disableChildren(item);
+            }
+          }
+        }
+      }
+      return item;
+    });
+    return toc;
+  }
+
   get landmarks() {
     return this.Landmarks;
   }
@@ -105,16 +142,16 @@ export default class Publication extends R2Publication {
 
   public getSpineIndex(href: string): number | null {
     return this.readingOrder.findIndex(
-      (item) =>
-        item.Href && new URL(item.Href, this.manifestUrl.href).href === href
+      (item) => item.Href && this.getAbsoluteHref(item.Href) === href
     );
   }
 
   public getAbsoluteHref(href: string): string {
     return new URL(href, this.manifestUrl.href).href;
   }
+
   public getRelativeHref(href: string): string | null {
-    const manifest = this.manifestUrl.href.replace("/manifest.json", ""); //new URL(this.manifestUrl.href, this.manifestUrl.href).href;
+    const manifest = this.manifestUrl.href.replace("/manifest.json", "");
     let h = href.replace(manifest, "");
     if (h.indexOf("#") > 0) {
       h = h.slice(0, h.indexOf("#"));
@@ -135,7 +172,7 @@ export default class Publication extends R2Publication {
             item.Href.indexOf("#") !== -1
               ? item.Href.slice(0, item.Href.indexOf("#"))
               : item.Href;
-          const itemUrl = new URL(hrefAbsolutre, this.manifestUrl.href).href;
+          const itemUrl = this.getAbsoluteHref(hrefAbsolutre);
           if (itemUrl === href) {
             return item;
           }
@@ -161,7 +198,7 @@ export default class Publication extends R2Publication {
       for (let index = 0; index < links.length; index++) {
         const item = links[index] as Link;
         if (item.Href) {
-          const itemUrl = new URL(item.Href, this.manifestUrl.href).href;
+          const itemUrl = this.getAbsoluteHref(item.Href);
           if (itemUrl === href) {
             return item;
           }
@@ -196,7 +233,7 @@ export default class Publication extends R2Publication {
    */
   public positionsByHref(href: string) {
     const decodedHref = decodeURI(href) ?? "";
-    return this.positions.filter((p: Locator) => decodedHref.includes(p.href));
+    return this.positions?.filter((p: Locator) => decodedHref.includes(p.href));
   }
 
   /**

@@ -116,6 +116,8 @@ export default class D2Reader {
     // update our config based on what we know from the publication
     const config = updateConfig(initialConfig, publication);
 
+    publication.sample = config.sample;
+
     /**
      * Set up publication positions and weights by either auto
      * generating them or fetching them from provided services.
@@ -164,6 +166,7 @@ export default class D2Reader {
       api: config.api,
       rights: config.rights,
       tts: config.tts,
+      sample: config.sample,
       injectables:
         (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
           ? config.injectablesFixed

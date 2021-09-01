@@ -22,6 +22,10 @@ async function start() {
         getUrl: (url) => `/viewer/index_dita.html?url=${url}`,
       },
       {
+        title: "Dita Sample Read",
+        getUrl: (url) => `/viewer/index_sampleread.html?url=${url}`,
+      },
+      {
         title: "Minimal Example",
         getUrl: (url) => `/viewer/index_minimal.html?url=${url}`,
       },

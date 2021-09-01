@@ -61,8 +61,8 @@
                         </ul>
                         <ul id="nav-mobile-left" class="left">
                             <li><a href="#!" data-target="sidenav-left" class="sidenav-trigger left"><i class="material-icons  show-on-large">menu</i></a></li>
-                            <li><a rel="prev" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_back_ios</i></a></li>
-                            <li><a rel="next" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_forward_ios</i></a></li>
+                            <li><a rel="prev" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons show-on-large">arrow_back_ios</i></a></li>
+                            <li><a rel="next" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons show-on-large">arrow_forward_ios</i></a></li>
                         </ul>
                     </div>
                 </nav>
@@ -577,7 +577,8 @@
                 margin: 60, // subtract this from the iframe height , when setting the iframe minimum height
                 navHeight: 65, // used for positioning the toolbox
                 iframePaddingTop: 20, // top padding inside iframe
-                bottomInfoHeight: 75 // #reader-info-bottom height
+                bottomInfoHeight: 75, // #reader-info-bottom height
+                sideNavPosition: 'left'
             },
             rights: {
                 enableMaterial: true,
@@ -593,6 +594,12 @@
             // services: {
             //     positions: new URL("https://alice.dita.digital/positions.json"),
             //     weight: new URL("https://alice.dita.digital/weight.json"),
+            // },
+            // sample: {
+            //     isSampleRead: true,
+            //     limit: 10, // in percent e.g. 5%
+            //     minimum: 5, // in pages
+            //     popup: "You can borrow the book to continue reading."
             // },
             mediaOverlays: {
                 autoScroll: true,

@@ -53,7 +53,7 @@
                         <ul id="nav-mobile-right" class="right">
                             <li style="display:none"><a class="saveBookmark" id="menu-button-bookmark"><i
                                        class="material-icons ">bookmark</i></a></li>
-                            <li><a data-target="container-view-settings" class="dropdown-trigger "
+                            <li><a data-target="container-view-settings-custom" class="dropdown-trigger "
                                    id="menu-button-settings"><i class="material-icons ">settings</i></a></li>
                         </ul>
                         <ul id="nav-mobile-left" class="left">
@@ -89,31 +89,32 @@
                     </ul>
                 </li>
             </ul>
-            <div id="container-view-settings" class="dropdown-content settings-view notifications">
+
+            <div id="container-view-settings-custom" class="dropdown-content settings-view notifications">
                 <ul class="settings-menu" role="menu" tabindex="0">
                     <li id="container-view-fontsize">
                         <ul class="settings-options">
                             <li class="font-setting"><button id="decrease-font" class="decrease" role="menuitem"
-                                        tabindex="-1" onclick="javascript:d2Reader.decrease('fontSize')">A-</button></li>
+                                        tabindex="-1" onclick="d2Reader.decrease('fontSize')">A-</button></li>
                             <li class="font-setting"><button id="increase-font" class="increase" role="menuitem"
-                                        tabindex="-1" onclick="javascript:d2Reader.increase('fontSize')">A+</button></li>
+                                        tabindex="-1" onclick="d2Reader.increase('fontSize')">A+</button></li>
                         </ul>
                     </li>
                     <li id="container-view-appearance">
                         <ul class="settings-options">
-                            <li class="reading-theme"><button onclick="javascript:d2Reader.applyUserSettings({appearance:'day'})" id="day-theme" class="day-theme" role="menuitem"
+                            <li class="reading-theme"><button onclick="d2Reader.applyUserSettings({appearance:'day'})" id="day-theme" class="day-theme" role="menuitem"
                                         tabindex="-1" aria-label="Day mode enabled">Day<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
-                            <li class="reading-theme"><button onclick="javascript:d2Reader.applyUserSettings({appearance:'sepia'})" id="sepia-theme" class="sepia-theme" role="menuitem"
+                            <li class="reading-theme"><button onclick="d2Reader.applyUserSettings({appearance:'sepia'})" id="sepia-theme" class="sepia-theme" role="menuitem"
                                         tabindex="-1" aria-label="Sepia mode disabled">Sepia<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
-                            <li class="reading-theme"><button onclick="javascript:d2Reader.applyUserSettings({appearance:'night'})" id="night-theme" class="night-theme" role="menuitem"
+                            <li class="reading-theme"><button onclick="d2Reader.applyUserSettings({appearance:'night'})" id="night-theme" class="night-theme" role="menuitem"
                                         tabindex="-1" aria-label="Night mode disabled">Night<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
@@ -123,14 +124,14 @@
                     </li>
                     <li id="container-view-scroll">
                         <ul class="settings-options">
-                            <li class="reading-view"><button onclick="javascript:d2Reader.scroll(true)" id="view-scroll" class="view-scroll" role="menuitem"
+                            <li class="reading-view"><button onclick="d2Reader.scroll(true)" id="view-scroll" class="view-scroll" role="menuitem"
                                         tabindex="-1" aria-label="Scroll view enabled" >Scroll<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-view"><button onclick="javascript:d2Reader.scroll(false)" id="view-paginated" class="view-paginated" role="menuitem"
+                            <li class="reading-view"><button onclick="d2Reader.scroll(false)" id="view-paginated" class="view-paginated" role="menuitem"
                                         tabindex="-1" aria-label="Paginated view disabled">Paginated<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
@@ -141,21 +142,21 @@
                     <li id="container-view-fontfamily">
                         <ul class="settings-options">
 
-                            <li class="reading-style"><button onclick="javascript:d2Reader.applyUserSettings({fontFamily:'Original'})" id="publisher-font" class="publisher-font" role="menuitem"
+                            <li class="reading-style"><button onclick="d2Reader.applyUserSettings({fontFamily:'Original'})" id="publisher-font" class="publisher-font" role="menuitem"
                                         tabindex="-1" aria-label="Publisher font enabled">Publisher<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-style"><button onclick="javascript:d2Reader.applyUserSettings({fontFamily:'serif'})" id="serif-font" class="serif-font" role="menuitem"
+                            <li class="reading-style"><button onclick="d2Reader.applyUserSettings({fontFamily:'serif'})" id="serif-font" class="serif-font" role="menuitem"
                                         tabindex="-1" aria-label="Serif font disabled">Serif<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">
                                         <use xlink:href="#check-icon"></use>
                                     </svg></button></li>
 
-                            <li class="reading-style"><button onclick="javascript:d2Reader.applyUserSettings({fontFamily:'sans-serif'})" id="sans-font" class="sans-font" role="menuitem"
+                            <li class="reading-style"><button onclick="d2Reader.applyUserSettings({fontFamily:'sans-serif'})" id="sans-font" class="sans-font" role="menuitem"
                                         tabindex="-1" aria-label="Sans-serif font disabled">Sans-serif<svg
                                          xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
                                          class="checkedIcon" role="img" aria-labelledby="check-icon">

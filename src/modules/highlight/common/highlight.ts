@@ -26,16 +26,66 @@ export interface IColor {
   blue: number;
 }
 
+export interface IStyleProperty {
+  property: string;
+  value: string;
+  priority?: string;
+}
+
+export interface IStyle {
+  default?: [IStyleProperty] | undefined;
+  hover?: [IStyleProperty] | undefined;
+  defaultClass?: string | undefined;
+  hoverClass?: string | undefined;
+}
+
+export interface IPopupStyle {
+  background?: string;
+  textColor?: string;
+  class?: string;
+}
+
+export interface IHighlightStyle {
+  style?: IStyle;
+  color?: string;
+}
+
+export interface IMarkerIcon {
+  id: string;
+  position: string;
+  title: string;
+  svgPath?: string;
+  color?: string;
+  class?: string;
+}
+
 export interface IHighlight {
   id: string;
   selectionInfo: ISelectionInfo;
-  color: IColor;
   pointerInteraction: boolean;
   marker: AnnotationMarker;
+
+  icon?: IMarkerIcon | undefined;
+  popup?: IPopupStyle | undefined;
+
+  color: string;
+  style?: IStyle | undefined;
+
   position?: number;
+  note?: string | undefined;
+}
+
+export interface SelectionMenuItem {
+  id: string;
+  callback?: any;
+  marker?: AnnotationMarker;
+  icon?: IMarkerIcon;
+  popup?: IPopupStyle;
+  highlight?: IHighlightStyle;
+  note?: boolean;
 }
 
 export interface IHighlightDefinition {
   selectionInfo: ISelectionInfo | undefined;
-  color: IColor | undefined;
+  color: string | undefined;
 }

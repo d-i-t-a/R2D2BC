@@ -24,11 +24,25 @@ import { Publication } from "../model/Publication";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { icons as IconLib } from "../utils/IconLib";
-import { Bookmark, Locator } from "../model/Locator";
+import { AnnotationMarker, Bookmark, Locator } from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
+import { getCurrentSelectionInfo } from "./highlight/renderer/iframe/selection";
+import { uniqueCssSelector } from "./highlight/renderer/common/cssselector2";
+import { SelectionMenuItem } from "./highlight/common/highlight";
+import { getClientRectsNoOverlap } from "./highlight/common/rect-utils";
+import { _highlights } from "./highlight/TextHighlighter";
+
+interface HTMLElementRect {
+  node: Element;
+  height: number;
+  top: number;
+  width: number;
+  left: number;
+  textContent: string;
+}
 
 export interface BookmarkModuleAPI {
   addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
@@ -181,6 +195,10 @@ export default class BookmarkModule implements ReaderModule {
     }
   }
 
+  saveBookmarkPlus() {
+    this.addBookmarkPlus();
+  }
+
   async saveBookmark(): Promise<any> {
     if (this.annotator) {
       var tocItem = this.publication.getTOCItem(
@@ -212,6 +230,7 @@ export default class BookmarkModule implements ReaderModule {
             this.delegate.currentChapterLink.href
           )
         );
+
         const positionIndex = Math.ceil(progression * (positions.length - 1));
         const locator = positions[positionIndex];
 
@@ -276,6 +295,220 @@ export default class BookmarkModule implements ReaderModule {
     }
   }
 
+  private addBookmarkPlus() {
+    let self = this;
+
+    let node = this.visibleTextRects[0];
+    const range = this.delegate.highlighter
+      .dom(this.delegate.iframes[0].contentDocument.body)
+      .getWindow()
+      .document.createRange();
+
+    const selection = this.delegate.highlighter
+      .dom(this.delegate.iframes[0].contentDocument.body)
+      .getSelection();
+    selection.removeAllRanges();
+    range.selectNodeContents(node.node);
+    selection.addRange(range);
+
+    const clientRects = getClientRectsNoOverlap(range, false);
+
+    function isOutsideViewport(rect): boolean {
+      const windowLeft = window.scrollX;
+      const windowRight = windowLeft + window.innerWidth;
+      const right = rect.left + rect.width;
+      const bottom = rect.top + rect.height;
+      const windowTop = window.scrollY;
+      const windowBottom = windowTop + window.innerHeight;
+
+      const isAbove = bottom < windowTop;
+      const isBelow = rect.top > windowBottom;
+
+      const isLeft = right < windowLeft;
+      const isRight = rect.left > windowRight;
+
+      return isAbove || isBelow || isLeft || isRight;
+    }
+
+    let index = 0;
+    for (const rect of clientRects) {
+      if (!isOutsideViewport(rect)) {
+        const endNode = selection.focusNode;
+        const endOffset = selection.focusOffset;
+
+        selection.collapse(selection.anchorNode, selection.anchorOffset);
+
+        for (let i = 0; i < index; i++) {
+          selection.modify("move", "forward", "line");
+        }
+        selection.extend(endNode, endOffset);
+        const endNode2 = selection.focusNode;
+
+        const focusNodeLength = selection.focusNode.length;
+        selection.collapse(selection.anchorNode, selection.anchorOffset);
+
+        let endOffset2 = focusNodeLength;
+        if (selection.anchorOffset > focusNodeLength) {
+          endOffset2 = focusNodeLength;
+        } else {
+          endOffset2 = selection.anchorOffset + 1;
+        }
+
+        selection.modify("move", "forward", "character");
+        selection.modify("move", "backward", "word");
+        selection.extend(endNode2, endOffset2);
+        selection.modify("extend", "backward", "character");
+        selection.modify("extend", "forward", "word");
+
+        break;
+      }
+      index++;
+    }
+
+    function getCssSelector(element: Element): string {
+      const options = {};
+      return uniqueCssSelector(
+        element,
+        self.delegate.highlighter
+          .dom(self.delegate.iframes[0].contentDocument.body)
+          .getDocument(),
+        options
+      );
+    }
+
+    const selectionInfo = getCurrentSelectionInfo(
+      this.delegate.iframes[0].contentWindow,
+      getCssSelector
+    );
+
+    let menuItem: SelectionMenuItem = {
+      id: `bookmarkIcon`,
+      marker: AnnotationMarker.Bookmark,
+      icon: {
+        id: `bookmarkIcon`,
+        title: `Bookmark`,
+        svgPath: `<path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>`,
+        color: `#000000`,
+        position: "left",
+      },
+      popup: {
+        background: `#000000`,
+        textColor: `#ffffff`,
+      },
+      highlight: {
+        color: `#000000`,
+        style: {
+          default: [
+            {
+              property: `border-bottom`,
+              value: `0px dashed #000000`,
+              priority: `important`,
+            },
+          ],
+        },
+      },
+    };
+    let book = this.delegate.highlighter.createHighlight(
+      this.delegate.highlighter
+        .dom(self.delegate.iframes[0].contentDocument.body)
+        .getWindow(),
+      selectionInfo,
+      menuItem.highlight.color,
+      true,
+      AnnotationMarker.Bookmark,
+      menuItem.icon,
+      menuItem.popup,
+      menuItem.highlight.style
+    );
+    this.delegate.annotationModule.saveAnnotation(book).then((anno) => {
+      if (IS_DEV) {
+        console.log("saved bookmark " + anno.id);
+      }
+    });
+    this.delegate.iframes[0].contentDocument.getSelection().removeAllRanges();
+  }
+
+  private get visibleTextRects() {
+    const body = HTMLUtilities.findRequiredIframeElement(
+      this.delegate.iframes[0].contentDocument,
+      "body"
+    ) as HTMLBodyElement;
+
+    function findTextNodes(
+      parentElement: Element,
+      nodes: Array<Element> = []
+    ): Array<Element> {
+      let element = parentElement.firstChild as Element;
+      while (element) {
+        if (element.nodeType === 1) {
+          findTextNodes(element, nodes);
+        }
+        if (element.nodeType === 3) {
+          if (element.textContent.trim()) {
+            nodes.push(element);
+          }
+        }
+        element = element.nextSibling as Element;
+      }
+      return nodes;
+    }
+
+    function isOutsideViewport(rect): boolean {
+      const windowLeft = window.scrollX;
+      const windowRight = windowLeft + window.innerWidth;
+      const right = rect.left + rect.width;
+      const bottom = rect.top + rect.height;
+      const windowTop = window.scrollY;
+      const windowBottom = windowTop + window.innerHeight;
+
+      const isAbove = bottom < windowTop;
+      const isBelow = rect.top > windowBottom;
+
+      const isLeft = right < windowLeft;
+      const isRight = rect.left > windowRight;
+
+      return isAbove || isBelow || isLeft || isRight;
+    }
+
+    function findRects(parent: HTMLElement): Array<HTMLElementRect> {
+      const textNodes = findTextNodes(parent);
+
+      return textNodes.map((node) => {
+        const { top, height, left, width } = measureTextNode(node);
+        return {
+          top,
+          height,
+          width,
+          left,
+          node,
+          textContent: node.textContent,
+        };
+      });
+    }
+
+    function measureTextNode(node: Element): any {
+      try {
+        const range = document.createRange();
+        range.selectNode(node);
+
+        const rect = range.getBoundingClientRect();
+        range.detach(); // frees up memory in older browsers
+
+        return rect;
+      } catch (error) {
+        if (IS_DEV) {
+          console.log("measureTextNode " + error);
+          console.log("measureTextNode " + node);
+          console.log(node.textContent);
+        }
+      }
+    }
+
+    const textNodes = findRects(body);
+    const visible = textNodes.filter((rect) => !isOutsideViewport(rect));
+    return visible;
+  }
+
   async getBookmarks(): Promise<any> {
     let bookmarks: Array<any> = [];
     if (this.annotator) {
@@ -287,6 +520,22 @@ export default class BookmarkModule implements ReaderModule {
     let bookmarks: Array<any> = [];
     if (this.annotator) {
       bookmarks = (await this.annotator.getBookmarks()) as Array<any>;
+    }
+
+    let highlights: Array<any> = [];
+    if (this.annotator) {
+      highlights = (await this.annotator.getAnnotations()) as Array<any>;
+      if (highlights) {
+        highlights = highlights.filter(
+          (rangeRepresentation) =>
+            rangeRepresentation.highlight.marker === AnnotationMarker.Bookmark
+        );
+        if (bookmarks) {
+          bookmarks.push(highlights);
+        } else {
+          bookmarks = highlights;
+        }
+      }
     }
 
     if (this.bookmarksView)

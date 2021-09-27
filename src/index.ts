@@ -134,6 +134,17 @@ export function resumeReadAloud() {
 exports.resumeReadAloud = function () {
   return resumeReadAloud();
 };
+export function saveBookmarkPlus() {
+  if (D2Navigator.rights?.enableBookmarks) {
+    if (IS_DEV) {
+      console.log("saveBookmarkPlus");
+    }
+    return BookmarkModuleInstance.saveBookmarkPlus();
+  }
+}
+exports.saveBookmarkPlus = function () {
+  return saveBookmarkPlus();
+};
 export async function saveBookmark() {
   if (D2Navigator.rights?.enableBookmarks) {
     if (IS_DEV) {
@@ -549,6 +560,24 @@ export function applyAttributes(value) {
 }
 exports.applyAttributes = function (value) {
   applyAttributes(value);
+};
+export function hideAnnotationLayer() {
+  if (IS_DEV) {
+    console.log("hideAnnotationLayer");
+  }
+  return AnnotationModuleInstance.hideAnnotationLayer();
+}
+exports.hideAnnotationLayer = function () {
+  return hideAnnotationLayer();
+};
+export function showAnnotationLayer() {
+  if (IS_DEV) {
+    console.log("showAnnotationLayer");
+  }
+  return AnnotationModuleInstance.showAnnotationLayer();
+}
+exports.showAnnotationLayer = function () {
+  return showAnnotationLayer();
 };
 // currently not used or functional
 export function snapToElement(value) {

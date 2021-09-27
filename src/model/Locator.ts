@@ -55,14 +55,14 @@ export interface Bookmark extends Locator {
 export enum AnnotationMarker {
   Highlight,
   Underline,
+  Bookmark,
+  Custom,
 }
 
 export interface Annotation extends Locator {
   id?: any;
   created: Date;
   highlight?: IHighlight;
-  marker: AnnotationMarker;
-  color: string;
 }
 
 export interface ISelectionInfo {

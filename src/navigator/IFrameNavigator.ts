@@ -137,10 +137,6 @@ export interface Injectable {
   appearance?: string;
   async?: boolean;
 }
-export interface SelectionMenuItem {
-  id: string;
-  callback: any;
-}
 
 export interface ReaderRights {
   enableBookmarks?: boolean;
@@ -488,7 +484,10 @@ export default class IFrameNavigator implements Navigator {
         if (
           (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
         ) {
-          if (this.settings.columnCount !== 1) {
+          if (
+            this.settings.columnCount !== 1 &&
+            !window.matchMedia("screen and (max-width: 600px)").matches
+          ) {
             let secondSpread = document.createElement("div");
             this.spreads.appendChild(secondSpread);
             let iframe2 = document.createElement("iframe");
@@ -2615,7 +2614,10 @@ export default class IFrameNavigator implements Navigator {
     if (
       (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
     ) {
-      if (this.settings.columnCount !== 1) {
+      if (
+        this.settings.columnCount !== 1 &&
+        !window.matchMedia("screen and (max-width: 600px)").matches
+      ) {
         if (this.iframes.length === 1) {
           var iframe = document.createElement("iframe");
           iframe.setAttribute("SCROLLING", "no");
@@ -2654,6 +2656,37 @@ export default class IFrameNavigator implements Navigator {
     if (
       (this.publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
     ) {
+      if (
+        this.settings.columnCount !== 1 &&
+        !window.matchMedia("screen and (max-width: 600px)").matches
+      ) {
+        if (this.iframes.length === 1) {
+          var iframe = document.createElement("iframe");
+          iframe.setAttribute("SCROLLING", "no");
+          iframe.setAttribute("allowtransparency", "true");
+          iframe.style.opacity = "1";
+          this.iframes.push(iframe);
+        }
+        let secondSpread = document.createElement("div");
+        this.spreads.appendChild(secondSpread);
+        secondSpread.appendChild(this.iframes[1]);
+
+        this.firstSpread.style.clipPath =
+          "polygon(0% -20%, 100% -20%, 100% 120%, -20% 120%)";
+        this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
+        secondSpread.style.clipPath =
+          "polygon(0% -20%, 100% -20%, 120% 100%, 0% 120%)";
+        secondSpread.style.boxShadow = "0 0 8px 2px #ccc";
+      } else {
+        if (this.iframes.length == 2) {
+          this.iframes.pop();
+          this.spreads.removeChild(this.spreads.lastChild);
+        }
+        this.firstSpread.style.clipPath =
+          "polygon(0% -20%, 100% -20%, 120% 100%, -20% 120%)";
+        this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
+      }
+
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
       var wrapper = HTMLUtilities.findRequiredElement(
         this.mainElement,

@@ -531,7 +531,7 @@ export default class BookmarkModule implements ReaderModule {
             rangeRepresentation.highlight.marker === AnnotationMarker.Bookmark
         );
         if (bookmarks) {
-          bookmarks.push(highlights);
+          bookmarks.push.apply(bookmarks, highlights);
         } else {
           bookmarks = highlights;
         }

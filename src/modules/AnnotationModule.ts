@@ -148,6 +148,8 @@ export default class AnnotationModule implements ReaderModule {
     ) as HTMLDivElement;
     if (container) {
       container.style.display = "none";
+    }
+    if (this.show && this.hide) {
       this.show.style.display = "block";
       this.hide.style.display = "none";
     }
@@ -159,6 +161,8 @@ export default class AnnotationModule implements ReaderModule {
     ) as HTMLDivElement;
     if (container) {
       container.style.display = "block";
+    }
+    if (this.show && this.hide) {
       this.show.style.display = "none";
       this.hide.style.display = "block";
     }

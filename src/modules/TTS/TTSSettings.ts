@@ -26,9 +26,11 @@ import {
   Incremental,
   JSONable,
 } from "../../model/user-settings/UserProperties";
+import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { IS_DEV } from "../..";
 import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
 import TextHighlighter from "../highlight/TextHighlighter";
+import { addEventListenerOptional } from "../../utils/EventHandler";
 
 export interface TTSModuleAPI {
   started: any;
@@ -116,11 +118,17 @@ export class TTSSettings implements ITTSUserSettings {
   private settingsChangeCallback: (key?: string) => void = () => {};
   private restartCallback: (key?: string) => void = () => {};
 
+  private settingsView: HTMLDivElement;
+  private readonly headerMenu: HTMLElement;
+  private speechRate: HTMLInputElement;
+  private speechPitch: HTMLInputElement;
+  private speechVolume: HTMLInputElement;
+  private speechAutoScroll: HTMLInputElement;
 
   private readonly api: TTSModuleAPI;
 
   public static async create(config: TTSSettingsConfig): Promise<any> {
-    const settings = new this(config.store, config.api);
+    const settings = new this(config.store, config.headerMenu, config.api);
 
     if (config.initialTTSSettings) {
       let initialTTSSettings = config.initialTTSSettings;
@@ -157,10 +165,12 @@ export class TTSSettings implements ITTSUserSettings {
 
   protected constructor(
     store: Store,
+    headerMenu: HTMLElement,
     api: TTSModuleAPI
   ) {
     this.store = store;
     this.api = api;
+    this.headerMenu = headerMenu;
     this.initialise();
   }
 
@@ -219,8 +229,32 @@ export class TTSSettings implements ITTSUserSettings {
   }
 
   private async initializeSelections(): Promise<void> {
+    if (this.headerMenu)
+      this.settingsView = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#container-view-tts-settings"
+      ) as HTMLDivElement;
   }
 
+  setControls() {
+    if (this.settingsView) this.renderControls(this.settingsView);
+  }
+
+  private renderControls(element: HTMLElement): void {
+    if (this.speechRate) this.speechRate.value = this.rate.toString();
+    if (this.speechPitch) this.speechPitch.value = this.pitch.toString();
+    if (this.speechVolume) this.speechVolume.value = this.volume.toString();
+    if (this.speechAutoScroll) this.speechAutoScroll.checked = this.autoScroll;
+
+    // Clicking the settings view outside the ul hides it, but clicking inside the ul keeps it up.
+    addEventListenerOptional(
+      HTMLUtilities.findElement(element, "ul"),
+      "click",
+      (event: Event) => {
+        event.stopPropagation();
+      }
+    );
+  }
 
   public onSettingsChange(callback: () => void) {
     this.settingsChangeCallback = callback;

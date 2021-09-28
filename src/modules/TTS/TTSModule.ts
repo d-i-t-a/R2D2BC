@@ -52,6 +52,7 @@ export default class TTSModule implements ReaderModule {
 
   initialize(body: any) {
     if (this.highlighter !== undefined) {
+      this.tts.setControls();
       this.tts.onSettingsChange(this.handleResize.bind(this));
       this.body = body;
       this.clean = sanitize(this.body.innerHTML, {

@@ -58,8 +58,7 @@ export default class TTSModule2 implements ReaderModule {
 
   initialize(body: any) {
     if (this.highlighter !== undefined) {
-      // this.tts.setControls();
-      // this.tts.onSettingsChange(this.restart.bind(this));
+      this.tts.setControls();
       this.tts.onRestart(this.restart.bind(this));
       this.body = body;
       this.clean = sanitize(this.body.innerHTML, {
@@ -152,12 +151,11 @@ export default class TTSModule2 implements ReaderModule {
     partial: boolean,
     callback: () => void
   ): Promise<any> {
-    this.cancel();
-
     if (this.api?.started) this.api?.started();
 
     var self = this;
-    // this.userScrolled = false;
+    this.userScrolled = false;
+    this.cancel();
 
     // const ttsQueue = this.generateTtsQueue(
     //   selectionInfo.range.startContainer.parentElement,
@@ -310,7 +308,9 @@ export default class TTSModule2 implements ReaderModule {
     }
     if (IS_DEV) console.log("navigator.language", navigator.language);
 
-    window.speechSynthesis.speak(utterance);
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+    }, 0);
 
     this.index = 0;
 

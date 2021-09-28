@@ -74,7 +74,6 @@ import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler
 import ReaderModule from "../modules/ReaderModule";
 import TTSModule2 from "../modules/TTS/TTSModule2";
 import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
-import { getClientRectsNoOverlap } from "../modules/highlight/common/rect-utils";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -2352,6 +2351,8 @@ export default class IFrameNavigator implements Navigator {
       if (this.tts.enableSplitter) {
         this.highlighter.speakAll();
       } else {
+        const ttsModule = this.ttsModule as TTSModule2;
+        ttsModule.speakPlay();
       }
     }
   }

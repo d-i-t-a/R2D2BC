@@ -65,23 +65,6 @@ export interface Annotation extends Locator {
   highlight?: IHighlight;
 }
 
-export interface ISelectionInfo {
-  rangeInfo: IRangeInfo;
-  cleanText: string;
-  rawText: string;
-  color: string;
-  range: Range;
-}
-
-export interface IRangeInfo {
-  startContainerElementCssSelector: string;
-  startContainerChildTextNodeIndex: number;
-  startOffset: number;
-  endContainerElementCssSelector: string;
-  endContainerChildTextNodeIndex: number;
-  endOffset: number;
-}
-
 export interface ChapterWeight {
   chapterHref: string;
   weight: number;

@@ -42,6 +42,7 @@ import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { iconTemplateColored, icons } from "../../utils/IconLib";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
+import * as HTMLUtilities from "../../utils/HTMLUtilities";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
@@ -68,6 +69,15 @@ interface IWithRect {
   scale: number;
 }
 export interface IHTMLDivElementWithRect extends HTMLDivElement, IWithRect {}
+
+export interface HTMLElementRect {
+  node: Element;
+  height: number;
+  top: number;
+  width: number;
+  left: number;
+  textContent: string;
+}
 
 /**
  * Attribute added by default to every highlight.
@@ -1299,6 +1309,87 @@ export default class TextHighlighter {
   callbackComplete() {
     this.toolboxHide();
     this.dom(this.delegate.iframes[0].contentDocument.body).removeAllRanges();
+  }
+
+  get visibleTextRects() {
+    const body = HTMLUtilities.findRequiredIframeElement(
+      this.delegate.iframes[0].contentDocument,
+      "body"
+    ) as HTMLBodyElement;
+
+    function findTextNodes(
+      parentElement: Element,
+      nodes: Array<Element> = []
+    ): Array<Element> {
+      let element = parentElement.firstChild as Element;
+      while (element) {
+        if (element.nodeType === 1) {
+          findTextNodes(element, nodes);
+        }
+        if (element.nodeType === 3) {
+          if (element.textContent.trim()) {
+            nodes.push(element);
+          }
+        }
+        element = element.nextSibling as Element;
+      }
+      return nodes;
+    }
+
+    function isOutsideViewport(rect): boolean {
+      const windowLeft = window.scrollX;
+      const windowRight = windowLeft + window.innerWidth;
+      const right = rect.left + rect.width;
+      const bottom = rect.top + rect.height;
+      const windowTop = window.scrollY;
+      const windowBottom = windowTop + window.innerHeight;
+
+      const isAbove = bottom < windowTop;
+      const isBelow = rect.top > windowBottom;
+
+      const isLeft = right < windowLeft;
+      const isRight = rect.left > windowRight;
+
+      return isAbove || isBelow || isLeft || isRight;
+    }
+
+    function findRects(parent: HTMLElement): Array<HTMLElementRect> {
+      const textNodes = findTextNodes(parent);
+
+      return textNodes.map((node) => {
+        const { top, height, left, width } = measureTextNode(node);
+        return {
+          top,
+          height,
+          width,
+          left,
+          node,
+          textContent: node.textContent,
+        };
+      });
+    }
+
+    function measureTextNode(node: Element): any {
+      try {
+        const range = document.createRange();
+        range.selectNode(node);
+
+        const rect = range.getBoundingClientRect();
+        range.detach(); // frees up memory in older browsers
+
+        return rect;
+      } catch (error) {
+        if (IS_DEV) {
+          console.log("measureTextNode " + error);
+          console.log("measureTextNode " + node);
+          console.log(node.textContent);
+        }
+      }
+    }
+
+    const textNodes = findRects(body);
+    const visible = textNodes.filter((rect) => !isOutsideViewport(rect));
+    return visible;
   }
 
   doneSpeaking(reload: boolean = false) {

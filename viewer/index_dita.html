@@ -579,8 +579,9 @@ height: 50px;
         let selectionMenuItems = [
             {
                 id: 'anIcon',
-                callback: function (selection) {
-                    alert(selection)
+                callback: function (selection, element) {
+                    alert(selection);
+                    console.log(element);
                 }
             },
             {

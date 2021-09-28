@@ -22,6 +22,7 @@ import { debounce } from "debounce";
 
 import { IEventPayload_R2_EVENT_HIGHLIGHT_CLICK } from "./common/events";
 import {
+  HighlightType,
   IColor,
   IHighlight,
   IMarkerIcon,
@@ -47,6 +48,10 @@ import TTSModule2 from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
+
+export const ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER";
+export const ID_SEARCH_CONTAINER = "R2_ID_SEARCH_CONTAINER";
+
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
 export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
 export const CLASS_HIGHLIGHT_ICON = "R2_CLASS_HIGHLIGHT_ICON";
@@ -111,6 +116,8 @@ let bodyEventListenersSet = false;
 
 // TODO this needs to reflect layer name
 let _highlightsContainer: HTMLElement | null;
+let _highlightsReadAloudContainer: HTMLElement | null;
+let _highlightsSearchContainer: HTMLElement | null;
 
 export interface TextHighlighterProperties {
   selectionMenuItems: Array<SelectionMenuItem>;
@@ -1093,7 +1100,10 @@ export default class TextHighlighter {
               );
               if (selectionInfo !== undefined) {
                 if (menuItem.callback) {
-                  menuItem.callback(selectionInfo.cleanText);
+                  menuItem.callback(
+                    selectionInfo.cleanText,
+                    selectionInfo.range.startContainer.parentElement
+                  );
                 } else {
                   let style = menuItem.highlight.style;
                   let marker = menuItem.marker
@@ -1829,7 +1839,8 @@ export default class TextHighlighter {
 
   resetHighlightAreaStyle(
     _win: IReadiumIFrameWindow,
-    highlightArea: HTMLElement
+    highlightArea: HTMLElement,
+    id_container: string
   ) {
     const id =
       highlightArea.parentNode &&
@@ -1942,9 +1953,24 @@ export default class TextHighlighter {
             highlightArea.classList.remove("hover");
           }
         }
-        let highlightParent = _highlightsContainer.querySelector(
-          `#${highlight.id}`
-        );
+
+        let highlightParent;
+        if (id_container == ID_HIGHLIGHTS_CONTAINER) {
+          highlightParent = _highlightsContainer.querySelector(
+            `#${highlight.id}`
+          );
+        }
+        if (id_container == ID_SEARCH_CONTAINER) {
+          highlightParent = _highlightsSearchContainer.querySelector(
+            `#${highlight.id}`
+          );
+        }
+        if (id_container == ID_READALOUD_CONTAINER) {
+          highlightParent = _highlightsReadAloudContainer.querySelector(
+            `#${highlight.id}`
+          );
+        }
+
         let nodeList =
           highlightParent.getElementsByClassName(CLASS_HIGHLIGHT_ICON);
         if (nodeList.length > 0) {
@@ -2076,7 +2102,7 @@ export default class TextHighlighter {
 
   setAndResetSearchHighlight(highlight, highlights) {
     const allHighlightAreas = Array.from(
-      _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
+      _highlightsSearchContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
     );
     for (const highlighta of allHighlightAreas) {
       var highlightArea = highlighta as HTMLElement;
@@ -2110,7 +2136,7 @@ export default class TextHighlighter {
             } else {
               highlightArea.classList.remove("hover");
             }
-            let highlightParent = _highlightsContainer.querySelector(
+            let highlightParent = _highlightsSearchContainer.querySelector(
               `#${highlight.id}`
             );
             let nodeList =
@@ -2149,7 +2175,7 @@ export default class TextHighlighter {
           } else {
             highlightArea.classList.remove("hover");
           }
-          let highlightParent = _highlightsContainer.querySelector(
+          let highlightParent = _highlightsSearchContainer.querySelector(
             `#${highlight.id}`
           );
           let nodeList =
@@ -2191,7 +2217,11 @@ export default class TextHighlighter {
     const x = ev.clientX;
     const y = ev.clientY;
 
-    if (!_highlightsContainer) {
+    if (
+      !_highlightsContainer &&
+      !_highlightsSearchContainer &&
+      !_highlightsReadAloudContainer
+    ) {
       return;
     }
 
@@ -2248,15 +2278,58 @@ export default class TextHighlighter {
       const highlightBoundings = _highlightsContainer.querySelectorAll(
         `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
       );
+      const highlightBoundings2 = _highlightsSearchContainer.querySelectorAll(
+        `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
+      );
+      const highlightBoundings3 =
+        _highlightsReadAloudContainer.querySelectorAll(
+          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
+        );
+
       for (const highlightBounding of highlightBoundings) {
         this.resetHighlightBoundingStyle(win, highlightBounding as HTMLElement);
       }
+      for (const highlightBounding of highlightBoundings2) {
+        this.resetHighlightBoundingStyle(win, highlightBounding as HTMLElement);
+      }
+      for (const highlightBounding of highlightBoundings3) {
+        this.resetHighlightBoundingStyle(win, highlightBounding as HTMLElement);
+      }
+
       const allHighlightAreas = Array.from(
         _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
       );
+      const allHighlightAreas2 = Array.from(
+        _highlightsSearchContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
+      );
+      const allHighlightAreas3 = Array.from(
+        _highlightsReadAloudContainer.querySelectorAll(
+          `.${CLASS_HIGHLIGHT_AREA}`
+        )
+      );
+
       for (const highlightArea of allHighlightAreas) {
-        this.resetHighlightAreaStyle(win, highlightArea as HTMLElement);
+        this.resetHighlightAreaStyle(
+          win,
+          highlightArea as HTMLElement,
+          ID_HIGHLIGHTS_CONTAINER
+        );
       }
+      for (const highlightArea of allHighlightAreas2) {
+        this.resetHighlightAreaStyle(
+          win,
+          highlightArea as HTMLElement,
+          ID_SEARCH_CONTAINER
+        );
+      }
+      for (const highlightArea of allHighlightAreas3) {
+        this.resetHighlightAreaStyle(
+          win,
+          highlightArea as HTMLElement,
+          ID_READALOUD_CONTAINER
+        );
+      }
+
       return;
     }
 
@@ -2268,11 +2341,42 @@ export default class TextHighlighter {
         const allHighlightAreas = _highlightsContainer.querySelectorAll(
           `.${CLASS_HIGHLIGHT_AREA}`
         );
+        const allHighlightAreas2 = _highlightsSearchContainer.querySelectorAll(
+          `.${CLASS_HIGHLIGHT_AREA}`
+        );
+        const allHighlightAreas3 =
+          _highlightsReadAloudContainer.querySelectorAll(
+            `.${CLASS_HIGHLIGHT_AREA}`
+          );
+
         for (const highlightArea of allHighlightAreas) {
           if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
-            this.resetHighlightAreaStyle(win, highlightArea as HTMLElement);
+            this.resetHighlightAreaStyle(
+              win,
+              highlightArea as HTMLElement,
+              ID_HIGHLIGHTS_CONTAINER
+            );
           }
         }
+        for (const highlightArea of allHighlightAreas2) {
+          if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
+            this.resetHighlightAreaStyle(
+              win,
+              highlightArea as HTMLElement,
+              ID_SEARCH_CONTAINER
+            );
+          }
+        }
+        for (const highlightArea of allHighlightAreas3) {
+          if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
+            this.resetHighlightAreaStyle(
+              win,
+              highlightArea as HTMLElement,
+              ID_READALOUD_CONTAINER
+            );
+          }
+        }
+
         this.setHighlightAreaStyle(
           win,
           foundElementHighlightAreas as HTMLElement[],
@@ -2285,7 +2389,38 @@ export default class TextHighlighter {
         const allHighlightBoundings = _highlightsContainer.querySelectorAll(
           `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
         );
+        const allHighlightBoundings2 =
+          _highlightsSearchContainer.querySelectorAll(
+            `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
+          );
+        const allHighlightBoundings3 =
+          _highlightsReadAloudContainer.querySelectorAll(
+            `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
+          );
+
         for (const highlightBounding of allHighlightBoundings) {
+          if (
+            !foundElementHighlightBounding ||
+            highlightBounding !== foundElementHighlightBounding
+          ) {
+            this.resetHighlightBoundingStyle(
+              win,
+              highlightBounding as HTMLElement
+            );
+          }
+        }
+        for (const highlightBounding of allHighlightBoundings2) {
+          if (
+            !foundElementHighlightBounding ||
+            highlightBounding !== foundElementHighlightBounding
+          ) {
+            this.resetHighlightBoundingStyle(
+              win,
+              highlightBounding as HTMLElement
+            );
+          }
+        }
+        for (const highlightBounding of allHighlightBoundings3) {
           if (
             !foundElementHighlightBounding ||
             highlightBounding !== foundElementHighlightBounding
@@ -2410,10 +2545,17 @@ export default class TextHighlighter {
     }
   }
 
-  ensureHighlightsContainer(win: IReadiumIFrameWindow): HTMLElement {
+  ensureHighlightsContainer(
+    win: IReadiumIFrameWindow,
+    id: string
+  ): HTMLElement {
     const documant = win.document;
     var self = this;
-    if (!_highlightsContainer) {
+    if (
+      (!_highlightsContainer && id == ID_HIGHLIGHTS_CONTAINER) ||
+      (!_highlightsSearchContainer && id == ID_SEARCH_CONTAINER) ||
+      (!_highlightsReadAloudContainer && id == ID_READALOUD_CONTAINER)
+    ) {
       if (!bodyEventListenersSet) {
         bodyEventListenersSet = true;
 
@@ -2443,10 +2585,32 @@ export default class TextHighlighter {
         documant.body.addEventListener("touchmove", mousemove, false);
       }
 
-      _highlightsContainer = documant.createElement("div");
-      _highlightsContainer.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
-      _highlightsContainer.style.setProperty("pointer-events", "none");
-      documant.body.append(_highlightsContainer);
+      if (id == ID_HIGHLIGHTS_CONTAINER) {
+        _highlightsContainer = documant.createElement("div");
+        _highlightsContainer.setAttribute("id", id);
+        _highlightsContainer.style.setProperty("pointer-events", "none");
+        documant.body.append(_highlightsContainer);
+      } else if (id == ID_SEARCH_CONTAINER) {
+        _highlightsSearchContainer = documant.createElement("div");
+        _highlightsSearchContainer.setAttribute("id", id);
+        _highlightsSearchContainer.style.setProperty("pointer-events", "none");
+        documant.body.append(_highlightsSearchContainer);
+      } else if (id == ID_READALOUD_CONTAINER) {
+        _highlightsReadAloudContainer = documant.createElement("div");
+        _highlightsReadAloudContainer.setAttribute("id", id);
+        _highlightsReadAloudContainer.style.setProperty(
+          "pointer-events",
+          "none"
+        );
+        documant.body.append(_highlightsReadAloudContainer);
+      }
+    }
+    if (id == ID_HIGHLIGHTS_CONTAINER) {
+      return _highlightsContainer;
+    } else if (id == ID_SEARCH_CONTAINER) {
+      return _highlightsSearchContainer;
+    } else if (id == ID_READALOUD_CONTAINER) {
+      return _highlightsReadAloudContainer;
     }
     return _highlightsContainer;
   }
@@ -2456,11 +2620,43 @@ export default class TextHighlighter {
       _highlightsContainer.remove();
       _highlightsContainer = null;
     }
+    if (_highlightsSearchContainer) {
+      _highlightsSearchContainer.remove();
+      _highlightsSearchContainer = null;
+    }
+    if (_highlightsReadAloudContainer) {
+      _highlightsReadAloudContainer.remove();
+      _highlightsReadAloudContainer = null;
+    }
   }
 
   destroyAllhighlights(documant: Document) {
     this.hideAllhighlights(documant);
     _highlights.splice(0, _highlights.length);
+  }
+
+  destroyHighlights(type: HighlightType) {
+    switch (type) {
+      case HighlightType.ReadAloud:
+        if (_highlightsReadAloudContainer) {
+          _highlightsReadAloudContainer.remove();
+          _highlightsReadAloudContainer = null;
+        }
+        break;
+      case HighlightType.Search:
+        if (_highlightsSearchContainer) {
+          _highlightsSearchContainer.remove();
+          _highlightsSearchContainer = null;
+        }
+        break;
+      default:
+        if (_highlightsContainer) {
+          _highlightsContainer.remove();
+          _highlightsContainer = null;
+        }
+        _highlights.splice(0, _highlights.length);
+        break;
+    }
   }
 
   destroyHighlight(documant: Document, id: string) {
@@ -2504,9 +2700,8 @@ export default class TextHighlighter {
 
       const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
       const sha256Hex = SHA256.hash(uniqueStr);
-      const id = "R2_HIGHLIGHT_" + sha256Hex;
+      const id = "R2_SEARCh_" + sha256Hex;
 
-      this.destroyHighlight(this.delegate.iframes[0].contentDocument, id);
       var pointerInteraction = false;
       const highlight: IHighlight = {
         color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
@@ -2514,6 +2709,7 @@ export default class TextHighlighter {
         pointerInteraction,
         selectionInfo,
         marker: AnnotationMarker.Highlight,
+        type: HighlightType.Search,
       };
       _highlights.push(highlight);
 
@@ -2542,12 +2738,14 @@ export default class TextHighlighter {
     marker: AnnotationMarker,
     icon?: IMarkerIcon | undefined,
     popup?: IPopupStyle | undefined,
-    style?: IStyle | undefined
+    style?: IStyle | undefined,
+    type?: HighlightType | undefined,
+    prefix?: string | undefined
   ): [IHighlight, HTMLDivElement] {
     try {
       const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
       const sha256Hex = SHA256.hash(uniqueStr);
-      const id = "R2_HIGHLIGHT_" + sha256Hex;
+      const id = (prefix ? prefix : "R2_HIGHLIGHT_") + sha256Hex;
 
       this.destroyHighlight(win.document, id);
 
@@ -2562,6 +2760,7 @@ export default class TextHighlighter {
         icon: icon,
         popup: popup,
         style: style,
+        type: type ? type : HighlightType.Annotation,
       };
       _highlights.push(highlight);
 
@@ -2590,7 +2789,18 @@ export default class TextHighlighter {
       return undefined;
     }
 
-    const highlightsContainer = this.ensureHighlightsContainer(win);
+    const highlightsContainer = this.ensureHighlightsContainer(
+      win,
+      ID_HIGHLIGHTS_CONTAINER
+    );
+    const highlightsReadaloudContainer = this.ensureHighlightsContainer(
+      win,
+      ID_READALOUD_CONTAINER
+    );
+    const highlightsSearchContainer = this.ensureHighlightsContainer(
+      win,
+      ID_SEARCH_CONTAINER
+    );
 
     const highlightParent = documant.createElement(
       "div"
@@ -3131,7 +3341,19 @@ export default class TextHighlighter {
     ) {
       highlightParent.append(highlightAreaIcon);
     }
-    highlightsContainer.append(highlightParent);
+
+    switch (highlight.type) {
+      case 0:
+        highlightsContainer.append(highlightParent);
+        break;
+      case 1:
+        highlightsSearchContainer.append(highlightParent);
+        break;
+      case 2:
+        highlightsReadaloudContainer.append(highlightParent);
+        break;
+    }
+
     return highlightParent;
   }
 }

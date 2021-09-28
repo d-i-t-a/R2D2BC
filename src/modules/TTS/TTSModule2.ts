@@ -20,7 +20,12 @@
 import ReaderModule from "../ReaderModule";
 import { IS_DEV } from "../..";
 import { AnnotationMarker } from "../../model/Locator";
-import { TTSSettings } from "./TTSSettings";
+import {
+  TTSModuleAPI,
+  TTSModuleConfig,
+  TTSModuleProperties,
+  TTSSettings,
+} from "./TTSSettings";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import {
   addEventListenerOptional,
@@ -29,16 +34,11 @@ import {
 import * as sanitize from "sanitize-html";
 import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
 import TextHighlighter from "../highlight/TextHighlighter";
-import { IHighlight } from "../highlight/common/highlight";
+import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
 import { debounce } from "debounce";
 import { split } from "sentence-splitter";
-import {
-  TTSModuleAPI,
-  TTSModuleConfig,
-  TTSModuleProperties,
-} from "./TTSSettings";
 import { ISelectionInfo } from "../highlight/common/selection";
 import { getClientRectsNoOverlap } from "../highlight/common/rect-utils";
 
@@ -137,9 +137,7 @@ export default class TTSModule2 implements ReaderModule {
     }, 0);
 
     if (this._ttsQueueItemHighlightsWord) {
-      this.delegate.highlighter.destroyAllhighlights(
-        this.delegate.iframes[0].contentWindow as any
-      );
+      this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud);
       this._ttsQueueItemHighlightsWord = undefined;
     }
   }
@@ -437,9 +435,7 @@ export default class TTSModule2 implements ReaderModule {
       this.speaking = false;
 
       if (this._ttsQueueItemHighlightsWord) {
-        this.delegate.highlighter.destroyAllhighlights(
-          this.delegate.iframes[0].contentWindow as any
-        );
+        this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud);
         this._ttsQueueItemHighlightsWord = undefined;
       }
     }
@@ -790,7 +786,6 @@ export default class TTSModule2 implements ReaderModule {
   private restart(): void {
     if (window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
-      this.speaking = true;
       this.restartIndex = this.ttsQueueIndex;
       this.ttsPlayQueueIndexDebounced(this.restartIndex, this.ttsQueue);
     }
@@ -966,6 +961,9 @@ export default class TTSModule2 implements ReaderModule {
 
     setTimeout(() => {
       window.speechSynthesis.speak(utterance);
+      if (!self.speaking) {
+        window.speechSynthesis.pause();
+      }
     }, 0);
 
     var self = this;
@@ -1048,9 +1046,7 @@ export default class TTSModule2 implements ReaderModule {
     end: number
   ) {
     if (this._ttsQueueItemHighlightsWord) {
-      this.delegate.highlighter.destroyAllhighlights(
-        this.delegate.iframes[0].contentWindow as any
-      );
+      this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud);
       this._ttsQueueItemHighlightsWord = undefined;
     }
 
@@ -1148,7 +1144,7 @@ export default class TTSModule2 implements ReaderModule {
           range: undefined,
         },
         this.tts.color,
-        true,
+        false,
         AnnotationMarker.Custom,
         {
           id: "tts",
@@ -1158,7 +1154,9 @@ export default class TTSModule2 implements ReaderModule {
         null,
         {
           defaultClass: this.tts.color,
-        }
+        },
+        HighlightType.ReadAloud,
+        "R2_READALOUD_"
       );
       this._ttsQueueItemHighlightsWord = result[0];
 

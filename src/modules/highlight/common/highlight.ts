@@ -59,6 +59,12 @@ export interface IMarkerIcon {
   class?: string;
 }
 
+export enum HighlightType {
+  Annotation = 0,
+  Search = 1,
+  ReadAloud = 2,
+}
+
 export interface IHighlight {
   id: string;
   selectionInfo: ISelectionInfo;
@@ -73,6 +79,8 @@ export interface IHighlight {
 
   position?: number;
   note?: string | undefined;
+
+  type: HighlightType;
 }
 
 export interface SelectionMenuItem {

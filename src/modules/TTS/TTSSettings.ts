@@ -114,7 +114,6 @@ export class TTSSettings implements ITTSUserSettings {
 
   userProperties: UserProperties;
 
-
   private settingsChangeCallback: (key?: string) => void = () => {};
   private restartCallback: (key?: string) => void = () => {};
 
@@ -241,6 +240,28 @@ export class TTSSettings implements ITTSUserSettings {
   }
 
   private renderControls(element: HTMLElement): void {
+    if (this.headerMenu)
+      this.speechRate = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#speechRate"
+      ) as HTMLInputElement;
+    if (this.headerMenu)
+      this.speechPitch = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#speechPitch"
+      ) as HTMLInputElement;
+    if (this.headerMenu)
+      this.speechVolume = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#speechVolume"
+      ) as HTMLInputElement;
+
+    if (this.headerMenu)
+      this.speechAutoScroll = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#autoScroll"
+      ) as HTMLInputElement;
+
     if (this.speechRate) this.speechRate.value = this.rate.toString();
     if (this.speechPitch) this.speechPitch.value = this.pitch.toString();
     if (this.speechVolume) this.speechVolume.value = this.volume.toString();
@@ -263,7 +284,6 @@ export class TTSSettings implements ITTSUserSettings {
   public onRestart(callback: () => void) {
     this.restartCallback = callback;
   }
-
 
   private async storeProperty(property: UserProperty): Promise<void> {
     this.updateUserSettings();

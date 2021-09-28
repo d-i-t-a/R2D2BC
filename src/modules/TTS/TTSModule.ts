@@ -19,7 +19,6 @@
 
 import ReaderModule from "../ReaderModule";
 import { IS_DEV } from "../..";
-import { ISelectionInfo } from "../../model/Locator";
 import { TTSSettings, TTSVoice } from "./TTSSettings";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import {
@@ -29,6 +28,7 @@ import {
 import * as sanitize from "sanitize-html";
 import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
 import TextHighlighter from "../highlight/TextHighlighter";
+import { ISelectionInfo } from "../highlight/common/selection";
 
 export interface TTSModuleAPI {
   started: any;

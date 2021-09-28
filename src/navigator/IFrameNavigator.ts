@@ -48,7 +48,7 @@ import BookmarkModule, {
 import AnnotationModule, {
   AnnotationModuleConfig,
 } from "../modules/AnnotationModule";
-import TTSModule, { TTSModuleConfig } from "../modules/TTS/TTSModule";
+import TTSModule from "../modules/TTS/TTSModule";
 import { IS_DEV } from "..";
 import Splitting from "../modules/TTS/splitting";
 import SearchModule, {
@@ -71,6 +71,10 @@ import MediaOverlayModule, {
 } from "../modules/mediaoverlays/MediaOverlayModule";
 import { D2Link, Link } from "../model/Link";
 import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
+import ReaderModule from "../modules/ReaderModule";
+import TTSModule2 from "../modules/TTS/TTSModule2";
+import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
+import { getClientRectsNoOverlap } from "../modules/highlight/common/rect-utils";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -188,7 +192,7 @@ export default class IFrameNavigator implements Navigator {
 
   bookmarkModule?: BookmarkModule;
   annotationModule?: AnnotationModule;
-  ttsModule?: TTSModule;
+  ttsModule?: ReaderModule;
   searchModule?: SearchModule;
   contentProtectionModule?: ContentProtectionModule;
   highlighter?: TextHighlighter;
@@ -1012,7 +1016,7 @@ export default class IFrameNavigator implements Navigator {
           title: firstPage.Title,
         };
 
-        this.stopReadAloud(true);
+        this.stopReadAloud();
         this.navigate(position);
       }
     }
@@ -1588,7 +1592,13 @@ export default class IFrameNavigator implements Navigator {
         for (const iframe of this.iframes) {
           const body = iframe.contentDocument.body;
           if (this.ttsModule !== undefined) {
-            await this.ttsModule.initialize(body);
+            if (this.tts.enableSplitter) {
+              const ttsModule = this.ttsModule as TTSModule;
+              await ttsModule.initialize(body);
+            } else {
+              const ttsModule = this.ttsModule as TTSModule2;
+              await ttsModule.initialize(body);
+            }
           }
         }
       }
@@ -2338,42 +2348,66 @@ export default class IFrameNavigator implements Navigator {
     return this.publication.hasMediaOverlays;
   }
   startReadAloud() {
+    if (this.rights?.enableTTS) {
+      if (this.tts.enableSplitter) {
+        this.highlighter.speakAll();
+      } else {
+      }
+    }
+  }
+  startReadAlong() {
     if (this.rights?.enableMediaOverlays && this.publication.hasMediaOverlays) {
       this.mediaOverlayModule.startReadAloud();
-    } else if (this.rights?.enableTTS) {
-      this.highlighter.speakAll();
     }
   }
-  stopReadAloud(ttsOnly: boolean = false) {
-    if (ttsOnly) {
-      if (this.rights?.enableTTS) {
-        this.highlighter.stopReadAloud();
-      }
-    } else {
-      if (
-        this.rights?.enableMediaOverlays &&
-        this.publication.hasMediaOverlays
-      ) {
-        this.mediaOverlayModule.stopReadAloud();
-      } else if (this.rights?.enableTTS) {
-        this.highlighter.stopReadAloud();
+  stopReadAloud() {
+    if (this.rights?.enableTTS) {
+      this.highlighter.stopReadAloud();
+      if (!this.tts.enableSplitter) {
+        this.annotationModule.drawHighlights();
       }
     }
   }
+  stopReadAlong() {
+    if (this.rights?.enableMediaOverlays && this.publication.hasMediaOverlays) {
+      this.mediaOverlayModule.stopReadAloud();
+    }
+  }
+
   pauseReadAloud() {
+    if (this.rights?.enableTTS) {
+      if (this.tts.enableSplitter) {
+        const ttsModule = this.ttsModule as TTSModule;
+        ttsModule.speakPause();
+      } else {
+        const ttsModule = this.ttsModule as TTSModule2;
+        ttsModule.speakPause();
+        this.annotationModule.drawHighlights();
+      }
+    }
+  }
+  pauseReadAlong() {
     if (this.rights?.enableMediaOverlays && this.publication.hasMediaOverlays) {
       this.mediaOverlayModule.pauseReadAloud();
-    } else if (this.rights?.enableTTS) {
-      this.ttsModule.speakPause();
     }
   }
   resumeReadAloud() {
-    if (this.rights?.enableMediaOverlays && this.publication.hasMediaOverlays) {
-      this.mediaOverlayModule.resumeReadAloud();
-    } else if (this.rights?.enableTTS) {
-      this.ttsModule.speakResume();
+    if (this.rights?.enableTTS) {
+      if (this.tts.enableSplitter) {
+        const ttsModule = this.ttsModule as TTSModule;
+        ttsModule.speakResume();
+      } else {
+        const ttsModule = this.ttsModule as TTSModule2;
+        ttsModule.speakResume();
+      }
     }
   }
+  resumeReadAlong() {
+    if (this.rights?.enableMediaOverlays && this.publication.hasMediaOverlays) {
+      this.mediaOverlayModule.resumeReadAloud();
+    }
+  }
+
   totalResources(): number {
     return this.publication.readingOrder.length;
   }
@@ -2446,7 +2480,7 @@ export default class IFrameNavigator implements Navigator {
     if (IS_DEV) console.log(locator.href);
     if (IS_DEV) console.log(linkHref);
     position.href = linkHref;
-    this.stopReadAloud(true);
+    this.stopReadAloud();
     this.navigate(position);
   }
   currentLocator(): Locator {
@@ -2511,7 +2545,7 @@ export default class IFrameNavigator implements Navigator {
   private handlePreviousPageClick(
     event: MouseEvent | TouchEvent | KeyboardEvent
   ): void {
-    this.stopReadAloud(true);
+    this.stopReadAloud();
     if (this.view.layout === "fixed") {
       this.handlePreviousChapterClick(event);
     } else {
@@ -2547,7 +2581,7 @@ export default class IFrameNavigator implements Navigator {
       !this.sample?.isSampleRead ||
       !this.publication.positions
     ) {
-      this.stopReadAloud(true);
+      this.stopReadAloud();
       if (this.view.layout === "fixed") {
         this.handleNextChapterClick(event);
       } else {
@@ -2606,7 +2640,7 @@ export default class IFrameNavigator implements Navigator {
 
     event.preventDefault();
     event.stopPropagation();
-    this.stopReadAloud(true);
+    this.stopReadAloud();
     this.navigate(position);
   }
 
@@ -2890,7 +2924,7 @@ export default class IFrameNavigator implements Navigator {
         title: previous.Title,
       };
 
-      this.stopReadAloud(true);
+      this.stopReadAloud();
       this.navigate(position);
     } else {
       if (this.previousChapterLink) {
@@ -2903,7 +2937,7 @@ export default class IFrameNavigator implements Navigator {
           title: this.previousChapterLink.title,
         };
 
-        this.stopReadAloud(true);
+        this.stopReadAloud();
         this.navigate(position);
       }
     }
@@ -2931,7 +2965,7 @@ export default class IFrameNavigator implements Navigator {
         title: next.Title,
       };
 
-      this.stopReadAloud(true);
+      this.stopReadAloud();
       this.navigate(position);
     } else {
       if (this.nextChapterLink) {
@@ -2944,7 +2978,7 @@ export default class IFrameNavigator implements Navigator {
           title: this.nextChapterLink.title,
         };
 
-        this.stopReadAloud(true);
+        this.stopReadAloud();
         this.navigate(position);
       }
     }

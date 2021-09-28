@@ -411,7 +411,7 @@ export default class BookmarkModule implements ReaderModule {
       menuItem.popup,
       menuItem.highlight.style
     );
-    this.delegate.annotationModule.saveAnnotation(book).then((anno) => {
+    this.delegate.annotationModule.saveAnnotation(book[0]).then((anno) => {
       if (IS_DEV) {
         console.log("saved bookmark " + anno.id);
       }

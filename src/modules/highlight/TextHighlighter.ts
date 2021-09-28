@@ -42,6 +42,8 @@ import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { iconTemplateColored, icons } from "../../utils/IconLib";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
+import TTSModule from "../TTS/TTSModule";
+import TTSModule2 from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
@@ -1112,7 +1114,7 @@ export default class TextHighlighter {
                   self.options.onAfterHighlight(highlight, marker);
                   if (self.delegate.rights?.enableAnnotations) {
                     self.delegate.annotationModule
-                      .saveAnnotation(highlight)
+                      .saveAnnotation(highlight[0])
                       .then((anno) => {
                         if (menuItem?.note) {
                           let note = prompt("Add your note here:");
@@ -1183,7 +1185,7 @@ export default class TextHighlighter {
         );
         this.options.onAfterHighlight(highlight, marker);
         if (this.delegate.rights?.enableAnnotations) {
-          this.delegate.annotationModule.saveAnnotation(highlight);
+          this.delegate.annotationModule.saveAnnotation(highlight[0]);
         }
       }
 
@@ -1225,7 +1227,19 @@ export default class TextHighlighter {
         getCssSelector
       );
       if (selectionInfo !== undefined) {
-        this.delegate.ttsModule.speak(selectionInfo as any, true, () => {});
+        if (this.delegate.tts?.enableSplitter) {
+          (this.delegate.ttsModule as TTSModule).speak(
+            selectionInfo as any,
+            true,
+            () => {}
+          );
+        } else {
+          (this.delegate.ttsModule as TTSModule2).speak(
+            selectionInfo as any,
+            true,
+            () => {}
+          );
+        }
       }
       if (this.delegate.tts?.enableSplitter) {
         const selection = self
@@ -1288,13 +1302,31 @@ export default class TextHighlighter {
         );
 
         if (selectionInfo !== undefined && selectionInfo.cleanText) {
-          this.delegate.ttsModule.speak(selectionInfo as any, false, () => {
-            var selection = self
-              .dom(self.delegate.iframes[0].contentDocument.body)
-              .getSelection();
-            selection.removeAllRanges();
-            self.toolboxHide();
-          });
+          if (this.delegate.tts?.enableSplitter) {
+            (this.delegate.ttsModule as TTSModule).speak(
+              selectionInfo as any,
+              false,
+              () => {
+                var selection = self
+                  .dom(self.delegate.iframes[0].contentDocument.body)
+                  .getSelection();
+                selection.removeAllRanges();
+                self.toolboxHide();
+              }
+            );
+          } else {
+            (this.delegate.ttsModule as TTSModule2).speak(
+              selectionInfo as any,
+              false,
+              () => {
+                var selection = self
+                  .dom(self.delegate.iframes[0].contentDocument.body)
+                  .getSelection();
+                selection.removeAllRanges();
+                self.toolboxHide();
+              }
+            );
+          }
         } else {
           self
             .dom(self.delegate.iframes[0].contentDocument.body)
@@ -1396,8 +1428,11 @@ export default class TextHighlighter {
     if (this.delegate.rights?.enableTTS) {
       this.toolboxHide();
       this.dom(this.delegate.iframes[0].contentDocument.body).removeAllRanges();
-      this.delegate.ttsModule.cancel();
-
+      if (this.delegate.tts?.enableSplitter) {
+        (this.delegate.ttsModule as TTSModule).cancel();
+      } else {
+        (this.delegate.ttsModule as TTSModule2).cancel();
+      }
       if (reload) {
         this.delegate.reload();
       }
@@ -2508,7 +2543,7 @@ export default class TextHighlighter {
     icon?: IMarkerIcon | undefined,
     popup?: IPopupStyle | undefined,
     style?: IStyle | undefined
-  ): IHighlight {
+  ): [IHighlight, HTMLDivElement] {
     try {
       const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
       const sha256Hex = SHA256.hash(uniqueStr);
@@ -2539,7 +2574,7 @@ export default class TextHighlighter {
         ).style.top.replace("px", "")
       );
 
-      return highlight;
+      return [highlight, highlightDom];
     } catch (e) {
       throw "Can't create highlight: " + e;
     }

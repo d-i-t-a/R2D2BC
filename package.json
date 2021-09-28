@@ -32,6 +32,7 @@
     "jscrypto": "0.0.1",
     "mark.js": "^8.11.1",
     "promise-polyfill": "^8.2.0",
+    "sentence-splitter": "^3.2.1",
     "r2-shared-js": "^1.0.51",
     "sanitize-html": "^2.3.3",
     "whatwg-fetch": "^3.6.2"

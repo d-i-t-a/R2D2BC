@@ -458,7 +458,7 @@ export default class TTSModule2 implements ReaderModule {
             selection.focusOffset,
             rootEl
           );
-          console.log(idx);
+
           if (idx >= 0) {
             ttsQueueIndex = idx;
           }

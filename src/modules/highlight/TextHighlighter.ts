@@ -41,7 +41,7 @@ import { IReadiumIFrameWindow } from "./renderer/iframe/state";
 import { uniqueCssSelector } from "./renderer/common/cssselector2";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { IS_DEV } from "../..";
-import { iconTemplateColored, icons } from "../../utils/IconLib";
+import { icons, iconTemplateColored } from "../../utils/IconLib";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import TTSModule from "../TTS/TTSModule";
 import TTSModule2 from "../TTS/TTSModule2";
@@ -1955,17 +1955,20 @@ export default class TextHighlighter {
         }
 
         let highlightParent;
-        if (id_container == ID_HIGHLIGHTS_CONTAINER) {
+        if (_highlightsContainer && id_container == ID_HIGHLIGHTS_CONTAINER) {
           highlightParent = _highlightsContainer.querySelector(
             `#${highlight.id}`
           );
         }
-        if (id_container == ID_SEARCH_CONTAINER) {
+        if (_highlightsSearchContainer && id_container == ID_SEARCH_CONTAINER) {
           highlightParent = _highlightsSearchContainer.querySelector(
             `#${highlight.id}`
           );
         }
-        if (id_container == ID_READALOUD_CONTAINER) {
+        if (
+          _highlightsReadAloudContainer &&
+          id_container == ID_READALOUD_CONTAINER
+        ) {
           highlightParent = _highlightsReadAloudContainer.querySelector(
             `#${highlight.id}`
           );
@@ -2275,59 +2278,79 @@ export default class TextHighlighter {
       }
     }
     if (!foundHighlight || !foundElement) {
-      const highlightBoundings = _highlightsContainer.querySelectorAll(
-        `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-      );
-      const highlightBoundings2 = _highlightsSearchContainer.querySelectorAll(
-        `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-      );
-      const highlightBoundings3 =
-        _highlightsReadAloudContainer.querySelectorAll(
+      if (_highlightsContainer) {
+        const highlightBoundings = _highlightsContainer.querySelectorAll(
           `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
         );
-
-      for (const highlightBounding of highlightBoundings) {
-        this.resetHighlightBoundingStyle(win, highlightBounding as HTMLElement);
+        for (const highlightBounding of highlightBoundings) {
+          this.resetHighlightBoundingStyle(
+            win,
+            highlightBounding as HTMLElement
+          );
+        }
       }
-      for (const highlightBounding of highlightBoundings2) {
-        this.resetHighlightBoundingStyle(win, highlightBounding as HTMLElement);
-      }
-      for (const highlightBounding of highlightBoundings3) {
-        this.resetHighlightBoundingStyle(win, highlightBounding as HTMLElement);
-      }
-
-      const allHighlightAreas = Array.from(
-        _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
-      );
-      const allHighlightAreas2 = Array.from(
-        _highlightsSearchContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
-      );
-      const allHighlightAreas3 = Array.from(
-        _highlightsReadAloudContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_AREA}`
-        )
-      );
-
-      for (const highlightArea of allHighlightAreas) {
-        this.resetHighlightAreaStyle(
-          win,
-          highlightArea as HTMLElement,
-          ID_HIGHLIGHTS_CONTAINER
+      if (_highlightsSearchContainer) {
+        const highlightBoundings2 = _highlightsSearchContainer.querySelectorAll(
+          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
         );
+        for (const highlightBounding of highlightBoundings2) {
+          this.resetHighlightBoundingStyle(
+            win,
+            highlightBounding as HTMLElement
+          );
+        }
       }
-      for (const highlightArea of allHighlightAreas2) {
-        this.resetHighlightAreaStyle(
-          win,
-          highlightArea as HTMLElement,
-          ID_SEARCH_CONTAINER
-        );
+      if (_highlightsReadAloudContainer) {
+        const highlightBoundings3 =
+          _highlightsReadAloudContainer.querySelectorAll(
+            `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
+          );
+        for (const highlightBounding of highlightBoundings3) {
+          this.resetHighlightBoundingStyle(
+            win,
+            highlightBounding as HTMLElement
+          );
+        }
       }
-      for (const highlightArea of allHighlightAreas3) {
-        this.resetHighlightAreaStyle(
-          win,
-          highlightArea as HTMLElement,
-          ID_READALOUD_CONTAINER
+      if (_highlightsContainer) {
+        const allHighlightAreas = Array.from(
+          _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
         );
+        for (const highlightArea of allHighlightAreas) {
+          this.resetHighlightAreaStyle(
+            win,
+            highlightArea as HTMLElement,
+            ID_HIGHLIGHTS_CONTAINER
+          );
+        }
+      }
+      if (_highlightsSearchContainer) {
+        const allHighlightAreas2 = Array.from(
+          _highlightsSearchContainer.querySelectorAll(
+            `.${CLASS_HIGHLIGHT_AREA}`
+          )
+        );
+        for (const highlightArea of allHighlightAreas2) {
+          this.resetHighlightAreaStyle(
+            win,
+            highlightArea as HTMLElement,
+            ID_SEARCH_CONTAINER
+          );
+        }
+      }
+      if (_highlightsReadAloudContainer) {
+        const allHighlightAreas3 = Array.from(
+          _highlightsReadAloudContainer.querySelectorAll(
+            `.${CLASS_HIGHLIGHT_AREA}`
+          )
+        );
+        for (const highlightArea of allHighlightAreas3) {
+          this.resetHighlightAreaStyle(
+            win,
+            highlightArea as HTMLElement,
+            ID_READALOUD_CONTAINER
+          );
+        }
       }
 
       return;
@@ -2762,7 +2785,9 @@ export default class TextHighlighter {
         style: style,
         type: type ? type : HighlightType.Annotation,
       };
-      _highlights.push(highlight);
+      if (type == HighlightType.Annotation) {
+        _highlights.push(highlight);
+      }
 
       let highlightDom = this.createHighlightDom(win, highlight);
       highlight.position = parseInt(

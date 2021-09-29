@@ -79,6 +79,58 @@ export default class TTSModule2 implements ReaderModule {
           "keydown",
           this.wheel.bind(this)
         );
+        addEventListenerOptional(this.body, "click", this.click.bind(this));
+      }
+    }
+  }
+
+  private click(_event: KeyboardEvent | MouseEvent | TrackEvent): void {
+    if (window.speechSynthesis.speaking && this.speaking) {
+      const selection = this.highlighter
+        .dom(this.delegate.iframes[0].contentDocument.body)
+        .getSelection();
+      let range = selection.getRangeAt(0);
+      let node = selection.anchorNode;
+
+      // Find starting point
+      while (range.toString().indexOf(" ") != 0) {
+        try {
+          range.setStart(node, range.startOffset - 1);
+        } catch (e) {
+          break;
+        }
+      }
+      range.setStart(node, range.startOffset + 1);
+
+      // Find ending point
+      do {
+        range.setEnd(node, range.endOffset + 1);
+      } while (
+        range.toString().indexOf(" ") == -1 &&
+        range.toString().trim() != ""
+      );
+
+      // Alert result
+      // var str = range.toString().trim();
+      // alert(str);
+
+      let iframe = document.querySelector(
+        "main#iframe-wrapper iframe"
+      ) as HTMLIFrameElement;
+      let rootEl = iframe.contentWindow.document.body;
+      const idx = this.findTtsQueueItemIndex(
+        this.ttsQueue,
+        selection.anchorNode as Element,
+        selection.focusNode,
+        selection.focusOffset,
+        rootEl
+      );
+      selection.removeAllRanges();
+
+      if (idx >= 0) {
+        window.speechSynthesis.cancel();
+        this.restartIndex = idx;
+        this.ttsPlayQueueIndexDebounced(this.restartIndex, this.ttsQueue);
       }
     }
   }
@@ -527,6 +579,7 @@ export default class TTSModule2 implements ReaderModule {
       "keydown",
       this.wheel.bind(this)
     );
+    removeEventListenerOptional(this.body, "click", this.click.bind(this));
   }
 
   generateTtsQueue(
@@ -999,15 +1052,9 @@ export default class TTSModule2 implements ReaderModule {
       return undefined;
     }
 
-    const isWordBoundary = charIndex >= 0 && utteranceText;
-    console.log(isWordBoundary);
-
     const ttsQueueItemText = utteranceText
       ? utteranceText
       : getTtsQueueItemRefText(ttsQueueItem);
-
-    let ttsQueueItemMarkup = ttsQueueItemText;
-    console.log(ttsQueueItemMarkup);
 
     if (charIndex >= 0 && utteranceText) {
       const start = utteranceText.slice(0, charIndex + 1).search(/\S+$/);
@@ -1017,9 +1064,6 @@ export default class TTSModule2 implements ReaderModule {
           ? utteranceText.slice(start)
           : utteranceText.slice(start, right + charIndex);
       const end = start + word.length;
-
-      console.log(word);
-      console.log(end);
 
       this.wrapHighlightWord(
         ttsQueueItem,

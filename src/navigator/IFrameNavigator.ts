@@ -72,11 +72,11 @@ import MediaOverlayModule, {
 import { D2Link, Link } from "../model/Link";
 import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
 import ReaderModule from "../modules/ReaderModule";
-import TTSModule2 from "../modules/TTS/TTSModule2";
 import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
 
-import PageBreakModule from "../modules/pagebreak/PageBreakModule";
 import { HighlightType } from "../modules/highlight/common/highlight";
+import TTSModule2 from "../modules/TTS/TTSModule2";
+import PageBreakModule from "../modules/pagebreak/PageBreakModule";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -917,7 +917,6 @@ export default class IFrameNavigator implements Navigator {
       this.handleEditClick.bind(this)
     );
 
-
     addEventListenerOptional(window, "resize", this.onResize);
     for (const iframe of this.iframes) {
       addEventListenerOptional(iframe, "resize", this.onResize);
@@ -1296,7 +1295,6 @@ export default class IFrameNavigator implements Navigator {
           );
         }
       }
-
 
       if (this.landmarksView) {
         if (landmarks?.length) {

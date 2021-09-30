@@ -1019,8 +1019,7 @@ export default class IFrameNavigator implements Navigator {
           title: firstPage.Title,
         };
 
-        this.stopReadAloud();
-        this.navigate(position);
+        this.goTo(position);
       }
     }
   }

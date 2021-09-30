@@ -63,6 +63,7 @@ export enum HighlightType {
   Annotation = 0,
   Search = 1,
   ReadAloud = 2,
+  PageBreak = 3,
 }
 
 export interface IHighlight {

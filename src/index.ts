@@ -40,6 +40,7 @@ import { TaJsonDeserialize } from "./utils/JsonUtil";
 import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
 import ReaderModule from "./modules/ReaderModule";
 import TTSModule2 from "./modules/TTS/TTSModule2";
+import PageBreakModule from "./modules/pagebreak/PageBreakModule";
 
 let D2Settings: UserSettings;
 let D2TTSSettings: TTSSettings;
@@ -53,6 +54,7 @@ let SearchModuleInstance: SearchModule;
 let ContentProtectionModuleInstance: ContentProtectionModule;
 let TimelineModuleInstance: TimelineModule;
 let MediaOverlayModuleInstance: MediaOverlayModule;
+let PageBreakModuleInstance: PageBreakModule;
 
 export const IS_DEV =
   process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
@@ -91,6 +93,7 @@ export async function unload() {
     await D2MediaOverlaySettings.stop();
     await MediaOverlayModuleInstance.stop();
   }
+  await PageBreakModuleInstance.stop();
 }
 exports.unload = async function () {
   await unload();
@@ -935,6 +938,10 @@ export async function load(config: ReaderConfig): Promise<any> {
       ...config.mediaOverlays,
     });
   }
+
+  PageBreakModuleInstance = await PageBreakModule.create({
+    delegate: D2Navigator,
+  });
 
   return new Promise((resolve) => resolve(D2Navigator));
 }

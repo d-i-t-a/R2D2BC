@@ -33,7 +33,6 @@ import { getCurrentSelectionInfo } from "./highlight/renderer/iframe/selection";
 import { uniqueCssSelector } from "./highlight/renderer/common/cssselector2";
 import { SelectionMenuItem } from "./highlight/common/highlight";
 import { getClientRectsNoOverlap } from "./highlight/common/rect-utils";
-import { _highlights } from "./highlight/TextHighlighter";
 
 export interface BookmarkModuleAPI {
   addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;

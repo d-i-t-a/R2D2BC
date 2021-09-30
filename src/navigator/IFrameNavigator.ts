@@ -75,6 +75,9 @@ import ReaderModule from "../modules/ReaderModule";
 import TTSModule2 from "../modules/TTS/TTSModule2";
 import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
 
+import PageBreakModule from "../modules/pagebreak/PageBreakModule";
+import { HighlightType } from "../modules/highlight/common/highlight";
+
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
 
@@ -196,6 +199,7 @@ export default class IFrameNavigator implements Navigator {
   contentProtectionModule?: ContentProtectionModule;
   highlighter?: TextHighlighter;
   timelineModule?: TimelineModule;
+  pageBreakModule?: PageBreakModule;
   mediaOverlayModule?: MediaOverlayModule;
 
   sideNavExpanded: boolean = false;
@@ -989,8 +993,8 @@ export default class IFrameNavigator implements Navigator {
       (event.key === "Enter" || event.type === "click")
     ) {
       var filteredPages = this.publication.pageList.filter(
-        (el: any) =>
-          el.href.slice(el.href.indexOf("#") + 1).replace(/[^0-9]/g, "") ===
+        (el: Link) =>
+          el.Href.slice(el.Href.indexOf("#") + 1).replace(/[^0-9]/g, "") ===
           this.goToPageNumberInput.value
       );
       if (filteredPages && filteredPages.length > 0) {
@@ -1213,21 +1217,22 @@ export default class IFrameNavigator implements Navigator {
         }
       });
       setTimeout(async () => {
+        if (this.pageBreakModule !== undefined) {
+          await this.highlighter.destroyHighlights(HighlightType.PageBreak);
+          await this.pageBreakModule.drawPageBreaks();
+        }
+
         if (this.annotationModule !== undefined) {
           await this.annotationModule.drawHighlights();
-        } else {
-          if (
-            this.rights?.enableSearch &&
-            this.searchModule !== undefined &&
-            this.highlighter !== undefined
-          ) {
-            for (const iframe of this.iframes) {
-              await this.highlighter.destroyAllhighlights(
-                iframe.contentDocument
-              );
-            }
-            this.searchModule.drawSearch();
-          }
+        }
+
+        if (
+          this.rights?.enableSearch &&
+          this.searchModule !== undefined &&
+          this.highlighter !== undefined
+        ) {
+          await this.highlighter.destroyHighlights(HighlightType.Search);
+          this.searchModule.drawSearch();
         }
       }, 200);
     }
@@ -1599,18 +1604,6 @@ export default class IFrameNavigator implements Navigator {
               await ttsModule.initialize(body);
             }
           }
-        }
-      }
-      for (const iframe of this.iframes) {
-        const body = iframe.contentDocument.body;
-        var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
-        for (var i = 0; i < pagebreaks.length; i++) {
-          var img = pagebreaks[i];
-          if (IS_DEV) console.log(img);
-          if (img.innerHTML.length === 0) {
-            img.innerHTML = img.getAttribute("title");
-          }
-          img.className = "epubPageBreak";
         }
       }
 
@@ -2850,14 +2843,19 @@ export default class IFrameNavigator implements Navigator {
     }, 100);
     setTimeout(async () => {
       selectedView.goToPosition(oldPosition);
+
       await this.updatePositionInfo(false);
+
       if (this.annotationModule !== undefined) {
-        this.annotationModule.handleResize();
-      } else {
-        if (this.rights?.enableSearch) {
-          await this.searchModule.handleResize();
-        }
+        await this.annotationModule.handleResize();
       }
+      if (this.rights?.enableSearch) {
+        await this.searchModule.handleResize();
+      }
+      if (this.pageBreakModule !== undefined) {
+        await this.pageBreakModule.handleResize();
+      }
+
       if (this.rights?.enableContentProtection) {
         if (this.contentProtectionModule !== undefined) {
           this.contentProtectionModule.handleResize();
@@ -3228,23 +3226,25 @@ export default class IFrameNavigator implements Navigator {
         ) {
           this.contentProtectionModule.recalculate(300);
         }
+
+        if (this.pageBreakModule !== undefined) {
+          await this.highlighter.destroyHighlights(HighlightType.PageBreak);
+          await this.pageBreakModule.drawPageBreaks();
+        }
+
         if (this.annotationModule !== undefined) {
           await this.annotationModule.drawHighlights();
           await this.annotationModule.showHighlights();
-        } else {
-          if (
-            this.rights?.enableSearch &&
-            this.searchModule !== undefined &&
-            this.highlighter !== undefined
-          ) {
-            for (const iframe of this.iframes) {
-              await this.highlighter.destroyAllhighlights(
-                iframe.contentDocument
-              );
-            }
-            this.searchModule.drawSearch();
-          }
         }
+        if (
+          this.rights?.enableSearch &&
+          this.searchModule !== undefined &&
+          this.highlighter !== undefined
+        ) {
+          await this.highlighter.destroyHighlights(HighlightType.Search);
+          this.searchModule.drawSearch();
+        }
+
         if (this.view.layout === "fixed") {
           if (this.nextChapterBottomAnchorElement)
             this.nextChapterBottomAnchorElement.style.display = "none";

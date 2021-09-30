@@ -19,7 +19,10 @@
 
 import { convertRange } from "../highlight/renderer/iframe/selection";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
-import { IRangeInfo } from "../highlight/common/selection";
+import {
+  _getCssSelectorOptions,
+  IRangeInfo,
+} from "../highlight/common/selection";
 
 export interface ISearchResult {
   rangeInfo: IRangeInfo;
@@ -57,18 +60,6 @@ export const reset = () => {
   _counter = 0;
 };
 const getCount = counter();
-
-const _getCssSelectorOptions = {
-  className: (_str: string) => {
-    return true;
-  },
-  idName: (_str: string) => {
-    return true;
-  },
-  tagName: (_str: string) => {
-    return true;
-  },
-};
 
 const getCssSelector_ =
   (doc: Document) =>

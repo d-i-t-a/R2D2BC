@@ -1385,7 +1385,6 @@ export default class IFrameNavigator implements Navigator {
       if (this.newPosition) {
         bookViewPosition = this.newPosition.locations.progression;
       }
-      this.handleResize();
       this.updateBookView();
 
       await this.settings.applyProperties();
@@ -1489,6 +1488,16 @@ export default class IFrameNavigator implements Navigator {
           by: "lines",
         });
       }
+
+      // resize on toggle details
+      let details = body.querySelector("details");
+      if (details) {
+        let self = this;
+        details.addEventListener("toggle", async (_event) => {
+          await self.handleResize();
+        });
+      }
+
       if (this.rights?.enableContentProtection) {
         if (this.contentProtectionModule !== undefined) {
           await this.contentProtectionModule.initialize();
@@ -1557,7 +1566,7 @@ export default class IFrameNavigator implements Navigator {
               .startContainerElementCssSelector
           );
         } else if (bookViewPosition > 0) {
-          this.view.goToPosition(bookViewPosition);
+          this.view.goToProgression(bookViewPosition);
         }
 
         this.newPosition = null;
@@ -2602,7 +2611,7 @@ export default class IFrameNavigator implements Navigator {
     }
   }
 
-  private handleResize(): void {
+  async handleResize(): Promise<void> {
     if (this.isScrolling) {
       return;
     }
@@ -2713,7 +2722,7 @@ export default class IFrameNavigator implements Navigator {
     const selectedView = this.view;
     const oldPosition = selectedView.getCurrentPosition();
 
-    this.settings.applyProperties();
+    await this.settings.applyProperties(false);
 
     // If the links are hidden, show them temporarily
     // to determine the top and bottom heights.
@@ -2768,7 +2777,7 @@ export default class IFrameNavigator implements Navigator {
       }
     }, 100);
     setTimeout(async () => {
-      selectedView.goToPosition(oldPosition);
+      selectedView.goToProgression(oldPosition);
 
       await this.updatePositionInfo(false);
 
@@ -3012,7 +3021,7 @@ export default class IFrameNavigator implements Navigator {
                 .startContainerElementCssSelector
             );
           } else {
-            this.view.goToPosition(locator.locations.progression);
+            this.view.goToProgression(locator.locations.progression);
           }
         }
 

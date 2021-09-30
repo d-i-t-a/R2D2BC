@@ -44,14 +44,6 @@ export default class FixedBookView implements BookView {
     return 0;
   }
 
-  goToPosition(_position: number): void {}
-
-  goToCssSelector(_cssSelector: string, _relative?: boolean): void {}
-
-  goToFragment(_fragment: string, _relative?: boolean): void {}
-
-  snap(_element: HTMLElement, _relative?: boolean): void {}
-
   getCurrentPage(): number {
     return 0;
   }

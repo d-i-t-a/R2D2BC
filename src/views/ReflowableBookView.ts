@@ -182,7 +182,7 @@ export default class ReflowableBookView implements BookView {
     }
   }
 
-  goToPosition(position: number): void {
+  goToProgression(position: number): void {
     if (this.isScrollMode()) {
       document.scrollingElement.scrollTop =
         this.iframe.contentDocument.scrollingElement.scrollHeight * position;

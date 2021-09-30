@@ -452,7 +452,7 @@ export class UserSettings implements IUserSettings {
       ) as HTMLDivElement;
   }
 
-  async applyProperties(): Promise<any> {
+  async applyProperties(resize: boolean = true): Promise<any> {
     this.userProperties = this.getUserSettings();
     const html = HTMLUtilities.findRequiredIframeElement(
       this.iframe.contentDocument,
@@ -670,10 +670,11 @@ export class UserSettings implements IUserSettings {
       //     "readium-advanced-off"
       //   );
       // }
-
-      this.isScrollMode().then((scroll) => {
-        this.view.setMode(scroll);
-      });
+      if (resize) {
+        this.isScrollMode().then((scroll) => {
+          this.view.setMode(scroll);
+        });
+      }
     }
   }
 
@@ -1077,7 +1078,7 @@ export class UserSettings implements IUserSettings {
         );
         await this.applyProperties();
         this.view.setMode(this.verticalScroll);
-        this.view.goToPosition(position);
+        this.view.goToProgression(position);
         this.viewChangeCallback();
       }
     }, 10);
@@ -1114,7 +1115,7 @@ export class UserSettings implements IUserSettings {
     //   this.updateViewButtons();
     // }
     this.view.setMode(this.verticalScroll);
-    this.view.goToPosition(position);
+    this.view.goToProgression(position);
     this.viewChangeCallback();
   }
 

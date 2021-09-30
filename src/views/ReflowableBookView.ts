@@ -81,7 +81,7 @@ export default class ReflowableBookView implements BookView {
         "html"
       ) as any;
       html.style.setProperty("--USER__scroll", "readium-scroll-on");
-      this.setSize();
+      // this.setSize();
       this.setIframeHeight(this.iframe);
     } else {
       this.name = "readium-scroll-off";

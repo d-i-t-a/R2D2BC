@@ -196,7 +196,7 @@ export class UserSettings implements IUserSettings {
           (el: any) => el === initialUserSettings.appearance
         );
         settings.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF).value =
-          settings.appearance;        
+          settings.appearance;
         await settings.saveProperty(
           settings.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)
         );
@@ -452,7 +452,7 @@ export class UserSettings implements IUserSettings {
       ) as HTMLDivElement;
   }
 
-  async applyProperties(resize: boolean = true): Promise<any> {
+  async applyProperties(): Promise<any> {
     this.userProperties = this.getUserSettings();
     const html = HTMLUtilities.findRequiredIframeElement(
       this.iframe.contentDocument,
@@ -670,11 +670,9 @@ export class UserSettings implements IUserSettings {
       //     "readium-advanced-off"
       //   );
       // }
-      if (resize) {
-        this.isScrollMode().then((scroll) => {
-          this.view.setMode(scroll);
-        });
-      }
+      this.isScrollMode().then((scroll) => {
+        this.view.setMode(scroll);
+      });
     }
   }
 

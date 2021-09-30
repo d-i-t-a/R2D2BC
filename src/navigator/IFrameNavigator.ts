@@ -2722,7 +2722,7 @@ export default class IFrameNavigator implements Navigator {
     const selectedView = this.view;
     const oldPosition = selectedView.getCurrentPosition();
 
-    await this.settings.applyProperties(false);
+    await this.settings.applyProperties();
 
     // If the links are hidden, show them temporarily
     // to determine the top and bottom heights.

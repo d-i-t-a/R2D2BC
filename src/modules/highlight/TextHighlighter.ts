@@ -3368,14 +3368,14 @@ export default class TextHighlighter {
     }
 
     switch (highlight.type) {
-      case 0:
-        highlightsContainer.append(highlightParent);
-        break;
       case 1:
         highlightsSearchContainer.append(highlightParent);
         break;
       case 2:
         highlightsReadaloudContainer.append(highlightParent);
+        break;
+      default:
+        highlightsContainer.append(highlightParent);
         break;
     }
 

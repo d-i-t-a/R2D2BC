@@ -79,8 +79,8 @@ export default class TTSModule2 implements ReaderModule {
           "keydown",
           this.wheel.bind(this)
         );
-        addEventListenerOptional(this.body, "click", this.click.bind(this));
       }
+      addEventListenerOptional(this.body, "click", this.click.bind(this));
     }
   }
 

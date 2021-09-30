@@ -2912,7 +2912,7 @@ export default class TextHighlighter {
         style: style,
         type: type ? type : HighlightType.Annotation,
       };
-      if (type == HighlightType.Annotation) {
+      if (type == HighlightType.Annotation || type == undefined) {
         _highlights.push(highlight);
       }
 
@@ -3502,9 +3502,6 @@ export default class TextHighlighter {
     }
 
     switch (highlight.type) {
-      case HighlightType.Annotation:
-        highlightsContainer.append(highlightParent);
-        break;
       case HighlightType.Search:
         highlightsSearchContainer.append(highlightParent);
         break;
@@ -3513,6 +3510,9 @@ export default class TextHighlighter {
         break;
       case HighlightType.PageBreak:
         highlightsPageBreakContainer.append(highlightParent);
+        break;
+      default:
+        highlightsContainer.append(highlightParent);
         break;
     }
 

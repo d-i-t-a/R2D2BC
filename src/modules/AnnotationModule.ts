@@ -167,6 +167,7 @@ export default class AnnotationModule implements ReaderModule {
   handleResize() {
     setTimeout(() => {
       this.drawHighlights();
+      this.showHighlights();
     }, 10);
   }
 
@@ -176,6 +177,7 @@ export default class AnnotationModule implements ReaderModule {
       if (this.rights?.enableAnnotations) {
         setTimeout(() => {
           this.drawHighlights();
+          this.showHighlights();
         }, 300);
       }
       resolve(null);

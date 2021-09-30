@@ -24,22 +24,45 @@ import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
 import { HighlightType } from "../highlight/common/highlight";
 import { _getCssSelectorOptions } from "../highlight/common/selection";
+import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import { Publication } from "../../model/Publication";
+import { addEventListenerOptional } from "../../utils/EventHandler";
+import { Link } from "../../model/Link";
+import { Locations, Locator } from "../../model/Locator";
 
 export interface PageBreakModuleConfig {
   delegate: IFrameNavigator;
+  headerMenu: HTMLElement;
+  publication: Publication;
 }
 
 export default class PageBreakModule implements ReaderModule {
   private delegate: IFrameNavigator;
+  private readonly headerMenu: HTMLElement;
+  private publication: Publication;
+
+  private goToPageView: HTMLLIElement;
+  private goToPageNumberInput: HTMLInputElement;
+  private goToPageNumberButton: HTMLButtonElement;
 
   public static async create(config: PageBreakModuleConfig) {
-    const pageBreak = new this(config.delegate);
+    const pageBreak = new this(
+      config.headerMenu,
+      config.delegate,
+      config.publication
+    );
     await pageBreak.start();
     return pageBreak;
   }
 
-  private constructor(delegate: IFrameNavigator) {
+  private constructor(
+    headerMenu: HTMLElement,
+    delegate: IFrameNavigator,
+    publication: Publication
+  ) {
+    this.headerMenu = headerMenu;
     this.delegate = delegate;
+    this.publication = publication;
   }
 
   async stop() {
@@ -50,6 +73,77 @@ export default class PageBreakModule implements ReaderModule {
 
   protected async start(): Promise<void> {
     this.delegate.pageBreakModule = this;
+
+    if (this.headerMenu)
+      this.goToPageView = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#sidenav-section-gotopage"
+      ) as HTMLLIElement;
+    if (this.headerMenu)
+      this.goToPageNumberInput = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#goToPageNumberInput"
+      ) as HTMLInputElement;
+    if (this.headerMenu)
+      this.goToPageNumberButton = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#goToPageNumberButton"
+      ) as HTMLButtonElement;
+
+    addEventListenerOptional(
+      this.goToPageNumberInput,
+      "keypress",
+      this.goToPageNumber.bind(this)
+    );
+    addEventListenerOptional(
+      this.goToPageNumberButton,
+      "click",
+      this.goToPageNumber.bind(this)
+    );
+
+    if (this.goToPageView) {
+      if (this.publication.pageList?.length) {
+        //
+      } else {
+        this.goToPageView.parentElement.removeChild(this.goToPageView);
+      }
+    }
+  }
+  private async goToPageNumber(event: any): Promise<any> {
+    if (
+      this.goToPageNumberInput.value &&
+      (event.key === "Enter" || event.type === "click")
+    ) {
+      var filteredPages = this.publication.pageList.filter(
+        (el: Link) =>
+          el.Href.slice(el.Href.indexOf("#") + 1).replace(/[^0-9]/g, "") ===
+          this.goToPageNumberInput.value
+      );
+      if (filteredPages && filteredPages.length > 0) {
+        var firstPage = filteredPages[0];
+        let locations: Locations = {
+          progression: 0,
+        };
+        if (firstPage.Href.indexOf("#") !== -1) {
+          const elementId = firstPage.Href.slice(
+            firstPage.Href.indexOf("#") + 1
+          );
+          if (elementId !== null) {
+            locations = {
+              fragment: elementId,
+            };
+          }
+        }
+        const position: Locator = {
+          href: this.publication.getAbsoluteHref(firstPage.Href),
+          locations: locations,
+          type: firstPage.TypeLink,
+          title: firstPage.Title,
+        };
+
+        this.delegate.goTo(position);
+      }
+    }
   }
 
   async handleResize() {

@@ -240,9 +240,6 @@ export default class IFrameNavigator implements Navigator {
   private landmarksView: HTMLDivElement;
   private landmarksSection: HTMLDivElement;
   private pageListView: HTMLDivElement;
-  private goToPageView: HTMLLIElement;
-  private goToPageNumberInput: HTMLInputElement;
-  private goToPageNumberButton: HTMLButtonElement;
 
   private bookmarksControl: HTMLButtonElement;
   private bookmarksView: HTMLDivElement;
@@ -636,21 +633,6 @@ export default class IFrameNavigator implements Navigator {
           headerMenu,
           "#container-view-pagelist"
         ) as HTMLDivElement;
-      if (this.headerMenu)
-        this.goToPageView = HTMLUtilities.findElement(
-          headerMenu,
-          "#sidenav-section-gotopage"
-        ) as HTMLLIElement;
-      if (this.headerMenu)
-        this.goToPageNumberInput = HTMLUtilities.findElement(
-          headerMenu,
-          "#goToPageNumberInput"
-        ) as HTMLInputElement;
-      if (this.headerMenu)
-        this.goToPageNumberButton = HTMLUtilities.findElement(
-          headerMenu,
-          "#goToPageNumberButton"
-        ) as HTMLButtonElement;
 
       // Footer Menu
       if (footerMenu)
@@ -935,16 +917,6 @@ export default class IFrameNavigator implements Navigator {
       this.handleEditClick.bind(this)
     );
 
-    addEventListenerOptional(
-      this.goToPageNumberInput,
-      "keypress",
-      this.goToPageNumber.bind(this)
-    );
-    addEventListenerOptional(
-      this.goToPageNumberButton,
-      "click",
-      this.goToPageNumber.bind(this)
-    );
 
     addEventListenerOptional(window, "resize", this.onResize);
     for (const iframe of this.iframes) {
@@ -987,42 +959,6 @@ export default class IFrameNavigator implements Navigator {
     });
   }
 
-  private async goToPageNumber(event: any): Promise<any> {
-    if (
-      this.goToPageNumberInput.value &&
-      (event.key === "Enter" || event.type === "click")
-    ) {
-      var filteredPages = this.publication.pageList.filter(
-        (el: Link) =>
-          el.Href.slice(el.Href.indexOf("#") + 1).replace(/[^0-9]/g, "") ===
-          this.goToPageNumberInput.value
-      );
-      if (filteredPages && filteredPages.length > 0) {
-        var firstPage = filteredPages[0];
-        let locations: Locations = {
-          progression: 0,
-        };
-        if (firstPage.Href.indexOf("#") !== -1) {
-          const elementId = firstPage.Href.slice(
-            firstPage.Href.indexOf("#") + 1
-          );
-          if (elementId !== null) {
-            locations = {
-              fragment: elementId,
-            };
-          }
-        }
-        const position: Locator = {
-          href: this.publication.getAbsoluteHref(firstPage.Href),
-          locations: locations,
-          type: firstPage.TypeLink,
-          title: firstPage.Title,
-        };
-
-        this.goTo(position);
-      }
-    }
-  }
   isScrolling: boolean;
   private updateBookView(): void {
     if (this.view.layout === "fixed") {
@@ -1361,13 +1297,6 @@ export default class IFrameNavigator implements Navigator {
         }
       }
 
-      if (this.goToPageView) {
-        if (pageList?.length) {
-          //
-        } else {
-          this.goToPageView.parentElement.removeChild(this.goToPageView);
-        }
-      }
 
       if (this.landmarksView) {
         if (landmarks?.length) {

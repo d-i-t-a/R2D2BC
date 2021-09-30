@@ -940,6 +940,8 @@ export async function load(config: ReaderConfig): Promise<any> {
   }
 
   PageBreakModuleInstance = await PageBreakModule.create({
+    publication: publication,
+    headerMenu: headerMenu,
     delegate: D2Navigator,
   });
 

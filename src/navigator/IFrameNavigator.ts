@@ -1498,7 +1498,7 @@ export default class IFrameNavigator implements Navigator {
       if (details) {
         let self = this;
         details.addEventListener("toggle", async (_event) => {
-          await self.handleResize();
+          await self.view.setIframeHeight(this.iframes[0]);
         });
       }
 

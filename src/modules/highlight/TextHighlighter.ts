@@ -748,23 +748,25 @@ export default class TextHighlighter {
         self.toolboxMode("colors");
       });
 
-      let index = 10;
-      colors.forEach((color) => {
-        index--;
-        const colorButton = colorIcon.cloneNode(true) as HTMLButtonElement;
-        const colorButtonSymbol = colorButton.lastChild as HTMLElement;
-        let c = TextHighlighter.hexToRgbChannels(color);
-        colorButtonSymbol.style.backgroundColor =
-          "rgba(" + [c.red, c.green, c.blue].join(",") + ",.5)";
+      if (this.delegate.rights?.enableAnnotations) {
+        let index = 10;
+        colors.forEach((color) => {
+          index--;
+          const colorButton = colorIcon.cloneNode(true) as HTMLButtonElement;
+          const colorButtonSymbol = colorButton.lastChild as HTMLElement;
+          let c = TextHighlighter.hexToRgbChannels(color);
+          colorButtonSymbol.style.backgroundColor =
+            "rgba(" + [c.red, c.green, c.blue].join(",") + ",.5)";
 
-        colorButton.id = `c${color}`;
-        colorButton.style.display = "unset";
-        colorButton.style.position = "relative";
-        colorButton.style.zIndex = `${index}`;
-        colorButton.style.marginLeft = `-30px`;
-        colorRainbow.push(colorButton);
-        toolboxOptions.insertBefore(colorButton, highlightIcon);
-      });
+          colorButton.id = `c${color}`;
+          colorButton.style.display = "unset";
+          colorButton.style.position = "relative";
+          colorButton.style.zIndex = `${index}`;
+          colorButton.style.marginLeft = `-30px`;
+          colorRainbow.push(colorButton);
+          toolboxOptions.insertBefore(colorButton, highlightIcon);
+        });
+      }
 
       // Generate color options
       colors.forEach((color) => {
@@ -994,6 +996,7 @@ export default class TextHighlighter {
 
         self.toolboxMode("add");
         var highlightIcon = document.getElementById("highlightIcon");
+        var collapseIcon = document.getElementById("collapseIcon");
         var underlineIcon = document.getElementById("underlineIcon");
         var colorIcon = document.getElementById("colorIcon");
         var speakIcon = document.getElementById("speakIcon");
@@ -1053,6 +1056,9 @@ export default class TextHighlighter {
           if (colorIcon) {
             colorIcon.style.setProperty("display", "none");
           }
+          if (collapseIcon) {
+            collapseIcon.style.setProperty("display", "none");
+          }
         }
         if (this.delegate.rights?.enableTTS) {
           if (speakIcon) {
@@ -1110,35 +1116,45 @@ export default class TextHighlighter {
                   let marker = menuItem.marker
                     ? menuItem.marker
                     : AnnotationMarker.Custom;
-                  let highlight = self.createHighlight(
-                    self
-                      .dom(self.delegate.iframes[0].contentDocument.body)
-                      .getWindow(),
-                    selectionInfo,
-                    menuItem.highlight.color,
-                    true,
-                    marker,
-                    menuItem.icon,
-                    menuItem.popup,
-                    style
-                  );
-                  self.options.onAfterHighlight(highlight, marker);
-                  if (self.delegate.rights?.enableAnnotations) {
-                    self.delegate.annotationModule
-                      .saveAnnotation(highlight[0])
-                      .then((anno) => {
-                        if (menuItem?.note) {
-                          let note = prompt("Add your note here:");
-                          anno.highlight.note = note;
-                          self.delegate.annotationModule
-                            .updateAnnotation(anno)
-                            .then(async () => {
-                              if (IS_DEV) {
-                                console.log("update highlight " + anno.id);
-                              }
-                            });
-                        }
-                      });
+
+                  if (
+                    (marker == AnnotationMarker.Custom &&
+                      self.delegate.rights?.enableAnnotations) ||
+                    (marker == AnnotationMarker.Bookmark &&
+                      self.delegate.rights?.enableBookmarks)
+                  ) {
+                    let highlight = self.createHighlight(
+                      self
+                        .dom(self.delegate.iframes[0].contentDocument.body)
+                        .getWindow(),
+                      selectionInfo,
+                      menuItem.highlight.color,
+                      true,
+                      marker,
+                      menuItem.icon,
+                      menuItem.popup,
+                      style
+                    );
+                    self.options.onAfterHighlight(highlight, marker);
+                    if (self.delegate.rights?.enableAnnotations) {
+                      self.delegate.annotationModule
+                        .saveAnnotation(highlight[0])
+                        .then((anno) => {
+                          if (menuItem?.note) {
+                            let note = prompt("Add your note here:");
+                            anno.highlight.note = note;
+                            self.delegate.annotationModule
+                              .updateAnnotation(anno)
+                              .then(async () => {
+                                if (IS_DEV) {
+                                  console.log("update highlight " + anno.id);
+                                }
+                              });
+                          }
+                        });
+                    } else if (self.delegate.rights?.enableBookmarks) {
+                      self.delegate.bookmarkModule.saveAnnotation(highlight[0]);
+                    }
                   }
                 }
               }
@@ -1195,8 +1211,16 @@ export default class TextHighlighter {
           marker
         );
         this.options.onAfterHighlight(highlight, marker);
-        if (this.delegate.rights?.enableAnnotations) {
+        if (
+          this.delegate.rights?.enableAnnotations &&
+          marker != AnnotationMarker.Bookmark
+        ) {
           this.delegate.annotationModule.saveAnnotation(highlight[0]);
+        } else if (
+          this.delegate.rights?.enableBookmarks &&
+          marker == AnnotationMarker.Bookmark
+        ) {
+          this.delegate.bookmarkModule.saveAnnotation(highlight[0]);
         }
       }
 
@@ -2532,9 +2556,16 @@ export default class TextHighlighter {
           console.log(payload);
         }
         var self = this;
-        var anno = (await this.delegate.annotationModule.getAnnotation(
-          payload.highlight
-        )) as Annotation;
+        var anno;
+        if (self.delegate.rights?.enableAnnotations) {
+          anno = (await this.delegate.annotationModule.getAnnotation(
+            payload.highlight
+          )) as Annotation;
+        } else if (self.delegate.rights?.enableBookmarks) {
+          anno = (await this.delegate.bookmarkModule.getAnnotation(
+            payload.highlight
+          )) as Annotation;
+        }
 
         this.delegate.annotationModule.api
           ?.selectedAnnotation(anno)
@@ -2598,15 +2629,27 @@ export default class TextHighlighter {
           }
 
           function deleteH() {
-            self.delegate.annotationModule
-              .deleteSelectedHighlight(anno)
-              .then(async () => {
-                if (IS_DEV) {
-                  console.log("delete highlight " + anno.id);
-                }
-                toolbox.style.display = "none";
-                self.selectionMenuClosed();
-              });
+            if (self.delegate.rights?.enableAnnotations) {
+              self.delegate.annotationModule
+                .deleteSelectedHighlight(anno)
+                .then(async () => {
+                  if (IS_DEV) {
+                    console.log("delete highlight " + anno.id);
+                  }
+                  toolbox.style.display = "none";
+                  self.selectionMenuClosed();
+                });
+            } else if (self.delegate.rights?.enableBookmarks) {
+              self.delegate.bookmarkModule
+                .deleteSelectedHighlight(anno)
+                .then(async () => {
+                  if (IS_DEV) {
+                    console.log("delete highlight " + anno.id);
+                  }
+                  toolbox.style.display = "none";
+                  self.selectionMenuClosed();
+                });
+            }
           }
 
           let deleteIcon = document.getElementById("deleteIcon");
@@ -3363,13 +3406,19 @@ export default class TextHighlighter {
     let self = this;
     if (highlight.type != HighlightType.PageBreak) {
       highlightAreaIcon.addEventListener("click", async function (ev) {
-        let anno = (await self.delegate.annotationModule.getAnnotationByID(
-          highlight.id
-        )) as Annotation;
-
-        self.delegate.annotationModule.api
-          ?.selectedAnnotation(anno)
-          .then(async () => {});
+        var anno;
+        if (self.delegate.rights?.enableAnnotations) {
+          anno = (await self.delegate.annotationModule.getAnnotationByID(
+            highlight.id
+          )) as Annotation;
+          self.delegate.annotationModule.api
+            ?.selectedAnnotation(anno)
+            .then(async () => {});
+        } else if (self.delegate.rights?.enableBookmarks) {
+          anno = (await self.delegate.bookmarkModule.getAnnotationByID(
+            highlight.id
+          )) as Annotation;
+        }
 
         if (IS_DEV) {
           console.log("selected highlight " + anno.id);
@@ -3427,15 +3476,27 @@ export default class TextHighlighter {
           }
 
           function deleteH() {
-            self.delegate.annotationModule
-              .deleteSelectedHighlight(anno)
-              .then(async () => {
-                if (IS_DEV) {
-                  console.log("delete highlight " + anno.id);
-                }
-                toolbox.style.display = "none";
-                self.selectionMenuClosed();
-              });
+            if (self.delegate.rights?.enableAnnotations) {
+              self.delegate.annotationModule
+                .deleteSelectedHighlight(anno)
+                .then(async () => {
+                  if (IS_DEV) {
+                    console.log("delete highlight " + anno.id);
+                  }
+                  toolbox.style.display = "none";
+                  self.selectionMenuClosed();
+                });
+            } else if (self.delegate.rights?.enableBookmarks) {
+              self.delegate.bookmarkModule
+                .deleteSelectedHighlight(anno)
+                .then(async () => {
+                  if (IS_DEV) {
+                    console.log("delete highlight " + anno.id);
+                  }
+                  toolbox.style.display = "none";
+                  self.selectionMenuClosed();
+                });
+            }
           }
           let deleteIcon = document.getElementById("deleteIcon");
           let cloneDeleteIcon = document.getElementById("cloneDeleteIcon");

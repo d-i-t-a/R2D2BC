@@ -1105,13 +1105,10 @@ export class UserSettings implements IUserSettings {
     this.verticalScroll = scroll;
     this.userProperties.getByRef(ReadiumCSS.SCROLL_REF).value =
       this.verticalScroll;
-    await this.storeProperty(
+    await this.saveProperty(
       this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
     );
     await this.applyProperties();
-    // if (this.material?.settings.scroll) {
-    //   this.updateViewButtons();
-    // }
     this.view.setMode(this.verticalScroll);
     this.view.goToProgression(position);
     this.viewChangeCallback();

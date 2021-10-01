@@ -72,8 +72,11 @@ import MediaOverlayModule, {
 import { D2Link, Link } from "../model/Link";
 import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
 import ReaderModule from "../modules/ReaderModule";
-import TTSModule2 from "../modules/TTS/TTSModule2";
 import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
+
+import { HighlightType } from "../modules/highlight/common/highlight";
+import TTSModule2 from "../modules/TTS/TTSModule2";
+import PageBreakModule from "../modules/pagebreak/PageBreakModule";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -196,6 +199,7 @@ export default class IFrameNavigator implements Navigator {
   contentProtectionModule?: ContentProtectionModule;
   highlighter?: TextHighlighter;
   timelineModule?: TimelineModule;
+  pageBreakModule?: PageBreakModule;
   mediaOverlayModule?: MediaOverlayModule;
 
   sideNavExpanded: boolean = false;
@@ -236,9 +240,6 @@ export default class IFrameNavigator implements Navigator {
   private landmarksView: HTMLDivElement;
   private landmarksSection: HTMLDivElement;
   private pageListView: HTMLDivElement;
-  private goToPageView: HTMLLIElement;
-  private goToPageNumberInput: HTMLInputElement;
-  private goToPageNumberButton: HTMLButtonElement;
 
   private bookmarksControl: HTMLButtonElement;
   private bookmarksView: HTMLDivElement;
@@ -632,21 +633,6 @@ export default class IFrameNavigator implements Navigator {
           headerMenu,
           "#container-view-pagelist"
         ) as HTMLDivElement;
-      if (this.headerMenu)
-        this.goToPageView = HTMLUtilities.findElement(
-          headerMenu,
-          "#sidenav-section-gotopage"
-        ) as HTMLLIElement;
-      if (this.headerMenu)
-        this.goToPageNumberInput = HTMLUtilities.findElement(
-          headerMenu,
-          "#goToPageNumberInput"
-        ) as HTMLInputElement;
-      if (this.headerMenu)
-        this.goToPageNumberButton = HTMLUtilities.findElement(
-          headerMenu,
-          "#goToPageNumberButton"
-        ) as HTMLButtonElement;
 
       // Footer Menu
       if (footerMenu)
@@ -931,17 +917,6 @@ export default class IFrameNavigator implements Navigator {
       this.handleEditClick.bind(this)
     );
 
-    addEventListenerOptional(
-      this.goToPageNumberInput,
-      "keypress",
-      this.goToPageNumber.bind(this)
-    );
-    addEventListenerOptional(
-      this.goToPageNumberButton,
-      "click",
-      this.goToPageNumber.bind(this)
-    );
-
     addEventListenerOptional(window, "resize", this.onResize);
     for (const iframe of this.iframes) {
       addEventListenerOptional(iframe, "resize", this.onResize);
@@ -983,43 +958,6 @@ export default class IFrameNavigator implements Navigator {
     });
   }
 
-  private async goToPageNumber(event: any): Promise<any> {
-    if (
-      this.goToPageNumberInput.value &&
-      (event.key === "Enter" || event.type === "click")
-    ) {
-      var filteredPages = this.publication.pageList.filter(
-        (el: any) =>
-          el.href.slice(el.href.indexOf("#") + 1).replace(/[^0-9]/g, "") ===
-          this.goToPageNumberInput.value
-      );
-      if (filteredPages && filteredPages.length > 0) {
-        var firstPage = filteredPages[0];
-        let locations: Locations = {
-          progression: 0,
-        };
-        if (firstPage.Href.indexOf("#") !== -1) {
-          const elementId = firstPage.Href.slice(
-            firstPage.Href.indexOf("#") + 1
-          );
-          if (elementId !== null) {
-            locations = {
-              fragment: elementId,
-            };
-          }
-        }
-        const position: Locator = {
-          href: this.publication.getAbsoluteHref(firstPage.Href),
-          locations: locations,
-          type: firstPage.TypeLink,
-          title: firstPage.Title,
-        };
-
-        this.stopReadAloud();
-        this.navigate(position);
-      }
-    }
-  }
   isScrolling: boolean;
   private updateBookView(): void {
     if (this.view.layout === "fixed") {
@@ -1213,21 +1151,25 @@ export default class IFrameNavigator implements Navigator {
         }
       });
       setTimeout(async () => {
+        if (this.pageBreakModule !== undefined) {
+          await this.highlighter.destroyHighlights(HighlightType.PageBreak);
+          await this.pageBreakModule.drawPageBreaks();
+        }
+
         if (this.annotationModule !== undefined) {
           await this.annotationModule.drawHighlights();
-        } else {
-          if (
-            this.rights?.enableSearch &&
-            this.searchModule !== undefined &&
-            this.highlighter !== undefined
-          ) {
-            for (const iframe of this.iframes) {
-              await this.highlighter.destroyAllhighlights(
-                iframe.contentDocument
-              );
-            }
-            this.searchModule.drawSearch();
-          }
+        }
+        if (this.bookmarkModule !== undefined) {
+          await this.bookmarkModule.drawBookmarks();
+        }
+
+        if (
+          this.rights?.enableSearch &&
+          this.searchModule !== undefined &&
+          this.highlighter !== undefined
+        ) {
+          await this.highlighter.destroyHighlights(HighlightType.Search);
+          this.searchModule.drawSearch();
         }
       }, 200);
     }
@@ -1354,14 +1296,6 @@ export default class IFrameNavigator implements Navigator {
           this.pageListView.parentElement.parentElement.removeChild(
             this.pageListView.parentElement
           );
-        }
-      }
-
-      if (this.goToPageView) {
-        if (pageList?.length) {
-          //
-        } else {
-          this.goToPageView.parentElement.removeChild(this.goToPageView);
         }
       }
 
@@ -1558,6 +1492,16 @@ export default class IFrameNavigator implements Navigator {
           by: "lines",
         });
       }
+
+      // resize on toggle details
+      let details = body.querySelector("details");
+      if (details) {
+        let self = this;
+        details.addEventListener("toggle", async (_event) => {
+          await self.view.setIframeHeight(this.iframes[0]);
+        });
+      }
+
       if (this.rights?.enableContentProtection) {
         if (this.contentProtectionModule !== undefined) {
           await this.contentProtectionModule.initialize();
@@ -1587,6 +1531,9 @@ export default class IFrameNavigator implements Navigator {
       if (this.annotationModule !== undefined) {
         await this.annotationModule.initialize();
       }
+      if (this.bookmarkModule !== undefined) {
+        await this.bookmarkModule.initialize();
+      }
       if (this.rights?.enableTTS) {
         for (const iframe of this.iframes) {
           const body = iframe.contentDocument.body;
@@ -1599,18 +1546,6 @@ export default class IFrameNavigator implements Navigator {
               await ttsModule.initialize(body);
             }
           }
-        }
-      }
-      for (const iframe of this.iframes) {
-        const body = iframe.contentDocument.body;
-        var pagebreaks = body.querySelectorAll('[*|type="pagebreak"]');
-        for (var i = 0; i < pagebreaks.length; i++) {
-          var img = pagebreaks[i];
-          if (IS_DEV) console.log(img);
-          if (img.innerHTML.length === 0) {
-            img.innerHTML = img.getAttribute("title");
-          }
-          img.className = "epubPageBreak";
         }
       }
 
@@ -1638,7 +1573,7 @@ export default class IFrameNavigator implements Navigator {
               .startContainerElementCssSelector
           );
         } else if (bookViewPosition > 0) {
-          this.view.goToPosition(bookViewPosition);
+          this.view.goToProgression(bookViewPosition);
         }
 
         this.newPosition = null;
@@ -2365,7 +2300,9 @@ export default class IFrameNavigator implements Navigator {
     if (this.rights?.enableTTS) {
       this.highlighter.stopReadAloud();
       if (!this.tts.enableSplitter) {
-        this.annotationModule.drawHighlights();
+        if (this.annotationModule !== undefined) {
+          this.annotationModule.drawHighlights();
+        }
       }
     }
   }
@@ -2383,7 +2320,9 @@ export default class IFrameNavigator implements Navigator {
       } else {
         const ttsModule = this.ttsModule as TTSModule2;
         ttsModule.speakPause();
-        this.annotationModule.drawHighlights();
+        if (this.annotationModule !== undefined) {
+          this.annotationModule.drawHighlights();
+        }
       }
     }
   }
@@ -2683,7 +2622,7 @@ export default class IFrameNavigator implements Navigator {
     }
   }
 
-  private handleResize(): void {
+  async handleResize(): Promise<void> {
     if (this.isScrolling) {
       return;
     }
@@ -2794,7 +2733,7 @@ export default class IFrameNavigator implements Navigator {
     const selectedView = this.view;
     const oldPosition = selectedView.getCurrentPosition();
 
-    this.settings.applyProperties();
+    await this.settings.applyProperties();
 
     // If the links are hidden, show them temporarily
     // to determine the top and bottom heights.
@@ -2849,15 +2788,23 @@ export default class IFrameNavigator implements Navigator {
       }
     }, 100);
     setTimeout(async () => {
-      selectedView.goToPosition(oldPosition);
+      selectedView.goToProgression(oldPosition);
+
       await this.updatePositionInfo(false);
+
       if (this.annotationModule !== undefined) {
-        this.annotationModule.handleResize();
-      } else {
-        if (this.rights?.enableSearch) {
-          await this.searchModule.handleResize();
-        }
+        await this.annotationModule.handleResize();
       }
+      if (this.bookmarkModule !== undefined) {
+        await this.bookmarkModule.handleResize();
+      }
+      if (this.rights?.enableSearch) {
+        await this.searchModule.handleResize();
+      }
+      if (this.pageBreakModule !== undefined) {
+        await this.pageBreakModule.handleResize();
+      }
+
       if (this.rights?.enableContentProtection) {
         if (this.contentProtectionModule !== undefined) {
           this.contentProtectionModule.handleResize();
@@ -2875,22 +2822,9 @@ export default class IFrameNavigator implements Navigator {
         const locator = this.currentLocator();
         const currentPage = locator.displayInfo.resourceScreenIndex;
         const pageCount = locator.displayInfo.resourceScreenCount;
-        const remaining = locator.locations.remainingPositions;
         if (this.chapterPosition) {
-          if (remaining) {
-            this.chapterPosition.innerHTML =
-              "Page " + currentPage + " of " + pageCount;
-          } else {
-            this.chapterPosition.innerHTML = "";
-          }
-        }
-        if (this.remainingPositions) {
-          if (remaining) {
-            this.remainingPositions.innerHTML = remaining + " left in chapter";
-          } else {
-            this.remainingPositions.innerHTML =
-              "Page " + currentPage + " of " + pageCount;
-          }
+          this.chapterPosition.innerHTML =
+            "Page " + currentPage + " of " + pageCount;
         }
       } else {
         if (this.chapterPosition) this.chapterPosition.innerHTML = "";
@@ -3088,7 +3022,7 @@ export default class IFrameNavigator implements Navigator {
                 .startContainerElementCssSelector
             );
           } else {
-            this.view.goToPosition(locator.locations.progression);
+            this.view.goToProgression(locator.locations.progression);
           }
         }
 
@@ -3228,23 +3162,29 @@ export default class IFrameNavigator implements Navigator {
         ) {
           this.contentProtectionModule.recalculate(300);
         }
+
+        if (this.pageBreakModule !== undefined) {
+          await this.highlighter.destroyHighlights(HighlightType.PageBreak);
+          await this.pageBreakModule.drawPageBreaks();
+        }
+
         if (this.annotationModule !== undefined) {
           await this.annotationModule.drawHighlights();
           await this.annotationModule.showHighlights();
-        } else {
-          if (
-            this.rights?.enableSearch &&
-            this.searchModule !== undefined &&
-            this.highlighter !== undefined
-          ) {
-            for (const iframe of this.iframes) {
-              await this.highlighter.destroyAllhighlights(
-                iframe.contentDocument
-              );
-            }
-            this.searchModule.drawSearch();
-          }
         }
+        if (this.bookmarkModule !== undefined) {
+          await this.bookmarkModule.drawBookmarks();
+          await this.bookmarkModule.showBookmarks();
+        }
+        if (
+          this.rights?.enableSearch &&
+          this.searchModule !== undefined &&
+          this.highlighter !== undefined
+        ) {
+          await this.highlighter.destroyHighlights(HighlightType.Search);
+          this.searchModule.drawSearch();
+        }
+
         if (this.view.layout === "fixed") {
           if (this.nextChapterBottomAnchorElement)
             this.nextChapterBottomAnchorElement.style.display = "none";

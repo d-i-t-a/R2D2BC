@@ -39,7 +39,10 @@ import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
 import { debounce } from "debounce";
 import { split } from "sentence-splitter";
-import { ISelectionInfo } from "../highlight/common/selection";
+import {
+  _getCssSelectorOptions,
+  ISelectionInfo,
+} from "../highlight/common/selection";
 import { getClientRectsNoOverlap } from "../highlight/common/rect-utils";
 
 export default class TTSModule2 implements ReaderModule {
@@ -1217,18 +1220,6 @@ export default class TTSModule2 implements ReaderModule {
     }
   }
 }
-
-const _getCssSelectorOptions = {
-  className: (_str: string) => {
-    return true;
-  },
-  idName: (_str: string) => {
-    return true;
-  },
-  tagName: (_str: string) => {
-    return true;
-  },
-};
 
 export interface ITtsQueueItem {
   dir: string | undefined;

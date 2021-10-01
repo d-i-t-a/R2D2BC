@@ -24,7 +24,7 @@ import { Publication } from "../model/Publication";
 import TextHighlighter, { _highlights } from "./highlight/TextHighlighter";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
-import { IHighlight } from "./highlight/common/highlight";
+import { HighlightType, IHighlight } from "./highlight/common/highlight";
 import {
   Annotation,
   AnnotationMarker,
@@ -168,11 +168,11 @@ export default class AnnotationModule implements ReaderModule {
     }
   }
 
-  handleResize() {
-    setTimeout(() => {
-      this.drawHighlights();
-      this.showHighlights();
-    }, 10);
+  async handleResize() {
+    setTimeout(async () => {
+      await this.drawHighlights();
+      await this.showHighlights();
+    }, 100);
   }
 
   initialize() {
@@ -376,9 +376,6 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   public async showHighlights(): Promise<void> {
-    // TODO: refactor !!!
-    await this.delegate.bookmarkModule.showBookmarks();
-
     let highlights: Array<any> = [];
     if (this.annotator) {
       highlights = (await this.annotator.getAnnotations()) as Array<any>;
@@ -401,7 +398,7 @@ export default class AnnotationModule implements ReaderModule {
       );
   }
 
-  async drawHighlights(search: boolean = true): Promise<void> {
+  async drawHighlights(): Promise<void> {
     if (this.rights?.enableAnnotations && this.highlighter) {
       if (this.api) {
         let highlights: Array<any> = [];
@@ -413,9 +410,7 @@ export default class AnnotationModule implements ReaderModule {
           highlights &&
           this.delegate.iframes[0].contentDocument.readyState === "complete"
         ) {
-          await this.highlighter.destroyAllhighlights(
-            this.delegate.iframes[0].contentDocument
-          );
+          await this.highlighter.destroyHighlights(HighlightType.Annotation);
 
           for (const rangeRepresentation of highlights) {
             _highlights.push(rangeRepresentation.highlight);
@@ -496,9 +491,7 @@ export default class AnnotationModule implements ReaderModule {
           highlights &&
           this.delegate.iframes[0].contentDocument.readyState === "complete"
         ) {
-          await this.highlighter.destroyAllhighlights(
-            this.delegate.iframes[0].contentDocument
-          );
+          await this.highlighter.destroyHighlights(HighlightType.Annotation);
 
           for (const rangeRepresentation of highlights) {
             _highlights.push(rangeRepresentation.highlight);
@@ -569,9 +562,6 @@ export default class AnnotationModule implements ReaderModule {
       if (this.properties?.initialAnnotationColor) {
         this.highlighter.setColor(this.properties?.initialAnnotationColor);
       }
-    }
-    if (search && this.rights?.enableSearch) {
-      this.delegate.searchModule.drawSearch();
     }
   }
 

@@ -47,15 +47,6 @@ export default class ReflowableBookView implements BookView {
   }
 
   setMode(scroll: boolean) {
-    // this.iframe.height = "0";
-    // this.iframe.width = "0";
-
-    // const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
-
-    // const images = Array.prototype.slice.call(body.querySelectorAll("img"));
-    // for (const image of images) {
-    //     image.style.maxWidth = "";
-    // }
     this.scrollMode = scroll;
 
     if (scroll === true) {
@@ -129,16 +120,6 @@ export default class ReflowableBookView implements BookView {
     } else {
       this.iframe.height = "0";
       this.iframe.width = "0";
-
-      const body = HTMLUtilities.findRequiredIframeElement(
-        this.iframe.contentDocument,
-        "body"
-      ) as HTMLBodyElement;
-
-      const images = Array.prototype.slice.call(body.querySelectorAll("img"));
-      for (const image of images) {
-        image.style.maxWidth = "";
-      }
 
       // any is necessary because CSSStyleDeclaration type does not include
       // all the vendor-prefixed attributes.
@@ -479,47 +460,10 @@ export default class ReflowableBookView implements BookView {
 
   private setSize(): void {
     if (this.isPaginated()) {
-      // any is necessary because CSSStyleDeclaration type does not include
-      // all the vendor-prefixed attributes.
-
       (this.iframe.contentDocument as any).documentElement.style.height =
         this.height + "px";
       this.iframe.height = this.height + "px";
       this.iframe.width = BrowserUtilities.getWidth() + "px";
-
-      const body = HTMLUtilities.findRequiredIframeElement(
-        this.iframe.contentDocument,
-        "body"
-      ) as any;
-      const images = Array.prototype.slice.call(body.querySelectorAll("img"));
-      for (const image of images) {
-        if (image.hasAttribute("width")) {
-          image.style.width = image.width + "px";
-        }
-      }
-    } else {
-      // Remove previous iframe height so body scroll height will be accurate.
-      this.iframe.height = "0";
-      this.iframe.width = BrowserUtilities.getWidth() + "px";
-
-      const width = BrowserUtilities.getWidth() - this.sideMargin * 2 + "px";
-
-      const body = HTMLUtilities.findRequiredIframeElement(
-        this.iframe.contentDocument,
-        "body"
-      ) as HTMLBodyElement;
-      const images = Array.prototype.slice.call(body.querySelectorAll("img"));
-      for (const image of images) {
-        if (image.hasAttribute("width")) {
-          image.style.width = image.width + "px";
-        }
-        if (image.hasAttribute("height")) {
-          image.style.height = image.height + "px";
-        }
-        if (image.width > width) {
-          image.style.maxWidth = width;
-        }
-      }
     }
   }
 

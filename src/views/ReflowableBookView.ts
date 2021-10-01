@@ -72,7 +72,7 @@ export default class ReflowableBookView implements BookView {
         "html"
       ) as any;
       html.style.setProperty("--USER__scroll", "readium-scroll-on");
-      // this.setSize();
+      this.setSize();
       this.setIframeHeight(this.iframe);
     } else {
       this.name = "readium-scroll-off";
@@ -463,6 +463,10 @@ export default class ReflowableBookView implements BookView {
       (this.iframe.contentDocument as any).documentElement.style.height =
         this.height + "px";
       this.iframe.height = this.height + "px";
+      this.iframe.width = BrowserUtilities.getWidth() + "px";
+    } else {
+      // Remove previous iframe height so body scroll height will be accurate.
+      this.iframe.height = "0";
       this.iframe.width = BrowserUtilities.getWidth() + "px";
     }
   }

@@ -161,8 +161,8 @@ export default class BookmarkModule implements ReaderModule {
       }
     }
 
-    this.showBookmarks();
-    this.drawBookmarks();
+    await this.showBookmarks();
+    await this.drawBookmarks();
   }
 
   async handleResize() {
@@ -194,7 +194,7 @@ export default class BookmarkModule implements ReaderModule {
           console.log("Bookmark deleted " + JSON.stringify(deleted));
         }
         await this.showBookmarks();
-        this.drawBookmarks();
+        await this.drawBookmarks();
         if (this.delegate.rights?.enableMaterial) {
           toast({ html: "bookmark deleted" });
         }
@@ -206,7 +206,7 @@ export default class BookmarkModule implements ReaderModule {
           console.log("Bookmark deleted " + JSON.stringify(deleted));
         }
         await this.showBookmarks();
-        this.drawBookmarks();
+        await this.drawBookmarks();
         if (this.delegate.rights?.enableMaterial) {
           toast({ html: "bookmark deleted" });
         }
@@ -294,7 +294,7 @@ export default class BookmarkModule implements ReaderModule {
             toast({ html: "bookmark added" });
           }
           await this.showBookmarks();
-          this.drawBookmarks();
+          await this.drawBookmarks();
           return saved;
         } else {
           let saved = await this.annotator.saveBookmark(bookmark);
@@ -306,7 +306,7 @@ export default class BookmarkModule implements ReaderModule {
             toast({ html: "bookmark added" });
           }
           await this.showBookmarks();
-          this.drawBookmarks();
+          await this.drawBookmarks();
           return saved;
         }
       } else {
@@ -529,14 +529,12 @@ export default class BookmarkModule implements ReaderModule {
         let result = await this.api.addBookmark(annotation);
         const saved = await this.annotator.saveAnnotation(result);
         await this.showBookmarks();
-        this.drawBookmarks();
-        // await this.drawHighlights();
+        await this.drawBookmarks();
         return new Promise<Annotation>((resolve) => resolve(saved));
       } else {
         const saved = await this.annotator.saveAnnotation(annotation);
         await this.showBookmarks();
-        this.drawBookmarks();
-        // await this.drawHighlights();
+        await this.drawBookmarks();
         return new Promise<Annotation>((resolve) => resolve(saved));
       }
     } else {

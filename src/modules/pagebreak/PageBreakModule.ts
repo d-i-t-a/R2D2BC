@@ -182,6 +182,11 @@ export default class PageBreakModule implements ReaderModule {
           img.innerHTML = title;
           hide = true;
         }
+        if (img.innerHTML.length === 0) {
+          title = img.getAttribute("id").replace(/[^0-9]/g, "");
+          img.innerHTML = title;
+          hide = true;
+        }
 
         const range = this.delegate.highlighter
           .dom(this.delegate.iframes[0].contentDocument.body)
@@ -193,20 +198,19 @@ export default class PageBreakModule implements ReaderModule {
         selection.removeAllRanges();
         range.selectNodeContents(img);
         selection.addRange(range);
-
-        const rangeInfo = convertRange(range, getCssSelector);
-        selection.removeAllRanges();
-
-        this.delegate.highlighter.createPageBreakHighlight(
-          {
-            rangeInfo: rangeInfo,
-            cleanText: "",
-            rawText: "",
-            range: undefined,
-          },
-          title
-        );
-
+        if (!selection.isCollapsed) {
+          const rangeInfo = convertRange(range, getCssSelector);
+          selection.removeAllRanges();
+          this.delegate.highlighter.createPageBreakHighlight(
+            {
+              rangeInfo: rangeInfo,
+              cleanText: "",
+              rawText: "",
+              range: undefined,
+            },
+            title
+          );
+        }
         if (hide) {
           img.innerHTML = "";
         }

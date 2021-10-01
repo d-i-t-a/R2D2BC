@@ -376,9 +376,6 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   public async showHighlights(): Promise<void> {
-    // TODO: refactor !!!
-    await this.delegate.bookmarkModule.showBookmarks();
-
     let highlights: Array<any> = [];
     if (this.annotator) {
       highlights = (await this.annotator.getAnnotations()) as Array<any>;

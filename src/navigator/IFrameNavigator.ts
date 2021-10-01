@@ -1159,6 +1159,9 @@ export default class IFrameNavigator implements Navigator {
         if (this.annotationModule !== undefined) {
           await this.annotationModule.drawHighlights();
         }
+        if (this.bookmarkModule !== undefined) {
+          await this.bookmarkModule.drawBookmarks();
+        }
 
         if (
           this.rights?.enableSearch &&
@@ -1489,6 +1492,16 @@ export default class IFrameNavigator implements Navigator {
           by: "lines",
         });
       }
+
+      // resize on toggle details
+      let details = body.querySelector("details");
+      if (details) {
+        let self = this;
+        details.addEventListener("toggle", async (_event) => {
+          await self.view.setIframeHeight(this.iframes[0]);
+        });
+      }
+
       if (this.rights?.enableContentProtection) {
         if (this.contentProtectionModule !== undefined) {
           await this.contentProtectionModule.initialize();
@@ -1517,6 +1530,9 @@ export default class IFrameNavigator implements Navigator {
       }
       if (this.annotationModule !== undefined) {
         await this.annotationModule.initialize();
+      }
+      if (this.bookmarkModule !== undefined) {
+        await this.bookmarkModule.initialize();
       }
       if (this.rights?.enableTTS) {
         for (const iframe of this.iframes) {
@@ -1557,7 +1573,7 @@ export default class IFrameNavigator implements Navigator {
               .startContainerElementCssSelector
           );
         } else if (bookViewPosition > 0) {
-          this.view.goToPosition(bookViewPosition);
+          this.view.goToProgression(bookViewPosition);
         }
 
         this.newPosition = null;
@@ -2284,7 +2300,9 @@ export default class IFrameNavigator implements Navigator {
     if (this.rights?.enableTTS) {
       this.highlighter.stopReadAloud();
       if (!this.tts.enableSplitter) {
-        this.annotationModule.drawHighlights();
+        if (this.annotationModule !== undefined) {
+          this.annotationModule.drawHighlights();
+        }
       }
     }
   }
@@ -2302,7 +2320,9 @@ export default class IFrameNavigator implements Navigator {
       } else {
         const ttsModule = this.ttsModule as TTSModule2;
         ttsModule.speakPause();
-        this.annotationModule.drawHighlights();
+        if (this.annotationModule !== undefined) {
+          this.annotationModule.drawHighlights();
+        }
       }
     }
   }
@@ -2602,7 +2622,7 @@ export default class IFrameNavigator implements Navigator {
     }
   }
 
-  private handleResize(): void {
+  async handleResize(): Promise<void> {
     if (this.isScrolling) {
       return;
     }
@@ -2713,7 +2733,7 @@ export default class IFrameNavigator implements Navigator {
     const selectedView = this.view;
     const oldPosition = selectedView.getCurrentPosition();
 
-    this.settings.applyProperties();
+    await this.settings.applyProperties();
 
     // If the links are hidden, show them temporarily
     // to determine the top and bottom heights.
@@ -2768,12 +2788,15 @@ export default class IFrameNavigator implements Navigator {
       }
     }, 100);
     setTimeout(async () => {
-      selectedView.goToPosition(oldPosition);
+      selectedView.goToProgression(oldPosition);
 
       await this.updatePositionInfo(false);
 
       if (this.annotationModule !== undefined) {
         await this.annotationModule.handleResize();
+      }
+      if (this.bookmarkModule !== undefined) {
+        await this.bookmarkModule.handleResize();
       }
       if (this.rights?.enableSearch) {
         await this.searchModule.handleResize();
@@ -2799,22 +2822,9 @@ export default class IFrameNavigator implements Navigator {
         const locator = this.currentLocator();
         const currentPage = locator.displayInfo.resourceScreenIndex;
         const pageCount = locator.displayInfo.resourceScreenCount;
-        const remaining = locator.locations.remainingPositions;
         if (this.chapterPosition) {
-          if (remaining) {
-            this.chapterPosition.innerHTML =
-              "Page " + currentPage + " of " + pageCount;
-          } else {
-            this.chapterPosition.innerHTML = "";
-          }
-        }
-        if (this.remainingPositions) {
-          if (remaining) {
-            this.remainingPositions.innerHTML = remaining + " left in chapter";
-          } else {
-            this.remainingPositions.innerHTML =
-              "Page " + currentPage + " of " + pageCount;
-          }
+          this.chapterPosition.innerHTML =
+            "Page " + currentPage + " of " + pageCount;
         }
       } else {
         if (this.chapterPosition) this.chapterPosition.innerHTML = "";
@@ -3012,7 +3022,7 @@ export default class IFrameNavigator implements Navigator {
                 .startContainerElementCssSelector
             );
           } else {
-            this.view.goToPosition(locator.locations.progression);
+            this.view.goToProgression(locator.locations.progression);
           }
         }
 
@@ -3161,6 +3171,10 @@ export default class IFrameNavigator implements Navigator {
         if (this.annotationModule !== undefined) {
           await this.annotationModule.drawHighlights();
           await this.annotationModule.showHighlights();
+        }
+        if (this.bookmarkModule !== undefined) {
+          await this.bookmarkModule.drawBookmarks();
+          await this.bookmarkModule.showBookmarks();
         }
         if (
           this.rights?.enableSearch &&

@@ -615,19 +615,23 @@ export function hideAnnotationLayer() {
   if (IS_DEV) {
     console.log("hideAnnotationLayer");
   }
-  return AnnotationModuleInstance.hideAnnotationLayer();
+  if (AnnotationModuleInstance) {
+    AnnotationModuleInstance.hideAnnotationLayer();
+  }
 }
 exports.hideAnnotationLayer = function () {
-  return hideAnnotationLayer();
+  hideAnnotationLayer();
 };
 export function showAnnotationLayer() {
   if (IS_DEV) {
     console.log("showAnnotationLayer");
   }
-  return AnnotationModuleInstance.showAnnotationLayer();
+  if (AnnotationModuleInstance) {
+    AnnotationModuleInstance.showAnnotationLayer();
+  }
 }
 exports.showAnnotationLayer = function () {
-  return showAnnotationLayer();
+  showAnnotationLayer();
 };
 // currently not used or functional
 export function snapToElement(value) {

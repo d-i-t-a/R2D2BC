@@ -53,13 +53,13 @@
                         <ul id="nav-mobile-right" class="right">
                             <li style="display:none"><a data-target="container-view-note-input" class="dropdown-trigger " id="menu-button-note"><i class="material-icons">speaker_notes</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark-range"  onclick="D2Reader.saveBookmarkPlus()"><i class="material-icons">bookmark_border</i></a></li>
-<!--                            <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>-->
-<!--                            <li><a id="menu-button-play" onclick="D2Reader.startReadAloud()"><i class="material-icons">play_arrow</i></a></li>-->
-<!--                            <li><a id="menu-button-pause" onclick="D2Reader.pauseReadAloud()" style="display: none"><i class="material-icons">pause</i></a></li>-->
+                            <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
+                            <li><a id="menu-button-play" onclick="D2Reader.startReadAlong()"><i class="material-icons">play_arrow</i></a></li>
+                            <li><a id="menu-button-pause" onclick="D2Reader.pauseReadAlong()" style="display: none"><i class="material-icons">pause</i></a></li>
                             <li><a id="menu-button-show" onclick="D2Reader.showAnnotationLayer()" style="display: none"><i class="material-icons">toggle_off</i></a></li>
                             <li><a id="menu-button-hide" onclick="D2Reader.hideAnnotationLayer()"><i class="material-icons">toggle_on</i></a></li>
-<!--                            <li><a data-target="container-view-tts-settings" class="dropdown-trigger " id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>-->
-<!--                            <li><a data-target="container-view-mediaoverlay-settings" class="dropdown-trigger " id="menu-button-mediaoverlay"><i class="material-icons ">record_voice_over</i></a></li>-->
+                            <li><a data-target="container-view-tts-settings" class="dropdown-trigger " id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>
+                            <li><a data-target="container-view-mediaoverlay-settings" class="dropdown-trigger " id="menu-button-mediaoverlay"><i class="material-icons ">record_voice_over</i></a></li>
                             <li><a data-target="container-view-settings-custom" class="dropdown-trigger " id="menu-button-settings" onclick="reload()"><i class="material-icons">settings</i></a></li>
                             <li style="display:none"><a data-target="container-view-search" class="dropdown-trigger " id="menu-button-search"><i class="material-icons">search</i></a></li>
                         </ul>
@@ -579,17 +579,18 @@ height: 50px;
         let selectionMenuItems = [
             {
                 id: 'anIcon',
-                callback: function (selection) {
-                    alert(selection)
+                callback: function (selection, element) {
+                    alert(selection);
+                    console.log(element);
                 }
             },
             {
                 id: `errorIcon`,
                 icon: {
                     title: `Error`,
-                    // svgPath: `<path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z\"/>`,
-                    // color: `#fc0303`,
-                    class: "red",
+                    svgPath: `<path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z\"/>`,
+                    color: `#fc0303`,
+                    // class: "red",
                     position: "inline",
                 },
                 popup: {

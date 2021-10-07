@@ -967,8 +967,15 @@ export default class ContentProtectionModule implements ReaderModule {
     const isAbove = bottom < windowTop;
     const isBelow = rect.top > windowBottom;
 
-    const isLeft = right < windowLeft;
-    const isRight = rect.left > windowRight;
+    // Consider left boundary to be one full screen width left of the leftmost
+    // edge of the viewing area. This is so text originating on the previous
+    // screen does not flow onto the current screen scrambled.
+    const isLeft = right < (windowLeft - window.innerWidth);
+
+    // Consider right boundary to be one full screen width right of the rightmost
+    // edge of the viewing area. This is so quickly paging through the book
+    // does not result in visible page descrambling.
+    const isRight = rect.left > (windowRight + window.innerWidth);
 
     return isAbove || isBelow || isLeft || isRight;
   }

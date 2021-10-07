@@ -943,11 +943,13 @@ export async function load(config: ReaderConfig): Promise<any> {
     });
   }
 
-  PageBreakModuleInstance = await PageBreakModule.create({
-    publication: publication,
-    headerMenu: headerMenu,
-    delegate: D2Navigator,
-  });
+  if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
+    PageBreakModuleInstance = await PageBreakModule.create({
+      publication: publication,
+      headerMenu: headerMenu,
+      delegate: D2Navigator,
+    });
+  }
 
   return new Promise((resolve) => resolve(D2Navigator));
 }

@@ -45,10 +45,10 @@ interface BookView {
   stop(): void;
 
   getCurrentPosition(): number;
-  goToProgression?(position: number): void;
-  goToFragment?(fragment: string): void;
-  goToCssSelector?(cssSelector: string): void;
-  snap?(element: HTMLElement | null, relative?: boolean): void;
+  goToProgression(position: number): void;
+  goToFragment(fragment: string): void;
+  goToCssSelector(cssSelector: string): void;
+  snap(element: HTMLElement | null, relative?: boolean): void;
 
   atStart?(): boolean;
   atEnd?(): boolean;

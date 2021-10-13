@@ -80,14 +80,27 @@ export default class EventHandler {
         window.location.protocol === link.protocol &&
         window.location.port === link.port &&
         window.location.hostname === link.hostname;
+      
+      // If epub is hosted, rather than streamed, links to a resource inside the same epub should not be opened externally.   
+      
+      const referrer = new URL(link.baseURI);
+
+      const isEpubInternal =
+      referrer.protocol === link.protocol &&
+      referrer.port === link.port &&
+      referrer.hostname === link.hostname;
+      
       const isInternal = link.href.indexOf("#");
-      if (!isSameOrigin) {
+
+      if (!isSameOrigin && !isEpubInternal) {
         window.open(link.href, "_blank");
         event.preventDefault();
         event.stopPropagation();
       } else {
         (event.target as HTMLAnchorElement).href = link.href;
         if (isSameOrigin && isInternal !== -1) {
+          this.onInternalLink(event);
+        } else if (isEpubInternal) { 
           this.onInternalLink(event);
         } else if (isSameOrigin && isInternal === -1) {
           // TODO needs some more refactoring when handling other types of links or elements

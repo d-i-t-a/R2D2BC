@@ -1580,6 +1580,9 @@ export default class IFrameNavigator implements Navigator {
 
         this.hideLoadingMessage();
         this.showIframeContents();
+        if (this.mediaOverlayModule !== undefined) {
+          await this.mediaOverlayModule.initializeResource(this.currentLink());
+        }
         await this.updatePositionInfo();
       }, 200);
 

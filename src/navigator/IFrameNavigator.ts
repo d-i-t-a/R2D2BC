@@ -319,7 +319,7 @@ export default class IFrameNavigator implements Navigator {
     this.view = settings.view;
     this.view.attributes = attributes;
     this.view.delegate = this;
-    this.eventHandler = new EventHandler();
+    this.eventHandler = new EventHandler(this);
     this.touchEventHandler = new TouchEventHandler();
     this.keyboardEventHandler = new KeyboardEventHandler();
     this.upLinkConfig = upLinkConfig;

@@ -48,6 +48,7 @@ import TTSModule2 from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import Popup from "../popup/Popup";
 import { SearchDefinition } from "../search/SearchModule";
+import * as lodash from "lodash";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER";
@@ -2755,7 +2756,12 @@ export default class TextHighlighter {
           let result = this.delegate.searchModule.properties.definitions.filter(
             (el: any) => el.order === Number(foundElement.dataset.order)
           )[0];
-          result?.callback(result, foundElement);
+          if (result.callbacks?.click) {
+            result.callbacks?.click(
+              result.terms,
+              lodash.omit(foundHighlight, "definition")
+            );
+          }
         }
       }
     }

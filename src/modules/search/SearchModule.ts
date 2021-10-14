@@ -30,16 +30,23 @@ import { IS_DEV } from "../..";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import TextHighlighter from "../highlight/TextHighlighter";
 import { HighlightType } from "../highlight/common/highlight";
+import * as lodash from "lodash";
 
 export interface SearchModuleAPI {}
 
+export interface SearchDefinitionCallbacks {
+  success?: any;
+  click?: any;
+  visible?: any;
+}
+
 export interface SearchDefinition {
   order: number;
-  term: string;
+  terms: [string];
   result?: number;
   definition?: string;
   color?: string;
-  callback?: any;
+  callbacks?: SearchDefinitionCallbacks;
 }
 
 export interface SearchModuleProperties {
@@ -307,48 +314,51 @@ export default class SearchModule implements ReaderModule {
     await fetch(href)
       .then((r) => r.text())
       .then(async (_data) => {
-        // ({ data, tocItem });
-        // TODO: this seems to break with obfuscation
-        // var parser = new DOMParser();
-        // var doc = parser.parseFromString(data, "text/html");
-        searchDocDomSeek(
-          item.term,
-          this.delegate.iframes[0].contentDocument,
-          tocItem.Href,
-          tocItem.Title
-        ).then((result) => {
-          // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
+        item.terms.forEach((termKey, index) => {
+          // for (const termKey in item.term) {
+          console.log(termKey);
+          searchDocDomSeek(
+            termKey,
+            this.delegate.iframes[0].contentDocument,
+            tocItem.Href,
+            tocItem.Title
+          ).then((result) => {
+            // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
 
-          let i: number = undefined;
-          if (item.result == 1) {
-            i = 0;
-          } else if (item.result == 2) {
-            i = Math.floor(Math.random() * result.length - 1) + 1;
-          }
-          console.log(i);
-          result.forEach((searchItem, index) => {
-            if (i === undefined || i === index) {
-              const selectionInfo = {
-                rangeInfo: searchItem.rangeInfo,
-                cleanText: null,
-                rawText: null,
-                range: null,
-              };
+            let i: number = undefined;
+            if (item.result == 1) {
+              i = 0;
+            } else if (item.result == 2) {
+              i = Math.floor(Math.random() * result.length - 1) + 1;
+            }
+            console.log(i);
+            result.forEach((searchItem, index) => {
+              if (i === undefined || i === index) {
+                const selectionInfo = {
+                  rangeInfo: searchItem.rangeInfo,
+                  cleanText: null,
+                  rawText: null,
+                  range: null,
+                };
+                setTimeout(() => {
+                  const highlight = this.highlighter.createPopupHighlight(
+                    selectionInfo,
+                    item
+                  );
+                  searchItem.highlight = highlight;
+                  localSearchResultChapter.push(searchItem);
+                  this.currentChapterPopupResult.push(searchItem);
+                  this.currentPopupHighlights.push(highlight);
+                }, 500);
+              }
+            });
+
+            if (index == item.terms.length - 1) {
               setTimeout(() => {
-                const highlight = this.highlighter.createPopupHighlight(
-                  selectionInfo,
-                  item
-                );
-                searchItem.highlight = highlight;
-                localSearchResultChapter.push(searchItem);
-                this.currentChapterPopupResult.push(searchItem);
-                this.currentPopupHighlights.push(highlight);
+                callback(localSearchResultChapter);
               }, 500);
             }
           });
-          setTimeout(() => {
-            callback(localSearchResultChapter);
-          }, 500);
         });
       });
   }
@@ -438,7 +448,14 @@ export default class SearchModule implements ReaderModule {
   }
 
   async define(item: SearchDefinition) {
-    await this.searchAndPaint(item, async () => {});
+    await this.searchAndPaint(item, async (result) => {
+      if (item.callbacks?.success) {
+        item.callbacks?.success(
+          item.terms,
+          lodash.omit(result.highlight, "definition")
+        );
+      }
+    });
   }
 
   async search(term: any, current: boolean): Promise<any> {

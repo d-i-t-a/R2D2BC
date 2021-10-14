@@ -105,8 +105,17 @@ export default class EventHandler {
         (event.target as HTMLAnchorElement).href = link.href;
         if (isSameOrigin && isInternal !== -1) {
           this.onInternalLink(event);
-        } else if (isEpubInternal) {
-          this.onInternalLink(event);
+          const link = event.target as HTMLLIElement;
+          if (link) {
+            const attribute = link.getAttribute("epub:type") === "noteref";
+            if (attribute) {
+              // await this.popup.handleFootnote(link, event);
+            } else {
+              this.onInternalLink(event);
+            }
+          } else {
+            this.onInternalLink(event);
+          }
         } else if (isSameOrigin && isInternal === -1) {
           // TODO needs some more refactoring when handling other types of links or elements
           // link.click();

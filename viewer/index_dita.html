@@ -870,15 +870,30 @@ height: 50px;
                 definitions: [
                     {
                         term: "lavender",
-                        definition: "Lavandula (common name lavender) is a genus of 47 known species of flowering plants in the mint family, Lamiaceae."
+                        definition: "Lavandula (common name lavender) is a genus of 47 known species of flowering plants in the mint family, Lamiaceae.",
+                        color: "#40E0D0",
+                        callback: function (selection, element) {
+                            alert(selection);
+                            console.log(element);
+                        }
                     },
                     {
                         term: "lavandula",
-                        definition: "Lavandula angustifolia is what many people in the aromatherapy industry refer to as “true” lavender, though technically all plants in the Lavandula genus are in fact true lavenders."
+                        definition: "Lavandula angustifolia is what many people in the aromatherapy industry refer to as “true” lavender, though technically all plants in the Lavandula genus are in fact true lavenders.",
+                        color: "#40E0D0",
+                        callback: function (selection, element) {
+                            alert(selection);
+                            console.log(element);
+                        }
                     },
                     {
                         term: "allium",
-                        definition: "a bulbous plant of a genus that includes the onion and its relatives (e.g. garlic, leek, and chives)."
+                        definition: "a bulbous plant of a genus that includes the onion and its relatives (e.g. garlic, leek, and chives).",
+                        color: "#40E0D0",
+                        callback: function (selection, element) {
+                            alert(selection);
+                            console.log(element);
+                        }
                     }
                 ],
                 api: {

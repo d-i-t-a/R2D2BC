@@ -35,7 +35,9 @@ export interface SearchModuleAPI {}
 
 export interface SearchDefinition {
   term: string;
-  definition: string;
+  definition?: string;
+  color?: string;
+  callback?: any;
 }
 
 export interface SearchModuleProperties {
@@ -289,11 +291,7 @@ export default class SearchModule implements ReaderModule {
       }
     }
   }
-  async searchAndPaint(
-    term: string,
-    definition: string,
-    callback: (result: any) => any
-  ) {
+  async searchAndPaint(item: SearchDefinition, callback: (result: any) => any) {
     const linkHref = this.publication.getAbsoluteHref(
       this.publication.readingOrder[this.delegate.currentResource()].Href
     );
@@ -312,7 +310,7 @@ export default class SearchModule implements ReaderModule {
         // var parser = new DOMParser();
         // var doc = parser.parseFromString(data, "text/html");
         searchDocDomSeek(
-          term,
+          item.term,
           this.delegate.iframes[0].contentDocument,
           tocItem.Href,
           tocItem.Title
@@ -329,7 +327,7 @@ export default class SearchModule implements ReaderModule {
               const highlight = this.highlighter.createPopupHighlight(
                 selectionInfo,
                 "#40E0D0",
-                definition
+                item.definition
               );
               searchItem.highlight = highlight;
               localSearchResultChapter.push(searchItem);
@@ -424,12 +422,12 @@ export default class SearchModule implements ReaderModule {
 
   async definitions() {
     for (const item of this.properties.definitions) {
-      await this.define(item.term, item.definition);
+      await this.define(item);
     }
   }
 
-  async define(term: any, definition: string) {
-    await this.searchAndPaint(term, definition, async () => {});
+  async define(item: SearchDefinition) {
+    await this.searchAndPaint(item, async () => {});
   }
 
   async search(term: any, current: boolean): Promise<any> {

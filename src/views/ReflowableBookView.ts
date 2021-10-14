@@ -84,8 +84,6 @@ export default class ReflowableBookView implements BookView {
       this.setSize();
       this.setIframeHeight(this.iframe);
     } else {
-      this.height =
-        BrowserUtilities.getHeight() - 40 - this.delegate.attributes.margin;
       this.name = "readium-scroll-off";
       this.label = "Paginated";
       // any is necessary because CSSStyleDeclaration type does not include

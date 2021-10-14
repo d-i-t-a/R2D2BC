@@ -877,19 +877,19 @@ height: 50px;
                         definition: "Lavandula (common name lavender) is a genus of 47 known species of flowering plants in the mint family, Lamiaceae.",
                         color: "#40E0D0",
                         callbacks: {
-                            click: function (terms, element) {
+                            click: function (item, element) {
                                 console.log("click");
-                                console.log(terms);
+                                console.log(item);
                                 console.log(element);
                             },
-                            success: function (terms, elements) {
+                            success: function (item, elements) {
                                 console.log("success");
-                                console.log(terms);
+                                console.log(item);
                                 console.log(elements);
                             },
-                            visible: function (terms, element) {
+                            visible: function (item, element) {
                                 console.log("visible");
-                                console.log(terms);
+                                console.log(item);
                                 console.log(element);
                             },
                         }

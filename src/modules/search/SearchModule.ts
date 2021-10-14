@@ -452,7 +452,7 @@ export default class SearchModule implements ReaderModule {
   async define(item: SearchDefinition) {
     await this.searchAndPaint(item, async (result) => {
       if (item.callbacks?.success) {
-        item.callbacks?.success(item.terms, result);
+        item.callbacks?.success(lodash.omit(item, "callbacks"), result);
       }
     });
   }

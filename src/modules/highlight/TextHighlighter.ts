@@ -2758,7 +2758,7 @@ export default class TextHighlighter {
           )[0];
           if (result.callbacks?.click) {
             result.callbacks?.click(
-              result.terms,
+              lodash.omit(result, "callbacks"),
               lodash.omit(foundHighlight, "definition")
             );
           }

@@ -3378,4 +3378,14 @@ export default class IFrameNavigator implements Navigator {
 
     return jsLink;
   }
+
+  activateMarker(id) {
+    this.annotationModule.activeAnnotationMarkerId = id;
+    this.highlighter.activeAnnotationMarkerId = id;
+  }
+
+  deactivateMarker() {
+    this.annotationModule.activeAnnotationMarkerId = undefined;
+    this.highlighter.activeAnnotationMarkerId = undefined;
+  }
 }

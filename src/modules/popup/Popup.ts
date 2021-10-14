@@ -79,13 +79,10 @@ export default class Popup {
     const p = document.createElement("p");
     d2content.appendChild(p);
 
-    if (element as Element) {
-      p.innerHTML = sanitize(element.innerHTML, {
-        allowedTags: [],
-        allowedAttributes: {},
-      });
+    if (typeof element === "string") {
+      p.innerHTML = element;
     } else {
-      p.innerHTML = sanitize(element, {
+      p.innerHTML = sanitize(element.innerHTML, {
         allowedTags: [],
         allowedAttributes: {},
       });
@@ -109,10 +106,13 @@ export default class Popup {
     this.navigator.iframes[0].contentDocument.body.appendChild(d2popup);
 
     let self = this;
-    this.navigator.iframes[0].contentWindow.onclick = function () {
-      if (d2popup.parentElement) {
-        d2popup.parentElement.removeChild(d2popup);
-        self.navigator.iframes[0].contentWindow.onclick = undefined;
+    this.navigator.iframes[0].contentWindow.onclick = function (ev) {
+      if (event.target !== ev.target) {
+        if (d2popup.parentElement) {
+          d2popup.style.display = "none";
+          d2popup.parentElement.removeChild(d2popup);
+          self.navigator.iframes[0].contentWindow.onclick = undefined;
+        }
       }
     };
   }

@@ -46,6 +46,7 @@ import IFrameNavigator from "../../navigator/IFrameNavigator";
 import TTSModule from "../TTS/TTSModule";
 import TTSModule2 from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import Popup from "../popup/Popup";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER";
@@ -923,43 +924,43 @@ export default class TextHighlighter {
 
   toolboxShow() {
     if (this.activeAnnotationMarkerId == undefined) {
-    var self = this;
-    var toolboxAddOptions = document.getElementById(
-      "highlight-toolbox-mode-add"
-    );
-    var range = this.dom(
-      this.delegate.iframes[0].contentDocument.body
-    ).getRange();
-
-    if ((!range || range.collapsed) && toolboxAddOptions) {
-      // Only force hide for `toolboxMode('add')`
-      if (getComputedStyle(toolboxAddOptions).display !== "none") {
-        self.toolboxHide();
-      }
-      return;
-    }
-
-    // Hide the iOS Safari context menu
-    // Reference: https://stackoverflow.com/a/30046936
-    if (this.isIOS()) {
-      this.delegate.iframes[0].contentDocument.body.removeEventListener(
-        "selectionchange",
-        this.toolboxPlacement.bind(this)
+      var self = this;
+      var toolboxAddOptions = document.getElementById(
+        "highlight-toolbox-mode-add"
       );
-      setTimeout(function () {
-        var selection = self
-          .dom(self.delegate.iframes[0].contentDocument.body)
-          .getSelection();
-        selection.removeAllRanges();
-        setTimeout(function () {
-          selection.addRange(range);
-        }, 5);
-      }, 100);
-    }
+      var range = this.dom(
+        this.delegate.iframes[0].contentDocument.body
+      ).getRange();
 
-    this.toolboxPlacement();
-    this.toolboxHandler();
-  }
+      if ((!range || range.collapsed) && toolboxAddOptions) {
+        // Only force hide for `toolboxMode('add')`
+        if (getComputedStyle(toolboxAddOptions).display !== "none") {
+          self.toolboxHide();
+        }
+        return;
+      }
+
+      // Hide the iOS Safari context menu
+      // Reference: https://stackoverflow.com/a/30046936
+      if (this.isIOS()) {
+        this.delegate.iframes[0].contentDocument.body.removeEventListener(
+          "selectionchange",
+          this.toolboxPlacement.bind(this)
+        );
+        setTimeout(function () {
+          var selection = self
+            .dom(self.delegate.iframes[0].contentDocument.body)
+            .getSelection();
+          selection.removeAllRanges();
+          setTimeout(function () {
+            selection.addRange(range);
+          }, 5);
+        }, 100);
+      }
+
+      this.toolboxPlacement();
+      this.toolboxHandler();
+    }
   }
 
   isSelectionMenuOpen = false;
@@ -2137,24 +2138,24 @@ export default class TextHighlighter {
       }
 
       if (highlight.type !== HighlightType.Popup) {
-      let highlightParent = _highlightsContainer.querySelector(
-        `#${highlight.id}`
-      );
-      let nodeList =
-        highlightParent.getElementsByClassName(CLASS_HIGHLIGHT_ICON);
-      if (nodeList.length > 0) {
+        let highlightParent = _highlightsContainer.querySelector(
+          `#${highlight.id}`
+        );
+        let nodeList =
+          highlightParent.getElementsByClassName(CLASS_HIGHLIGHT_ICON);
+        if (nodeList.length > 0) {
           const tooltip = nodeList
             .item(0)
             .getElementsByClassName("icon-tooltip");
-        if (tooltip.length > 0) {
-          (tooltip.item(0) as HTMLElement).style.setProperty(
-            "display",
-            "block"
-          );
+          if (tooltip.length > 0) {
+            (tooltip.item(0) as HTMLElement).style.setProperty(
+              "display",
+              "block"
+            );
+          }
         }
       }
     }
-  }
   }
 
   setAndResetSearchHighlight(highlight, highlights) {
@@ -2643,109 +2644,111 @@ export default class TextHighlighter {
           .then(async () => {});
 
         if (anno?.id) {
-        if (IS_DEV) {
-          console.log("selected highlight " + anno.id);
-        }
-        self.lastSelectedHighlight = anno.id;
-
-        var toolbox = document.getElementById("highlight-toolbox");
-
-        toolbox.style.top =
-          ev.clientY + (this.delegate.attributes?.navHeight ?? 0) + "px";
-        toolbox.style.left = ev.clientX + "px";
-
-        if (getComputedStyle(toolbox).display === "none") {
-          toolbox.style.display = "block";
-
-          this.toolboxMode("edit");
-
-          var colorIcon = document.getElementById("colorIcon");
-          var highlightIcon = document.getElementById("highlightIcon");
-
-          if (colorIcon) {
-            colorIcon.style.display = "none";
+          if (IS_DEV) {
+            console.log("selected highlight " + anno.id);
           }
-          highlightIcon.style.display = "none";
+          self.lastSelectedHighlight = anno.id;
 
-          function noteH() {
-            let note = prompt("Add your note here:");
-            anno.highlight.note = note;
-            self.delegate.annotationModule
-              .updateAnnotation(anno)
-              .then(async () => {
-                if (IS_DEV) {
-                  console.log("update highlight " + anno.id);
-                }
-                toolbox.style.display = "none";
-                self.selectionMenuClosed();
-              });
+          var toolbox = document.getElementById("highlight-toolbox");
 
-            toolbox.style.display = "none";
-            self.selectionMenuClosed();
-            commentIcon.removeEventListener("click", noteH, false);
-          }
-          let commentIcon = document.getElementById("commentIcon");
-          let cloneCommentIcon = document.getElementById("cloneCommentIcon");
-          if (cloneCommentIcon) {
-            let parent = cloneCommentIcon.parentElement;
-            parent.removeChild(cloneCommentIcon);
-          }
-          if (commentIcon) {
-            commentIcon.style.display = "none";
-            let clone = commentIcon.cloneNode(true) as HTMLButtonElement;
-            let parent = commentIcon.parentElement;
-            clone.style.display = "unset";
-            clone.id = "cloneCommentIcon";
-            clone.addEventListener("click", noteH, false);
-            parent.append(clone);
-          }
+          toolbox.style.top =
+            ev.clientY + (this.delegate.attributes?.navHeight ?? 0) + "px";
+          toolbox.style.left = ev.clientX + "px";
 
-          function deleteH() {
-            if (self.delegate.rights?.enableAnnotations) {
-              self.delegate.annotationModule
-                .deleteSelectedHighlight(anno)
-                .then(async () => {
-                  if (IS_DEV) {
-                    console.log("delete highlight " + anno.id);
-                  }
-                  toolbox.style.display = "none";
-                  self.selectionMenuClosed();
-                });
-            } else if (self.delegate.rights?.enableBookmarks) {
-              self.delegate.bookmarkModule
-                .deleteSelectedHighlight(anno)
-                .then(async () => {
-                  if (IS_DEV) {
-                    console.log("delete highlight " + anno.id);
-                  }
-                  toolbox.style.display = "none";
-                  self.selectionMenuClosed();
-                });
+          if (getComputedStyle(toolbox).display === "none") {
+            toolbox.style.display = "block";
+
+            this.toolboxMode("edit");
+
+            var colorIcon = document.getElementById("colorIcon");
+            var highlightIcon = document.getElementById("highlightIcon");
+
+            if (colorIcon) {
+              colorIcon.style.display = "none";
             }
-          }
+            highlightIcon.style.display = "none";
 
-          let deleteIcon = document.getElementById("deleteIcon");
-          let cloneDeleteIcon = document.getElementById("cloneDeleteIcon");
-          if (cloneDeleteIcon) {
-            let parent = cloneDeleteIcon.parentElement;
-            parent.removeChild(cloneDeleteIcon);
-          }
-          if (deleteIcon) {
-            deleteIcon.style.display = "none";
-            let clone = deleteIcon.cloneNode(true) as HTMLButtonElement;
-            let parent = deleteIcon.parentElement;
-            clone.style.display = "unset";
-            clone.id = "cloneDeleteIcon";
-            clone.addEventListener("click", deleteH, false);
-            parent.append(clone);
+            function noteH() {
+              let note = prompt("Add your note here:");
+              anno.highlight.note = note;
+              self.delegate.annotationModule
+                .updateAnnotation(anno)
+                .then(async () => {
+                  if (IS_DEV) {
+                    console.log("update highlight " + anno.id);
+                  }
+                  toolbox.style.display = "none";
+                  self.selectionMenuClosed();
+                });
+
+              toolbox.style.display = "none";
+              self.selectionMenuClosed();
+              commentIcon.removeEventListener("click", noteH, false);
+            }
+            let commentIcon = document.getElementById("commentIcon");
+            let cloneCommentIcon = document.getElementById("cloneCommentIcon");
+            if (cloneCommentIcon) {
+              let parent = cloneCommentIcon.parentElement;
+              parent.removeChild(cloneCommentIcon);
+            }
+            if (commentIcon) {
+              commentIcon.style.display = "none";
+              let clone = commentIcon.cloneNode(true) as HTMLButtonElement;
+              let parent = commentIcon.parentElement;
+              clone.style.display = "unset";
+              clone.id = "cloneCommentIcon";
+              clone.addEventListener("click", noteH, false);
+              parent.append(clone);
+            }
+
+            function deleteH() {
+              if (self.delegate.rights?.enableAnnotations) {
+                self.delegate.annotationModule
+                  .deleteSelectedHighlight(anno)
+                  .then(async () => {
+                    if (IS_DEV) {
+                      console.log("delete highlight " + anno.id);
+                    }
+                    toolbox.style.display = "none";
+                    self.selectionMenuClosed();
+                  });
+              } else if (self.delegate.rights?.enableBookmarks) {
+                self.delegate.bookmarkModule
+                  .deleteSelectedHighlight(anno)
+                  .then(async () => {
+                    if (IS_DEV) {
+                      console.log("delete highlight " + anno.id);
+                    }
+                    toolbox.style.display = "none";
+                    self.selectionMenuClosed();
+                  });
+              }
+            }
+
+            let deleteIcon = document.getElementById("deleteIcon");
+            let cloneDeleteIcon = document.getElementById("cloneDeleteIcon");
+            if (cloneDeleteIcon) {
+              let parent = cloneDeleteIcon.parentElement;
+              parent.removeChild(cloneDeleteIcon);
+            }
+            if (deleteIcon) {
+              deleteIcon.style.display = "none";
+              let clone = deleteIcon.cloneNode(true) as HTMLButtonElement;
+              let parent = deleteIcon.parentElement;
+              clone.style.display = "unset";
+              clone.id = "cloneDeleteIcon";
+              clone.addEventListener("click", deleteH, false);
+              parent.append(clone);
+            }
+          } else {
+            toolbox.style.display = "none";
+            this.selectionMenuClosed();
+            void toolbox.offsetWidth;
+            toolbox.style.display = "block";
           }
         } else {
-          toolbox.style.display = "none";
-          this.selectionMenuClosed();
-          void toolbox.offsetWidth;
-          toolbox.style.display = "block";
-        }
-        } else {
+          const popup = new Popup(this.delegate);
+          popup.showPopup(foundElement.dataset.definition, ev);
         }
       }
     }

@@ -84,6 +84,8 @@ export default class ReflowableBookView implements BookView {
       this.setSize();
       this.setIframeHeight(this.iframe);
     } else {
+      this.height =
+        BrowserUtilities.getHeight() - 40 - this.delegate.attributes.margin;
       this.name = "readium-scroll-off";
       this.label = "Paginated";
       // any is necessary because CSSStyleDeclaration type does not include
@@ -97,7 +99,6 @@ export default class ReflowableBookView implements BookView {
       ) as any;
       html.style.setProperty("--USER__scroll", "readium-scroll-off");
       this.setSize();
-      this.setIframeHeight(this.iframe);
     }
     if (this.delegate.rights?.enableContentProtection) {
       this.delegate.contentProtectionModule.recalculate();

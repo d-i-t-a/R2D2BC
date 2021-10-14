@@ -286,11 +286,20 @@ export default class LocalAnnotator implements Annotator {
           `${filtered[0].highlight.id}`
         );
         if (foundElement) {
-          var position = parseInt(
-            ((foundElement.hasChildNodes
-              ? foundElement.childNodes[0]
-              : foundElement) as HTMLDivElement).style.top.replace("px", "")
-          );
+          let position = 0;
+          if (foundElement.hasChildNodes) {
+            for (let i = 0; i < foundElement.childNodes.length; i++) {
+              let childNode = foundElement.childNodes[i] as HTMLDivElement;
+              let top = parseInt(childNode.style.top.replace("px", ""));
+              if (top < position || position == 0) {
+                position = top;
+              }
+            }
+          } else {
+            position = parseInt(
+              (foundElement as HTMLDivElement).style.top.replace("px", "")
+            );
+          }
           return new Promise((resolve) => resolve(position));
         }
       }
@@ -304,6 +313,19 @@ export default class LocalAnnotator implements Annotator {
       const annotations = JSON.parse(savedAnnotations);
       const filtered = annotations.filter(
         (el: Annotation) => el.highlight.id === highlight.id
+      );
+      if (filtered.length > 0) {
+        return new Promise((resolve) => resolve(filtered[0]));
+      }
+    }
+    return new Promise<void>((resolve) => resolve());
+  }
+  public async getAnnotationByID(id: string): Promise<any> {
+    const savedAnnotations = await this.store.get(LocalAnnotator.ANNOTATIONS);
+    if (savedAnnotations) {
+      const annotations = JSON.parse(savedAnnotations);
+      const filtered = annotations.filter(
+        (el: Annotation) => el.highlight.id === id
       );
       if (filtered.length > 0) {
         return new Promise((resolve) => resolve(filtered[0]));

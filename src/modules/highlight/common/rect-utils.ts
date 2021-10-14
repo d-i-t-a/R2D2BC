@@ -67,7 +67,7 @@ export function getClientRectsNoOverlap_(
     doNotMergeHorizontallyAlignedRects
   );
   const noContainedRects = removeContainedRects(mergedRects, tolerance);
-  const newRects = replaceOverlapingRects(noContainedRects);
+  const newRects = replaceOverlappingRects(noContainedRects);
 
   const minArea = 2 * 2;
   for (let j = newRects.length - 1; j >= 0; j--) {
@@ -313,14 +313,14 @@ export function mergeTouchingRects(
   return rects;
 }
 
-export function replaceOverlapingRects(rects: IRect[]): IRect[] {
+export function replaceOverlappingRects(rects: IRect[]): IRect[] {
   for (let i = 0; i < rects.length; i++) {
     for (let j = i + 1; j < rects.length; j++) {
       const rect1 = rects[i];
       const rect2 = rects[j];
       if (rect1 === rect2) {
         if (IS_DEV) {
-          console.log("replaceOverlapingRects rect1 === rect2 ??!");
+          console.log("replaceOverlappingRects rect1 === rect2 ??!");
         }
         continue;
       }
@@ -369,7 +369,7 @@ export function replaceOverlapingRects(rects: IRect[]): IRect[] {
         });
         Array.prototype.push.apply(newRects, toAdd);
 
-        return replaceOverlapingRects(newRects);
+        return replaceOverlappingRects(newRects);
       }
     }
   }
@@ -427,24 +427,24 @@ export function removeContainedRects(
 }
 
 export function checkOverlaps(rects: IRect[]) {
-  const stillOverlapingRects: IRect[] = [];
+  const stillOverlappingRects: IRect[] = [];
 
   for (const rect1 of rects) {
     for (const rect2 of rects) {
       if (rect1 === rect2) {
         continue;
       }
-      const has1 = stillOverlapingRects.indexOf(rect1) >= 0;
-      const has2 = stillOverlapingRects.indexOf(rect2) >= 0;
+      const has1 = stillOverlappingRects.indexOf(rect1) >= 0;
+      const has2 = stillOverlappingRects.indexOf(rect2) >= 0;
       if (!has1 || !has2) {
         if (rectsTouchOrOverlap(rect1, rect2, -1)) {
           // negative tolerance for strict overlap test
 
           if (!has1) {
-            stillOverlapingRects.push(rect1);
+            stillOverlappingRects.push(rect1);
           }
           if (!has2) {
-            stillOverlapingRects.push(rect2);
+            stillOverlappingRects.push(rect2);
           }
           if (IS_DEV) {
             console.log("CLIENT RECT: overlap ---");
@@ -467,9 +467,9 @@ export function checkOverlaps(rects: IRect[]) {
       }
     }
   }
-  if (stillOverlapingRects.length) {
+  if (stillOverlappingRects.length) {
     if (IS_DEV) {
-      console.log(`CLIENT RECT: overlaps ${stillOverlapingRects.length}`);
+      console.log(`CLIENT RECT: overlaps ${stillOverlappingRects.length}`);
     }
   }
 }

@@ -19,8 +19,12 @@
 
 import ReaderModule from "../ReaderModule";
 import { IS_DEV } from "../../utils";
-import { ISelectionInfo } from "../../model/Locator";
-import { TTSSettings, TTSVoice } from "./TTSSettings";
+import {
+  TTSModuleAPI,
+  TTSModuleConfig,
+  TTSModuleProperties,
+  TTSSettings,
+} from "./TTSSettings";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import {
   addEventListenerOptional,
@@ -30,32 +34,7 @@ import sanitize from "sanitize-html";
 import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
 import TextHighlighter from "../highlight/TextHighlighter";
 
-export interface TTSModuleAPI {
-  started: any;
-  stopped: any;
-  paused: any;
-  resumed: any;
-  finished: any;
-  updateSettings: any;
-}
-export interface TTSModuleProperties {
-  enableSplitter?: boolean;
-  color?: string;
-  autoScroll?: boolean;
-  rate?: number;
-  pitch?: number;
-  volume?: number;
-  voice?: TTSVoice;
-}
-
-export interface TTSModuleConfig extends TTSModuleProperties {
-  delegate: IFrameNavigator;
-  headerMenu: HTMLElement;
-  rights?: ReaderRights;
-  tts: TTSSettings;
-  highlighter: TextHighlighter;
-  api?: TTSModuleAPI;
-}
+import { ISelectionInfo } from "../highlight/common/selection";
 
 export default class TTSModule implements ReaderModule {
   private tts: TTSSettings;
@@ -575,7 +554,7 @@ export default class TTSModule implements ReaderModule {
     }
   }
 
-  async stop() {
+  stop() {
     if (IS_DEV) {
       console.log("TTS module stop");
     }

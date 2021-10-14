@@ -663,7 +663,6 @@ export class UserSettings implements IUserSettings {
       //     "readium-advanced-off"
       //   );
       // }
-
       this.isScrollMode().then((scroll) => {
         this.view.setMode(scroll);
       });
@@ -1080,7 +1079,7 @@ export class UserSettings implements IUserSettings {
         );
         await this.applyProperties();
         this.view.setMode(this.verticalScroll);
-        this.view.goToPosition(position);
+        this.view.goToProgression(position);
         this.viewChangeCallback();
       }
     }, 10);
@@ -1110,15 +1109,12 @@ export class UserSettings implements IUserSettings {
     this.userProperties.getByRef(
       ReadiumCSS.SCROLL_REF
     ).value = this.verticalScroll;
-    await this.storeProperty(
+    await this.saveProperty(
       this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)
     );
     await this.applyProperties();
-    // if (this.material?.settings.scroll) {
-    //   this.updateViewButtons();
-    // }
     this.view.setMode(this.verticalScroll);
-    this.view.goToPosition(position);
+    this.view.goToProgression(position);
     this.viewChangeCallback();
   }
 

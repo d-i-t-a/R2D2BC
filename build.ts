@@ -148,11 +148,7 @@ async function buildAll() {
   const p4 = buildTs(
     {
       format: "iife",
-      entryPoints: [
-        "injectables/click/click.ts",
-        "injectables/footnotes/footnotes.ts",
-        "injectables/glossary/glossary.ts",
-      ],
+      entryPoints: ["injectables/click/click.ts"],
       outbase: ".",
       tsconfig: "injectables/tsconfig.json",
       outdir: "dist",

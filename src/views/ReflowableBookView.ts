@@ -438,7 +438,7 @@ export default class ReflowableBookView implements BookView {
           iframe.height = Math.max(minHeight, bodyHeight);
         }
       }
-    }, 100);
+    }, 200);
     d(iframe);
   }
 
@@ -458,7 +458,7 @@ export default class ReflowableBookView implements BookView {
     this.hasFixedScrollWidth = body.scrollWidth === originalScrollWidth;
   }
 
-  private setSize(): void {
+  setSize(): void {
     this.iframe.width = BrowserUtilities.getWidth() + "px";
     if (!this.scrollMode) {
       (this.iframe.contentDocument as any).documentElement.style.height =

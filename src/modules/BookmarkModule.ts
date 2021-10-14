@@ -24,11 +24,25 @@ import { Publication } from "../model/Publication";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { icons as IconLib } from "../utils/IconLib";
-import { Bookmark, Locator } from "../model/Locator";
+import {
+  Annotation,
+  AnnotationMarker,
+  Bookmark,
+  Locator,
+} from "../model/Locator";
 import { IS_DEV } from "..";
 import { toast } from "materialize-css";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
+import { getCurrentSelectionInfo } from "./highlight/renderer/iframe/selection";
+import { uniqueCssSelector } from "./highlight/renderer/common/cssselector2";
+import {
+  HighlightType,
+  IHighlight,
+  SelectionMenuItem,
+} from "./highlight/common/highlight";
+import { getClientRectsNoOverlap } from "./highlight/common/rect-utils";
+import { _highlights } from "./highlight/TextHighlighter";
 
 export interface BookmarkModuleAPI {
   addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
@@ -147,9 +161,29 @@ export default class BookmarkModule implements ReaderModule {
       }
     }
 
-    this.showBookmarks();
+    await this.showBookmarks();
+    await this.drawBookmarks();
   }
 
+  async handleResize() {
+    setTimeout(async () => {
+      await this.drawBookmarks();
+      await this.showBookmarks();
+    }, 100);
+  }
+
+  initialize() {
+    return new Promise(async (resolve) => {
+      await (document as any).fonts.ready;
+      if (this.rights?.enableBookmarks) {
+        setTimeout(() => {
+          this.drawBookmarks();
+          this.showBookmarks();
+        }, 300);
+      }
+      resolve(null);
+    });
+  }
   async deleteBookmark(bookmark: Bookmark): Promise<any> {
     if (this.annotator) {
       if (this.api?.deleteBookmark) {
@@ -160,6 +194,7 @@ export default class BookmarkModule implements ReaderModule {
           console.log("Bookmark deleted " + JSON.stringify(deleted));
         }
         await this.showBookmarks();
+        await this.drawBookmarks();
         if (this.delegate.rights?.enableMaterial) {
           toast({ html: "bookmark deleted" });
         }
@@ -171,6 +206,7 @@ export default class BookmarkModule implements ReaderModule {
           console.log("Bookmark deleted " + JSON.stringify(deleted));
         }
         await this.showBookmarks();
+        await this.drawBookmarks();
         if (this.delegate.rights?.enableMaterial) {
           toast({ html: "bookmark deleted" });
         }
@@ -179,6 +215,10 @@ export default class BookmarkModule implements ReaderModule {
     } else {
       return new Promise<any>((resolve) => resolve(null));
     }
+  }
+
+  saveBookmarkPlus() {
+    this.addBookmarkPlus();
   }
 
   async saveBookmark(): Promise<any> {
@@ -212,6 +252,7 @@ export default class BookmarkModule implements ReaderModule {
             this.delegate.currentChapterLink.href
           )
         );
+
         const positionIndex = Math.ceil(progression * (positions.length - 1));
         const locator = positions[positionIndex];
 
@@ -253,6 +294,7 @@ export default class BookmarkModule implements ReaderModule {
             toast({ html: "bookmark added" });
           }
           await this.showBookmarks();
+          await this.drawBookmarks();
           return saved;
         } else {
           let saved = await this.annotator.saveBookmark(bookmark);
@@ -264,12 +306,236 @@ export default class BookmarkModule implements ReaderModule {
             toast({ html: "bookmark added" });
           }
           await this.showBookmarks();
+          await this.drawBookmarks();
           return saved;
         }
       } else {
         if (this.delegate.rights?.enableMaterial) {
           toast({ html: "bookmark exists" });
         }
+      }
+    } else {
+      return new Promise<any>((resolve) => resolve(null));
+    }
+  }
+
+  private addBookmarkPlus() {
+    let self = this;
+
+    let node = this.delegate.highlighter.visibleTextRects[0];
+    const range = this.delegate.highlighter
+      .dom(this.delegate.iframes[0].contentDocument.body)
+      .getWindow()
+      .document.createRange();
+
+    const selection = this.delegate.highlighter
+      .dom(this.delegate.iframes[0].contentDocument.body)
+      .getSelection();
+    selection.removeAllRanges();
+    range.selectNodeContents(node.node);
+    selection.addRange(range);
+
+    const clientRects = getClientRectsNoOverlap(range, false);
+
+    function isOutsideViewport(rect): boolean {
+      const windowLeft = window.scrollX;
+      const windowRight = windowLeft + window.innerWidth;
+      const right = rect.left + rect.width;
+      const bottom = rect.top + rect.height;
+      const windowTop = window.scrollY;
+      const windowBottom = windowTop + window.innerHeight;
+
+      const isAbove = bottom < windowTop;
+      const isBelow = rect.top > windowBottom;
+
+      const isLeft = right < windowLeft;
+      const isRight = rect.left > windowRight;
+
+      return isAbove || isBelow || isLeft || isRight;
+    }
+
+    let index = 0;
+    for (const rect of clientRects) {
+      if (!isOutsideViewport(rect)) {
+        const endNode = selection.focusNode;
+        const endOffset = selection.focusOffset;
+
+        selection.collapse(selection.anchorNode, selection.anchorOffset);
+
+        for (let i = 0; i < index; i++) {
+          selection.modify("move", "forward", "line");
+        }
+        selection.extend(endNode, endOffset);
+        const endNode2 = selection.focusNode;
+
+        const focusNodeLength = selection.focusNode.length;
+        selection.collapse(selection.anchorNode, selection.anchorOffset);
+
+        let endOffset2 = focusNodeLength;
+        if (selection.anchorOffset > focusNodeLength) {
+          endOffset2 = focusNodeLength;
+        } else {
+          endOffset2 = selection.anchorOffset + 1;
+        }
+
+        selection.modify("move", "forward", "character");
+        selection.modify("move", "backward", "word");
+        selection.extend(endNode2, endOffset2);
+        selection.modify("extend", "backward", "character");
+        selection.modify("extend", "forward", "word");
+
+        break;
+      }
+      index++;
+    }
+
+    function getCssSelector(element: Element): string {
+      const options = {};
+      return uniqueCssSelector(
+        element,
+        self.delegate.highlighter
+          .dom(self.delegate.iframes[0].contentDocument.body)
+          .getDocument(),
+        options
+      );
+    }
+
+    const selectionInfo = getCurrentSelectionInfo(
+      this.delegate.iframes[0].contentWindow,
+      getCssSelector
+    );
+
+    let menuItem: SelectionMenuItem = {
+      id: `bookmarkIcon`,
+      marker: AnnotationMarker.Bookmark,
+      icon: {
+        id: `bookmarkIcon`,
+        title: `Bookmark`,
+        svgPath: `<path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>`,
+        color: `#000000`,
+        position: "left",
+      },
+      popup: {
+        background: `#000000`,
+        textColor: `#ffffff`,
+      },
+      highlight: {
+        color: `#000000`,
+        style: {
+          default: [
+            {
+              property: `border-bottom`,
+              value: `0px dashed #000000`,
+              priority: `important`,
+            },
+          ],
+        },
+      },
+    };
+    let book = this.delegate.highlighter.createHighlight(
+      this.delegate.highlighter
+        .dom(self.delegate.iframes[0].contentDocument.body)
+        .getWindow(),
+      selectionInfo,
+      menuItem.highlight.color,
+      true,
+      AnnotationMarker.Bookmark,
+      menuItem.icon,
+      menuItem.popup,
+      menuItem.highlight.style
+    );
+    this.saveAnnotation(book[0]).then((anno) => {
+      if (IS_DEV) {
+        console.log("saved bookmark " + anno.id);
+      }
+    });
+    this.delegate.iframes[0].contentDocument.getSelection().removeAllRanges();
+  }
+
+  public async saveAnnotation(highlight: IHighlight): Promise<Annotation> {
+    if (this.annotator) {
+      var tocItem = this.publication.getTOCItem(
+        this.delegate.currentChapterLink.href
+      );
+      if (this.delegate.currentTocUrl !== null) {
+        tocItem = this.publication.getTOCItem(this.delegate.currentTocUrl);
+      }
+
+      if (tocItem === null) {
+        tocItem = this.publication.getTOCItemAbsolute(
+          this.delegate.currentChapterLink.href
+        );
+      }
+
+      const bookmarkPosition = this.delegate.view.getCurrentPosition();
+
+      const body = HTMLUtilities.findRequiredIframeElement(
+        this.delegate.iframes[0].contentDocument,
+        "body"
+      ) as HTMLBodyElement;
+      const progression = highlight.position
+        ? highlight.position / body.scrollHeight
+        : bookmarkPosition;
+      const id: string = uuid();
+      let annotation: Annotation;
+
+      let href = tocItem.Href;
+      if (href.indexOf("#") > 0) {
+        href = href.slice(0, href.indexOf("#"));
+      }
+
+      if (
+        ((this.rights?.autoGeneratePositions ?? true) &&
+          this.publication.positions) ||
+        this.publication.positions
+      ) {
+        const positions = this.publication.positionsByHref(
+          this.publication.getRelativeHref(
+            this.delegate.currentChapterLink.href
+          )
+        );
+        const positionIndex = Math.ceil(progression * (positions.length - 1));
+        const locator = positions[positionIndex];
+
+        annotation = {
+          ...locator,
+          id: id,
+          href: href,
+          created: new Date(),
+          title: this.delegate.currentChapterLink.title,
+          highlight: highlight,
+          text: {
+            highlight: highlight.selectionInfo.cleanText,
+          },
+        };
+      } else {
+        annotation = {
+          id: id,
+          href: href,
+          locations: {
+            progression: progression,
+          },
+          created: new Date(),
+          type: this.delegate.currentChapterLink.type,
+          title: this.delegate.currentChapterLink.title,
+          highlight: highlight,
+          text: {
+            highlight: highlight.selectionInfo.cleanText,
+          },
+        };
+      }
+
+      if (this.api?.addBookmark) {
+        let result = await this.api.addBookmark(annotation);
+        const saved = await this.annotator.saveAnnotation(result);
+        await this.showBookmarks();
+        await this.drawBookmarks();
+        return new Promise<Annotation>((resolve) => resolve(saved));
+      } else {
+        const saved = await this.annotator.saveAnnotation(annotation);
+        await this.showBookmarks();
+        await this.drawBookmarks();
+        return new Promise<Annotation>((resolve) => resolve(saved));
       }
     } else {
       return new Promise<any>((resolve) => resolve(null));
@@ -283,14 +549,159 @@ export default class BookmarkModule implements ReaderModule {
     }
     return bookmarks;
   }
+
   public async showBookmarks(): Promise<void> {
     let bookmarks: Array<any> = [];
     if (this.annotator) {
       bookmarks = (await this.annotator.getBookmarks()) as Array<any>;
     }
 
+    let highlights: Array<any> = [];
+    if (this.annotator) {
+      highlights = (await this.annotator.getAnnotations()) as Array<any>;
+      if (highlights) {
+        highlights = highlights.filter(
+          (rangeRepresentation) =>
+            rangeRepresentation.highlight.marker === AnnotationMarker.Bookmark
+        );
+        if (bookmarks) {
+          bookmarks.push.apply(bookmarks, highlights);
+        } else {
+          bookmarks = highlights;
+        }
+      }
+    }
+
     if (this.bookmarksView)
       this.createTree(AnnotationType.Bookmark, bookmarks, this.bookmarksView);
+  }
+
+  async drawBookmarks(): Promise<void> {
+    if (this.rights?.enableBookmarks && this.delegate.highlighter) {
+      if (this.api) {
+        let highlights: Array<any> = [];
+        if (this.annotator) {
+          highlights = (await this.annotator.getAnnotations()) as Array<any>;
+        }
+        if (
+          this.delegate.highlighter &&
+          highlights &&
+          this.delegate.iframes[0].contentDocument.readyState === "complete"
+        ) {
+          await this.delegate.highlighter.destroyHighlights(
+            HighlightType.Annotation
+          );
+
+          for (const rangeRepresentation of highlights) {
+            _highlights.push(rangeRepresentation.highlight);
+
+            const annotation: Annotation = rangeRepresentation;
+
+            let currentLocation = this.delegate.currentChapterLink.href;
+
+            var tocItem = this.publication.getTOCItem(currentLocation);
+            if (this.delegate.currentTocUrl !== null) {
+              tocItem = this.publication.getTOCItem(
+                this.delegate.currentTocUrl
+              );
+            }
+
+            if (tocItem === null) {
+              tocItem = this.publication.getTOCItemAbsolute(
+                this.delegate.currentChapterLink.href
+              );
+            }
+
+            let href = tocItem.Href;
+            if (href.indexOf("#") > 0) {
+              href = href.slice(0, href.indexOf("#"));
+            }
+
+            if (annotation.href === href) {
+              await this.delegate.highlighter.createHighlightDom(
+                this.delegate.iframes[0].contentWindow as any,
+                rangeRepresentation.highlight
+              );
+            }
+          }
+        }
+      } else {
+        let highlights: Array<any> = [];
+        if (this.annotator) {
+          highlights = (await this.annotator.getAnnotations()) as Array<any>;
+        }
+        if (
+          this.delegate.highlighter &&
+          highlights &&
+          this.delegate.iframes[0].contentDocument.readyState === "complete"
+        ) {
+          await this.delegate.highlighter.destroyHighlights(
+            HighlightType.Annotation
+          );
+
+          for (const rangeRepresentation of highlights) {
+            _highlights.push(rangeRepresentation.highlight);
+
+            const annotation: Annotation = rangeRepresentation;
+
+            let currentLocation = this.delegate.currentChapterLink.href;
+
+            var tocItem = this.publication.getTOCItem(currentLocation);
+            if (this.delegate.currentTocUrl !== null) {
+              tocItem = this.publication.getTOCItem(
+                this.delegate.currentTocUrl
+              );
+            }
+
+            if (tocItem === null) {
+              tocItem = this.publication.getTOCItemAbsolute(
+                this.delegate.currentChapterLink.href
+              );
+            }
+
+            let href = tocItem.Href;
+            if (href.indexOf("#") > 0) {
+              href = href.slice(0, href.indexOf("#"));
+            }
+
+            if (annotation.href === href) {
+              await this.delegate.highlighter.createHighlightDom(
+                this.delegate.iframes[0].contentWindow as any,
+                rangeRepresentation.highlight
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+
+  public async deleteSelectedHighlight(highlight: Annotation): Promise<any> {
+    if (this.api?.deleteBookmark) {
+      this.api.deleteBookmark(highlight).then(async () => {
+        this.deleteLocalHighlight(highlight.id);
+      });
+    } else {
+      this.deleteLocalHighlight(highlight.id);
+    }
+  }
+
+  async deleteLocalHighlight(id: any): Promise<any> {
+    if (this.annotator) {
+      var deleted = await this.annotator.deleteAnnotation(id);
+
+      if (IS_DEV) {
+        console.log("Highlight deleted " + JSON.stringify(deleted));
+      }
+      await this.showBookmarks();
+      await this.drawBookmarks();
+      if (this.delegate.rights?.enableMaterial) {
+        toast({ html: "highlight deleted" });
+      }
+      return deleted;
+    } else {
+      return new Promise<any>((resolve) => resolve(null));
+    }
   }
 
   private createTree(
@@ -476,5 +887,11 @@ export default class BookmarkModule implements ReaderModule {
   private static readableTimestamp(timestamp: string) {
     const date = new Date(timestamp);
     return date.toDateString() + " " + date.toLocaleTimeString();
+  }
+  public async getAnnotation(highlight: IHighlight): Promise<any> {
+    return this.annotator.getAnnotation(highlight);
+  }
+  public async getAnnotationByID(id: string): Promise<any> {
+    return this.annotator.getAnnotationByID(id);
   }
 }

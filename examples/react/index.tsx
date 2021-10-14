@@ -62,6 +62,7 @@ const App = () => {
             id="iframe-wrapper"
             style={{
               height: "calc(100vh - 10px)",
+              overflow: "hidden",
             }}
           >
             <div id="reader-loading" className="loading"></div>

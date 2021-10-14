@@ -2751,13 +2751,11 @@ export default class TextHighlighter {
           if (foundElement.dataset.definition) {
             const popup = new Popup(this.delegate);
             popup.showPopup(foundElement.dataset.definition, ev);
-          } else {
-            let result =
-              this.delegate.searchModule.properties.definitions.filter(
-                (el: any) => el.order === Number(foundElement.dataset.order)
-              )[0];
-            result.callback(result, foundElement);
           }
+          let result = this.delegate.searchModule.properties.definitions.filter(
+            (el: any) => el.order === Number(foundElement.dataset.order)
+          )[0];
+          result?.callback(result, foundElement);
         }
       }
     }

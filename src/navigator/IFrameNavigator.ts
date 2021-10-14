@@ -1584,6 +1584,7 @@ export default class IFrameNavigator implements Navigator {
           await this.mediaOverlayModule.initializeResource(this.currentLink());
         }
         await this.updatePositionInfo();
+        await this.view?.setSize();
       }, 200);
 
       return new Promise<void>((resolve) => resolve());

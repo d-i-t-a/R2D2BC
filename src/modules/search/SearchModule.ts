@@ -308,7 +308,7 @@ export default class SearchModule implements ReaderModule {
     if (tocItem === null) {
       tocItem = this.publication.readingOrder[this.delegate.currentResource()];
     }
-    var localSearchResultChapter: any = [];
+    let localSearchDefinitions: any = [];
 
     const href = this.publication.getAbsoluteHref(tocItem.Href);
     await fetch(href)
@@ -346,7 +346,9 @@ export default class SearchModule implements ReaderModule {
                     item
                   );
                   searchItem.highlight = highlight;
-                  localSearchResultChapter.push(searchItem);
+                  localSearchDefinitions.push(
+                    lodash.omit(highlight, "definition")
+                  );
                   this.currentChapterPopupResult.push(searchItem);
                   this.currentPopupHighlights.push(highlight);
                 }, 500);
@@ -355,7 +357,7 @@ export default class SearchModule implements ReaderModule {
 
             if (index == item.terms.length - 1) {
               setTimeout(() => {
-                callback(localSearchResultChapter);
+                callback(localSearchDefinitions);
               }, 500);
             }
           });
@@ -450,10 +452,7 @@ export default class SearchModule implements ReaderModule {
   async define(item: SearchDefinition) {
     await this.searchAndPaint(item, async (result) => {
       if (item.callbacks?.success) {
-        item.callbacks?.success(
-          item.terms,
-          lodash.omit(result.highlight, "definition")
-        );
+        item.callbacks?.success(item.terms, result);
       }
     });
   }

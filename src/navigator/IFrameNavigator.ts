@@ -1171,7 +1171,7 @@ export default class IFrameNavigator implements Navigator {
           await this.highlighter.destroyHighlights(HighlightType.Search);
           await this.highlighter.destroyHighlights(HighlightType.Popup);
           this.searchModule.drawSearch();
-          this.searchModule.drawPopup();
+          this.searchModule.drawDefinitions();
         }
       }, 200);
     }
@@ -3164,7 +3164,7 @@ export default class IFrameNavigator implements Navigator {
           await this.highlighter.destroyHighlights(HighlightType.Search);
           await this.highlighter.destroyHighlights(HighlightType.Popup);
           this.searchModule.drawSearch();
-          this.searchModule.drawPopup();
+          this.searchModule.drawDefinitions();
         }
 
         if (this.view.layout === "fixed") {

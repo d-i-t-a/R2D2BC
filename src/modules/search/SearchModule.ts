@@ -189,7 +189,7 @@ export default class SearchModule implements ReaderModule {
       if (this.delegate.rights?.enableContentProtection) {
         this.delegate.contentProtectionModule.recalculate(200);
       }
-      this.drawPopup();
+      this.drawDefinitions();
     });
 
     async function goToResultPage(page: number) {
@@ -386,7 +386,7 @@ export default class SearchModule implements ReaderModule {
     this.highlighter.destroyHighlights(HighlightType.Search);
     if (this.delegate.rights?.enableSearch) {
       this.drawSearch();
-      this.drawPopup();
+      this.drawDefinitions();
     }
     var i = 0;
 
@@ -868,7 +868,7 @@ export default class SearchModule implements ReaderModule {
       });
     }, 100);
   }
-  drawPopup() {
+  drawDefinitions() {
     setTimeout(async () => {
       await this.definitions();
     }, 100);
@@ -877,7 +877,7 @@ export default class SearchModule implements ReaderModule {
   async handleResize() {
     await this.highlighter.destroyHighlights(HighlightType.Search);
     this.drawSearch();
-    this.drawPopup();
+    this.drawDefinitions();
   }
 
   jumpToMark(index: number) {

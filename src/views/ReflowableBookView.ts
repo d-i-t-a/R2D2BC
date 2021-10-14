@@ -47,15 +47,6 @@ export default class ReflowableBookView implements BookView {
   }
 
   setMode(scroll: boolean) {
-    // this.iframe.height = "0";
-    // this.iframe.width = "0";
-
-    // const body = HTMLUtilities.findRequiredIframeElement(this.iframe.contentDocument, "body") as HTMLBodyElement;
-
-    // const images = Array.prototype.slice.call(body.querySelectorAll("img"));
-    // for (const image of images) {
-    //     image.style.maxWidth = "";
-    // }
     this.scrollMode = scroll;
 
     if (scroll === true) {
@@ -130,16 +121,6 @@ export default class ReflowableBookView implements BookView {
       this.iframe.height = "0";
       this.iframe.width = "0";
 
-      const body = HTMLUtilities.findRequiredIframeElement(
-        this.iframe.contentDocument,
-        "body"
-      ) as HTMLBodyElement;
-
-      const images = Array.prototype.slice.call(body.querySelectorAll("img"));
-      for (const image of images) {
-        image.style.maxWidth = "";
-      }
-
       // any is necessary because CSSStyleDeclaration type does not include
       // all the vendor-prefixed attributes.
       this.setSize();
@@ -184,7 +165,7 @@ export default class ReflowableBookView implements BookView {
     }
   }
 
-  goToPosition(position: number): void {
+  goToProgression(position: number): void {
     const wrapper = HTMLUtilities.findRequiredElement(
       document,
       "#iframe-wrapper"
@@ -481,7 +462,7 @@ export default class ReflowableBookView implements BookView {
           iframe.height = Math.max(minHeight, bodyHeight);
         }
       }
-    }, 100);
+    }, 200);
     d(iframe);
   }
 
@@ -501,48 +482,16 @@ export default class ReflowableBookView implements BookView {
     this.hasFixedScrollWidth = body.scrollWidth === originalScrollWidth;
   }
 
-  private setSize(): void {
-    if (this.isPaginated()) {
-      // any is necessary because CSSStyleDeclaration type does not include
-      // all the vendor-prefixed attributes.
-
+  setSize(): void {
+    this.iframe.width = BrowserUtilities.getWidth() + "px";
+    if (!this.scrollMode) {
       (this.iframe.contentDocument as any).documentElement.style.height =
         this.height + "px";
       this.iframe.height = this.height + "px";
-      this.iframe.width = BrowserUtilities.getWidth() + "px";
-
-      const body = HTMLUtilities.findRequiredIframeElement(
-        this.iframe.contentDocument,
-        "body"
-      ) as any;
-      const images = Array.prototype.slice.call(body.querySelectorAll("img"));
-      for (const image of images) {
-        if (image.hasAttribute("width")) {
-          image.style.width = image.width + "px";
-        }
-      }
     } else {
-      // Remove previous iframe height so body scroll height will be accurate.
-      this.iframe.height = "0";
-      this.iframe.width = BrowserUtilities.getWidth() + "px";
-
-      const width = BrowserUtilities.getWidth() - this.sideMargin * 2 + "px";
-
-      const body = HTMLUtilities.findRequiredIframeElement(
-        this.iframe.contentDocument,
-        "body"
-      ) as HTMLBodyElement;
-      const images = Array.prototype.slice.call(body.querySelectorAll("img"));
-      for (const image of images) {
-        if (image.hasAttribute("width")) {
-          image.style.width = image.width + "px";
-        }
-        if (image.hasAttribute("height")) {
-          image.style.height = image.height + "px";
-        }
-        if (image.width > width) {
-          image.style.maxWidth = width;
-        }
+      let body = this.iframe.contentWindow.document.body;
+      if (body) {
+        this.iframe.height = parseInt(getComputedStyle(body).height) + "px";
       }
     }
   }

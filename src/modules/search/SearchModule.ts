@@ -29,6 +29,7 @@ import { Locator, Locations } from "../../model/Locator";
 import { IS_DEV } from "../../utils";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import TextHighlighter from "../highlight/TextHighlighter";
+import { HighlightType } from "../highlight/common/highlight";
 
 export interface SearchModuleAPI {}
 
@@ -295,15 +296,9 @@ export default class SearchModule implements ReaderModule {
     var localSearchResultChapter: any = [];
 
     // clear search results // needs more works
-    for (const iframe of this.delegate.iframes) {
-      this.highlighter.destroyAllhighlights(iframe.contentDocument);
-    }
-    if (this.delegate.rights?.enableAnnotations) {
-      this.delegate.annotationModule.drawHighlights();
-    } else {
-      if (this.delegate.rights?.enableSearch) {
-        this.drawSearch();
-      }
+    this.highlighter.destroyHighlights(HighlightType.Search);
+    if (this.delegate.rights?.enableSearch) {
+      this.drawSearch();
     }
     var i = 0;
 
@@ -359,12 +354,7 @@ export default class SearchModule implements ReaderModule {
   clearSearch() {
     this.currentChapterSearchResult = [];
     this.currentHighlights = [];
-    for (const iframe of this.delegate.iframes) {
-      this.highlighter.destroyAllhighlights(iframe.contentDocument);
-    }
-    if (this.delegate.rights?.enableAnnotations) {
-      this.delegate.annotationModule.drawHighlights();
-    }
+    this.highlighter.destroyHighlights(HighlightType.Search);
   }
   async search(term: string, current: boolean): Promise<any> {
     this.currentChapterSearchResult = [];
@@ -750,9 +740,7 @@ export default class SearchModule implements ReaderModule {
   }
 
   async handleResize() {
-    for (const iframe of this.delegate.iframes) {
-      await this.highlighter.destroyAllhighlights(iframe.contentDocument);
-    }
+    await this.highlighter.destroyHighlights(HighlightType.Search);
     this.drawSearch();
   }
 

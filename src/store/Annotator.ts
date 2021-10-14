@@ -38,6 +38,7 @@ interface Annotator {
   deleteSelectedAnnotation(annotation: any): Promise<any>;
   getAnnotations(): Promise<any>;
   getAnnotation(annotation: IHighlight): Promise<any>;
+  getAnnotationByID(id: string): Promise<any>;
   getAnnotationPosition(id: any, iframeWin: IReadiumIFrameWindow): Promise<any>;
 }
 

@@ -30,6 +30,17 @@ const iconTemplate = (
   <title id="${id}">${title}</title>
   ${path}
 </svg>`;
+export const iconTemplateColored = (
+  id: string,
+  title: string,
+  path: string,
+  classAttr: string = `icon`,
+  size: number,
+  fill: string
+) => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${VIEWBOX_ATTR}" style="fill:${fill}" preserveAspectRatio="xMidYMid meet" role="img" class="${classAttr}" aria-labelledBy="${id}">
+  <title id="${id}">${title}</title>
+  ${path}
+</svg>`;
 
 export const icons = {
   error: iconTemplate(

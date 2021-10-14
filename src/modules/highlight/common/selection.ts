@@ -112,3 +112,15 @@ export function sameSelections(
   }
   return true;
 }
+
+export const _getCssSelectorOptions = {
+  className: (_str: string) => {
+    return true;
+  },
+  idName: (_str: string) => {
+    return true;
+  },
+  tagName: (_str: string) => {
+    return true;
+  },
+};

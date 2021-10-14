@@ -185,3 +185,42 @@
     z-index: 2;
     position: relative;
 }
+
+.icon:hover .icon-tooltip {
+    display: block;
+}
+
+.icon-tooltip {
+    display: none;
+    position: absolute;
+    left: 50%;
+    /*top: 50%;*/
+    transform: translate(-50%, -105%);
+    background: #DADADA;
+    padding: 0.25rem 0.5rem;
+    text-overflow: ellipsis;
+    max-width: 22rem;
+    min-width: 100px;
+    font-size: small;
+    z-index: 1000;
+    border: 1px dotted #5b5852;
+}
+
+.icon-tooltip:before, .icon-tooltip:after {
+    content: '';
+    display: block;
+}
+
+.icon-tooltip:before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 5px solid #5b5852;
+    margin-left: -10px;
+}

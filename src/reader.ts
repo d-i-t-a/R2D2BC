@@ -32,7 +32,6 @@ import {
 import TimelineModule from "./modules/positions/TimelineModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
 import SearchModule from "./modules/search/SearchModule";
-import TTSModule from "./modules/TTS/TTSModule";
 import {
   ITTSUserSettings,
   TTSIncrementable,
@@ -47,6 +46,10 @@ import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
 import { convertAndCamel } from "./model/Link";
+import PageBreakModule from "./modules/pagebreak/PageBreakModule";
+import TTSModule from "./modules/TTS/TTSModule";
+import TTSModule2 from "./modules/TTS/TTSModule2";
+import ReaderModule from "./modules/ReaderModule";
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -67,12 +70,13 @@ export default class D2Reader {
     readonly highlighter: TextHighlighter,
     readonly bookmarkModule: BookmarkModule,
     readonly annotationModule?: AnnotationModule,
-    readonly ttsModule?: TTSModule,
+    readonly ttsModule?: ReaderModule,
     readonly searchModule?: SearchModule,
     readonly contentProtectionModule?: ContentProtectionModule,
     readonly timelineModule?: TimelineModule,
     readonly mediaOverlaySettings?: MediaOverlaySettings,
-    readonly mediaOverlayModule?: MediaOverlayModule
+    readonly mediaOverlayModule?: MediaOverlayModule,
+    readonly pageBreakModule?: PageBreakModule
   ) {}
 
   /**
@@ -222,16 +226,26 @@ export default class D2Reader {
         })
       : undefined;
 
-    const ttsModule = ttsEnabled
-      ? await TTSModule.create({
-          delegate: navigator,
-          tts: ttsSettings,
-          headerMenu: headerMenu,
-          rights: config.rights,
-          highlighter: highlighter,
-          ...config.tts,
-        })
-      : undefined;
+    const ttsModule =
+      ttsEnabled && config.tts.enableSplitter
+        ? await TTSModule.create({
+            delegate: navigator,
+            tts: ttsSettings,
+            headerMenu: headerMenu,
+            rights: config.rights,
+            highlighter: highlighter,
+            ...config.tts,
+          })
+        : ttsEnabled && !config.tts.enableSplitter
+        ? await TTSModule2.create({
+            delegate: navigator,
+            tts: ttsSettings,
+            headerMenu: headerMenu,
+            rights: config.rights,
+            highlighter: highlighter,
+            ...config.tts,
+          })
+        : undefined;
 
     // Search Module
     const searchModule = config.rights?.enableSearch
@@ -280,6 +294,14 @@ export default class D2Reader {
         })
       : undefined;
 
+    const pageBreakModule = publication.isReflowable
+      ? await PageBreakModule.create({
+          publication: publication,
+          headerMenu: headerMenu,
+          delegate: navigator,
+        })
+      : undefined;
+
     return new D2Reader(
       settings,
       ttsSettings,
@@ -292,7 +314,8 @@ export default class D2Reader {
       contentProtectionModule,
       timelineModule,
       mediaOverlaySettings,
-      mediaOverlayModule
+      mediaOverlayModule,
+      pageBreakModule
     );
   }
 
@@ -313,11 +336,32 @@ export default class D2Reader {
   };
 
   /**
+   * Read Along
+   */
+  startReadAlong = () => {
+    return this.navigator.startReadAlong();
+  };
+  stopReadAlong = () => {
+    return this.navigator.stopReadAlong();
+  };
+  pauseReadAlong = () => {
+    return this.navigator.pauseReadAlong();
+  };
+  resumeReadAlong = () => {
+    return this.navigator.resumeReadAlong();
+  };
+
+  /**
    * Bookmarks and annotations
    */
   saveBookmark = async () => {
     if (this.navigator.rights?.enableBookmarks) {
       return await this.bookmarkModule.saveBookmark();
+    }
+  };
+  saveBookmarkPlus = async () => {
+    if (this.navigator.rights?.enableBookmarks) {
+      return this.bookmarkModule.saveBookmarkPlus();
     }
   };
   deleteBookmark = async (bookmark) => {
@@ -331,6 +375,20 @@ export default class D2Reader {
   addAnnotation = async (highlight) => {
     return await this.annotationModule?.addAnnotation(highlight);
   };
+
+  hideAnnotationLayer = () => {
+    return this.annotationModule?.hideAnnotationLayer();
+  };
+  showAnnotationLayer = () => {
+    return this.annotationModule?.showAnnotationLayer();
+  };
+  activateMarker = (id) => {
+    return this.navigator?.activateMarker(id);
+  };
+  deactivateMarker = () => {
+    return this.navigator?.deactivateMarker();
+  };
+
   tableOfContents = async () => {
     return await convertAndCamel(this.navigator.tableOfContents());
   };
@@ -574,7 +632,11 @@ export default class D2Reader {
     this.navigator.stop();
     this.settings.stop();
     this.ttsSettings?.stop();
-    this.ttsModule?.stop();
+    if (this.ttsSettings.enableSplitter) {
+      (this.ttsModule as TTSModule)?.stop();
+    } else {
+      (this.ttsModule as TTSModule2)?.stop();
+    }
     this.bookmarkModule?.stop();
     this.annotationModule?.stop();
     this.searchModule?.stop();
@@ -582,6 +644,7 @@ export default class D2Reader {
     this.timelineModule?.stop();
     this.mediaOverlaySettings?.stop();
     this.mediaOverlayModule?.stop();
+    this.pageBreakModule?.stop();
   };
 }
 

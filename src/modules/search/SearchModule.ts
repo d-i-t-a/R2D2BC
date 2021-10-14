@@ -347,30 +347,6 @@ export default class SearchModule implements ReaderModule {
                     selectionInfo,
                     item
                   );
-                  if (item.callbacks?.visible) {
-                    let highlightParent =
-                      this.delegate.iframes[0].contentDocument.getElementById(
-                        highlight.id
-                      );
-                    const highlightFragments = highlightParent.querySelectorAll(
-                      `.${CLASS_HIGHLIGHT_AREA}`
-                    );
-                    let observer = new IntersectionObserver(
-                      (entries, _observer) => {
-                        entries.forEach((entry) => {
-                          if (entry.intersectionRatio == 1) {
-                            item.callbacks?.visible(
-                              lodash.omit(item, "callbacks"),
-                              lodash.omit(highlight, "definition")
-                            );
-                          }
-                        });
-                      },
-                      { threshold: 1 }
-                    );
-                    observer.observe(highlightFragments[0]);
-                  }
-
                   searchItem.highlight = highlight;
                   localSearchDefinitions.push(
                     lodash.omit(highlight, "definition")
@@ -479,6 +455,33 @@ export default class SearchModule implements ReaderModule {
     await this.searchAndPaint(item, async (result) => {
       if (item.callbacks?.success) {
         item.callbacks?.success(lodash.omit(item, "callbacks"), result);
+
+        if (item.callbacks?.visible) {
+          result.forEach((highlight) => {
+            console.log(this.delegate.iframes[0].contentDocument);
+            let highlightParent =
+              this.delegate.iframes[0].contentDocument.querySelector(
+                `#${highlight.id}`
+              );
+            const highlightFragments = highlightParent.querySelectorAll(
+              `.${CLASS_HIGHLIGHT_AREA}`
+            );
+            let observer = new IntersectionObserver(
+              (entries, _observer) => {
+                entries.forEach((entry) => {
+                  if (entry.intersectionRatio == 1) {
+                    item.callbacks?.visible(
+                      lodash.omit(item, "callbacks"),
+                      lodash.omit(highlight, "definition")
+                    );
+                  }
+                });
+              },
+              { threshold: 1 }
+            );
+            observer.observe(highlightFragments[0]);
+          });
+        }
       }
     });
   }
@@ -866,23 +869,8 @@ export default class SearchModule implements ReaderModule {
     }, 100);
   }
   drawPopup() {
-    setTimeout(() => {
-      this.currentPopupHighlights = [];
-      this.currentChapterPopupResult.forEach((searchItem) => {
-        var selectionInfo = {
-          rangeInfo: searchItem.rangeInfo,
-          cleanText: null,
-          rawText: null,
-          range: null,
-        };
-        const highlight = this.highlighter.createPopupHighlight(
-          selectionInfo,
-          searchItem.highlight.definition
-        );
-
-        searchItem.highlight = highlight;
-        this.currentPopupHighlights.push(highlight);
-      });
+    setTimeout(async () => {
+      await this.definitions();
     }, 100);
   }
 

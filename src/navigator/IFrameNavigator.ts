@@ -1169,6 +1169,7 @@ export default class IFrameNavigator implements Navigator {
           this.highlighter !== undefined
         ) {
           await this.highlighter.destroyHighlights(HighlightType.Search);
+          await this.highlighter.destroyHighlights(HighlightType.Popup);
           this.searchModule.drawSearch();
           this.searchModule.drawPopup();
         }
@@ -1586,8 +1587,11 @@ export default class IFrameNavigator implements Navigator {
         }
         await this.updatePositionInfo();
         await this.view?.setSize();
-        await this.searchModule.definitions();
       }, 200);
+
+      if (this.searchModule !== undefined) {
+        await this.searchModule.definitions();
+      }
 
       return new Promise<void>((resolve) => resolve());
     } catch (err) {
@@ -3158,6 +3162,7 @@ export default class IFrameNavigator implements Navigator {
           this.highlighter !== undefined
         ) {
           await this.highlighter.destroyHighlights(HighlightType.Search);
+          await this.highlighter.destroyHighlights(HighlightType.Popup);
           this.searchModule.drawSearch();
           this.searchModule.drawPopup();
         }

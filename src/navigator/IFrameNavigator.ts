@@ -1170,6 +1170,7 @@ export default class IFrameNavigator implements Navigator {
         ) {
           await this.highlighter.destroyHighlights(HighlightType.Search);
           this.searchModule.drawSearch();
+          this.searchModule.drawPopup();
         }
       }, 200);
     }
@@ -1585,6 +1586,7 @@ export default class IFrameNavigator implements Navigator {
         }
         await this.updatePositionInfo();
         await this.view?.setSize();
+        await this.searchModule.definitions();
       }, 200);
 
       return new Promise<void>((resolve) => resolve());
@@ -3157,6 +3159,7 @@ export default class IFrameNavigator implements Navigator {
         ) {
           await this.highlighter.destroyHighlights(HighlightType.Search);
           this.searchModule.drawSearch();
+          this.searchModule.drawPopup();
         }
 
         if (this.view.layout === "fixed") {

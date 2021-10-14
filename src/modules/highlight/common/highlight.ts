@@ -64,6 +64,7 @@ export enum HighlightType {
   Search = 1,
   ReadAloud = 2,
   PageBreak = 3,
+  Popup = 4,
 }
 
 export interface IHighlight {
@@ -80,6 +81,7 @@ export interface IHighlight {
 
   position?: number;
   note?: string | undefined;
+  definition?: string;
 
   type: HighlightType;
 }

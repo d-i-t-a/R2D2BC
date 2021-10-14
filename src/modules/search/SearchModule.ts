@@ -33,9 +33,15 @@ import { HighlightType } from "../highlight/common/highlight";
 
 export interface SearchModuleAPI {}
 
+export interface SearchDefinition {
+  term: string;
+  definition: string;
+}
+
 export interface SearchModuleProperties {
   color: string;
   current: string;
+  definitions: SearchDefinition[];
 }
 
 export interface SearchModuleConfig extends SearchModuleProperties {
@@ -56,8 +62,10 @@ export default class SearchModule implements ReaderModule {
   private searchInput: HTMLInputElement;
   private searchGo: HTMLElement;
   private currentChapterSearchResult: any = [];
+  private currentChapterPopupResult: any = [];
+  private currentPopupHighlights: any = [];
   private bookSearchResult: any = [];
-  private currentHighlights: any = [];
+  private currentSearchHighlights: any = [];
   private highlighter: TextHighlighter;
 
   public static async create(config: SearchModuleConfig) {
@@ -157,7 +165,7 @@ export default class SearchModule implements ReaderModule {
     ) as HTMLDivElement;
 
     self.currentChapterSearchResult = [];
-    self.currentHighlights = [];
+    self.currentSearchHighlights = [];
     var localSearchResultChapter: any = [];
     if (this.delegate.rights?.enableContentProtection) {
       this.delegate.contentProtectionModule.deactivate();
@@ -168,6 +176,7 @@ export default class SearchModule implements ReaderModule {
       if (this.delegate.rights?.enableContentProtection) {
         this.delegate.contentProtectionModule.recalculate(200);
       }
+      this.drawPopup();
     });
 
     async function goToResultPage(page: number) {
@@ -280,6 +289,61 @@ export default class SearchModule implements ReaderModule {
       }
     }
   }
+  async searchAndPaint(
+    term: string,
+    definition: string,
+    callback: (result: any) => any
+  ) {
+    const linkHref = this.publication.getAbsoluteHref(
+      this.publication.readingOrder[this.delegate.currentResource()].Href
+    );
+    let tocItem = this.publication.getTOCItem(linkHref);
+    if (tocItem === null) {
+      tocItem = this.publication.readingOrder[this.delegate.currentResource()];
+    }
+    var localSearchResultChapter: any = [];
+
+    const href = this.publication.getAbsoluteHref(tocItem.Href);
+    await fetch(href)
+      .then((r) => r.text())
+      .then(async (_data) => {
+        // ({ data, tocItem });
+        // TODO: this seems to break with obfuscation
+        // var parser = new DOMParser();
+        // var doc = parser.parseFromString(data, "text/html");
+        searchDocDomSeek(
+          term,
+          this.delegate.iframes[0].contentDocument,
+          tocItem.Href,
+          tocItem.Title
+        ).then((result) => {
+          // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
+          result.forEach((searchItem) => {
+            const selectionInfo = {
+              rangeInfo: searchItem.rangeInfo,
+              cleanText: null,
+              rawText: null,
+              range: null,
+            };
+            setTimeout(() => {
+              const highlight = this.highlighter.createPopupHighlight(
+                selectionInfo,
+                "#40E0D0",
+                definition
+              );
+              searchItem.highlight = highlight;
+              localSearchResultChapter.push(searchItem);
+              this.currentChapterPopupResult.push(searchItem);
+              this.currentPopupHighlights.push(highlight);
+            }, 500);
+          });
+          setTimeout(() => {
+            callback(localSearchResultChapter);
+          }, 500);
+        });
+      });
+  }
+
   // Search Current Resource
   async searchAndPaintChapter(
     term: string,
@@ -299,6 +363,7 @@ export default class SearchModule implements ReaderModule {
     this.highlighter.destroyHighlights(HighlightType.Search);
     if (this.delegate.rights?.enableSearch) {
       this.drawSearch();
+      this.drawPopup();
     }
     var i = 0;
 
@@ -341,7 +406,7 @@ export default class SearchModule implements ReaderModule {
               searchItem.highlight = highlight;
               localSearchResultChapter.push(searchItem);
               this.currentChapterSearchResult.push(searchItem);
-              this.currentHighlights.push(highlight);
+              this.currentSearchHighlights.push(highlight);
               i++;
             }, 500);
           });
@@ -353,12 +418,23 @@ export default class SearchModule implements ReaderModule {
   }
   clearSearch() {
     this.currentChapterSearchResult = [];
-    this.currentHighlights = [];
+    this.currentSearchHighlights = [];
     this.highlighter.destroyHighlights(HighlightType.Search);
   }
+
+  async definitions() {
+    for (const item of this.properties.definitions) {
+      await this.define(item.term, item.definition);
+    }
+  }
+
+  async define(term: any, definition: string) {
+    await this.searchAndPaint(term, definition, async () => {});
+  }
+
   async search(term: any, current: boolean): Promise<any> {
     this.currentChapterSearchResult = [];
-    this.currentHighlights = [];
+    this.currentSearchHighlights = [];
     this.bookSearchResult = [];
     reset();
 
@@ -721,7 +797,7 @@ export default class SearchModule implements ReaderModule {
 
   drawSearch() {
     setTimeout(() => {
-      this.currentHighlights = [];
+      this.currentSearchHighlights = [];
       this.currentChapterSearchResult.forEach((searchItem) => {
         var selectionInfo = {
           rangeInfo: searchItem.rangeInfo,
@@ -734,7 +810,28 @@ export default class SearchModule implements ReaderModule {
           this.properties?.color
         );
         searchItem.highlight = highlight;
-        this.currentHighlights.push(highlight);
+        this.currentSearchHighlights.push(highlight);
+      });
+    }, 100);
+  }
+  drawPopup() {
+    setTimeout(() => {
+      this.currentPopupHighlights = [];
+      this.currentChapterPopupResult.forEach((searchItem) => {
+        var selectionInfo = {
+          rangeInfo: searchItem.rangeInfo,
+          cleanText: null,
+          rawText: null,
+          range: null,
+        };
+        const highlight = this.highlighter.createPopupHighlight(
+          selectionInfo,
+          "#40E0D0",
+          searchItem.highlight.definition
+        );
+
+        searchItem.highlight = highlight;
+        this.currentPopupHighlights.push(highlight);
       });
     }, 100);
   }
@@ -742,13 +839,14 @@ export default class SearchModule implements ReaderModule {
   async handleResize() {
     await this.highlighter.destroyHighlights(HighlightType.Search);
     this.drawSearch();
+    this.drawPopup();
   }
 
   jumpToMark(index: number) {
     setTimeout(() => {
       if (this.currentChapterSearchResult.length) {
         var current = this.currentChapterSearchResult[index];
-        this.currentHighlights.forEach((highlight) => {
+        this.currentSearchHighlights.forEach((highlight) => {
           var createColor: any = this.properties?.color;
           if (TextHighlighter.isHexColor(createColor)) {
             createColor = TextHighlighter.hexToRgbChannels(createColor);
@@ -762,7 +860,7 @@ export default class SearchModule implements ReaderModule {
         current.highlight.color = currentColor;
         this.highlighter.setAndResetSearchHighlight(
           current.highlight,
-          this.currentHighlights
+          this.currentSearchHighlights
         );
 
         this.delegate.view.goToCssSelector(

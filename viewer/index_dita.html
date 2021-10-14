@@ -556,9 +556,11 @@ height: 50px;
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
+            { type: 'style', url: '/viewer/injectables/style/popup.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
         let injectablesFixed = [
+            { type: 'style', url: '/viewer/injectables/style/popup.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
         let userSettings = {
@@ -865,6 +867,20 @@ height: 50px;
             search: {
                 color: "#fce300",
                 current: "#ed7138",
+                definitions: [
+                    {
+                        term: "lavender",
+                        definition: "Lavandula (common name lavender) is a genus of 47 known species of flowering plants in the mint family, Lamiaceae."
+                    },
+                    {
+                        term: "lavandula",
+                        definition: "Lavandula angustifolia is what many people in the aromatherapy industry refer to as “true” lavender, though technically all plants in the Lavandula genus are in fact true lavenders."
+                    },
+                    {
+                        term: "allium",
+                        definition: "a bulbous plant of a genus that includes the onion and its relatives (e.g. garlic, leek, and chives)."
+                    }
+                ],
                 api: {
 
                 }

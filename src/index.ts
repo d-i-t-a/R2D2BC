@@ -643,6 +643,26 @@ export function snapToElement(value) {
 exports.snapToElement = function (value) {
   snapToElement(value);
 };
+
+export function activateMarker(id) {
+  if (IS_DEV) {
+    console.log("activateMarker");
+  }
+  D2Navigator.activateMarker(id);
+}
+exports.activateMarker = function (id) {
+  activateMarker(id);
+};
+
+export function deactivateMarker() {
+  if (IS_DEV) {
+    console.log("deactivateMarker");
+  }
+  D2Navigator.deactivateMarker();
+}
+exports.deactivateMarker = function () {
+  deactivateMarker();
+};
 export async function load(config: ReaderConfig): Promise<any> {
   if (config.rights?.enableContentProtection) {
     await ContentProtectionModule.setupPreloadProtection(config.protection);

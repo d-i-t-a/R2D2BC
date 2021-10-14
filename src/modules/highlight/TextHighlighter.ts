@@ -133,9 +133,10 @@ export default class TextHighlighter {
   private options: any;
   private delegate: IFrameNavigator;
   private lastSelectedHighlight: number = undefined;
-  private properties: TextHighlighterProperties;
+  properties: TextHighlighterProperties;
   private api: TextSelectorAPI;
   private hasEventListener: boolean;
+  activeAnnotationMarkerId: string = undefined;
 
   public static async create(config: TextHighlighterConfig): Promise<any> {
     const module = new this(
@@ -915,6 +916,7 @@ export default class TextHighlighter {
   }
 
   toolboxShow() {
+    if (this.activeAnnotationMarkerId == undefined) {
     var self = this;
     var toolboxAddOptions = document.getElementById(
       "highlight-toolbox-mode-add"
@@ -951,6 +953,7 @@ export default class TextHighlighter {
 
     this.toolboxPlacement();
     this.toolboxHandler();
+  }
   }
 
   isSelectionMenuOpen = false;
@@ -3341,6 +3344,19 @@ export default class TextHighlighter {
           size / 2
         }px;height:${size}px; width:${size}px;`
       );
+    } else if (highlight.icon?.position === "center") {
+      // let sizeIcon = parseInt(highlightAreaIcon.style.width.replace("px", ""));
+
+      let third = size / 3;
+      let half = third * 2;
+      highlightAreaIcon.setAttribute(
+        "style",
+        `position: absolute;top:${position}px;left:${
+          parseInt(highlightBounding.style.left.replace("px", "")) +
+          parseInt(highlightBounding.style.width.replace("px", "")) -
+          half
+        }px;height:${size}px; width:${size}px;`
+      );
     } else {
       if (
         highlight.note &&
@@ -3371,19 +3387,19 @@ export default class TextHighlighter {
       highlight.marker === AnnotationMarker.Bookmark
     ) {
       if (highlight.icon?.class) {
-        highlightAreaIcon.classList.add(highlight.icon.class);
-        highlightAreaIcon.id = highlight.icon.id;
-      } else if (highlight.icon.svgPath) {
+        highlightAreaIcon.classList.add(highlight.icon?.class);
+        highlightAreaIcon.id = highlight.icon?.id;
+      } else if (highlight.icon?.svgPath) {
         highlightAreaIcon.innerHTML = iconTemplateColored(
-          `${highlight.icon.id}`,
-          `${highlight.icon.title}`,
-          `${highlight.icon.svgPath}`,
+          `${highlight.icon?.id}`,
+          `${highlight.icon?.title}`,
+          `${highlight.icon?.svgPath}`,
           `icon open`,
           size,
-          `${highlight.icon.color} !important`
+          `${highlight.icon?.color} !important`
         );
       } else {
-        highlightAreaIcon.innerHTML = highlight.icon.title;
+        highlightAreaIcon.innerHTML = highlight.icon?.title;
       }
     } else {
       if (highlight.note) {

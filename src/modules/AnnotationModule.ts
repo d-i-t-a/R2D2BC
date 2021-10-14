@@ -36,6 +36,10 @@ import { toast } from "materialize-css";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
+import { convertRange } from "./highlight/renderer/iframe/selection";
+import { uniqueCssSelector } from "./highlight/renderer/common/cssselector2";
+import { _getCssSelectorOptions } from "./highlight/common/selection";
+import * as lodash from "lodash";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
 
@@ -71,6 +75,7 @@ export default class AnnotationModule implements ReaderModule {
   private delegate: IFrameNavigator;
   properties: AnnotationModuleProperties;
   api: AnnotationModuleAPI;
+  activeAnnotationMarkerId: string;
 
   public static async create(config: AnnotationModuleConfig) {
     const annotations = new this(
@@ -182,10 +187,91 @@ export default class AnnotationModule implements ReaderModule {
         setTimeout(() => {
           this.drawHighlights();
           this.showHighlights();
+          addEventListenerOptional(
+            this.delegate.iframes[0].contentDocument.body,
+            "click",
+            this.click.bind(this)
+          );
         }, 300);
       }
       resolve(null);
     });
+  }
+
+  private click(_event: KeyboardEvent | MouseEvent | TrackEvent): void {
+    if (this.activeAnnotationMarkerId) {
+      let menuItems = this.highlighter.properties?.selectionMenuItems?.filter(
+        (menuItem) => menuItem.id === this.activeAnnotationMarkerId
+      );
+      if (menuItems.length > 0) {
+        let menuItem = lodash.cloneDeep(menuItems[0]);
+        menuItem.marker = AnnotationMarker.Custom;
+        menuItem.icon.position = "center";
+        // menuItem.icon.svgPath = `<path d="M4,16v6h16v-6c0-1.1-0.9-2-2-2H6C4.9,14,4,14.9,4,16z M18,18H6v-2h12V18z M12,2C9.24,2,7,4.24,7,7l5,7l5-7 C17,4.24,14.76,2,12,2z M12,11L9,7c0-1.66,1.34-3,3-3s3,1.34,3,3L12,11z"/>`;
+        // menuItem.icon.color = `#dc491d`;
+        // menuItem.highlight.color = `#dc491d`;
+        menuItem.highlight.style.default = null;
+        menuItem.highlight.style.hover = null;
+
+        const selection = this.highlighter
+          .dom(this.delegate.iframes[0].contentDocument.body)
+          .getSelection();
+        let range = selection.getRangeAt(0);
+        let node = selection.anchorNode;
+        range.setStart(node, range.startOffset);
+        range.setEnd(node, range.endOffset + 1);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        // Alert result
+        // let str = range.toString().trim();
+        // alert(str);
+
+        let self = this;
+        function getCssSelector(element: Element): string {
+          try {
+            return uniqueCssSelector(
+              element,
+              self.delegate.iframes[0].contentDocument,
+              _getCssSelectorOptions
+            );
+          } catch (err) {
+            console.log("uniqueCssSelector:");
+            console.log(err);
+            return "";
+          }
+        }
+        const rangeInfo = convertRange(range, getCssSelector);
+        selection.removeAllRanges();
+        let selectionInfo = {
+          rangeInfo: rangeInfo,
+          cleanText: null,
+          rawText: null,
+          range: null,
+        };
+
+        let book = this.delegate.highlighter.createHighlight(
+          this.delegate.highlighter
+            .dom(self.delegate.iframes[0].contentDocument.body)
+            .getWindow(),
+          selectionInfo,
+          menuItem.highlight.color,
+          true,
+          AnnotationMarker.Bookmark,
+          menuItem.icon,
+          menuItem.popup,
+          menuItem.highlight.style
+        );
+        this.saveAnnotation(book[0]).then((anno) => {
+          if (IS_DEV) {
+            console.log("saved bookmark " + anno.id);
+          }
+        });
+        this.delegate.iframes[0].contentDocument
+          .getSelection()
+          .removeAllRanges();
+      }
+    }
   }
 
   async scrollToHighlight(id: any): Promise<any> {

@@ -28,7 +28,9 @@ import {
 import { Locator, Locations } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
-import TextHighlighter from "../highlight/TextHighlighter";
+import TextHighlighter, {
+  CLASS_HIGHLIGHT_AREA,
+} from "../highlight/TextHighlighter";
 import { HighlightType } from "../highlight/common/highlight";
 import * as lodash from "lodash";
 
@@ -345,6 +347,30 @@ export default class SearchModule implements ReaderModule {
                     selectionInfo,
                     item
                   );
+                  if (item.callbacks?.visible) {
+                    let highlightParent =
+                      this.delegate.iframes[0].contentDocument.getElementById(
+                        highlight.id
+                      );
+                    const highlightFragments = highlightParent.querySelectorAll(
+                      `.${CLASS_HIGHLIGHT_AREA}`
+                    );
+                    let observer = new IntersectionObserver(
+                      (entries, _observer) => {
+                        entries.forEach((entry) => {
+                          if (entry.intersectionRatio == 1) {
+                            item.callbacks?.visible(
+                              lodash.omit(item, "callbacks"),
+                              lodash.omit(highlight, "definition")
+                            );
+                          }
+                        });
+                      },
+                      { threshold: 1 }
+                    );
+                    observer.observe(highlightFragments[0]);
+                  }
+
                   searchItem.highlight = highlight;
                   localSearchDefinitions.push(
                     lodash.omit(highlight, "definition")

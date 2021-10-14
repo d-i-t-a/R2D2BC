@@ -47,6 +47,7 @@ import TTSModule from "../TTS/TTSModule";
 import TTSModule2 from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import Popup from "../popup/Popup";
+import { SearchDefinition } from "../search/SearchModule";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER";
@@ -2747,8 +2748,16 @@ export default class TextHighlighter {
             toolbox.style.display = "block";
           }
         } else {
-          const popup = new Popup(this.delegate);
-          popup.showPopup(foundElement.dataset.definition, ev);
+          if (foundElement.dataset.definition) {
+            const popup = new Popup(this.delegate);
+            popup.showPopup(foundElement.dataset.definition, ev);
+          } else {
+            let result =
+              this.delegate.searchModule.properties.definitions.filter(
+                (el: any) => el.order === Number(foundElement.dataset.order)
+              )[0];
+            result.callback(result, foundElement);
+          }
         }
       }
     }
@@ -2939,13 +2948,9 @@ export default class TextHighlighter {
     this.recreateAllHighlightsDebounced(win);
   }
 
-  createPopupHighlight(
-    selectionInfo: ISelectionInfo,
-    color: string,
-    definition: string
-  ) {
+  createPopupHighlight(selectionInfo: ISelectionInfo, item: SearchDefinition) {
     try {
-      let createColor: any = color;
+      let createColor: any = item.color;
       if (TextHighlighter.isHexColor(createColor)) {
         createColor = TextHighlighter.hexToRgbChannels(createColor);
       }
@@ -2969,8 +2974,11 @@ export default class TextHighlighter {
         this.delegate.iframes[0].contentWindow as any,
         highlight
       );
-      highlightDom.dataset.definition = definition;
-      highlight.definition = definition;
+      if (item.definition) {
+        highlightDom.dataset.definition = item.definition;
+      }
+      highlightDom.dataset.order = String(item.order);
+      highlight.definition = item;
       highlight.position = parseInt(
         (
           (highlightDom.hasChildNodes

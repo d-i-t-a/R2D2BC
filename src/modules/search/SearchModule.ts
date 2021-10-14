@@ -34,7 +34,9 @@ import { HighlightType } from "../highlight/common/highlight";
 export interface SearchModuleAPI {}
 
 export interface SearchDefinition {
+  order: number;
   term: string;
+  result?: number;
   definition?: string;
   color?: string;
   callback?: any;
@@ -55,7 +57,7 @@ export interface SearchModuleConfig extends SearchModuleProperties {
 }
 
 export default class SearchModule implements ReaderModule {
-  private properties: SearchModuleProperties;
+  properties: SearchModuleProperties;
   // @ts-ignore
   private api: SearchModuleAPI;
   private publication: Publication;
@@ -316,24 +318,33 @@ export default class SearchModule implements ReaderModule {
           tocItem.Title
         ).then((result) => {
           // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
-          result.forEach((searchItem) => {
-            const selectionInfo = {
-              rangeInfo: searchItem.rangeInfo,
-              cleanText: null,
-              rawText: null,
-              range: null,
-            };
-            setTimeout(() => {
-              const highlight = this.highlighter.createPopupHighlight(
-                selectionInfo,
-                "#40E0D0",
-                item.definition
-              );
-              searchItem.highlight = highlight;
-              localSearchResultChapter.push(searchItem);
-              this.currentChapterPopupResult.push(searchItem);
-              this.currentPopupHighlights.push(highlight);
-            }, 500);
+
+          let i: number = undefined;
+          if (item.result == 1) {
+            i = 0;
+          } else if (item.result == 2) {
+            i = Math.floor(Math.random() * result.length - 1) + 1;
+          }
+          console.log(i);
+          result.forEach((searchItem, index) => {
+            if (i === undefined || i === index) {
+              const selectionInfo = {
+                rangeInfo: searchItem.rangeInfo,
+                cleanText: null,
+                rawText: null,
+                range: null,
+              };
+              setTimeout(() => {
+                const highlight = this.highlighter.createPopupHighlight(
+                  selectionInfo,
+                  item
+                );
+                searchItem.highlight = highlight;
+                localSearchResultChapter.push(searchItem);
+                this.currentChapterPopupResult.push(searchItem);
+                this.currentPopupHighlights.push(highlight);
+              }, 500);
+            }
           });
           setTimeout(() => {
             callback(localSearchResultChapter);
@@ -824,7 +835,6 @@ export default class SearchModule implements ReaderModule {
         };
         const highlight = this.highlighter.createPopupHighlight(
           selectionInfo,
-          "#40E0D0",
           searchItem.highlight.definition
         );
 

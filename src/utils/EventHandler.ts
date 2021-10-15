@@ -19,7 +19,7 @@
 
 import { IS_DEV } from "..";
 import IFrameNavigator from "../navigator/IFrameNavigator";
-import Popup from "../modules/popup/Popup";
+import Popup from "../modules/search/Popup";
 
 export function addEventListenerOptional(
   element: any,

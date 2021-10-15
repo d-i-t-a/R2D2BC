@@ -46,9 +46,9 @@ import IFrameNavigator from "../../navigator/IFrameNavigator";
 import TTSModule from "../TTS/TTSModule";
 import TTSModule2 from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import Popup from "../popup/Popup";
 import { SearchDefinition } from "../search/SearchModule";
 import * as lodash from "lodash";
+import Popup from "../search/Popup";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER";

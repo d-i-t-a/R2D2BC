@@ -59,4 +59,14 @@ export default class FixedBookView implements BookView {
   getPageCount(): number {
     return 1;
   }
+
+  setSize(): void {}
+
+  isPaginated() {
+    return true;
+  }
+
+  isScrollMode() {
+    return false;
+  }
 }

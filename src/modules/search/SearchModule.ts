@@ -28,11 +28,8 @@ import {
 import { Locator, Locations } from "../../model/Locator";
 import { IS_DEV } from "../..";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
-import TextHighlighter, {
-  CLASS_HIGHLIGHT_AREA,
-} from "../highlight/TextHighlighter";
+import TextHighlighter from "../highlight/TextHighlighter";
 import { HighlightType } from "../highlight/common/highlight";
-import * as lodash from "lodash";
 
 export interface SearchModuleAPI {}
 
@@ -75,8 +72,6 @@ export default class SearchModule implements ReaderModule {
   private searchInput: HTMLInputElement;
   private searchGo: HTMLElement;
   private currentChapterSearchResult: any = [];
-  private currentChapterPopupResult: any = [];
-  private currentPopupHighlights: any = [];
   private bookSearchResult: any = [];
   private currentSearchHighlights: any = [];
   private highlighter: TextHighlighter;
@@ -189,7 +184,6 @@ export default class SearchModule implements ReaderModule {
       if (this.delegate.rights?.enableContentProtection) {
         this.delegate.contentProtectionModule.recalculate(200);
       }
-      this.drawDefinitions();
     });
 
     async function goToResultPage(page: number) {
@@ -302,70 +296,6 @@ export default class SearchModule implements ReaderModule {
       }
     }
   }
-  async searchAndPaint(item: SearchDefinition, callback: (result: any) => any) {
-    const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder[this.delegate.currentResource()].Href
-    );
-    let tocItem = this.publication.getTOCItem(linkHref);
-    if (tocItem === null) {
-      tocItem = this.publication.readingOrder[this.delegate.currentResource()];
-    }
-    let localSearchDefinitions: any = [];
-
-    const href = this.publication.getAbsoluteHref(tocItem.Href);
-    await fetch(href)
-      .then((r) => r.text())
-      .then(async (_data) => {
-        item.terms.forEach((termKey, index) => {
-          // for (const termKey in item.term) {
-          console.log(termKey);
-          searchDocDomSeek(
-            termKey,
-            this.delegate.iframes[0].contentDocument,
-            tocItem.Href,
-            tocItem.Title
-          ).then((result) => {
-            // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
-
-            let i: number = undefined;
-            if (item.result == 1) {
-              i = 0;
-            } else if (item.result == 2) {
-              i = Math.floor(Math.random() * result.length - 1) + 1;
-            }
-            console.log(i);
-            result.forEach((searchItem, index) => {
-              if (i === undefined || i === index) {
-                const selectionInfo = {
-                  rangeInfo: searchItem.rangeInfo,
-                  cleanText: null,
-                  rawText: null,
-                  range: null,
-                };
-                setTimeout(() => {
-                  const highlight = this.highlighter.createPopupHighlight(
-                    selectionInfo,
-                    item
-                  );
-                  searchItem.highlight = highlight;
-                  localSearchDefinitions.push(
-                    lodash.omit(highlight, "definition")
-                  );
-                  this.currentChapterPopupResult.push(searchItem);
-                  this.currentPopupHighlights.push(highlight);
-                }, 500);
-              }
-            });
-
-            if (index == item.terms.length - 1) {
-              setTimeout(() => {
-                callback(localSearchDefinitions);
-              }, 500);
-            }
-          });
-        });
-      });
-  }
 
   // Search Current Resource
   async searchAndPaintChapter(
@@ -386,7 +316,6 @@ export default class SearchModule implements ReaderModule {
     this.highlighter.destroyHighlights(HighlightType.Search);
     if (this.delegate.rights?.enableSearch) {
       this.drawSearch();
-      this.drawDefinitions();
     }
     var i = 0;
 
@@ -443,47 +372,6 @@ export default class SearchModule implements ReaderModule {
     this.currentChapterSearchResult = [];
     this.currentSearchHighlights = [];
     this.highlighter.destroyHighlights(HighlightType.Search);
-  }
-
-  async definitions() {
-    for (const item of this.properties.definitions) {
-      await this.define(item);
-    }
-  }
-
-  async define(item: SearchDefinition) {
-    await this.searchAndPaint(item, async (result) => {
-      if (item.callbacks?.success) {
-        item.callbacks?.success(lodash.omit(item, "callbacks"), result);
-
-        if (item.callbacks?.visible) {
-          result.forEach((highlight) => {
-            console.log(this.delegate.iframes[0].contentDocument);
-            let highlightParent =
-              this.delegate.iframes[0].contentDocument.querySelector(
-                `#${highlight.id}`
-              );
-            const highlightFragments = highlightParent.querySelectorAll(
-              `.${CLASS_HIGHLIGHT_AREA}`
-            );
-            let observer = new IntersectionObserver(
-              (entries, _observer) => {
-                entries.forEach((entry) => {
-                  if (entry.intersectionRatio == 1) {
-                    item.callbacks?.visible(
-                      lodash.omit(item, "callbacks"),
-                      lodash.omit(highlight, "definition")
-                    );
-                  }
-                });
-              },
-              { threshold: 1 }
-            );
-            observer.observe(highlightFragments[0]);
-          });
-        }
-      }
-    });
   }
 
   async search(term: any, current: boolean): Promise<any> {
@@ -868,16 +756,10 @@ export default class SearchModule implements ReaderModule {
       });
     }, 100);
   }
-  drawDefinitions() {
-    setTimeout(async () => {
-      await this.definitions();
-    }, 100);
-  }
 
   async handleResize() {
     await this.highlighter.destroyHighlights(HighlightType.Search);
     this.drawSearch();
-    this.drawDefinitions();
   }
 
   jumpToMark(index: number) {

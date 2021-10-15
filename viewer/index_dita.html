@@ -52,7 +52,7 @@
                     <div class="nav-wrapper"><span class="brand-logo  hide-on-med-and-down " id="book-title"></span>
                         <ul id="nav-mobile-right" class="right">
                             <li style="display:none"><a data-target="container-view-note-input" class="dropdown-trigger " id="menu-button-note"><i class="material-icons">speaker_notes</i></a></li>
-                            <li><a class="saveBookmark" id="menu-button-stamp-activate"  onclick="D2Reader.activateMarker('bookmarkIcon')"><i class="material-icons">approval</i></a></li>
+                            <li><a class="saveBookmark" id="menu-button-stamp-activate"  onclick="D2Reader.activateMarker('bookmarkIcon', 'center')"><i class="material-icons">approval</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-stamp-deactivate"  onclick="D2Reader.deactivateMarker()"><i class="material-icons">approval</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark-range"  onclick="D2Reader.saveBookmarkPlus()"><i class="material-icons">bookmark_border</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
@@ -592,7 +592,7 @@ height: 50px;
                     svgPath: `<path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z\"/>`,
                     color: `#fc0303`,
                     // class: "red",
-                    position: "inline",
+                    position: "center",// inline , center , right , left
                 },
                 popup: {
                     class: "red"
@@ -792,6 +792,7 @@ height: 50px;
                 enableTTS: true,
                 enableSearch: true,
                 enableTimeline: true,
+                enableDefinitions: true,
                 enableContentProtection: false,
                 enableMediaOverlays: true,
                 autoGeneratePositions: true,
@@ -869,75 +870,49 @@ height: 50px;
             search: {
                 color: "#fce300",
                 current: "#ed7138",
+                api: {
+
+                }
+            },
+            define: {
+                color: "#40E0D0",
+                api: {
+                    click: function (item, element) {
+                        console.log("click");
+                        console.log(item);
+                        console.log(element);
+                    },
+                    success: function (item, elements) {
+                        console.log("success");
+                        console.log(item);
+                        console.log(elements);
+                    },
+                    visible: function (item, element) {
+                        console.log("visible");
+                        console.log(item);
+                        console.log(element);
+                    },
+                },
                 definitions: [
                     {
                         order: 0,
                         result: 1, // 1 = first, 2 = random, 0 = all
                         terms: ["lavender", "lavandula"],
                         definition: "Lavandula (common name lavender) is a genus of 47 known species of flowering plants in the mint family, Lamiaceae.",
-                        color: "#40E0D0",
-                        callbacks: {
-                            click: function (item, element) {
-                                console.log("click");
-                                console.log(item);
-                                console.log(element);
-                            },
-                            success: function (item, elements) {
-                                console.log("success");
-                                console.log(item);
-                                console.log(elements);
-                            },
-                            visible: function (item, element) {
-                                console.log("visible");
-                                console.log(item);
-                                console.log(element);
-                            },
-                        }
                     },
-                    // {
-                    //     order: 1,
-                    //     result: 2, // 1 = first, 2 = random, 0 = all
-                    //     term: "lavandula",
-                    //     definition: "Lavandula angustifolia is what many people in the aromatherapy industry refer to as “true” lavender, though technically all plants in the Lavandula genus are in fact true lavenders.",
-                    //     color: "var(--RS__highlightColor)",
-                    //     callback: function (item, element) {
-                    //         alert(item);
-                    //         console.log(element);
-                    //     }
-                    // },
+                    {
+                        order: 1,
+                        result: 0,
+                        terms: ["Dahlia"],
+                        definition: "Giant hyssop was rarely included, despite being hugely attractive to bees.",
+                    },
                     {
                         order: 2,
                         result: 0, // 1 = first, 2 = random, 0 = all
                         terms: ["allium"],
                         definition: "a bulbous plant of a genus that includes the onion and its relatives (e.g. garlic, leek, and chives).",
-                        color: "#40E0D0",
-                        // callback: function (item, element) {
-                        //     alert(item);
-                        //     console.log(element);
-                        // }
-                        callbacks: {
-                            click: function (terms, element) {
-                                console.log("click");
-                                console.log(terms);
-                                console.log(element);
-                            },
-                            success: function (terms, elements) {
-                                console.log("success");
-                                console.log(terms);
-                                console.log(elements);
-                            },
-                            visible: function (terms, element) {
-                                console.log("visible");
-                                console.log(terms);
-                                console.log(element);
-                            },
-                        }
-
                     }
                 ],
-                api: {
-
-                }
             },
             highlighter: {
                 selectionMenuItems: selectionMenuItems,

@@ -145,7 +145,7 @@ export default class TextHighlighter {
   properties: TextHighlighterProperties;
   private api: TextSelectorAPI;
   private hasEventListener: boolean;
-  activeAnnotationMarkerId: string = undefined;
+  activeAnnotationMarkerId?: string = undefined;
 
   public static async create(config: TextHighlighterConfig): Promise<any> {
     const module = new this(
@@ -2641,7 +2641,7 @@ export default class TextHighlighter {
           )) as Annotation;
         }
 
-        this.delegate.annotationModule.api
+        this.delegate.annotationModule?.api
           ?.selectedAnnotation(anno)
           .then(async () => {});
 
@@ -2753,11 +2753,12 @@ export default class TextHighlighter {
             const popup = new Popup(this.delegate);
             popup.showPopup(foundElement.dataset.definition, ev);
           }
-          let result = this.delegate.searchModule.properties.definitions.filter(
-            (el: any) => el.order === Number(foundElement.dataset.order)
-          )[0];
-          if (result.callbacks?.click) {
-            result.callbacks?.click(
+          let result =
+            this.delegate.definitionsModule?.properties?.definitions.filter(
+              (el: any) => el.order === Number(foundElement.dataset.order)
+            )[0];
+          if (this.delegate.definitionsModule.api?.click) {
+            this.delegate.definitionsModule.api?.click(
               lodash.omit(result, "callbacks"),
               lodash.omit(foundHighlight, "definition")
             );
@@ -2954,7 +2955,7 @@ export default class TextHighlighter {
 
   createPopupHighlight(selectionInfo: ISelectionInfo, item: SearchDefinition) {
     try {
-      let createColor: any = item.color;
+      let createColor: any = this.delegate.definitionsModule.properties.color;
       if (TextHighlighter.isHexColor(createColor)) {
         createColor = TextHighlighter.hexToRgbChannels(createColor);
       }

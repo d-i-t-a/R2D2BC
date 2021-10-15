@@ -2814,11 +2814,21 @@ export default class TextHighlighter {
         _highlightsContainer = documant.createElement("div");
         _highlightsContainer.setAttribute("id", id);
         _highlightsContainer.style.setProperty("pointer-events", "none");
+        if (this.delegate.view.layout === "fixed") {
+          _highlightsContainer.style.setProperty("position", "absolute");
+          _highlightsContainer.style.setProperty("top", "0");
+          _highlightsContainer.style.setProperty("left", "0");
+        }
         documant.body.append(_highlightsContainer);
       } else if (id == ID_SEARCH_CONTAINER) {
         _highlightsSearchContainer = documant.createElement("div");
         _highlightsSearchContainer.setAttribute("id", id);
         _highlightsSearchContainer.style.setProperty("pointer-events", "none");
+        if (this.delegate.view.layout === "fixed") {
+          _highlightsSearchContainer.style.setProperty("position", "absolute");
+          _highlightsSearchContainer.style.setProperty("top", "0");
+          _highlightsSearchContainer.style.setProperty("left", "0");
+        }
         documant.body.append(_highlightsSearchContainer);
       } else if (id == ID_READALOUD_CONTAINER) {
         _highlightsReadAloudContainer = documant.createElement("div");
@@ -2827,6 +2837,14 @@ export default class TextHighlighter {
           "pointer-events",
           "none"
         );
+        if (this.delegate.view.layout === "fixed") {
+          _highlightsReadAloudContainer.style.setProperty(
+            "position",
+            "absolute"
+          );
+          _highlightsReadAloudContainer.style.setProperty("top", "0");
+          _highlightsReadAloudContainer.style.setProperty("left", "0");
+        }
         documant.body.append(_highlightsReadAloudContainer);
       } else if (id == ID_PAGEBREAK_CONTAINER) {
         _highlightsPageBreakContainer = documant.createElement("div");
@@ -2835,11 +2853,24 @@ export default class TextHighlighter {
           "pointer-events",
           "none"
         );
+        if (this.delegate.view.layout === "fixed") {
+          _highlightsPageBreakContainer.style.setProperty(
+            "position",
+            "absolute"
+          );
+          _highlightsPageBreakContainer.style.setProperty("top", "0");
+          _highlightsPageBreakContainer.style.setProperty("left", "0");
+        }
         documant.body.append(_highlightsPageBreakContainer);
       } else if (id == ID_POPUP_CONTAINER) {
         _highlightsPopupContainer = documant.createElement("div");
         _highlightsPopupContainer.setAttribute("id", id);
         _highlightsPopupContainer.style.setProperty("pointer-events", "none");
+        if (this.delegate.view.layout === "fixed") {
+          _highlightsPopupContainer.style.setProperty("position", "absolute");
+          _highlightsPopupContainer.style.setProperty("top", "0");
+          _highlightsPopupContainer.style.setProperty("left", "0");
+        }
         documant.body.append(_highlightsPopupContainer);
       }
     }

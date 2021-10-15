@@ -857,12 +857,10 @@ export async function load(config: ReaderConfig): Promise<any> {
   });
 
   // Highlighter
-  if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
-    D2Highlighter = await TextHighlighter.create({
-      delegate: D2Navigator,
-      ...config.highlighter,
-    });
-  }
+  D2Highlighter = await TextHighlighter.create({
+    delegate: D2Navigator,
+    ...config.highlighter,
+  });
 
   // Bookmark Module
   if (config.rights?.enableBookmarks) {

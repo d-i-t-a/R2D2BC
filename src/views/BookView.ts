@@ -38,7 +38,7 @@ interface BookView {
   goToElement?(element: HTMLElement | null, relative?: boolean): void;
   setSize(): void;
   setIframeHeight?(iframe: any);
-  setSize?(): void;
+  setSize(): void;
   getScreenHeight(): number;
 
   /** Load this view in its book element, at the specified position. */

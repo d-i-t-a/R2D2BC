@@ -46,9 +46,9 @@ import IFrameNavigator from "../../navigator/IFrameNavigator";
 import TTSModule from "../TTS/TTSModule";
 import TTSModule2 from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { SearchDefinition } from "../search/SearchModule";
 import * as lodash from "lodash";
 import Popup from "../search/Popup";
+import { Definition } from "../search/DefinitionsModule";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER";
@@ -2988,7 +2988,7 @@ export default class TextHighlighter {
     this.recreateAllHighlightsDebounced(win);
   }
 
-  createPopupHighlight(selectionInfo: ISelectionInfo, item: SearchDefinition) {
+  createPopupHighlight(selectionInfo: ISelectionInfo, item: Definition) {
     try {
       let createColor: any = this.delegate.definitionsModule.properties.color;
       if (TextHighlighter.isHexColor(createColor)) {

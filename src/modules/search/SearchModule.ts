@@ -33,25 +33,9 @@ import { HighlightType } from "../highlight/common/highlight";
 
 export interface SearchModuleAPI {}
 
-export interface SearchDefinitionCallbacks {
-  success?: any;
-  click?: any;
-  visible?: any;
-}
-
-export interface SearchDefinition {
-  order: number;
-  terms: [string];
-  result?: number;
-  definition?: string;
-  color?: string;
-  callbacks?: SearchDefinitionCallbacks;
-}
-
 export interface SearchModuleProperties {
-  color: string;
-  current: string;
-  definitions: SearchDefinition[];
+  color?: string;
+  current?: string;
 }
 
 export interface SearchModuleConfig extends SearchModuleProperties {
@@ -374,7 +358,7 @@ export default class SearchModule implements ReaderModule {
     this.highlighter.destroyHighlights(HighlightType.Search);
   }
 
-  async search(term: any, current: boolean): Promise<any> {
+  async search(term: string, current: boolean): Promise<any> {
     this.currentChapterSearchResult = [];
     this.currentSearchHighlights = [];
     this.bookSearchResult = [];

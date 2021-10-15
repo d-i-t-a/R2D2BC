@@ -91,8 +91,17 @@ export default class EventHandler {
         window.location.protocol === link.protocol &&
         window.location.port === link.port &&
         window.location.hostname === link.hostname;
+
+      // If epub is hosted, rather than streamed, links to a resource inside the same epub should not be opened externally.
+      const manifestUrl = this.navigator.publication.manifestUrl;
+
+      const isEpubInternal =
+        manifestUrl.protocol === link.protocol &&
+        manifestUrl.port === link.port &&
+        manifestUrl.hostname === link.hostname;
+
       const isInternal = link.href.indexOf("#");
-      if (!isSameOrigin) {
+      if (!isSameOrigin && !isEpubInternal) {
         window.open(link.href, "_blank");
         event.preventDefault();
         event.stopPropagation();

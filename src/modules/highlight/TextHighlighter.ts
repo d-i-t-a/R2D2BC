@@ -46,11 +46,15 @@ import IFrameNavigator from "../../navigator/IFrameNavigator";
 import TTSModule from "../TTS/TTSModule";
 import TTSModule2 from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import { SearchDefinition } from "../search/SearchModule";
+import * as lodash from "lodash";
+import Popup from "../search/Popup";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER";
 export const ID_PAGEBREAK_CONTAINER = "R2_ID_PAGEBREAK_CONTAINER";
 export const ID_SEARCH_CONTAINER = "R2_ID_SEARCH_CONTAINER";
+export const ID_POPUP_CONTAINER = "R2_ID_POPUP_CONTAINER";
 
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
 export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
@@ -105,6 +109,10 @@ let NODE_TYPE = {
 
 const _blacklistIdClassForCssSelectors = [
   ID_HIGHLIGHTS_CONTAINER,
+  ID_PAGEBREAK_CONTAINER,
+  ID_SEARCH_CONTAINER,
+  ID_READALOUD_CONTAINER,
+  ID_POPUP_CONTAINER,
   CLASS_HIGHLIGHT_CONTAINER,
   CLASS_HIGHLIGHT_AREA,
   CLASS_HIGHLIGHT_BOUNDING_AREA,
@@ -119,6 +127,7 @@ let _highlightsContainer: HTMLElement | null;
 let _highlightsReadAloudContainer: HTMLElement | null;
 let _highlightsPageBreakContainer: HTMLElement | null;
 let _highlightsSearchContainer: HTMLElement | null;
+let _highlightsPopupContainer: HTMLElement | null;
 
 export interface TextHighlighterProperties {
   selectionMenuItems: Array<SelectionMenuItem>;
@@ -136,7 +145,7 @@ export default class TextHighlighter {
   properties: TextHighlighterProperties;
   private api: TextSelectorAPI;
   private hasEventListener: boolean;
-  activeAnnotationMarkerId: string = undefined;
+  activeAnnotationMarkerId?: string = undefined;
 
   public static async create(config: TextHighlighterConfig): Promise<any> {
     const module = new this(
@@ -917,43 +926,43 @@ export default class TextHighlighter {
 
   toolboxShow() {
     if (this.activeAnnotationMarkerId == undefined) {
-    var self = this;
-    var toolboxAddOptions = document.getElementById(
-      "highlight-toolbox-mode-add"
-    );
-    var range = this.dom(
-      this.delegate.iframes[0].contentDocument.body
-    ).getRange();
-
-    if ((!range || range.collapsed) && toolboxAddOptions) {
-      // Only force hide for `toolboxMode('add')`
-      if (getComputedStyle(toolboxAddOptions).display !== "none") {
-        self.toolboxHide();
-      }
-      return;
-    }
-
-    // Hide the iOS Safari context menu
-    // Reference: https://stackoverflow.com/a/30046936
-    if (this.isIOS()) {
-      this.delegate.iframes[0].contentDocument.body.removeEventListener(
-        "selectionchange",
-        this.toolboxPlacement.bind(this)
+      var self = this;
+      var toolboxAddOptions = document.getElementById(
+        "highlight-toolbox-mode-add"
       );
-      setTimeout(function () {
-        var selection = self
-          .dom(self.delegate.iframes[0].contentDocument.body)
-          .getSelection();
-        selection.removeAllRanges();
-        setTimeout(function () {
-          selection.addRange(range);
-        }, 5);
-      }, 100);
-    }
+      var range = this.dom(
+        this.delegate.iframes[0].contentDocument.body
+      ).getRange();
 
-    this.toolboxPlacement();
-    this.toolboxHandler();
-  }
+      if ((!range || range.collapsed) && toolboxAddOptions) {
+        // Only force hide for `toolboxMode('add')`
+        if (getComputedStyle(toolboxAddOptions).display !== "none") {
+          self.toolboxHide();
+        }
+        return;
+      }
+
+      // Hide the iOS Safari context menu
+      // Reference: https://stackoverflow.com/a/30046936
+      if (this.isIOS()) {
+        this.delegate.iframes[0].contentDocument.body.removeEventListener(
+          "selectionchange",
+          this.toolboxPlacement.bind(this)
+        );
+        setTimeout(function () {
+          var selection = self
+            .dom(self.delegate.iframes[0].contentDocument.body)
+            .getSelection();
+          selection.removeAllRanges();
+          setTimeout(function () {
+            selection.addRange(range);
+          }, 5);
+        }, 100);
+      }
+
+      this.toolboxPlacement();
+      this.toolboxHandler();
+    }
   }
 
   isSelectionMenuOpen = false;
@@ -2011,6 +2020,12 @@ export default class TextHighlighter {
           );
         }
 
+        if (_highlightsPopupContainer && id_container == ID_POPUP_CONTAINER) {
+          highlightParent = _highlightsPopupContainer.querySelector(
+            `#${highlight.id}`
+          );
+        }
+
         let nodeList =
           highlightParent.getElementsByClassName(CLASS_HIGHLIGHT_ICON);
         if (nodeList.length > 0) {
@@ -2123,18 +2138,23 @@ export default class TextHighlighter {
           highlightArea.classList.add("hover");
         }
       }
-      let highlightParent = _highlightsContainer.querySelector(
-        `#${highlight.id}`
-      );
-      let nodeList =
-        highlightParent.getElementsByClassName(CLASS_HIGHLIGHT_ICON);
-      if (nodeList.length > 0) {
-        const tooltip = nodeList.item(0).getElementsByClassName("icon-tooltip");
-        if (tooltip.length > 0) {
-          (tooltip.item(0) as HTMLElement).style.setProperty(
-            "display",
-            "block"
-          );
+
+      if (highlight.type !== HighlightType.Popup) {
+        let highlightParent = _highlightsContainer.querySelector(
+          `#${highlight.id}`
+        );
+        let nodeList =
+          highlightParent.getElementsByClassName(CLASS_HIGHLIGHT_ICON);
+        if (nodeList.length > 0) {
+          const tooltip = nodeList
+            .item(0)
+            .getElementsByClassName("icon-tooltip");
+          if (tooltip.length > 0) {
+            (tooltip.item(0) as HTMLElement).style.setProperty(
+              "display",
+              "block"
+            );
+          }
         }
       }
     }
@@ -2261,7 +2281,8 @@ export default class TextHighlighter {
       !_highlightsContainer &&
       !_highlightsSearchContainer &&
       !_highlightsPageBreakContainer &&
-      !_highlightsReadAloudContainer
+      !_highlightsReadAloudContainer &&
+      !_highlightsPopupContainer
     ) {
       return;
     }
@@ -2362,6 +2383,17 @@ export default class TextHighlighter {
           );
         }
       }
+      if (_highlightsPopupContainer) {
+        const highlightBoundings5 = _highlightsPopupContainer.querySelectorAll(
+          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
+        );
+        for (const highlightBounding of highlightBoundings5) {
+          this.resetHighlightBoundingStyle(
+            win,
+            highlightBounding as HTMLElement
+          );
+        }
+      }
 
       if (_highlightsContainer) {
         const allHighlightAreas = Array.from(
@@ -2417,6 +2449,18 @@ export default class TextHighlighter {
           );
         }
       }
+      if (_highlightsPopupContainer) {
+        const allHighlightAreas5 = Array.from(
+          _highlightsPopupContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
+        );
+        for (const highlightArea of allHighlightAreas5) {
+          this.resetHighlightAreaStyle(
+            win,
+            highlightArea as HTMLElement,
+            ID_POPUP_CONTAINER
+          );
+        }
+      }
 
       return;
     }
@@ -2440,6 +2484,9 @@ export default class TextHighlighter {
           _highlightsPageBreakContainer.querySelectorAll(
             `.${CLASS_HIGHLIGHT_AREA}`
           );
+        const allHighlightAreas5 = _highlightsPopupContainer.querySelectorAll(
+          `.${CLASS_HIGHLIGHT_AREA}`
+        );
 
         for (const highlightArea of allHighlightAreas) {
           if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
@@ -2477,6 +2524,15 @@ export default class TextHighlighter {
             );
           }
         }
+        for (const highlightArea of allHighlightAreas5) {
+          if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
+            this.resetHighlightAreaStyle(
+              win,
+              highlightArea as HTMLElement,
+              ID_POPUP_CONTAINER
+            );
+          }
+        }
 
         this.setHighlightAreaStyle(
           win,
@@ -2500,6 +2556,10 @@ export default class TextHighlighter {
           );
         const allHighlightBoundings4 =
           _highlightsPageBreakContainer.querySelectorAll(
+            `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
+          );
+        const allHighlightBoundings5 =
+          _highlightsPopupContainer.querySelectorAll(
             `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
           );
 
@@ -2547,6 +2607,17 @@ export default class TextHighlighter {
             );
           }
         }
+        for (const highlightBounding of allHighlightBoundings5) {
+          if (
+            !foundElementHighlightBounding ||
+            highlightBounding !== foundElementHighlightBounding
+          ) {
+            this.resetHighlightBoundingStyle(
+              win,
+              highlightBounding as HTMLElement
+            );
+          }
+        }
       } else if (
         ev.type === "mouseup" ||
         ev.type === "click" ||
@@ -2570,111 +2641,128 @@ export default class TextHighlighter {
           )) as Annotation;
         }
 
-        this.delegate.annotationModule.api
+        this.delegate.annotationModule?.api
           ?.selectedAnnotation(anno)
           .then(async () => {});
 
-        if (IS_DEV) {
-          console.log("selected highlight " + anno.id);
-        }
-        self.lastSelectedHighlight = anno.id;
-
-        var toolbox = document.getElementById("highlight-toolbox");
-
-        toolbox.style.top =
-          ev.clientY + (this.delegate.attributes?.navHeight ?? 0) + "px";
-        toolbox.style.left = ev.clientX + "px";
-
-        if (getComputedStyle(toolbox).display === "none") {
-          toolbox.style.display = "block";
-
-          this.toolboxMode("edit");
-
-          var colorIcon = document.getElementById("colorIcon");
-          var highlightIcon = document.getElementById("highlightIcon");
-
-          if (colorIcon) {
-            colorIcon.style.display = "none";
+        if (anno?.id) {
+          if (IS_DEV) {
+            console.log("selected highlight " + anno.id);
           }
-          highlightIcon.style.display = "none";
+          self.lastSelectedHighlight = anno.id;
 
-          function noteH() {
-            let note = prompt("Add your note here:");
-            anno.highlight.note = note;
-            self.delegate.annotationModule
-              .updateAnnotation(anno)
-              .then(async () => {
-                if (IS_DEV) {
-                  console.log("update highlight " + anno.id);
-                }
-                toolbox.style.display = "none";
-                self.selectionMenuClosed();
-              });
+          var toolbox = document.getElementById("highlight-toolbox");
 
-            toolbox.style.display = "none";
-            self.selectionMenuClosed();
-            commentIcon.removeEventListener("click", noteH, false);
-          }
-          let commentIcon = document.getElementById("commentIcon");
-          let cloneCommentIcon = document.getElementById("cloneCommentIcon");
-          if (cloneCommentIcon) {
-            let parent = cloneCommentIcon.parentElement;
-            parent.removeChild(cloneCommentIcon);
-          }
-          if (commentIcon) {
-            commentIcon.style.display = "none";
-            let clone = commentIcon.cloneNode(true) as HTMLButtonElement;
-            let parent = commentIcon.parentElement;
-            clone.style.display = "unset";
-            clone.id = "cloneCommentIcon";
-            clone.addEventListener("click", noteH, false);
-            parent.append(clone);
-          }
+          toolbox.style.top =
+            ev.clientY + (this.delegate.attributes?.navHeight ?? 0) + "px";
+          toolbox.style.left = ev.clientX + "px";
 
-          function deleteH() {
-            if (self.delegate.rights?.enableAnnotations) {
-              self.delegate.annotationModule
-                .deleteSelectedHighlight(anno)
-                .then(async () => {
-                  if (IS_DEV) {
-                    console.log("delete highlight " + anno.id);
-                  }
-                  toolbox.style.display = "none";
-                  self.selectionMenuClosed();
-                });
-            } else if (self.delegate.rights?.enableBookmarks) {
-              self.delegate.bookmarkModule
-                .deleteSelectedHighlight(anno)
-                .then(async () => {
-                  if (IS_DEV) {
-                    console.log("delete highlight " + anno.id);
-                  }
-                  toolbox.style.display = "none";
-                  self.selectionMenuClosed();
-                });
+          if (getComputedStyle(toolbox).display === "none") {
+            toolbox.style.display = "block";
+
+            this.toolboxMode("edit");
+
+            var colorIcon = document.getElementById("colorIcon");
+            var highlightIcon = document.getElementById("highlightIcon");
+
+            if (colorIcon) {
+              colorIcon.style.display = "none";
             }
-          }
+            highlightIcon.style.display = "none";
 
-          let deleteIcon = document.getElementById("deleteIcon");
-          let cloneDeleteIcon = document.getElementById("cloneDeleteIcon");
-          if (cloneDeleteIcon) {
-            let parent = cloneDeleteIcon.parentElement;
-            parent.removeChild(cloneDeleteIcon);
-          }
-          if (deleteIcon) {
-            deleteIcon.style.display = "none";
-            let clone = deleteIcon.cloneNode(true) as HTMLButtonElement;
-            let parent = deleteIcon.parentElement;
-            clone.style.display = "unset";
-            clone.id = "cloneDeleteIcon";
-            clone.addEventListener("click", deleteH, false);
-            parent.append(clone);
+            function noteH() {
+              let note = prompt("Add your note here:");
+              anno.highlight.note = note;
+              self.delegate.annotationModule
+                .updateAnnotation(anno)
+                .then(async () => {
+                  if (IS_DEV) {
+                    console.log("update highlight " + anno.id);
+                  }
+                  toolbox.style.display = "none";
+                  self.selectionMenuClosed();
+                });
+
+              toolbox.style.display = "none";
+              self.selectionMenuClosed();
+              commentIcon.removeEventListener("click", noteH, false);
+            }
+            let commentIcon = document.getElementById("commentIcon");
+            let cloneCommentIcon = document.getElementById("cloneCommentIcon");
+            if (cloneCommentIcon) {
+              let parent = cloneCommentIcon.parentElement;
+              parent.removeChild(cloneCommentIcon);
+            }
+            if (commentIcon) {
+              commentIcon.style.display = "none";
+              let clone = commentIcon.cloneNode(true) as HTMLButtonElement;
+              let parent = commentIcon.parentElement;
+              clone.style.display = "unset";
+              clone.id = "cloneCommentIcon";
+              clone.addEventListener("click", noteH, false);
+              parent.append(clone);
+            }
+
+            function deleteH() {
+              if (self.delegate.rights?.enableAnnotations) {
+                self.delegate.annotationModule
+                  .deleteSelectedHighlight(anno)
+                  .then(async () => {
+                    if (IS_DEV) {
+                      console.log("delete highlight " + anno.id);
+                    }
+                    toolbox.style.display = "none";
+                    self.selectionMenuClosed();
+                  });
+              } else if (self.delegate.rights?.enableBookmarks) {
+                self.delegate.bookmarkModule
+                  .deleteSelectedHighlight(anno)
+                  .then(async () => {
+                    if (IS_DEV) {
+                      console.log("delete highlight " + anno.id);
+                    }
+                    toolbox.style.display = "none";
+                    self.selectionMenuClosed();
+                  });
+              }
+            }
+
+            let deleteIcon = document.getElementById("deleteIcon");
+            let cloneDeleteIcon = document.getElementById("cloneDeleteIcon");
+            if (cloneDeleteIcon) {
+              let parent = cloneDeleteIcon.parentElement;
+              parent.removeChild(cloneDeleteIcon);
+            }
+            if (deleteIcon) {
+              deleteIcon.style.display = "none";
+              let clone = deleteIcon.cloneNode(true) as HTMLButtonElement;
+              let parent = deleteIcon.parentElement;
+              clone.style.display = "unset";
+              clone.id = "cloneDeleteIcon";
+              clone.addEventListener("click", deleteH, false);
+              parent.append(clone);
+            }
+          } else {
+            toolbox.style.display = "none";
+            this.selectionMenuClosed();
+            void toolbox.offsetWidth;
+            toolbox.style.display = "block";
           }
         } else {
-          toolbox.style.display = "none";
-          this.selectionMenuClosed();
-          void toolbox.offsetWidth;
-          toolbox.style.display = "block";
+          if (foundElement.dataset.definition) {
+            const popup = new Popup(this.delegate);
+            popup.showPopup(foundElement.dataset.definition, ev);
+          }
+          let result =
+            this.delegate.definitionsModule?.properties?.definitions.filter(
+              (el: any) => el.order === Number(foundElement.dataset.order)
+            )[0];
+          if (this.delegate.definitionsModule.api?.click) {
+            this.delegate.definitionsModule.api?.click(
+              lodash.omit(result, "callbacks"),
+              lodash.omit(foundHighlight, "definition")
+            );
+          }
         }
       }
     }
@@ -2690,7 +2778,8 @@ export default class TextHighlighter {
       (!_highlightsContainer && id == ID_HIGHLIGHTS_CONTAINER) ||
       (!_highlightsSearchContainer && id == ID_SEARCH_CONTAINER) ||
       (!_highlightsReadAloudContainer && id == ID_READALOUD_CONTAINER) ||
-      (!_highlightsPageBreakContainer && id == ID_PAGEBREAK_CONTAINER)
+      (!_highlightsPageBreakContainer && id == ID_PAGEBREAK_CONTAINER) ||
+      (!_highlightsPopupContainer && id == ID_POPUP_CONTAINER)
     ) {
       if (!bodyEventListenersSet) {
         bodyEventListenersSet = true;
@@ -2725,11 +2814,21 @@ export default class TextHighlighter {
         _highlightsContainer = documant.createElement("div");
         _highlightsContainer.setAttribute("id", id);
         _highlightsContainer.style.setProperty("pointer-events", "none");
+        if (this.delegate.view.layout === "fixed") {
+          _highlightsContainer.style.setProperty("position", "absolute");
+          _highlightsContainer.style.setProperty("top", "0");
+          _highlightsContainer.style.setProperty("left", "0");
+        }
         documant.body.append(_highlightsContainer);
       } else if (id == ID_SEARCH_CONTAINER) {
         _highlightsSearchContainer = documant.createElement("div");
         _highlightsSearchContainer.setAttribute("id", id);
         _highlightsSearchContainer.style.setProperty("pointer-events", "none");
+        if (this.delegate.view.layout === "fixed") {
+          _highlightsSearchContainer.style.setProperty("position", "absolute");
+          _highlightsSearchContainer.style.setProperty("top", "0");
+          _highlightsSearchContainer.style.setProperty("left", "0");
+        }
         documant.body.append(_highlightsSearchContainer);
       } else if (id == ID_READALOUD_CONTAINER) {
         _highlightsReadAloudContainer = documant.createElement("div");
@@ -2738,6 +2837,14 @@ export default class TextHighlighter {
           "pointer-events",
           "none"
         );
+        if (this.delegate.view.layout === "fixed") {
+          _highlightsReadAloudContainer.style.setProperty(
+            "position",
+            "absolute"
+          );
+          _highlightsReadAloudContainer.style.setProperty("top", "0");
+          _highlightsReadAloudContainer.style.setProperty("left", "0");
+        }
         documant.body.append(_highlightsReadAloudContainer);
       } else if (id == ID_PAGEBREAK_CONTAINER) {
         _highlightsPageBreakContainer = documant.createElement("div");
@@ -2746,7 +2853,25 @@ export default class TextHighlighter {
           "pointer-events",
           "none"
         );
+        if (this.delegate.view.layout === "fixed") {
+          _highlightsPageBreakContainer.style.setProperty(
+            "position",
+            "absolute"
+          );
+          _highlightsPageBreakContainer.style.setProperty("top", "0");
+          _highlightsPageBreakContainer.style.setProperty("left", "0");
+        }
         documant.body.append(_highlightsPageBreakContainer);
+      } else if (id == ID_POPUP_CONTAINER) {
+        _highlightsPopupContainer = documant.createElement("div");
+        _highlightsPopupContainer.setAttribute("id", id);
+        _highlightsPopupContainer.style.setProperty("pointer-events", "none");
+        if (this.delegate.view.layout === "fixed") {
+          _highlightsPopupContainer.style.setProperty("position", "absolute");
+          _highlightsPopupContainer.style.setProperty("top", "0");
+          _highlightsPopupContainer.style.setProperty("left", "0");
+        }
+        documant.body.append(_highlightsPopupContainer);
       }
     }
     if (id == ID_HIGHLIGHTS_CONTAINER) {
@@ -2757,6 +2882,8 @@ export default class TextHighlighter {
       return _highlightsReadAloudContainer;
     } else if (id == ID_PAGEBREAK_CONTAINER) {
       return _highlightsPageBreakContainer;
+    } else if (id == ID_POPUP_CONTAINER) {
+      return _highlightsPopupContainer;
     }
     return _highlightsContainer;
   }
@@ -2777,6 +2904,10 @@ export default class TextHighlighter {
     if (_highlightsPageBreakContainer) {
       _highlightsPageBreakContainer.remove();
       _highlightsPageBreakContainer = null;
+    }
+    if (_highlightsPopupContainer) {
+      _highlightsPopupContainer.remove();
+      _highlightsPopupContainer = null;
     }
   }
 
@@ -2803,6 +2934,12 @@ export default class TextHighlighter {
         if (_highlightsPageBreakContainer) {
           _highlightsPageBreakContainer.remove();
           _highlightsPageBreakContainer = null;
+        }
+        break;
+      case HighlightType.Popup:
+        if (_highlightsPopupContainer) {
+          _highlightsPopupContainer.remove();
+          _highlightsPopupContainer = null;
         }
         break;
       default:
@@ -2845,6 +2982,50 @@ export default class TextHighlighter {
   recreateAllHighlights(win: IReadiumIFrameWindow) {
     this.hideAllhighlights(win.document);
     this.recreateAllHighlightsDebounced(win);
+  }
+
+  createPopupHighlight(selectionInfo: ISelectionInfo, item: SearchDefinition) {
+    try {
+      let createColor: any = this.delegate.definitionsModule.properties.color;
+      if (TextHighlighter.isHexColor(createColor)) {
+        createColor = TextHighlighter.hexToRgbChannels(createColor);
+      }
+
+      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
+      const sha256Hex = SHA256.hash(uniqueStr);
+      const id = "R2_POPUP_" + sha256Hex;
+
+      this.destroyHighlight(this.delegate.iframes[0].contentDocument, id);
+      const highlight: IHighlight = {
+        color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
+        id,
+        pointerInteraction: true,
+        selectionInfo,
+        marker: AnnotationMarker.Underline,
+        type: HighlightType.Popup,
+      };
+      _highlights.push(highlight);
+
+      let highlightDom = this.createHighlightDom(
+        this.delegate.iframes[0].contentWindow as any,
+        highlight
+      );
+      if (item.definition) {
+        highlightDom.dataset.definition = item.definition;
+      }
+      highlightDom.dataset.order = String(item.order);
+      highlight.definition = item;
+      highlight.position = parseInt(
+        (
+          (highlightDom.hasChildNodes
+            ? highlightDom.childNodes[0]
+            : highlightDom) as HTMLDivElement
+        ).style.top.replace("px", "")
+      );
+      return highlight;
+    } catch (e) {
+      throw "Can't create popup highlight: " + e;
+    }
   }
 
   createSearchHighlight(selectionInfo: ISelectionInfo, color: string) {
@@ -2958,7 +3139,11 @@ export default class TextHighlighter {
         style: style,
         type: type ? type : HighlightType.Annotation,
       };
-      if (type == HighlightType.Annotation || type == undefined) {
+      if (
+        type == HighlightType.Annotation ||
+        type == HighlightType.Popup ||
+        type == undefined
+      ) {
         _highlights.push(highlight);
       }
 
@@ -2991,7 +3176,7 @@ export default class TextHighlighter {
       win,
       ID_HIGHLIGHTS_CONTAINER
     );
-    const highlightsReadaloudContainer = this.ensureHighlightsContainer(
+    const highlightsReadAloudContainer = this.ensureHighlightsContainer(
       win,
       ID_READALOUD_CONTAINER
     );
@@ -3002,6 +3187,10 @@ export default class TextHighlighter {
     const highlightsSearchContainer = this.ensureHighlightsContainer(
       win,
       ID_SEARCH_CONTAINER
+    );
+    const highlightsPopupContainer = this.ensureHighlightsContainer(
+      win,
+      ID_POPUP_CONTAINER
     );
 
     const highlightParent = documant.createElement(
@@ -3583,10 +3772,13 @@ export default class TextHighlighter {
         highlightsSearchContainer.append(highlightParent);
         break;
       case HighlightType.ReadAloud:
-        highlightsReadaloudContainer.append(highlightParent);
+        highlightsReadAloudContainer.append(highlightParent);
         break;
       case HighlightType.PageBreak:
         highlightsPageBreakContainer.append(highlightParent);
+        break;
+      case HighlightType.Popup:
+        highlightsPopupContainer.append(highlightParent);
         break;
       default:
         highlightsContainer.append(highlightParent);

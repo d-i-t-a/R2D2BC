@@ -52,6 +52,8 @@
                     <div class="nav-wrapper"><span class="brand-logo  hide-on-med-and-down " id="book-title"></span>
                         <ul id="nav-mobile-right" class="right">
                             <li style="display:none"><a data-target="container-view-note-input" class="dropdown-trigger " id="menu-button-note"><i class="material-icons">speaker_notes</i></a></li>
+                            <li><a class="saveBookmark" id="menu-button-stamp-activate"  onclick="D2Reader.activateMarker('bookmarkIcon', 'center')"><i class="material-icons">approval</i></a></li>
+                            <li><a class="saveBookmark" id="menu-button-stamp-deactivate"  onclick="D2Reader.deactivateMarker()"><i class="material-icons">approval</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark-range"  onclick="D2Reader.saveBookmarkPlus()"><i class="material-icons">bookmark_border</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
                             <li><a id="menu-button-play" onclick="D2Reader.startReadAlong()"><i class="material-icons">play_arrow</i></a></li>
@@ -556,9 +558,11 @@ height: 50px;
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
+            { type: 'style', url: '/viewer/injectables/style/popup.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
         let injectablesFixed = [
+            { type: 'style', url: '/viewer/injectables/style/popup.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
         let userSettings = {
@@ -588,7 +592,7 @@ height: 50px;
                     svgPath: `<path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z\"/>`,
                     color: `#fc0303`,
                     // class: "red",
-                    position: "inline",
+                    position: "center",// inline , center , right , left
                 },
                 popup: {
                     class: "red"
@@ -788,6 +792,7 @@ height: 50px;
                 enableTTS: true,
                 enableSearch: true,
                 enableTimeline: true,
+                enableDefinitions: true,
                 enableContentProtection: false,
                 enableMediaOverlays: true,
                 autoGeneratePositions: true,
@@ -869,6 +874,55 @@ height: 50px;
 
                 }
             },
+            define: {
+                color: "#40E0D0",
+                api: {
+                    click: function (item, element) {
+                        console.log("click");
+                        console.log(item);
+                        console.log(element);
+                    },
+                    success: function (item, elements) {
+                        console.log("success");
+                        console.log(item);
+                        console.log(elements);
+                    },
+                    visible: function (item, element) {
+                        console.log("visible");
+                        console.log(item);
+                        console.log(element);
+                    },
+                },
+                definitions: [
+                    {
+                        order: 0,
+                        result: 1, // 1 = first, 2 = random, 0 = all
+                        terms: ["lavender", "lavandula"],
+                        definition: "Lavandula (common name lavender) is a genus of 47 known species of flowering plants in the mint family, Lamiaceae.",
+                    },
+                    {
+                        order: 1,
+                        result: 0, // 1 = first, 2 = random, 0 = all
+                        terms: ["Belle"],
+                        definition: "But over time, Belle became friends\n" +
+                            "with the staff. Then she and the Beast fell\n" +
+                            "in love. The whole household became a\n" +
+                            "family.",
+                    },
+                    {
+                        order: 2,
+                        result: 0,
+                        terms: ["Dahlia"],
+                        definition: "Giant hyssop was rarely included, despite being hugely attractive to bees.",
+                    },
+                    {
+                        order: 3,
+                        result: 0, // 1 = first, 2 = random, 0 = all
+                        terms: ["allium"],
+                        definition: "a bulbous plant of a genus that includes the onion and its relatives (e.g. garlic, leek, and chives).",
+                    }
+                ],
+            },
             highlighter: {
                 selectionMenuItems: selectionMenuItems,
                 api: {
@@ -881,7 +935,7 @@ height: 50px;
                 }
             },
             annotations: {
-                initialAnnotationColor: "var(--RS__highlightColor)",
+                // initialAnnotationColor: "var(--RS__highlightColor)",
                 // initialAnnotationColor: "#ff8500",
                 api: {
                     addAnnotation: function (highlight) {

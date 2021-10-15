@@ -18,6 +18,8 @@
  */
 
 import { IS_DEV } from "..";
+import IFrameNavigator from "../navigator/IFrameNavigator";
+import Popup from "../modules/search/Popup";
 
 export function addEventListenerOptional(
   element: any,
@@ -39,6 +41,13 @@ export function removeEventListenerOptional(
 }
 
 export default class EventHandler {
+  navigator: IFrameNavigator;
+  popup: Popup;
+  constructor(navigator: IFrameNavigator) {
+    this.navigator = navigator;
+    this.popup = new Popup(this.navigator);
+  }
+
   public onInternalLink: (event: UIEvent) => void = () => {};
   public onClickThrough: (event: UIEvent) => void = () => {};
 
@@ -70,7 +79,9 @@ export default class EventHandler {
     return null;
   };
 
-  private handleLinks = (event: MouseEvent | TouchEvent): void => {
+  private handleLinks = async (
+    event: MouseEvent | TouchEvent
+  ): Promise<void> => {
     if (IS_DEV) console.log("R2 Click Handler");
 
     const link = this.checkForLink(event);
@@ -80,15 +91,34 @@ export default class EventHandler {
         window.location.protocol === link.protocol &&
         window.location.port === link.port &&
         window.location.hostname === link.hostname;
+
+      // If epub is hosted, rather than streamed, links to a resource inside the same epub should not be opened externally.
+      const manifestUrl = this.navigator.publication.manifestUrl;
+
+      const isEpubInternal =
+        manifestUrl.protocol === link.protocol &&
+        manifestUrl.port === link.port &&
+        manifestUrl.hostname === link.hostname;
+
       const isInternal = link.href.indexOf("#");
-      if (!isSameOrigin) {
+      if (!isSameOrigin && !isEpubInternal) {
         window.open(link.href, "_blank");
         event.preventDefault();
         event.stopPropagation();
       } else {
         (event.target as HTMLAnchorElement).href = link.href;
         if (isSameOrigin && isInternal !== -1) {
-          this.onInternalLink(event);
+          const link = event.target as HTMLLIElement;
+          if (link) {
+            const attribute = link.getAttribute("epub:type") === "noteref";
+            if (attribute) {
+              await this.popup.handleFootnote(link, event);
+            } else {
+              this.onInternalLink(event);
+            }
+          } else {
+            this.onInternalLink(event);
+          }
         } else if (isSameOrigin && isInternal === -1) {
           // TODO needs some more refactoring when handling other types of links or elements
           // link.click();

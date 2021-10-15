@@ -17,16 +17,16 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { Publication } from "../../model/Publication";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import ReaderModule from "../ReaderModule";
-import { IS_DEV } from "../..";
 import TextHighlighter, {
   CLASS_HIGHLIGHT_AREA,
 } from "../highlight/TextHighlighter";
 import * as lodash from "lodash";
 import { searchDocDomSeek } from "./searchWithDomSeek";
 import { HighlightType } from "../highlight/common/highlight";
+import Publication from "../../model/Publication";
+import { IS_DEV } from "../../utils";
 
 export interface DefinitionsModuleAPI {
   success?: any;
@@ -180,10 +180,9 @@ export default class DefinitionsModule implements ReaderModule {
         if (this.api?.visible) {
           result.forEach((highlight) => {
             console.log(this.delegate.iframes[0].contentDocument);
-            let highlightParent =
-              this.delegate.iframes[0].contentDocument.querySelector(
-                `#${highlight.id}`
-              );
+            let highlightParent = this.delegate.iframes[0].contentDocument.querySelector(
+              `#${highlight.id}`
+            );
             const highlightFragments = highlightParent.querySelectorAll(
               `.${CLASS_HIGHLIGHT_AREA}`
             );

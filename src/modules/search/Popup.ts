@@ -17,8 +17,8 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import * as sanitize from "sanitize-html";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
+import sanitize from "sanitize-html";
 
 export default class Popup {
   navigator: IFrameNavigator;
@@ -58,8 +58,9 @@ export default class Popup {
   }
 
   showPopup(element: any, event: MouseEvent | TouchEvent) {
-    let footnote =
-      this.navigator.iframes[0].contentDocument.getElementById("d2-popup");
+    let footnote = this.navigator.iframes[0].contentDocument.getElementById(
+      "d2-popup"
+    );
     if (footnote) {
       footnote.parentElement.removeChild(footnote);
     }

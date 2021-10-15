@@ -50,6 +50,7 @@ import PageBreakModule from "./modules/pagebreak/PageBreakModule";
 import TTSModule from "./modules/TTS/TTSModule";
 import TTSModule2 from "./modules/TTS/TTSModule2";
 import ReaderModule from "./modules/ReaderModule";
+import DefinitionsModule from "./modules/search/DefinitionsModule";
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -72,6 +73,7 @@ export default class D2Reader {
     readonly annotationModule?: AnnotationModule,
     readonly ttsModule?: ReaderModule,
     readonly searchModule?: SearchModule,
+    readonly definitionsModule?: DefinitionsModule,
     readonly contentProtectionModule?: ContentProtectionModule,
     readonly timelineModule?: TimelineModule,
     readonly mediaOverlaySettings?: MediaOverlaySettings,
@@ -180,7 +182,7 @@ export default class D2Reader {
     });
 
     // Highlighter
-    const highligherEnabled = publication.isReflowable;
+    const highligherEnabled = true; //publication.isReflowable;
     const highlighter = highligherEnabled
       ? await TextHighlighter.create({
           delegate: navigator,
@@ -258,6 +260,15 @@ export default class D2Reader {
         })
       : undefined;
 
+    const definitionsModule = config.rights?.enableDefinitions
+      ? await DefinitionsModule.create({
+          delegate: navigator,
+          publication: publication,
+          highlighter: highlighter,
+          ...config.define,
+        })
+      : undefined;
+
     // Timeline Module
     const timelineModule = config.rights?.enableTimeline
       ? await TimelineModule.create({
@@ -311,6 +322,7 @@ export default class D2Reader {
       annotationModule,
       ttsModule,
       searchModule,
+      definitionsModule,
       contentProtectionModule,
       timelineModule,
       mediaOverlaySettings,
@@ -382,8 +394,8 @@ export default class D2Reader {
   showAnnotationLayer = () => {
     return this.annotationModule?.showAnnotationLayer();
   };
-  activateMarker = (id) => {
-    return this.navigator?.activateMarker(id);
+  activateMarker = (id, position) => {
+    return this.navigator?.activateMarker(id, position);
   };
   deactivateMarker = () => {
     return this.navigator?.deactivateMarker();
@@ -640,6 +652,7 @@ export default class D2Reader {
     this.bookmarkModule?.stop();
     this.annotationModule?.stop();
     this.searchModule?.stop();
+    this.definitionsModule?.stop();
     this.contentProtectionModule?.stop();
     this.timelineModule?.stop();
     this.mediaOverlaySettings?.stop();

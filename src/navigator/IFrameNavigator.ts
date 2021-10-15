@@ -77,6 +77,9 @@ import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
 import { HighlightType } from "../modules/highlight/common/highlight";
 import TTSModule2 from "../modules/TTS/TTSModule2";
 import PageBreakModule from "../modules/pagebreak/PageBreakModule";
+import DefinitionsModule, {
+  DefinitionsModuleConfig,
+} from "../modules/search/DefinitionsModule";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -149,6 +152,7 @@ export interface ReaderRights {
   enableAnnotations?: boolean;
   enableTTS?: boolean;
   enableSearch?: boolean;
+  enableDefinitions?: boolean;
   enableContentProtection?: boolean;
   enableMaterial?: boolean;
   enableTimeline?: boolean;
@@ -170,6 +174,7 @@ export interface ReaderConfig {
   api?: NavigatorAPI;
   tts?: TTSModuleConfig;
   search?: SearchModuleConfig;
+  define?: DefinitionsModuleConfig;
   protection?: ContentProtectionModuleConfig;
   mediaOverlays?: MediaOverlayModuleConfig;
   annotations?: AnnotationModuleConfig;
@@ -196,6 +201,7 @@ export default class IFrameNavigator implements Navigator {
   annotationModule?: AnnotationModule;
   ttsModule?: ReaderModule;
   searchModule?: SearchModule;
+  definitionsModule?: DefinitionsModule;
   contentProtectionModule?: ContentProtectionModule;
   highlighter?: TextHighlighter;
   timelineModule?: TimelineModule;
@@ -1143,6 +1149,14 @@ export default class IFrameNavigator implements Navigator {
           await this.highlighter.destroyHighlights(HighlightType.Search);
           this.searchModule.drawSearch();
         }
+        if (
+          this.rights?.enableDefinitions &&
+          this.definitionsModule !== undefined &&
+          this.highlighter !== undefined
+        ) {
+          await this.highlighter.destroyHighlights(HighlightType.Popup);
+          this.definitionsModule.drawDefinitions();
+        }
       }, 200);
     }
   }
@@ -1557,9 +1571,14 @@ export default class IFrameNavigator implements Navigator {
         }
         this.view?.setSize();
         await this.updatePositionInfo();
+        await this.view.setSize();
       }, 200);
 
-      return Promise.resolve();
+      if (this.definitionsModule !== undefined) {
+        await this.definitionsModule.definitions();
+      }
+
+      return new Promise<void>((resolve) => resolve());
     } catch (err) {
       console.error(err);
       this.abortOnError();
@@ -2686,17 +2705,17 @@ export default class IFrameNavigator implements Navigator {
       if (this.bookmarkModule !== undefined) {
         await this.bookmarkModule.handleResize();
       }
-      if (this.rights?.enableSearch) {
+      if (this.searchModule !== undefined) {
         await this.searchModule.handleResize();
+      }
+      if (this.definitionsModule !== undefined) {
+        await this.definitionsModule.handleResize();
       }
       if (this.pageBreakModule !== undefined) {
         await this.pageBreakModule.handleResize();
       }
-
-      if (this.rights?.enableContentProtection) {
-        if (this.contentProtectionModule !== undefined) {
-          this.contentProtectionModule.handleResize();
-        }
+      if (this.contentProtectionModule !== undefined) {
+        this.contentProtectionModule.handleResize();
       }
     }, 150);
   }
@@ -3074,6 +3093,14 @@ export default class IFrameNavigator implements Navigator {
           await this.highlighter.destroyHighlights(HighlightType.Search);
           this.searchModule.drawSearch();
         }
+        if (
+          this.rights?.enableDefinitions &&
+          this.definitionsModule !== undefined &&
+          this.highlighter !== undefined
+        ) {
+          await this.highlighter.destroyHighlights(HighlightType.Popup);
+          this.definitionsModule.drawDefinitions();
+        }
 
         if (this.view.layout === "fixed") {
           if (this.nextChapterBottomAnchorElement)
@@ -3300,13 +3327,19 @@ export default class IFrameNavigator implements Navigator {
     return jsLink;
   }
 
-  activateMarker(id) {
-    this.annotationModule.activeAnnotationMarkerId = id;
-    this.highlighter.activeAnnotationMarkerId = id;
+  activateMarker(id, position) {
+    if (this.annotationModule !== undefined) {
+      this.annotationModule.activeAnnotationMarkerId = id;
+      this.annotationModule.activeAnnotationMarkerPosition = position;
+      this.highlighter.activeAnnotationMarkerId = id;
+    }
   }
 
   deactivateMarker() {
-    this.annotationModule.activeAnnotationMarkerId = undefined;
-    this.highlighter.activeAnnotationMarkerId = undefined;
+    if (this.annotationModule !== undefined) {
+      this.annotationModule.activeAnnotationMarkerId = undefined;
+      this.annotationModule.activeAnnotationMarkerPosition = undefined;
+      this.highlighter.activeAnnotationMarkerId = undefined;
+    }
   }
 }

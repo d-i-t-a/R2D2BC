@@ -19,6 +19,7 @@
 
 import { ISelectionInfo } from "./selection";
 import { AnnotationMarker } from "../../../model/Locator";
+import { SearchDefinition } from "../../search/SearchModule";
 
 export interface IColor {
   red: number;
@@ -64,6 +65,7 @@ export enum HighlightType {
   Search = 1,
   ReadAloud = 2,
   PageBreak = 3,
+  Popup = 4,
 }
 
 export interface IHighlight {
@@ -80,6 +82,7 @@ export interface IHighlight {
 
   position?: number;
   note?: string | undefined;
+  definition?: SearchDefinition | undefined;
 
   type: HighlightType;
 }

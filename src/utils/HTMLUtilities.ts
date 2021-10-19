@@ -34,7 +34,7 @@ export function findRequiredElement(
 ): HTMLElement {
   const element = findElement(parentElement, selector);
   if (!element) {
-    throw "required element " + selector + " not found";
+    throw new Error("required element " + selector + " not found");
   } else {
     return element;
   }
@@ -47,7 +47,7 @@ export function findIframeElement(
   selector: string
 ): Element | null {
   if (parentElement === null) {
-    throw "parent element is null";
+    throw new Error("parent element is null");
   } else {
     return parentElement.querySelector(selector);
   }
@@ -61,7 +61,7 @@ export function findRequiredIframeElement(
 ): Element {
   const element = findIframeElement(parentElement, selector);
   if (!element) {
-    throw "required element " + selector + " not found in iframe";
+    throw new Error("required element " + selector + " not found in iframe");
   } else {
     return element;
   }

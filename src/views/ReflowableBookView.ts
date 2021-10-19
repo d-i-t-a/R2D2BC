@@ -452,16 +452,18 @@ export default class ReflowableBookView implements BookView {
   setIframeHeight(iframe: any) {
     let d = debounce((iframe: any) => {
       if (iframe) {
-        let iframeWin =
-          iframe.contentWindow || iframe.contentDocument.parentWindow;
-        if (iframeWin.document.body) {
-          const minHeight =
-            BrowserUtilities.getHeight() - this.attributes.margin;
-          const bodyHeight =
-            iframeWin.document.documentElement.scrollHeight ||
-            iframeWin.document.body.scrollHeight;
-          iframe.height = Math.max(minHeight, bodyHeight);
-        }
+        let body = iframe.contentWindow.document.body,
+          html = iframe.contentWindow.document.documentElement;
+
+        let height = Math.max(
+          body.scrollHeight,
+          body.offsetHeight,
+          html.clientHeight,
+          html.scrollHeight,
+          html.offsetHeight
+        );
+        const minHeight = BrowserUtilities.getHeight() - this.attributes.margin;
+        iframe.height = Math.max(minHeight, height) + "px";
       }
     }, 200);
     d(iframe);
@@ -490,10 +492,8 @@ export default class ReflowableBookView implements BookView {
         this.height + "px";
       this.iframe.height = this.height + "px";
     } else {
-      let body = this.iframe.contentWindow.document.body;
-      if (body) {
-        this.iframe.height = parseInt(getComputedStyle(body).height) + "px";
-      }
+      let html = this.iframe.contentWindow.document.documentElement;
+      this.iframe.height = html.offsetHeight + "px";
     }
   }
 

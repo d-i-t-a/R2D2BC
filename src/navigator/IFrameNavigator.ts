@@ -1593,9 +1593,18 @@ export default class IFrameNavigator implements Navigator {
     const addLoadingInjectable = (
       injectable: HTMLLinkElement | HTMLScriptElement
     ) => {
-      const loadPromise = new Promise<boolean>((resolve) => {
+      const loadPromise = new Promise<boolean>((resolve, reject) => {
         injectable.onload = () => {
           resolve(true);
+        };
+        injectable.onerror = (e) => {
+          const message =
+            typeof e === "string"
+              ? e
+              : `Injectable failed to load at: ${
+                  "href" in injectable ? injectable.href : injectable.src
+                }`;
+          reject(new Error(message));
         };
       });
       injectablesToLoad.push(loadPromise);

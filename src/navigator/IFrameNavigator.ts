@@ -93,6 +93,7 @@ export interface NavigatorAPI {
   resourceAtEnd: any;
   resourceFitsScreen: any;
   updateCurrentLocation: any;
+  onError?: (e: Error) => void;
 }
 
 export interface UpLinkConfig {
@@ -807,11 +808,11 @@ export default class IFrameNavigator implements Navigator {
       }
 
       return await this.loadManifest();
-    } catch (err) {
+    } catch (err: unknown) {
       // There's a mismatch between the template and the selectors above,
       // or we weren't able to insert the template in the element.
       console.error(err);
-      this.abortOnError();
+      this.abortOnError(err);
       return Promise.reject(err);
     }
   }
@@ -1358,9 +1359,9 @@ export default class IFrameNavigator implements Navigator {
       }
 
       return new Promise<void>((resolve) => resolve());
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      this.abortOnError();
+      this.abortOnError(err);
       return new Promise<void>((_, reject) => reject(err)).catch(() => {});
     }
   }
@@ -1579,9 +1580,9 @@ export default class IFrameNavigator implements Navigator {
       }
 
       return new Promise<void>((resolve) => resolve());
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      this.abortOnError();
+      this.abortOnError(err);
       return Promise.reject(err);
     }
   }
@@ -1593,9 +1594,18 @@ export default class IFrameNavigator implements Navigator {
     const addLoadingInjectable = (
       injectable: HTMLLinkElement | HTMLScriptElement
     ) => {
-      const loadPromise = new Promise<boolean>((resolve) => {
+      const loadPromise = new Promise<boolean>((resolve, reject) => {
         injectable.onload = () => {
           resolve(true);
+        };
+        injectable.onerror = (e) => {
+          const message =
+            typeof e === "string"
+              ? e
+              : `Injectable failed to load at: ${
+                  "href" in injectable ? injectable.href : injectable.src
+                }`;
+          reject(new Error(message));
         };
       });
       injectablesToLoad.push(loadPromise);
@@ -1661,10 +1671,27 @@ export default class IFrameNavigator implements Navigator {
     await Promise.all(injectablesToLoad);
   }
 
-  private abortOnError() {
-    if (this.errorMessage) this.errorMessage.style.display = "block";
-    if (this.isLoading) {
-      this.hideLoadingMessage();
+  /**
+   * Displays standard error UI.
+   */
+  private abortOnError(e: unknown) {
+    // if there is an onError event passed in, depend on that
+    // to catch it.
+    if (this.api.onError) {
+      // make sure the error is always an actual Error
+      const trueError =
+        e instanceof Error
+          ? e
+          : typeof e === "string"
+          ? new Error(e)
+          : new Error("An unknown error occurred in the IFrameNavigator.");
+      this.api.onError(trueError);
+    } else {
+      // otherwise just display the standard error UI
+      if (this.errorMessage) this.errorMessage.style.display = "block";
+      if (this.isLoading) {
+        this.hideLoadingMessage();
+      }
     }
   }
 

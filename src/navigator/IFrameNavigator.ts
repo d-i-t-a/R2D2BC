@@ -1558,7 +1558,7 @@ export default class IFrameNavigator implements Navigator {
             (this.newPosition as Annotation).highlight.selectionInfo.rangeInfo
               .startContainerElementCssSelector
           );
-        } else if (bookViewPosition > 0) {
+        } else if (bookViewPosition >= 0) {
           this.view.goToProgression(bookViewPosition);
         }
 
@@ -2819,7 +2819,6 @@ export default class IFrameNavigator implements Navigator {
           type: this.nextChapterLink.type,
           title: this.nextChapterLink.title,
         };
-
         this.stopReadAloud();
         this.navigate(position);
       }
@@ -3026,7 +3025,6 @@ export default class IFrameNavigator implements Navigator {
           if (this.chapterTitle)
             this.chapterTitle.innerHTML = "(Current Chapter)";
         }
-
         await this.updatePositionInfo();
       } else {
         if (this.searchModule !== undefined) {

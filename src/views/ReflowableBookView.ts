@@ -414,7 +414,7 @@ export default class ReflowableBookView implements BookView {
   }
 
   isScrollMode() {
-    if (this.iframe) {
+    if (this.iframe && this.iframe.contentDocument) {
       const html = HTMLUtilities.findRequiredIframeElement(
         this.iframe.contentDocument,
         "html"

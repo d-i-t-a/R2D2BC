@@ -443,7 +443,7 @@ export default class IFrameNavigator implements Navigator {
         mainElement,
         "main#iframe-wrapper"
       ) as HTMLElement;
-      wrapper.style.overflow = "overlay";
+      wrapper.style.overflow = "auto";
       let iframe = HTMLUtilities.findElement(
         mainElement,
         "main#iframe-wrapper iframe"
@@ -463,7 +463,7 @@ export default class IFrameNavigator implements Navigator {
         this.settings.columnCount = 1;
       }
       if (this.iframes.length === 0) {
-        wrapper.style.overflow = "overlay";
+        wrapper.style.overflow = "auto";
         let iframe = document.createElement("iframe");
         iframe.setAttribute("SCROLLING", "no");
         iframe.setAttribute("allowtransparency", "true");

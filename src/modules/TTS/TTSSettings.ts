@@ -27,7 +27,7 @@ import {
   JSONable,
 } from "../../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
 import TextHighlighter from "../highlight/TextHighlighter";
 import { addEventListenerOptional } from "../../utils/EventHandler";

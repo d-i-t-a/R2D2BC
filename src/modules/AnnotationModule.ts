@@ -31,7 +31,7 @@ import {
   Bookmark,
   Locator,
 } from "../model/Locator";
-import { IS_DEV } from "..";
+import { IS_DEV } from "../utils";
 import { toast } from "materialize-css";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from "uuid";

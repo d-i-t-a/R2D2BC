@@ -20,13 +20,19 @@
 import { Publication } from "../../model/Publication";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import ReaderModule from "../ReaderModule";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import TextHighlighter, {
+  _highlights,
   CLASS_HIGHLIGHT_AREA,
+  DEFAULT_BACKGROUND_COLOR,
 } from "../highlight/TextHighlighter";
 import * as lodash from "lodash";
 import { searchDocDomSeek } from "./searchWithDomSeek";
-import { HighlightType } from "../highlight/common/highlight";
+import { HighlightType, IHighlight } from "../highlight/common/highlight";
+import { debounce } from "debounce";
+import { ISelectionInfo } from "../highlight/common/selection";
+import { SHA256 } from "jscrypto/es6/SHA256";
+import { AnnotationMarker } from "../../model/Locator";
 
 export interface DefinitionsModuleAPI {
   success?: any;
@@ -116,23 +122,18 @@ export default class DefinitionsModule implements ReaderModule {
       .then((r) => r.text())
       .then(async (_data) => {
         item.terms.forEach((termKey, index) => {
-          // for (const termKey in item.term) {
-          console.log(termKey);
           searchDocDomSeek(
             termKey,
             this.delegate.iframes[0].contentDocument,
             tocItem.Href,
             tocItem.Title
           ).then((result) => {
-            // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
-
             let i: number = undefined;
             if (item.result == 1) {
               i = 0;
             } else if (item.result == 2) {
               i = Math.floor(Math.random() * result.length - 1) + 1;
             }
-            console.log(i);
             result.forEach((searchItem, index) => {
               if (i === undefined || i === index) {
                 const selectionInfo = {
@@ -142,7 +143,7 @@ export default class DefinitionsModule implements ReaderModule {
                   range: null,
                 };
                 setTimeout(() => {
-                  const highlight = this.highlighter.createPopupHighlight(
+                  const highlight = this.createPopupHighlight(
                     selectionInfo,
                     item
                   );
@@ -166,11 +167,11 @@ export default class DefinitionsModule implements ReaderModule {
       });
   }
 
-  async definitions() {
+  definitions = debounce(async () => {
     for (const item of this.properties.definitions) {
       await this.define(item);
     }
-  }
+  }, 200);
 
   async define(item: Definition) {
     await this.searchAndPaint(item, async (result) => {
@@ -179,7 +180,6 @@ export default class DefinitionsModule implements ReaderModule {
 
         if (this.api?.visible) {
           result.forEach((highlight) => {
-            console.log(this.delegate.iframes[0].contentDocument);
             let highlightParent =
               this.delegate.iframes[0].contentDocument.querySelector(
                 `#${highlight.id}`
@@ -232,5 +232,51 @@ export default class DefinitionsModule implements ReaderModule {
   async handleResize() {
     await this.highlighter.destroyHighlights(HighlightType.Popup);
     this.drawDefinitions();
+  }
+  createPopupHighlight(selectionInfo: ISelectionInfo, item: Definition) {
+    try {
+      let createColor: any = this.delegate.definitionsModule.properties.color;
+      if (TextHighlighter.isHexColor(createColor)) {
+        createColor = TextHighlighter.hexToRgbChannels(createColor);
+      }
+
+      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
+      const sha256Hex = SHA256.hash(uniqueStr);
+      const id = "R2_POPUP_" + sha256Hex;
+      this.highlighter.destroyHighlight(
+        this.delegate.iframes[0].contentDocument,
+        id
+      );
+
+      const highlight: IHighlight = {
+        color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
+        id,
+        pointerInteraction: true,
+        selectionInfo,
+        marker: AnnotationMarker.Underline,
+        type: HighlightType.Popup,
+      };
+      _highlights.push(highlight);
+
+      let highlightDom = this.highlighter.createHighlightDom(
+        this.delegate.iframes[0].contentWindow as any,
+        highlight
+      );
+      if (item.definition) {
+        highlightDom.dataset.definition = item.definition;
+      }
+      highlightDom.dataset.order = String(item.order);
+      highlight.definition = item;
+      highlight.position = parseInt(
+        (
+          (highlightDom.hasChildNodes
+            ? highlightDom.childNodes[0]
+            : highlightDom) as HTMLDivElement
+        ).style.top.replace("px", "")
+      );
+      return highlight;
+    } catch (e) {
+      throw "Can't create popup highlight: " + e;
+    }
   }
 }

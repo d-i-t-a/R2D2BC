@@ -42,6 +42,7 @@ import ReaderModule from "./modules/ReaderModule";
 import TTSModule2 from "./modules/TTS/TTSModule2";
 import PageBreakModule from "./modules/pagebreak/PageBreakModule";
 import DefinitionsModule from "./modules/search/DefinitionsModule";
+import { IS_DEV } from "./utils";
 
 let D2Settings: UserSettings;
 let D2TTSSettings: TTSSettings;
@@ -57,9 +58,6 @@ let ContentProtectionModuleInstance: ContentProtectionModule;
 let TimelineModuleInstance: TimelineModule;
 let MediaOverlayModuleInstance: MediaOverlayModule;
 let PageBreakModuleInstance: PageBreakModule;
-
-export const IS_DEV =
-  process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
 
 export async function unload() {
   if (IS_DEV) {

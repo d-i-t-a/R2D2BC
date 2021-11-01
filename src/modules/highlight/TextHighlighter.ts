@@ -37,10 +37,9 @@ import {
   convertRangeInfo,
   getCurrentSelectionInfo,
 } from "./renderer/iframe/selection";
-import { IReadiumIFrameWindow } from "./renderer/iframe/state";
 import { uniqueCssSelector } from "./renderer/common/cssselector2";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { icons, iconTemplateColored } from "../../utils/IconLib";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import TTSModule from "../TTS/TTSModule";
@@ -48,7 +47,6 @@ import TTSModule2 from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import * as lodash from "lodash";
 import Popup from "../search/Popup";
-import { Definition } from "../search/DefinitionsModule";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER";
@@ -63,7 +61,7 @@ export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 
 const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.5;
 const ALT_BACKGROUND_COLOR_OPACITY = 0.75;
-const DEFAULT_BACKGROUND_COLOR = {
+export const DEFAULT_BACKGROUND_COLOR = {
   blue: 100,
   green: 50,
   red: 230,
@@ -71,6 +69,7 @@ const DEFAULT_BACKGROUND_COLOR = {
 export interface TextSelectorAPI {
   selectionMenuOpen: any;
   selectionMenuClose: any;
+  selection: any;
 }
 
 export const _highlights: IHighlight[] = [];
@@ -919,6 +918,7 @@ export default class TextHighlighter {
         selection.extend(endNode, endOffset);
         selection.modify("extend", direction[1], "character");
         selection.modify("extend", direction[0], "word");
+        this.selection(selection.toString(), selection);
       }
     }
     return selection;
@@ -977,6 +977,10 @@ export default class TextHighlighter {
       this.isSelectionMenuOpen = false;
       if (this.api?.selectionMenuClose) this.api?.selectionMenuClose();
     }
+  }, 100);
+
+  selection = debounce((text, selection) => {
+    if (this.api?.selection) this.api?.selection(text, selection);
   }, 100);
 
   toolboxPlacement() {
@@ -1615,39 +1619,6 @@ export default class TextHighlighter {
     return this.options.color;
   }
 
-  /**
-   * Returns highlights from given container.
-   * @param params
-   * @param {HTMLElement} [params.container] - return highlights from this element. Default: the element the
-   * highlighter is applied to.
-   * @param {boolean} [params.andSelf] - if set to true and container is a highlight itself, add container to
-   * returned results. Default: true.
-   * @param {boolean} [params.grouped] - if set to true, highlights are grouped in logical groups of highlights added
-   * in the same moment. Each group is an object which has got array of highlights, 'toString' method and 'timestamp'
-   * property. Default: false.
-   * @returns {Array} - array of highlights.
-   * @memberof TextHighlighter
-   */
-  getHighlights(params?: any): Array<any> {
-    params = this.defaults(params, {
-      container: this.delegate.iframes[0].contentDocument.body,
-      andSelf: true,
-      grouped: false,
-    });
-
-    var nodeList = params.container.querySelectorAll("[" + DATA_ATTR + "]"),
-      highlights = Array.prototype.slice.call(nodeList);
-
-    if (params.andSelf === true && params.container.hasAttribute(DATA_ATTR)) {
-      highlights.push(params.container);
-    }
-
-    if (params.grouped) {
-      highlights = this.groupHighlights(highlights);
-    }
-
-    return highlights;
-  }
 
   /**
    * Returns true if element is a highlight.
@@ -1662,134 +1633,6 @@ export default class TextHighlighter {
     );
   }
 
-  /**
-   * Serializes all highlights in the element the highlighter is applied to.
-   * @returns {string} - stringified JSON with highlights definition
-   * @memberof TextHighlighter
-   */
-  serializeHighlights(): string {
-    var highlights = this.getHighlights(),
-      refEl = this.delegate.iframes[0].contentDocument.body,
-      hlDescriptors: any = [];
-
-    function getElementPath(el: any, refElement: any) {
-      var path = [],
-        childNodes;
-
-      do {
-        childNodes = Array.prototype.slice.call(el.parentNode.childNodes);
-        path.unshift(childNodes.indexOf(el));
-        el = el.parentNode;
-      } while (el !== refElement || !el);
-
-      return path;
-    }
-
-    this.sortByDepth(highlights, false);
-
-    highlights.forEach(function (highlight: any) {
-      var offset = 0, // Hl offset from previous sibling within parent node.
-        length = highlight.textContent.length,
-        hlPath = getElementPath(highlight, refEl),
-        wrapper = highlight.cloneNode(true);
-
-      wrapper.innerHTML = "";
-      wrapper = wrapper.outerHTML;
-
-      if (
-        highlight.previousSibling &&
-        highlight.previousSibling.nodeType === NODE_TYPE.TEXT_NODE
-      ) {
-        offset = highlight.previousSibling.length;
-      }
-
-      hlDescriptors.push([
-        wrapper,
-        highlight.textContent,
-        hlPath.join(":"),
-        offset,
-        length,
-      ]);
-    });
-
-    return JSON.stringify(hlDescriptors);
-  }
-
-  /**
-   * Deserializes highlights.
-   * @throws exception when can't parse JSON or JSON has invalid structure.
-   * @param {object} json - JSON object with highlights definition.
-   * @returns {Array} - array of deserialized highlights.
-   * @memberof TextHighlighter
-   */
-  deserializeHighlights(json: any): Array<any> {
-    var hlDescriptors,
-      highlights: any = [],
-      self = this;
-
-    if (!json) {
-      return highlights;
-    }
-
-    try {
-      hlDescriptors = JSON.parse(json);
-    } catch (e) {
-      throw "Can't parse JSON: " + e;
-    }
-
-    function deserializationFn(hlDescriptor: any) {
-      var hl = {
-          wrapper: hlDescriptor[0],
-          text: hlDescriptor[1],
-          path: hlDescriptor[2].split(":"),
-          offset: hlDescriptor[3],
-          length: hlDescriptor[4],
-        },
-        elIndex = hl.path.pop(),
-        node: any = self.delegate.iframes[0].contentDocument.body,
-        hlNode,
-        highlight,
-        idx;
-
-      while (!!(idx = hl.path.shift())) {
-        node = node.childNodes[idx];
-      }
-
-      if (
-        node.childNodes[elIndex - 1] &&
-        node.childNodes[elIndex - 1].nodeType === NODE_TYPE.TEXT_NODE
-      ) {
-        elIndex -= 1;
-      }
-
-      node = node.childNodes[elIndex];
-      hlNode = node.splitText(hl.offset);
-      hlNode.splitText(hl.length);
-
-      if (hlNode.nextSibling && !hlNode.nextSibling.nodeValue) {
-        self.dom(hlNode.nextSibling).remove();
-      }
-
-      if (hlNode.previousSibling && !hlNode.previousSibling.nodeValue) {
-        self.dom(hlNode.previousSibling).remove();
-      }
-
-      highlight = self.dom(hlNode).wrap(self.dom().fromHTML(hl.wrapper)[0]);
-      highlights.push(highlight);
-    }
-
-    hlDescriptors.forEach(function (hlDescriptor: any) {
-      try {
-        deserializationFn(hlDescriptor);
-      } catch (e) {
-        if (console && console.warn) {
-          console.warn("Can't deserialize highlight descriptor. Cause: " + e);
-        }
-      }
-    });
-
-    return highlights;
-  }
 
   /**
    * Creates wrapper for highlights.
@@ -1862,10 +1705,7 @@ export default class TextHighlighter {
     throw new Error("Bad Hex");
   }
 
-  resetHighlightBoundingStyle(
-    _win: IReadiumIFrameWindow,
-    highlightBounding: HTMLElement
-  ) {
+  resetHighlightBoundingStyle(_win: any, highlightBounding: HTMLElement) {
     highlightBounding.style.outline = "none";
     highlightBounding.style.setProperty(
       "background-color",
@@ -1875,7 +1715,7 @@ export default class TextHighlighter {
   }
 
   resetHighlightAreaStyle(
-    _win: IReadiumIFrameWindow,
+    _win: any,
     highlightArea: HTMLElement,
     id_container: string
   ) {
@@ -2041,7 +1881,7 @@ export default class TextHighlighter {
   }
 
   setHighlightAreaStyle(
-    _win: IReadiumIFrameWindow,
+    _win: any,
     highlightAreas: Array<HTMLElement>,
     highlight: IHighlight
   ) {
@@ -2270,7 +2110,7 @@ export default class TextHighlighter {
     return documant.body;
   };
 
-  async processMouseEvent(win: IReadiumIFrameWindow, ev: MouseEvent) {
+  async processMouseEvent(win: any, ev: MouseEvent) {
     const documant = win.document;
     // relative to fixed window top-left corner
     // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
@@ -2641,9 +2481,11 @@ export default class TextHighlighter {
           )) as Annotation;
         }
 
+        if (payload.highlight.type === HighlightType.Annotation) {
         this.delegate.annotationModule?.api
           ?.selectedAnnotation(anno)
           .then(async () => {});
+        }
 
         if (anno?.id) {
           if (IS_DEV) {
@@ -2768,10 +2610,7 @@ export default class TextHighlighter {
     }
   }
 
-  ensureHighlightsContainer(
-    win: IReadiumIFrameWindow,
-    id: string
-  ): HTMLElement {
+  ensureHighlightsContainer(win: any, id: string): HTMLElement {
     const documant = win.document;
     var self = this;
     if (
@@ -2968,147 +2807,9 @@ export default class TextHighlighter {
     }
   }
 
-  recreateAllHighlightsRaw(win: IReadiumIFrameWindow) {
-    this.hideAllhighlights(win.document);
-    for (const highlight of _highlights) {
-      this.createHighlightDom(win, highlight);
-    }
-  }
-
-  recreateAllHighlightsDebounced = debounce((win: IReadiumIFrameWindow) => {
-    this.recreateAllHighlightsRaw(win);
-  }, 500);
-
-  recreateAllHighlights(win: IReadiumIFrameWindow) {
-    this.hideAllhighlights(win.document);
-    this.recreateAllHighlightsDebounced(win);
-  }
-
-  createPopupHighlight(selectionInfo: ISelectionInfo, item: Definition) {
-    try {
-      let createColor: any = this.delegate.definitionsModule.properties.color;
-      if (TextHighlighter.isHexColor(createColor)) {
-        createColor = TextHighlighter.hexToRgbChannels(createColor);
-      }
-
-      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
-      const sha256Hex = SHA256.hash(uniqueStr);
-      const id = "R2_POPUP_" + sha256Hex;
-
-      this.destroyHighlight(this.delegate.iframes[0].contentDocument, id);
-      const highlight: IHighlight = {
-        color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
-        id,
-        pointerInteraction: true,
-        selectionInfo,
-        marker: AnnotationMarker.Underline,
-        type: HighlightType.Popup,
-      };
-      _highlights.push(highlight);
-
-      let highlightDom = this.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
-        highlight
-      );
-      if (item.definition) {
-        highlightDom.dataset.definition = item.definition;
-      }
-      highlightDom.dataset.order = String(item.order);
-      highlight.definition = item;
-      highlight.position = parseInt(
-        (
-          (highlightDom.hasChildNodes
-            ? highlightDom.childNodes[0]
-            : highlightDom) as HTMLDivElement
-        ).style.top.replace("px", "")
-      );
-      return highlight;
-    } catch (e) {
-      throw "Can't create popup highlight: " + e;
-    }
-  }
-
-  createSearchHighlight(selectionInfo: ISelectionInfo, color: string) {
-    try {
-      var createColor: any = color;
-      if (TextHighlighter.isHexColor(createColor)) {
-        createColor = TextHighlighter.hexToRgbChannels(createColor);
-      }
-
-      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
-      const sha256Hex = SHA256.hash(uniqueStr);
-      const id = "R2_SEARCH_" + sha256Hex;
-
-      var pointerInteraction = false;
-      const highlight: IHighlight = {
-        color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
-        id,
-        pointerInteraction,
-        selectionInfo,
-        marker: AnnotationMarker.Highlight,
-        type: HighlightType.Search,
-      };
-      _highlights.push(highlight);
-
-      let highlightDom = this.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
-        highlight
-      );
-      highlight.position = parseInt(
-        (
-          (highlightDom.hasChildNodes
-            ? highlightDom.childNodes[0]
-            : highlightDom) as HTMLDivElement
-        ).style.top.replace("px", "")
-      );
-      return highlight;
-    } catch (e) {
-      throw "Can't create highlight: " + e;
-    }
-  }
-  createPageBreakHighlight(selectionInfo: ISelectionInfo, title: string) {
-    try {
-      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
-      const sha256Hex = SHA256.hash(uniqueStr);
-      const id = "R2_PAGEBREAK_" + sha256Hex;
-
-      var pointerInteraction = false;
-
-      const highlight: IHighlight = {
-        color: "#000000",
-        id,
-        pointerInteraction,
-        selectionInfo,
-        marker: AnnotationMarker.Custom,
-        icon: {
-          id: `pageBreak`,
-          title: title,
-          color: `#000000`,
-          position: "left",
-        },
-        type: HighlightType.PageBreak,
-      };
-      _highlights.push(highlight);
-
-      let highlightDom = this.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
-        highlight
-      );
-      highlight.position = parseInt(
-        (
-          (highlightDom.hasChildNodes
-            ? highlightDom.childNodes[0]
-            : highlightDom) as HTMLDivElement
-        ).style.top.replace("px", "")
-      );
-      return highlight;
-    } catch (e) {
-      throw "Can't create highlight: " + e;
-    }
-  }
 
   createHighlight(
-    win: IReadiumIFrameWindow,
+    win: any,
     selectionInfo: ISelectionInfo,
     color: string | undefined,
     pointerInteraction: boolean,
@@ -3162,7 +2863,7 @@ export default class TextHighlighter {
     }
   }
   createHighlightDom(
-    win: IReadiumIFrameWindow,
+    win: any,
     highlight: IHighlight
   ): HTMLDivElement | undefined {
     const documant = win.document;
@@ -3353,6 +3054,10 @@ export default class TextHighlighter {
         top: clientRect.top - yOffset,
         width: clientRect.width,
       };
+      if (highlight.pointerInteraction) {
+        highlightArea.setAttribute("data-click", "1");
+        highlightArea.tabIndex = 0;
+      }
       highlightArea.style.width = `${highlightArea.rect.width * scale}px`;
       highlightArea.style.height = `${highlightArea.rect.height * scale}px`;
       highlightArea.style.left = `${highlightArea.rect.left * scale}px`;
@@ -3609,7 +3314,10 @@ export default class TextHighlighter {
 
     highlightAreaIcon.style.setProperty("pointer-events", "all");
     let self = this;
-    if (highlight.type != HighlightType.PageBreak) {
+    if (
+      highlight.type != HighlightType.PageBreak &&
+      highlight.type != HighlightType.Popup
+    ) {
       highlightAreaIcon.addEventListener("click", async function (ev) {
         var anno;
         if (self.delegate.rights?.enableAnnotations) {

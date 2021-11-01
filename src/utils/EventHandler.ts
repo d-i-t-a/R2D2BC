@@ -17,9 +17,9 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "..";
 import IFrameNavigator from "../navigator/IFrameNavigator";
 import Popup from "../modules/search/Popup";
+import { IS_DEV } from "./index";
 
 export function addEventListenerOptional(
   element: any,
@@ -107,7 +107,7 @@ export default class EventHandler {
         event.stopPropagation();
       } else {
         (event.target as HTMLAnchorElement).href = link.href;
-        if (isSameOrigin && isInternal !== -1) {
+        if ((isSameOrigin || isEpubInternal) && isInternal !== -1) {
           const link = event.target as HTMLLIElement;
           if (link) {
             const attribute = link.getAttribute("epub:type") === "noteref";
@@ -119,7 +119,7 @@ export default class EventHandler {
           } else {
             this.onInternalLink(event);
           }
-        } else if (isSameOrigin && isInternal === -1) {
+        } else if ((isSameOrigin || isEpubInternal) && isInternal === -1) {
           // TODO needs some more refactoring when handling other types of links or elements
           // link.click();
           this.onInternalLink(event);

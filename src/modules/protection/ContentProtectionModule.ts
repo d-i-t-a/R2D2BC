@@ -25,7 +25,7 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { delay } from "../../utils";
 import { addListener, launch } from "devtools-detector";
 import { getUserAgentRegExp } from "browserslist-useragent-regexp";
@@ -970,12 +970,12 @@ export default class ContentProtectionModule implements ReaderModule {
     // Consider left boundary to be one full screen width left of the leftmost
     // edge of the viewing area. This is so text originating on the previous
     // screen does not flow onto the current screen scrambled.
-    const isLeft = right < (windowLeft - window.innerWidth);
+    const isLeft = right < windowLeft - window.innerWidth;
 
     // Consider right boundary to be one full screen width right of the rightmost
     // edge of the viewing area. This is so quickly paging through the book
     // does not result in visible page descrambling.
-    const isRight = rect.left > (windowRight + window.innerWidth);
+    const isRight = rect.left > windowRight + window.innerWidth;
 
     return isAbove || isBelow || isLeft || isRight;
   }

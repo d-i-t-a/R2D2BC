@@ -18,7 +18,7 @@
  */
 
 import ReaderModule from "../ReaderModule";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { AnnotationMarker } from "../../model/Locator";
 import {
   TTSModuleAPI,

@@ -20,7 +20,6 @@ import { SHA256 } from "jscrypto/es6/SHA256";
 import Annotator, { AnnotationType } from "./Annotator";
 import Store from "./Store";
 import { Annotation, Bookmark, ReadingPosition } from "../model/Locator";
-import { IReadiumIFrameWindow } from "../modules/highlight/renderer/iframe/state";
 import { IHighlight } from "../modules/highlight/common/highlight";
 import TextHighlighter from "../modules/highlight/TextHighlighter";
 
@@ -274,10 +273,7 @@ export default class LocalAnnotator implements Annotator {
     return new Promise<void>((resolve) => resolve());
   }
 
-  public async getAnnotationPosition(
-    id: any,
-    iframeWin: IReadiumIFrameWindow
-  ): Promise<any> {
+  public async getAnnotationPosition(id: any, iframeWin): Promise<any> {
     const savedAnnotations = await this.store.get(LocalAnnotator.ANNOTATIONS);
     if (savedAnnotations) {
       const annotations = JSON.parse(savedAnnotations);

@@ -20,13 +20,19 @@
 import { Publication } from "../../model/Publication";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import ReaderModule from "../ReaderModule";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import TextHighlighter, {
+  _highlights,
   CLASS_HIGHLIGHT_AREA,
+  DEFAULT_BACKGROUND_COLOR,
 } from "../highlight/TextHighlighter";
 import * as lodash from "lodash";
 import { searchDocDomSeek } from "./searchWithDomSeek";
-import { HighlightType } from "../highlight/common/highlight";
+import { HighlightType, IHighlight } from "../highlight/common/highlight";
+import { debounce } from "debounce";
+import { ISelectionInfo } from "../highlight/common/selection";
+import { SHA256 } from "jscrypto/es6/SHA256";
+import { AnnotationMarker } from "../../model/Locator";
 
 export interface DefinitionsModuleAPI {
   success?: any;
@@ -116,23 +122,18 @@ export default class DefinitionsModule implements ReaderModule {
       .then((r) => r.text())
       .then(async (_data) => {
         item.terms.forEach((termKey, index) => {
-          // for (const termKey in item.term) {
-          console.log(termKey);
           searchDocDomSeek(
             termKey,
             this.delegate.iframes[0].contentDocument,
             tocItem.Href,
             tocItem.Title
           ).then((result) => {
-            // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
-
             let i: number = undefined;
             if (item.result == 1) {
               i = 0;
             } else if (item.result == 2) {
               i = Math.floor(Math.random() * result.length - 1) + 1;
             }
-            console.log(i);
             result.forEach((searchItem, index) => {
               if (i === undefined || i === index) {
                 const selectionInfo = {
@@ -179,7 +180,6 @@ export default class DefinitionsModule implements ReaderModule {
 
         if (this.api?.visible) {
           result.forEach((highlight) => {
-            console.log(this.delegate.iframes[0].contentDocument);
             let highlightParent =
               this.delegate.iframes[0].contentDocument.querySelector(
                 `#${highlight.id}`

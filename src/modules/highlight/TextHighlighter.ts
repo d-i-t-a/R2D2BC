@@ -37,10 +37,9 @@ import {
   convertRangeInfo,
   getCurrentSelectionInfo,
 } from "./renderer/iframe/selection";
-import { IReadiumIFrameWindow } from "./renderer/iframe/state";
 import { uniqueCssSelector } from "./renderer/common/cssselector2";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { icons, iconTemplateColored } from "../../utils/IconLib";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import TTSModule from "../TTS/TTSModule";
@@ -48,7 +47,6 @@ import TTSModule2 from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import * as lodash from "lodash";
 import Popup from "../search/Popup";
-import { Definition } from "../search/DefinitionsModule";
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER";
@@ -1862,10 +1860,7 @@ export default class TextHighlighter {
     throw new Error("Bad Hex");
   }
 
-  resetHighlightBoundingStyle(
-    _win: IReadiumIFrameWindow,
-    highlightBounding: HTMLElement
-  ) {
+  resetHighlightBoundingStyle(_win: any, highlightBounding: HTMLElement) {
     highlightBounding.style.outline = "none";
     highlightBounding.style.setProperty(
       "background-color",
@@ -1875,7 +1870,7 @@ export default class TextHighlighter {
   }
 
   resetHighlightAreaStyle(
-    _win: IReadiumIFrameWindow,
+    _win: any,
     highlightArea: HTMLElement,
     id_container: string
   ) {
@@ -2041,7 +2036,7 @@ export default class TextHighlighter {
   }
 
   setHighlightAreaStyle(
-    _win: IReadiumIFrameWindow,
+    _win: any,
     highlightAreas: Array<HTMLElement>,
     highlight: IHighlight
   ) {
@@ -2270,7 +2265,7 @@ export default class TextHighlighter {
     return documant.body;
   };
 
-  async processMouseEvent(win: IReadiumIFrameWindow, ev: MouseEvent) {
+  async processMouseEvent(win: any, ev: MouseEvent) {
     const documant = win.document;
     // relative to fixed window top-left corner
     // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
@@ -2768,10 +2763,7 @@ export default class TextHighlighter {
     }
   }
 
-  ensureHighlightsContainer(
-    win: IReadiumIFrameWindow,
-    id: string
-  ): HTMLElement {
+  ensureHighlightsContainer(win: any, id: string): HTMLElement {
     const documant = win.document;
     var self = this;
     if (
@@ -3108,7 +3100,7 @@ export default class TextHighlighter {
   }
 
   createHighlight(
-    win: IReadiumIFrameWindow,
+    win: any,
     selectionInfo: ISelectionInfo,
     color: string | undefined,
     pointerInteraction: boolean,
@@ -3162,7 +3154,7 @@ export default class TextHighlighter {
     }
   }
   createHighlightDom(
-    win: IReadiumIFrameWindow,
+    win: any,
     highlight: IHighlight
   ): HTMLDivElement | undefined {
     const documant = win.document;

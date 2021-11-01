@@ -25,11 +25,16 @@ import {
   addEventListenerOptional,
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
-import { Locator, Locations } from "../../model/Locator";
-import { IS_DEV } from "../..";
-import { searchDocDomSeek, reset } from "./searchWithDomSeek";
-import TextHighlighter from "../highlight/TextHighlighter";
-import { HighlightType } from "../highlight/common/highlight";
+import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
+import { IS_DEV } from "../../utils";
+import { reset, searchDocDomSeek } from "./searchWithDomSeek";
+import TextHighlighter, {
+  _highlights,
+  DEFAULT_BACKGROUND_COLOR,
+} from "../highlight/TextHighlighter";
+import { HighlightType, IHighlight } from "../highlight/common/highlight";
+import { ISelectionInfo } from "../highlight/common/selection";
+import { SHA256 } from "jscrypto";
 
 export interface SearchModuleAPI {}
 

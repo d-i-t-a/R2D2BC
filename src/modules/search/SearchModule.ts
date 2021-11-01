@@ -29,7 +29,6 @@ import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
 import { IS_DEV } from "../../utils";
 import { reset, searchDocDomSeek } from "./searchWithDomSeek";
 import TextHighlighter, {
-  _highlights,
   DEFAULT_BACKGROUND_COLOR,
 } from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
@@ -302,7 +301,7 @@ export default class SearchModule implements ReaderModule {
     var localSearchResultChapter: any = [];
 
     // clear search results // needs more works
-    this.highlighter.destroyHighlights(HighlightType.Search);
+    this.highlighter.destroyHighlights(HighlightType.Search, 0);
     if (this.delegate.rights?.enableSearch) {
       this.drawSearch();
     }
@@ -379,10 +378,8 @@ export default class SearchModule implements ReaderModule {
         type: HighlightType.Search,
       };
 
-      let highlightDom = this.highlighter.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
-        highlight
-      );
+      let highlightDom = this.highlighter.createHighlightDom(0, highlight);
+
       highlight.position = parseInt(
         (
           (highlightDom.hasChildNodes
@@ -399,7 +396,7 @@ export default class SearchModule implements ReaderModule {
   clearSearch() {
     this.currentChapterSearchResult = [];
     this.currentSearchHighlights = [];
-    this.highlighter.destroyHighlights(HighlightType.Search);
+    this.highlighter.destroyHighlights(HighlightType.Search, 0);
   }
 
   async search(term: string, current: boolean): Promise<any> {
@@ -786,7 +783,7 @@ export default class SearchModule implements ReaderModule {
   }
 
   async handleResize() {
-    await this.highlighter.destroyHighlights(HighlightType.Search);
+    await this.highlighter.destroyHighlights(HighlightType.Search, 0);
     this.drawSearch();
   }
 
@@ -808,7 +805,8 @@ export default class SearchModule implements ReaderModule {
         current.highlight.color = currentColor;
         this.highlighter.setAndResetSearchHighlight(
           current.highlight,
-          this.currentSearchHighlights
+          this.currentSearchHighlights,
+          0
         );
 
         this.delegate.view.goToCssSelector(

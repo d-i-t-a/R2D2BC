@@ -192,7 +192,7 @@ export default class TTSModule2 implements ReaderModule {
     }, 0);
 
     if (this._ttsQueueItemHighlightsWord) {
-      this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud);
+      this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud, 0);
       this._ttsQueueItemHighlightsWord = undefined;
     }
   }
@@ -369,7 +369,7 @@ export default class TTSModule2 implements ReaderModule {
 
     utterance.onend = function () {
       if (IS_DEV) console.log("utterance ended");
-      self.highlighter.doneSpeaking();
+      self.highlighter.doneSpeaking(0);
       self.api?.finished();
     };
     callback();
@@ -392,7 +392,7 @@ export default class TTSModule2 implements ReaderModule {
     let ttsQueueIndex = 0;
 
     function findVisibleText() {
-      let node = self.highlighter.visibleTextRects[0];
+      let node = self.highlighter.visibleTextRects(0)[0];
       const range = self.highlighter
         .dom(self.delegate.iframes[0].contentDocument.body)
         .getWindow()
@@ -490,7 +490,7 @@ export default class TTSModule2 implements ReaderModule {
       this.speaking = false;
 
       if (this._ttsQueueItemHighlightsWord) {
-        this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud);
+        this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud, 0);
         this._ttsQueueItemHighlightsWord = undefined;
       }
     }
@@ -1093,7 +1093,7 @@ export default class TTSModule2 implements ReaderModule {
     end: number
   ) {
     if (this._ttsQueueItemHighlightsWord) {
-      this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud);
+      this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud, 0);
       this._ttsQueueItemHighlightsWord = undefined;
     }
 
@@ -1183,7 +1183,7 @@ export default class TTSModule2 implements ReaderModule {
       }
 
       let result = this.delegate.highlighter.createHighlight(
-        this.delegate.iframes[0].contentWindow as any,
+        0,
         {
           rangeInfo: rangeInfo,
           cleanText: "",

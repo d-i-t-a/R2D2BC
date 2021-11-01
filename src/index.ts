@@ -703,10 +703,10 @@ export async function load(config: ReaderConfig): Promise<any> {
   publication.sample = config.sample;
 
   if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
-    config.rights.enableAnnotations = false;
     config.rights.enableSearch = false;
+    config.rights.enableDefinitions = false;
     config.rights.enableTTS = false;
-    // config.protection.enableObfuscation = false;
+    config.protection.enableObfuscation = false;
   }
 
   const getContentBytesLength = async (href: string): Promise<number> => {

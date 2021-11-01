@@ -230,7 +230,7 @@ export default class DefinitionsModule implements ReaderModule {
   }
 
   async handleResize() {
-    await this.highlighter.destroyHighlights(HighlightType.Popup);
+    await this.highlighter.destroyHighlights(HighlightType.Popup, 0);
     this.drawDefinitions();
   }
   createPopupHighlight(selectionInfo: ISelectionInfo, item: Definition) {
@@ -243,10 +243,7 @@ export default class DefinitionsModule implements ReaderModule {
       const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
       const sha256Hex = SHA256.hash(uniqueStr);
       const id = "R2_POPUP_" + sha256Hex;
-      this.highlighter.destroyHighlight(
-        this.delegate.iframes[0].contentDocument,
-        id
-      );
+      this.highlighter.destroyHighlight(id, 0);
 
       const highlight: IHighlight = {
         color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
@@ -258,10 +255,7 @@ export default class DefinitionsModule implements ReaderModule {
       };
       _highlights.push(highlight);
 
-      let highlightDom = this.highlighter.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
-        highlight
-      );
+      let highlightDom = this.highlighter.createHighlightDom(0, highlight);
       if (item.definition) {
         highlightDom.dataset.definition = item.definition;
       }

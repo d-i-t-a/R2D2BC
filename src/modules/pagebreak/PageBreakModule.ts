@@ -152,7 +152,10 @@ export default class PageBreakModule implements ReaderModule {
   }
 
   async handleResize() {
-    await this.delegate.highlighter.destroyHighlights(HighlightType.PageBreak);
+    await this.delegate.highlighter.destroyHighlights(
+      HighlightType.PageBreak,
+      0
+    );
     await this.drawPageBreaks();
   }
 
@@ -248,7 +251,7 @@ export default class PageBreakModule implements ReaderModule {
       _highlights.push(highlight);
 
       let highlightDom = this.delegate.highlighter.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
+        0,
         highlight
       );
       highlight.position = parseInt(

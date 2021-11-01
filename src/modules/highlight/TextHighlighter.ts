@@ -69,6 +69,7 @@ export const DEFAULT_BACKGROUND_COLOR = {
 export interface TextSelectorAPI {
   selectionMenuOpen: any;
   selectionMenuClose: any;
+  selection: any;
 }
 
 export const _highlights: IHighlight[] = [];
@@ -917,6 +918,7 @@ export default class TextHighlighter {
         selection.extend(endNode, endOffset);
         selection.modify("extend", direction[1], "character");
         selection.modify("extend", direction[0], "word");
+        this.selection(selection.toString(), selection);
       }
     }
     return selection;
@@ -975,6 +977,10 @@ export default class TextHighlighter {
       this.isSelectionMenuOpen = false;
       if (this.api?.selectionMenuClose) this.api?.selectionMenuClose();
     }
+  }, 100);
+
+  selection = debounce((text, selection) => {
+    if (this.api?.selection) this.api?.selection(text, selection);
   }, 100);
 
   toolboxPlacement() {
@@ -2475,9 +2481,11 @@ export default class TextHighlighter {
           )) as Annotation;
         }
 
+        if (payload.highlight.type === HighlightType.Annotation) {
         this.delegate.annotationModule?.api
           ?.selectedAnnotation(anno)
           .then(async () => {});
+        }
 
         if (anno?.id) {
           if (IS_DEV) {
@@ -3046,6 +3054,10 @@ export default class TextHighlighter {
         top: clientRect.top - yOffset,
         width: clientRect.width,
       };
+      if (highlight.pointerInteraction) {
+        highlightArea.setAttribute("data-click", "1");
+        highlightArea.tabIndex = 0;
+      }
       highlightArea.style.width = `${highlightArea.rect.width * scale}px`;
       highlightArea.style.height = `${highlightArea.rect.height * scale}px`;
       highlightArea.style.left = `${highlightArea.rect.left * scale}px`;
@@ -3302,7 +3314,10 @@ export default class TextHighlighter {
 
     highlightAreaIcon.style.setProperty("pointer-events", "all");
     let self = this;
-    if (highlight.type != HighlightType.PageBreak) {
+    if (
+      highlight.type != HighlightType.PageBreak &&
+      highlight.type != HighlightType.Popup
+    ) {
       highlightAreaIcon.addEventListener("click", async function (ev) {
         var anno;
         if (self.delegate.rights?.enableAnnotations) {

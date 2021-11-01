@@ -206,7 +206,7 @@ export default class PageBreakModule implements ReaderModule {
         if (!selection.isCollapsed) {
           const rangeInfo = convertRange(range, getCssSelector);
           selection.removeAllRanges();
-          this.delegate.highlighter.createPageBreakHighlight(
+          this.createPageBreakHighlight(
             {
               rangeInfo: rangeInfo,
               cleanText: "",
@@ -221,5 +221,46 @@ export default class PageBreakModule implements ReaderModule {
         }
       }
     }, 200);
+  }
+
+  createPageBreakHighlight(selectionInfo: ISelectionInfo, title: string) {
+    try {
+      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
+      const sha256Hex = SHA256.hash(uniqueStr);
+      const id = "R2_PAGEBREAK_" + sha256Hex;
+
+      var pointerInteraction = false;
+
+      const highlight: IHighlight = {
+        color: "#000000",
+        id,
+        pointerInteraction,
+        selectionInfo,
+        marker: AnnotationMarker.Custom,
+        icon: {
+          id: `pageBreak`,
+          title: title,
+          color: `#000000`,
+          position: "left",
+        },
+        type: HighlightType.PageBreak,
+      };
+      _highlights.push(highlight);
+
+      let highlightDom = this.delegate.highlighter.createHighlightDom(
+        this.delegate.iframes[0].contentWindow as any,
+        highlight
+      );
+      highlight.position = parseInt(
+        (
+          (highlightDom.hasChildNodes
+            ? highlightDom.childNodes[0]
+            : highlightDom) as HTMLDivElement
+        ).style.top.replace("px", "")
+      );
+      return highlight;
+    } catch (e) {
+      throw "Can't create highlight: " + e;
+    }
   }
 }

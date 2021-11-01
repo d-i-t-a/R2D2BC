@@ -333,13 +333,13 @@ export default class SearchModule implements ReaderModule {
             setTimeout(() => {
               var highlight;
               if (i === index) {
-                highlight = this.highlighter.createSearchHighlight(
+                highlight = this.createSearchHighlight(
                   selectionInfo,
                   this.properties?.current
                 );
                 this.jumpToMark(index);
               } else {
-                highlight = this.highlighter.createSearchHighlight(
+                highlight = this.createSearchHighlight(
                   selectionInfo,
                   this.properties?.color
                 );
@@ -357,6 +357,45 @@ export default class SearchModule implements ReaderModule {
         });
       });
   }
+
+  createSearchHighlight(selectionInfo: ISelectionInfo, color: string) {
+    try {
+      var createColor: any = color;
+      if (TextHighlighter.isHexColor(createColor)) {
+        createColor = TextHighlighter.hexToRgbChannels(createColor);
+      }
+
+      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
+      const sha256Hex = SHA256.hash(uniqueStr);
+      const id = "R2_SEARCH_" + sha256Hex;
+
+      var pointerInteraction = false;
+      const highlight: IHighlight = {
+        color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
+        id,
+        pointerInteraction,
+        selectionInfo,
+        marker: AnnotationMarker.Highlight,
+        type: HighlightType.Search,
+      };
+
+      let highlightDom = this.highlighter.createHighlightDom(
+        this.delegate.iframes[0].contentWindow as any,
+        highlight
+      );
+      highlight.position = parseInt(
+        (
+          (highlightDom.hasChildNodes
+            ? highlightDom.childNodes[0]
+            : highlightDom) as HTMLDivElement
+        ).style.top.replace("px", "")
+      );
+      return highlight;
+    } catch (e) {
+      throw "Can't create highlight: " + e;
+    }
+  }
+
   clearSearch() {
     this.currentChapterSearchResult = [];
     this.currentSearchHighlights = [];
@@ -736,7 +775,7 @@ export default class SearchModule implements ReaderModule {
           rawText: null,
           range: null,
         };
-        var highlight = this.highlighter.createSearchHighlight(
+        var highlight = this.createSearchHighlight(
           selectionInfo,
           this.properties?.color
         );

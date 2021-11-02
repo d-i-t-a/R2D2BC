@@ -913,6 +913,11 @@ export default class TextHighlighter {
   }, 100);
   selectionMenuClosed = debounce(() => {
     if (this.isSelectionMenuOpen) {
+      for (let index = 0; index < this.delegate.iframes.length; index++) {
+        this.dom(
+          this.delegate.iframes[index].contentDocument.body
+        ).removeAllRanges();
+      }
       this.isSelectionMenuOpen = false;
       if (this.api?.selectionMenuClose) this.api?.selectionMenuClose();
     }
@@ -930,6 +935,7 @@ export default class TextHighlighter {
       return;
     }
 
+    let iframeRect = iframe.getBoundingClientRect();
     let rect = range.getBoundingClientRect();
     let toolbox = document.getElementById("highlight-toolbox");
 
@@ -938,8 +944,8 @@ export default class TextHighlighter {
         rect.top + (this.delegate.attributes?.navHeight ?? 0) + "px";
       toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
       if (this.delegate.view.layout === "fixed") {
-        toolbox.style.left = "50%";
-        toolbox.style.top = "50%";
+        toolbox.style.left =
+          iframeRect.left + (rect.right - rect.left) / 2 + rect.left + "px";
       }
     }
   }
@@ -2407,6 +2413,7 @@ export default class TextHighlighter {
           if (IS_DEV) {
             console.log("selected highlight " + anno.id);
           }
+          let iframeRect = iframe.getBoundingClientRect();
 
           var toolbox = document.getElementById("highlight-toolbox");
 
@@ -2414,8 +2421,7 @@ export default class TextHighlighter {
             ev.clientY + (this.delegate.attributes?.navHeight ?? 0) + "px";
           toolbox.style.left = ev.clientX + "px";
           if (this.delegate.view.layout === "fixed") {
-            toolbox.style.left = "50%";
-            toolbox.style.top = "50%";
+            toolbox.style.left = iframeRect.left + ev.clientX + "px";
           }
 
           if (getComputedStyle(toolbox).display === "none") {
@@ -3320,13 +3326,13 @@ export default class TextHighlighter {
           console.log("selected highlight " + anno.id);
         }
 
+        let iframeRect = iframe.getBoundingClientRect();
         var toolbox = document.getElementById("highlight-toolbox");
         toolbox.style.top =
           ev.clientY + (self.delegate.attributes?.navHeight ?? 0) + "px";
         toolbox.style.left = ev.clientX + "px";
         if (self.delegate.view.layout === "fixed") {
-          toolbox.style.left = "50%";
-          toolbox.style.top = "50%";
+          toolbox.style.left = iframeRect.left + ev.clientX + "px";
         }
 
         if (getComputedStyle(toolbox).display === "none") {

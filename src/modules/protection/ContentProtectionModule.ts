@@ -27,7 +27,7 @@ import {
 import { debounce } from "debounce";
 import { IS_DEV } from "../../utils";
 import { delay } from "../../utils";
-import { addListener, launch } from "devtools-detector";
+import { DevtoolsDetector, checkers } from "devtools-detector";
 import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 
 export interface ContentProtectionModuleProperties {
@@ -119,8 +119,17 @@ export default class ContentProtectionModule implements ReaderModule {
         config.api.inspectDetected();
       }
     };
-    addListener(onInspectorOpened);
-    launch();
+    const detector = new DevtoolsDetector({
+      checkers: [
+        checkers.elementIdChecker,
+        checkers.regToStringChecker,
+        checkers.functionToStringChecker,
+        checkers.depRegToStringChecker,
+        checkers.dateToStringChecker,
+      ],
+    })
+    detector.addListener(onInspectorOpened);
+    detector.launch();
     await delay(config.detectInspectInitDelay ?? 50);
   }
 
@@ -740,8 +749,11 @@ export default class ContentProtectionModule implements ReaderModule {
     if (IS_DEV) {
       console.log("before print");
     }
-    this.delegate.headerMenu.style.display = "none";
-    this.delegate.mainElement.style.display = "none";
+
+    if (this.delegate && this.delegate.headerMenu) {
+      this.delegate.headerMenu.style.display = "none";
+      this.delegate.mainElement.style.display = "none";
+    }
 
     event.stopPropagation();
     event.preventDefault();
@@ -752,10 +764,13 @@ export default class ContentProtectionModule implements ReaderModule {
     stopPropagation: () => void;
   }) {
     if (IS_DEV) {
-      console.log("before print");
+      console.log("after print");
     }
-    this.delegate.headerMenu.style.removeProperty("display");
-    this.delegate.mainElement.style.removeProperty("display");
+
+    if (this.delegate && this.delegate.headerMenu) {
+      this.delegate.headerMenu.style.removeProperty("display");
+      this.delegate.mainElement.style.removeProperty("display");
+    }
 
     event.stopPropagation();
     event.preventDefault();

@@ -26,9 +26,8 @@ import {
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
 import { IS_DEV } from "../..";
-import { delay } from "../../utils";
-import { addListener, launch } from "devtools-detector";
-import { getUserAgentRegExp } from "browserslist-useragent-regexp";
+
+//var counter = 0;
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;
@@ -38,7 +37,6 @@ export interface ContentProtectionModuleProperties {
   disableCopy: boolean;
   detectInspect: boolean;
   clearOnInspect: boolean;
-  detectInspectInitDelay: number;
   disableKeys: boolean;
   disableContextMenu: boolean;
   hideTargetUrl: boolean;
@@ -48,12 +46,12 @@ export interface ContentProtectionModuleProperties {
 
 export interface ContentProtectionModuleConfig
   extends ContentProtectionModuleProperties {
-  delegate?: IFrameNavigator;
+  delegate: IFrameNavigator;
   api: ContentProtectionModuleAPI;
 }
 
 export interface ContentProtectionModuleAPI {
-  inspectDetected: () => void;
+  inspectDetected: any;
 }
 
 interface ContentProtectionRect {
@@ -76,18 +74,6 @@ export default class ContentProtectionModule implements ReaderModule {
   private securityContainer: HTMLDivElement;
   private mutationObserver: MutationObserver;
 
-  public static async setupPreloadProtection(
-    config: ContentProtectionModuleConfig
-  ): Promise<void> {
-    if (this.isCurrentBrowserSupported(config)) {
-      if (config.detectInspect) {
-        await this.startInspectorProtection(config);
-      }
-    } else {
-      throw new Error("Browser not supported");
-    }
-  }
-
   public static async create(config: ContentProtectionModuleConfig) {
     const security = new this(
       config.delegate,
@@ -103,44 +89,6 @@ export default class ContentProtectionModule implements ReaderModule {
   ) {
     this.delegate = delegate;
     this.properties = properties;
-  }
-
-  private static async startInspectorProtection(
-    config: Partial<ContentProtectionModuleConfig>
-  ): Promise<void> {
-    const onInspectorOpened = (): void => {
-      if (config.clearOnInspect) {
-        console.clear();
-        window.localStorage.clear();
-        window.sessionStorage.clear();
-        window.location.replace(window.location.origin);
-      }
-      if (typeof config.api?.inspectDetected === "function") {
-        config.api.inspectDetected();
-      }
-    };
-    addListener(onInspectorOpened);
-    launch();
-    await delay(config.detectInspectInitDelay ?? 50);
-  }
-
-  private static isCurrentBrowserSupported(
-    config: ContentProtectionModuleConfig
-  ): boolean {
-    if (!config.enforceSupportedBrowsers) {
-      return true;
-    }
-    let browsers: string[] = [];
-
-    (config.supportedBrowsers ?? []).forEach((browser: string) => {
-      browsers.push("last 1 " + browser + " version");
-    });
-
-    const supportedBrowsers = getUserAgentRegExp({
-      browsers: browsers,
-      allowHigherVersions: true,
-    });
-    return supportedBrowsers.test(navigator.userAgent);
   }
 
   protected async start(): Promise<void> {
@@ -168,7 +116,7 @@ export default class ContentProtectionModule implements ReaderModule {
 
   async stop() {
     if (IS_DEV) {
-      console.log("Protection module stop");
+      console.log("Protection module stop",);
     }
     this.mutationObserver.disconnect();
 
@@ -870,6 +818,8 @@ export default class ContentProtectionModule implements ReaderModule {
   ): void {
     const beingHacked = this.isBeingHacked(securityContainer);
 
+    console.log("deactivate beingHacked " + beingHacked + " isHacked " + isHacked,"CPM");
+
     if (beingHacked || isHacked) {
       rect.node.textContent = rect.scrambledTextContent;
       rect.isObfuscated = true;
@@ -887,15 +837,37 @@ export default class ContentProtectionModule implements ReaderModule {
     const outsideViewport = this.isOutsideViewport(rect);
     const beingHacked = this.isBeingHacked(securityContainer);
 
+    console.log("===TOGGLE=============================","CPM");
+    console.log("is obfuscated " + rect.isObfuscated + " outsideViewport " + outsideViewport + " beingHacked " + beingHacked + " isHacked " + isHacked,"CPM");
+
+
+    // console.log("window inner height: " + window.innerHeight);
+    // console.log("html client height: " + document.querySelectorAll("html")[0].clientHeight);
+    // console.log("html bounding client rect: " + document.querySelectorAll("html")[0].getBoundingClientRect);
+    // var htmlElement = document.querySelectorAll("html")[0];
+    // htmlElement.style.height = "100%";
+    // var computedHeight = window.getComputedStyle(htmlElement).getPropertyValue("height");
+    // console.log("computedHeight: " + computedHeight);
+
+
     if (rect.isObfuscated && !outsideViewport && !beingHacked && !isHacked) {
       rect.node.textContent = rect.textContent;
       rect.isObfuscated = false;
+      console.log("--vv-Descrambling-vv--","CPM");
+      console.log(rect.textContent,"CPM");
+      console.log("--^^-Descrambled-^^--","CPM");
     }
 
     if (!rect.isObfuscated && (outsideViewport || beingHacked || isHacked)) {
       rect.node.textContent = rect.scrambledTextContent;
       rect.isObfuscated = true;
+      console.log("--vv-Scrambling this text:-vv--","CPM");
+      console.log(rect.textContent,"CPM");
+      console.log("--vv-After Scrambling-vv--","CPM");
+      console.log(rect.scrambledTextContent,"CPM");
+      console.log("--^^-SCRAMBLED-^^--","CPM");
     }
+
   }
 
   findRects(parent: HTMLElement): Array<ContentProtectionRect> {
@@ -905,7 +877,7 @@ export default class ContentProtectionModule implements ReaderModule {
       const { top, height, left, width } = this.measureTextNode(node);
       const scrambled =
         node.parentElement.nodeName === "option" ||
-        node.parentElement.nodeName === "script"
+          node.parentElement.nodeName === "script"
           ? node.textContent
           : this.obfuscateText(node.textContent);
       return {
@@ -969,6 +941,11 @@ export default class ContentProtectionModule implements ReaderModule {
 
     const isLeft = right < windowLeft;
     const isRight = rect.left > windowRight;
+
+        console.log("CPM isOutsideViewport" + (isAbove || isBelow || isLeft || isRight) +
+        " isLeft " + isLeft + " isRight " + isRight, "CPM");
+
+        console.log("CPM windowLeft " + windowLeft + " windowRight " + windowRight + " right " + right + " left " + rect.left, "CPM")
 
     return isAbove || isBelow || isLeft || isRight;
   }

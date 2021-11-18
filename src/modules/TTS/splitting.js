@@ -226,37 +226,7 @@
         next.tagName === "input" ||
         next.tagName === "option" ||
         next.tagName === "textarea" ||
-        next.tagName === "script" ||
-        // mathml tags
-        next.tagName === "maction" ||
-        next.tagName === "math" ||
-        next.tagName === "menclose" ||
-        next.tagName === "merror" ||
-        next.tagName === "mfenced" ||
-        next.tagName === "mfrac" ||
-        next.tagName === "mi" ||
-        next.tagName === "mmultiscripts" ||
-        next.tagName === "mn" ||
-        next.tagName === "mo" ||
-        next.tagName === "mover" ||
-        next.tagName === "mpadded" ||
-        next.tagName === "mphantom" ||
-        next.tagName === "mroot" ||
-        next.tagName === "mrow" ||
-        next.tagName === "ms" ||
-        next.tagName === "mspace" ||
-        next.tagName === "msqrt" ||
-        next.tagName === "mstyle" ||
-        next.tagName === "msub" ||
-        next.tagName === "msubsup" ||
-        next.tagName === "msup" ||
-        next.tagName === "mtable" ||
-        next.tagName === "mtd" ||
-        next.tagName === "mtext" ||
-        next.tagName === "mtr" ||
-        next.tagName === "munder" ||
-        next.tagName === "munderover" ||
-        next.tagName === "semantics"
+        next.tagName === "script"
       ) {
         allElements.push(next);
         return;

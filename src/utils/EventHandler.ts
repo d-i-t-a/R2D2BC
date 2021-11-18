@@ -25,7 +25,7 @@ export function addEventListenerOptional(
   eventListener: any
 ) {
   if (element) {
-    element.addEventListener(eventType, eventListener, true);
+    element.addEventListener(eventType, eventListener);
   }
 }
 export function removeEventListenerOptional(
@@ -34,7 +34,7 @@ export function removeEventListenerOptional(
   eventListener: any
 ) {
   if (element) {
-    element.removeEventListener(eventType, eventListener, true);
+    element.removeEventListener(eventType, eventListener);
   }
 }
 

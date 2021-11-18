@@ -21,7 +21,7 @@
 <html lang="en">
 
 <head>
-    <title>Dita Reader</title>
+    <title>D2 Reader</title>
     <meta charset="utf-8" />
     <meta name="author" content="Aferdita Muriqi" />
     <meta name="description" content="A viewer application for EPUB files." />
@@ -62,14 +62,14 @@
                         </ul>
                         <ul id="nav-mobile-left" class="left">
                             <li><a href="#!" data-target="sidenav-left" class="sidenav-trigger left"><i class="material-icons  show-on-large">menu</i></a></li>
-                            <li><a rel="prev" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons show-on-large">arrow_back_ios</i></a></li>
-                            <li><a rel="next" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons show-on-large">arrow_forward_ios</i></a></li>
+                            <li><a rel="prev" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_back_ios</i></a></li>
+                            <li><a rel="next" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_forward_ios</i></a></li>
                         </ul>
                     </div>
                 </nav>
             </div>
             <ul id="sidenav-left" class="sidenav">
-                <li><a href="#" class="logo-container ">Dita Reader<i class="material-icons  left" style="margin-right: 15px">
+                <li><a href="#" class="logo-container ">D2 Reader<i class="material-icons  left" style="margin-right: 15px">
                             import_contacts
                         </i><i class="material-icons right  editAnnotations" id="expand-menu">unfold_more</i></a></li>
                 <li class="no-padding ">
@@ -578,8 +578,7 @@ height: 50px;
                 margin: 120,
                 navHeight: 70,
                 iframePaddingTop: 20,
-                bottomInfoHeight: 60,
-                sideNavPosition: 'left'
+                bottomInfoHeight: 60
             },
             rights: {
                 enableMaterial: true,
@@ -595,12 +594,6 @@ height: 50px;
             // services: {
             //     positions: new URL("https://alice.dita.digital/positions.json"),
             //     weight: new URL("https://alice.dita.digital/weight.json"),
-            // },
-            // sample: {
-            //     isSampleRead: true,
-            //     limit: 10, // in percent e.g. 5%
-            //     minimum: 5, // in pages
-            //     popup: "You can borrow the book to continue reading."
             // },
             mediaOverlays: {
                 autoScroll: true,
@@ -774,7 +767,7 @@ height: 50px;
                     console.log("resourceFitsScreen")
                 },
                 updateCurrentLocation: function (location) {
-                    console.log("updateCurrentLocation " + location.locations.progression)
+                    console.log("updateCurrentLocation")
                     return new Promise(function (resolve, reject) {
                         resolve(
                             location

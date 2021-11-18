@@ -32,12 +32,15 @@ import SearchModule from "./modules/search/SearchModule";
 import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
 import TextHighlighter from "./modules/highlight/TextHighlighter";
 import TimelineModule from "./modules/positions/TimelineModule";
+import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 import MediaOverlayModule from "./modules/mediaoverlays/MediaOverlayModule";
 import { Locator } from "./model/Locator";
 import { Publication } from "./model/Publication";
 import { convertAndCamel, Link } from "./model/Link";
 import { TaJsonDeserialize } from "./utils/JsonUtil";
+import { delay } from "./utils";
 import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
+import InspectorProtectionModule from "./modules/protection/InspectorProtectionModule";
 
 let D2Settings: UserSettings;
 let D2TTSSettings: TTSSettings;
@@ -52,8 +55,8 @@ let ContentProtectionModuleInstance: ContentProtectionModule;
 let TimelineModuleInstance: TimelineModule;
 let MediaOverlayModuleInstance: MediaOverlayModule;
 
-export const IS_DEV =
-  process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
+export const IS_DEV = true;
+  //process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
 
 export async function unload() {
   if (IS_DEV) {
@@ -561,295 +564,317 @@ exports.snapToElement = function (value) {
   snapToElement(value);
 };
 export async function load(config: ReaderConfig): Promise<any> {
-  if (config.rights?.enableContentProtection) {
-    await ContentProtectionModule.setupPreloadProtection(config.protection);
+  let browsers: string[] = [];
+
+  if (config.protection?.enforceSupportedBrowsers) {
+    (config.protection?.supportedBrowsers ?? []).forEach((browser: string) => {
+      browsers.push("last 1 " + browser + " version");
+    });
   }
-
-  let mainElement = document.getElementById("D2Reader-Container");
-  let headerMenu = document.getElementById("headerMenu");
-
-  let footerMenu = document.getElementById("footerMenu");
-  let webpubManifestUrl = config.url;
-
-  let store = new LocalStorageStore({
-    prefix: webpubManifestUrl.href,
-    useLocalStorage: config.useLocalStorage,
+  const supportedBrowsers = getUserAgentRegExp({
+    browsers: browsers,
+    allowHigherVersions: true,
   });
 
-  let settingsStore = new LocalStorageStore({
-    prefix: "r2d2bc-reader",
-    useLocalStorage: config.useLocalStorage,
-  });
-
-  let annotator = new LocalAnnotator({ store: store });
-
-  let upLink: UpLinkConfig;
-  if (config.upLinkUrl) {
-    upLink = config.upLinkUrl;
-  }
-
-  const response = await window.fetch(webpubManifestUrl.href, {
-    credentials: "same-origin",
-  });
-  const manifestJSON = await response.json();
-  let publication = TaJsonDeserialize<Publication>(manifestJSON, Publication);
-  publication.manifestUrl = webpubManifestUrl;
-  publication.sample = config.sample;
-
-  if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
-    config.rights.enableAnnotations = false;
-    config.rights.enableSearch = false;
-    config.rights.enableTTS = false;
-    // config.protection.enableObfuscation = false;
-  }
-
-  const getContentBytesLength = async (href: string): Promise<number> => {
-    if (config.api?.getContentBytesLength) {
-      return config.api.getContentBytesLength(href);
+  if (
+    (config.protection?.enforceSupportedBrowsers &&
+      supportedBrowsers.test(navigator.userAgent)) ||
+    !config.protection?.enforceSupportedBrowsers
+  ) {
+    if (config.protection?.detectInspect) {
+      InspectorProtectionModule.start({
+        api: config.protection?.api ?? {},
+        clearOnInspect: config.protection?.clearOnInspect ?? false,
+      });
+      await delay(1200);
     }
-    const r = await fetch(href);
-    const b = await r.blob();
-    return b.size;
-  };
 
-  if (config.rights?.autoGeneratePositions ?? true) {
-    let startPosition = 0;
-    let totalContentLength = 0;
-    let positions = [];
-    let weight = {};
-    for (const link of publication.readingOrder) {
-      if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
-        const locator: Locator = {
-          href: link.Href,
-          locations: {
-            progression: 0,
-            position: startPosition + 1,
-          },
-          type: link.TypeLink,
-        };
-        if (IS_DEV) console.log(locator);
-        positions.push(locator);
-        startPosition = startPosition + 1;
-      } else {
-        let href = publication.getAbsoluteHref(link.Href);
-        let length = await getContentBytesLength(href);
-        (link as Link).contentLength = length;
-        totalContentLength += length;
-        let positionLength = 1024;
-        let positionCount = Math.max(1, Math.ceil(length / positionLength));
-        if (IS_DEV) console.log(length + " Bytes");
-        if (IS_DEV) console.log(positionCount + " Positions");
-        Array.from(Array(positionCount).keys()).map((_, position) => {
-          const locator: Locator = {
-            href: link.Href,
-            locations: {
-              progression: position / positionCount,
-              position: startPosition + (position + 1),
-            },
-            type: link.TypeLink,
-          };
-          if (IS_DEV) console.log(locator);
-          positions.push(locator);
+    let mainElement = document.getElementById("D2Reader-Container");
+    let headerMenu = document.getElementById("headerMenu");
+    let footerMenu = document.getElementById("footerMenu");
+    let webpubManifestUrl = config.url;
+    let store = new LocalStorageStore({
+      prefix: webpubManifestUrl.href,
+      useLocalStorage: config.useLocalStorage,
+    });
+    let settingsStore = new LocalStorageStore({
+      prefix: "r2d2bc-reader",
+      useLocalStorage: config.useLocalStorage,
+    });
+
+    let annotator = new LocalAnnotator({ store: store });
+
+    let upLink: UpLinkConfig;
+    if (config.upLinkUrl) {
+      upLink = config.upLinkUrl;
+    }
+
+    const response = await window.fetch(webpubManifestUrl.href, {
+      credentials: "same-origin",
+    });
+    const manifestJSON = await response.json();
+    let publication = TaJsonDeserialize<Publication>(manifestJSON, Publication);
+    publication.manifestUrl = webpubManifestUrl;
+
+    if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
+      config.rights.enableAnnotations = false;
+      config.rights.enableSearch = false;
+      config.rights.enableTTS = false;
+      // config.protection.enableObfuscation = false;
+    }
+
+    const getContentBytesLength = async (href: string): Promise<number> => {
+      if (config.api?.getContentBytesLength) {
+        return config.api.getContentBytesLength(href);
+      }
+      const r = await fetch(href);
+      const b = await r.blob();
+      return b.size;
+    };
+
+    if (config.rights?.autoGeneratePositions ?? true) {
+      let startPosition = 0;
+      let totalContentLength = 0;
+      let positions = [];
+      let weight = {};
+      await Promise.all(
+        publication.readingOrder.map(async (link) => {
+          if (
+            (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          ) {
+            const locator: Locator = {
+              href: link.Href,
+              locations: {
+                progression: 0,
+                position: startPosition + 1,
+              },
+              type: link.TypeLink,
+            };
+            if (IS_DEV) console.log(locator);
+            positions.push(locator);
+            startPosition = startPosition + 1;
+          } else {
+            let href = publication.getAbsoluteHref(link.Href);
+            let length = await getContentBytesLength(href);
+            (link as Link).contentLength = length;
+            totalContentLength += length;
+            let positionLength = 1024;
+            let positionCount = Math.max(1, Math.ceil(length / positionLength));
+            if (IS_DEV) console.log(length + " Bytes");
+            if (IS_DEV) console.log(positionCount + " Positions");
+            Array.from(Array(positionCount).keys()).map((_, position) => {
+              const locator: Locator = {
+                href: link.Href,
+                locations: {
+                  progression: position / positionCount,
+                  position: startPosition + (position + 1),
+                },
+                type: link.TypeLink,
+              };
+              if (IS_DEV) console.log(locator);
+              positions.push(locator);
+            });
+            startPosition = startPosition + positionCount;
+          }
+        })
+      );
+      if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
+        publication.readingOrder.map(async (link) => {
+          if (IS_DEV) console.log(totalContentLength);
+          if (IS_DEV) console.log((link as Link).contentLength);
+          (link as Link).contentWeight =
+            (100 / totalContentLength) * (link as Link).contentLength;
+          weight[link.Href] = (link as Link).contentWeight;
+          if (IS_DEV) console.log((link as Link).contentWeight);
         });
-        startPosition = startPosition + positionCount;
+      }
+      positions.map((locator, _index) => {
+        let resource = positions.filter(
+          (el: Locator) => el.href === decodeURI(locator.href)
+        );
+        let positionIndex = Math.ceil(
+          locator.locations.progression * (resource.length - 1)
+        );
+        locator.locations.totalProgression =
+          (locator.locations.position - 1) / positions.length;
+        locator.locations.remainingPositions = Math.abs(
+          positionIndex - (resource.length - 1)
+        );
+        locator.locations.totalRemainingPositions = Math.abs(
+          locator.locations.position - 1 - (positions.length - 1)
+        );
+      });
+      publication.positions = positions;
+      if (IS_DEV) console.log(positions);
+    } else {
+      if (config.services?.positions) {
+        await fetch(config.services?.positions.href)
+          .then((r) => r.text())
+          .then(async (content) => {
+            publication.positions = JSON.parse(content).positions;
+          });
+      }
+      if (config.services?.weight) {
+        await fetch(config.services?.weight.href)
+          .then((r) => r.text())
+          .then(async (content) => {
+            if (
+              (publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"
+            ) {
+              let weight = JSON.parse(content);
+              publication.readingOrder.map(async (link) => {
+                (link as Link).contentWeight = weight[link.Href];
+                if (IS_DEV) console.log((link as Link).contentWeight);
+              });
+            }
+          });
       }
     }
 
+    // Settings
+    D2Settings = await UserSettings.create({
+      store: settingsStore,
+      initialUserSettings: config.userSettings,
+      headerMenu: headerMenu,
+      material: config.material,
+      api: config.api,
+      injectables:
+        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          ? config.injectablesFixed
+          : config.injectables,
+      layout:
+        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          ? "fixed"
+          : "reflowable",
+    });
+
+    // Navigator
+    D2Navigator = await IFrameNavigator.create({
+      mainElement: mainElement,
+      headerMenu: headerMenu,
+      footerMenu: footerMenu,
+      publication: publication,
+      settings: D2Settings,
+      annotator: annotator,
+      upLink: upLink,
+      initialLastReadingPosition: config.lastReadingPosition,
+      material: config.material,
+      api: config.api,
+      rights: config.rights,
+      tts: config.tts,
+      injectables:
+        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          ? config.injectablesFixed
+          : config.injectables,
+      attributes: config.attributes,
+      services: config.services,
+    });
+
+    // Highlighter
     if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
-      publication.readingOrder.map(async (link) => {
-        if (IS_DEV) console.log(totalContentLength);
-        if (IS_DEV) console.log((link as Link).contentLength);
-        (link as Link).contentWeight =
-          (100 / totalContentLength) * (link as Link).contentLength;
-        weight[link.Href] = (link as Link).contentWeight;
-        if (IS_DEV) console.log((link as Link).contentWeight);
+      D2Highlighter = await TextHighlighter.create({
+        delegate: D2Navigator,
+        ...config.highlighter,
       });
     }
-    positions.map((locator, _index) => {
-      let resource = positions.filter(
-        (el: Locator) => el.href === decodeURI(locator.href)
-      );
-      let positionIndex = Math.ceil(
-        locator.locations.progression * (resource.length - 1)
-      );
-      locator.locations.totalProgression =
-        (locator.locations.position - 1) / positions.length;
-      locator.locations.remainingPositions = Math.abs(
-        positionIndex - (resource.length - 1)
-      );
-      locator.locations.totalRemainingPositions = Math.abs(
-        locator.locations.position - 1 - (positions.length - 1)
-      );
-    });
-    publication.positions = positions;
-    if (IS_DEV) console.log(positions);
+
+    // Bookmark Module
+    if (config.rights?.enableBookmarks) {
+      BookmarkModuleInstance = await BookmarkModule.create({
+        annotator: annotator,
+        headerMenu: headerMenu,
+        rights: config.rights,
+        publication: publication,
+        delegate: D2Navigator,
+        initialAnnotations: config.initialAnnotations,
+        ...config.bookmarks,
+      });
+    }
+
+    // Annotation Module
+    if (config.rights?.enableAnnotations) {
+      AnnotationModuleInstance = await AnnotationModule.create({
+        annotator: annotator,
+        headerMenu: headerMenu,
+        rights: config.rights,
+        publication: publication,
+        delegate: D2Navigator,
+        initialAnnotations: config.initialAnnotations,
+        highlighter: D2Highlighter,
+        ...config.annotations,
+      });
+    }
+
+    // TTS Module
+    if (config.rights?.enableTTS) {
+      D2TTSSettings = await TTSSettings.create({
+        store: settingsStore,
+        initialTTSSettings: config.tts,
+        headerMenu: headerMenu,
+        ...config.tts,
+      });
+      TTSModuleInstance = await TTSModule.create({
+        delegate: D2Navigator,
+        tts: D2TTSSettings,
+        headerMenu: headerMenu,
+        rights: config.rights,
+        highlighter: D2Highlighter,
+        ...config.tts,
+      });
+    }
+
+    // Search Module
+    if (config.rights?.enableSearch) {
+      SearchModule.create({
+        headerMenu: headerMenu,
+        delegate: D2Navigator,
+        publication: publication,
+        highlighter: D2Highlighter,
+        ...config.search,
+      }).then(function (searchModule) {
+        SearchModuleInstance = searchModule;
+      });
+    }
+    // Timeline Module
+    if (config.rights?.enableTimeline) {
+      TimelineModule.create({
+        publication: publication,
+        delegate: D2Navigator,
+      }).then(function (timelineModule) {
+        TimelineModuleInstance = timelineModule;
+      });
+    }
+
+    // Content Protection Module
+    if (config.rights?.enableContentProtection) {
+      ContentProtectionModule.create({
+        delegate: D2Navigator,
+        ...config.protection,
+      }).then(function (contentProtectionModule) {
+        ContentProtectionModuleInstance = contentProtectionModule;
+      });
+    }
+
+    // MediaOverlay Module
+    if (config.rights?.enableMediaOverlays) {
+      D2MediaOverlaySettings = await MediaOverlaySettings.create({
+        store: settingsStore,
+        initialMediaOverlaySettings: config.mediaOverlays,
+        headerMenu: headerMenu,
+        ...config.mediaOverlays,
+      });
+      MediaOverlayModuleInstance = await MediaOverlayModule.create({
+        publication: publication,
+        settings: D2MediaOverlaySettings,
+        delegate: D2Navigator,
+        ...config.mediaOverlays,
+      });
+    }
+
+    return new Promise((resolve) => resolve(D2Navigator));
   } else {
-    if (config.services?.positions) {
-      await fetch(config.services?.positions.href)
-        .then((r) => r.text())
-        .then(async (content) => {
-          publication.positions = JSON.parse(content).positions;
-        });
-    }
-    if (config.services?.weight) {
-      await fetch(config.services?.weight.href)
-        .then((r) => r.text())
-        .then(async (content) => {
-          if (
-            (publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"
-          ) {
-            let weight = JSON.parse(content);
-            publication.readingOrder.map(async (link) => {
-              (link as Link).contentWeight = weight[link.Href];
-              if (IS_DEV) console.log((link as Link).contentWeight);
-            });
-          }
-        });
-    }
+    throw new Error("Browser not supported");
   }
-
-  // Settings
-  D2Settings = await UserSettings.create({
-    store: settingsStore,
-    initialUserSettings: config.userSettings,
-    headerMenu: headerMenu,
-    material: config.material,
-    api: config.api,
-    injectables:
-      (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-        ? config.injectablesFixed
-        : config.injectables,
-    layout:
-      (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-        ? "fixed"
-        : "reflowable",
-  });
-
-  // Navigator
-  D2Navigator = await IFrameNavigator.create({
-    mainElement: mainElement,
-    headerMenu: headerMenu,
-    footerMenu: footerMenu,
-    publication: publication,
-    settings: D2Settings,
-    annotator: annotator,
-    upLink: upLink,
-    initialLastReadingPosition: config.lastReadingPosition,
-    material: config.material,
-    api: config.api,
-    rights: config.rights,
-    tts: config.tts,
-    sample: config.sample,
-    injectables:
-      (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-        ? config.injectablesFixed
-        : config.injectables,
-    attributes: config.attributes,
-    services: config.services,
-  });
-
-  // Highlighter
-  if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
-    D2Highlighter = await TextHighlighter.create({
-      delegate: D2Navigator,
-      ...config.highlighter,
-    });
-  }
-
-  // Bookmark Module
-  if (config.rights?.enableBookmarks) {
-    BookmarkModuleInstance = await BookmarkModule.create({
-      annotator: annotator,
-      headerMenu: headerMenu,
-      rights: config.rights,
-      publication: publication,
-      delegate: D2Navigator,
-      initialAnnotations: config.initialAnnotations,
-      ...config.bookmarks,
-    });
-  }
-
-  // Annotation Module
-  if (config.rights?.enableAnnotations) {
-    AnnotationModuleInstance = await AnnotationModule.create({
-      annotator: annotator,
-      headerMenu: headerMenu,
-      rights: config.rights,
-      publication: publication,
-      delegate: D2Navigator,
-      initialAnnotations: config.initialAnnotations,
-      highlighter: D2Highlighter,
-      ...config.annotations,
-    });
-  }
-
-  // TTS Module
-  if (config.rights?.enableTTS) {
-    D2TTSSettings = await TTSSettings.create({
-      store: settingsStore,
-      initialTTSSettings: config.tts,
-      headerMenu: headerMenu,
-      ...config.tts,
-    });
-    TTSModuleInstance = await TTSModule.create({
-      delegate: D2Navigator,
-      tts: D2TTSSettings,
-      headerMenu: headerMenu,
-      rights: config.rights,
-      highlighter: D2Highlighter,
-      ...config.tts,
-    });
-  }
-
-  // Search Module
-  if (config.rights?.enableSearch) {
-    SearchModule.create({
-      headerMenu: headerMenu,
-      delegate: D2Navigator,
-      publication: publication,
-      highlighter: D2Highlighter,
-      ...config.search,
-    }).then(function (searchModule) {
-      SearchModuleInstance = searchModule;
-    });
-  }
-  // Timeline Module
-  if (config.rights?.enableTimeline) {
-    TimelineModule.create({
-      publication: publication,
-      delegate: D2Navigator,
-    }).then(function (timelineModule) {
-      TimelineModuleInstance = timelineModule;
-    });
-  }
-
-  // Content Protection Module
-  if (config.rights?.enableContentProtection) {
-    ContentProtectionModule.create({
-      delegate: D2Navigator,
-      ...config.protection,
-    }).then(function (contentProtectionModule) {
-      ContentProtectionModuleInstance = contentProtectionModule;
-    });
-  }
-
-  // MediaOverlay Module
-  if (config.rights?.enableMediaOverlays) {
-    D2MediaOverlaySettings = await MediaOverlaySettings.create({
-      store: settingsStore,
-      initialMediaOverlaySettings: config.mediaOverlays,
-      headerMenu: headerMenu,
-      ...config.mediaOverlays,
-    });
-    MediaOverlayModuleInstance = await MediaOverlayModule.create({
-      publication: publication,
-      settings: D2MediaOverlaySettings,
-      delegate: D2Navigator,
-      ...config.mediaOverlays,
-    });
-  }
-
-  return new Promise((resolve) => resolve(D2Navigator));
 }
 exports.load = async function (config: ReaderConfig) {
   return load(config);

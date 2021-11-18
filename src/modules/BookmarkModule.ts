@@ -36,7 +36,7 @@ export interface BookmarkModuleAPI {
   getBookmarks: Array<any>;
 }
 
-export interface BookmarkModuleProperties {}
+export interface BookmarkModuleProperties { }
 
 export interface BookmarkModuleConfig {
   annotator: Annotator;
@@ -195,10 +195,7 @@ export default class BookmarkModule implements ReaderModule {
           this.delegate.currentChapterLink.href
         );
       }
-      let href = tocItem.Href;
-      if (href.indexOf("#") > 0) {
-        href = href.slice(0, href.indexOf("#"));
-      }
+
       const progression = this.delegate.view.getCurrentPosition();
       const id: string = uuid();
       let bookmark: Bookmark;
@@ -207,25 +204,22 @@ export default class BookmarkModule implements ReaderModule {
           this.publication.positions) ||
         this.publication.positions
       ) {
-        const positions = this.publication.positionsByHref(
-          this.publication.getRelativeHref(
-            this.delegate.currentChapterLink.href
-          )
-        );
+        const chptHref: string = this.delegate.currentChapterLink.href;
+        const positions = this.publication.positionsByHref(chptHref);
         const positionIndex = Math.ceil(progression * (positions.length - 1));
         const locator = positions[positionIndex];
 
         bookmark = {
           ...locator,
           id: id,
-          href: href,
+          href: tocItem.Href,
           created: new Date(),
           title: this.delegate.currentChapterLink.title,
         };
       } else {
         bookmark = {
           id: id,
-          href: href,
+          href: tocItem.Href,
           locations: {
             progression: progression,
           },
@@ -239,10 +233,7 @@ export default class BookmarkModule implements ReaderModule {
         !(await this.annotator.locatorExists(bookmark, AnnotationType.Bookmark))
       ) {
         if (this.api?.addBookmark) {
-          const result = await this.api.addBookmark(bookmark);
-          if (result) {
-            bookmark = result;
-          }
+          await this.api.addBookmark(bookmark);
           if (IS_DEV) console.log(bookmark);
           let saved = await this.annotator.saveBookmark(bookmark);
 

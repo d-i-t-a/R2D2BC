@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "1.10.0",
+  "version": "1.9.0",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -13,7 +13,9 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "prepare": "npm run build",
+    "build-lib": "tsc && node-sass src/styles/sass/ -o lib/ && npm run copy-build-files && npm run copy-splitting-module",
+    "copy-build-files": "node scripts/copyBuildFiles.js",
+    "copy-splitting-module": "node scripts/copySplittingModule.js",
     "build": "webpack --mode=production && npm run sass && cpx \"dist/*.{css,js,map,woff,woff2}\" viewer/ && cpx \"injectables/**/*.{css,js}\" viewer/injectables/ && cpx \"dist/injectables/**/*.{css,js,map}\" viewer/injectables/",
     "dev": "webpack --mode=development && npm run sass && cpx \"dist/*.{css,js,map,woff,woff2}\" viewer/ && cpx \"injectables/**/*.{css,js}\" viewer/injectables/ && cpx \"dist/injectables/**/*.{css,js,map}\" viewer/injectables/",
     "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
@@ -24,16 +26,20 @@
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
   },
   "dependencies": {
+    "browser-detect-devtools": "^1.0.4",
     "browserslist-useragent": "^3.0.3",
+    "browserslist-useragent-regexp": "^3.0.0",
     "cssesc": "^3.0.0",
     "debounce": "^1.2.1",
     "detect-browser": "^5.2.0",
     "devtools-detector": "^2.0.3",
     "jscrypto": "0.0.1",
     "mark.js": "^8.11.1",
+    "materialize-css": "^1.0.0",
     "promise-polyfill": "^8.2.0",
     "r2-shared-js": "^1.0.51",
     "sanitize-html": "^2.3.3",
+    "ts-optchain": "^0.1.8",
     "whatwg-fetch": "^3.6.2"
   },
   "browserslist": {
@@ -65,7 +71,6 @@
     "@typescript-eslint/parser": "^4.21.0",
     "babel-eslint": "^10.1.0",
     "braces": ">=3.0.2",
-    "browserslist-useragent-regexp": "^3.0.0",
     "chai": "^4.3.4",
     "cpx": "^1.2.1",
     "eslint": "^7.23.0",
@@ -78,8 +83,8 @@
     "eslint-plugin-react": "^7.23.2",
     "eslint-plugin-react-hooks": "^4.2.0",
     "express": "^4.17.1",
+    "fs-extra": "^10.0.0",
     "http-server": "^0.12.3",
-    "materialize-css": "^1.0.0",
     "minimist": ">=1.2.5",
     "mocha": "^8.3.2",
     "node-sass": "^6.0.0",

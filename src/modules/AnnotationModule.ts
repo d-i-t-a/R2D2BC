@@ -237,29 +237,20 @@ export default class AnnotationModule implements ReaderModule {
         : bookmarkPosition;
       const id: string = uuid();
       let annotation: Annotation;
-
-      let href = tocItem.Href;
-      if (href.indexOf("#") > 0) {
-        href = href.slice(0, href.indexOf("#"));
-      }
-
       if (
         ((this.rights?.autoGeneratePositions ?? true) &&
           this.publication.positions) ||
         this.publication.positions
       ) {
-        const positions = this.publication.positionsByHref(
-          this.publication.getRelativeHref(
-            this.delegate.currentChapterLink.href
-          )
-        );
+        const chptHref: string = this.delegate.currentChapterLink.href;
+        const positions = this.publication.positionsByHref(chptHref);
         const positionIndex = Math.ceil(progression * (positions.length - 1));
         const locator = positions[positionIndex];
 
         annotation = {
           ...locator,
           id: id,
-          href: href,
+          href: tocItem.Href,
           created: new Date(),
           title: this.delegate.currentChapterLink.title,
           highlight: highlight,
@@ -272,7 +263,7 @@ export default class AnnotationModule implements ReaderModule {
       } else {
         annotation = {
           id: id,
-          href: href,
+          href: tocItem.Href,
           locations: {
             progression: progression,
           },
@@ -372,12 +363,7 @@ export default class AnnotationModule implements ReaderModule {
               );
             }
 
-            let href = tocItem.Href;
-            if (href.indexOf("#") > 0) {
-              href = href.slice(0, href.indexOf("#"));
-            }
-
-            if (annotation.href === href) {
+            if (annotation.href === tocItem.Href) {
               this.highlighter.setColor(annotation.color);
 
               await this.highlighter.createHighlightDom(
@@ -423,12 +409,7 @@ export default class AnnotationModule implements ReaderModule {
               );
             }
 
-            let href = tocItem.Href;
-            if (href.indexOf("#") > 0) {
-              href = href.slice(0, href.indexOf("#"));
-            }
-
-            if (annotation.href === href) {
+            if (annotation.href === tocItem.Href) {
               this.highlighter.setColor(annotation.color);
 
               await this.highlighter.createHighlightDom(

@@ -197,10 +197,11 @@ export default class LocalAnnotator implements Annotator {
       rangeRepresentation.highlight.color = rangeColor;
       rangeRepresentation.highlight.pointerInteraction = true;
 
-      rangeRepresentation.highlight.selectionInfo.cleanText = rangeRepresentation.highlight.selectionInfo.rawText
-        .trim()
-        .replace(/\n/g, " ")
-        .replace(/\s\s+/g, " ");
+      rangeRepresentation.highlight.selectionInfo.cleanText =
+        rangeRepresentation.highlight.selectionInfo.rawText
+          .trim()
+          .replace(/\n/g, " ")
+          .replace(/\s\s+/g, " ");
 
       annotationsToStore.push(rangeRepresentation);
     });
@@ -287,9 +288,11 @@ export default class LocalAnnotator implements Annotator {
         );
         if (foundElement) {
           var position = parseInt(
-            ((foundElement.hasChildNodes
-              ? foundElement.childNodes[0]
-              : foundElement) as HTMLDivElement).style.top.replace("px", "")
+            (
+              (foundElement.hasChildNodes
+                ? foundElement.childNodes[0]
+                : foundElement) as HTMLDivElement
+            ).style.top.replace("px", "")
           );
           return new Promise((resolve) => resolve(position));
         }

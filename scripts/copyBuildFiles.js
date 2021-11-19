@@ -44,7 +44,7 @@ function createPackageFile() {
       const { version, description, dependencies } = packageData;
 
       const minimalPackage = {
-        name: "treeline-r2d2bc",
+        name: "bluefire-r2d2bc",
         author: "dev@abovethetreeline.com",
         version,
         description,

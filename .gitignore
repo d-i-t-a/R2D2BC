@@ -1,6 +1,7 @@
 node_modules
 dist
 examples/streamed/epubs
+lib
 material.css
 material.css.map
 reader.css

@@ -436,23 +436,9 @@ export default class TTSModule2 implements ReaderModule {
             selection.modify("move", "forward", "line");
           }
           selection.extend(endNode, endOffset);
-          const endNode2 = selection.focusNode;
 
-          const focusNodeLength = selection.focusNode.length;
           selection.collapse(selection.anchorNode, selection.anchorOffset);
 
-          let endOffset2 = focusNodeLength;
-          if (selection.anchorOffset > focusNodeLength) {
-            endOffset2 = focusNodeLength;
-          } else {
-            endOffset2 = selection.anchorOffset + 1;
-          }
-
-          selection.modify("move", "forward", "character");
-          selection.modify("move", "backward", "word");
-          selection.extend(endNode2, endOffset2 - 1);
-          selection.modify("extend", "backward", "character");
-          selection.modify("extend", "forward", "sentence");
 
           const idx = self.findTtsQueueItemIndex(
             ttsQueue,

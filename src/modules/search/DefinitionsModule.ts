@@ -281,4 +281,12 @@ export default class DefinitionsModule implements ReaderModule {
       throw "Can't create popup highlight: " + e;
     }
   }
+
+  async addDefinition(definition) {
+    await this.define(definition);
+  }
+
+  async clearDefinitions() {
+    await this.highlighter.destroyHighlights(HighlightType.Popup);
+  }
 }

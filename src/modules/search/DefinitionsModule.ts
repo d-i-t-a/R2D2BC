@@ -50,6 +50,7 @@ export interface Definition {
 export interface DefinitionsModuleProperties {
   definitions: Definition[];
   color?: string;
+  fullWordSearch?: boolean;
   api?: DefinitionsModuleAPI;
 }
 
@@ -126,7 +127,8 @@ export default class DefinitionsModule implements ReaderModule {
             termKey,
             this.delegate.iframes[0].contentDocument,
             tocItem.Href,
-            tocItem.Title
+            tocItem.Title,
+            this.delegate.definitionsModule.properties.fullWordSearch
           ).then((result) => {
             let i: number = undefined;
             if (item.result == 1) {
@@ -278,5 +280,13 @@ export default class DefinitionsModule implements ReaderModule {
     } catch (e) {
       throw "Can't create popup highlight: " + e;
     }
+  }
+
+  async addDefinition(definition) {
+    await this.define(definition);
+  }
+
+  async clearDefinitions() {
+    await this.highlighter.destroyHighlights(HighlightType.Popup);
   }
 }

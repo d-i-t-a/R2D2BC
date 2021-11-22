@@ -127,7 +127,7 @@ export default class ContentProtectionModule implements ReaderModule {
         checkers.depRegToStringChecker,
         checkers.dateToStringChecker,
       ],
-    })
+    });
     detector.addListener(onInspectorOpened);
     detector.launch();
     await delay(config.detectInspectInitDelay ?? 50);

@@ -76,7 +76,8 @@ export async function searchDocDomSeek(
   searchInput: string,
   doc: Document,
   href: string,
-  title: string
+  title: string,
+  fullWordSearch: boolean = false
 ): Promise<ISearchResult[]> {
   const text = doc.body.textContent;
   if (!text) {
@@ -92,10 +93,18 @@ export async function searchDocDomSeek(
     acceptNode: (_node) => NodeFilter.FILTER_ACCEPT,
   });
 
-  const regexp = new RegExp(
+  let regexp = new RegExp(
     escapeRegExp(searchInput).replace(/ /g, "\\s+"),
     "gim"
   );
+
+  if (fullWordSearch) {
+    regexp = new RegExp(
+      "\\b" + escapeRegExp(searchInput).replace(/ /g, "\\s+") + "\\b",
+      "gim"
+    );
+  }
+
   const searchResults: ISearchResult[] = [];
   const snippetLength = 100;
   const snippetLengthNormalized = 30;

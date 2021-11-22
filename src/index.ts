@@ -636,6 +636,26 @@ export function showAnnotationLayer() {
 exports.showAnnotationLayer = function () {
   showAnnotationLayer();
 };
+
+export function hideLayer(layer) {
+  if (IS_DEV) {
+    console.log("hideLayer");
+  }
+  D2Navigator.hideLayer(layer);
+}
+exports.hideLayer = function (layer) {
+  hideLayer(layer);
+};
+export function showLayer(layer) {
+  if (IS_DEV) {
+    console.log("showLayer");
+  }
+  D2Navigator.showLayer(layer);
+}
+exports.showLayer = function (layer) {
+  showLayer(layer);
+};
+
 // currently not used or functional
 export function snapToElement(value) {
   if (IS_DEV) {

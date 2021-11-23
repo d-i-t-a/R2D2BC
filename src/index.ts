@@ -636,6 +636,49 @@ export function showAnnotationLayer() {
 exports.showAnnotationLayer = function () {
   showAnnotationLayer();
 };
+
+export function hideLayer(layer) {
+  if (IS_DEV) {
+    console.log("hideLayer");
+  }
+  D2Navigator.hideLayer(layer);
+}
+exports.hideLayer = function (layer) {
+  hideLayer(layer);
+};
+export function showLayer(layer) {
+  if (IS_DEV) {
+    console.log("showLayer");
+  }
+  D2Navigator.showLayer(layer);
+}
+exports.showLayer = function (layer) {
+  showLayer(layer);
+};
+
+export async function clearDefinitions() {
+  if (IS_DEV) {
+    console.log("clearDefinitions");
+  }
+  if (DefinitionsModuleInstance) {
+    await DefinitionsModuleInstance.clearDefinitions();
+  }
+}
+exports.clearDefinitions = async function () {
+  await clearDefinitions();
+};
+export async function addDefinition(definition) {
+  if (IS_DEV) {
+    console.log("addDefinition");
+  }
+  if (DefinitionsModuleInstance) {
+    await DefinitionsModuleInstance.addDefinition(definition);
+  }
+}
+exports.addDefinition = async function (definition) {
+  await addDefinition(definition);
+};
+
 // currently not used or functional
 export function snapToElement(value) {
   if (IS_DEV) {

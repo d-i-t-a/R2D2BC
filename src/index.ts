@@ -394,11 +394,11 @@ export async function applyLineFocusSettings(userSettings) {
   }
   if (userSettings.lines) {
     LineFocusModuleInstance.properties.lines = parseInt(userSettings.lines);
-    LineFocusModuleInstance.enableLineFocus();
+    await LineFocusModuleInstance.enableLineFocus();
   }
   if (userSettings.debug !== undefined) {
     LineFocusModuleInstance.isDebug = userSettings.debug;
-    LineFocusModuleInstance.enableLineFocus();
+    await LineFocusModuleInstance.enableLineFocus();
   }
 }
 
@@ -742,18 +742,18 @@ export function deactivateMarker() {
 exports.deactivateMarker = function () {
   deactivateMarker();
 };
-export function enableLineFocus() {
+export async function enableLineFocus() {
   if (IS_DEV) {
     console.log("enableLineFocus");
   }
-  LineFocusModuleInstance.enableLineFocus();
+  await LineFocusModuleInstance.enableLineFocus();
 }
-export function lineFocus(active: boolean) {
+export async function lineFocus(active: boolean) {
   if (IS_DEV) {
     console.log("lineFocus");
   }
   if (active) {
-    LineFocusModuleInstance.enableLineFocus();
+    await LineFocusModuleInstance.enableLineFocus();
   } else {
     LineFocusModuleInstance.disableLineFocus();
   }

@@ -104,8 +104,9 @@ export default class LineFocusModule implements ReaderModule {
     }
   }
 
-  enableLineFocus() {
+  async enableLineFocus() {
     this.isActive = true;
+    await this.delegate.settings.scroll(true);
     this.lineFocus();
   }
 

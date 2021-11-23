@@ -41,6 +41,7 @@
     <link rel="stylesheet" href="material.css" />
     <!-- END Material CSS -->
 
+    <link rel="stylesheet" href="/viewer/injectables/style/linefocus.css" />
 </head>
 
 <body>
@@ -491,6 +492,10 @@ height: 50px;
         </header>
 
         <div id="D2Reader-Container" style="width: 100%; height: 100%; position: relative;">
+            <div id="lineFocusContainer" class="d2-line-focus-container" style="display: none">
+                <div id="lineFocusTopBlinder" class="d2-line-focus-top"></div>
+                <div id="lineFocusBottomBlinder" class="d2-line-focus-bottom"></div>
+            </div>
             <main style="overflow: hidden" tabindex=-1 id="iframe-wrapper">
                 <div id="reader-loading" class="loading"></div>
                 <div id="reader-error" class="error"></div>
@@ -576,18 +581,18 @@ height: 50px;
             </div>
         </span>
 
-    <footer id="footerMenu">
-        <a rel="prev" class="disabled" role="button" aria-labelledby="previous-label" style="top: 50%;left:0;position: fixed;height: 100px;
+        <footer id="footerMenu">
+            <a rel="prev" class="disabled" role="button" aria-labelledby="previous-label" style="top: 50%;left:0;position: fixed;height: 100px;
                     background: #d3d3d33b;">
-            <i class="material-icons black-text" style="top: calc(50% - 12px);
+                <i class="material-icons black-text" style="top: calc(50% - 12px);
                         position: relative;">keyboard_arrow_left</i>
-        </a>
-        <a rel="next" class="disabled" role="button" aria-labelledby="next-label" style="top: 50%;right:0;position: fixed;height: 100px;
+            </a>
+            <a rel="next" class="disabled" role="button" aria-labelledby="next-label" style="top: 50%;right:0;position: fixed;height: 100px;
                     background: #d3d3d33b;">
-            <i class="material-icons black-text" style="top: calc(50% - 12px);
+                <i class="material-icons black-text" style="top: calc(50% - 12px);
                         position: relative;">keyboard_arrow_right</i>
-        </a>
-    </footer>
+            </a>
+        </footer>
     </div>
 
 

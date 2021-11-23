@@ -60,6 +60,10 @@ export default class LineFocusModule implements ReaderModule {
   isActive = false;
   isDebug = false;
 
+  lineFocusContainer = document.getElementById(`lineFocusContainer`);
+  lineFocusTopBlinder = document.getElementById(`lineFocusTopBlinder`);
+  lineFocusBottomBlinder = document.getElementById(`lineFocusBottomBlinder`);
+
   public static async create(config: LineFocusModuleConfig) {
     const search = new this(
       config.delegate,
@@ -109,8 +113,7 @@ export default class LineFocusModule implements ReaderModule {
     this.isActive = false;
     document.body.style.removeProperty("overflow");
 
-    let lineFocus = document.getElementById("lineFocus");
-    lineFocus.style.display = "none";
+    this.lineFocusContainer.style.display = "none";
 
     let timeline = document.getElementById("container-view-timeline");
     if (timeline) {
@@ -147,8 +150,7 @@ export default class LineFocusModule implements ReaderModule {
       timeline.style.display = "none";
     }
 
-    let lineFocus = document.getElementById("lineFocus");
-    lineFocus.style.removeProperty("display");
+    this.lineFocusContainer.style.removeProperty("display");
 
     let divBefore = document.getElementById("divBefore");
     if (divBefore) {
@@ -427,18 +429,14 @@ export default class LineFocusModule implements ReaderModule {
       parseInt(next.style.height.replace("px", ""));
     let height = bottom - parseInt(top.replace("px", ""));
 
-    let lineFocus = document.getElementById(`lineFocus`);
-    let topRect = document.getElementById(`topRect`);
-    let bottomRect = document.getElementById(`bottomRect`);
-
     let lineFocusHeight = parseInt(
-      getComputedStyle(lineFocus).height.replace("px", "")
+      getComputedStyle(this.lineFocusContainer).height.replace("px", "")
     );
 
     let blindersHeight = (lineFocusHeight - height) / 2;
 
-    topRect.style.height = blindersHeight + "px";
-    bottomRect.style.height = blindersHeight + "px";
+    this.lineFocusTopBlinder.style.height = blindersHeight + "px";
+    this.lineFocusBottomBlinder.style.height = blindersHeight + "px";
 
     current.focus();
     current.scrollIntoView({
@@ -464,18 +462,14 @@ export default class LineFocusModule implements ReaderModule {
         parseInt(next.style.height.replace("px", ""));
       let height = bottom - parseInt(top.replace("px", ""));
 
-      let lineFocus = document.getElementById(`lineFocus`);
-      let topRect = document.getElementById(`topRect`);
-      let bottomRect = document.getElementById(`bottomRect`);
-
       let lineFocusHeight = parseInt(
-        getComputedStyle(lineFocus).height.replace("px", "")
+        getComputedStyle(this.lineFocusContainer).height.replace("px", "")
       );
 
       let blindersHeight = (lineFocusHeight - height) / 2;
 
-      topRect.style.height = blindersHeight + "px";
-      bottomRect.style.height = blindersHeight + "px";
+      this.lineFocusTopBlinder.style.height = blindersHeight + "px";
+      this.lineFocusBottomBlinder.style.height = blindersHeight + "px";
 
       current.focus();
       current.scrollIntoView({
@@ -502,18 +496,14 @@ export default class LineFocusModule implements ReaderModule {
         parseInt(next.style.height.replace("px", ""));
       let height = bottom - parseInt(top.replace("px", ""));
 
-      let lineFocus = document.getElementById(`lineFocus`);
-      let topRect = document.getElementById(`topRect`);
-      let bottomRect = document.getElementById(`bottomRect`);
-
       let lineFocusHeight = parseInt(
-        getComputedStyle(lineFocus).height.replace("px", "")
+        getComputedStyle(this.lineFocusContainer).height.replace("px", "")
       );
 
       let blindersHeight = (lineFocusHeight - height) / 2;
 
-      topRect.style.height = blindersHeight + "px";
-      bottomRect.style.height = blindersHeight + "px";
+      this.lineFocusTopBlinder.style.height = blindersHeight + "px";
+      this.lineFocusBottomBlinder.style.height = blindersHeight + "px";
 
       current.focus();
       current.scrollIntoView({

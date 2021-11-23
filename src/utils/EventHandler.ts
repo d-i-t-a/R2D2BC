@@ -92,7 +92,11 @@ export default class EventHandler {
     const linkInReadingOrder = (
       readingOrder: Link[],
       clickedPathname: string
-    ) => readingOrder.some((link: Link) => clickedPathname.includes(link.Href));
+    ) =>
+      readingOrder.some(
+        (link: Link) =>
+          !link.Rel?.includes("external") && clickedPathname.includes(link.Href)
+      );
 
     const isEpubInternal = linkInReadingOrder(
       this.navigator.publication.readingOrder,

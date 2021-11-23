@@ -1292,15 +1292,13 @@ export default class TextHighlighter {
           );
         }
       }
-      if (this.delegate.tts?.enableSplitter) {
-        const selection = self
-          .dom(self.delegate.iframes[0].contentDocument.body)
-          .getSelection();
-        selection.removeAllRanges();
-        var toolbox = document.getElementById("highlight-toolbox");
-        toolbox.style.display = "none";
-        this.selectionMenuClosed();
-      }
+      const selection = self
+        .dom(self.delegate.iframes[0].contentDocument.body)
+        .getSelection();
+      selection.removeAllRanges();
+      const toolbox = document.getElementById("highlight-toolbox");
+      toolbox.style.display = "none";
+      this.selectionMenuClosed();
     }
   }
   stopReadAloud() {
@@ -1619,7 +1617,6 @@ export default class TextHighlighter {
     return this.options.color;
   }
 
-
   /**
    * Returns true if element is a highlight.
    * All highlights have 'data-highlighted' attribute.
@@ -1632,7 +1629,6 @@ export default class TextHighlighter {
       el && el.nodeType === NODE_TYPE.ELEMENT_NODE && el.hasAttribute(DATA_ATTR)
     );
   }
-
 
   /**
    * Creates wrapper for highlights.
@@ -2482,9 +2478,9 @@ export default class TextHighlighter {
         }
 
         if (payload.highlight.type === HighlightType.Annotation) {
-        this.delegate.annotationModule?.api
-          ?.selectedAnnotation(anno)
-          .then(async () => {});
+          this.delegate.annotationModule?.api
+            ?.selectedAnnotation(anno)
+            .then(async () => {});
         }
 
         if (anno?.id) {
@@ -2806,7 +2802,6 @@ export default class TextHighlighter {
       highlightContainer.remove();
     }
   }
-
 
   createHighlight(
     win: any,

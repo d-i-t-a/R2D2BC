@@ -20,6 +20,7 @@
 import { IS_DEV } from "../utils";
 import IFrameNavigator from "../navigator/IFrameNavigator";
 import Popup from "../modules/search/Popup";
+import { Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
 
 export function addEventListenerOptional(
   element: any,
@@ -79,6 +80,28 @@ export default class EventHandler {
     return null;
   };
 
+  /**
+   *
+   * This function checks the user clicked link inside the iframe
+   * against the tableOfContents, it is an internal link if found.
+   *
+   */
+  private isEpubInternal = (clickedLink: HTMLAnchorElement): boolean => {
+    if (IS_DEV) console.log("clickedLink: ", clickedLink);
+
+    const linkInReadingOrder = (
+      readingOrder: Link[],
+      clickedPathname: string
+    ) => readingOrder.some((link: Link) => clickedPathname.includes(link.Href));
+
+    const isEpubInternal = linkInReadingOrder(
+      this.navigator.publication.readingOrder,
+      clickedLink.pathname
+    );
+
+    return isEpubInternal;
+  };
+
   private handleLinks = async (
     event: MouseEvent | TouchEvent
   ): Promise<void> => {
@@ -93,12 +116,7 @@ export default class EventHandler {
         window.location.hostname === link.hostname;
 
       // If epub is hosted, rather than streamed, links to a resource inside the same epub should not be opened externally.
-      const manifestUrl = this.navigator.publication.manifestUrl;
-
-      const isEpubInternal =
-        manifestUrl.protocol === link.protocol &&
-        manifestUrl.port === link.port &&
-        manifestUrl.hostname === link.hostname;
+      const isEpubInternal = this.isEpubInternal(link);
 
       const isInternal = link.href.indexOf("#");
       if (!isSameOrigin && !isEpubInternal) {

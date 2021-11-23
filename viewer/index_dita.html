@@ -518,7 +518,6 @@ height: 50px;
                 <button style="background-color: gainsboro;" id="collapseIcon"><i class="material-icons" style="color:gray">close</i></button>
             </div>
         </span>
-    </div>
 
     <footer id="footerMenu">
         <a rel="prev" class="disabled" role="button" aria-labelledby="previous-label" style="top: 50%;left:0;position: fixed;height: 100px;
@@ -532,6 +531,8 @@ height: 50px;
                         position: relative;">keyboard_arrow_right</i>
         </a>
     </footer>
+    </div>
+
 
     <script>
         let getURLQueryParams = function () {
@@ -881,24 +882,18 @@ height: 50px;
                 api: {
                     click: function (item, element) {
                         console.log("click");
-                        console.log(item);
-                        console.log(element);
                     },
                     success: function (item, elements) {
                         console.log("success");
-                        console.log(item);
-                        console.log(elements);
                     },
                     visible: function (item, element) {
                         console.log("visible");
-                        console.log(item);
-                        console.log(element);
                     },
                 },
                 definitions: [
                     {
                         order: 0,
-                        result: 1, // 1 = first, 2 = random, 0 = all
+                        result: 0, // 1 = first, 2 = random, 0 = all
                         terms: ["lavender", "lavandula"],
                         definition: "Lavandula (common name lavender) is a genus of 47 known species of flowering plants in the mint family, Lamiaceae.",
                     },
@@ -934,6 +929,9 @@ height: 50px;
                     selectionMenuClose: function () {
                         console.log("selectionMenuClose")
                     },
+                    selection: function(value, selection) {
+                        console.log(value)
+                    }
                 }
             },
             annotations: {
@@ -1075,7 +1073,6 @@ height: 50px;
                 buttons[1].style.backgroundColor = 'white'
             }
         }
-
         function setScroll(scroll) {
             let buttons = document.getElementById('scrollMode').getElementsByTagName('button');
             if (scroll === 'true') {
@@ -1086,7 +1083,6 @@ height: 50px;
                 buttons[0].style.backgroundColor = 'white'
             }
         }
-
         function setAlignment(textAlignment) {
             let buttons = document.getElementById('textAlignment').getElementsByTagName('button');
             if (textAlignment === 'auto') {
@@ -1154,7 +1150,6 @@ height: 50px;
     <!-- START Material Scripts -->
     <!-- Compiled and minified Materialize JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-
     <noscript>
         <style>
             noscript {

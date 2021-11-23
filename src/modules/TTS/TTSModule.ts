@@ -451,7 +451,7 @@ export default class TTSModule implements ReaderModule {
 
     utterance.onend = function () {
       if (IS_DEV) console.log("utterance ended");
-      self.highlighter.doneSpeaking();
+      self.highlighter.doneSpeaking(0);
       if (self.delegate.tts?.enableSplitter) {
         let splittingResult = self.body.querySelectorAll("[data-word]");
         splittingResult.forEach((splittingWord) => {

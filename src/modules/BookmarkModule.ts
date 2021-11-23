@@ -322,7 +322,7 @@ export default class BookmarkModule implements ReaderModule {
   private addBookmarkPlus() {
     let self = this;
 
-    let node = this.delegate.highlighter.visibleTextRects[0];
+    let node = this.delegate.highlighter.visibleTextRects(0)[0];
     const range = this.delegate.highlighter
       .dom(this.delegate.iframes[0].contentDocument.body)
       .getWindow()
@@ -433,9 +433,7 @@ export default class BookmarkModule implements ReaderModule {
       },
     };
     let book = this.delegate.highlighter.createHighlight(
-      this.delegate.highlighter
-        .dom(self.delegate.iframes[0].contentDocument.body)
-        .getWindow(),
+      0,
       selectionInfo,
       menuItem.highlight.color,
       true,
@@ -589,7 +587,8 @@ export default class BookmarkModule implements ReaderModule {
           this.delegate.iframes[0].contentDocument.readyState === "complete"
         ) {
           await this.delegate.highlighter.destroyHighlights(
-            HighlightType.Annotation
+            HighlightType.Annotation,
+            0
           );
 
           for (const rangeRepresentation of highlights) {
@@ -619,7 +618,7 @@ export default class BookmarkModule implements ReaderModule {
 
             if (annotation.href === href) {
               await this.delegate.highlighter.createHighlightDom(
-                this.delegate.iframes[0].contentWindow as any,
+                0,
                 rangeRepresentation.highlight
               );
             }
@@ -636,7 +635,8 @@ export default class BookmarkModule implements ReaderModule {
           this.delegate.iframes[0].contentDocument.readyState === "complete"
         ) {
           await this.delegate.highlighter.destroyHighlights(
-            HighlightType.Annotation
+            HighlightType.Annotation,
+            0
           );
 
           for (const rangeRepresentation of highlights) {
@@ -666,7 +666,7 @@ export default class BookmarkModule implements ReaderModule {
 
             if (annotation.href === href) {
               await this.delegate.highlighter.createHighlightDom(
-                this.delegate.iframes[0].contentWindow as any,
+                0,
                 rangeRepresentation.highlight
               );
             }

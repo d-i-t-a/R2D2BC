@@ -43,6 +43,7 @@ import TTSModule2 from "./modules/TTS/TTSModule2";
 import PageBreakModule from "./modules/pagebreak/PageBreakModule";
 import DefinitionsModule from "./modules/search/DefinitionsModule";
 import { IS_DEV } from "./utils";
+import LineFocusModule from "./modules/linefocus/LineFocusModule";
 
 let D2Settings: UserSettings;
 let D2TTSSettings: TTSSettings;
@@ -54,6 +55,7 @@ let AnnotationModuleInstance: AnnotationModule;
 let TTSModuleInstance: ReaderModule;
 let SearchModuleInstance: SearchModule;
 let DefinitionsModuleInstance: DefinitionsModule;
+let LineFocusModuleInstance: LineFocusModule;
 let ContentProtectionModuleInstance: ContentProtectionModule;
 let TimelineModuleInstance: TimelineModule;
 let MediaOverlayModuleInstance: MediaOverlayModule;
@@ -85,6 +87,9 @@ export async function unload() {
   }
   if (D2Navigator.rights?.enableDefinitions) {
     await DefinitionsModuleInstance.stop();
+  }
+  if (D2Navigator.rights?.enableLineFocus) {
+    await LineFocusModuleInstance.stop();
   }
   if (D2Navigator.rights?.enableContentProtection) {
     await ContentProtectionModuleInstance.stop();
@@ -383,6 +388,20 @@ export async function applyUserSettings(userSettings) {
   }
   await D2Settings.applyUserSettings(userSettings);
 }
+export async function applyLineFocusSettings(userSettings) {
+  if (IS_DEV) {
+    console.log("applyUserSettings");
+  }
+  if (userSettings.lines) {
+    LineFocusModuleInstance.properties.factor = parseInt(userSettings.lines);
+    LineFocusModuleInstance.enableLineFocus();
+  }
+  if (userSettings.debug !== undefined) {
+    LineFocusModuleInstance.isDebug = userSettings.debug;
+    LineFocusModuleInstance.enableLineFocus();
+  }
+}
+
 exports.applyUserSettings = async function (userSettings) {
   await applyUserSettings(userSettings);
 };
@@ -633,6 +652,20 @@ export function showAnnotationLayer() {
     AnnotationModuleInstance.showAnnotationLayer();
   }
 }
+export function lineUp() {
+  if (IS_DEV) {
+    console.log("lineUp");
+  }
+  LineFocusModuleInstance.lineUp();
+}
+
+export function lineDown() {
+  if (IS_DEV) {
+    console.log("lineDown");
+  }
+  LineFocusModuleInstance.lineDown();
+}
+
 exports.showAnnotationLayer = function () {
   showAnnotationLayer();
 };
@@ -709,6 +742,28 @@ export function deactivateMarker() {
 exports.deactivateMarker = function () {
   deactivateMarker();
 };
+export function enableLineFocus() {
+  if (IS_DEV) {
+    console.log("enableLineFocus");
+  }
+  LineFocusModuleInstance.enableLineFocus();
+}
+export function lineFocus(active: boolean) {
+  if (IS_DEV) {
+    console.log("lineFocus");
+  }
+  if (active) {
+    LineFocusModuleInstance.enableLineFocus();
+  } else {
+    LineFocusModuleInstance.disableLineFocus();
+  }
+}
+export function disableLineFocus() {
+  if (IS_DEV) {
+    console.log("disableLineFocus");
+  }
+  LineFocusModuleInstance.disableLineFocus();
+}
 export async function load(config: ReaderConfig): Promise<any> {
   if (config.rights?.enableContentProtection) {
     await ContentProtectionModule.setupPreloadProtection(config.protection);
@@ -747,6 +802,7 @@ export async function load(config: ReaderConfig): Promise<any> {
 
   if ((publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed") {
     config.rights.enableSearch = false;
+    config.rights.enableLineFocus = false;
     config.rights.enableDefinitions = false;
     config.rights.enableTTS = false;
     config.protection.enableObfuscation = false;
@@ -980,6 +1036,16 @@ export async function load(config: ReaderConfig): Promise<any> {
       ...config.define,
     }).then(function (definitionsModule) {
       DefinitionsModuleInstance = definitionsModule;
+    });
+  }
+
+  if (config.rights?.enableLineFocus) {
+    LineFocusModule.create({
+      delegate: D2Navigator,
+      highlighter: D2Highlighter,
+      ...config.lineFocus,
+    }).then(function (lineFocusModule) {
+      LineFocusModuleInstance = lineFocusModule;
     });
   }
 

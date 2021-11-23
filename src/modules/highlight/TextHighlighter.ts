@@ -53,6 +53,7 @@ export const ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER";
 export const ID_PAGEBREAK_CONTAINER = "R2_ID_PAGEBREAK_CONTAINER";
 export const ID_SEARCH_CONTAINER = "R2_ID_SEARCH_CONTAINER";
 export const ID_POPUP_CONTAINER = "R2_ID_POPUP_CONTAINER";
+export const ID_LINEFOCUS_CONTAINER = "R2_ID_LINEFOCUS_CONTAINER";
 
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
 export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
@@ -2546,11 +2547,15 @@ export default class TextHighlighter {
       iframeDocument.getElementById(ID_SEARCH_CONTAINER);
     let _highlightsPopupContainer: HTMLElement =
       iframeDocument.getElementById(ID_POPUP_CONTAINER);
+
+    let _highlightsLineFocusContainer: HTMLElement =
+      iframeDocument.getElementById(ID_LINEFOCUS_CONTAINER);
     if (
       (!_highlightsContainer && id == ID_HIGHLIGHTS_CONTAINER) ||
       (!_highlightsSearchContainer && id == ID_SEARCH_CONTAINER) ||
       (!_highlightsReadAloudContainer && id == ID_READALOUD_CONTAINER) ||
       (!_highlightsPageBreakContainer && id == ID_PAGEBREAK_CONTAINER) ||
+      (!_highlightsLineFocusContainer && id == ID_LINEFOCUS_CONTAINER) ||
       (!_highlightsPopupContainer && id == ID_POPUP_CONTAINER)
     ) {
       if (
@@ -2652,6 +2657,22 @@ export default class TextHighlighter {
           _highlightsPopupContainer.style.setProperty("left", "0");
         }
         iframeBody.append(_highlightsPopupContainer);
+      } else if (id == ID_LINEFOCUS_CONTAINER) {
+        _highlightsLineFocusContainer = iframeDocument.createElement("div");
+        _highlightsLineFocusContainer.setAttribute("id", id);
+        _highlightsLineFocusContainer.style.setProperty(
+          "pointer-events",
+          "none"
+        );
+        if (this.delegate.view.layout === "fixed") {
+          _highlightsLineFocusContainer.style.setProperty(
+            "position",
+            "absolute"
+          );
+          _highlightsLineFocusContainer.style.setProperty("top", "0");
+          _highlightsLineFocusContainer.style.setProperty("left", "0");
+        }
+        iframeBody.append(_highlightsLineFocusContainer);
       }
     }
     if (id == ID_HIGHLIGHTS_CONTAINER) {
@@ -2664,6 +2685,8 @@ export default class TextHighlighter {
       return _highlightsPageBreakContainer;
     } else if (id == ID_POPUP_CONTAINER) {
       return _highlightsPopupContainer;
+    } else if (id == ID_LINEFOCUS_CONTAINER) {
+      return _highlightsLineFocusContainer;
     }
     return _highlightsContainer;
   }
@@ -2733,6 +2756,9 @@ export default class TextHighlighter {
     let _highlightsPopupContainer: HTMLElement =
       iframeDocument.getElementById(ID_POPUP_CONTAINER);
 
+    let _highlightsLineFocusContainer: HTMLElement =
+      iframeDocument.getElementById(ID_LINEFOCUS_CONTAINER);
+
     switch (type) {
       case HighlightType.ReadAloud:
         if (_highlightsReadAloudContainer) {
@@ -2756,6 +2782,12 @@ export default class TextHighlighter {
         if (_highlightsPopupContainer) {
           _highlightsPopupContainer.remove();
           _highlightsPopupContainer = null;
+        }
+        break;
+      case HighlightType.Lines:
+        if (_highlightsLineFocusContainer) {
+          _highlightsLineFocusContainer.remove();
+          _highlightsLineFocusContainer = null;
         }
         break;
       case HighlightType.Annotation:

@@ -85,6 +85,9 @@ import PageBreakModule from "../modules/pagebreak/PageBreakModule";
 import DefinitionsModule, {
   DefinitionsModuleConfig,
 } from "../modules/search/DefinitionsModule";
+import LineFocusModule, {
+  LineFocusModuleConfig,
+} from "../modules/linefocus/LineFocusModule";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -158,6 +161,7 @@ export interface ReaderRights {
   enableTTS?: boolean;
   enableSearch?: boolean;
   enableDefinitions?: boolean;
+  enableLineFocus?: boolean;
   enableContentProtection?: boolean;
   enableMaterial?: boolean;
   enableTimeline?: boolean;
@@ -180,6 +184,7 @@ export interface ReaderConfig {
   tts?: TTSModuleConfig;
   search?: SearchModuleConfig;
   define?: DefinitionsModuleConfig;
+  lineFocus?: LineFocusModuleConfig;
   protection?: ContentProtectionModuleConfig;
   mediaOverlays?: MediaOverlayModuleConfig;
   annotations?: AnnotationModuleConfig;
@@ -207,6 +212,7 @@ export default class IFrameNavigator implements Navigator {
   ttsModule?: ReaderModule;
   searchModule?: SearchModule;
   definitionsModule?: DefinitionsModule;
+  lineFocusModule?: LineFocusModule;
   contentProtectionModule?: ContentProtectionModule;
   highlighter?: TextHighlighter;
   timelineModule?: TimelineModule;
@@ -2850,6 +2856,9 @@ export default class IFrameNavigator implements Navigator {
       if (this.contentProtectionModule !== undefined) {
         this.contentProtectionModule.handleResize();
       }
+      if (this.lineFocusModule !== undefined) {
+        this.lineFocusModule.handleResize();
+      }
     }, 100);
   }
 
@@ -3160,6 +3169,9 @@ export default class IFrameNavigator implements Navigator {
 
         await this.updatePositionInfo();
       } else {
+        if (this.lineFocusModule !== undefined) {
+          this.lineFocusModule.disableLineFocus();
+        }
         if (this.searchModule !== undefined) {
           this.searchModule.clearSearch();
         }

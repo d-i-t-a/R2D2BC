@@ -56,6 +56,11 @@
                             <li><a class="saveBookmark" id="menu-button-stamp-deactivate"  onclick="D2Reader.deactivateMarker()"><i class="material-icons">approval</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark-range"  onclick="D2Reader.saveBookmarkPlus()"><i class="material-icons">bookmark_border</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
+
+                            <li><a data-target="container-view-linefocus-settings" class="dropdown-trigger " id="menu-button-linefocus"><i class="material-icons ">filter_center_focus</i></a></li>
+                            <li><a id="menu-button-up" onclick="D2Reader.lineUp()"><i class="material-icons">arrow_upward</i></a></li>
+                            <li><a id="menu-button-down" onclick="D2Reader.lineDown()"><i class="material-icons">arrow_downward</i></a></li>
+
                             <li><a id="menu-button-play" onclick="D2Reader.startReadAlong()"><i class="material-icons">play_arrow</i></a></li>
                             <li><a id="menu-button-pause" onclick="D2Reader.pauseReadAlong()" style="display: none"><i class="material-icons">pause</i></a></li>
                             <li><a id="menu-button-show" onclick="D2Reader.showAnnotationLayer()" style="display: none"><i class="material-icons">toggle_off</i></a></li>
@@ -170,6 +175,58 @@
                     <input class="range-slider__range_settings" type="range" min="0.1" max="1" step="0.1"
                            value="1" id="speechVolume" name="speechVolume"
                            onchange="D2Reader.applyTTSSettings({ volume: this.value })"/>
+                </div>
+            </div>
+            <div id="container-view-linefocus-settings" class="dropdown-content settings-view settings">
+                <div>
+                    <center tabindex="0" style="display: flex;justify-content: space-around;">
+                        <div style="display: flex;align-items: center;">
+                            <label style="margin-right: 10px;">Line Focus</label>
+                            <input type="checkbox" class="filled" id="lineFocus1" name="lineFocus1" onchange="D2Reader.lineFocus( this.checked )">
+                        </div>
+                    </center>
+                </div>
+                <div>
+                <center tabindex="0" style="display: flex;justify-content: space-around;">
+                    <div style="display: flex;align-items: center;">
+                        <label style="margin-right: 10px;">Debug</label>
+                        <input type="checkbox" class="filled" id="lineFocus2" name="lineFocus2" onchange="D2Reader.applyLineFocusSettings( {debug:this.checked} )">
+                    </div>
+                </center>
+                </div>
+                <div>
+                    <label style="display: block;
+        text-align: center;
+        line-height: 12pt;">Number of Lines</label>
+                    <center>
+                        <button style="width: 30%;
+        background-color: white;
+    height: 50px;
+    border-radius: 25px 0px 0px 25px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyLineFocusSettings({lines:'1'});"><span
+                          class="material-icons">looks_one</span></button><button style="width: 30%;
+        background-color: white;
+    height: 50px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyLineFocusSettings({lines:'3'});"><span
+                          class="material-icons">looks_3</span></button><button style="width: 30%;
+        background-color: white;
+    height: 50px;
+    border-radius: 0px 25px 25px 0px;
+    border-color: #00000020;
+    border-width: 1px;
+    border-style: solid;
+    color: black;
+    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyLineFocusSettings({lines:'5'});"><span
+                          class="material-icons">looks_5</span></button>
+                    </center>
                 </div>
             </div>
             <div id="container-view-mediaoverlay-settings" class="dropdown-content settings">
@@ -794,9 +851,13 @@ height: 50px;
                 enableSearch: true,
                 enableTimeline: true,
                 enableDefinitions: true,
+                enableLineFocus: true,
                 enableContentProtection: false,
                 enableMediaOverlays: true,
                 autoGeneratePositions: true,
+            },
+            lineFocus: {
+                lines: 5,
             },
             // services: {
             //     positions: new URL("https://alice.dita.digital/positions.json"),

@@ -393,7 +393,7 @@ export async function applyLineFocusSettings(userSettings) {
     console.log("applyUserSettings");
   }
   if (userSettings.lines) {
-    LineFocusModuleInstance.properties.factor = parseInt(userSettings.lines);
+    LineFocusModuleInstance.properties.lines = parseInt(userSettings.lines);
     LineFocusModuleInstance.enableLineFocus();
   }
   if (userSettings.debug !== undefined) {

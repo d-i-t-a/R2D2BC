@@ -1239,13 +1239,13 @@ export default class TextHighlighter {
           );
         }
       }
-      if (this.delegate.tts?.enableSplitter) {
-        const selection = self.dom(iframe.contentDocument.body).getSelection();
-        selection.removeAllRanges();
-        var toolbox = document.getElementById("highlight-toolbox");
-        toolbox.style.display = "none";
-        this.selectionMenuClosed();
-      }
+      const selection = self
+        .dom(self.delegate.iframes[0].contentDocument.body)
+        .getSelection();
+      selection.removeAllRanges();
+      const toolbox = document.getElementById("highlight-toolbox");
+      toolbox.style.display = "none";
+      this.selectionMenuClosed();
     }
   }
   stopReadAloud(iframeIndex: number) {

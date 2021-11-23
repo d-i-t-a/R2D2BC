@@ -58,6 +58,11 @@ import ContentProtectionModule, {
   ContentProtectionModuleConfig,
 } from "../modules/protection/ContentProtectionModule";
 import TextHighlighter, {
+  ID_HIGHLIGHTS_CONTAINER,
+  ID_PAGEBREAK_CONTAINER,
+  ID_POPUP_CONTAINER,
+  ID_READALOUD_CONTAINER,
+  ID_SEARCH_CONTAINER,
   TextHighlighterConfig,
 } from "../modules/highlight/TextHighlighter";
 import TimelineModule from "../modules/positions/TimelineModule";
@@ -3478,6 +3483,68 @@ export default class IFrameNavigator implements Navigator {
       this.annotationModule.activeAnnotationMarkerId = undefined;
       this.annotationModule.activeAnnotationMarkerPosition = undefined;
       this.highlighter.activeAnnotationMarkerId = undefined;
+    }
+  }
+
+  showLayer(layer) {
+    let ID = "#";
+    switch (layer) {
+      case "annotations":
+      case "highlights":
+        ID += ID_HIGHLIGHTS_CONTAINER;
+        break;
+      case "readalong":
+      case "mediaoverlays":
+        ID += ID_READALOUD_CONTAINER;
+        break;
+      case "pagebreak":
+        ID += ID_PAGEBREAK_CONTAINER;
+        break;
+      case "search":
+        ID += ID_SEARCH_CONTAINER;
+        break;
+      case "popup":
+      case "definitions":
+        ID += ID_POPUP_CONTAINER;
+        break;
+    }
+    const container = HTMLUtilities.findElement(
+      this.iframes[0].contentDocument,
+      ID
+    ) as HTMLDivElement;
+    if (container) {
+      container.style.display = "block";
+    }
+  }
+
+  hideLayer(layer) {
+    let ID = "#";
+    switch (layer) {
+      case "annotations":
+      case "highlights":
+        ID += ID_HIGHLIGHTS_CONTAINER;
+        break;
+      case "readalong":
+      case "mediaoverlays":
+        ID += ID_READALOUD_CONTAINER;
+        break;
+      case "pagebreak":
+        ID += ID_PAGEBREAK_CONTAINER;
+        break;
+      case "search":
+        ID += ID_SEARCH_CONTAINER;
+        break;
+      case "popup":
+      case "definitions":
+        ID += ID_POPUP_CONTAINER;
+        break;
+    }
+    const container = HTMLUtilities.findElement(
+      this.iframes[0].contentDocument,
+      ID
+    ) as HTMLDivElement;
+    if (container) {
+      container.style.display = "none";
     }
   }
 }

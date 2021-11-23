@@ -281,6 +281,6 @@ export default class DefinitionsModule implements ReaderModule {
   }
 
   async clearDefinitions() {
-    await this.highlighter.destroyHighlights(HighlightType.Popup);
+    await this.highlighter.destroyHighlights(HighlightType.Popup, 0);
   }
 }

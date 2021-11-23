@@ -206,32 +206,51 @@ export default class TTSModule2 implements ReaderModule {
   ): Promise<any> {
     if (this.api?.started) this.api?.started();
 
-    var self = this;
+    const self = this;
     this.userScrolled = false;
     this.cancel();
 
-    // const ttsQueue = this.generateTtsQueue(
-    //   selectionInfo.range.startContainer.parentElement,
-    //   true
-    // );
-    // let iframe = document.querySelector(
-    //   "main#iframe-wrapper iframe"
-    // ) as HTMLIFrameElement;
-    // let rootEl = iframe.contentWindow.document.body;
-    //
-    // this.startTTSSession(
-    //   1,
-    //   null,
-    //   rootEl as Element,
-    //   ttsQueue,
-    //   0,
-    //   null,
-    //   null,
-    //   null
-    // );
-    const utterance = partial
-      ? new SpeechSynthesisUtterance(selectionInfo.cleanText)
-      : new SpeechSynthesisUtterance(this.clean);
+    let utterance;
+    if (partial) {
+      let iframe = document.querySelector(
+        "main#iframe-wrapper iframe"
+      ) as HTMLIFrameElement;
+      let rootEl = iframe.contentWindow.document.body;
+
+      const selection = this.highlighter
+        .dom(this.delegate.iframes[0].contentDocument.body)
+        .getSelection();
+
+      const ttsQueue = this.generateTtsQueue(rootEl, true);
+      if (!ttsQueue.length) {
+        return;
+      }
+
+      const idx = this.findTtsQueueItemIndex(
+        ttsQueue,
+        selection.anchorNode as Element,
+        selection.focusNode,
+        selection.focusOffset,
+        rootEl
+      );
+
+      const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
+      const sentence = getTtsQueueItemRefText(ttsQueueItem);
+      const startIndex = sentence.indexOf(selectionInfo.cleanText);
+
+      utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
+      utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+        this.updateTTSInfo(
+          ttsQueueItem,
+          ev.charIndex + startIndex,
+          ev.charLength,
+          utterance.text
+        );
+      };
+    } else {
+      utterance = new SpeechSynthesisUtterance(this.clean);
+    }
+
     utterance.rate = this.tts.rate;
     utterance.pitch = this.tts.pitch;
     utterance.volume = this.tts.volume;
@@ -438,7 +457,6 @@ export default class TTSModule2 implements ReaderModule {
           selection.extend(endNode, endOffset);
 
           selection.collapse(selection.anchorNode, selection.anchorOffset);
-
 
           const idx = self.findTtsQueueItemIndex(
             ttsQueue,

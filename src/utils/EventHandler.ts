@@ -83,7 +83,7 @@ export default class EventHandler {
   /**
    *
    * This function checks the user clicked link inside the iframe
-   * against the tableOfContents, it is an internal link if found.
+   * against the readingOrder list, it is an internal link if found.
    *
    */
   private isEpubInternal = (clickedLink: HTMLAnchorElement): boolean => {

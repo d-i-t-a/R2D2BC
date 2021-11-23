@@ -390,7 +390,7 @@ export async function applyUserSettings(userSettings) {
 }
 export async function applyLineFocusSettings(userSettings) {
   if (IS_DEV) {
-    console.log("applyUserSettings");
+    console.log("applyLineFocusSettings");
   }
   if (userSettings.lines) {
     LineFocusModuleInstance.properties.lines = parseInt(userSettings.lines);

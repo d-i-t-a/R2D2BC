@@ -35,7 +35,11 @@ import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
 import { SHA256 } from "jscrypto/es6/SHA256";
 import { _highlights } from "../highlight/TextHighlighter";
 
-export interface PageBreakModuleConfig {
+export interface PageBreakModuleProperties {
+  hideLayer?: boolean;
+}
+
+export interface PageBreakModuleConfig extends PageBreakModuleProperties {
   delegate: IFrameNavigator;
   headerMenu: HTMLElement;
   publication: Publication;
@@ -45,6 +49,7 @@ export default class PageBreakModule implements ReaderModule {
   private delegate: IFrameNavigator;
   private readonly headerMenu: HTMLElement;
   private publication: Publication;
+  private properties: PageBreakModuleProperties;
 
   private goToPageView: HTMLLIElement;
   private goToPageNumberInput: HTMLInputElement;
@@ -54,7 +59,8 @@ export default class PageBreakModule implements ReaderModule {
     const pageBreak = new this(
       config.headerMenu,
       config.delegate,
-      config.publication
+      config.publication,
+      config as PageBreakModuleProperties
     );
     await pageBreak.start();
     return pageBreak;
@@ -63,11 +69,13 @@ export default class PageBreakModule implements ReaderModule {
   private constructor(
     headerMenu: HTMLElement,
     delegate: IFrameNavigator,
-    publication: Publication
+    publication: Publication,
+    properties: PageBreakModuleProperties
   ) {
     this.headerMenu = headerMenu;
     this.delegate = delegate;
     this.publication = publication;
+    this.properties = properties;
   }
 
   async stop() {
@@ -113,6 +121,11 @@ export default class PageBreakModule implements ReaderModule {
         this.goToPageView.parentElement.removeChild(this.goToPageView);
       }
     }
+    setTimeout(() => {
+      this.properties.hideLayer
+        ? this.delegate.hideLayer("pagebreak")
+        : this.delegate.showLayer("pagebreak");
+    }, 10);
   }
   private async goToPageNumber(event: any): Promise<any> {
     if (

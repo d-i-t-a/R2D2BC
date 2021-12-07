@@ -50,6 +50,7 @@ export interface MediaOverlayModuleProperties {
   autoTurn?: boolean;
   volume?: number;
   wait?: number;
+  hideLayer?: boolean;
 }
 export interface MediaOverlayModuleConfig extends MediaOverlayModuleProperties {
   publication: Publication;

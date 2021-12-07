@@ -50,22 +50,22 @@
     background-color: var(--RS__underlineHoverColor) !important;
 }
 
-#R2_ID_POPUP_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"] {
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"] {
     background-color: var(--RS__definitionsColor) !important;
     mix-blend-mode: var(--RS__definitionsMixBlendMode) !important;
     z-index: 1;
 }
-#R2_ID_POPUP_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"]:hover,
-#R2_ID_POPUP_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"].hover {
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"]:hover,
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"].hover {
     background-color: var(--RS__definitionsHoverColor) !important;
 }
-#R2_ID_POPUP_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"] {
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"] {
     border-bottom: 2px solid var(--RS__definitionsUnderlineBorderColor);
     mix-blend-mode: var(--RS__definitionsMixBlendMode) !important;
     z-index: 1;
 }
-#R2_ID_POPUP_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"]:hover,
-#R2_ID_POPUP_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"].hover {
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"]:hover,
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"].hover {
     background-color: var(--RS__definitionsUnderlineHoverColor) !important;
 }
 

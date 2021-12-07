@@ -51,6 +51,7 @@ export interface AnnotationModuleAPI {
 }
 export interface AnnotationModuleProperties {
   initialAnnotationColor: string;
+  hideLayer?: boolean;
 }
 
 export interface AnnotationModuleConfig extends AnnotationModuleProperties {
@@ -137,6 +138,11 @@ export default class AnnotationModule implements ReaderModule {
         this.annotator.initAnnotations(highlights);
       }
     }
+    setTimeout(() => {
+      this.properties.hideLayer
+        ? this.delegate.hideLayer("highlights")
+        : this.delegate.showLayer("highlights");
+    }, 10);
   }
   private hide: HTMLLinkElement = HTMLUtilities.findElement(
     document,

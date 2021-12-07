@@ -555,6 +555,11 @@ export default class TTSModule2 implements ReaderModule {
         if (menuTTS) menuTTS.parentElement.style.setProperty("display", "none");
       }
     }
+    setTimeout(() => {
+      this.properties.hideLayer
+        ? this.delegate.hideLayer("readaloud")
+        : this.delegate.showLayer("readaloud");
+    }, 10);
   }
 
   userScrolled = false;

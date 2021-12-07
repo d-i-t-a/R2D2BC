@@ -50,16 +50,17 @@ export interface BookmarkModuleAPI {
   getBookmarks: Array<any>;
 }
 
-export interface BookmarkModuleProperties {}
+export interface BookmarkModuleProperties {
+  hideLayer?: boolean;
+}
 
-export interface BookmarkModuleConfig {
+export interface BookmarkModuleConfig extends BookmarkModuleProperties {
   annotator: Annotator;
   headerMenu: HTMLElement;
   rights: ReaderRights;
   publication: Publication;
   delegate: IFrameNavigator;
   initialAnnotations?: any;
-  properties: BookmarkModuleProperties;
   api: BookmarkModuleAPI;
 }
 
@@ -84,7 +85,7 @@ export default class BookmarkModule implements ReaderModule {
       config.publication,
       config.delegate,
       config.initialAnnotations || null,
-      config.properties,
+      config as BookmarkModuleProperties,
       config.api
     );
     await module.start();
@@ -163,6 +164,11 @@ export default class BookmarkModule implements ReaderModule {
 
     await this.showBookmarks();
     await this.drawBookmarks();
+    setTimeout(() => {
+      this.properties.hideLayer
+        ? this.delegate.hideLayer("highlights")
+        : this.delegate.showLayer("highlights");
+    }, 10);
   }
 
   async handleResize() {

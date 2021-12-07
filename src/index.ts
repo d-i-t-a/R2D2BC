@@ -43,8 +43,10 @@ import TTSModule2 from "./modules/TTS/TTSModule2";
 import PageBreakModule from "./modules/pagebreak/PageBreakModule";
 import DefinitionsModule from "./modules/search/DefinitionsModule";
 import { IS_DEV } from "./utils";
+import { LayerSettings } from "./modules/highlight/LayerSettings";
 
 let D2Settings: UserSettings;
+let D2Layers: LayerSettings;
 let D2TTSSettings: TTSSettings;
 let D2MediaOverlaySettings: MediaOverlaySettings;
 let D2Navigator: IFrameNavigator;
@@ -729,6 +731,10 @@ export async function load(config: ReaderConfig): Promise<any> {
     prefix: "r2d2bc-reader",
     useLocalStorage: config.useLocalStorage,
   });
+  let layerStore = new LocalStorageStore({
+    prefix: "r2d2bc-layers",
+    useLocalStorage: config.useLocalStorage,
+  });
 
   let annotator = new LocalAnnotator({ store: store });
 
@@ -857,6 +863,8 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
   }
 
+  D2Layers = await LayerSettings.create({ store: layerStore });
+
   // Settings
   D2Settings = await UserSettings.create({
     store: settingsStore,
@@ -900,6 +908,7 @@ export async function load(config: ReaderConfig): Promise<any> {
   // Highlighter
   D2Highlighter = await TextHighlighter.create({
     delegate: D2Navigator,
+    layerSettings: D2Layers,
     ...config.highlighter,
   });
 
@@ -1018,13 +1027,15 @@ export async function load(config: ReaderConfig): Promise<any> {
       ...config.mediaOverlays,
     });
   }
-
-  if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
-    PageBreakModuleInstance = await PageBreakModule.create({
-      publication: publication,
-      headerMenu: headerMenu,
-      delegate: D2Navigator,
-    });
+  if (config.rights?.enablePageBreaks ?? true) {
+    if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
+      PageBreakModuleInstance = await PageBreakModule.create({
+        publication: publication,
+        headerMenu: headerMenu,
+        delegate: D2Navigator,
+        ...config.pagebreak,
+      });
+    }
   }
 
   return new Promise((resolve) => resolve(D2Navigator));

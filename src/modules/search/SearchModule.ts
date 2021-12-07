@@ -29,7 +29,6 @@ import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
 import { IS_DEV } from "../../utils";
 import { reset, searchDocDomSeek } from "./searchWithDomSeek";
 import TextHighlighter, {
-  _highlights,
   DEFAULT_BACKGROUND_COLOR,
 } from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
@@ -41,6 +40,7 @@ export interface SearchModuleAPI {}
 export interface SearchModuleProperties {
   color?: string;
   current?: string;
+  hideLayer?: boolean;
 }
 
 export interface SearchModuleConfig extends SearchModuleProperties {
@@ -142,6 +142,11 @@ export default class SearchModule implements ReaderModule {
       ) as HTMLLinkElement;
       if (menuSearch) menuSearch.parentElement.style.removeProperty("display");
     }
+    setTimeout(() => {
+      this.properties.hideLayer
+        ? this.delegate.hideLayer("search")
+        : this.delegate.showLayer("search");
+    }, 10);
   }
 
   private async handleSearch(event: any): Promise<void> {

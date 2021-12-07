@@ -58,11 +58,7 @@ import ContentProtectionModule, {
   ContentProtectionModuleConfig,
 } from "../modules/protection/ContentProtectionModule";
 import TextHighlighter, {
-  ID_HIGHLIGHTS_CONTAINER,
-  ID_PAGEBREAK_CONTAINER,
-  ID_POPUP_CONTAINER,
-  ID_READALOUD_CONTAINER,
-  ID_SEARCH_CONTAINER,
+  HighlightContainer,
   TextHighlighterConfig,
 } from "../modules/highlight/TextHighlighter";
 import TimelineModule from "../modules/positions/TimelineModule";
@@ -81,10 +77,13 @@ import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
 
 import { HighlightType } from "../modules/highlight/common/highlight";
 import TTSModule2 from "../modules/TTS/TTSModule2";
-import PageBreakModule from "../modules/pagebreak/PageBreakModule";
+import PageBreakModule, {
+  PageBreakModuleConfig,
+} from "../modules/pagebreak/PageBreakModule";
 import DefinitionsModule, {
   DefinitionsModuleConfig,
 } from "../modules/search/DefinitionsModule";
+import { Switchable } from "../model/user-settings/UserProperties";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -163,6 +162,7 @@ export interface ReaderRights {
   enableTimeline?: boolean;
   autoGeneratePositions?: boolean;
   enableMediaOverlays?: boolean;
+  enablePageBreaks?: boolean;
 }
 
 export interface ReaderUI {
@@ -182,6 +182,7 @@ export interface ReaderConfig {
   define?: DefinitionsModuleConfig;
   protection?: ContentProtectionModuleConfig;
   mediaOverlays?: MediaOverlayModuleConfig;
+  pagebreak?: PageBreakModuleConfig;
   annotations?: AnnotationModuleConfig;
   bookmarks?: BookmarkModuleConfig;
   highlighter?: TextHighlighterConfig;
@@ -1187,7 +1188,7 @@ export default class IFrameNavigator implements Navigator {
           this.definitionsModule !== undefined &&
           this.highlighter !== undefined
         ) {
-          await this.highlighter.destroyHighlights(HighlightType.Popup);
+          await this.highlighter.destroyHighlights(HighlightType.Definition);
           this.definitionsModule.drawDefinitions();
         }
       }, 200);
@@ -3186,7 +3187,7 @@ export default class IFrameNavigator implements Navigator {
           this.definitionsModule !== undefined &&
           this.highlighter !== undefined
         ) {
-          await this.highlighter.destroyHighlights(HighlightType.Popup);
+          await this.highlighter.destroyHighlights(HighlightType.Definition);
           this.definitionsModule.drawDefinitions();
         }
 
@@ -3429,26 +3430,40 @@ export default class IFrameNavigator implements Navigator {
 
   showLayer(layer) {
     let ID = "#";
+    let prop = new Switchable(
+      "layer-on",
+      "layer-off",
+      true,
+      layer,
+      "layer-" + layer
+    );
+
     switch (layer) {
       case "annotations":
       case "highlights":
-        ID += ID_HIGHLIGHTS_CONTAINER;
+        ID += HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER;
         break;
-      case "readalong":
-      case "mediaoverlays":
-        ID += ID_READALOUD_CONTAINER;
+      case "readaloud":
+        ID += HighlightContainer.R2_ID_READALOUD_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_READALOUD_CONTAINER;
         break;
       case "pagebreak":
-        ID += ID_PAGEBREAK_CONTAINER;
+        ID += HighlightContainer.R2_ID_PAGEBREAK_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_PAGEBREAK_CONTAINER;
         break;
       case "search":
-        ID += ID_SEARCH_CONTAINER;
+        ID += HighlightContainer.R2_ID_SEARCH_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_SEARCH_CONTAINER;
         break;
-      case "popup":
       case "definitions":
-        ID += ID_POPUP_CONTAINER;
+        ID += HighlightContainer.R2_ID_DEFINITIONS_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_DEFINITIONS_CONTAINER;
         break;
     }
+
+    this.highlighter.layerSettings.saveProperty(prop);
+
     const container = HTMLUtilities.findElement(
       this.iframes[0].contentDocument,
       ID
@@ -3460,26 +3475,40 @@ export default class IFrameNavigator implements Navigator {
 
   hideLayer(layer) {
     let ID = "#";
+    let prop = new Switchable(
+      "layer-on",
+      "layer-off",
+      false,
+      layer,
+      "layer-" + layer
+    );
+
     switch (layer) {
       case "annotations":
       case "highlights":
-        ID += ID_HIGHLIGHTS_CONTAINER;
+        ID += HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER;
         break;
-      case "readalong":
-      case "mediaoverlays":
-        ID += ID_READALOUD_CONTAINER;
+      case "readaloud":
+        ID += HighlightContainer.R2_ID_READALOUD_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_READALOUD_CONTAINER;
         break;
       case "pagebreak":
-        ID += ID_PAGEBREAK_CONTAINER;
+        ID += HighlightContainer.R2_ID_PAGEBREAK_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_PAGEBREAK_CONTAINER;
         break;
       case "search":
-        ID += ID_SEARCH_CONTAINER;
+        ID += HighlightContainer.R2_ID_SEARCH_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_SEARCH_CONTAINER;
         break;
-      case "popup":
       case "definitions":
-        ID += ID_POPUP_CONTAINER;
+        ID += HighlightContainer.R2_ID_DEFINITIONS_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_DEFINITIONS_CONTAINER;
         break;
     }
+
+    this.highlighter.layerSettings.saveProperty(prop);
+
     const container = HTMLUtilities.findElement(
       this.iframes[0].contentDocument,
       ID

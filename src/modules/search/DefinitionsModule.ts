@@ -51,7 +51,7 @@ export interface DefinitionsModuleProperties {
   definitions: Definition[];
   color?: string;
   fullWordSearch?: boolean;
-  api?: DefinitionsModuleAPI;
+  hideLayer?: boolean;
 }
 
 export interface DefinitionsModuleConfig extends DefinitionsModuleProperties {
@@ -106,6 +106,11 @@ export default class DefinitionsModule implements ReaderModule {
 
   protected async start(): Promise<void> {
     this.delegate.definitionsModule = this;
+    setTimeout(() => {
+      this.properties.hideLayer
+        ? this.delegate.hideLayer("definitions")
+        : this.delegate.showLayer("definitions");
+    }, 10);
   }
 
   async searchAndPaint(item: Definition, callback: (result: any) => any) {
@@ -145,7 +150,7 @@ export default class DefinitionsModule implements ReaderModule {
                   range: null,
                 };
                 setTimeout(() => {
-                  const highlight = this.createPopupHighlight(
+                  const highlight = this.createDefinitionHighlight(
                     selectionInfo,
                     item
                   );
@@ -232,10 +237,10 @@ export default class DefinitionsModule implements ReaderModule {
   }
 
   async handleResize() {
-    await this.highlighter.destroyHighlights(HighlightType.Popup);
+    await this.highlighter.destroyHighlights(HighlightType.Definition);
     this.drawDefinitions();
   }
-  createPopupHighlight(selectionInfo: ISelectionInfo, item: Definition) {
+  createDefinitionHighlight(selectionInfo: ISelectionInfo, item: Definition) {
     try {
       let createColor: any = this.delegate.definitionsModule.properties.color;
       if (TextHighlighter.isHexColor(createColor)) {
@@ -244,7 +249,7 @@ export default class DefinitionsModule implements ReaderModule {
 
       const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
       const sha256Hex = SHA256.hash(uniqueStr);
-      const id = "R2_POPUP_" + sha256Hex;
+      const id = "R2_DEFINITION_" + sha256Hex;
       this.highlighter.destroyHighlight(
         this.delegate.iframes[0].contentDocument,
         id
@@ -256,7 +261,7 @@ export default class DefinitionsModule implements ReaderModule {
         pointerInteraction: true,
         selectionInfo,
         marker: AnnotationMarker.Underline,
-        type: HighlightType.Popup,
+        type: HighlightType.Definition,
       };
       _highlights.push(highlight);
 
@@ -278,7 +283,7 @@ export default class DefinitionsModule implements ReaderModule {
       );
       return highlight;
     } catch (e) {
-      throw "Can't create popup highlight: " + e;
+      throw "Can't create definitions highlight: " + e;
     }
   }
 
@@ -287,6 +292,6 @@ export default class DefinitionsModule implements ReaderModule {
   }
 
   async clearDefinitions() {
-    await this.highlighter.destroyHighlights(HighlightType.Popup);
+    await this.highlighter.destroyHighlights(HighlightType.Definition);
   }
 }

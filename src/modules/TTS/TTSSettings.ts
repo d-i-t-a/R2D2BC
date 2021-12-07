@@ -48,6 +48,7 @@ export interface TTSModuleProperties {
   pitch?: number;
   volume?: number;
   voice?: TTSVoice;
+  hideLayer?: boolean;
 }
 
 export interface TTSModuleConfig extends TTSModuleProperties {

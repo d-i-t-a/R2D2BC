@@ -38,7 +38,7 @@ export default class ReflowableBookView implements BookView {
   constructor(store: Store) {
     this.store = store;
 
-    if (this.isScrollMode()) {
+    if (this.scrollMode) {
       this.name = "readium-scroll-on";
       this.label = "Scrolling";
     } else {
@@ -104,7 +104,7 @@ export default class ReflowableBookView implements BookView {
   attributes: IFrameAttributes = { margin: 0 };
 
   start(): void {
-    if (this.isScrollMode()) {
+    if (this.scrollMode) {
       const head = HTMLUtilities.findRequiredIframeElement(
         this.iframe.contentDocument,
         "head"
@@ -119,6 +119,7 @@ export default class ReflowableBookView implements BookView {
         }
       }
       this.setSize();
+      this.setIframeHeight(this.iframe);
     } else {
       this.iframe.height = "0";
       this.iframe.width = "0";
@@ -156,7 +157,7 @@ export default class ReflowableBookView implements BookView {
       "#iframe-wrapper"
     ) as HTMLDivElement;
 
-    if (this.isScrollMode()) {
+    if (this.scrollMode) {
       return wrapper.scrollTop / this.scrollingElement.scrollHeight;
     } else {
       const width = this.getColumnWidth();
@@ -172,7 +173,7 @@ export default class ReflowableBookView implements BookView {
       document,
       "#iframe-wrapper"
     ) as HTMLDivElement;
-    if (this.isScrollMode()) {
+    if (this.scrollMode) {
       wrapper.scrollTop = this.scrollingElement.scrollHeight * position;
     } else {
       // If the window has changed size since the columns were set up,
@@ -213,7 +214,7 @@ export default class ReflowableBookView implements BookView {
 
   snap(element: HTMLElement | null, _relative?: boolean): void {
     if (element) {
-      if (this.isScrollMode()) {
+      if (this.scrollMode) {
         //     // Put the element as close to the top as possible.
         //     document.scrollingElement.scrollTop = element.offsetTop;
       } else {
@@ -248,7 +249,7 @@ export default class ReflowableBookView implements BookView {
       "#iframe-wrapper"
     ) as HTMLDivElement;
 
-    if (this.isScrollMode()) {
+    if (this.scrollMode) {
       if (element) {
         // Put the element as close to the top as possible.
         wrapper.scrollTop = element.offsetTop;
@@ -287,7 +288,7 @@ export default class ReflowableBookView implements BookView {
 
   // at top in scrollmode
   atStart(): boolean {
-    if (this.isScrollMode()) {
+    if (this.scrollMode) {
       const wrapper = HTMLUtilities.findRequiredElement(
         document,
         "#iframe-wrapper"
@@ -302,7 +303,7 @@ export default class ReflowableBookView implements BookView {
 
   // at bottom in scrollmode
   atEnd(): boolean {
-    if (this.isScrollMode()) {
+    if (this.scrollMode) {
       const wrapper = HTMLUtilities.findRequiredElement(
         document,
         "#iframe-wrapper"
@@ -324,7 +325,7 @@ export default class ReflowableBookView implements BookView {
       "#iframe-wrapper"
     ) as HTMLDivElement;
 
-    if (this.isScrollMode()) {
+    if (this.scrollMode) {
       const leftHeight = wrapper.scrollTop;
       const height = this.getScreenHeight();
       const offset = leftHeight - height;
@@ -355,7 +356,7 @@ export default class ReflowableBookView implements BookView {
       "#iframe-wrapper"
     ) as HTMLDivElement;
 
-    if (this.isScrollMode()) {
+    if (this.scrollMode) {
       const leftHeight = wrapper.scrollTop;
       const height = this.getScreenHeight();
       const scrollHeight = this.scrollingElement.scrollHeight;
@@ -384,7 +385,7 @@ export default class ReflowableBookView implements BookView {
 
   // doesn't exist in scrollmode
   getCurrentPage(): number {
-    if (this.isScrollMode()) {
+    if (this.scrollMode) {
       return 0;
     } else {
       return this.getCurrentPosition() * this.getPageCount() + 1;
@@ -393,7 +394,7 @@ export default class ReflowableBookView implements BookView {
 
   // doesn't exist in scrollmode
   getPageCount(): number {
-    if (this.isScrollMode()) {
+    if (this.scrollMode) {
       return 0;
     } else {
       const width = this.getColumnWidth();

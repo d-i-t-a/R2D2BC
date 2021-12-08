@@ -1524,9 +1524,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       }
       if (this.view.layout !== "fixed") {
         if (this.view?.isScrollMode()) {
-          for (const iframe of this.iframes) {
-            this.view.setIframeHeight(iframe);
-          }
+          this.view.setIframeHeight(this.iframes[0]);
         }
       }
       if (this.annotationModule !== undefined) {
@@ -1583,7 +1581,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         if (this.mediaOverlayModule !== undefined) {
           await this.mediaOverlayModule.initializeResource(this.currentLink());
         }
-        this.view?.setSize();
         await this.updatePositionInfo();
         await this.view.setSize();
       }, 200);
@@ -2728,9 +2725,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     setTimeout(() => {
       if (this.view.layout !== "fixed") {
         if (this.view?.isScrollMode()) {
-          for (const iframe of this.iframes) {
-            this.view.setIframeHeight(iframe);
-          }
+          this.view.setIframeHeight(this.iframes[0]);
         }
       }
     }, 100);

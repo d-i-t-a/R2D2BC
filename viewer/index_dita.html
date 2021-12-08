@@ -51,12 +51,12 @@
                     <div class="nav-wrapper"><span class="brand-logo  hide-on-med-and-down " id="book-title"></span>
                         <ul id="nav-mobile-right" class="right">
                             <li style="display:none"><a data-target="container-view-note-input" class="dropdown-trigger " id="menu-button-note"><i class="material-icons">speaker_notes</i></a></li>
-                            <li><a class="saveBookmark" id="menu-button-stamp-activate"  onclick="D2Reader.activateMarker('bookmarkIcon', 'center')"><i class="material-icons">approval</i></a></li>
-                            <li><a class="saveBookmark" id="menu-button-stamp-deactivate"  onclick="D2Reader.deactivateMarker()"><i class="material-icons">approval</i></a></li>
-                            <li><a class="saveBookmark" id="menu-button-bookmark-range"  onclick="D2Reader.saveBookmarkPlus()"><i class="material-icons">bookmark_border</i></a></li>
+                            <li><a class="saveBookmark" id="menu-button-stamp-activate"  onclick="d2reader.activateMarker('bookmarkIcon', 'center')"><i class="material-icons">approval</i></a></li>
+                            <li><a class="saveBookmark" id="menu-button-stamp-deactivate"  onclick="d2reader.deactivateMarker()"><i class="material-icons">approval</i></a></li>
+                            <li><a class="saveBookmark" id="menu-button-bookmark-range"  onclick="d2reader.saveBookmarkPlus()"><i class="material-icons">bookmark_border</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
-                            <li><a id="menu-button-play" onclick="d2reader.startReadAloud()"><i class="material-icons">play_arrow</i></a></li>
-                            <li><a id="menu-button-pause" onclick="d2reader.pauseReadAloud()" style="display: none"><i class="material-icons">pause</i></a></li>
+                            <li><a id="menu-button-play" onclick="d2reader.startReadAlong()"><i class="material-icons">play_arrow</i></a></li>
+                            <li><a id="menu-button-pause" onclick="d2reader.pauseReadAlong()" style="display: none"><i class="material-icons">pause</i></a></li>
                             <li><a data-target="container-view-tts-settings" class="dropdown-trigger " id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>
                             <li><a data-target="container-view-layer-settings" class="dropdown-trigger " id="menu-button-layer"><i class="material-icons ">settings</i></a></li>
                             <li><a data-target="container-view-mediaoverlay-settings" class="dropdown-trigger " id="menu-button-mediaoverlay"><i class="material-icons ">record_voice_over</i></a></li>
@@ -109,27 +109,27 @@
                 <center style="display: flex;justify-content: center;align-items: center;">
                     <label style="margin-right: 10px;">Highlights</label>
                     <input type="checkbox" class="filled"
-                           onchange="this.checked ? D2Reader.showLayer('highlights') : D2Reader.hideLayer('highlights')">
+                           onchange="this.checked ? d2reader.showLayer('highlights') : d2reader.hideLayer('highlights')">
                 </center>
                 <center style="display: flex;justify-content: center;align-items: center;">
                     <label style="margin-right: 10px;">Definitions</label>
                     <input type="checkbox" class="filled"
-                           onchange="this.checked ? D2Reader.showLayer('definitions') : D2Reader.hideLayer('definitions')">
+                           onchange="this.checked ? d2reader.showLayer('definitions') : d2reader.hideLayer('definitions')">
                 </center>
                 <center style="display: flex;justify-content: center;align-items: center;">
                     <label style="margin-right: 10px;">Page Break</label>
                     <input type="checkbox" class="filled"
-                           onchange="this.checked ? D2Reader.showLayer('pagebreak') : D2Reader.hideLayer('pagebreak')">
+                           onchange="this.checked ? d2reader.showLayer('pagebreak') : d2reader.hideLayer('pagebreak')">
                 </center>
                 <center style="display: flex;justify-content: center;align-items: center;">
                     <label style="margin-right: 10px;">Search</label>
                     <input type="checkbox" class="filled"
-                           onchange="this.checked ? D2Reader.showLayer('search') : D2Reader.hideLayer('search')">
+                           onchange="this.checked ? d2reader.showLayer('search') : d2reader.hideLayer('search')">
                 </center>
                 <center style="display: flex;justify-content: center;align-items: center;">
                     <label style="margin-right: 10px;">Read Aloud</label>
                     <input type="checkbox" class="filled"
-                           onchange="this.checked ? D2Reader.showLayer('readaloud') : D2Reader.hideLayer('readaloud')">
+                           onchange="this.checked ? d2reader.showLayer('readaloud') : d2reader.hideLayer('readaloud')">
                 </center>
 
 
@@ -151,7 +151,7 @@
                     </button>
                 </center>
                 <center style="display: flex;justify-content: center;">
-                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2Reader.applyTTSSettings({ color: 'orange' })"><i
+                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'orange' })"><i
                       class="material-icons" style="color: rgba(250, 96, 0, 0.5);font-size: 24pt;">lense</i></button>
                     <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'red' })"><i
                       class="material-icons"

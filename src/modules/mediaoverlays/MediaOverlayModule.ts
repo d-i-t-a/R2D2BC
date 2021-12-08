@@ -85,13 +85,13 @@ export class MediaOverlayModule implements ReaderModule {
   private mediaOverlayTextAudioPair: MediaOverlayNode | undefined;
   private pid: string = undefined;
 
-  public static async create(config: MediaOverlayModuleConfig) {
+  public static create(config: MediaOverlayModuleConfig) {
     const mediaOverlay = new this(
       config.delegate,
       config.publication,
       config.settings
     );
-    await mediaOverlay.start();
+    mediaOverlay.start();
     return mediaOverlay;
   }
 
@@ -105,11 +105,11 @@ export class MediaOverlayModule implements ReaderModule {
     this.settings = settings;
   }
 
-  async stop() {
+  stop() {
     if (IS_DEV) console.log("MediaOverlay module stop");
   }
 
-  protected async start(): Promise<void> {
+  protected start() {
     this.delegate.mediaOverlayModule = this;
     if (IS_DEV) console.log("MediaOverlay module start");
   }
@@ -122,7 +122,6 @@ export class MediaOverlayModule implements ReaderModule {
       this.settings.onSettingsChange(() => {
         this.audioElement.volume = this.settings.volume;
       });
-
       resolve();
     });
   }

@@ -27,18 +27,15 @@ export default class MemoryStore implements Store {
     this.store = {};
   }
 
-  public get(key: string): Promise<string | null> {
-    const value = this.store[key] || null;
-    return new Promise<string | null>((resolve) => resolve(value));
+  public get(key: string): string | null {
+    return this.store[key] || null;
   }
 
-  public set(key: string, value: string): Promise<void> {
+  public set(key: string, value: string): void {
     this.store[key] = value;
-    return new Promise<void>((resolve) => resolve());
   }
 
-  public remove(key: string): Promise<void> {
+  public remove(key: string): void {
     this.store[key] = null;
-    return new Promise<void>((resolve) => resolve());
   }
 }

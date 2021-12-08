@@ -462,18 +462,18 @@ export class AnnotationModule implements ReaderModule {
     }
   }
 
-  async getAnnotations(): Promise<any> {
+  getAnnotations(): any {
     let highlights: Array<any> = [];
     if (this.annotator) {
-      highlights = (await this.annotator.getAnnotations()) as Array<any>;
+      highlights = this.annotator.getAnnotations() as Array<any>;
     }
     return highlights;
   }
 
-  public async showHighlights(): Promise<void> {
+  public showHighlights() {
     let highlights: Array<any> = [];
     if (this.annotator) {
-      highlights = (await this.annotator.getAnnotations()) as Array<any>;
+      highlights = this.annotator.getAnnotations() as Array<any>;
       if (highlights) {
         highlights = highlights.filter(
           (rangeRepresentation) =>
@@ -498,7 +498,7 @@ export class AnnotationModule implements ReaderModule {
       if (this.api) {
         let highlights: Array<any> = [];
         if (this.annotator) {
-          highlights = (await this.annotator.getAnnotations()) as Array<any>;
+          highlights = this.annotator.getAnnotations() as Array<any>;
         }
         if (
           this.highlighter &&
@@ -579,7 +579,7 @@ export class AnnotationModule implements ReaderModule {
       } else {
         let highlights: Array<any> = [];
         if (this.annotator) {
-          highlights = (await this.annotator.getAnnotations()) as Array<any>;
+          highlights = this.annotator.getAnnotations() as Array<any>;
         }
         if (
           this.highlighter &&

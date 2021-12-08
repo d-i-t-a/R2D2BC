@@ -224,8 +224,8 @@ export class BookmarkModule implements ReaderModule {
     }
   }
 
-  saveBookmarkPlus() {
-    this.addBookmarkPlus();
+  async saveBookmarkPlus(): Promise<any> {
+    await this.addBookmarkPlus();
   }
 
   async saveBookmark(): Promise<any> {
@@ -283,16 +283,14 @@ export class BookmarkModule implements ReaderModule {
         };
       }
 
-      if (
-        !(await this.annotator.locatorExists(bookmark, AnnotationType.Bookmark))
-      ) {
+      if (!this.annotator.locatorExists(bookmark, AnnotationType.Bookmark)) {
         if (this.api?.addBookmark) {
           const result = await this.api.addBookmark(bookmark);
           if (result) {
             bookmark = result;
           }
           if (IS_DEV) console.log(bookmark);
-          let saved = await this.annotator.saveBookmark(bookmark);
+          let saved = this.annotator.saveBookmark(bookmark);
 
           if (IS_DEV) {
             console.log("Bookmark added " + JSON.stringify(saved));
@@ -300,11 +298,11 @@ export class BookmarkModule implements ReaderModule {
           if (this.delegate.rights?.enableMaterial) {
             toast({ html: "bookmark added" });
           }
-          await this.showBookmarks();
+          this.showBookmarks();
           await this.drawBookmarks();
           return saved;
         } else {
-          let saved = await this.annotator.saveBookmark(bookmark);
+          let saved = this.annotator.saveBookmark(bookmark);
 
           if (IS_DEV) {
             console.log("Bookmark added " + JSON.stringify(saved));
@@ -312,21 +310,22 @@ export class BookmarkModule implements ReaderModule {
           if (this.delegate.rights?.enableMaterial) {
             toast({ html: "bookmark added" });
           }
-          await this.showBookmarks();
+          this.showBookmarks();
           await this.drawBookmarks();
           return saved;
         }
       } else {
         if (this.delegate.rights?.enableMaterial) {
           toast({ html: "bookmark exists" });
+          return null;
         }
       }
     } else {
-      return new Promise<any>((resolve) => resolve(null));
+      return null;
     }
   }
 
-  private addBookmarkPlus() {
+  private async addBookmarkPlus(): Promise<any> {
     let self = this;
 
     let node = this.delegate.highlighter.visibleTextRects[0];
@@ -451,12 +450,12 @@ export class BookmarkModule implements ReaderModule {
       menuItem.popup,
       menuItem.highlight.style
     );
-    this.saveAnnotation(book[0]).then((anno) => {
+    this.delegate.iframes[0].contentDocument.getSelection().removeAllRanges();
+    return this.saveAnnotation(book[0]).then((anno) => {
       if (IS_DEV) {
         console.log("saved bookmark " + anno.id);
       }
     });
-    this.delegate.iframes[0].contentDocument.getSelection().removeAllRanges();
   }
 
   public async saveAnnotation(highlight: IHighlight): Promise<Annotation> {
@@ -549,23 +548,23 @@ export class BookmarkModule implements ReaderModule {
     }
   }
 
-  async getBookmarks(): Promise<any> {
+  getBookmarks(): any {
     let bookmarks: Array<any> = [];
     if (this.annotator) {
-      bookmarks = (await this.annotator.getBookmarks()) as Array<any>;
+      bookmarks = this.annotator.getBookmarks() as Array<any>;
     }
     return bookmarks;
   }
 
-  public async showBookmarks(): Promise<void> {
+  public showBookmarks() {
     let bookmarks: Array<any> = [];
     if (this.annotator) {
-      bookmarks = (await this.annotator.getBookmarks()) as Array<any>;
+      bookmarks = this.annotator.getBookmarks() as Array<any>;
     }
 
     let highlights: Array<any> = [];
     if (this.annotator) {
-      highlights = (await this.annotator.getAnnotations()) as Array<any>;
+      highlights = this.annotator.getAnnotations() as Array<any>;
       if (highlights) {
         highlights = highlights.filter(
           (rangeRepresentation) =>

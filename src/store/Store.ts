@@ -18,9 +18,9 @@
  */
 
 interface Store {
-  get(key: string): Promise<any | null>;
-  set(key: string, value: any): Promise<void>;
-  remove(key: string): Promise<void>;
+  get(key: string): any | null;
+  set(key: string, value: any): void;
+  remove(key: string): void;
 }
 
 export default Store;

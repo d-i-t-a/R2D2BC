@@ -2760,7 +2760,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }, 150);
   }
 
-  async updatePositionInfo(save: boolean = true) {
+  updatePositionInfo(save: boolean = true) {
     if (this.view.layout === "fixed") {
       if (this.chapterPosition) this.chapterPosition.innerHTML = "";
       if (this.remainingPositions) this.remainingPositions.innerHTML = "";
@@ -2779,13 +2779,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       }
     }
     if (save) {
-      await this.savePosition();
+      this.savePosition();
     }
   }
 
-  savePosition = debounce(async () => {
+  savePosition = debounce(() => {
     if (this.annotator) {
-      await this.saveCurrentReadingPosition();
+      this.saveCurrentReadingPosition();
     }
   }, 200);
 
@@ -3110,10 +3110,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.contentProtectionModule.recalculate(300);
         }
 
-        if (this.pageBreakModule !== undefined) {
-          await this.highlighter.destroyHighlights(HighlightType.PageBreak);
-          await this.pageBreakModule.drawPageBreaks();
-        }
 
         if (this.annotationModule !== undefined) {
           await this.annotationModule.drawHighlights();
@@ -3123,6 +3119,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           await this.bookmarkModule.drawBookmarks();
           await this.bookmarkModule.showBookmarks();
         }
+
+        if (this.pageBreakModule !== undefined) {
+          await this.highlighter.destroyHighlights(HighlightType.PageBreak);
+          await this.pageBreakModule.drawPageBreaks();
+        }
+
         if (
           this.rights?.enableSearch &&
           this.searchModule !== undefined &&
@@ -3131,6 +3133,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           await this.highlighter.destroyHighlights(HighlightType.Search);
           this.searchModule.drawSearch();
         }
+
         if (
           this.rights?.enableDefinitions &&
           this.definitionsModule !== undefined &&
@@ -3255,7 +3258,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }, 150);
   }
 
-  private async saveCurrentReadingPosition(): Promise<void> {
+  private saveCurrentReadingPosition() {
     if (this.annotator) {
       var tocItem = this.publication.getTOCItem(this.currentChapterLink.href);
       if (this.currentTocUrl !== null) {
@@ -3325,10 +3328,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         if (IS_DEV) {
           console.log("save last reading position", position);
         }
-        return this.annotator.saveLastReadingPosition(position);
+        this.annotator.saveLastReadingPosition(position);
       }
-    } else {
-      return new Promise<void>((resolve) => resolve());
     }
   }
 

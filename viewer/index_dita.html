@@ -217,6 +217,12 @@
                            value="1" id="mediaOverlayVolume" name="mediaOverlayVolume"
                            onchange="d2reader.applyMediaOverlaySettings({ volume: this.value })"/>
                 </div>
+                <div class="range-slider">
+                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Rate</label>
+                    <input class="range-slider__range_settings" type="range" min="0.1" max="3" step="0.1"
+                           value="1" id="mediaOverlayRate" name="mediaOverlayRate"
+                           onchange="d2reader.applyMediaOverlaySettings({ rate: this.value })"/>
+                </div>
             </div>
             <div id="container-view-settings-custom" class="dropdown-content settings-view settings">
                 <div class="range-slider">
@@ -831,6 +837,7 @@
                 autoTurn: true,
                 // color: "redtext",
                 volume: 0.7,
+                rate: 1.2,
                 wait: 1,
                 // hideLayer:true,
                 api: {

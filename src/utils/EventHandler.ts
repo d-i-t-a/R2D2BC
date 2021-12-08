@@ -18,9 +18,9 @@
  */
 
 import { IS_DEV } from "../utils";
-import IFrameNavigator from "../navigator/IFrameNavigator";
-import Popup from "../modules/search/Popup";
 import { Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
+import { IFrameNavigator } from "../navigator/IFrameNavigator";
+import { Popup } from "../modules/search/Popup";
 
 export function addEventListenerOptional(
   element: any,

@@ -28,8 +28,8 @@ import {
 } from "../../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { IS_DEV } from "../../utils";
-import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
-import TextHighlighter from "../highlight/TextHighlighter";
+import { IFrameNavigator, ReaderRights } from "../../navigator/IFrameNavigator";
+import { TextHighlighter } from "../highlight/TextHighlighter";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 
 export interface TTSModuleAPI {
@@ -129,7 +129,7 @@ export class TTSSettings implements ITTSUserSettings {
 
   private readonly api: TTSModuleAPI;
 
-  public static async create(config: TTSSettingsConfig): Promise<any> {
+  public static create(config: TTSSettingsConfig) {
     const settings = new this(config.store, config.headerMenu, config.api);
 
     if (config.initialTTSSettings) {

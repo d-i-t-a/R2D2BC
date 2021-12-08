@@ -18,9 +18,9 @@
  */
 
 import { IS_DEV } from "../../utils";
-import Publication from "../../model/Publication";
-import IFrameNavigator from "../../navigator/IFrameNavigator";
-import ReaderModule from "../ReaderModule";
+import { Publication } from "../../model/Publication";
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { ReaderModule } from "../ReaderModule";
 import { Link } from "../../model/Link";
 import { MediaOverlayNode } from "r2-shared-js/dist/es6-es2015/src/models/media-overlay";
 import { TaJsonDeserialize } from "../../utils/JsonUtil";
@@ -59,7 +59,7 @@ export interface MediaOverlayModuleConfig extends MediaOverlayModuleProperties {
   settings: MediaOverlaySettings;
 }
 
-export default class MediaOverlayModule implements ReaderModule {
+export class MediaOverlayModule implements ReaderModule {
   private publication: Publication;
   private delegate: IFrameNavigator;
   private audioElement: HTMLMediaElement;

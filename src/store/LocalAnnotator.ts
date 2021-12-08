@@ -21,7 +21,7 @@ import Annotator, { AnnotationType } from "./Annotator";
 import Store from "./Store";
 import { Annotation, Bookmark, ReadingPosition } from "../model/Locator";
 import { IHighlight } from "../modules/highlight/common/highlight";
-import TextHighlighter from "../modules/highlight/TextHighlighter";
+import { TextHighlighter } from "../modules/highlight/TextHighlighter";
 
 export interface LocalAnnotatorConfig {
   store: Store;

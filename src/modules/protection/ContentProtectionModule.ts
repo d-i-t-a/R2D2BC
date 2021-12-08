@@ -17,9 +17,9 @@
  * Licensed to: Bluefire Productions, LLC, Bibliotheca LLC, Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import ReaderModule from "../ReaderModule";
+import { ReaderModule } from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import IFrameNavigator from "../../navigator/IFrameNavigator";
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
@@ -66,7 +66,7 @@ interface ContentProtectionRect {
   isObfuscated: boolean;
 }
 
-export default class ContentProtectionModule implements ReaderModule {
+export class ContentProtectionModule implements ReaderModule {
   private rects: Array<ContentProtectionRect>;
   private delegate: IFrameNavigator;
   private properties: ContentProtectionModuleProperties;

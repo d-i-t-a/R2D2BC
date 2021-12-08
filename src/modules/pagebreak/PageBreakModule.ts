@@ -18,8 +18,8 @@
  */
 
 import { IS_DEV } from "../../utils";
-import IFrameNavigator from "../../navigator/IFrameNavigator";
-import ReaderModule from "../ReaderModule";
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { ReaderModule } from "../ReaderModule";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
@@ -30,10 +30,10 @@ import {
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import { Link } from "../../model/Link";
-import Publication from "../../model/Publication";
 import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
 import { SHA256 } from "jscrypto/es6/SHA256";
 import { _highlights } from "../highlight/TextHighlighter";
+import { Publication } from "../../model/Publication";
 
 export interface PageBreakModuleProperties {
   hideLayer?: boolean;
@@ -45,7 +45,7 @@ export interface PageBreakModuleConfig extends PageBreakModuleProperties {
   publication: Publication;
 }
 
-export default class PageBreakModule implements ReaderModule {
+export class PageBreakModule implements ReaderModule {
   private delegate: IFrameNavigator;
   private readonly headerMenu: HTMLElement;
   private publication: Publication;

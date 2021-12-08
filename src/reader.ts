@@ -16,28 +16,29 @@
  * Developed on behalf of: NYPL, Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
  * Licensed to: NYPL, Bokbasen AS and CAST under one or more contributor license agreements.
  */
-import { Locator } from "./model/Locator";
-import Publication from "./model/Publication";
+import { Annotation, Bookmark, Locator } from "./model/Locator";
+import { Publication } from "./model/Publication";
 import { UserSettingsIncrementable } from "./model/user-settings/UserProperties";
 import { UserSettings } from "./model/user-settings/UserSettings";
-import AnnotationModule from "./modules/AnnotationModule";
-import BookmarkModule from "./modules/BookmarkModule";
-import TextHighlighter from "./modules/highlight/TextHighlighter";
-import MediaOverlayModule from "./modules/mediaoverlays/MediaOverlayModule";
+import { AnnotationModule } from "./modules/AnnotationModule";
+import { BookmarkModule } from "./modules/BookmarkModule";
+import { TextHighlighter } from "./modules/highlight/TextHighlighter";
+import { MediaOverlayModule } from "./modules/mediaoverlays/MediaOverlayModule";
 import {
   MediaOverlaySettings,
   IMediaOverlayUserSettings,
   MediaOverlayIncrementable,
 } from "./modules/mediaoverlays/MediaOverlaySettings";
-import TimelineModule from "./modules/positions/TimelineModule";
-import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
-import SearchModule from "./modules/search/SearchModule";
+import { TimelineModule } from "./modules/positions/TimelineModule";
+import { ContentProtectionModule } from "./modules/protection/ContentProtectionModule";
+import { SearchModule } from "./modules/search/SearchModule";
 import {
   ITTSUserSettings,
   TTSIncrementable,
   TTSSettings,
 } from "./modules/TTS/TTSSettings";
-import IFrameNavigator, {
+import {
+  IFrameNavigator,
   IFrameAttributes,
   ReaderConfig,
   UpLinkConfig,
@@ -46,12 +47,12 @@ import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
 import { convertAndCamel } from "./model/Link";
-import PageBreakModule from "./modules/pagebreak/PageBreakModule";
-import TTSModule from "./modules/TTS/TTSModule";
-import TTSModule2 from "./modules/TTS/TTSModule2";
-import ReaderModule from "./modules/ReaderModule";
-import DefinitionsModule from "./modules/search/DefinitionsModule";
 import { LayerSettings } from "./modules/highlight/LayerSettings";
+import { PageBreakModule } from "./modules/pagebreak/PageBreakModule";
+import { TTSModule } from "./modules/TTS/TTSModule";
+import { TTSModule2 } from "./modules/TTS/TTSModule2";
+import { ReaderModule } from "./modules/ReaderModule";
+import { DefinitionsModule } from "./modules/search/DefinitionsModule";
 
 /**
  * A class that, once instantiated using the public `.build` method,

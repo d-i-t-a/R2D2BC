@@ -18,22 +18,21 @@
  */
 
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import Publication from "../../model/Publication";
-import IFrameNavigator from "../../navigator/IFrameNavigator";
-import ReaderModule from "../ReaderModule";
+import { Publication } from "../../model/Publication";
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { ReaderModule } from "../ReaderModule";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
 import { IS_DEV } from "../../utils";
-import { reset, searchDocDomSeek } from "./searchWithDomSeek";
-import TextHighlighter, {
-  DEFAULT_BACKGROUND_COLOR,
-} from "../highlight/TextHighlighter";
+import { DEFAULT_BACKGROUND_COLOR } from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { ISelectionInfo } from "../highlight/common/selection";
 import { SHA256 } from "jscrypto";
+import { searchDocDomSeek, reset } from "./searchWithDomSeek";
+import { TextHighlighter } from "../highlight/TextHighlighter";
 
 export interface SearchModuleAPI {}
 
@@ -51,7 +50,7 @@ export interface SearchModuleConfig extends SearchModuleProperties {
   highlighter: TextHighlighter;
 }
 
-export default class SearchModule implements ReaderModule {
+export class SearchModule implements ReaderModule {
   private properties: SearchModuleProperties;
   // @ts-ignore
   private api: SearchModuleAPI;

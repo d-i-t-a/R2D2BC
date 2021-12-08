@@ -17,10 +17,10 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import IFrameNavigator from "../../navigator/IFrameNavigator";
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import sanitize from "sanitize-html";
 
-export default class Popup {
+export class Popup {
   navigator: IFrameNavigator;
 
   constructor(navigator: IFrameNavigator) {

@@ -18,9 +18,9 @@
  */
 
 import { IS_DEV } from "../../utils";
-import Publication from "../../model/Publication";
-import IFrameNavigator from "../../navigator/IFrameNavigator";
-import ReaderModule from "../ReaderModule";
+import { Publication } from "../../model/Publication";
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { ReaderModule } from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import { Locator } from "../../model/Locator";
@@ -31,7 +31,7 @@ export interface TimelineModuleConfig {
   delegate: IFrameNavigator;
 }
 
-export default class TimelineModule implements ReaderModule {
+export class TimelineModule implements ReaderModule {
   private publication: Publication;
   private delegate: IFrameNavigator;
   private timelineContainer: HTMLDivElement;

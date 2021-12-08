@@ -17,22 +17,23 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import IFrameNavigator from "../../navigator/IFrameNavigator";
-import ReaderModule from "../ReaderModule";
 import { IS_DEV } from "../../utils";
-import TextHighlighter, {
-  _highlights,
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { ReaderModule } from "../ReaderModule";
+import {
+  TextHighlighter,
   CLASS_HIGHLIGHT_AREA,
   DEFAULT_BACKGROUND_COLOR,
+  _highlights,
 } from "../highlight/TextHighlighter";
 import * as lodash from "lodash";
 import { searchDocDomSeek } from "./searchWithDomSeek";
-import Publication from "../../model/Publication";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { debounce } from "debounce";
 import { ISelectionInfo } from "../highlight/common/selection";
 import { SHA256 } from "jscrypto/es6/SHA256";
 import { AnnotationMarker } from "../../model/Locator";
+import { Publication } from "../../model/Publication";
 
 export interface DefinitionsModuleAPI {
   success?: any;
@@ -61,7 +62,7 @@ export interface DefinitionsModuleConfig extends DefinitionsModuleProperties {
   highlighter: TextHighlighter;
 }
 
-export default class DefinitionsModule implements ReaderModule {
+export class DefinitionsModule implements ReaderModule {
   properties: DefinitionsModuleProperties;
   // @ts-ignore
   api: DefinitionsModuleAPI;

@@ -17,8 +17,8 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import ReaderModule from "../ReaderModule";
 import { IS_DEV } from "../../utils";
+import { ReaderModule } from "../ReaderModule";
 import { AnnotationMarker } from "../../model/Locator";
 import {
   TTSModuleAPI,
@@ -32,8 +32,8 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import sanitize from "sanitize-html";
-import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
-import TextHighlighter from "../highlight/TextHighlighter";
+import { IFrameNavigator, ReaderRights } from "../../navigator/IFrameNavigator";
+import { TextHighlighter } from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
@@ -45,7 +45,7 @@ import {
 } from "../highlight/common/selection";
 import { getClientRectsNoOverlap } from "../highlight/common/rect-utils";
 
-export default class TTSModule2 implements ReaderModule {
+export class TTSModule2 implements ReaderModule {
   private tts: TTSSettings;
   private voices: SpeechSynthesisVoice[] = [];
   private clean: any;

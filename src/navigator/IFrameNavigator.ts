@@ -19,7 +19,7 @@
 
 import Navigator from "./Navigator";
 import Annotator from "../store/Annotator";
-import Publication from "../model/Publication";
+import { Publication } from "../model/Publication";
 import EventHandler, {
   addEventListenerOptional,
   removeEventListenerOptional,
@@ -42,48 +42,55 @@ import {
   UserSettings,
   UserSettingsUIConfig,
 } from "../model/user-settings/UserSettings";
-import BookmarkModule, {
+import {
+  BookmarkModule,
   BookmarkModuleConfig,
 } from "../modules/BookmarkModule";
-import AnnotationModule, {
+import {
+  AnnotationModule,
   AnnotationModuleConfig,
 } from "../modules/AnnotationModule";
 import { IS_DEV } from "../utils";
-import TTSModule from "../modules/TTS/TTSModule";
+import { TTSModule } from "../modules/TTS/TTSModule";
 import Splitting from "../modules/TTS/splitting";
-import SearchModule, {
+import {
+  SearchModule,
   SearchModuleConfig,
 } from "../modules/search/SearchModule";
-import ContentProtectionModule, {
+import {
+  ContentProtectionModule,
   ContentProtectionModuleConfig,
 } from "../modules/protection/ContentProtectionModule";
-import TextHighlighter, {
+import {
   HighlightContainer,
+  TextHighlighter,
   TextHighlighterConfig,
 } from "../modules/highlight/TextHighlighter";
-import TimelineModule from "../modules/positions/TimelineModule";
+import { TimelineModule } from "../modules/positions/TimelineModule";
 import { debounce } from "debounce";
 import TouchEventHandler from "../utils/TouchEventHandler";
 import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 import BookView from "../views/BookView";
 
-import MediaOverlayModule, {
+import {
+  MediaOverlayModule,
   MediaOverlayModuleConfig,
 } from "../modules/mediaoverlays/MediaOverlayModule";
 import { D2Link, Link } from "../model/Link";
 import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
-import ReaderModule from "../modules/ReaderModule";
+import { ReaderModule } from "../modules/ReaderModule";
 import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
 
 import { HighlightType } from "../modules/highlight/common/highlight";
-import TTSModule2 from "../modules/TTS/TTSModule2";
-import PageBreakModule, {
-  PageBreakModuleConfig,
-} from "../modules/pagebreak/PageBreakModule";
-import DefinitionsModule, {
+import { PageBreakModuleConfig } from "../modules/pagebreak/PageBreakModule";
+import { Switchable } from "../model/user-settings/UserProperties";
+import { TTSModule2 } from "../modules/TTS/TTSModule2";
+import { PageBreakModule } from "../modules/pagebreak/PageBreakModule";
+import {
+  DefinitionsModule,
   DefinitionsModuleConfig,
 } from "../modules/search/DefinitionsModule";
-import { Switchable } from "../model/user-settings/UserProperties";
+import EventEmitter from "events";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -196,7 +203,7 @@ export interface ReaderConfig {
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
-export default class IFrameNavigator implements Navigator {
+export class IFrameNavigator extends EventEmitter implements Navigator {
   iframes: Array<HTMLIFrameElement> = [];
 
   currentTocUrl: string;

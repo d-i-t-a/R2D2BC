@@ -22,7 +22,8 @@ import * as HTMLUtilities from "../utils/HTMLUtilities";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import Store from "../store/Store";
 import BookView from "./BookView";
-import IFrameNavigator, {
+import {
+  IFrameNavigator,
   IFrameAttributes,
 } from "../navigator/IFrameNavigator";
 import { debounce } from "debounce";

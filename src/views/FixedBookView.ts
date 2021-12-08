@@ -18,7 +18,8 @@
  */
 
 import Store from "../store/Store";
-import IFrameNavigator, {
+import {
+  IFrameNavigator,
   IFrameAttributes,
 } from "../navigator/IFrameNavigator";
 import BookView from "./BookView";

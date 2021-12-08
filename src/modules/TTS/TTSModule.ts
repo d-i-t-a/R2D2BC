@@ -17,7 +17,7 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import ReaderModule from "../ReaderModule";
+import { ReaderModule } from "../ReaderModule";
 import { IS_DEV } from "../../utils";
 import {
   TTSModuleAPI,
@@ -31,12 +31,12 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import sanitize from "sanitize-html";
-import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
-import TextHighlighter from "../highlight/TextHighlighter";
+import { IFrameNavigator, ReaderRights } from "../../navigator/IFrameNavigator";
+import { TextHighlighter } from "../highlight/TextHighlighter";
 
 import { ISelectionInfo } from "../highlight/common/selection";
 
-export default class TTSModule implements ReaderModule {
+export class TTSModule implements ReaderModule {
   private tts: TTSSettings;
   private splittingResult: any[];
   private voices: SpeechSynthesisVoice[] = [];

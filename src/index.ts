@@ -24,5 +24,5 @@ export default D2Reader;
 /** for interop with \<script\> based usage */
 export const load = D2Reader.load;
 
-export { Link } from "./model/Link";
-export { Locator, ReadingPosition } from "./model/Locator";
+// export { Link } from "./model/Link";
+// export { Locator, ReadingPosition } from "./model/Locator";

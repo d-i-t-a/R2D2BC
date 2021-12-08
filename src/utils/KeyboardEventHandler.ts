@@ -17,7 +17,7 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import IFrameNavigator from "../navigator/IFrameNavigator";
+import { IFrameNavigator } from "../navigator/IFrameNavigator";
 
 export default class KeyboardEventHandler {
   delegate: IFrameNavigator;

@@ -27,7 +27,7 @@ import { GetContentBytesLength } from "../navigator/IFrameNavigator";
 import { SampleRead } from "../navigator/IFrameNavigator";
 
 @JsonObject()
-export default class Publication extends R2Publication {
+export class Publication extends R2Publication {
   manifestUrl: URL;
 
   public positions: Array<Locator>;

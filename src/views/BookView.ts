@@ -17,7 +17,8 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import IFrameNavigator, {
+import {
+  IFrameNavigator,
   IFrameAttributes,
 } from "../navigator/IFrameNavigator";
 

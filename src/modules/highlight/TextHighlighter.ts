@@ -41,14 +41,14 @@ import { uniqueCssSelector } from "./renderer/common/cssselector2";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { IS_DEV } from "../../utils";
 import { icons, iconTemplateColored } from "../../utils/IconLib";
-import IFrameNavigator from "../../navigator/IFrameNavigator";
-import TTSModule from "../TTS/TTSModule";
-import TTSModule2 from "../TTS/TTSModule2";
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { TTSModule } from "../TTS/TTSModule";
+import { TTSModule2 } from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import * as lodash from "lodash";
-import Popup from "../search/Popup";
 import { LayerSettings } from "./LayerSettings";
 import { Switchable } from "../../model/user-settings/UserProperties";
+import { Popup } from "../search/Popup";
 
 export enum HighlightContainer {
   R2_ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER",
@@ -137,7 +137,7 @@ export interface TextHighlighterConfig extends TextHighlighterProperties {
   layerSettings: LayerSettings;
 }
 
-export default class TextHighlighter {
+export class TextHighlighter {
   private options: any;
   private readonly delegate: IFrameNavigator;
   layerSettings: LayerSettings;

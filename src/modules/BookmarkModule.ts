@@ -19,9 +19,9 @@
 
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
-import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
-import Publication from "../model/Publication";
-import ReaderModule from "./ReaderModule";
+import { IFrameNavigator, ReaderRights } from "../navigator/IFrameNavigator";
+import { Publication } from "../model/Publication";
+import { ReaderModule } from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { icons as IconLib } from "../utils/IconLib";
 import {
@@ -65,7 +65,7 @@ export interface BookmarkModuleConfig extends BookmarkModuleProperties {
   api?: BookmarkModuleAPI;
 }
 
-export default class BookmarkModule implements ReaderModule {
+export class BookmarkModule implements ReaderModule {
   private readonly annotator: Annotator | null;
   private rights: ReaderRights;
   private publication: Publication;

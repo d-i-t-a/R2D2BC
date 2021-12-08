@@ -18,7 +18,7 @@
  */
 
 import { debounce } from "debounce";
-import IFrameNavigator from "../../navigator/IFrameNavigator";
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 
 export default class SampleReadEventHandler {
   delegate: IFrameNavigator;

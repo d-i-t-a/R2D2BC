@@ -19,10 +19,10 @@
 
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
-import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
-import Publication from "../model/Publication";
-import TextHighlighter, { _highlights } from "./highlight/TextHighlighter";
-import ReaderModule from "./ReaderModule";
+import { IFrameNavigator, ReaderRights } from "../navigator/IFrameNavigator";
+import { Publication } from "../model/Publication";
+import { TextHighlighter, _highlights } from "./highlight/TextHighlighter";
+import { ReaderModule } from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { HighlightType, IHighlight } from "./highlight/common/highlight";
 import {
@@ -65,7 +65,7 @@ export interface AnnotationModuleConfig extends AnnotationModuleProperties {
   highlighter: TextHighlighter;
 }
 
-export default class AnnotationModule implements ReaderModule {
+export class AnnotationModule implements ReaderModule {
   readonly annotator: Annotator | null;
   private rights: ReaderRights;
   private publication: Publication;

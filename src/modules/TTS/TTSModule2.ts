@@ -185,6 +185,7 @@ export class TTSModule2 implements ReaderModule {
 
   cancel() {
     if (this.api?.stopped) this.api?.stopped();
+    this.delegate.emit("readaloud.stopped", "stopped");
     this.userScrolled = false;
     this.speaking = false;
     setTimeout(() => {
@@ -205,6 +206,7 @@ export class TTSModule2 implements ReaderModule {
     callback: () => void
   ): Promise<any> {
     if (this.api?.started) this.api?.started();
+    this.delegate.emit("readaloud.started", "started");
 
     const self = this;
     this.userScrolled = false;
@@ -390,13 +392,14 @@ export class TTSModule2 implements ReaderModule {
       if (IS_DEV) console.log("utterance ended");
       self.highlighter.doneSpeaking();
       self.api?.finished();
+      self.delegate.emit("readaloud.finished", "finished");
     };
     callback();
   }
 
   speakPlay() {
-    // function ttsPlay() {
     this.cancel();
+    this.delegate.emit("readaloud.started", "started");
 
     let self = this;
     let iframe = document.querySelector(
@@ -489,6 +492,7 @@ export class TTSModule2 implements ReaderModule {
   speakPause() {
     if (window.speechSynthesis.speaking) {
       if (this.api?.paused) this.api?.paused();
+      this.delegate.emit("readaloud.paused", "paused");
       this.userScrolled = false;
       window.speechSynthesis.pause();
       this.speaking = false;
@@ -503,6 +507,7 @@ export class TTSModule2 implements ReaderModule {
   speakResume() {
     if (window.speechSynthesis.speaking) {
       if (this.api?.resumed) this.api?.resumed();
+      this.delegate.emit("readaloud.resumed", "resumed");
       this.userScrolled = false;
       window.speechSynthesis.resume();
       this.speaking = true;

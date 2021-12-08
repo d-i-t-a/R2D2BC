@@ -82,6 +82,10 @@ export default class D2Reader {
     private readonly pageBreakModule?: PageBreakModule
   ) {}
 
+  addEventListener() {
+    this.navigator.addListener(arguments[0], arguments[1]);
+  }
+
   /**
    * The async builder.
    */

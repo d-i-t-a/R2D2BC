@@ -334,6 +334,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     services: PublicationServices,
     sample: SampleRead
   ) {
+    super();
     this.settings = settings;
     this.annotator = annotator;
     this.view = settings.view;
@@ -3105,7 +3106,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.contentProtectionModule.recalculate(300);
         }
 
-
         if (this.annotationModule !== undefined) {
           await this.annotationModule.drawHighlights();
           await this.annotationModule.showHighlights();
@@ -3144,6 +3144,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           if (this.previousChapterTopAnchorElement)
             this.previousChapterTopAnchorElement.style.display = "none";
           if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
+          this.emit("resource.fits");
         } else {
           this.settings.isPaginated().then((paginated) => {
             if (!paginated) {
@@ -3195,10 +3196,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   checkResourcePosition = debounce(() => {
     if (this.view.atStart() && this.view.atEnd()) {
       if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
+      this.emit("resource.fits");
     } else if (this.view.atEnd()) {
       if (this.api?.resourceAtEnd) this.api?.resourceAtEnd();
+      this.emit("resource.end");
     } else if (this.view.atStart()) {
       if (this.api?.resourceAtStart) this.api?.resourceAtStart();
+      this.emit("resource.start");
     }
   }, 200);
 
@@ -3243,13 +3247,17 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.view.layout !== "fixed") {
         if (this.view.atStart() && this.view.atEnd()) {
           if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
+          this.emit("resource.fits");
         } else if (this.view.atEnd()) {
           if (this.api?.resourceAtEnd) this.api?.resourceAtEnd();
+          this.emit("resource.end");
         } else if (this.view.atStart()) {
           if (this.api?.resourceAtStart) this.api?.resourceAtStart();
+          this.emit("resource.start");
         }
       }
       if (this.api?.resourceReady) this.api?.resourceReady();
+      this.emit("resource.ready");
     }, 150);
   }
 

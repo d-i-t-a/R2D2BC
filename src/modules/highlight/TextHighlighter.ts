@@ -966,12 +966,14 @@ export class TextHighlighter {
     if (!this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = true;
       if (this.api?.selectionMenuOpen) this.api?.selectionMenuOpen();
+      this.delegate.emit("toolbox.opened", "opened");
     }
   }, 100);
   selectionMenuClosed = debounce(() => {
     if (this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = false;
       if (this.api?.selectionMenuClose) this.api?.selectionMenuClose();
+      this.delegate.emit("toolbox.closed", "closed");
     }
   }, 100);
 
@@ -2160,6 +2162,7 @@ export class TextHighlighter {
         break;
       }
     }
+
     if (!foundHighlight || !foundElement) {
       for (let id in HighlightContainer) {
         let container = doc.getElementById(id);
@@ -2382,6 +2385,7 @@ export class TextHighlighter {
               lodash.omit(result, "callbacks"),
               lodash.omit(foundHighlight, "definition")
             );
+            this.delegate.emit("definition.click", result, foundHighlight);
           }
         }
       }
@@ -2470,6 +2474,7 @@ export class TextHighlighter {
       parent.removeChild(parent.firstChild);
     }
   }
+
   destroyHighlights(type: HighlightType) {
     let doc = this.delegate.iframes[0].contentWindow.document;
     let container;

@@ -185,6 +185,7 @@ export class DefinitionsModule implements ReaderModule {
     await this.searchAndPaint(item, async (result) => {
       if (this.api?.success) {
         this.api?.success(lodash.omit(item, "callbacks"), result);
+        this.delegate.emit("definition.success", result);
 
         if (this.api?.visible) {
           result.forEach((highlight) => {
@@ -202,6 +203,7 @@ export class DefinitionsModule implements ReaderModule {
                       lodash.omit(item, "callbacks"),
                       lodash.omit(highlight, "definition")
                     );
+                    this.delegate.emit("definition.visible", item, highlight);
                   }
                 });
               },

@@ -1081,6 +1081,36 @@
         }).then(instance => {
             console.log("D2reader instance ready", instance);
             d2reader = instance;
+
+            instance.addEventListener("readalong.started", (detail) => {
+                console.log("Something in the annotations has changed. ");
+                console.log("listener " + detail);
+            });
+            instance.addEventListener("readaloud.started", (detail) => {
+                console.log("listener " + detail);
+            });
+            instance.addEventListener("readaloud.stopped", (detail) => {
+                console.log("listener " + detail);
+            });
+            instance.addEventListener("readaloud.paused", (detail) => {
+                console.log("listener " + detail);
+            });
+            instance.addEventListener("readaloud.resumed", (detail) => {
+                console.log("listener " + detail);
+            });
+            instance.addEventListener("resource.start", () => {
+                console.log("listener start");
+            });
+            instance.addEventListener("resource.end", () => {
+                console.log("listener end");
+            });
+            instance.addEventListener("resource.fits", () => {
+                console.log("listener fits");
+            });
+            instance.addEventListener("resource.ready", () => {
+                console.log("listener ready");
+            });
+
             // console.log("instance.bookmarkModule ", instance.bookmarkModule)
             // console.log("instance.annotationModule ", instance.annotationModule)
         }).catch(error => {

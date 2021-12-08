@@ -1398,6 +1398,27 @@ export class TextHighlighter {
     this.dom(this.delegate.iframes[0].contentDocument.body).removeAllRanges();
   }
 
+  isOutsideViewport(rect): boolean {
+    let wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
+    const windowLeft = wrapper.scrollLeft;
+    const windowRight = windowLeft + wrapper.clientHeight;
+    const right = rect.left + rect.width;
+    const bottom = rect.top + rect.height;
+    const windowTop = wrapper.scrollTop;
+    const windowBottom = windowTop + wrapper.clientHeight;
+
+    const isAbove = bottom < windowTop;
+    const isBelow = rect.top > windowBottom;
+
+    const isLeft = right < windowLeft;
+    const isRight = rect.left > windowRight;
+
+    return isAbove || isBelow || isLeft || isRight;
+  }
+
   get visibleTextRects() {
     const body = HTMLUtilities.findRequiredIframeElement(
       this.delegate.iframes[0].contentDocument,
@@ -1421,23 +1442,6 @@ export class TextHighlighter {
         element = element.nextSibling as Element;
       }
       return nodes;
-    }
-
-    function isOutsideViewport(rect): boolean {
-      const windowLeft = window.scrollX;
-      const windowRight = windowLeft + window.innerWidth;
-      const right = rect.left + rect.width;
-      const bottom = rect.top + rect.height;
-      const windowTop = window.scrollY;
-      const windowBottom = windowTop + window.innerHeight;
-
-      const isAbove = bottom < windowTop;
-      const isBelow = rect.top > windowBottom;
-
-      const isLeft = right < windowLeft;
-      const isRight = rect.left > windowRight;
-
-      return isAbove || isBelow || isLeft || isRight;
     }
 
     function findRects(parent: HTMLElement): Array<HTMLElementRect> {
@@ -1475,7 +1479,7 @@ export class TextHighlighter {
     }
 
     const textNodes = findRects(body);
-    return textNodes.filter((rect) => !isOutsideViewport(rect));
+    return textNodes.filter((rect) => !this.isOutsideViewport(rect));
   }
 
   doneSpeaking(reload: boolean = false) {

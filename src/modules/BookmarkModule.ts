@@ -343,26 +343,10 @@ export class BookmarkModule implements ReaderModule {
 
     const clientRects = getClientRectsNoOverlap(range, false);
 
-    function isOutsideViewport(rect): boolean {
-      const windowLeft = window.scrollX;
-      const windowRight = windowLeft + window.innerWidth;
-      const right = rect.left + rect.width;
-      const bottom = rect.top + rect.height;
-      const windowTop = window.scrollY;
-      const windowBottom = windowTop + window.innerHeight;
-
-      const isAbove = bottom < windowTop;
-      const isBelow = rect.top > windowBottom;
-
-      const isLeft = right < windowLeft;
-      const isRight = rect.left > windowRight;
-
-      return isAbove || isBelow || isLeft || isRight;
-    }
 
     let index = 0;
     for (const rect of clientRects) {
-      if (!isOutsideViewport(rect)) {
+      if (!this.delegate.highlighter.isOutsideViewport(rect)) {
         const endNode = selection.focusNode;
         const endOffset = selection.focusOffset;
 

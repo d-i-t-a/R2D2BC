@@ -403,7 +403,7 @@
         // var lastReadingPosition = '{"href":"OEBPS/Text/cover.xhtml","locations":{"progression":0},"created":"2019-05-21T12:53:08.145Z","type":"application/xhtml+xml","title":"Cover"}';
 
         let d2reader = undefined;
-        D2Reader.build({
+        D2Reader.load({
             url: new URL(urlParams['url']),
             attributes: { // TODO: review these attributes and eventually needs better naming.
                 margin: 15, // subtract this from the iframe height , when setting the iframe minimum height

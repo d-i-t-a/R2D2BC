@@ -17,7 +17,7 @@ const App = () => {
 
   React.useEffect(() => {
     const url = new URL("https://alice.dita.digital/manifest.json");
-    D2Reader.build({
+    D2Reader.load({
       url,
       injectables: injectables as any,
       injectablesFixed: [],

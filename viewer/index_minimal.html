@@ -82,7 +82,7 @@
 
         var urlParams = getURLQueryParams();
         let d2reader = undefined;
-        D2Reader.build({
+        D2Reader.load({
             url: new URL(urlParams['url']),
             injectables: injectables,
             injectablesFixed: [],

@@ -33,7 +33,7 @@ const App = () => {
     didUpdate();
   }
 
-  const isScrolling = reader?.currentSettings().verticalScroll ?? false;
+  const isScrolling = reader?.currentSettings.verticalScroll ?? false;
 
   return (
     <div>

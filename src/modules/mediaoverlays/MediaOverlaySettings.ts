@@ -40,6 +40,7 @@ export class MEDIAOVERLAYREFS {
   static readonly AUTO_SCROLL_REF = "autoscroll";
   static readonly AUTO_TURN_REF = "autoturn";
   static readonly VOLUME_REF = "volume";
+  static readonly RATE_REF = "rate";
 
   static readonly COLOR_KEY = "mediaoverlay-" + MEDIAOVERLAYREFS.COLOR_REF;
   static readonly AUTO_SCROLL_KEY =
@@ -47,6 +48,7 @@ export class MEDIAOVERLAYREFS {
   static readonly AUTO_TURN_KEY =
     "mediaoverlay-" + MEDIAOVERLAYREFS.AUTO_TURN_REF;
   static readonly VOLUME_KEY = "mediaoverlay-" + MEDIAOVERLAYREFS.VOLUME_REF;
+  static readonly RATE_KEY = "mediaoverlay-" + MEDIAOVERLAYREFS.RATE_REF;
 }
 
 export interface MediaOverlayConfig {
@@ -61,11 +63,12 @@ export interface IMediaOverlayUserSettings {
   autoScroll?: boolean;
   autoTurn?: boolean;
   volume?: number;
+  rate?: number;
   playing?: boolean;
   wait?: number;
 }
 
-export type MediaOverlayIncrementable = "mo_volume";
+export type MediaOverlayIncrementable = "mo_volume" | "mo_rate";
 
 export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   private readonly store: Store;
@@ -75,6 +78,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   autoScroll = true;
   autoTurn = true;
   volume = 1.0;
+  rate = 1.0;
   playing = false;
   wait = 1;
 
@@ -88,6 +92,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   private speechAutoScroll: HTMLInputElement;
   private speechAutoTurn: HTMLInputElement;
   private speechVolume: HTMLInputElement;
+  private speechRate: HTMLInputElement;
 
   private readonly api: MediaOverlayModuleAPI;
 
@@ -111,6 +116,10 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       if (initialSettings?.volume) {
         settings.volume = initialSettings.volume;
         if (IS_DEV) console.log(settings.volume);
+      }
+      if (initialSettings?.rate) {
+        settings.rate = initialSettings.rate;
+        if (IS_DEV) console.log(settings.rate);
       }
       if (initialSettings?.wait) {
         settings.wait = initialSettings.wait;
@@ -162,6 +171,11 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
         ? (this.getProperty(MEDIAOVERLAYREFS.VOLUME_KEY) as Incremental).value
         : this.volume;
 
+    this.rate =
+      this.getProperty(MEDIAOVERLAYREFS.RATE_KEY) != null
+        ? (this.getProperty(MEDIAOVERLAYREFS.RATE_KEY) as Incremental).value
+        : this.rate;
+
     this.userProperties = this.getMediaOverlaySettings();
   }
 
@@ -170,6 +184,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
     this.autoScroll = true;
     this.autoTurn = true;
     this.volume = 1.0;
+    this.rate = 1.0;
     this.wait = 1;
 
     this.userProperties = this.getMediaOverlaySettings();
@@ -206,10 +221,16 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
         "#mediaOverlayVolume"
       ) as HTMLInputElement;
 
+    if (this.headerMenu)
+      this.speechRate = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#mediaOverlayRate"
+      ) as HTMLInputElement;
 
     if (this.speechAutoScroll) this.speechAutoScroll.checked = this.autoScroll;
     if (this.speechAutoTurn) this.speechAutoTurn.checked = this.autoTurn;
     if (this.speechVolume) this.speechVolume.value = this.volume.toString();
+    if (this.speechRate) this.speechRate.value = this.volume.toString();
 
     // Clicking the settings view outside the ul hides it, but clicking inside the ul keeps it up.
     addEventListenerOptional(
@@ -238,6 +259,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       autoTurn: this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF)
         .value,
       volume: this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF).value,
+      rate: this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF).value,
     };
     this.applyMediaOverlaySettings(syncSettings);
     if (this.api?.updateSettings) {
@@ -279,6 +301,15 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       "",
       MEDIAOVERLAYREFS.VOLUME_REF,
       MEDIAOVERLAYREFS.VOLUME_KEY
+    );
+    userProperties.addIncremental(
+      this.rate,
+      0.1,
+      3,
+      0.1,
+      "",
+      MEDIAOVERLAYREFS.RATE_REF,
+      MEDIAOVERLAYREFS.RATE_KEY
     );
 
     return userProperties;
@@ -362,6 +393,15 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       );
       this.settingsChangeCallback();
     }
+    if (mediaOverlaySettings.rate) {
+      if (IS_DEV) console.log("rate " + this.rate);
+      this.rate = mediaOverlaySettings.rate;
+      this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF).value = this.rate;
+      this.saveProperty(
+        this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)
+      );
+      this.settingsChangeCallback();
+    }
   }
 
   applyMediaOverlaySetting(key: any, value: any) {
@@ -403,6 +443,14 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
         this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
       );
       this.settingsChangeCallback();
+    } else if (incremental === "mo_rate") {
+      (this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.RATE_REF
+      ) as Incremental).increment();
+      this.storeProperty(
+        this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)
+      );
+      this.settingsChangeCallback();
     }
   }
 
@@ -413,6 +461,14 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       ) as Incremental).decrement();
       this.storeProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
+      );
+      this.settingsChangeCallback();
+    } else if (incremental === "mo_rate") {
+      (this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.RATE_REF
+      ) as Incremental).decrement();
+      this.storeProperty(
+        this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)
       );
       this.settingsChangeCallback();
     }

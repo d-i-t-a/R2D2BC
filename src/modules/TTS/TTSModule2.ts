@@ -18,6 +18,7 @@
  */
 
 import ReaderModule from "../ReaderModule";
+import { IS_DEV } from "../../utils";
 import { AnnotationMarker } from "../../model/Locator";
 import {
   TTSModuleAPI,
@@ -43,7 +44,6 @@ import {
   ISelectionInfo,
 } from "../highlight/common/selection";
 import { getClientRectsNoOverlap } from "../highlight/common/rect-utils";
-import { IS_DEV } from "../../utils";
 
 export default class TTSModule2 implements ReaderModule {
   private tts: TTSSettings;
@@ -206,32 +206,51 @@ export default class TTSModule2 implements ReaderModule {
   ): Promise<any> {
     if (this.api?.started) this.api?.started();
 
-    var self = this;
+    const self = this;
     this.userScrolled = false;
     this.cancel();
 
-    // const ttsQueue = this.generateTtsQueue(
-    //   selectionInfo.range.startContainer.parentElement,
-    //   true
-    // );
-    // let iframe = document.querySelector(
-    //   "main#iframe-wrapper iframe"
-    // ) as HTMLIFrameElement;
-    // let rootEl = iframe.contentWindow.document.body;
-    //
-    // this.startTTSSession(
-    //   1,
-    //   null,
-    //   rootEl as Element,
-    //   ttsQueue,
-    //   0,
-    //   null,
-    //   null,
-    //   null
-    // );
-    const utterance = partial
-      ? new SpeechSynthesisUtterance(selectionInfo.cleanText)
-      : new SpeechSynthesisUtterance(this.clean);
+    let utterance;
+    if (partial) {
+      let iframe = document.querySelector(
+        "main#iframe-wrapper iframe"
+      ) as HTMLIFrameElement;
+      let rootEl = iframe.contentWindow.document.body;
+
+      const selection = this.highlighter
+        .dom(this.delegate.iframes[0].contentDocument.body)
+        .getSelection();
+
+      const ttsQueue = this.generateTtsQueue(rootEl, true);
+      if (!ttsQueue.length) {
+        return;
+      }
+
+      const idx = this.findTtsQueueItemIndex(
+        ttsQueue,
+        selection.anchorNode as Element,
+        selection.focusNode,
+        selection.focusOffset,
+        rootEl
+      );
+
+      const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
+      const sentence = getTtsQueueItemRefText(ttsQueueItem);
+      const startIndex = sentence.indexOf(selectionInfo.cleanText);
+
+      utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
+      utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+        this.updateTTSInfo(
+          ttsQueueItem,
+          ev.charIndex + startIndex,
+          ev.charLength,
+          utterance.text
+        );
+      };
+    } else {
+      utterance = new SpeechSynthesisUtterance(this.clean);
+    }
+
     utterance.rate = this.tts.rate;
     utterance.pitch = this.tts.pitch;
     utterance.volume = this.tts.volume;
@@ -436,23 +455,8 @@ export default class TTSModule2 implements ReaderModule {
             selection.modify("move", "forward", "line");
           }
           selection.extend(endNode, endOffset);
-          const endNode2 = selection.focusNode;
 
-          const focusNodeLength = selection.focusNode.length;
           selection.collapse(selection.anchorNode, selection.anchorOffset);
-
-          let endOffset2 = focusNodeLength;
-          if (selection.anchorOffset > focusNodeLength) {
-            endOffset2 = focusNodeLength;
-          } else {
-            endOffset2 = selection.anchorOffset + 1;
-          }
-
-          selection.modify("move", "forward", "character");
-          selection.modify("move", "backward", "word");
-          selection.extend(endNode2, endOffset2 - 1);
-          selection.modify("extend", "backward", "character");
-          selection.modify("extend", "forward", "sentence");
 
           const idx = self.findTtsQueueItemIndex(
             ttsQueue,
@@ -551,6 +555,11 @@ export default class TTSModule2 implements ReaderModule {
         if (menuTTS) menuTTS.parentElement.style.setProperty("display", "none");
       }
     }
+    setTimeout(() => {
+      this.properties.hideLayer
+        ? this.delegate.hideLayer("readaloud")
+        : this.delegate.showLayer("readaloud");
+    }, 10);
   }
 
   userScrolled = false;

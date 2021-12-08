@@ -58,6 +58,7 @@ import ContentProtectionModule, {
   ContentProtectionModuleConfig,
 } from "../modules/protection/ContentProtectionModule";
 import TextHighlighter, {
+  HighlightContainer,
   TextHighlighterConfig,
 } from "../modules/highlight/TextHighlighter";
 import TimelineModule from "../modules/positions/TimelineModule";
@@ -76,10 +77,13 @@ import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
 
 import { HighlightType } from "../modules/highlight/common/highlight";
 import TTSModule2 from "../modules/TTS/TTSModule2";
-import PageBreakModule from "../modules/pagebreak/PageBreakModule";
+import PageBreakModule, {
+  PageBreakModuleConfig,
+} from "../modules/pagebreak/PageBreakModule";
 import DefinitionsModule, {
   DefinitionsModuleConfig,
 } from "../modules/search/DefinitionsModule";
+import { Switchable } from "../model/user-settings/UserProperties";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -159,6 +163,7 @@ export interface ReaderRights {
   enableTimeline?: boolean;
   autoGeneratePositions?: boolean;
   enableMediaOverlays?: boolean;
+  enablePageBreaks?: boolean;
 }
 
 export interface ReaderUI {
@@ -178,6 +183,7 @@ export interface ReaderConfig {
   define?: DefinitionsModuleConfig;
   protection?: ContentProtectionModuleConfig;
   mediaOverlays?: MediaOverlayModuleConfig;
+  pagebreak?: PageBreakModuleConfig;
   annotations?: AnnotationModuleConfig;
   bookmarks?: BookmarkModuleConfig;
   highlighter?: TextHighlighterConfig;
@@ -1155,7 +1161,7 @@ export default class IFrameNavigator implements Navigator {
           this.definitionsModule !== undefined &&
           this.highlighter !== undefined
         ) {
-          await this.highlighter.destroyHighlights(HighlightType.Popup);
+          await this.highlighter.destroyHighlights(HighlightType.Definition);
           this.definitionsModule.drawDefinitions();
         }
       }, 200);
@@ -3123,7 +3129,7 @@ export default class IFrameNavigator implements Navigator {
           this.definitionsModule !== undefined &&
           this.highlighter !== undefined
         ) {
-          await this.highlighter.destroyHighlights(HighlightType.Popup);
+          await this.highlighter.destroyHighlights(HighlightType.Definition);
           this.definitionsModule.drawDefinitions();
         }
 
@@ -3365,6 +3371,96 @@ export default class IFrameNavigator implements Navigator {
       this.annotationModule.activeAnnotationMarkerId = undefined;
       this.annotationModule.activeAnnotationMarkerPosition = undefined;
       this.highlighter.activeAnnotationMarkerId = undefined;
+    }
+  }
+
+  showLayer(layer) {
+    let ID = "#";
+    let prop = new Switchable(
+      "layer-on",
+      "layer-off",
+      true,
+      layer,
+      "layer-" + layer
+    );
+
+    switch (layer) {
+      case "annotations":
+      case "highlights":
+        ID += HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER;
+        break;
+      case "readaloud":
+        ID += HighlightContainer.R2_ID_READALOUD_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_READALOUD_CONTAINER;
+        break;
+      case "pagebreak":
+        ID += HighlightContainer.R2_ID_PAGEBREAK_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_PAGEBREAK_CONTAINER;
+        break;
+      case "search":
+        ID += HighlightContainer.R2_ID_SEARCH_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_SEARCH_CONTAINER;
+        break;
+      case "definitions":
+        ID += HighlightContainer.R2_ID_DEFINITIONS_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_DEFINITIONS_CONTAINER;
+        break;
+    }
+
+    this.highlighter.layerSettings.saveProperty(prop);
+
+    const container = HTMLUtilities.findElement(
+      this.iframes[0].contentDocument,
+      ID
+    ) as HTMLDivElement;
+    if (container) {
+      container.style.display = "block";
+    }
+  }
+
+  hideLayer(layer) {
+    let ID = "#";
+    let prop = new Switchable(
+      "layer-on",
+      "layer-off",
+      false,
+      layer,
+      "layer-" + layer
+    );
+
+    switch (layer) {
+      case "annotations":
+      case "highlights":
+        ID += HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER;
+        break;
+      case "readaloud":
+        ID += HighlightContainer.R2_ID_READALOUD_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_READALOUD_CONTAINER;
+        break;
+      case "pagebreak":
+        ID += HighlightContainer.R2_ID_PAGEBREAK_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_PAGEBREAK_CONTAINER;
+        break;
+      case "search":
+        ID += HighlightContainer.R2_ID_SEARCH_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_SEARCH_CONTAINER;
+        break;
+      case "definitions":
+        ID += HighlightContainer.R2_ID_DEFINITIONS_CONTAINER;
+        prop.name = HighlightContainer.R2_ID_DEFINITIONS_CONTAINER;
+        break;
+    }
+
+    this.highlighter.layerSettings.saveProperty(prop);
+
+    const container = HTMLUtilities.findElement(
+      this.iframes[0].contentDocument,
+      ID
+    ) as HTMLDivElement;
+    if (container) {
+      container.style.display = "none";
     }
   }
 }

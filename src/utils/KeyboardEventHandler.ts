@@ -53,7 +53,8 @@ export default class KeyboardEventHandler {
         }
 
         // Ignore when active text selection
-        const ownerDocument = (eventTarget.ownerDocument || eventTarget) as HTMLDocument;
+        const ownerDocument = (eventTarget.ownerDocument ||
+          eventTarget) as HTMLDocument;
         const ownerWindow = ownerDocument.defaultView as Window;
         const selection = ownerWindow.getSelection() as Selection;
         if (!selection.isCollapsed) {

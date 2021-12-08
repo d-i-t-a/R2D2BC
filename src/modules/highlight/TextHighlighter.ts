@@ -37,7 +37,6 @@ import {
   convertRangeInfo,
   getCurrentSelectionInfo,
 } from "./renderer/iframe/selection";
-import { IReadiumIFrameWindow } from "./renderer/iframe/state";
 import { uniqueCssSelector } from "./renderer/common/cssselector2";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { IS_DEV } from "../../utils";
@@ -48,22 +47,26 @@ import TTSModule2 from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import * as lodash from "lodash";
 import Popup from "../search/Popup";
-import { Definition } from "../search/DefinitionsModule";
+import { LayerSettings } from "./LayerSettings";
+import { Switchable } from "../../model/user-settings/UserProperties";
 
-export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
-export const ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER";
-export const ID_PAGEBREAK_CONTAINER = "R2_ID_PAGEBREAK_CONTAINER";
-export const ID_SEARCH_CONTAINER = "R2_ID_SEARCH_CONTAINER";
-export const ID_POPUP_CONTAINER = "R2_ID_POPUP_CONTAINER";
+export enum HighlightContainer {
+  R2_ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER",
+  R2_ID_BOOKMAKRS_CONTAINER = "R2_ID_BOOKMAKRS_CONTAINER",
+  R2_ID_READALOUD_CONTAINER = "R2_ID_READALOUD_CONTAINER",
+  R2_ID_PAGEBREAK_CONTAINER = "R2_ID_PAGEBREAK_CONTAINER",
+  R2_ID_SEARCH_CONTAINER = "R2_ID_SEARCH_CONTAINER",
+  R2_ID_DEFINITIONS_CONTAINER = "R2_ID_DEFINITIONS_CONTAINER",
+}
 
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
+export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
 export const CLASS_HIGHLIGHT_ICON = "R2_CLASS_HIGHLIGHT_ICON";
-export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 
 const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.5;
 const ALT_BACKGROUND_COLOR_OPACITY = 0.75;
-const DEFAULT_BACKGROUND_COLOR = {
+export const DEFAULT_BACKGROUND_COLOR = {
   blue: 100,
   green: 50,
   red: 230,
@@ -71,6 +74,7 @@ const DEFAULT_BACKGROUND_COLOR = {
 export interface TextSelectorAPI {
   selectionMenuOpen: any;
   selectionMenuClose: any;
+  selection: any;
 }
 
 export const _highlights: IHighlight[] = [];
@@ -108,11 +112,12 @@ let NODE_TYPE = {
 };
 
 const _blacklistIdClassForCssSelectors = [
-  ID_HIGHLIGHTS_CONTAINER,
-  ID_PAGEBREAK_CONTAINER,
-  ID_SEARCH_CONTAINER,
-  ID_READALOUD_CONTAINER,
-  ID_POPUP_CONTAINER,
+  HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER,
+  HighlightContainer.R2_ID_PAGEBREAK_CONTAINER,
+  HighlightContainer.R2_ID_SEARCH_CONTAINER,
+  HighlightContainer.R2_ID_READALOUD_CONTAINER,
+  HighlightContainer.R2_ID_BOOKMAKRS_CONTAINER,
+  HighlightContainer.R2_ID_DEFINITIONS_CONTAINER,
   CLASS_HIGHLIGHT_CONTAINER,
   CLASS_HIGHLIGHT_AREA,
   CLASS_HIGHLIGHT_BOUNDING_AREA,
@@ -122,13 +127,6 @@ let lastMouseDownX = -1;
 let lastMouseDownY = -1;
 let bodyEventListenersSet = false;
 
-// TODO this needs to reflect layer name
-let _highlightsContainer: HTMLElement | null;
-let _highlightsReadAloudContainer: HTMLElement | null;
-let _highlightsPageBreakContainer: HTMLElement | null;
-let _highlightsSearchContainer: HTMLElement | null;
-let _highlightsPopupContainer: HTMLElement | null;
-
 export interface TextHighlighterProperties {
   selectionMenuItems?: Array<SelectionMenuItem>;
 }
@@ -136,11 +134,13 @@ export interface TextHighlighterProperties {
 export interface TextHighlighterConfig extends TextHighlighterProperties {
   delegate?: IFrameNavigator;
   api?: TextSelectorAPI;
+  layerSettings: LayerSettings;
 }
 
 export default class TextHighlighter {
   private options: any;
-  private delegate: IFrameNavigator;
+  private readonly delegate: IFrameNavigator;
+  layerSettings: LayerSettings;
   private lastSelectedHighlight: number = undefined;
   properties: TextHighlighterProperties;
   private api: TextSelectorAPI;
@@ -150,6 +150,7 @@ export default class TextHighlighter {
   public static async create(config: TextHighlighterConfig): Promise<any> {
     const module = new this(
       config.delegate,
+      config.layerSettings,
       config as TextHighlighterProperties,
       config.api,
       false,
@@ -160,12 +161,14 @@ export default class TextHighlighter {
 
   private constructor(
     delegate: IFrameNavigator,
+    layerSettings: LayerSettings,
     properties: TextHighlighterProperties,
     api: TextSelectorAPI,
     hasEventListener: boolean,
     options: any
   ) {
     this.delegate = delegate;
+    this.layerSettings = layerSettings;
     this.properties = properties;
     this.api = api;
     this.hasEventListener = hasEventListener;
@@ -196,7 +199,7 @@ export default class TextHighlighter {
     lastMouseDownY = -1;
     bodyEventListenersSet = false;
 
-    var self = this;
+    let self = this;
     async function unselect() {
       if (self.lastSelectedHighlight === undefined) {
         // self.delegate.api.highlightUnSelected().then(async () => {
@@ -333,7 +336,7 @@ export default class TextHighlighter {
     arr: { sort: (arg0: (a: any, b: any) => number) => void },
     descending: boolean
   ) {
-    var self = this;
+    let self = this;
     arr.sort(function (a, b) {
       return (
         self.dom(descending ? b : a).parents().length -
@@ -350,7 +353,7 @@ export default class TextHighlighter {
   groupHighlights(highlights: {
     forEach: (arg0: (hl: any) => void) => void;
   }): Array<any> {
-    var order: any[] = [],
+    let order: any[] = [],
       chunks: any = {},
       grouped:
         | any
@@ -392,7 +395,7 @@ export default class TextHighlighter {
    * @returns {object}
    */
   dom(el?: any): any {
-    var self = this;
+    let self = this;
 
     return /** @lends dom **/ {
       /**
@@ -427,7 +430,7 @@ export default class TextHighlighter {
        * @param {Node[]} nodesToPrepend
        */
       prepend: function (nodesToPrepend: Node[]) {
-        var nodes = Array.prototype.slice.call(nodesToPrepend),
+        let nodes = Array.prototype.slice.call(nodesToPrepend),
           i = nodes.length;
 
         while (i--) {
@@ -440,9 +443,9 @@ export default class TextHighlighter {
        * @param {Node[]} nodesToAppend
        */
       append: function (nodesToAppend: Node[]) {
-        var nodes = Array.prototype.slice.call(nodesToAppend);
+        let nodes = Array.prototype.slice.call(nodesToAppend);
 
-        for (var i = 0, len = nodes.length; i < len; ++i) {
+        for (let i = 0, len = nodes.length; i < len; ++i) {
           el.appendChild(nodes[i]);
         }
       },
@@ -501,7 +504,7 @@ export default class TextHighlighter {
        * @returns {Node[]} - child nodes of unwrapped element.
        */
       unwrap: function (): Node[] {
-        var nodes = Array.prototype.slice.call(el.childNodes),
+        let nodes = Array.prototype.slice.call(el.childNodes),
           wrapper;
 
         nodes.forEach(function (node: any) {
@@ -518,7 +521,7 @@ export default class TextHighlighter {
        * @returns {HTMLElement[]}
        */
       parents: function (): HTMLElement[] {
-        var parent,
+        let parent,
           path = [];
 
         while (!!(parent = el.parentNode)) {
@@ -567,7 +570,7 @@ export default class TextHighlighter {
        * @returns {NodeList}
        */
       fromHTML: function (html: string): NodeList {
-        var div = document.createElement("div");
+        let div = document.createElement("div");
         div.innerHTML = html;
         return div.childNodes;
       },
@@ -577,7 +580,7 @@ export default class TextHighlighter {
        * @returns {Range}
        */
       getRange: function (): Range {
-        var selection = self.dom(el).getSelection(),
+        let selection = self.dom(el).getSelection(),
           range;
 
         if (selection.rangeCount > 0) {
@@ -591,7 +594,7 @@ export default class TextHighlighter {
        * Removes all ranges of the window of base element.
        */
       removeAllRanges: function () {
-        var selection = self.dom(el).getSelection();
+        let selection = self.dom(el).getSelection();
         selection.removeAllRanges();
         self.toolboxHide();
       },
@@ -633,23 +636,17 @@ export default class TextHighlighter {
   }
 
   bindEvents(el: any, _scope: any, hasEventListener: boolean) {
-    var documant = el.ownerDocument;
+    let doc = el.ownerDocument;
 
-    documant.addEventListener("keyup", this.toolboxShowDelayed.bind(this));
+    doc.addEventListener("keyup", this.toolboxShowDelayed.bind(this));
     el.addEventListener("mouseup", this.toolboxShowDelayed.bind(this));
     el.addEventListener("touchend", this.toolboxShowDelayed.bind(this));
-    documant.addEventListener(
-      "selectstart",
-      this.toolboxShowDelayed.bind(this)
-    );
+    doc.addEventListener("selectstart", this.toolboxShowDelayed.bind(this));
 
     if (!hasEventListener) {
       window.addEventListener("resize", this.toolboxPlacement.bind(this));
     }
-    documant.addEventListener(
-      "selectionchange",
-      this.toolboxPlacement.bind(this)
-    );
+    doc.addEventListener("selectionchange", this.toolboxPlacement.bind(this));
 
     el.addEventListener("mousedown", this.toolboxHide.bind(this));
     el.addEventListener("touchstart", this.toolboxHide.bind(this));
@@ -662,18 +659,15 @@ export default class TextHighlighter {
   }
 
   unbindEvents(el: any, _scope: any) {
-    var documant = el.ownerDocument;
+    let doc = el.ownerDocument;
 
-    documant.removeEventListener("keyup", this.toolboxShowDelayed.bind(this));
+    doc.removeEventListener("keyup", this.toolboxShowDelayed.bind(this));
     el.removeEventListener("mouseup", this.toolboxShowDelayed.bind(this));
     el.removeEventListener("touchend", this.toolboxShowDelayed.bind(this));
-    documant.removeEventListener(
-      "selectstart",
-      this.toolboxShowDelayed.bind(this)
-    );
+    doc.removeEventListener("selectstart", this.toolboxShowDelayed.bind(this));
 
     window.removeEventListener("resize", this.toolboxPlacement.bind(this));
-    documant.removeEventListener(
+    doc.removeEventListener(
       "selectionchange",
       this.toolboxPlacement.bind(this)
     );
@@ -741,8 +735,8 @@ export default class TextHighlighter {
       colorIcon.style.zIndex = "20";
 
       colors.forEach((color) => {
-        var colorButton = document.getElementById(color);
-        var cButton = document.getElementById(`c${color}`);
+        let colorButton = document.getElementById(color);
+        let cButton = document.getElementById(`c${color}`);
         if (toolboxColorsOptions.contains(colorButton)) {
           toolboxColorsOptions.removeChild(colorButton);
         }
@@ -795,7 +789,7 @@ export default class TextHighlighter {
         if (colorIcon) {
           colorButton.addEventListener("click", function () {
             self.setColor(color);
-            var colorIconSymbol = colorIcon.lastChild as HTMLElement;
+            let colorIconSymbol = colorIcon.lastChild as HTMLElement;
             if (colorIconSymbol) {
               colorIconSymbol.style.backgroundColor = color;
             }
@@ -829,16 +823,16 @@ export default class TextHighlighter {
   }
 
   toolboxMode(mode: "colors" | "edit" | "add" | "action") {
-    var toolboxColorsOptions = document.getElementById(
+    let toolboxColorsOptions = document.getElementById(
       "highlight-toolbox-mode-colors"
     );
-    var toolboxAddOptions = document.getElementById(
+    let toolboxAddOptions = document.getElementById(
       "highlight-toolbox-mode-add"
     );
-    var toolboxEditOptions = document.getElementById(
+    let toolboxEditOptions = document.getElementById(
       "highlight-toolbox-mode-edit"
     );
-    var toolboxMarkOptions = document.getElementById(
+    let toolboxMarkOptions = document.getElementById(
       "highlight-toolbox-mode-action"
     );
 
@@ -871,7 +865,7 @@ export default class TextHighlighter {
   }
 
   toolboxHide() {
-    var toolbox = document.getElementById("highlight-toolbox");
+    let toolbox = document.getElementById("highlight-toolbox");
     if (toolbox) toolbox.style.display = "none";
     this.selectionMenuClosed();
   }
@@ -879,7 +873,7 @@ export default class TextHighlighter {
   // Use short timeout to let the selection updated to 'finish', otherwise some
   // browsers can get wrong or incomplete selection data.
   toolboxShowDelayed() {
-    var self = this;
+    let self = this;
     setTimeout(function () {
       if (!self.isAndroid()) {
         self.snapSelectionToWord();
@@ -889,24 +883,24 @@ export default class TextHighlighter {
   }
 
   snapSelectionToWord() {
-    var self = this;
+    let self = this;
+    let selection = self
+      .dom(this.delegate.iframes[0].contentDocument.body)
+      .getWindow()
+      .getSelection();
     // Check for existence of window.getSelection() and that it has a
     // modify() method. IE 9 has both selection APIs but no modify() method.
     if (self.dom(this.delegate.iframes[0].contentDocument.body)) {
-      var selection = self
-        .dom(this.delegate.iframes[0].contentDocument.body)
-        .getWindow()
-        .getSelection();
       if (!selection.isCollapsed) {
         // Detect if selection is backwards
-        var range = document.createRange();
+        let range = document.createRange();
         range.setStart(selection.anchorNode, selection.anchorOffset);
         range.setEnd(selection.focusNode, selection.focusOffset);
-        var backwards = range.collapsed;
+        let backwards = range.collapsed;
         range.detach();
 
         // modify() works on the focus of the selection
-        var endNode = selection.focusNode,
+        let endNode = selection.focusNode,
           endOffset = selection.focusOffset;
         selection.collapse(selection.anchorNode, selection.anchorOffset);
 
@@ -920,18 +914,19 @@ export default class TextHighlighter {
         selection.extend(endNode, endOffset);
         selection.modify("extend", direction[1], "character");
         selection.modify("extend", direction[0], "word");
+        this.selection(selection.toString(), selection);
       }
     }
     return selection;
   }
 
   toolboxShow() {
-    if (this.activeAnnotationMarkerId == undefined) {
-      var self = this;
-      var toolboxAddOptions = document.getElementById(
+    if (this.activeAnnotationMarkerId === undefined) {
+      let self = this;
+      let toolboxAddOptions = document.getElementById(
         "highlight-toolbox-mode-add"
       );
-      var range = this.dom(
+      let range = this.dom(
         this.delegate.iframes[0].contentDocument.body
       ).getRange();
 
@@ -951,7 +946,7 @@ export default class TextHighlighter {
           this.toolboxPlacement.bind(this)
         );
         setTimeout(function () {
-          var selection = self
+          let selection = self
             .dom(self.delegate.iframes[0].contentDocument.body)
             .getSelection();
           selection.removeAllRanges();
@@ -980,16 +975,20 @@ export default class TextHighlighter {
     }
   }, 100);
 
+  selection = debounce((text, selection) => {
+    if (this.api?.selection) this.api?.selection(text, selection);
+  }, 100);
+
   toolboxPlacement() {
-    var range = this.dom(
+    let range = this.dom(
       this.delegate.iframes[0].contentDocument.body
     ).getRange();
     if (!range || range.collapsed) {
       return;
     }
 
-    var rect = range.getBoundingClientRect();
-    var toolbox = document.getElementById("highlight-toolbox");
+    let rect = range.getBoundingClientRect();
+    let toolbox = document.getElementById("highlight-toolbox");
 
     if (toolbox) {
       const paginated = this.delegate.view.isPaginated();
@@ -1004,7 +1003,7 @@ export default class TextHighlighter {
   }
 
   toolboxHandler() {
-    var toolbox = document.getElementById("highlight-toolbox");
+    let toolbox = document.getElementById("highlight-toolbox");
     if (toolbox) {
       if (getComputedStyle(toolbox).display === "none") {
         toolbox.style.display = "block";
@@ -1016,14 +1015,14 @@ export default class TextHighlighter {
         }
         this.selectionMenuOpened();
 
-        var self = this;
+        let self = this;
 
         self.toolboxMode("add");
-        var highlightIcon = document.getElementById("highlightIcon");
-        var collapseIcon = document.getElementById("collapseIcon");
-        var underlineIcon = document.getElementById("underlineIcon");
-        var colorIcon = document.getElementById("colorIcon");
-        var speakIcon = document.getElementById("speakIcon");
+        let highlightIcon = document.getElementById("highlightIcon");
+        let collapseIcon = document.getElementById("collapseIcon");
+        let underlineIcon = document.getElementById("underlineIcon");
+        let colorIcon = document.getElementById("colorIcon");
+        let speakIcon = document.getElementById("speakIcon");
         if (this.delegate.rights?.enableAnnotations) {
           if (highlightIcon) {
             highlightIcon.style.display = "unset";
@@ -1047,7 +1046,7 @@ export default class TextHighlighter {
           }
           if (colorIcon) {
             colorIcon.style.display = "unset";
-            var colorIconSymbol = colorIcon.lastChild as HTMLElement;
+            let colorIconSymbol = colorIcon.lastChild as HTMLElement;
             colorIconSymbol.style.backgroundColor = this.getColor();
           }
           if (highlightIcon) {
@@ -1138,9 +1137,9 @@ export default class TextHighlighter {
                     : AnnotationMarker.Custom;
 
                   if (
-                    (marker == AnnotationMarker.Custom &&
+                    (marker === AnnotationMarker.Custom &&
                       self.delegate.rights?.enableAnnotations) ||
-                    (marker == AnnotationMarker.Bookmark &&
+                    (marker === AnnotationMarker.Bookmark &&
                       self.delegate.rights?.enableBookmarks)
                   ) {
                     let highlight = self.createHighlight(
@@ -1161,8 +1160,7 @@ export default class TextHighlighter {
                         .saveAnnotation(highlight[0])
                         .then((anno) => {
                           if (menuItem?.note) {
-                            let note = prompt("Add your note here:");
-                            anno.highlight.note = note;
+                            anno.highlight.note = prompt("Add your note here:");
                             self.delegate.annotationModule
                               .updateAnnotation(anno)
                               .then(async () => {
@@ -1180,7 +1178,9 @@ export default class TextHighlighter {
               }
               self.callbackComplete();
             }
-            itemElement.addEventListener("click", itemEvent);
+            if (itemElement) {
+              itemElement.addEventListener("click", itemEvent);
+            }
           });
         }
       }
@@ -1194,7 +1194,7 @@ export default class TextHighlighter {
    * @memberof TextHighlighter
    */
   doHighlight(keepRange?: boolean, marker?: AnnotationMarker) {
-    var self = this;
+    let self = this;
     function getCssSelector(element: Element): string {
       const options = {
         className: (str: string) => {
@@ -1217,13 +1217,13 @@ export default class TextHighlighter {
     );
     if (selectionInfo) {
       if (this.options.onBeforeHighlight(selectionInfo) === true) {
-        var createColor: any;
+        let createColor: any;
         createColor = this.getColor();
         if (TextHighlighter.isHexColor(createColor)) {
           createColor = TextHighlighter.hexToRgbChannels(createColor);
         }
 
-        var highlight = this.createHighlight(
+        let highlight = this.createHighlight(
           self.dom(self.delegate.iframes[0].contentDocument.body).getWindow(),
           selectionInfo,
           createColor,
@@ -1233,12 +1233,12 @@ export default class TextHighlighter {
         this.options.onAfterHighlight(highlight, marker);
         if (
           this.delegate.rights?.enableAnnotations &&
-          marker != AnnotationMarker.Bookmark
+          marker !== AnnotationMarker.Bookmark
         ) {
           this.delegate.annotationModule.saveAnnotation(highlight[0]);
         } else if (
           this.delegate.rights?.enableBookmarks &&
-          marker == AnnotationMarker.Bookmark
+          marker === AnnotationMarker.Bookmark
         ) {
           this.delegate.bookmarkModule.saveAnnotation(highlight[0]);
         }
@@ -1260,7 +1260,7 @@ export default class TextHighlighter {
 
   speak() {
     if (this.delegate.rights?.enableTTS) {
-      var self = this;
+      let self = this;
       function getCssSelector(element: Element): string {
         const options = {
           className: (str: string) => {
@@ -1296,15 +1296,13 @@ export default class TextHighlighter {
           );
         }
       }
-      if (this.delegate.tts?.enableSplitter) {
-        const selection = self
-          .dom(self.delegate.iframes[0].contentDocument.body)
-          .getSelection();
-        selection.removeAllRanges();
-        var toolbox = document.getElementById("highlight-toolbox");
-        toolbox.style.display = "none";
-        this.selectionMenuClosed();
-      }
+      const selection = self
+        .dom(self.delegate.iframes[0].contentDocument.body)
+        .getSelection();
+      selection.removeAllRanges();
+      const toolbox = document.getElementById("highlight-toolbox");
+      toolbox.style.display = "none";
+      this.selectionMenuClosed();
     }
   }
   stopReadAloud() {
@@ -1374,7 +1372,7 @@ export default class TextHighlighter {
               selectionInfo as any,
               false,
               () => {
-                var selection = self
+                let selection = self
                   .dom(self.delegate.iframes[0].contentDocument.body)
                   .getSelection();
                 selection.removeAllRanges();
@@ -1475,8 +1473,7 @@ export default class TextHighlighter {
     }
 
     const textNodes = findRects(body);
-    const visible = textNodes.filter((rect) => !isOutsideViewport(rect));
-    return visible;
+    return textNodes.filter((rect) => !isOutsideViewport(rect));
   }
 
   doneSpeaking(reload: boolean = false) {
@@ -1526,16 +1523,16 @@ export default class TextHighlighter {
    * @memberof TextHighlighter
    */
   flattenNestedHighlights(highlights: any) {
-    var again,
-      self = this;
+    let again;
+    let self = this;
 
     self.sortByDepth(highlights, true);
 
     function flattenOnce() {
-      var again = false;
+      let again = false;
 
       highlights.forEach(function (hl: any, i: any) {
-        var parent = hl.parentElement,
+        let parent = hl.parentElement,
           parentPrev = parent.previousSibling,
           parentNext = parent.nextSibling;
 
@@ -1577,7 +1574,7 @@ export default class TextHighlighter {
    * @memberof TextHighlighter
    */
   mergeSiblingHighlights(highlights: any) {
-    var self = this;
+    let self = this;
 
     function shouldMerge(current: any, node: any) {
       return (
@@ -1589,7 +1586,7 @@ export default class TextHighlighter {
     }
 
     highlights.forEach(function (highlight: any) {
-      var prev = highlight.previousSibling,
+      let prev = highlight.previousSibling,
         next = highlight.nextSibling;
 
       if (shouldMerge(highlight, prev)) {
@@ -1624,40 +1621,6 @@ export default class TextHighlighter {
   }
 
   /**
-   * Returns highlights from given container.
-   * @param params
-   * @param {HTMLElement} [params.container] - return highlights from this element. Default: the element the
-   * highlighter is applied to.
-   * @param {boolean} [params.andSelf] - if set to true and container is a highlight itself, add container to
-   * returned results. Default: true.
-   * @param {boolean} [params.grouped] - if set to true, highlights are grouped in logical groups of highlights added
-   * in the same moment. Each group is an object which has got array of highlights, 'toString' method and 'timestamp'
-   * property. Default: false.
-   * @returns {Array} - array of highlights.
-   * @memberof TextHighlighter
-   */
-  getHighlights(params?: any): Array<any> {
-    params = this.defaults(params, {
-      container: this.delegate.iframes[0].contentDocument.body,
-      andSelf: true,
-      grouped: false,
-    });
-
-    var nodeList = params.container.querySelectorAll("[" + DATA_ATTR + "]"),
-      highlights = Array.prototype.slice.call(nodeList);
-
-    if (params.andSelf === true && params.container.hasAttribute(DATA_ATTR)) {
-      highlights.push(params.container);
-    }
-
-    if (params.grouped) {
-      highlights = this.groupHighlights(highlights);
-    }
-
-    return highlights;
-  }
-
-  /**
    * Returns true if element is a highlight.
    * All highlights have 'data-highlighted' attribute.
    * @param el - element to check.
@@ -1671,135 +1634,6 @@ export default class TextHighlighter {
   }
 
   /**
-   * Serializes all highlights in the element the highlighter is applied to.
-   * @returns {string} - stringified JSON with highlights definition
-   * @memberof TextHighlighter
-   */
-  serializeHighlights(): string {
-    var highlights = this.getHighlights(),
-      refEl = this.delegate.iframes[0].contentDocument.body,
-      hlDescriptors: any = [];
-
-    function getElementPath(el: any, refElement: any) {
-      var path = [],
-        childNodes;
-
-      do {
-        childNodes = Array.prototype.slice.call(el.parentNode.childNodes);
-        path.unshift(childNodes.indexOf(el));
-        el = el.parentNode;
-      } while (el !== refElement || !el);
-
-      return path;
-    }
-
-    this.sortByDepth(highlights, false);
-
-    highlights.forEach(function (highlight: any) {
-      var offset = 0, // Hl offset from previous sibling within parent node.
-        length = highlight.textContent.length,
-        hlPath = getElementPath(highlight, refEl),
-        wrapper = highlight.cloneNode(true);
-
-      wrapper.innerHTML = "";
-      wrapper = wrapper.outerHTML;
-
-      if (
-        highlight.previousSibling &&
-        highlight.previousSibling.nodeType === NODE_TYPE.TEXT_NODE
-      ) {
-        offset = highlight.previousSibling.length;
-      }
-
-      hlDescriptors.push([
-        wrapper,
-        highlight.textContent,
-        hlPath.join(":"),
-        offset,
-        length,
-      ]);
-    });
-
-    return JSON.stringify(hlDescriptors);
-  }
-
-  /**
-   * Deserializes highlights.
-   * @throws exception when can't parse JSON or JSON has invalid structure.
-   * @param {object} json - JSON object with highlights definition.
-   * @returns {Array} - array of deserialized highlights.
-   * @memberof TextHighlighter
-   */
-  deserializeHighlights(json: any): Array<any> {
-    var hlDescriptors,
-      highlights: any = [],
-      self = this;
-
-    if (!json) {
-      return highlights;
-    }
-
-    try {
-      hlDescriptors = JSON.parse(json);
-    } catch (e) {
-      throw "Can't parse JSON: " + e;
-    }
-
-    function deserializationFn(hlDescriptor: any) {
-      var hl = {
-          wrapper: hlDescriptor[0],
-          text: hlDescriptor[1],
-          path: hlDescriptor[2].split(":"),
-          offset: hlDescriptor[3],
-          length: hlDescriptor[4],
-        },
-        elIndex = hl.path.pop(),
-        node: any = self.delegate.iframes[0].contentDocument.body,
-        hlNode,
-        highlight,
-        idx;
-
-      while (!!(idx = hl.path.shift())) {
-        node = node.childNodes[idx];
-      }
-
-      if (
-        node.childNodes[elIndex - 1] &&
-        node.childNodes[elIndex - 1].nodeType === NODE_TYPE.TEXT_NODE
-      ) {
-        elIndex -= 1;
-      }
-
-      node = node.childNodes[elIndex];
-      hlNode = node.splitText(hl.offset);
-      hlNode.splitText(hl.length);
-
-      if (hlNode.nextSibling && !hlNode.nextSibling.nodeValue) {
-        self.dom(hlNode.nextSibling).remove();
-      }
-
-      if (hlNode.previousSibling && !hlNode.previousSibling.nodeValue) {
-        self.dom(hlNode.previousSibling).remove();
-      }
-
-      highlight = self.dom(hlNode).wrap(self.dom().fromHTML(hl.wrapper)[0]);
-      highlights.push(highlight);
-    }
-
-    hlDescriptors.forEach(function (hlDescriptor: any) {
-      try {
-        deserializationFn(hlDescriptor);
-      } catch (e) {
-        if (console && console.warn) {
-          console.warn("Can't deserialize highlight descriptor. Cause: " + e);
-        }
-      }
-    });
-
-    return highlights;
-  }
-
-  /**
    * Creates wrapper for highlights.
    * TextHighlighter instance calls this method each time it needs to create highlights and pass options retrieved
    * in constructor.
@@ -1808,7 +1642,7 @@ export default class TextHighlighter {
    * @static
    */
   createWrapper(): HTMLElement {
-    var span = document.createElement("mark");
+    let span = document.createElement("mark");
     span.style.background =
       "linear-gradient(" +
       TextHighlighter.hexToRgbA(this.options.color) +
@@ -1824,7 +1658,7 @@ export default class TextHighlighter {
   }
 
   public static hexToRgbString(hex: string) {
-    var c: any;
+    let c: any;
     c = hex.substring(1).split("");
     if (c.length === 3) {
       c = [c[0], c[0], c[1], c[1], c[2], c[2]];
@@ -1834,7 +1668,7 @@ export default class TextHighlighter {
   }
 
   public static hexToRgbChannels(hex: string) {
-    var c: any;
+    let c: any;
     if (this.isHexColor(hex)) {
       c = this.hexToRgbString(hex);
       return {
@@ -1847,7 +1681,7 @@ export default class TextHighlighter {
   }
 
   public static hexToRgbA(hex: string) {
-    var c: any;
+    let c: any;
     if (this.isHexColor(hex)) {
       c = this.hexToRgbChannels(hex);
       return "rgba(" + [c.red, c.green, c.blue].join(",") + ",.5)";
@@ -1859,7 +1693,7 @@ export default class TextHighlighter {
   }
 
   public static hexToRgbAWithOpacity(hex: string, opacity: number) {
-    var c: any;
+    let c: any;
     if (this.isHexColor(hex)) {
       c = this.hexToRgbChannels(hex);
       return "rgba(" + [c.red, c.green, c.blue].join(",") + "," + opacity + ")";
@@ -1870,10 +1704,7 @@ export default class TextHighlighter {
     throw new Error("Bad Hex");
   }
 
-  resetHighlightBoundingStyle(
-    _win: IReadiumIFrameWindow,
-    highlightBounding: HTMLElement
-  ) {
+  resetHighlightBoundingStyle(_win: any, highlightBounding: HTMLElement) {
     highlightBounding.style.outline = "none";
     highlightBounding.style.setProperty(
       "background-color",
@@ -1883,10 +1714,11 @@ export default class TextHighlighter {
   }
 
   resetHighlightAreaStyle(
-    _win: IReadiumIFrameWindow,
+    win: any,
     highlightArea: HTMLElement,
     id_container: string
   ) {
+    let doc = win.document;
     const id =
       highlightArea.parentNode &&
       highlightArea.parentNode.nodeType === Node.ELEMENT_NODE &&
@@ -2000,50 +1832,23 @@ export default class TextHighlighter {
         }
 
         let highlightParent;
-        if (_highlightsContainer && id_container == ID_HIGHLIGHTS_CONTAINER) {
-          highlightParent = _highlightsContainer.querySelector(
-            `#${highlight.id}`
-          );
-        }
-        if (_highlightsSearchContainer && id_container == ID_SEARCH_CONTAINER) {
-          highlightParent = _highlightsSearchContainer.querySelector(
-            `#${highlight.id}`
-          );
-        }
-        if (
-          _highlightsReadAloudContainer &&
-          id_container == ID_READALOUD_CONTAINER
-        ) {
-          highlightParent = _highlightsReadAloudContainer.querySelector(
-            `#${highlight.id}`
-          );
+
+        let container = doc.getElementById(id_container);
+        if (container) {
+          highlightParent = container.querySelector(`#${highlight.id}`);
         }
 
-        if (
-          _highlightsPageBreakContainer &&
-          id_container == ID_PAGEBREAK_CONTAINER
-        ) {
-          highlightParent = _highlightsPageBreakContainer.querySelector(
-            `#${highlight.id}`
+        if (highlightParent) {
+          let nodeList = highlightParent.getElementsByClassName(
+            CLASS_HIGHLIGHT_ICON
           );
-        }
-
-        if (_highlightsPopupContainer && id_container == ID_POPUP_CONTAINER) {
-          highlightParent = _highlightsPopupContainer.querySelector(
-            `#${highlight.id}`
-          );
-        }
-
-        let nodeList = highlightParent.getElementsByClassName(
-          CLASS_HIGHLIGHT_ICON
-        );
-
-        if (nodeList.length > 0) {
-          const tooltip = nodeList
-            .item(0)
-            .getElementsByClassName("icon-tooltip");
-          if (tooltip.length > 0) {
-            (tooltip.item(0) as HTMLElement).style.removeProperty("display");
+          if (nodeList.length > 0) {
+            const tooltip = nodeList
+              .item(0)
+              .getElementsByClassName("icon-tooltip");
+            if (tooltip.length > 0) {
+              (tooltip.item(0) as HTMLElement).style.removeProperty("display");
+            }
           }
         }
       }
@@ -2051,10 +1856,11 @@ export default class TextHighlighter {
   }
 
   setHighlightAreaStyle(
-    _win: IReadiumIFrameWindow,
+    win: any,
     highlightAreas: Array<HTMLElement>,
     highlight: IHighlight
   ) {
+    let doc = win.document;
     for (const highlightArea of highlightAreas) {
       if (
         highlight.marker === AnnotationMarker.Custom ||
@@ -2149,10 +1955,10 @@ export default class TextHighlighter {
         }
       }
 
-      if (highlight.type !== HighlightType.Popup) {
-        let highlightParent = _highlightsContainer.querySelector(
-          `#${highlight.id}`
-        );
+      if (highlight.type !== HighlightType.Definition) {
+        let highlightParent = doc
+          .getElementById(HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER)
+          .querySelector(`#${highlight.id}`);
         let nodeList = highlightParent.getElementsByClassName(
           CLASS_HIGHLIGHT_ICON
         );
@@ -2172,11 +1978,15 @@ export default class TextHighlighter {
   }
 
   setAndResetSearchHighlight(highlight, highlights) {
+    let doc = this.delegate.iframes[0].contentWindow.document as any;
+
     const allHighlightAreas = Array.from(
-      _highlightsSearchContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
+      doc
+        .getElementById(HighlightContainer.R2_ID_SEARCH_CONTAINER)
+        .querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
     );
     for (const highlighta of allHighlightAreas) {
-      var highlightArea = highlighta as HTMLElement;
+      let highlightArea = highlighta as HTMLElement;
       const id =
         highlightArea.parentNode &&
         highlightArea.parentNode.nodeType === Node.ELEMENT_NODE &&
@@ -2207,9 +2017,9 @@ export default class TextHighlighter {
             } else {
               highlightArea.classList.remove("hover");
             }
-            let highlightParent = _highlightsSearchContainer.querySelector(
-              `#${highlight.id}`
-            );
+            let highlightParent = doc
+              .getElementById(HighlightContainer.R2_ID_SEARCH_CONTAINER)
+              .querySelector(`#${highlight.id}`);
             let nodeList = highlightParent.getElementsByClassName(
               CLASS_HIGHLIGHT_ICON
             );
@@ -2247,9 +2057,9 @@ export default class TextHighlighter {
           } else {
             highlightArea.classList.remove("hover");
           }
-          let highlightParent = _highlightsSearchContainer.querySelector(
-            `#${highlight.id}`
-          );
+          let highlightParent = doc
+            .getElementById(HighlightContainer.R2_ID_SEARCH_CONTAINER)
+            .querySelector(`#${highlight.id}`);
           let nodeList = highlightParent.getElementsByClassName(
             CLASS_HIGHLIGHT_ICON
           );
@@ -2276,33 +2086,33 @@ export default class TextHighlighter {
   isAndroid() {
     return navigator.userAgent.match(/Android/i) != null;
   }
-  getScrollingElement = (documant: Document): Element => {
-    if (documant.scrollingElement) {
-      return documant.scrollingElement;
+  getScrollingElement = (doc: Document): Element => {
+    if (doc.scrollingElement) {
+      return doc.scrollingElement;
     }
-    return documant.body;
+    return doc.body;
   };
 
-  async processMouseEvent(win: IReadiumIFrameWindow, ev: MouseEvent) {
-    const documant = win.document;
+  async processMouseEvent(win: any, ev: MouseEvent) {
+    const doc = win.document;
     // relative to fixed window top-left corner
     // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
     const x = ev.clientX;
     const y = ev.clientY;
 
     if (
-      !_highlightsContainer &&
-      !_highlightsSearchContainer &&
-      !_highlightsPageBreakContainer &&
-      !_highlightsReadAloudContainer &&
-      !_highlightsPopupContainer
+      !doc.getElementById(HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER) &&
+      !doc.getElementById(HighlightContainer.R2_ID_SEARCH_CONTAINER) &&
+      !doc.getElementById(HighlightContainer.R2_ID_PAGEBREAK_CONTAINER) &&
+      !doc.getElementById(HighlightContainer.R2_ID_READALOUD_CONTAINER) &&
+      !doc.getElementById(HighlightContainer.R2_ID_DEFINITIONS_CONTAINER)
     ) {
       return;
     }
 
     const paginated = this.delegate.view.isPaginated();
-    const bodyRect = documant.body.getBoundingClientRect();
-    const scrollElement = this.getScrollingElement(documant);
+    const bodyRect = doc.body.getBoundingClientRect();
+    const scrollElement = this.getScrollingElement(doc);
 
     const xOffset = paginated ? -scrollElement.scrollLeft : bodyRect.left;
     const yOffset = paginated ? -scrollElement.scrollTop : bodyRect.top;
@@ -2313,12 +2123,13 @@ export default class TextHighlighter {
     for (let i = _highlights.length - 1; i >= 0; i--) {
       const highlight = _highlights[i];
 
-      let highlightParent = documant.getElementById(`${highlight.id}`);
+      let highlightParent = doc.getElementById(`${highlight.id}`);
       if (!highlightParent) {
         // ??!!
-        highlightParent = _highlightsContainer.querySelector(
-          `#${highlight.id}`
-        ); // .${CLASS_HIGHLIGHT_CONTAINER}
+        let container = doc.getElementById(
+          HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER
+        );
+        highlightParent = container.querySelector(`#${highlight.id}`); // .${CLASS_HIGHLIGHT_CONTAINER}
       }
       if (!highlightParent) {
         // what?
@@ -2350,126 +2161,24 @@ export default class TextHighlighter {
       }
     }
     if (!foundHighlight || !foundElement) {
-      if (_highlightsContainer) {
-        const highlightBoundings = _highlightsContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-        );
-        for (const highlightBounding of highlightBoundings) {
-          this.resetHighlightBoundingStyle(
-            win,
-            highlightBounding as HTMLElement
+      for (let id in HighlightContainer) {
+        let container = doc.getElementById(id);
+        if (container) {
+          const highlightBoundings = container.querySelectorAll(
+            `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
           );
-        }
-      }
-      if (_highlightsSearchContainer) {
-        const highlightBoundings2 = _highlightsSearchContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-        );
-        for (const highlightBounding of highlightBoundings2) {
-          this.resetHighlightBoundingStyle(
-            win,
-            highlightBounding as HTMLElement
+          for (const highlightBounding of highlightBoundings) {
+            this.resetHighlightBoundingStyle(
+              win,
+              highlightBounding as HTMLElement
+            );
+          }
+          const allHighlightAreas = Array.from(
+            container.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
           );
-        }
-      }
-      if (_highlightsReadAloudContainer) {
-        const highlightBoundings3 = _highlightsReadAloudContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-        );
-        for (const highlightBounding of highlightBoundings3) {
-          this.resetHighlightBoundingStyle(
-            win,
-            highlightBounding as HTMLElement
-          );
-        }
-      }
-      if (_highlightsPageBreakContainer) {
-        const highlightBoundings4 = _highlightsPageBreakContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-        );
-        for (const highlightBounding of highlightBoundings4) {
-          this.resetHighlightBoundingStyle(
-            win,
-            highlightBounding as HTMLElement
-          );
-        }
-      }
-      if (_highlightsPopupContainer) {
-        const highlightBoundings5 = _highlightsPopupContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-        );
-        for (const highlightBounding of highlightBoundings5) {
-          this.resetHighlightBoundingStyle(
-            win,
-            highlightBounding as HTMLElement
-          );
-        }
-      }
-
-      if (_highlightsContainer) {
-        const allHighlightAreas = Array.from(
-          _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
-        );
-        for (const highlightArea of allHighlightAreas) {
-          this.resetHighlightAreaStyle(
-            win,
-            highlightArea as HTMLElement,
-            ID_HIGHLIGHTS_CONTAINER
-          );
-        }
-      }
-      if (_highlightsSearchContainer) {
-        const allHighlightAreas2 = Array.from(
-          _highlightsSearchContainer.querySelectorAll(
-            `.${CLASS_HIGHLIGHT_AREA}`
-          )
-        );
-        for (const highlightArea of allHighlightAreas2) {
-          this.resetHighlightAreaStyle(
-            win,
-            highlightArea as HTMLElement,
-            ID_SEARCH_CONTAINER
-          );
-        }
-      }
-      if (_highlightsReadAloudContainer) {
-        const allHighlightAreas3 = Array.from(
-          _highlightsReadAloudContainer.querySelectorAll(
-            `.${CLASS_HIGHLIGHT_AREA}`
-          )
-        );
-        for (const highlightArea of allHighlightAreas3) {
-          this.resetHighlightAreaStyle(
-            win,
-            highlightArea as HTMLElement,
-            ID_READALOUD_CONTAINER
-          );
-        }
-      }
-      if (_highlightsPageBreakContainer) {
-        const allHighlightAreas4 = Array.from(
-          _highlightsPageBreakContainer.querySelectorAll(
-            `.${CLASS_HIGHLIGHT_AREA}`
-          )
-        );
-        for (const highlightArea of allHighlightAreas4) {
-          this.resetHighlightAreaStyle(
-            win,
-            highlightArea as HTMLElement,
-            ID_PAGEBREAK_CONTAINER
-          );
-        }
-      }
-      if (_highlightsPopupContainer) {
-        const allHighlightAreas5 = Array.from(
-          _highlightsPopupContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
-        );
-        for (const highlightArea of allHighlightAreas5) {
-          this.resetHighlightAreaStyle(
-            win,
-            highlightArea as HTMLElement,
-            ID_POPUP_CONTAINER
-          );
+          for (const highlightArea of allHighlightAreas) {
+            this.resetHighlightAreaStyle(win, highlightArea as HTMLElement, id);
+          }
         }
       }
 
@@ -2481,65 +2190,22 @@ export default class TextHighlighter {
         const foundElementHighlightAreas = Array.from(
           foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
         );
-        const allHighlightAreas = _highlightsContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_AREA}`
-        );
-        const allHighlightAreas2 = _highlightsSearchContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_AREA}`
-        );
-        const allHighlightAreas3 = _highlightsReadAloudContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_AREA}`
-        );
-        const allHighlightAreas4 = _highlightsPageBreakContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_AREA}`
-        );
-        const allHighlightAreas5 = _highlightsPopupContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_AREA}`
-        );
 
-        for (const highlightArea of allHighlightAreas) {
-          if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
-            this.resetHighlightAreaStyle(
-              win,
-              highlightArea as HTMLElement,
-              ID_HIGHLIGHTS_CONTAINER
+        for (let id in HighlightContainer) {
+          let container = doc.getElementById(id);
+          if (container) {
+            const allHighlightAreas = container.querySelectorAll(
+              `.${CLASS_HIGHLIGHT_AREA}`
             );
-          }
-        }
-        for (const highlightArea of allHighlightAreas2) {
-          if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
-            this.resetHighlightAreaStyle(
-              win,
-              highlightArea as HTMLElement,
-              ID_SEARCH_CONTAINER
-            );
-          }
-        }
-        for (const highlightArea of allHighlightAreas3) {
-          if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
-            this.resetHighlightAreaStyle(
-              win,
-              highlightArea as HTMLElement,
-              ID_READALOUD_CONTAINER
-            );
-          }
-        }
-        for (const highlightArea of allHighlightAreas4) {
-          if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
-            this.resetHighlightAreaStyle(
-              win,
-              highlightArea as HTMLElement,
-              ID_PAGEBREAK_CONTAINER
-            );
-          }
-        }
-        for (const highlightArea of allHighlightAreas5) {
-          if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
-            this.resetHighlightAreaStyle(
-              win,
-              highlightArea as HTMLElement,
-              ID_POPUP_CONTAINER
-            );
+            for (const highlightArea of allHighlightAreas) {
+              if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
+                this.resetHighlightAreaStyle(
+                  win,
+                  highlightArea as HTMLElement,
+                  id
+                );
+              }
+            }
           }
         }
 
@@ -2552,75 +2218,24 @@ export default class TextHighlighter {
         const foundElementHighlightBounding = foundElement.querySelector(
           `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
         );
-        const allHighlightBoundings = _highlightsContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-        );
-        const allHighlightBoundings2 = _highlightsSearchContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-        );
-        const allHighlightBoundings3 = _highlightsReadAloudContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-        );
-        const allHighlightBoundings4 = _highlightsPageBreakContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-        );
-        const allHighlightBoundings5 = _highlightsPopupContainer.querySelectorAll(
-          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-        );
 
-        for (const highlightBounding of allHighlightBoundings) {
-          if (
-            !foundElementHighlightBounding ||
-            highlightBounding !== foundElementHighlightBounding
-          ) {
-            this.resetHighlightBoundingStyle(
-              win,
-              highlightBounding as HTMLElement
+        for (let id in HighlightContainer) {
+          let container = doc.getElementById(id);
+          if (container) {
+            const allHighlightBoundings = container.querySelectorAll(
+              `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
             );
-          }
-        }
-        for (const highlightBounding of allHighlightBoundings2) {
-          if (
-            !foundElementHighlightBounding ||
-            highlightBounding !== foundElementHighlightBounding
-          ) {
-            this.resetHighlightBoundingStyle(
-              win,
-              highlightBounding as HTMLElement
-            );
-          }
-        }
-        for (const highlightBounding of allHighlightBoundings3) {
-          if (
-            !foundElementHighlightBounding ||
-            highlightBounding !== foundElementHighlightBounding
-          ) {
-            this.resetHighlightBoundingStyle(
-              win,
-              highlightBounding as HTMLElement
-            );
-          }
-        }
-        for (const highlightBounding of allHighlightBoundings4) {
-          if (
-            !foundElementHighlightBounding ||
-            highlightBounding !== foundElementHighlightBounding
-          ) {
-            this.resetHighlightBoundingStyle(
-              win,
-              highlightBounding as HTMLElement
-            );
-          }
-        }
-        for (const highlightBounding of allHighlightBoundings5) {
-          if (
-            !foundElementHighlightBounding ||
-            highlightBounding !== foundElementHighlightBounding
-          ) {
-            this.resetHighlightBoundingStyle(
-              win,
-              highlightBounding as HTMLElement
-            );
+            for (const highlightBounding of allHighlightBoundings) {
+              if (
+                !foundElementHighlightBounding ||
+                highlightBounding !== foundElementHighlightBounding
+              ) {
+                this.resetHighlightBoundingStyle(
+                  win,
+                  highlightBounding as HTMLElement
+                );
+              }
+            }
           }
         }
       } else if (
@@ -2634,8 +2249,8 @@ export default class TextHighlighter {
         if (IS_DEV) {
           console.log(payload);
         }
-        var self = this;
-        var anno;
+        let self = this;
+        let anno;
         if (self.delegate.rights?.enableAnnotations) {
           anno = (await this.delegate.annotationModule.getAnnotation(
             payload.highlight
@@ -2646,9 +2261,11 @@ export default class TextHighlighter {
           )) as Annotation;
         }
 
-        this.delegate.annotationModule?.api
-          ?.selectedAnnotation(anno)
-          .then(async () => {});
+        if (payload.highlight.type === HighlightType.Annotation) {
+          this.delegate.annotationModule?.api
+            ?.selectedAnnotation(anno)
+            .then(async () => {});
+        }
 
         if (anno?.id) {
           if (IS_DEV) {
@@ -2656,7 +2273,7 @@ export default class TextHighlighter {
           }
           self.lastSelectedHighlight = anno.id;
 
-          var toolbox = document.getElementById("highlight-toolbox");
+          let toolbox = document.getElementById("highlight-toolbox");
 
           toolbox.style.top =
             ev.clientY + (this.delegate.attributes?.navHeight ?? 0) + "px";
@@ -2667,8 +2284,8 @@ export default class TextHighlighter {
 
             this.toolboxMode("edit");
 
-            var colorIcon = document.getElementById("colorIcon");
-            var highlightIcon = document.getElementById("highlightIcon");
+            let colorIcon = document.getElementById("colorIcon");
+            let highlightIcon = document.getElementById("highlightIcon");
 
             if (colorIcon) {
               colorIcon.style.display = "none";
@@ -2676,8 +2293,7 @@ export default class TextHighlighter {
             highlightIcon.style.display = "none";
 
             function noteH() {
-              let note = prompt("Add your note here:");
-              anno.highlight.note = note;
+              anno.highlight.note = prompt("Add your note here:");
               self.delegate.annotationModule
                 .updateAnnotation(anno)
                 .then(async () => {
@@ -2772,19 +2388,10 @@ export default class TextHighlighter {
     }
   }
 
-  ensureHighlightsContainer(
-    win: IReadiumIFrameWindow,
-    id: string
-  ): HTMLElement {
-    const documant = win.document;
-    var self = this;
-    if (
-      (!_highlightsContainer && id == ID_HIGHLIGHTS_CONTAINER) ||
-      (!_highlightsSearchContainer && id == ID_SEARCH_CONTAINER) ||
-      (!_highlightsReadAloudContainer && id == ID_READALOUD_CONTAINER) ||
-      (!_highlightsPageBreakContainer && id == ID_PAGEBREAK_CONTAINER) ||
-      (!_highlightsPopupContainer && id == ID_POPUP_CONTAINER)
-    ) {
+  async ensureHighlightsContainer(win: any, id: string): Promise<HTMLElement> {
+    const doc = win.document;
+    let self = this;
+    if (!doc.getElementById(id)) {
       if (!bodyEventListenersSet) {
         bodyEventListenersSet = true;
 
@@ -2801,162 +2408,117 @@ export default class TextHighlighter {
             self.processMouseEvent(win, ev);
           }
         }
+
         async function mousemove(ev: MouseEvent) {
           self.processMouseEvent(win, ev);
         }
 
-        documant.body.addEventListener("mousedown", mousedown, false);
-        documant.body.addEventListener("mouseup", mouseup, false);
-        documant.body.addEventListener("mousemove", mousemove, false);
+        doc.body.addEventListener("mousedown", mousedown, false);
+        doc.body.addEventListener("mouseup", mouseup, false);
+        doc.body.addEventListener("mousemove", mousemove, false);
 
-        documant.body.addEventListener("touchstart", mousedown, false);
-        documant.body.addEventListener("touchend", mouseup, false);
-        documant.body.addEventListener("touchmove", mousemove, false);
+        doc.body.addEventListener("touchstart", mousedown, false);
+        doc.body.addEventListener("touchend", mouseup, false);
+        doc.body.addEventListener("touchmove", mousemove, false);
       }
 
-      if (id == ID_HIGHLIGHTS_CONTAINER) {
-        _highlightsContainer = documant.createElement("div");
-        _highlightsContainer.setAttribute("id", id);
-        _highlightsContainer.style.setProperty("pointer-events", "none");
-        if (this.delegate.view.layout === "fixed") {
-          _highlightsContainer.style.setProperty("position", "absolute");
-          _highlightsContainer.style.setProperty("top", "0");
-          _highlightsContainer.style.setProperty("left", "0");
-        }
-        documant.body.append(_highlightsContainer);
-      } else if (id == ID_SEARCH_CONTAINER) {
-        _highlightsSearchContainer = documant.createElement("div");
-        _highlightsSearchContainer.setAttribute("id", id);
-        _highlightsSearchContainer.style.setProperty("pointer-events", "none");
-        if (this.delegate.view.layout === "fixed") {
-          _highlightsSearchContainer.style.setProperty("position", "absolute");
-          _highlightsSearchContainer.style.setProperty("top", "0");
-          _highlightsSearchContainer.style.setProperty("left", "0");
-        }
-        documant.body.append(_highlightsSearchContainer);
-      } else if (id == ID_READALOUD_CONTAINER) {
-        _highlightsReadAloudContainer = documant.createElement("div");
-        _highlightsReadAloudContainer.setAttribute("id", id);
-        _highlightsReadAloudContainer.style.setProperty(
-          "pointer-events",
-          "none"
-        );
-        if (this.delegate.view.layout === "fixed") {
-          _highlightsReadAloudContainer.style.setProperty(
-            "position",
-            "absolute"
-          );
-          _highlightsReadAloudContainer.style.setProperty("top", "0");
-          _highlightsReadAloudContainer.style.setProperty("left", "0");
-        }
-        documant.body.append(_highlightsReadAloudContainer);
-      } else if (id == ID_PAGEBREAK_CONTAINER) {
-        _highlightsPageBreakContainer = documant.createElement("div");
-        _highlightsPageBreakContainer.setAttribute("id", id);
-        _highlightsPageBreakContainer.style.setProperty(
-          "pointer-events",
-          "none"
-        );
-        if (this.delegate.view.layout === "fixed") {
-          _highlightsPageBreakContainer.style.setProperty(
-            "position",
-            "absolute"
-          );
-          _highlightsPageBreakContainer.style.setProperty("top", "0");
-          _highlightsPageBreakContainer.style.setProperty("left", "0");
-        }
-        documant.body.append(_highlightsPageBreakContainer);
-      } else if (id == ID_POPUP_CONTAINER) {
-        _highlightsPopupContainer = documant.createElement("div");
-        _highlightsPopupContainer.setAttribute("id", id);
-        _highlightsPopupContainer.style.setProperty("pointer-events", "none");
-        if (this.delegate.view.layout === "fixed") {
-          _highlightsPopupContainer.style.setProperty("position", "absolute");
-          _highlightsPopupContainer.style.setProperty("top", "0");
-          _highlightsPopupContainer.style.setProperty("left", "0");
-        }
-        documant.body.append(_highlightsPopupContainer);
+      let container = doc.createElement("div");
+      container.setAttribute("id", id);
+      container.style.setProperty("pointer-events", "none");
+      if (this.delegate.view.layout === "fixed") {
+        container.style.setProperty("position", "absolute");
+        container.style.setProperty("top", "0");
+        container.style.setProperty("left", "0");
+      }
+      doc.body.append(container);
+
+      if (
+        ((await this.layerSettings.getProperty(id)) as Switchable)?.value ===
+        false
+      ) {
+        container.style.display = "none";
       }
     }
-    if (id == ID_HIGHLIGHTS_CONTAINER) {
-      return _highlightsContainer;
-    } else if (id == ID_SEARCH_CONTAINER) {
-      return _highlightsSearchContainer;
-    } else if (id == ID_READALOUD_CONTAINER) {
-      return _highlightsReadAloudContainer;
-    } else if (id == ID_PAGEBREAK_CONTAINER) {
-      return _highlightsPageBreakContainer;
-    } else if (id == ID_POPUP_CONTAINER) {
-      return _highlightsPopupContainer;
-    }
-    return _highlightsContainer;
+
+    return doc.getElementById(id);
   }
 
-  hideAllhighlights(_documant: Document) {
-    if (_highlightsContainer) {
-      _highlightsContainer.remove();
-      _highlightsContainer = null;
-    }
-    if (_highlightsSearchContainer) {
-      _highlightsSearchContainer.remove();
-      _highlightsSearchContainer = null;
-    }
-    if (_highlightsReadAloudContainer) {
-      _highlightsReadAloudContainer.remove();
-      _highlightsReadAloudContainer = null;
-    }
-    if (_highlightsPageBreakContainer) {
-      _highlightsPageBreakContainer.remove();
-      _highlightsPageBreakContainer = null;
-    }
-    if (_highlightsPopupContainer) {
-      _highlightsPopupContainer.remove();
-      _highlightsPopupContainer = null;
-    }
+  hideAllhighlights(doc: Document) {
+    this.removeAllChildNodes(
+      doc.getElementById(HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER)
+    );
+    this.removeAllChildNodes(
+      doc.getElementById(HighlightContainer.R2_ID_SEARCH_CONTAINER)
+    );
+    this.removeAllChildNodes(
+      doc.getElementById(HighlightContainer.R2_ID_READALOUD_CONTAINER)
+    );
+    this.removeAllChildNodes(
+      doc.getElementById(HighlightContainer.R2_ID_PAGEBREAK_CONTAINER)
+    );
+    this.removeAllChildNodes(
+      doc.getElementById(HighlightContainer.R2_ID_DEFINITIONS_CONTAINER)
+    );
   }
 
-  destroyAllhighlights(documant: Document) {
-    this.hideAllhighlights(documant);
+  destroyAllhighlights(doc: Document) {
+    this.hideAllhighlights(doc);
     _highlights.splice(0, _highlights.length);
   }
-
+  removeAllChildNodes(parent) {
+    while (parent.firstChild) {
+      parent.removeChild(parent.firstChild);
+    }
+  }
   destroyHighlights(type: HighlightType) {
+    let doc = this.delegate.iframes[0].contentWindow.document;
+    let container;
     switch (type) {
       case HighlightType.ReadAloud:
-        if (_highlightsReadAloudContainer) {
-          _highlightsReadAloudContainer.remove();
-          _highlightsReadAloudContainer = null;
+        container = doc.getElementById(
+          HighlightContainer.R2_ID_READALOUD_CONTAINER
+        );
+        if (container) {
+          this.removeAllChildNodes(container);
         }
         break;
       case HighlightType.Search:
-        if (_highlightsSearchContainer) {
-          _highlightsSearchContainer.remove();
-          _highlightsSearchContainer = null;
+        container = doc.getElementById(
+          HighlightContainer.R2_ID_SEARCH_CONTAINER
+        );
+        if (container) {
+          this.removeAllChildNodes(container);
         }
         break;
       case HighlightType.PageBreak:
-        if (_highlightsPageBreakContainer) {
-          _highlightsPageBreakContainer.remove();
-          _highlightsPageBreakContainer = null;
+        container = doc.getElementById(
+          HighlightContainer.R2_ID_PAGEBREAK_CONTAINER
+        );
+        if (container) {
+          this.removeAllChildNodes(container);
         }
         break;
-      case HighlightType.Popup:
-        if (_highlightsPopupContainer) {
-          _highlightsPopupContainer.remove();
-          _highlightsPopupContainer = null;
+      case HighlightType.Definition:
+        container = doc.getElementById(
+          HighlightContainer.R2_ID_DEFINITIONS_CONTAINER
+        );
+        if (container) {
+          this.removeAllChildNodes(container);
         }
         break;
       default:
-        if (_highlightsContainer) {
-          _highlightsContainer.remove();
-          _highlightsContainer = null;
+        container = doc.getElementById(
+          HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER
+        );
+        if (container) {
+          this.removeAllChildNodes(container);
         }
         _highlights.splice(0, _highlights.length);
         break;
     }
   }
 
-  destroyHighlight(documant: Document, id: string) {
+  destroyHighlight(doc: Document, id: string) {
     let i = -1;
     const highlight = _highlights.find((h, j) => {
       i = j;
@@ -2966,147 +2528,14 @@ export default class TextHighlighter {
       _highlights.splice(i, 1);
     }
 
-    const highlightContainer = documant.getElementById(id);
+    const highlightContainer = doc.getElementById(id);
     if (highlightContainer) {
-      highlightContainer.remove();
-    }
-  }
-
-  recreateAllHighlightsRaw(win: IReadiumIFrameWindow) {
-    this.hideAllhighlights(win.document);
-    for (const highlight of _highlights) {
-      this.createHighlightDom(win, highlight);
-    }
-  }
-
-  recreateAllHighlightsDebounced = debounce((win: IReadiumIFrameWindow) => {
-    this.recreateAllHighlightsRaw(win);
-  }, 500);
-
-  recreateAllHighlights(win: IReadiumIFrameWindow) {
-    this.hideAllhighlights(win.document);
-    this.recreateAllHighlightsDebounced(win);
-  }
-
-  createPopupHighlight(selectionInfo: ISelectionInfo, item: Definition) {
-    try {
-      let createColor: any = this.delegate.definitionsModule.properties.color;
-      if (TextHighlighter.isHexColor(createColor)) {
-        createColor = TextHighlighter.hexToRgbChannels(createColor);
-      }
-
-      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
-      const sha256Hex = SHA256.hash(uniqueStr);
-      const id = "R2_POPUP_" + sha256Hex;
-
-      this.destroyHighlight(this.delegate.iframes[0].contentDocument, id);
-      const highlight: IHighlight = {
-        color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
-        id,
-        pointerInteraction: true,
-        selectionInfo,
-        marker: AnnotationMarker.Underline,
-        type: HighlightType.Popup,
-      };
-      _highlights.push(highlight);
-
-      let highlightDom = this.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
-        highlight
-      );
-      if (item.definition) {
-        highlightDom.dataset.definition = item.definition;
-      }
-      highlightDom.dataset.order = String(item.order);
-      highlight.definition = item;
-      highlight.position = parseInt(
-        ((highlightDom.hasChildNodes
-          ? highlightDom.childNodes[0]
-          : highlightDom) as HTMLDivElement).style.top.replace("px", "")
-      );
-      return highlight;
-    } catch (e) {
-      throw "Can't create popup highlight: " + e;
-    }
-  }
-
-  createSearchHighlight(selectionInfo: ISelectionInfo, color: string) {
-    try {
-      var createColor: any = color;
-      if (TextHighlighter.isHexColor(createColor)) {
-        createColor = TextHighlighter.hexToRgbChannels(createColor);
-      }
-
-      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
-      const sha256Hex = SHA256.hash(uniqueStr);
-      const id = "R2_SEARCH_" + sha256Hex;
-
-      var pointerInteraction = false;
-      const highlight: IHighlight = {
-        color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
-        id,
-        pointerInteraction,
-        selectionInfo,
-        marker: AnnotationMarker.Highlight,
-        type: HighlightType.Search,
-      };
-      _highlights.push(highlight);
-
-      let highlightDom = this.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
-        highlight
-      );
-      highlight.position = parseInt(
-        ((highlightDom.hasChildNodes
-          ? highlightDom.childNodes[0]
-          : highlightDom) as HTMLDivElement).style.top.replace("px", "")
-      );
-      return highlight;
-    } catch (e) {
-      throw "Can't create highlight: " + e;
-    }
-  }
-  createPageBreakHighlight(selectionInfo: ISelectionInfo, title: string) {
-    try {
-      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
-      const sha256Hex = SHA256.hash(uniqueStr);
-      const id = "R2_PAGEBREAK_" + sha256Hex;
-
-      var pointerInteraction = false;
-
-      const highlight: IHighlight = {
-        color: "#000000",
-        id,
-        pointerInteraction,
-        selectionInfo,
-        marker: AnnotationMarker.Custom,
-        icon: {
-          id: `pageBreak`,
-          title: title,
-          color: `#000000`,
-          position: "left",
-        },
-        type: HighlightType.PageBreak,
-      };
-      _highlights.push(highlight);
-
-      let highlightDom = this.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
-        highlight
-      );
-      highlight.position = parseInt(
-        ((highlightDom.hasChildNodes
-          ? highlightDom.childNodes[0]
-          : highlightDom) as HTMLDivElement).style.top.replace("px", "")
-      );
-      return highlight;
-    } catch (e) {
-      throw "Can't create highlight: " + e;
+      this.removeAllChildNodes(highlightContainer);
     }
   }
 
   createHighlight(
-    win: IReadiumIFrameWindow,
+    win: any,
     selectionInfo: ISelectionInfo,
     color: string | undefined,
     pointerInteraction: boolean,
@@ -3138,9 +2567,9 @@ export default class TextHighlighter {
         type: type ? type : HighlightType.Annotation,
       };
       if (
-        type == HighlightType.Annotation ||
-        type == HighlightType.Popup ||
-        type == undefined
+        type === HighlightType.Annotation ||
+        type === HighlightType.Definition ||
+        type === undefined
       ) {
         _highlights.push(highlight);
       }
@@ -3158,40 +2587,21 @@ export default class TextHighlighter {
     }
   }
   createHighlightDom(
-    win: IReadiumIFrameWindow,
+    win: any,
     highlight: IHighlight
   ): HTMLDivElement | undefined {
-    const documant = win.document;
+    const doc = win.document;
 
-    const range = convertRangeInfo(documant, highlight.selectionInfo.rangeInfo);
+    const range = convertRangeInfo(doc, highlight.selectionInfo.rangeInfo);
     if (!range) {
       return undefined;
     }
 
-    const highlightsContainer = this.ensureHighlightsContainer(
-      win,
-      ID_HIGHLIGHTS_CONTAINER
-    );
-    const highlightsReadAloudContainer = this.ensureHighlightsContainer(
-      win,
-      ID_READALOUD_CONTAINER
-    );
-    const highlightsPageBreakContainer = this.ensureHighlightsContainer(
-      win,
-      ID_PAGEBREAK_CONTAINER
-    );
-    const highlightsSearchContainer = this.ensureHighlightsContainer(
-      win,
-      ID_SEARCH_CONTAINER
-    );
-    const highlightsPopupContainer = this.ensureHighlightsContainer(
-      win,
-      ID_POPUP_CONTAINER
-    );
+    for (let container in HighlightContainer) {
+      this.ensureHighlightsContainer(win, container);
+    }
 
-    const highlightParent = documant.createElement(
-      "div"
-    ) as IHTMLDivElementWithRect;
+    const highlightParent = doc.createElement("div") as IHTMLDivElementWithRect;
     highlightParent.setAttribute("id", highlight.id);
     highlightParent.setAttribute("class", CLASS_HIGHLIGHT_CONTAINER);
     highlightParent.style.setProperty("pointer-events", "none");
@@ -3207,12 +2617,12 @@ export default class TextHighlighter {
     // Also note that ReadiumCSS default to (via stylesheet :root):
 
     if (paginated) {
-      documant.body.style.position = "revert";
+      doc.body.style.position = "revert";
     } else {
-      documant.body.style.position = "relative";
+      doc.body.style.position = "relative";
     }
-    const bodyRect = documant.body.getBoundingClientRect();
-    const scrollElement = this.getScrollingElement(documant);
+    const bodyRect = doc.body.getBoundingClientRect();
+    const scrollElement = this.getScrollingElement(doc);
 
     const xOffset = paginated ? -scrollElement.scrollLeft : bodyRect.left;
     const yOffset = paginated ? -scrollElement.scrollTop : bodyRect.top;
@@ -3238,9 +2648,7 @@ export default class TextHighlighter {
     let size = 24;
     let left, right;
     for (const clientRect of clientRects) {
-      const highlightArea = documant.createElement(
-        "div"
-      ) as IHTMLDivElementWithRect;
+      const highlightArea = doc.createElement("div") as IHTMLDivElementWithRect;
       highlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
       highlightArea.dataset.marker = "" + highlight.marker;
 
@@ -3349,6 +2757,10 @@ export default class TextHighlighter {
         top: clientRect.top - yOffset,
         width: clientRect.width,
       };
+      if (highlight.pointerInteraction) {
+        highlightArea.setAttribute("data-click", "1");
+        highlightArea.tabIndex = 0;
+      }
       highlightArea.style.width = `${highlightArea.rect.width * scale}px`;
       highlightArea.style.height = `${highlightArea.rect.height * scale}px`;
       highlightArea.style.left = `${highlightArea.rect.left * scale}px`;
@@ -3357,13 +2769,13 @@ export default class TextHighlighter {
       highlightParent.append(highlightArea);
 
       let top = parseInt(highlightArea.style.top.replace("px", ""));
-      if (top < position || position == 0) {
+      if (top < position || position === 0) {
         position = top;
       }
 
       size = parseInt(highlightArea.style.height.replace("px", ""));
       if (drawStrikeThrough) {
-        const highlightAreaLine = documant.createElement(
+        const highlightAreaLine = doc.createElement(
           "div"
         ) as IHTMLDivElementWithRect;
         highlightAreaLine.setAttribute("class", CLASS_HIGHLIGHT_AREA);
@@ -3488,7 +2900,7 @@ export default class TextHighlighter {
     }
 
     const rangeBoundingClientRect = range.getBoundingClientRect();
-    const highlightBounding = documant.createElement(
+    const highlightBounding = doc.createElement(
       "div"
     ) as IHTMLDivElementWithRect;
     highlightBounding.setAttribute("class", CLASS_HIGHLIGHT_BOUNDING_AREA);
@@ -3509,7 +2921,7 @@ export default class TextHighlighter {
     highlightBounding.style.top = `${highlightBounding.rect.top * scale}px`;
     highlightParent.append(highlightBounding);
 
-    const highlightAreaIcon = documant.createElement("div");
+    const highlightAreaIcon = doc.createElement("div");
     highlightAreaIcon.setAttribute("class", CLASS_HIGHLIGHT_ICON);
 
     if (highlight.icon?.position === "left") {
@@ -3605,9 +3017,12 @@ export default class TextHighlighter {
 
     highlightAreaIcon.style.setProperty("pointer-events", "all");
     let self = this;
-    if (highlight.type != HighlightType.PageBreak) {
+    if (
+      highlight.type !== HighlightType.PageBreak &&
+      highlight.type !== HighlightType.Definition
+    ) {
       highlightAreaIcon.addEventListener("click", async function (ev) {
-        var anno;
+        let anno;
         if (self.delegate.rights?.enableAnnotations) {
           anno = (await self.delegate.annotationModule.getAnnotationByID(
             highlight.id
@@ -3626,7 +3041,7 @@ export default class TextHighlighter {
         }
 
         self.lastSelectedHighlight = anno.id;
-        var toolbox = document.getElementById("highlight-toolbox");
+        let toolbox = document.getElementById("highlight-toolbox");
         toolbox.style.top =
           ev.clientY + (self.delegate.attributes?.navHeight ?? 0) + "px";
         toolbox.style.left = ev.clientX + "px";
@@ -3636,16 +3051,15 @@ export default class TextHighlighter {
 
           self.toolboxMode("edit");
 
-          var colorIcon = document.getElementById("colorIcon");
-          var highlightIcon = document.getElementById("highlightIcon");
+          let colorIcon = document.getElementById("colorIcon");
+          let highlightIcon = document.getElementById("highlightIcon");
           if (colorIcon) {
             colorIcon.style.display = "none";
           }
           highlightIcon.style.display = "none";
 
           function noteH() {
-            let note = prompt("Add your note here:");
-            anno.highlight.note = note;
+            anno.highlight.note = prompt("Add your note here:");
 
             self.delegate.annotationModule
               .updateAnnotation(anno)
@@ -3765,19 +3179,29 @@ export default class TextHighlighter {
 
     switch (highlight.type) {
       case HighlightType.Search:
-        highlightsSearchContainer.append(highlightParent);
+        doc
+          .getElementById(HighlightContainer.R2_ID_SEARCH_CONTAINER)
+          .append(highlightParent);
         break;
       case HighlightType.ReadAloud:
-        highlightsReadAloudContainer.append(highlightParent);
+        doc
+          .getElementById(HighlightContainer.R2_ID_READALOUD_CONTAINER)
+          .append(highlightParent);
         break;
       case HighlightType.PageBreak:
-        highlightsPageBreakContainer.append(highlightParent);
+        doc
+          .getElementById(HighlightContainer.R2_ID_PAGEBREAK_CONTAINER)
+          .append(highlightParent);
         break;
-      case HighlightType.Popup:
-        highlightsPopupContainer.append(highlightParent);
+      case HighlightType.Definition:
+        doc
+          .getElementById(HighlightContainer.R2_ID_DEFINITIONS_CONTAINER)
+          .append(highlightParent);
         break;
       default:
-        highlightsContainer.append(highlightParent);
+        doc
+          .getElementById(HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER)
+          .append(highlightParent);
         break;
     }
 

@@ -17,20 +17,29 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
+import { IS_DEV } from "../../utils";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import ReaderModule from "../ReaderModule";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
-import { HighlightType } from "../highlight/common/highlight";
-import { _getCssSelectorOptions } from "../highlight/common/selection";
+import { HighlightType, IHighlight } from "../highlight/common/highlight";
+import {
+  _getCssSelectorOptions,
+  ISelectionInfo,
+} from "../highlight/common/selection";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import { Link } from "../../model/Link";
-import { Locations, Locator } from "../../model/Locator";
 import Publication from "../../model/Publication";
-import { IS_DEV } from "../../utils";
+import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
+import { SHA256 } from "jscrypto/es6/SHA256";
+import { _highlights } from "../highlight/TextHighlighter";
 
-export interface PageBreakModuleConfig {
+export interface PageBreakModuleProperties {
+  hideLayer?: boolean;
+}
+
+export interface PageBreakModuleConfig extends PageBreakModuleProperties {
   delegate: IFrameNavigator;
   headerMenu: HTMLElement;
   publication: Publication;
@@ -40,6 +49,7 @@ export default class PageBreakModule implements ReaderModule {
   private delegate: IFrameNavigator;
   private readonly headerMenu: HTMLElement;
   private publication: Publication;
+  private properties: PageBreakModuleProperties;
 
   private goToPageView: HTMLLIElement;
   private goToPageNumberInput: HTMLInputElement;
@@ -49,7 +59,8 @@ export default class PageBreakModule implements ReaderModule {
     const pageBreak = new this(
       config.headerMenu,
       config.delegate,
-      config.publication
+      config.publication,
+      config as PageBreakModuleProperties
     );
     await pageBreak.start();
     return pageBreak;
@@ -58,11 +69,13 @@ export default class PageBreakModule implements ReaderModule {
   private constructor(
     headerMenu: HTMLElement,
     delegate: IFrameNavigator,
-    publication: Publication
+    publication: Publication,
+    properties: PageBreakModuleProperties
   ) {
     this.headerMenu = headerMenu;
     this.delegate = delegate;
     this.publication = publication;
+    this.properties = properties;
   }
 
   async stop() {
@@ -108,6 +121,11 @@ export default class PageBreakModule implements ReaderModule {
         this.goToPageView.parentElement.removeChild(this.goToPageView);
       }
     }
+    setTimeout(() => {
+      this.properties.hideLayer
+        ? this.delegate.hideLayer("pagebreak")
+        : this.delegate.showLayer("pagebreak");
+    }, 10);
   }
   private async goToPageNumber(event: any): Promise<any> {
     if (
@@ -201,7 +219,7 @@ export default class PageBreakModule implements ReaderModule {
         if (!selection.isCollapsed) {
           const rangeInfo = convertRange(range, getCssSelector);
           selection.removeAllRanges();
-          this.delegate.highlighter.createPageBreakHighlight(
+          this.createPageBreakHighlight(
             {
               rangeInfo: rangeInfo,
               cleanText: "",
@@ -216,5 +234,44 @@ export default class PageBreakModule implements ReaderModule {
         }
       }
     }, 200);
+  }
+
+  createPageBreakHighlight(selectionInfo: ISelectionInfo, title: string) {
+    try {
+      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
+      const sha256Hex = SHA256.hash(uniqueStr);
+      const id = "R2_PAGEBREAK_" + sha256Hex;
+
+      var pointerInteraction = false;
+
+      const highlight: IHighlight = {
+        color: "#000000",
+        id,
+        pointerInteraction,
+        selectionInfo,
+        marker: AnnotationMarker.Custom,
+        icon: {
+          id: `pageBreak`,
+          title: title,
+          color: `#000000`,
+          position: "left",
+        },
+        type: HighlightType.PageBreak,
+      };
+      _highlights.push(highlight);
+
+      let highlightDom = this.delegate.highlighter.createHighlightDom(
+        this.delegate.iframes[0].contentWindow as any,
+        highlight
+      );
+      highlight.position = parseInt(
+        ((highlightDom.hasChildNodes
+          ? highlightDom.childNodes[0]
+          : highlightDom) as HTMLDivElement).style.top.replace("px", "")
+      );
+      return highlight;
+    } catch (e) {
+      throw "Can't create highlight: " + e;
+    }
   }
 }

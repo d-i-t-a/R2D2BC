@@ -26,8 +26,8 @@ import {
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
 import { delay, IS_DEV } from "../../utils";
-import { addListener, launch } from "devtools-detector";
 import { getUserAgentRegExp } from "browserslist-useragent-regexp";
+import { checkers, DevtoolsDetector } from "devtools-detector";
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;
@@ -119,8 +119,17 @@ export default class ContentProtectionModule implements ReaderModule {
         config.api.inspectDetected();
       }
     };
-    addListener(onInspectorOpened);
-    launch();
+    const detector = new DevtoolsDetector({
+      checkers: [
+        checkers.elementIdChecker,
+        checkers.regToStringChecker,
+        checkers.functionToStringChecker,
+        checkers.depRegToStringChecker,
+        checkers.dateToStringChecker,
+      ],
+    });
+    detector.addListener(onInspectorOpened);
+    detector.launch();
     await delay(config.detectInspectInitDelay ?? 50);
   }
 
@@ -749,8 +758,11 @@ export default class ContentProtectionModule implements ReaderModule {
     if (IS_DEV) {
       console.log("before print");
     }
-    this.delegate.headerMenu.style.display = "none";
-    this.delegate.mainElement.style.display = "none";
+
+    if (this.delegate && this.delegate.headerMenu) {
+      this.delegate.headerMenu.style.display = "none";
+      this.delegate.mainElement.style.display = "none";
+    }
 
     event.stopPropagation();
     event.preventDefault();
@@ -761,10 +773,13 @@ export default class ContentProtectionModule implements ReaderModule {
     stopPropagation: () => void;
   }) {
     if (IS_DEV) {
-      console.log("before print");
+      console.log("after print");
     }
-    this.delegate.headerMenu.style.removeProperty("display");
-    this.delegate.mainElement.style.removeProperty("display");
+
+    if (this.delegate && this.delegate.headerMenu) {
+      this.delegate.headerMenu.style.removeProperty("display");
+      this.delegate.mainElement.style.removeProperty("display");
+    }
 
     event.stopPropagation();
     event.preventDefault();
@@ -979,12 +994,12 @@ export default class ContentProtectionModule implements ReaderModule {
     // Consider left boundary to be one full screen width left of the leftmost
     // edge of the viewing area. This is so text originating on the previous
     // screen does not flow onto the current screen scrambled.
-    const isLeft = right < (windowLeft - window.innerWidth);
+    const isLeft = right < windowLeft - window.innerWidth;
 
     // Consider right boundary to be one full screen width right of the rightmost
     // edge of the viewing area. This is so quickly paging through the book
     // does not result in visible page descrambling.
-    const isRight = rect.left > (windowRight + window.innerWidth);
+    const isRight = rect.left > windowRight + window.innerWidth;
 
     return isAbove || isBelow || isLeft || isRight;
   }

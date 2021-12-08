@@ -51,6 +51,7 @@ import TTSModule from "./modules/TTS/TTSModule";
 import TTSModule2 from "./modules/TTS/TTSModule2";
 import ReaderModule from "./modules/ReaderModule";
 import DefinitionsModule from "./modules/search/DefinitionsModule";
+import { LayerSettings } from "./modules/highlight/LayerSettings";
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -110,6 +111,10 @@ export default class D2Reader {
       prefix: "r2d2bc-reader",
       useLocalStorage: initialConfig.useLocalStorage ?? false,
     });
+    const layerStore = new LocalStorageStore({
+      prefix: "r2d2bc-layers",
+      useLocalStorage: initialConfig.useLocalStorage,
+    });
 
     const annotator = new LocalAnnotator({ store: store });
 
@@ -140,6 +145,8 @@ export default class D2Reader {
         await publication.fetchWeightsFromService(config.services?.weight.href);
       }
     }
+
+    const layers = await LayerSettings.create({ store: layerStore });
 
     // Settings
     const settings = await UserSettings.create({
@@ -182,13 +189,11 @@ export default class D2Reader {
     });
 
     // Highlighter
-    const highligherEnabled = true; //publication.isReflowable;
-    const highlighter = highligherEnabled
-      ? await TextHighlighter.create({
-          delegate: navigator,
-          ...config.highlighter,
-        })
-      : undefined;
+    const highlighter = await TextHighlighter.create({
+      delegate: navigator,
+      layerSettings: layers,
+      ...config.highlighter,
+    });
 
     // Bookmark Module
     const bookmarkModule = config.rights?.enableBookmarks
@@ -305,13 +310,16 @@ export default class D2Reader {
         })
       : undefined;
 
-    const pageBreakModule = publication.isReflowable
-      ? await PageBreakModule.create({
-          publication: publication,
-          headerMenu: headerMenu,
-          delegate: navigator,
-        })
-      : undefined;
+    const enablePageBreaks = config.rights?.enablePageBreaks ?? true;
+    const pageBreakModule =
+      enablePageBreaks && publication.isReflowable
+        ? await PageBreakModule.create({
+            publication: publication,
+            headerMenu: headerMenu,
+            delegate: navigator,
+            ...config.pagebreak,
+          })
+        : undefined;
 
     return new D2Reader(
       settings,
@@ -394,11 +402,26 @@ export default class D2Reader {
   showAnnotationLayer = () => {
     return this.annotationModule?.showAnnotationLayer();
   };
+
+  hideLayer = (layer) => {
+    return this.navigator?.hideLayer(layer);
+  };
+  showLayer = (layer) => {
+    return this.navigator?.showLayer(layer);
+  };
+
   activateMarker = (id, position) => {
     return this.navigator?.activateMarker(id, position);
   };
   deactivateMarker = () => {
     return this.navigator?.deactivateMarker();
+  };
+
+  clearDefinitions = async () => {
+    await this.definitionsModule?.clearDefinitions();
+  };
+  addDefinition = async (definition) => {
+    await this.definitionsModule?.addDefinition(definition);
   };
 
   tableOfContents = async () => {

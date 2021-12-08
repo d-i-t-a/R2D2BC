@@ -58,6 +58,7 @@
                             <li><a id="menu-button-play" onclick="d2reader.startReadAloud()"><i class="material-icons">play_arrow</i></a></li>
                             <li><a id="menu-button-pause" onclick="d2reader.pauseReadAloud()" style="display: none"><i class="material-icons">pause</i></a></li>
                             <li><a data-target="container-view-tts-settings" class="dropdown-trigger " id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>
+                            <li><a data-target="container-view-layer-settings" class="dropdown-trigger " id="menu-button-layer"><i class="material-icons ">settings</i></a></li>
                             <li><a data-target="container-view-mediaoverlay-settings" class="dropdown-trigger " id="menu-button-mediaoverlay"><i class="material-icons ">record_voice_over</i></a></li>
                             <li><a data-target="container-view-settings-custom" class="dropdown-trigger " id="menu-button-settings" onclick="reload()"><i class="material-icons">settings</i></a></li>
                             <li style="display:none"><a data-target="container-view-search" class="dropdown-trigger " id="menu-button-search"><i class="material-icons">search</i></a></li>
@@ -103,6 +104,36 @@
                     </ul>
                 </li>
             </ul>
+            <div id="container-view-layer-settings" class="dropdown-content settings">
+                <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Layers</label>
+                <center style="display: flex;justify-content: center;align-items: center;">
+                    <label style="margin-right: 10px;">Highlights</label>
+                    <input type="checkbox" class="filled"
+                           onchange="this.checked ? D2Reader.showLayer('highlights') : D2Reader.hideLayer('highlights')">
+                </center>
+                <center style="display: flex;justify-content: center;align-items: center;">
+                    <label style="margin-right: 10px;">Definitions</label>
+                    <input type="checkbox" class="filled"
+                           onchange="this.checked ? D2Reader.showLayer('definitions') : D2Reader.hideLayer('definitions')">
+                </center>
+                <center style="display: flex;justify-content: center;align-items: center;">
+                    <label style="margin-right: 10px;">Page Break</label>
+                    <input type="checkbox" class="filled"
+                           onchange="this.checked ? D2Reader.showLayer('pagebreak') : D2Reader.hideLayer('pagebreak')">
+                </center>
+                <center style="display: flex;justify-content: center;align-items: center;">
+                    <label style="margin-right: 10px;">Search</label>
+                    <input type="checkbox" class="filled"
+                           onchange="this.checked ? D2Reader.showLayer('search') : D2Reader.hideLayer('search')">
+                </center>
+                <center style="display: flex;justify-content: center;align-items: center;">
+                    <label style="margin-right: 10px;">Read Aloud</label>
+                    <input type="checkbox" class="filled"
+                           onchange="this.checked ? D2Reader.showLayer('readaloud') : D2Reader.hideLayer('readaloud')">
+                </center>
+
+
+            </div>
             <div id="container-view-tts-settings" class="dropdown-content settings">
                 <center style="display: flex;
         justify-content: center;">
@@ -782,6 +813,7 @@
                 enableDefinitions: true,
                 enableContentProtection: false,
                 enableMediaOverlays: true,
+                enablePageBreaks: true,
                 autoGeneratePositions: true,
             },
             // services: {
@@ -800,6 +832,7 @@
                 // color: "redtext",
                 volume: 0.7,
                 wait: 1,
+                // hideLayer:true,
                 api: {
 
                 }
@@ -808,6 +841,7 @@
                 enableSplitter: false,
                 color: "orange",
                 autoScroll: true,
+                // hideLayer:true,
                 voice: {
                     usePublication: false//, // true = will be used no matter if an initial language is set, false = ignore publicaiton language
                     // lang: "de_DE" // initial language, default system language will be used it this language can't be found
@@ -857,12 +891,16 @@
             search: {
                 color: "#fce300",
                 current: "#ed7138",
+                // hideLayer:true,
                 api: {
 
                 }
             },
             define: {
-                color: "#40E0D0",
+                // color: "#40E0D0",
+                color: "var(--RS__definitionsColor)",
+                fullWordSearch: true,
+                // hideLayer:true,
                 api: {
                     click: function (item, element) {
                         console.log("click");
@@ -924,6 +962,7 @@
             annotations: {
                 // initialAnnotationColor: "var(--RS__highlightColor)",
                 // initialAnnotationColor: "#ff8500",
+                // hideLayer:true,
                 api: {
                     addAnnotation: function (highlight) {
                         console.log("addAnnotation")
@@ -948,7 +987,11 @@
                     }
                 }
             },
+            pagebreak: {
+                // hideLayer:false,
+            },
             bookmarks: {
+                // hideLayer:true,
                 api: {
                     addBookmark: function (bookmark) {
                         console.log("addBookmark")

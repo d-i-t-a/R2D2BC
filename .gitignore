@@ -6,3 +6,4 @@ settings.json
 yarn.lock
 .parcel-cache
 parcel-dist
+docs

@@ -85,7 +85,7 @@ export default class D2Reader {
   /**
    * The async builder.
    */
-  static async build(initialConfig: ReaderConfig): Promise<D2Reader> {
+  static async load(initialConfig: ReaderConfig): Promise<D2Reader> {
     // Enforces supported browsers
     if (
       initialConfig.rights?.enableContentProtection &&

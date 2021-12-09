@@ -728,6 +728,8 @@ function updateConfig(
     config.rights.enableAnnotations = false;
     config.rights.enableSearch = false;
     config.rights.enableTTS = false;
+    config.rights.enablePageBreaks = false;
+    config.rights.enableDefinitions = false;
     // config.protection.enableObfuscation = false;
   }
 

@@ -19,3 +19,4 @@ yarn.lock
 package-lock.json
 .parcel-cache
 parcel-dist
+docs

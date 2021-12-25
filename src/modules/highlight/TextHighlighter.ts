@@ -2172,7 +2172,10 @@ export default class TextHighlighter {
     }
 
     if (foundElement.getAttribute("data-click")) {
-      if (ev.type === "mousemove" || ev.type === "touchmove") {
+      if (
+        (ev.type === "mousemove" || ev.type === "touchmove") &&
+        foundElement.parentElement.style.display !== "none"
+      ) {
         const foundElementHighlightAreas = Array.from(
           foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
         );
@@ -2225,9 +2228,10 @@ export default class TextHighlighter {
           }
         }
       } else if (
-        ev.type === "mouseup" ||
-        ev.type === "click" ||
-        ev.type === "touchup"
+        (ev.type === "mouseup" ||
+          ev.type === "click" ||
+          ev.type === "touchup") &&
+        foundElement.parentElement.style.display !== "none"
       ) {
         const payload: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK = {
           highlight: foundHighlight,

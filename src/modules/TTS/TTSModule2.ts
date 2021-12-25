@@ -1076,11 +1076,18 @@ export default class TTSModule2 implements ReaderModule {
           ? utteranceText.slice(start)
           : utteranceText.slice(start, right + charIndex);
       const end = start + word.length;
+      let useStart = false;
+      if (!charLength) {
+        charLength = word.length;
+        useStart = true;
+      } else {
+        useStart = false;
+      }
 
       this.wrapHighlightWord(
         ttsQueueItem,
         utteranceText,
-        charIndex,
+        useStart ? start : charIndex,
         charLength,
         word,
         start,
@@ -1163,6 +1170,8 @@ export default class TTSModule2 implements ReaderModule {
       if (rangeStartNode && charIndexEnd <= acc) {
         rangeEndNode = txtNode;
         rangeEndOffset = l - (acc - charIndexEnd);
+      }
+      if (rangeEndNode) {
         break;
       }
     }

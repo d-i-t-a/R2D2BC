@@ -19,7 +19,6 @@
 
 import { ReadingPosition } from "../model/Locator";
 import { IHighlight } from "../modules/highlight/common/highlight";
-import { IReadiumIFrameWindow } from "../modules/highlight/renderer/iframe/state";
 
 interface Annotator {
   initLastReadingPosition(position: ReadingPosition): Promise<void>;
@@ -38,7 +37,8 @@ interface Annotator {
   deleteSelectedAnnotation(annotation: any): Promise<any>;
   getAnnotations(): Promise<any>;
   getAnnotation(annotation: IHighlight): Promise<any>;
-  getAnnotationPosition(id: any, iframeWin: IReadiumIFrameWindow): Promise<any>;
+  getAnnotationByID(id: string): Promise<any>;
+  getAnnotationPosition(id: any, iframeWin: any): Promise<any>;
 }
 
 export enum AnnotationType {

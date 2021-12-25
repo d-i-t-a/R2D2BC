@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -28,12 +28,14 @@
     "cssesc": "^3.0.0",
     "debounce": "^1.2.1",
     "detect-browser": "^5.2.0",
-    "devtools-detector": "^2.0.3",
+    "devtools-detector": "^2.0.6",
     "jscrypto": "0.0.1",
+    "lodash.clonedeep": "^4.5.0",
     "mark.js": "^8.11.1",
     "promise-polyfill": "^8.2.0",
     "r2-shared-js": "^1.0.51",
     "sanitize-html": "^2.3.3",
+    "sentence-splitter": "^3.2.1",
     "whatwg-fetch": "^3.6.2"
   },
   "browserslist": {

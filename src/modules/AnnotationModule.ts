@@ -24,28 +24,34 @@ import { Publication } from "../model/Publication";
 import TextHighlighter, { _highlights } from "./highlight/TextHighlighter";
 import ReaderModule from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
-import { IHighlight } from "./highlight/common/highlight";
+import { HighlightType, IHighlight } from "./highlight/common/highlight";
 import {
   Annotation,
   AnnotationMarker,
   Bookmark,
   Locator,
 } from "../model/Locator";
-import { IS_DEV } from "..";
+import { IS_DEV } from "../utils";
 import { toast } from "materialize-css";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
+import { convertRange } from "./highlight/renderer/iframe/selection";
+import { uniqueCssSelector } from "./highlight/renderer/common/cssselector2";
+import { _getCssSelectorOptions } from "./highlight/common/selection";
+import * as lodash from "lodash";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
 
 export interface AnnotationModuleAPI {
   addAnnotation: Highlight;
   deleteAnnotation: Highlight;
+  updateAnnotation: Highlight;
   selectedAnnotation: Highlight;
 }
 export interface AnnotationModuleProperties {
   initialAnnotationColor: string;
+  hideLayer?: boolean;
 }
 
 export interface AnnotationModuleConfig extends AnnotationModuleProperties {
@@ -60,7 +66,7 @@ export interface AnnotationModuleConfig extends AnnotationModuleProperties {
 }
 
 export default class AnnotationModule implements ReaderModule {
-  private readonly annotator: Annotator | null;
+  readonly annotator: Annotator | null;
   private rights: ReaderRights;
   private publication: Publication;
   private highlightsView: HTMLDivElement;
@@ -70,6 +76,8 @@ export default class AnnotationModule implements ReaderModule {
   private delegate: IFrameNavigator;
   properties: AnnotationModuleProperties;
   api: AnnotationModuleAPI;
+  activeAnnotationMarkerId?: string;
+  activeAnnotationMarkerPosition?: string;
 
   public static async create(config: AnnotationModuleConfig) {
     const annotations = new this(
@@ -130,12 +138,53 @@ export default class AnnotationModule implements ReaderModule {
         this.annotator.initAnnotations(highlights);
       }
     }
+    setTimeout(() => {
+      this.properties.hideLayer
+        ? this.delegate.hideLayer("highlights")
+        : this.delegate.showLayer("highlights");
+    }, 10);
+  }
+  private hide: HTMLLinkElement = HTMLUtilities.findElement(
+    document,
+    "#menu-button-hide"
+  ) as HTMLLinkElement;
+  private show: HTMLLinkElement = HTMLUtilities.findElement(
+    document,
+    "#menu-button-show"
+  ) as HTMLLinkElement;
+
+  hideAnnotationLayer() {
+    const container = HTMLUtilities.findElement(
+      this.delegate.iframes[0].contentDocument,
+      "#R2_ID_HIGHLIGHTS_CONTAINER"
+    ) as HTMLDivElement;
+    if (container) {
+      container.style.display = "none";
+    }
+    if (this.show && this.hide) {
+      this.show.style.display = "block";
+      this.hide.style.display = "none";
+    }
+  }
+  showAnnotationLayer() {
+    const container = HTMLUtilities.findElement(
+      this.delegate.iframes[0].contentDocument,
+      "#R2_ID_HIGHLIGHTS_CONTAINER"
+    ) as HTMLDivElement;
+    if (container) {
+      container.style.display = "block";
+    }
+    if (this.show && this.hide) {
+      this.show.style.display = "none";
+      this.hide.style.display = "block";
+    }
   }
 
-  handleResize() {
-    setTimeout(() => {
-      this.drawHighlights();
-    }, 10);
+  async handleResize() {
+    setTimeout(async () => {
+      await this.drawHighlights();
+      await this.showHighlights();
+    }, 100);
   }
 
   initialize() {
@@ -144,10 +193,94 @@ export default class AnnotationModule implements ReaderModule {
       if (this.rights?.enableAnnotations) {
         setTimeout(() => {
           this.drawHighlights();
+          this.showHighlights();
+          addEventListenerOptional(
+            this.delegate.iframes[0].contentDocument.body,
+            "click",
+            this.click.bind(this)
+          );
         }, 300);
       }
       resolve(null);
     });
+  }
+
+  private click(_event: KeyboardEvent | MouseEvent | TrackEvent): void {
+    if (this.activeAnnotationMarkerId) {
+      let menuItems = this.highlighter.properties?.selectionMenuItems?.filter(
+        (menuItem) => menuItem.id === this.activeAnnotationMarkerId
+      );
+      if (menuItems.length > 0) {
+        let menuItem = lodash.cloneDeep(menuItems[0]);
+        menuItem.marker = AnnotationMarker.Custom;
+        if (this.activeAnnotationMarkerPosition) {
+          menuItem.icon.position = this.activeAnnotationMarkerPosition;
+        }
+        // menuItem.icon.svgPath = `<path d="M4,16v6h16v-6c0-1.1-0.9-2-2-2H6C4.9,14,4,14.9,4,16z M18,18H6v-2h12V18z M12,2C9.24,2,7,4.24,7,7l5,7l5-7 C17,4.24,14.76,2,12,2z M12,11L9,7c0-1.66,1.34-3,3-3s3,1.34,3,3L12,11z"/>`;
+        // menuItem.icon.color = `#dc491d`;
+        // menuItem.highlight.color = `#dc491d`;
+        menuItem.highlight.style.default = null;
+        menuItem.highlight.style.hover = null;
+
+        const selection = this.highlighter
+          .dom(this.delegate.iframes[0].contentDocument.body)
+          .getSelection();
+        let range = selection.getRangeAt(0);
+        let node = selection.anchorNode;
+        range.setStart(node, range.startOffset);
+        range.setEnd(node, range.endOffset + 1);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        // Alert result
+        // let str = range.toString().trim();
+        // alert(str);
+
+        let self = this;
+        function getCssSelector(element: Element): string {
+          try {
+            return uniqueCssSelector(
+              element,
+              self.delegate.iframes[0].contentDocument,
+              _getCssSelectorOptions
+            );
+          } catch (err) {
+            console.log("uniqueCssSelector:");
+            console.log(err);
+            return "";
+          }
+        }
+        const rangeInfo = convertRange(range, getCssSelector);
+        selection.removeAllRanges();
+        let selectionInfo = {
+          rangeInfo: rangeInfo,
+          cleanText: null,
+          rawText: null,
+          range: null,
+        };
+
+        let book = this.delegate.highlighter.createHighlight(
+          this.delegate.highlighter
+            .dom(self.delegate.iframes[0].contentDocument.body)
+            .getWindow(),
+          selectionInfo,
+          menuItem.highlight.color,
+          true,
+          AnnotationMarker.Bookmark,
+          menuItem.icon,
+          menuItem.popup,
+          menuItem.highlight.style
+        );
+        this.saveAnnotation(book[0]).then((anno) => {
+          if (IS_DEV) {
+            console.log("saved bookmark " + anno.id);
+          }
+        });
+        this.delegate.iframes[0].contentDocument
+          .getSelection()
+          .removeAllRanges();
+      }
+    }
   }
 
   async scrollToHighlight(id: any): Promise<any> {
@@ -159,6 +292,26 @@ export default class AnnotationModule implements ReaderModule {
       this.delegate.iframes[0].contentWindow as any
     );
     window.scrollTo(0, position - window.innerHeight / 3);
+  }
+
+  async updateLocalHighlight(annotation: Annotation): Promise<any> {
+    if (this.annotator) {
+      let deleted = await this.annotator.deleteAnnotation(annotation.id);
+      let added = await this.addAnnotation(annotation);
+
+      if (IS_DEV) {
+        console.log("Highlight deleted " + JSON.stringify(deleted));
+        console.log("Highlight added " + JSON.stringify(added));
+      }
+      await this.showHighlights();
+      await this.drawHighlights();
+      if (this.delegate.rights?.enableMaterial) {
+        toast({ html: "highlight updated" });
+      }
+      return added;
+    } else {
+      return new Promise<any>((resolve) => resolve(null));
+    }
   }
 
   async deleteLocalHighlight(id: any): Promise<any> {
@@ -208,10 +361,18 @@ export default class AnnotationModule implements ReaderModule {
     }
   }
 
-  public async saveAnnotation(
-    highlight: IHighlight,
-    marker: AnnotationMarker
-  ): Promise<any> {
+  public async updateAnnotation(highlight: Annotation): Promise<any> {
+    if (this.api?.updateAnnotation) {
+      this.api.updateAnnotation(highlight).then(async () => {
+        this.updateLocalHighlight(highlight);
+      });
+    } else {
+      this.updateLocalHighlight(highlight);
+    }
+  }
+
+  // @ts-ignore
+  public async saveAnnotation(highlight: IHighlight): Promise<Annotation> {
     if (this.annotator) {
       var tocItem = this.publication.getTOCItem(
         this.delegate.currentChapterLink.href
@@ -263,8 +424,6 @@ export default class AnnotationModule implements ReaderModule {
           created: new Date(),
           title: this.delegate.currentChapterLink.title,
           highlight: highlight,
-          color: this.highlighter.getColor(),
-          marker: marker,
           text: {
             highlight: highlight.selectionInfo.cleanText,
           },
@@ -280,8 +439,6 @@ export default class AnnotationModule implements ReaderModule {
           type: this.delegate.currentChapterLink.type,
           title: this.delegate.currentChapterLink.title,
           highlight: highlight,
-          color: this.highlighter.getColor(),
-          marker: marker,
           text: {
             highlight: highlight.selectionInfo.cleanText,
           },
@@ -289,18 +446,16 @@ export default class AnnotationModule implements ReaderModule {
       }
 
       if (this.api?.addAnnotation) {
-        this.api.addAnnotation(annotation).then(async (result) => {
-          annotation.id = result.id;
-          var saved = await this.annotator.saveAnnotation(annotation);
-          await this.showHighlights();
-          await this.drawHighlights();
-          return saved;
-        });
-      } else {
-        var saved = await this.annotator.saveAnnotation(annotation);
+        let result = await this.api.addAnnotation(annotation);
+        const saved = await this.annotator.saveAnnotation(result);
         await this.showHighlights();
         await this.drawHighlights();
-        return saved;
+        return new Promise<Annotation>((resolve) => resolve(saved));
+      } else {
+        const saved = await this.annotator.saveAnnotation(annotation);
+        await this.showHighlights();
+        await this.drawHighlights();
+        return new Promise<Annotation>((resolve) => resolve(saved));
       }
     } else {
       return new Promise<any>((resolve) => resolve(null));
@@ -320,8 +475,12 @@ export default class AnnotationModule implements ReaderModule {
     if (this.annotator) {
       highlights = (await this.annotator.getAnnotations()) as Array<any>;
       if (highlights) {
+        highlights = highlights.filter(
+          (rangeRepresentation) =>
+            rangeRepresentation.highlight.marker !== AnnotationMarker.Bookmark
+        );
+
         highlights.forEach((rangeRepresentation) => {
-          rangeRepresentation.highlight.marker = rangeRepresentation.marker;
           _highlights.push(rangeRepresentation.highlight);
         });
       }
@@ -334,7 +493,7 @@ export default class AnnotationModule implements ReaderModule {
       );
   }
 
-  async drawHighlights(search: boolean = true): Promise<void> {
+  async drawHighlights(): Promise<void> {
     if (this.rights?.enableAnnotations && this.highlighter) {
       if (this.api) {
         let highlights: Array<any> = [];
@@ -346,13 +505,9 @@ export default class AnnotationModule implements ReaderModule {
           highlights &&
           this.delegate.iframes[0].contentDocument.readyState === "complete"
         ) {
-          await this.highlighter.destroyAllhighlights(
-            this.delegate.iframes[0].contentDocument
-          );
+          await this.highlighter.destroyHighlights(HighlightType.Annotation);
 
-          highlights.forEach(async (rangeRepresentation) => {
-            rangeRepresentation.highlight.marker = rangeRepresentation.marker;
-
+          for (const rangeRepresentation of highlights) {
             _highlights.push(rangeRepresentation.highlight);
 
             const annotation: Annotation = rangeRepresentation;
@@ -378,14 +533,48 @@ export default class AnnotationModule implements ReaderModule {
             }
 
             if (annotation.href === href) {
-              this.highlighter.setColor(annotation.color);
-
               await this.highlighter.createHighlightDom(
                 this.delegate.iframes[0].contentWindow as any,
                 rangeRepresentation.highlight
               );
+
+              setTimeout(async () => {
+                if (
+                  annotation.highlight.marker === AnnotationMarker.Underline
+                ) {
+                  const position = await this.annotator.getAnnotationPosition(
+                    rangeRepresentation.id,
+                    this.delegate.iframes[0].contentWindow as any
+                  );
+
+                  const commentTemplate =
+                    `<div class="comment" style="top: ` +
+                    position +
+                    `px;width:20px"></div>`;
+
+                  let comment: HTMLDivElement = document.createElement("div");
+                  comment.innerHTML = commentTemplate;
+                  let div = comment.childNodes[0] as HTMLDivElement;
+                  let icon: HTMLElement = document.createElement("i");
+                  icon.innerHTML = "sticky_note_2";
+                  icon.className = "material-icons";
+                  icon.style.color = annotation.highlight.color;
+
+                  div.appendChild(icon);
+
+                  addEventListenerOptional(
+                    comment,
+                    "click",
+                    (event: MouseEvent) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      this.scrollToHighlight(annotation.id);
+                    }
+                  );
+                }
+              }, 100);
             }
-          });
+          }
         }
       } else {
         let highlights: Array<any> = [];
@@ -397,13 +586,9 @@ export default class AnnotationModule implements ReaderModule {
           highlights &&
           this.delegate.iframes[0].contentDocument.readyState === "complete"
         ) {
-          await this.highlighter.destroyAllhighlights(
-            this.delegate.iframes[0].contentDocument
-          );
+          await this.highlighter.destroyHighlights(HighlightType.Annotation);
 
-          highlights.forEach(async (rangeRepresentation) => {
-            rangeRepresentation.highlight.marker = rangeRepresentation.marker;
-
+          for (const rangeRepresentation of highlights) {
             _highlights.push(rangeRepresentation.highlight);
 
             const annotation: Annotation = rangeRepresentation;
@@ -429,22 +614,49 @@ export default class AnnotationModule implements ReaderModule {
             }
 
             if (annotation.href === href) {
-              this.highlighter.setColor(annotation.color);
-
               await this.highlighter.createHighlightDom(
                 this.delegate.iframes[0].contentWindow as any,
                 rangeRepresentation.highlight
               );
+
+              setTimeout(async () => {
+                if (
+                  annotation.highlight.marker === AnnotationMarker.Underline
+                ) {
+                  const position = await this.annotator.getAnnotationPosition(
+                    rangeRepresentation.id,
+                    this.delegate.iframes[0].contentWindow as any
+                  );
+
+                  const commentTemplate =
+                    `<div class="comment" style="top: ` +
+                    position +
+                    `px;background: ` +
+                    annotation.highlight.color +
+                    `;width:20px"></div>`;
+
+                  let comment: HTMLDivElement = document.createElement("div");
+                  comment.innerHTML = commentTemplate;
+                  (comment.childNodes[0] as HTMLDivElement).innerHTML =
+                    IconLib.note;
+                  addEventListenerOptional(
+                    comment,
+                    "click",
+                    (event: MouseEvent) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      this.scrollToHighlight(annotation.id);
+                    }
+                  );
+                }
+              }, 100);
             }
-          });
+          }
         }
       }
       if (this.properties?.initialAnnotationColor) {
         this.highlighter.setColor(this.properties?.initialAnnotationColor);
       }
-    }
-    if (search && this.rights?.enableSearch) {
-      this.delegate.searchModule.drawSearch();
     }
   }
 
@@ -524,33 +736,39 @@ export default class AnnotationModule implements ReaderModule {
                   marker.innerHTML = locator.highlight.selectionInfo.cleanText;
 
                   if (
-                    (locator as Annotation).marker ===
+                    (locator as Annotation).highlight.marker ===
                     AnnotationMarker.Underline
                   ) {
-                    if (typeof (locator as Annotation).color === "object") {
+                    if (
+                      typeof (locator as Annotation).highlight.color ===
+                      "object"
+                    ) {
                       marker.style.setProperty(
                         "border-bottom",
                         `2px solid ${TextHighlighter.hexToRgbA(
-                          (locator as Annotation).color
+                          (locator as Annotation).highlight.color
                         )}`,
                         "important"
                       );
                     } else {
                       marker.style.setProperty(
                         "border-bottom",
-                        `2px solid ${(locator as Annotation).color}`,
+                        `2px solid ${(locator as Annotation).highlight.color}`,
                         "important"
                       );
                     }
                   } else {
-                    if (typeof (locator as Annotation).color === "object") {
+                    if (
+                      typeof (locator as Annotation).highlight.color ===
+                      "object"
+                    ) {
                       marker.style.backgroundColor = TextHighlighter.hexToRgbA(
-                        (locator as Annotation).color
+                        (locator as Annotation).highlight.color
                       );
                     } else {
                       marker.style.backgroundColor = (
                         locator as Annotation
-                      ).color;
+                      ).highlight.color;
                     }
                   }
                   title.appendChild(marker);
@@ -673,5 +891,9 @@ export default class AnnotationModule implements ReaderModule {
 
   public async getAnnotation(highlight: IHighlight): Promise<any> {
     return this.annotator.getAnnotation(highlight);
+  }
+
+  public async getAnnotationByID(id: string): Promise<any> {
+    return this.annotator.getAnnotationByID(id);
   }
 }

@@ -44,7 +44,7 @@ export default class FixedBookView implements BookView {
     return 0;
   }
 
-  goToPosition(_position: number): void {}
+  goToProgression(_position: number): void {}
 
   goToCssSelector(_cssSelector: string, _relative?: boolean): void {}
 
@@ -58,5 +58,15 @@ export default class FixedBookView implements BookView {
 
   getPageCount(): number {
     return 1;
+  }
+
+  setSize(): void {}
+
+  isPaginated() {
+    return true;
+  }
+
+  isScrollMode() {
+    return false;
   }
 }

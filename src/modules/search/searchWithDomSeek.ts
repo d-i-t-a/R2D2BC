@@ -19,7 +19,10 @@
 
 import { convertRange } from "../highlight/renderer/iframe/selection";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
-import { IRangeInfo } from "../highlight/common/selection";
+import {
+  _getCssSelectorOptions,
+  IRangeInfo,
+} from "../highlight/common/selection";
 
 export interface ISearchResult {
   rangeInfo: IRangeInfo;
@@ -58,18 +61,6 @@ export const reset = () => {
 };
 const getCount = counter();
 
-const _getCssSelectorOptions = {
-  className: (_str: string) => {
-    return true;
-  },
-  idName: (_str: string) => {
-    return true;
-  },
-  tagName: (_str: string) => {
-    return true;
-  },
-};
-
 const getCssSelector_ =
   (doc: Document) =>
   (element: Element): string => {
@@ -85,7 +76,8 @@ export async function searchDocDomSeek(
   searchInput: string,
   doc: Document,
   href: string,
-  title: string
+  title: string,
+  fullWordSearch: boolean = false
 ): Promise<ISearchResult[]> {
   const text = doc.body.textContent;
   if (!text) {
@@ -101,10 +93,18 @@ export async function searchDocDomSeek(
     acceptNode: (_node) => NodeFilter.FILTER_ACCEPT,
   });
 
-  const regexp = new RegExp(
+  let regexp = new RegExp(
     escapeRegExp(searchInput).replace(/ /g, "\\s+"),
     "gim"
   );
+
+  if (fullWordSearch) {
+    regexp = new RegExp(
+      "\\b" + escapeRegExp(searchInput).replace(/ /g, "\\s+") + "\\b",
+      "gim"
+    );
+  }
+
   const searchResults: ISearchResult[] = [];
   const snippetLength = 100;
   const snippetLengthNormalized = 30;

@@ -17,7 +17,7 @@
  * Licensed to: Bibliotheca LLC under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { Publication } from "../../model/Publication";
 import IFrameNavigator from "../../navigator/IFrameNavigator";
 import ReaderModule from "../ReaderModule";
@@ -50,6 +50,7 @@ export interface MediaOverlayModuleProperties {
   autoTurn?: boolean;
   volume?: number;
   wait?: number;
+  hideLayer?: boolean;
 }
 export interface MediaOverlayModuleConfig extends MediaOverlayModuleProperties {
   publication: Publication;

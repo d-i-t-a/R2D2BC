@@ -27,9 +27,38 @@ import {
   JSONable,
 } from "../../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
+import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
+import TextHighlighter from "../highlight/TextHighlighter";
 import { addEventListenerOptional } from "../../utils/EventHandler";
-import { TTSModuleAPI, TTSModuleProperties } from "./TTSModule";
+
+export interface TTSModuleAPI {
+  started: any;
+  stopped: any;
+  paused: any;
+  resumed: any;
+  finished: any;
+  updateSettings: any;
+}
+export interface TTSModuleProperties {
+  enableSplitter?: boolean;
+  color?: string;
+  autoScroll?: boolean;
+  rate?: number;
+  pitch?: number;
+  volume?: number;
+  voice?: TTSVoice;
+  hideLayer?: boolean;
+}
+
+export interface TTSModuleConfig extends TTSModuleProperties {
+  delegate: IFrameNavigator;
+  headerMenu: HTMLElement;
+  rights: ReaderRights;
+  tts: TTSSettings;
+  highlighter: TextHighlighter;
+  api: TTSModuleAPI;
+}
 
 export class TTSREFS {
   static readonly COLOR_REF = "color";
@@ -86,11 +115,8 @@ export class TTSSettings implements ITTSUserSettings {
 
   userProperties: UserProperties;
 
-  private rateButtons: { [key: string]: HTMLButtonElement };
-  private pitchButtons: { [key: string]: HTMLButtonElement };
-  private volumeButtons: { [key: string]: HTMLButtonElement };
-
   private settingsChangeCallback: (key?: string) => void = () => {};
+  private restartCallback: (key?: string) => void = () => {};
 
   private settingsView: HTMLDivElement;
   private readonly headerMenu: HTMLElement;
@@ -215,28 +241,6 @@ export class TTSSettings implements ITTSUserSettings {
   }
 
   private renderControls(element: HTMLElement): void {
-    this.rateButtons = {};
-    for (const rateName of ["decrease", "increase"]) {
-      this.rateButtons[rateName] = HTMLUtilities.findElement(
-        element,
-        "#" + rateName + "-rate"
-      ) as HTMLButtonElement;
-    }
-    this.pitchButtons = {};
-    for (const pitchName of ["decrease", "increase"]) {
-      this.pitchButtons[pitchName] = HTMLUtilities.findElement(
-        element,
-        "#" + pitchName + "-pitch"
-      ) as HTMLButtonElement;
-    }
-    this.volumeButtons = {};
-    for (const volumeName of ["decrease", "increase"]) {
-      this.volumeButtons[volumeName] = HTMLUtilities.findElement(
-        element,
-        "#" + volumeName + "-volume"
-      ) as HTMLButtonElement;
-    }
-
     if (this.headerMenu)
       this.speechRate = HTMLUtilities.findElement(
         this.headerMenu,
@@ -259,8 +263,6 @@ export class TTSSettings implements ITTSUserSettings {
         "#autoScroll"
       ) as HTMLInputElement;
 
-    this.setupEvents();
-
     if (this.speechRate) this.speechRate.value = this.rate.toString();
     if (this.speechPitch) this.speechPitch.value = this.pitch.toString();
     if (this.speechVolume) this.speechVolume.value = this.volume.toString();
@@ -280,85 +282,8 @@ export class TTSSettings implements ITTSUserSettings {
     this.settingsChangeCallback = callback;
   }
 
-  private async setupEvents(): Promise<void> {
-    addEventListenerOptional(
-      this.rateButtons["decrease"],
-      "click",
-      (event: MouseEvent) => {
-        if (IS_DEV) console.log(TTSREFS.RATE_REF);
-        (
-          this.userProperties.getByRef(TTSREFS.RATE_REF) as Incremental
-        ).decrement();
-        this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
-        this.settingsChangeCallback();
-        event.preventDefault();
-      }
-    );
-    addEventListenerOptional(
-      this.rateButtons["increase"],
-      "click",
-      (event: MouseEvent) => {
-        if (IS_DEV) console.log(TTSREFS.RATE_REF);
-        (
-          this.userProperties.getByRef(TTSREFS.RATE_REF) as Incremental
-        ).increment();
-        this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
-        this.settingsChangeCallback();
-        event.preventDefault();
-      }
-    );
-    addEventListenerOptional(
-      this.pitchButtons["decrease"],
-      "click",
-      (event: MouseEvent) => {
-        if (IS_DEV) console.log(TTSREFS.PITCH_REF);
-        (
-          this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental
-        ).decrement();
-        this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
-        this.settingsChangeCallback();
-        event.preventDefault();
-      }
-    );
-    addEventListenerOptional(
-      this.pitchButtons["increase"],
-      "click",
-      (event: MouseEvent) => {
-        if (IS_DEV) console.log(TTSREFS.PITCH_REF);
-        (
-          this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental
-        ).increment();
-        this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
-        this.settingsChangeCallback();
-        event.preventDefault();
-      }
-    );
-    addEventListenerOptional(
-      this.volumeButtons["decrease"],
-      "click",
-      (event: MouseEvent) => {
-        if (IS_DEV) console.log(TTSREFS.VOLUME_REF);
-        (
-          this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental
-        ).decrement();
-        this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
-        this.settingsChangeCallback();
-        event.preventDefault();
-      }
-    );
-    addEventListenerOptional(
-      this.volumeButtons["increase"],
-      "click",
-      (event: MouseEvent) => {
-        if (IS_DEV) console.log(TTSREFS.VOLUME_REF);
-        (
-          this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental
-        ).increment();
-        this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
-        this.settingsChangeCallback();
-        event.preventDefault();
-      }
-    );
+  public onRestart(callback: () => void) {
+    this.restartCallback = callback;
   }
 
   private async storeProperty(property: UserProperty): Promise<void> {
@@ -468,6 +393,7 @@ export class TTSSettings implements ITTSUserSettings {
     await this.store.remove(this.TTSSETTINGS);
     await this.reset();
     this.settingsChangeCallback();
+    this.restartCallback();
   }
 
   async applyTTSSettings(ttsSettings: ITTSUserSettings): Promise<void> {
@@ -477,6 +403,7 @@ export class TTSSettings implements ITTSUserSettings {
       this.userProperties.getByRef(TTSREFS.RATE_REF).value = this.rate;
       await this.saveProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
       this.settingsChangeCallback();
+      this.restartCallback();
     }
     if (ttsSettings.pitch) {
       if (IS_DEV) console.log("pitch " + this.pitch);
@@ -484,6 +411,7 @@ export class TTSSettings implements ITTSUserSettings {
       this.userProperties.getByRef(TTSREFS.PITCH_REF).value = this.pitch;
       await this.saveProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
       this.settingsChangeCallback();
+      this.restartCallback();
     }
     if (ttsSettings.volume) {
       if (IS_DEV) console.log("volume " + this.volume);
@@ -491,6 +419,7 @@ export class TTSSettings implements ITTSUserSettings {
       this.userProperties.getByRef(TTSREFS.VOLUME_REF).value = this.volume;
       await this.saveProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
       this.settingsChangeCallback();
+      this.restartCallback();
     }
 
     if (ttsSettings.color) {
@@ -515,6 +444,7 @@ export class TTSSettings implements ITTSUserSettings {
       this.userProperties.getByRef(TTSREFS.VOICE_REF).value = this.voice;
       await this.saveProperty(this.userProperties.getByRef(TTSREFS.VOICE_REF));
       this.settingsChangeCallback();
+      this.restartCallback();
     }
   }
 
@@ -555,6 +485,7 @@ export class TTSSettings implements ITTSUserSettings {
       this.userProperties.getByRef(TTSREFS.VOICE_REF).value = this.voice;
       await this.saveProperty(this.userProperties.getByRef(TTSREFS.VOICE_REF));
       this.settingsChangeCallback();
+      this.restartCallback();
     }
   }
 
@@ -565,18 +496,21 @@ export class TTSSettings implements ITTSUserSettings {
       ).increment();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
       this.settingsChangeCallback();
+      this.restartCallback();
     } else if (incremental === "pitch") {
       (
         this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental
       ).increment();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
       this.settingsChangeCallback();
+      this.restartCallback();
     } else if (incremental === "volume") {
       (
         this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental
       ).increment();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
       this.settingsChangeCallback();
+      this.restartCallback();
     }
   }
 
@@ -587,18 +521,21 @@ export class TTSSettings implements ITTSUserSettings {
       ).decrement();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
       this.settingsChangeCallback();
+      this.restartCallback();
     } else if (incremental === "pitch") {
       (
         this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental
       ).decrement();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
       this.settingsChangeCallback();
+      this.restartCallback();
     } else if (incremental === "volume") {
       (
         this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental
       ).decrement();
       this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
       this.settingsChangeCallback();
+      this.restartCallback();
     }
   }
 }

@@ -38,22 +38,28 @@ import { Publication } from "./model/Publication";
 import { convertAndCamel, Link } from "./model/Link";
 import { TaJsonDeserialize } from "./utils/JsonUtil";
 import { MediaOverlaySettings } from "./modules/mediaoverlays/MediaOverlaySettings";
+import ReaderModule from "./modules/ReaderModule";
+import TTSModule2 from "./modules/TTS/TTSModule2";
+import PageBreakModule from "./modules/pagebreak/PageBreakModule";
+import DefinitionsModule from "./modules/search/DefinitionsModule";
+import { IS_DEV } from "./utils";
+import { LayerSettings } from "./modules/highlight/LayerSettings";
 
 let D2Settings: UserSettings;
+let D2Layers: LayerSettings;
 let D2TTSSettings: TTSSettings;
 let D2MediaOverlaySettings: MediaOverlaySettings;
 let D2Navigator: IFrameNavigator;
 let D2Highlighter: TextHighlighter;
 let BookmarkModuleInstance: BookmarkModule;
 let AnnotationModuleInstance: AnnotationModule;
-let TTSModuleInstance: TTSModule;
+let TTSModuleInstance: ReaderModule;
 let SearchModuleInstance: SearchModule;
+let DefinitionsModuleInstance: DefinitionsModule;
 let ContentProtectionModuleInstance: ContentProtectionModule;
 let TimelineModuleInstance: TimelineModule;
 let MediaOverlayModuleInstance: MediaOverlayModule;
-
-export const IS_DEV =
-  process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
+let PageBreakModuleInstance: PageBreakModule;
 
 export async function unload() {
   if (IS_DEV) {
@@ -64,7 +70,11 @@ export async function unload() {
   await D2Settings.stop();
   if (D2Navigator.rights?.enableTTS) {
     await D2TTSSettings.stop();
-    await TTSModuleInstance.stop();
+    if (D2TTSSettings.enableSplitter) {
+      await (TTSModuleInstance as TTSModule).stop();
+    } else {
+      await (TTSModuleInstance as TTSModule2).stop();
+    }
   }
   if (D2Navigator.rights?.enableBookmarks) {
     await BookmarkModuleInstance.stop();
@@ -74,6 +84,9 @@ export async function unload() {
   }
   if (D2Navigator.rights?.enableSearch) {
     await SearchModuleInstance.stop();
+  }
+  if (D2Navigator.rights?.enableDefinitions) {
+    await DefinitionsModuleInstance.stop();
   }
   if (D2Navigator.rights?.enableContentProtection) {
     await ContentProtectionModuleInstance.stop();
@@ -85,6 +98,7 @@ export async function unload() {
     await D2MediaOverlaySettings.stop();
     await MediaOverlayModuleInstance.stop();
   }
+  await PageBreakModuleInstance.stop();
 }
 exports.unload = async function () {
   await unload();
@@ -98,6 +112,47 @@ export function hasMediaOverlays() {
 exports.hasMediaOverlays = function () {
   return hasMediaOverlays();
 };
+
+/**
+ * Read Along
+ */
+export function startReadAlong() {
+  if (IS_DEV) {
+    console.log("startReadAlong");
+  }
+  return D2Navigator.startReadAlong();
+}
+exports.startReadAlong = function () {
+  return startReadAlong();
+};
+export function stopReadAlong() {
+  if (IS_DEV) {
+    console.log("stopReadAlong");
+  }
+  return D2Navigator.stopReadAlong();
+}
+exports.stopReadAlong = function () {
+  return stopReadAlong();
+};
+export function pauseReadAlong() {
+  if (IS_DEV) {
+    console.log("pauseReadAlong");
+  }
+  return D2Navigator.pauseReadAlong();
+}
+exports.pauseReadAlong = function () {
+  return pauseReadAlong();
+};
+export function resumeReadAlong() {
+  if (IS_DEV) {
+    console.log("resumeReadAlong");
+  }
+  return D2Navigator.resumeReadAlong();
+}
+exports.resumeReadAlong = function () {
+  return resumeReadAlong();
+};
+
 export function startReadAloud() {
   if (IS_DEV) {
     console.log("startReadAloud");
@@ -133,6 +188,17 @@ export function resumeReadAloud() {
 }
 exports.resumeReadAloud = function () {
   return resumeReadAloud();
+};
+export function saveBookmarkPlus() {
+  if (D2Navigator.rights?.enableBookmarks) {
+    if (IS_DEV) {
+      console.log("saveBookmarkPlus");
+    }
+    return BookmarkModuleInstance.saveBookmarkPlus();
+  }
+}
+exports.saveBookmarkPlus = function () {
+  return saveBookmarkPlus();
 };
 export async function saveBookmark() {
   if (D2Navigator.rights?.enableBookmarks) {
@@ -550,6 +616,71 @@ export function applyAttributes(value) {
 exports.applyAttributes = function (value) {
   applyAttributes(value);
 };
+export function hideAnnotationLayer() {
+  if (IS_DEV) {
+    console.log("hideAnnotationLayer");
+  }
+  if (AnnotationModuleInstance) {
+    AnnotationModuleInstance.hideAnnotationLayer();
+  }
+}
+exports.hideAnnotationLayer = function () {
+  hideAnnotationLayer();
+};
+export function showAnnotationLayer() {
+  if (IS_DEV) {
+    console.log("showAnnotationLayer");
+  }
+  if (AnnotationModuleInstance) {
+    AnnotationModuleInstance.showAnnotationLayer();
+  }
+}
+exports.showAnnotationLayer = function () {
+  showAnnotationLayer();
+};
+
+export function hideLayer(layer) {
+  if (IS_DEV) {
+    console.log("hideLayer");
+  }
+  D2Navigator.hideLayer(layer);
+}
+exports.hideLayer = function (layer) {
+  hideLayer(layer);
+};
+export function showLayer(layer) {
+  if (IS_DEV) {
+    console.log("showLayer");
+  }
+  D2Navigator.showLayer(layer);
+}
+exports.showLayer = function (layer) {
+  showLayer(layer);
+};
+
+export async function clearDefinitions() {
+  if (IS_DEV) {
+    console.log("clearDefinitions");
+  }
+  if (DefinitionsModuleInstance) {
+    await DefinitionsModuleInstance.clearDefinitions();
+  }
+}
+exports.clearDefinitions = async function () {
+  await clearDefinitions();
+};
+export async function addDefinition(definition) {
+  if (IS_DEV) {
+    console.log("addDefinition");
+  }
+  if (DefinitionsModuleInstance) {
+    await DefinitionsModuleInstance.addDefinition(definition);
+  }
+}
+exports.addDefinition = async function (definition) {
+  await addDefinition(definition);
+};
+
 // currently not used or functional
 export function snapToElement(value) {
   if (IS_DEV) {
@@ -559,6 +690,26 @@ export function snapToElement(value) {
 }
 exports.snapToElement = function (value) {
   snapToElement(value);
+};
+
+export function activateMarker(id, position) {
+  if (IS_DEV) {
+    console.log("activateMarker");
+  }
+  D2Navigator.activateMarker(id, position);
+}
+exports.activateMarker = function (id, position) {
+  activateMarker(id, position);
+};
+
+export function deactivateMarker() {
+  if (IS_DEV) {
+    console.log("deactivateMarker");
+  }
+  D2Navigator.deactivateMarker();
+}
+exports.deactivateMarker = function () {
+  deactivateMarker();
 };
 export async function load(config: ReaderConfig): Promise<any> {
   if (config.rights?.enableContentProtection) {
@@ -578,6 +729,10 @@ export async function load(config: ReaderConfig): Promise<any> {
 
   let settingsStore = new LocalStorageStore({
     prefix: "r2d2bc-reader",
+    useLocalStorage: config.useLocalStorage,
+  });
+  let layerStore = new LocalStorageStore({
+    prefix: "r2d2bc-layers",
     useLocalStorage: config.useLocalStorage,
   });
 
@@ -708,6 +863,8 @@ export async function load(config: ReaderConfig): Promise<any> {
     }
   }
 
+  D2Layers = await LayerSettings.create({ store: layerStore });
+
   // Settings
   D2Settings = await UserSettings.create({
     store: settingsStore,
@@ -749,12 +906,11 @@ export async function load(config: ReaderConfig): Promise<any> {
   });
 
   // Highlighter
-  if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
-    D2Highlighter = await TextHighlighter.create({
-      delegate: D2Navigator,
-      ...config.highlighter,
-    });
-  }
+  D2Highlighter = await TextHighlighter.create({
+    delegate: D2Navigator,
+    layerSettings: D2Layers,
+    ...config.highlighter,
+  });
 
   // Bookmark Module
   if (config.rights?.enableBookmarks) {
@@ -791,14 +947,25 @@ export async function load(config: ReaderConfig): Promise<any> {
       headerMenu: headerMenu,
       ...config.tts,
     });
-    TTSModuleInstance = await TTSModule.create({
-      delegate: D2Navigator,
-      tts: D2TTSSettings,
-      headerMenu: headerMenu,
-      rights: config.rights,
-      highlighter: D2Highlighter,
-      ...config.tts,
-    });
+    if (config.tts.enableSplitter) {
+      TTSModuleInstance = await TTSModule.create({
+        delegate: D2Navigator,
+        tts: D2TTSSettings,
+        headerMenu: headerMenu,
+        rights: config.rights,
+        highlighter: D2Highlighter,
+        ...config.tts,
+      });
+    } else {
+      TTSModuleInstance = await TTSModule2.create({
+        delegate: D2Navigator,
+        tts: D2TTSSettings,
+        headerMenu: headerMenu,
+        rights: config.rights,
+        highlighter: D2Highlighter,
+        ...config.tts,
+      });
+    }
   }
 
   // Search Module
@@ -813,6 +980,18 @@ export async function load(config: ReaderConfig): Promise<any> {
       SearchModuleInstance = searchModule;
     });
   }
+
+  if (config.rights?.enableDefinitions) {
+    DefinitionsModule.create({
+      delegate: D2Navigator,
+      publication: publication,
+      highlighter: D2Highlighter,
+      ...config.define,
+    }).then(function (definitionsModule) {
+      DefinitionsModuleInstance = definitionsModule;
+    });
+  }
+
   // Timeline Module
   if (config.rights?.enableTimeline) {
     TimelineModule.create({
@@ -847,6 +1026,16 @@ export async function load(config: ReaderConfig): Promise<any> {
       delegate: D2Navigator,
       ...config.mediaOverlays,
     });
+  }
+  if (config.rights?.enablePageBreaks ?? true) {
+    if ((publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed") {
+      PageBreakModuleInstance = await PageBreakModule.create({
+        publication: publication,
+        headerMenu: headerMenu,
+        delegate: D2Navigator,
+        ...config.pagebreak,
+      });
+    }
   }
 
   return new Promise((resolve) => resolve(D2Navigator));

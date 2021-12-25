@@ -25,16 +25,22 @@ import {
   addEventListenerOptional,
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
-import { Locator, Locations } from "../../model/Locator";
-import { IS_DEV } from "../..";
-import { searchDocDomSeek, reset } from "./searchWithDomSeek";
-import TextHighlighter from "../highlight/TextHighlighter";
+import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
+import { IS_DEV } from "../../utils";
+import { reset, searchDocDomSeek } from "./searchWithDomSeek";
+import TextHighlighter, {
+  DEFAULT_BACKGROUND_COLOR,
+} from "../highlight/TextHighlighter";
+import { HighlightType, IHighlight } from "../highlight/common/highlight";
+import { ISelectionInfo } from "../highlight/common/selection";
+import { SHA256 } from "jscrypto";
 
 export interface SearchModuleAPI {}
 
 export interface SearchModuleProperties {
-  color: string;
-  current: string;
+  color?: string;
+  current?: string;
+  hideLayer?: boolean;
 }
 
 export interface SearchModuleConfig extends SearchModuleProperties {
@@ -46,7 +52,7 @@ export interface SearchModuleConfig extends SearchModuleProperties {
 }
 
 export default class SearchModule implements ReaderModule {
-  private properties: SearchModuleProperties;
+  properties: SearchModuleProperties;
   // @ts-ignore
   private api: SearchModuleAPI;
   private publication: Publication;
@@ -56,7 +62,7 @@ export default class SearchModule implements ReaderModule {
   private searchGo: HTMLElement;
   private currentChapterSearchResult: any = [];
   private bookSearchResult: any = [];
-  private currentHighlights: any = [];
+  private currentSearchHighlights: any = [];
   private highlighter: TextHighlighter;
 
   public static async create(config: SearchModuleConfig) {
@@ -136,6 +142,11 @@ export default class SearchModule implements ReaderModule {
       ) as HTMLLinkElement;
       if (menuSearch) menuSearch.parentElement.style.removeProperty("display");
     }
+    setTimeout(() => {
+      this.properties.hideLayer
+        ? this.delegate.hideLayer("search")
+        : this.delegate.showLayer("search");
+    }, 10);
   }
 
   private async handleSearch(event: any): Promise<void> {
@@ -156,7 +167,7 @@ export default class SearchModule implements ReaderModule {
     ) as HTMLDivElement;
 
     self.currentChapterSearchResult = [];
-    self.currentHighlights = [];
+    self.currentSearchHighlights = [];
     var localSearchResultChapter: any = [];
     if (this.delegate.rights?.enableContentProtection) {
       this.delegate.contentProtectionModule.deactivate();
@@ -279,6 +290,7 @@ export default class SearchModule implements ReaderModule {
       }
     }
   }
+
   // Search Current Resource
   async searchAndPaintChapter(
     term: string,
@@ -295,15 +307,9 @@ export default class SearchModule implements ReaderModule {
     var localSearchResultChapter: any = [];
 
     // clear search results // needs more works
-    for (const iframe of this.delegate.iframes) {
-      this.highlighter.destroyAllhighlights(iframe.contentDocument);
-    }
-    if (this.delegate.rights?.enableAnnotations) {
-      this.delegate.annotationModule.drawHighlights();
-    } else {
-      if (this.delegate.rights?.enableSearch) {
-        this.drawSearch();
-      }
+    this.highlighter.destroyHighlights(HighlightType.Search);
+    if (this.delegate.rights?.enableSearch) {
+      this.drawSearch();
     }
     var i = 0;
 
@@ -332,13 +338,13 @@ export default class SearchModule implements ReaderModule {
             setTimeout(() => {
               var highlight;
               if (i === index) {
-                highlight = this.highlighter.createSearchHighlight(
+                highlight = this.createSearchHighlight(
                   selectionInfo,
                   this.properties?.current
                 );
                 this.jumpToMark(index);
               } else {
-                highlight = this.highlighter.createSearchHighlight(
+                highlight = this.createSearchHighlight(
                   selectionInfo,
                   this.properties?.color
                 );
@@ -346,7 +352,7 @@ export default class SearchModule implements ReaderModule {
               searchItem.highlight = highlight;
               localSearchResultChapter.push(searchItem);
               this.currentChapterSearchResult.push(searchItem);
-              this.currentHighlights.push(highlight);
+              this.currentSearchHighlights.push(highlight);
               i++;
             }, 500);
           });
@@ -356,19 +362,54 @@ export default class SearchModule implements ReaderModule {
         });
       });
   }
-  clearSearch() {
-    this.currentChapterSearchResult = [];
-    this.currentHighlights = [];
-    for (const iframe of this.delegate.iframes) {
-      this.highlighter.destroyAllhighlights(iframe.contentDocument);
-    }
-    if (this.delegate.rights?.enableAnnotations) {
-      this.delegate.annotationModule.drawHighlights();
+
+  createSearchHighlight(selectionInfo: ISelectionInfo, color: string) {
+    try {
+      var createColor: any = color;
+      if (TextHighlighter.isHexColor(createColor)) {
+        createColor = TextHighlighter.hexToRgbChannels(createColor);
+      }
+
+      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
+      const sha256Hex = SHA256.hash(uniqueStr);
+      const id = "R2_SEARCH_" + sha256Hex;
+
+      var pointerInteraction = false;
+      const highlight: IHighlight = {
+        color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
+        id,
+        pointerInteraction,
+        selectionInfo,
+        marker: AnnotationMarker.Highlight,
+        type: HighlightType.Search,
+      };
+
+      let highlightDom = this.highlighter.createHighlightDom(
+        this.delegate.iframes[0].contentWindow as any,
+        highlight
+      );
+      highlight.position = parseInt(
+        (
+          (highlightDom.hasChildNodes
+            ? highlightDom.childNodes[0]
+            : highlightDom) as HTMLDivElement
+        ).style.top.replace("px", "")
+      );
+      return highlight;
+    } catch (e) {
+      throw "Can't create highlight: " + e;
     }
   }
-  async search(term: any, current: boolean): Promise<any> {
+
+  clearSearch() {
     this.currentChapterSearchResult = [];
-    this.currentHighlights = [];
+    this.currentSearchHighlights = [];
+    this.highlighter.destroyHighlights(HighlightType.Search);
+  }
+
+  async search(term: string, current: boolean): Promise<any> {
+    this.currentChapterSearchResult = [];
+    this.currentSearchHighlights = [];
     this.bookSearchResult = [];
     reset();
 
@@ -731,7 +772,7 @@ export default class SearchModule implements ReaderModule {
 
   drawSearch() {
     setTimeout(() => {
-      this.currentHighlights = [];
+      this.currentSearchHighlights = [];
       this.currentChapterSearchResult.forEach((searchItem) => {
         var selectionInfo = {
           rangeInfo: searchItem.rangeInfo,
@@ -739,20 +780,18 @@ export default class SearchModule implements ReaderModule {
           rawText: null,
           range: null,
         };
-        var highlight = this.highlighter.createSearchHighlight(
+        var highlight = this.createSearchHighlight(
           selectionInfo,
           this.properties?.color
         );
         searchItem.highlight = highlight;
-        this.currentHighlights.push(highlight);
+        this.currentSearchHighlights.push(highlight);
       });
     }, 100);
   }
 
   async handleResize() {
-    for (const iframe of this.delegate.iframes) {
-      await this.highlighter.destroyAllhighlights(iframe.contentDocument);
-    }
+    await this.highlighter.destroyHighlights(HighlightType.Search);
     this.drawSearch();
   }
 
@@ -760,7 +799,7 @@ export default class SearchModule implements ReaderModule {
     setTimeout(() => {
       if (this.currentChapterSearchResult.length) {
         var current = this.currentChapterSearchResult[index];
-        this.currentHighlights.forEach((highlight) => {
+        this.currentSearchHighlights.forEach((highlight) => {
           var createColor: any = this.properties?.color;
           if (TextHighlighter.isHexColor(createColor)) {
             createColor = TextHighlighter.hexToRgbChannels(createColor);
@@ -774,7 +813,7 @@ export default class SearchModule implements ReaderModule {
         current.highlight.color = currentColor;
         this.highlighter.setAndResetSearchHighlight(
           current.highlight,
-          this.currentHighlights
+          this.currentSearchHighlights
         );
 
         this.delegate.view.goToCssSelector(

@@ -23,6 +23,12 @@
     --RS__highlightHoverColor: rgba(255, 255, 0, 0.75);
     --RS__underlineBorderColor: rgba(255, 255, 0, 1);
     --RS__underlineHoverColor: rgba(255, 255, 0, 0.1);
+
+    --RS__definitionsColor: rgba(255, 111, 111, 0.5);
+    --RS__definitionsMixBlendMode: multiply;
+    --RS__definitionsHoverColor: rgba(255, 111, 111, 0.75);
+    --RS__definitionsUnderlineBorderColor: rgba(255, 111, 111, 1);
+    --RS__definitionsUnderlineHoverColor: rgba(255, 111, 111, 0.1);
 }
 
 .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"] {
@@ -34,7 +40,6 @@
 .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"].hover {
     background-color: var(--RS__highlightHoverColor) !important;
 }
-
 .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"] {
     border-bottom: 2px solid var(--RS__underlineBorderColor);
     mix-blend-mode: var(--RS__highlightMixBlendMode) !important;
@@ -43,6 +48,25 @@
 .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"]:hover,
 .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"].hover {
     background-color: var(--RS__underlineHoverColor) !important;
+}
+
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"] {
+    background-color: var(--RS__definitionsColor) !important;
+    mix-blend-mode: var(--RS__definitionsMixBlendMode) !important;
+    z-index: 1;
+}
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"]:hover,
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"].hover {
+    background-color: var(--RS__definitionsHoverColor) !important;
+}
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"] {
+    border-bottom: 2px solid var(--RS__definitionsUnderlineBorderColor);
+    mix-blend-mode: var(--RS__definitionsMixBlendMode) !important;
+    z-index: 1;
+}
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"]:hover,
+#R2_ID_DEFINITIONS_CONTAINER .R2_CLASS_HIGHLIGHT_AREA[data-marker="1"].hover {
+    background-color: var(--RS__definitionsUnderlineHoverColor) !important;
 }
 
 :root[style] .r2-mo-active,
@@ -184,4 +208,43 @@
     background: rgba(85,85,85,0.5) !important;
     z-index: 2;
     position: relative;
+}
+
+.icon:hover .icon-tooltip {
+    display: block;
+}
+
+.icon-tooltip {
+    display: none;
+    position: absolute;
+    left: 50%;
+    /*top: 50%;*/
+    transform: translate(-50%, -105%);
+    background: #DADADA;
+    padding: 0.25rem 0.5rem;
+    text-overflow: ellipsis;
+    max-width: 22rem;
+    min-width: 100px;
+    font-size: small;
+    z-index: 1000;
+    border: 1px dotted #5b5852;
+}
+
+.icon-tooltip:before, .icon-tooltip:after {
+    content: '';
+    display: block;
+}
+
+.icon-tooltip:before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 5px solid #5b5852;
+    margin-left: -10px;
 }

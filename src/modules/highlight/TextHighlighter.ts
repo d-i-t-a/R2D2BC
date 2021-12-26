@@ -57,6 +57,7 @@ export enum HighlightContainer {
   R2_ID_PAGEBREAK_CONTAINER = "R2_ID_PAGEBREAK_CONTAINER",
   R2_ID_SEARCH_CONTAINER = "R2_ID_SEARCH_CONTAINER",
   R2_ID_DEFINITIONS_CONTAINER = "R2_ID_DEFINITIONS_CONTAINER",
+  R2_ID_LINEFOCUS_CONTAINER = "R2_ID_LINEFOCUS_CONTAINER",
 }
 
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
@@ -118,6 +119,7 @@ const _blacklistIdClassForCssSelectors = [
   HighlightContainer.R2_ID_READALOUD_CONTAINER,
   HighlightContainer.R2_ID_BOOKMAKRS_CONTAINER,
   HighlightContainer.R2_ID_DEFINITIONS_CONTAINER,
+  HighlightContainer.R2_ID_LINEFOCUS_CONTAINER,
   CLASS_HIGHLIGHT_CONTAINER,
   CLASS_HIGHLIGHT_AREA,
   CLASS_HIGHLIGHT_BOUNDING_AREA,
@@ -2492,6 +2494,14 @@ export default class TextHighlighter {
       case HighlightType.Definition:
         container = doc.getElementById(
           HighlightContainer.R2_ID_DEFINITIONS_CONTAINER
+        );
+        if (container) {
+          this.removeAllChildNodes(container);
+        }
+        break;
+      case HighlightType.Lines:
+        container = doc.getElementById(
+          HighlightContainer.R2_ID_LINEFOCUS_CONTAINER
         );
         if (container) {
           this.removeAllChildNodes(container);

@@ -84,6 +84,9 @@ import DefinitionsModule, {
   DefinitionsModuleConfig,
 } from "../modules/search/DefinitionsModule";
 import { Switchable } from "../model/user-settings/UserProperties";
+import LineFocusModule, {
+  LineFocusModuleConfig,
+} from "../modules/linefocus/LineFocusModule";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -163,6 +166,7 @@ export interface ReaderRights {
   autoGeneratePositions?: boolean;
   enableMediaOverlays?: boolean;
   enablePageBreaks?: boolean;
+  enableLineFocus?: boolean;
 }
 
 export interface ReaderUI {
@@ -185,6 +189,7 @@ export interface ReaderConfig {
   pagebreak?: PageBreakModuleConfig;
   annotations?: AnnotationModuleConfig;
   bookmarks?: BookmarkModuleConfig;
+  lineFocus?: LineFocusModuleConfig;
   highlighter?: TextHighlighterConfig;
   injectables: Array<Injectable>;
   injectablesFixed: Array<Injectable>;
@@ -213,6 +218,7 @@ export default class IFrameNavigator implements Navigator {
   timelineModule?: TimelineModule;
   pageBreakModule?: PageBreakModule;
   mediaOverlayModule?: MediaOverlayModule;
+  lineFocusModule?: LineFocusModule;
 
   sideNavExpanded: boolean = false;
   material: boolean = false;
@@ -2808,6 +2814,9 @@ export default class IFrameNavigator implements Navigator {
       if (this.contentProtectionModule !== undefined) {
         this.contentProtectionModule.handleResize();
       }
+      if (this.lineFocusModule !== undefined) {
+        this.lineFocusModule.handleResize();
+      }
     }, 100);
   }
 
@@ -3118,6 +3127,9 @@ export default class IFrameNavigator implements Navigator {
 
         await this.updatePositionInfo();
       } else {
+        if (this.lineFocusModule !== undefined) {
+          this.lineFocusModule.disableLineFocus();
+        }
         if (this.searchModule !== undefined) {
           this.searchModule.clearSearch();
         }

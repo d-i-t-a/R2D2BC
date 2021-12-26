@@ -44,6 +44,7 @@ import PageBreakModule from "./modules/pagebreak/PageBreakModule";
 import DefinitionsModule from "./modules/search/DefinitionsModule";
 import { IS_DEV } from "./utils";
 import { LayerSettings } from "./modules/highlight/LayerSettings";
+import LineFocusModule from "./modules/linefocus/LineFocusModule";
 
 let D2Settings: UserSettings;
 let D2Layers: LayerSettings;
@@ -60,6 +61,7 @@ let ContentProtectionModuleInstance: ContentProtectionModule;
 let TimelineModuleInstance: TimelineModule;
 let MediaOverlayModuleInstance: MediaOverlayModule;
 let PageBreakModuleInstance: PageBreakModule;
+let LineFocusModuleInstance: LineFocusModule;
 
 export async function unload() {
   if (IS_DEV) {
@@ -97,6 +99,9 @@ export async function unload() {
   if (D2Navigator.rights?.enableMediaOverlays) {
     await D2MediaOverlaySettings.stop();
     await MediaOverlayModuleInstance.stop();
+  }
+  if (D2Navigator.rights?.enableLineFocus) {
+    await LineFocusModuleInstance.stop();
   }
   await PageBreakModuleInstance.stop();
 }
@@ -388,6 +393,53 @@ export async function applyUserSettings(userSettings) {
 exports.applyUserSettings = async function (userSettings) {
   await applyUserSettings(userSettings);
 };
+export async function applyLineFocusSettings(userSettings) {
+  if (IS_DEV) {
+    console.log("applyLineFocusSettings");
+  }
+  if (userSettings.lines) {
+    LineFocusModuleInstance.properties.lines = parseInt(userSettings.lines);
+    await LineFocusModuleInstance.enableLineFocus();
+  }
+  if (userSettings.debug !== undefined) {
+    LineFocusModuleInstance.isDebug = userSettings.debug;
+    await LineFocusModuleInstance.enableLineFocus();
+  }
+}
+export function lineUp() {
+  if (IS_DEV) {
+    console.log("lineUp");
+  }
+  LineFocusModuleInstance.lineUp();
+}
+export function lineDown() {
+  if (IS_DEV) {
+    console.log("lineDown");
+  }
+  LineFocusModuleInstance.lineDown();
+}
+export async function enableLineFocus() {
+  if (IS_DEV) {
+    console.log("enableLineFocus");
+  }
+  await LineFocusModuleInstance.enableLineFocus();
+}
+export async function lineFocus(active: boolean) {
+  if (IS_DEV) {
+    console.log("lineFocus");
+  }
+  if (active) {
+    await LineFocusModuleInstance.enableLineFocus();
+  } else {
+    LineFocusModuleInstance.disableLineFocus();
+  }
+}
+export function disableLineFocus() {
+  if (IS_DEV) {
+    console.log("disableLineFocus");
+  }
+  LineFocusModuleInstance.disableLineFocus();
+}
 export async function currentSettings() {
   if (IS_DEV) {
     console.log("currentSettings");
@@ -755,6 +807,7 @@ export async function load(config: ReaderConfig): Promise<any> {
     config.rights.enableAnnotations = false;
     config.rights.enableSearch = false;
     config.rights.enableTTS = false;
+    config.rights.enableLineFocus = false;
     // config.protection.enableObfuscation = false;
   }
 
@@ -999,6 +1052,17 @@ export async function load(config: ReaderConfig): Promise<any> {
       delegate: D2Navigator,
     }).then(function (timelineModule) {
       TimelineModuleInstance = timelineModule;
+    });
+  }
+
+  // LineFocus Module
+  if (config.rights?.enableLineFocus) {
+    LineFocusModule.create({
+      delegate: D2Navigator,
+      highlighter: D2Highlighter,
+      ...config.lineFocus,
+    }).then(function (lineFocusModule) {
+      LineFocusModuleInstance = lineFocusModule;
     });
   }
 

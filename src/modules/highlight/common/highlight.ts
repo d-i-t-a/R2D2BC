@@ -66,7 +66,7 @@ export enum HighlightType {
   ReadAloud = 2,
   PageBreak = 3,
   Definition = 4,
-  Lines = 5,
+  LinesFocus = 5,
 }
 
 export interface IHighlight {

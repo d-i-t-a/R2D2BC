@@ -2499,7 +2499,7 @@ export default class TextHighlighter {
           this.removeAllChildNodes(container);
         }
         break;
-      case HighlightType.Lines:
+      case HighlightType.LinesFocus:
         container = doc.getElementById(
           HighlightContainer.R2_ID_LINEFOCUS_CONTAINER
         );

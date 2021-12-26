@@ -131,7 +131,7 @@ export default class LineFocusModule implements ReaderModule {
     if (divAfter) {
       divAfter.remove();
     }
-    this.highlighter.destroyHighlights(HighlightType.Lines);
+    this.highlighter.destroyHighlights(HighlightType.LinesFocus);
   }
 
   lineFocus() {
@@ -207,7 +207,7 @@ export default class LineFocusModule implements ReaderModule {
       return false;
     });
 
-    this.highlighter.destroyHighlights(HighlightType.Lines);
+    this.highlighter.destroyHighlights(HighlightType.LinesFocus);
 
     const container = HTMLUtilities.findElement(
       this.delegate.iframes[0].contentDocument,

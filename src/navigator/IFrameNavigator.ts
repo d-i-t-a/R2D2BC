@@ -91,6 +91,9 @@ import {
   DefinitionsModuleConfig,
 } from "../modules/search/DefinitionsModule";
 import EventEmitter from "events";
+import LineFocusModule, {
+  LineFocusModuleConfig,
+} from "../modules/linefocus/LineFocusModule";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -171,6 +174,7 @@ export interface ReaderRights {
   autoGeneratePositions?: boolean;
   enableMediaOverlays?: boolean;
   enablePageBreaks?: boolean;
+  enableLineFocus?: boolean;
 }
 
 export interface ReaderUI {
@@ -193,6 +197,7 @@ export interface ReaderConfig {
   pagebreak?: PageBreakModuleConfig;
   annotations?: AnnotationModuleConfig;
   bookmarks?: BookmarkModuleConfig;
+  lineFocus?: LineFocusModuleConfig;
   highlighter?: TextHighlighterConfig;
   injectables: Array<Injectable>;
   injectablesFixed: Array<Injectable>;
@@ -221,6 +226,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   timelineModule?: TimelineModule;
   pageBreakModule?: PageBreakModule;
   mediaOverlayModule?: MediaOverlayModule;
+  lineFocusModule?: LineFocusModule;
 
   sideNavExpanded: boolean = false;
   material: boolean = false;
@@ -2753,6 +2759,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.contentProtectionModule !== undefined) {
         this.contentProtectionModule.handleResize();
       }
+      if (this.lineFocusModule !== undefined) {
+        this.lineFocusModule.handleResize();
+      }
     }, 150);
   }
 
@@ -3063,6 +3072,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
         await this.updatePositionInfo();
       } else {
+        if (this.lineFocusModule !== undefined) {
+          this.lineFocusModule.disableLineFocus();
+        }
         if (this.searchModule !== undefined) {
           this.searchModule.clearSearch();
         }

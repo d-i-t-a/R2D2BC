@@ -53,6 +53,7 @@ import { TTSModule } from "./modules/TTS/TTSModule";
 import { TTSModule2 } from "./modules/TTS/TTSModule2";
 import { ReaderModule } from "./modules/ReaderModule";
 import { DefinitionsModule } from "./modules/search/DefinitionsModule";
+import LineFocusModule from "./modules/linefocus/LineFocusModule";
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -79,7 +80,8 @@ export default class D2Reader {
     private readonly timelineModule?: TimelineModule,
     private readonly mediaOverlaySettings?: MediaOverlaySettings,
     private readonly mediaOverlayModule?: MediaOverlayModule,
-    private readonly pageBreakModule?: PageBreakModule
+    private readonly pageBreakModule?: PageBreakModule,
+    private readonly lineFocusModule?: LineFocusModule
   ) {}
 
   addEventListener() {
@@ -325,6 +327,15 @@ export default class D2Reader {
           })
         : undefined;
 
+    const lineFocusModule = config.rights?.enableLineFocus
+      ? await LineFocusModule.create({
+          publication: publication,
+          delegate: navigator,
+          highlighter: highlighter,
+          ...config.lineFocus,
+        })
+      : undefined;
+
     return new D2Reader(
       settings,
       navigator,
@@ -339,7 +350,8 @@ export default class D2Reader {
       timelineModule,
       mediaOverlaySettings,
       mediaOverlayModule,
-      pageBreakModule
+      pageBreakModule,
+      lineFocusModule
     );
   }
 
@@ -690,6 +702,36 @@ export default class D2Reader {
     this.navigator.applyAttributes(value);
   };
 
+  async applyLineFocusSettings(userSettings) {
+    if (userSettings.lines) {
+      this.lineFocusModule.properties.lines = parseInt(userSettings.lines);
+      await this.lineFocusModule.enableLineFocus();
+    }
+    if (userSettings.debug !== undefined) {
+      this.lineFocusModule.isDebug = userSettings.debug;
+      await this.lineFocusModule.enableLineFocus();
+    }
+  }
+  lineUp() {
+    this.lineFocusModule.lineUp();
+  }
+  lineDown() {
+    this.lineFocusModule.lineDown();
+  }
+  async enableLineFocus() {
+    await this.lineFocusModule.enableLineFocus();
+  }
+  async lineFocus(active: boolean) {
+    if (active) {
+      await this.lineFocusModule.enableLineFocus();
+    } else {
+      this.lineFocusModule.disableLineFocus();
+    }
+  }
+  disableLineFocus() {
+    this.lineFocusModule.disableLineFocus();
+  }
+
   /**
    * Destructor:
    * Only used in react applications because when they re-visit the page
@@ -714,6 +756,7 @@ export default class D2Reader {
     this.mediaOverlaySettings?.stop();
     this.mediaOverlayModule?.stop();
     this.pageBreakModule?.stop();
+    this.lineFocusModule?.stop();
   };
 }
 

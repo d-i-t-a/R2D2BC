@@ -92,7 +92,9 @@ export class TimelineModule implements ReaderModule {
         ).toString();
       }
 
-      this.timelineContainer.innerHTML = "";
+      if (this.timelineContainer) {
+        this.timelineContainer.innerHTML = "";
+      }
       this.publication.readingOrder.forEach((link) => {
         const linkHref = this.publication.getAbsoluteHref(link.Href);
         const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
@@ -167,7 +169,9 @@ export class TimelineModule implements ReaderModule {
         // append notes indicator
         // append highlights indicator
 
-        this.timelineContainer.appendChild(chapter);
+        if (this.timelineContainer) {
+          this.timelineContainer.appendChild(chapter);
+        }
       });
 
       resolve();

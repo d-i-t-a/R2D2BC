@@ -1380,6 +1380,10 @@ export default class IFrameNavigator implements Navigator {
       if (this.newPosition) {
         bookViewPosition = this.newPosition.locations.progression;
       }
+
+      // Reset before setIframeHeight is called to calculate the height.
+      this.iframes[0].height = "0px";
+
       await this.handleResize();
       this.updateBookView();
 

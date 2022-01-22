@@ -17,7 +17,6 @@
     "clean": "rimraf node_modules dist parcel-dist .parcel-cache",
     "dev": "ts-node -T build.ts -w",
     "build": "ts-node -T build.ts",
-    "start": "node dev-server.js",
     "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
     "examples": "npx ts-node examples/server.ts",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --fix",

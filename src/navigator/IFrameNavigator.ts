@@ -1543,6 +1543,7 @@ export default class IFrameNavigator implements Navigator {
       if (this.view.layout !== "fixed") {
         if (this.view?.isScrollMode()) {
           for (const iframe of this.iframes) {
+            iframe.height = "0";
             this.view.setIframeHeight(iframe);
           }
         }

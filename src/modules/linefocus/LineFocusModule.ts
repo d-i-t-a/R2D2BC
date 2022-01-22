@@ -107,14 +107,39 @@ export default class LineFocusModule implements ReaderModule {
   }
 
   async enableLineFocus() {
+    if (!this.isActive) {
+      const wrapper = HTMLUtilities.findRequiredElement(
+        document,
+        "#iframe-wrapper"
+      ) as HTMLDivElement;
+      wrapper.style.overflow = "hidden";
+      if (wrapper.style.height.length > 0) {
+        this.wrapperHeight = wrapper.style.height;
+      }
+      wrapper.style.height = "100vh";
+    }
     this.isActive = true;
     await this.delegate.settings.scroll(true);
     this.lineFocus();
   }
 
+  wrapperHeight: string | undefined = undefined;
+
   disableLineFocus() {
     this.isActive = false;
-    document.body.style.removeProperty("overflow");
+    // document.body.style.removeProperty("overflow");
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
+
+    wrapper.style.overflow = "auto";
+    if (this.wrapperHeight) {
+      wrapper.style.height = this.wrapperHeight;
+    } else {
+      wrapper.style.removeProperty("height");
+    }
+    this.wrapperHeight = undefined;
 
     if (this.lineFocusContainer) this.lineFocusContainer.style.display = "none";
 
@@ -136,11 +161,10 @@ export default class LineFocusModule implements ReaderModule {
   }
 
   lineFocus() {
-    document.body.style.overflow = "hidden";
-
-    let iframe = document.querySelector(
-      "main#iframe-wrapper iframe"
-    ) as HTMLIFrameElement;
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
 
     function insertAfter(referenceNode, newNode) {
       referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
@@ -160,27 +184,27 @@ export default class LineFocusModule implements ReaderModule {
 
     let divBefore = document.getElementById("divBefore");
     if (divBefore) {
-      divBefore.style.height = document.documentElement.clientHeight / 2 + "px";
+      divBefore.style.height = wrapper.clientHeight / 2 + "px";
     } else {
       let divBefore = document.createElement("div");
-      divBefore.style.height = document.documentElement.clientHeight / 2 + "px";
+      divBefore.style.height = wrapper.clientHeight / 2 + "px";
       divBefore.id = "divBefore";
-      insertBefore(iframe, divBefore);
+      insertBefore(wrapper, divBefore);
     }
 
     let divAfter = document.getElementById("divAfter");
     if (divAfter) {
-      divAfter.style.height = document.documentElement.clientHeight / 2 + "px";
+      divAfter.style.height = wrapper.clientHeight / 2 + "px";
     } else {
       let divAfter = document.createElement("div");
-      divAfter.style.height = document.documentElement.clientHeight / 2 + "px";
+      divAfter.style.height = wrapper.clientHeight / 2 + "px";
       divAfter.id = "divAfter";
-      insertAfter(iframe, divAfter);
+      insertAfter(wrapper, divAfter);
     }
 
     this.lines = [];
     const self = this;
-    let doc = self.delegate.iframes[0].contentDocument;
+    const doc = self.delegate.iframes[0].contentDocument;
     if (doc) {
       let textNodes = this.findRects(doc.body);
       textNodes = getClientRectsNoOverlap_(textNodes, true);

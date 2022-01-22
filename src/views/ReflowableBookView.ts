@@ -497,7 +497,6 @@ export default class ReflowableBookView implements BookView {
         }
       }
     }, 200);
-    if (iframe) iframe.height = 0;
     d(iframe);
   }
 

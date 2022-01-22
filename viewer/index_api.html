@@ -29,7 +29,6 @@
 
     <!-- R2 Reader CSS -->
     <link rel="stylesheet" href="reader.css" />
-
     <script src="reader.js"></script>
 </head>
 <body>
@@ -102,24 +101,21 @@
         </ul>
         <!--Info-->
         <ul> <div>Info</div>
-
-
             <button onclick="alert(d2reader.totalResources)">totalResources</button><br>
             <button onclick="alert(d2reader.currentResource)">currentResource</button><br>
-            <button
-                    onclick="alert(d2reader.mostRecentNavigatedTocItem)">mostRecentNavigatedTocItem</button><br>
+            <button onclick="alert(d2reader.mostRecentNavigatedTocItem)">mostRecentNavigatedTocItem</button><br>
             <button onclick="alert(JSON.stringify(d2reader.currentLocator))">currentProgressInfo</button><br>
             <button onclick="alert(JSON.stringify(d2reader.positions))">positions</button><br>
         </ul>
+
         <!--Bookmarks-->
         <ul> <div>Bookmarks</div>
-
-        <button onclick="d2reader.saveBookmark().then(
-            result => {
-                console.log(result);
-                console.log(d2reader.bookmarks.length)
-            }); ">add bookmark</button><br>
-        <button onclick="d2reader.deleteBookmark({id:0.32616493991327755})">delete bookmark</button><br>
+            <button onclick="d2reader.saveBookmark().then(
+                result => {
+                    console.log(result);
+                    console.log(d2reader.bookmarks.length)
+                }); ">add bookmark</button><br>
+            <button onclick="d2reader.deleteBookmark({id:0.32616493991327755})">delete bookmark</button><br>
             <button onclick="
                     var result = d2reader.bookmarks;
                     console.log(result)
@@ -142,10 +138,12 @@
                         }
                     });
                     container.innerHTML = tocString
-            ">show bookmarks</button><br> </ul>
+            ">show bookmarks</button><br>
+        </ul>
+
         <!--Annotations-->
         <ul> <div>Annotations</div>
-        <button onclick="
+            <button onclick="
                 var result = d2reader.annotations;
 
                 console.log(result)
@@ -168,11 +166,11 @@
                     }
                 });
                 container.innerHTML = tocString
-        ">show annotations</button><br>
+            ">show annotations</button><br>
         </ul>
+
         <!--Search-->
         <ul> <div>Search</div>
-
             <button onclick="d2reader.search('attractions', true).then(
             result => {
                 console.log(JSON.stringify(result))
@@ -196,8 +194,8 @@
             <button onclick="d2reader.goToSearchID('OEBPS/Text/intro.xhtml', 3, false)">go to uuid 3 in chapter
                 OEBPS/Text/intro.xhtml</button><br>
             <button onclick="d2reader.clearSearch()">clear search</button><br>
-
         </ul>
+
         <!--LAYERS-->
         <ul> <div>LAYERS</div>
             <input type="checkbox"
@@ -234,6 +232,7 @@
                 multiple tts settings</button><br>
             <button onclick="d2reader.resetTTSSettings()">reset TTS setting</button><br>
         </ul>
+
         <!--Media Overlays-->
         <ul> <div>Media Overlays</div>
             <button onclick="d2reader.startReadAlong()">start read along</button><br>
@@ -250,6 +249,7 @@
 
             <button onclick="d2reader.resetMediaOverlaySettings()">reset Media Overlay setting</button><br>
         </ul>
+
         <!--User Settings-->
         <ul> <div>User settings</div>
             <button onclick="d2reader.resetUserSettings()">reset user setting</button><br>
@@ -284,8 +284,8 @@
             <button onclick="d2reader.applyUserSettings({textAlignment:'start'})">align start</button><br>
             <button onclick="d2reader.scroll(true)">vertical scroll</button><br>
             <button onclick="d2reader.scroll(false)">horizontal scroll (paginated)</button><br>
-
         </ul>
+
         <!--other-->
         <ul> <div>other</div>
             <button onclick="d2reader.applyAttributes({margin:200})">applyAtributes (margin 200 for example)</button><br>
@@ -351,14 +351,14 @@
         </div>
     </div>
     <script>
-        var getURLQueryParams = function () {
-            var params = {};
-            var query = window.location.search;
+        let getURLQueryParams = function () {
+            let params = {};
+            let query = window.location.search;
             if (query && query.length) {
                 query = query.substring(1);
-                var keyParams = query.split('&');
-                for (var x = 0; x < keyParams.length; x++) {
-                    var keyVal = keyParams[x].split('=');
+                let keyParams = query.split('&');
+                for (let x = 0; x < keyParams.length; x++) {
+                    let keyVal = keyParams[x].split('=');
                     if (keyVal.length > 1) {
                         params[keyVal[0]] = decodeURIComponent(keyVal[1]);
                     }
@@ -366,47 +366,17 @@
             }
             return params;
         };
-
-
-        var injectables = [
+        let injectables = [
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
-            // { type: 'style', url: '/viewer/readium-css/neon-after.css', r2after: true, appearance: 'neon' },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic', systemFont: false },
-            { type: 'style', fontFamily: 'Courier', systemFont: true },
             { type: 'script', url: '/viewer/injectables/click/click.js' },
             { type: 'style', url: '/viewer/injectables/style/popup.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
-
-        // Injectable {
-        //     type: string;
-        //     url?: string;
-        //     r2after: boolean;
-        //     r2before: boolean;
-        //     r2default: boolean;
-        //     fontFamily?: string;
-        //     systemFont?: boolean;
-        //     appearance?: string;
-        //     async?: boolean;
-        // }
-
-        var userSettings = {
-            // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
-            // fontFamily: "sans-serif", //Original, serif, sans-serif
-            // textAlignment: "justify", //"auto", "justify", "start"
-            // columnCount: "auto", // "auto", "1", "2"
-            // verticalScroll: "readium-scroll-off", //readium-scroll-on, readium-scroll-off,
-            // fontSize: 100.0,
-            // wordSpacing: 0.0,
-            // letterSpacing: 0.0,
-            // pageMargins: 2.0,
-            // lineHeight: 1.0
-        }
-
-        var selectionMenuItems = [
+        let selectionMenuItems = [
             {
                 id: 'anIcon',
                 callback: function (selection) {
@@ -415,18 +385,15 @@
             }
         ]
 
-        var urlParams = getURLQueryParams();
-        var upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
-        // var lastReadingPosition = '{"href":"OEBPS/Text/cover.xhtml","locations":{"progression":0},"created":"2019-05-21T12:53:08.145Z","type":"application/xhtml+xml","title":"Cover"}';
+        let urlParams = getURLQueryParams();
+        let upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
 
         let d2reader = undefined;
         D2Reader.load({
             url: new URL(urlParams['url']),
             attributes: { // TODO: review these attributes and eventually needs better naming.
                 margin: 15, // subtract this from the iframe height , when setting the iframe minimum height
-                // navHeight: 65, // used for positioning the toolbox
                 iframePaddingTop: 10, // top padding inside iframe
-                // bottomInfoHeight: 75 // #reader-info-bottom height
             },
             rights: {
                 enableBookmarks: true,
@@ -440,25 +407,8 @@
                 enableLineFocus:true,
                 enableContentProtection: false,
             },
-
-            // sample: {
-            //     isSampleRead: true,
-            //     limit: 10, // in percent e.g. 5%
-            //     minimum: 5, // in pages
-            //     popup: "You can borrow the book to continue reading."
-            // },
             tts: {
                 enableSplitter: false,
-                //     highlight: "lines",
-                //     autoScroll: false,
-                //     rate: 1.2,
-                //     pitch: 1.0,
-                //     volume: 0.5,
-                //     voice: {
-                //         usePublication: true,
-                //         name : "Daniel",
-                //         lang : "en-GB",
-                //     }
                 api: {
                     started: function () {
                         console.log("started")
@@ -509,7 +459,6 @@
             },
             annotations: {
                 initialAnnotationColor: "var(--RS__highlightColor)",
-                // initialAnnotationColor: "#ff8500",
             },
             protection: {
                 enforceSupportedBrowsers: true,
@@ -535,7 +484,6 @@
             },
             injectables: injectables,
             injectablesFixed: [],
-            userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {
             d2reader = instance;

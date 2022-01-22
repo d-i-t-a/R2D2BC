@@ -24,7 +24,7 @@ export function getWidth(): number {
   const wrapper = HTMLUtilities.findRequiredElement(
     document,
     "#iframe-wrapper"
-  ) as HTMLDivElement;
+  );
 
   return wrapper.clientWidth;
 }
@@ -34,7 +34,7 @@ export function getHeight(): number {
   const wrapper = HTMLUtilities.findRequiredElement(
     document,
     "#iframe-wrapper"
-  ) as HTMLDivElement;
+  );
 
   return wrapper.clientHeight;
 }

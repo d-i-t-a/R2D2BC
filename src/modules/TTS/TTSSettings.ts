@@ -234,7 +234,7 @@ export class TTSSettings implements ITTSUserSettings {
       this.settingsView = HTMLUtilities.findElement(
         this.headerMenu,
         "#container-view-tts-settings"
-      ) as HTMLDivElement;
+      );
   }
 
   setControls() {
@@ -246,23 +246,23 @@ export class TTSSettings implements ITTSUserSettings {
       this.speechRate = HTMLUtilities.findElement(
         this.headerMenu,
         "#speechRate"
-      ) as HTMLInputElement;
+      );
     if (this.headerMenu)
       this.speechPitch = HTMLUtilities.findElement(
         this.headerMenu,
         "#speechPitch"
-      ) as HTMLInputElement;
+      );
     if (this.headerMenu)
       this.speechVolume = HTMLUtilities.findElement(
         this.headerMenu,
         "#speechVolume"
-      ) as HTMLInputElement;
+      );
 
     if (this.headerMenu)
       this.speechAutoScroll = HTMLUtilities.findElement(
         this.headerMenu,
         "#autoScroll"
-      ) as HTMLInputElement;
+      );
 
     if (this.speechRate) this.speechRate.value = this.rate.toString();
     if (this.speechPitch) this.speechPitch.value = this.pitch.toString();

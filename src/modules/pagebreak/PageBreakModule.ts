@@ -91,17 +91,17 @@ export class PageBreakModule implements ReaderModule {
       this.goToPageView = HTMLUtilities.findElement(
         this.headerMenu,
         "#sidenav-section-gotopage"
-      ) as HTMLLIElement;
+      );
     if (this.headerMenu)
       this.goToPageNumberInput = HTMLUtilities.findElement(
         this.headerMenu,
         "#goToPageNumberInput"
-      ) as HTMLInputElement;
+      );
     if (this.headerMenu)
       this.goToPageNumberButton = HTMLUtilities.findElement(
         this.headerMenu,
         "#goToPageNumberButton"
-      ) as HTMLButtonElement;
+      );
 
     addEventListenerOptional(
       this.goToPageNumberInput,

@@ -159,12 +159,12 @@ export class ContentProtectionModule implements ReaderModule {
       this.wrapper = HTMLUtilities.findRequiredElement(
         document,
         "#iframe-wrapper"
-      ) as HTMLDivElement;
+      );
 
       this.securityContainer = HTMLUtilities.findElement(
         document,
         "#container-view-security"
-      ) as HTMLDivElement;
+      );
 
       var self = this;
 

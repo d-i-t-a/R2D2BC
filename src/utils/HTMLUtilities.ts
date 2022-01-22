@@ -22,8 +22,13 @@
 export function findElement(
   parentElement: Element | Document,
   selector: string
-): HTMLElement | null {
-  return parentElement.querySelector(selector);
+): any | null {
+  const element = parentElement.querySelector(selector);
+  if (element && element instanceof HTMLElement) {
+    return element;
+  } else {
+    return null;
+  }
 }
 
 /** Returns a single element matching the selector within the parent element,
@@ -31,12 +36,12 @@ export function findElement(
 export function findRequiredElement(
   parentElement: Element | Document,
   selector: string
-): HTMLElement {
+): any {
   const element = findElement(parentElement, selector);
-  if (!element) {
-    throw new Error("required element " + selector + " not found");
-  } else {
+  if (element && element instanceof HTMLElement) {
     return element;
+  } else {
+    throw new Error("required element " + selector + " not found");
   }
 }
 

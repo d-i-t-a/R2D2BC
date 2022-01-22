@@ -126,19 +126,19 @@ export class BookmarkModule implements ReaderModule {
       this.bookmarksView = HTMLUtilities.findElement(
         this.headerMenu,
         "#container-view-bookmarks"
-      ) as HTMLDivElement;
+      );
 
     if (this.headerMenu)
       this.sideNavSectionBookmarks = HTMLUtilities.findElement(
         this.headerMenu,
         "#sidenav-section-bookmarks"
-      ) as HTMLElement;
+      );
 
     if (this.headerMenu) {
       var menuBookmark = HTMLUtilities.findElement(
         this.headerMenu,
         "#menu-button-bookmark"
-      ) as HTMLLinkElement;
+      );
       if (this.rights?.enableMaterial) {
         if (menuBookmark)
           menuBookmark.parentElement?.style.removeProperty("display");

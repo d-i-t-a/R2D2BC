@@ -421,10 +421,7 @@ export class UserSettings implements IUserSettings {
       ) as HTMLHtmlElement;
       if (html) {
         const rootElement = document.documentElement;
-        const body = HTMLUtilities.findRequiredElement(
-          rootElement,
-          "body"
-        ) as HTMLBodyElement;
+        const body = HTMLUtilities.findRequiredElement(rootElement, "body");
 
         // // Apply publishers default
         // html.style.removeProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY);
@@ -465,7 +462,7 @@ export class UserSettings implements IUserSettings {
       this.settingsView = HTMLUtilities.findElement(
         this.headerMenu,
         "#container-view-settings"
-      ) as HTMLDivElement;
+      );
   }
 
   async applyProperties(): Promise<any> {
@@ -479,10 +476,7 @@ export class UserSettings implements IUserSettings {
 
       if (html) {
         const rootElement = document.documentElement;
-        const body = HTMLUtilities.findRequiredElement(
-          rootElement,
-          "body"
-        ) as HTMLBodyElement;
+        const body = HTMLUtilities.findRequiredElement(rootElement, "body");
         if (this.view?.delegate.publication.isReflowable) {
           // Apply font size
           if (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY)) {

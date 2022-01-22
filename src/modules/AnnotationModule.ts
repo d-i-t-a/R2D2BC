@@ -150,11 +150,11 @@ export class AnnotationModule implements ReaderModule {
   private hide: HTMLLinkElement = HTMLUtilities.findElement(
     document,
     "#menu-button-hide"
-  ) as HTMLLinkElement;
+  );
   private show: HTMLLinkElement = HTMLUtilities.findElement(
     document,
     "#menu-button-show"
-  ) as HTMLLinkElement;
+  );
 
   hideAnnotationLayer() {
     let doc = this.delegate.iframes[0].contentDocument;
@@ -162,7 +162,7 @@ export class AnnotationModule implements ReaderModule {
       const container = HTMLUtilities.findElement(
         doc,
         "#R2_ID_HIGHLIGHTS_CONTAINER"
-      ) as HTMLDivElement;
+      );
       if (container) {
         container.style.display = "none";
       }
@@ -178,7 +178,7 @@ export class AnnotationModule implements ReaderModule {
       const container = HTMLUtilities.findElement(
         doc,
         "#R2_ID_HIGHLIGHTS_CONTAINER"
-      ) as HTMLDivElement;
+      );
       if (container) {
         container.style.display = "block";
       }

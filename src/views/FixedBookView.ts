@@ -23,7 +23,6 @@ import {
 } from "../navigator/IFrameNavigator";
 import BookView from "./BookView";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
-import Store from "../store/Store";
 
 export default class FixedBookView implements BookView {
   layout = "fixed";

@@ -198,7 +198,21 @@
             <button onclick="d2reader.clearSearch()">clear search</button><br>
 
         </ul>
-        <!--TTS-->
+        <!--LAYERS-->
+        <ul> <div>LAYERS</div>
+            <input type="checkbox"
+                   onchange="this.checked ? d2reader.showLayer('highlights') : d2reader.hideLayer('highlights')"/> Highlights<br>
+            <input type="checkbox"
+                   onchange="this.checked ? d2reader.showLayer('definitions') : d2reader.hideLayer('definitions')"/> Definitions<br>
+            <input type="checkbox"
+                   onchange="this.checked ? d2reader.showLayer('pagebreak') : d2reader.hideLayer('pagebreak')"/> Pagebreak<br>
+            <input type="checkbox"
+                   onchange="this.checked ? d2reader.showLayer('search') : d2reader.hideLayer('search')"/> Search<br>
+            <input type="checkbox"
+                   onchange="this.checked ? d2reader.showLayer('readaloud') : d2reader.hideLayer('readaloud')"/> Readaloud<br>
+        </ul>
+
+            <!--TTS-->
         <ul> <div>TTS</div>
             <button onclick="d2reader.startReadAloud()">read aloud from top</button><br>
             <button onclick="d2reader.stopReadAloud()">stop read aloud from top</button><br>
@@ -363,6 +377,7 @@
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic', systemFont: false },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
             { type: 'script', url: '/viewer/injectables/click/click.js' },
+            { type: 'style', url: '/viewer/injectables/style/popup.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
 
@@ -425,6 +440,13 @@
                 enableLineFocus:true,
                 enableContentProtection: false,
             },
+
+            // sample: {
+            //     isSampleRead: true,
+            //     limit: 10, // in percent e.g. 5%
+            //     minimum: 5, // in pages
+            //     popup: "You can borrow the book to continue reading."
+            // },
             tts: {
                 enableSplitter: false,
                 //     highlight: "lines",

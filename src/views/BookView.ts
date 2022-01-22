@@ -31,7 +31,7 @@ interface BookView {
   sideMargin: number;
   height: number;
   delegate: IFrameNavigator;
-  attributes: IFrameAttributes;
+  attributes?: IFrameAttributes;
 
   setMode?(scroll: boolean);
   isScrollMode();
@@ -54,8 +54,8 @@ interface BookView {
   goToCssSelector(cssSelector: string): void;
   snap(element: HTMLElement | null, relative?: boolean): void;
 
-  atStart?(): boolean;
-  atEnd?(): boolean;
+  atStart(): boolean;
+  atEnd(): boolean;
   goToPreviousPage?(): void;
   goToNextPage?(): void;
   getCurrentPage(): number;

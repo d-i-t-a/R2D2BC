@@ -119,7 +119,7 @@ export default class D2Reader {
     });
     const layerStore = new LocalStorageStore({
       prefix: "r2d2bc-layers",
-      useLocalStorage: initialConfig.useLocalStorage,
+      useLocalStorage: initialConfig.useLocalStorage ?? false,
     });
 
     const annotator = new LocalAnnotator({ store: store });
@@ -218,12 +218,12 @@ export default class D2Reader {
     const annotationModule = config.rights?.enableAnnotations
       ? await AnnotationModule.create({
           annotator: annotator,
-          headerMenu: headerMenu,
           rights: config.rights,
           publication: publication,
           delegate: navigator,
           initialAnnotations: config.initialAnnotations,
           highlighter: highlighter,
+          headerMenu: headerMenu,
           ...config.annotations,
         })
       : undefined;
@@ -235,30 +235,34 @@ export default class D2Reader {
           store: settingsStore,
           initialTTSSettings: config.tts,
           headerMenu: headerMenu,
-          ...config.tts,
         })
       : undefined;
 
-    const ttsModule =
-      ttsEnabled && config.tts.enableSplitter
-        ? await TTSModule.create({
-            delegate: navigator,
-            tts: ttsSettings,
-            headerMenu: headerMenu,
-            rights: config.rights,
-            highlighter: highlighter,
-            ...config.tts,
-          })
-        : ttsEnabled && !config.tts.enableSplitter
-        ? await TTSModule2.create({
-            delegate: navigator,
-            tts: ttsSettings,
-            headerMenu: headerMenu,
-            rights: config.rights,
-            highlighter: highlighter,
-            ...config.tts,
-          })
-        : undefined;
+    let ttsModule: ReaderModule | undefined = undefined;
+
+    if (config.tts?.enableSplitter ?? false) {
+      if (ttsEnabled && ttsSettings) {
+        ttsModule = await TTSModule.create({
+          delegate: navigator,
+          tts: ttsSettings,
+          headerMenu: headerMenu,
+          rights: config.rights,
+          highlighter: highlighter,
+          ...config.tts,
+        });
+      }
+    } else {
+      if (ttsEnabled && ttsSettings) {
+        ttsModule = await TTSModule2.create({
+          delegate: navigator,
+          tts: ttsSettings,
+          headerMenu: headerMenu,
+          rights: config.rights,
+          highlighter: highlighter,
+          ...config.tts,
+        });
+      }
+    }
 
     // Search Module
     const searchModule = config.rights?.enableSearch
@@ -310,8 +314,8 @@ export default class D2Reader {
     const mediaOverlayModule = enableMediaOverlays
       ? await MediaOverlayModule.create({
           publication: publication,
-          settings: mediaOverlaySettings,
           delegate: navigator,
+          settings: mediaOverlaySettings,
           ...config.mediaOverlays,
         })
       : undefined;
@@ -570,11 +574,11 @@ export default class D2Reader {
   ) => {
     if (this.isTTSIncrementable(incremental)) {
       if (this.navigator.rights?.enableTTS) {
-        await this.ttsSettings.increase(incremental);
+        await this.ttsSettings?.increase(incremental);
       }
     } else if (this.isMOIncrementable(incremental)) {
       if (this.navigator.rights?.enableMediaOverlays) {
-        await this.mediaOverlaySettings.increase(incremental);
+        await this.mediaOverlaySettings?.increase(incremental);
       }
     } else {
       await this.settings.increase(incremental);
@@ -593,11 +597,11 @@ export default class D2Reader {
   ) => {
     if (this.isTTSIncrementable(incremental)) {
       if (this.navigator.rights?.enableTTS) {
-        await this.ttsSettings.decrease(incremental);
+        await this.ttsSettings?.decrease(incremental);
       }
     } else if (this.isMOIncrementable(incremental)) {
       if (this.navigator.rights?.enableMediaOverlays) {
-        await this.mediaOverlaySettings.decrease(incremental);
+        await this.mediaOverlaySettings?.decrease(incremental);
       }
     } else {
       await this.settings.decrease(incremental);
@@ -617,12 +621,12 @@ export default class D2Reader {
    */
   resetTTSSettings = () => {
     if (this.navigator.rights?.enableTTS) {
-      this.ttsSettings.resetTTSSettings();
+      this.ttsSettings?.resetTTSSettings();
     }
   };
   applyTTSSettings = async (ttsSettings: Partial<ITTSUserSettings>) => {
     if (this.navigator.rights?.enableTTS) {
-      await this.ttsSettings.applyTTSSettings(ttsSettings);
+      await this.ttsSettings?.applyTTSSettings(ttsSettings);
     }
   };
   /**
@@ -635,7 +639,7 @@ export default class D2Reader {
   // };
   applyPreferredVoice = async (value: string) => {
     if (this.navigator.rights?.enableTTS) {
-      await this.ttsSettings.applyPreferredVoice(value);
+      await this.ttsSettings?.applyPreferredVoice(value);
     }
   };
 
@@ -644,14 +648,14 @@ export default class D2Reader {
    */
   resetMediaOverlaySettings = async () => {
     if (this.navigator.rights?.enableMediaOverlays) {
-      await this.mediaOverlaySettings.resetMediaOverlaySettings();
+      await this.mediaOverlaySettings?.resetMediaOverlaySettings();
     }
   };
   applyMediaOverlaySettings = async (
     settings: Partial<IMediaOverlayUserSettings>
   ) => {
     if (this.navigator.rights?.enableMediaOverlays) {
-      await this.mediaOverlaySettings.applyMediaOverlaySettings(settings);
+      await this.mediaOverlaySettings?.applyMediaOverlaySettings(settings);
     }
   };
 
@@ -704,32 +708,34 @@ export default class D2Reader {
 
   async applyLineFocusSettings(userSettings) {
     if (userSettings.lines) {
-      this.lineFocusModule.properties.lines = parseInt(userSettings.lines);
-      await this.lineFocusModule.enableLineFocus();
+      if (this.lineFocusModule)
+        this.lineFocusModule.properties.lines = parseInt(userSettings.lines);
+      await this.lineFocusModule?.enableLineFocus();
     }
     if (userSettings.debug !== undefined) {
-      this.lineFocusModule.isDebug = userSettings.debug;
-      await this.lineFocusModule.enableLineFocus();
+      if (this.lineFocusModule)
+        this.lineFocusModule.isDebug = userSettings.debug;
+      await this.lineFocusModule?.enableLineFocus();
     }
   }
   lineUp() {
-    this.lineFocusModule.lineUp();
+    this.lineFocusModule?.lineUp();
   }
   lineDown() {
-    this.lineFocusModule.lineDown();
+    this.lineFocusModule?.lineDown();
   }
   async enableLineFocus() {
-    await this.lineFocusModule.enableLineFocus();
+    await this.lineFocusModule?.enableLineFocus();
   }
   async lineFocus(active: boolean) {
     if (active) {
-      await this.lineFocusModule.enableLineFocus();
+      await this.lineFocusModule?.enableLineFocus();
     } else {
-      this.lineFocusModule.disableLineFocus();
+      this.lineFocusModule?.disableLineFocus();
     }
   }
   disableLineFocus() {
-    this.lineFocusModule.disableLineFocus();
+    this.lineFocusModule?.disableLineFocus();
   }
 
   /**
@@ -742,7 +748,7 @@ export default class D2Reader {
     this.navigator.stop();
     this.settings.stop();
     this.ttsSettings?.stop();
-    if (this.ttsSettings.enableSplitter) {
+    if (this.ttsSettings?.enableSplitter) {
       (this.ttsModule as TTSModule)?.stop();
     } else {
       (this.ttsModule as TTSModule2)?.stop();

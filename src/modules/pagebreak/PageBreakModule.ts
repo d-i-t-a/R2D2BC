@@ -41,13 +41,13 @@ export interface PageBreakModuleProperties {
 
 export interface PageBreakModuleConfig extends PageBreakModuleProperties {
   delegate: IFrameNavigator;
-  headerMenu: HTMLElement;
+  headerMenu?: HTMLElement | null;
   publication: Publication;
 }
 
 export class PageBreakModule implements ReaderModule {
   private delegate: IFrameNavigator;
-  private readonly headerMenu: HTMLElement;
+  private readonly headerMenu?: HTMLElement | null;
   private publication: Publication;
   private properties: PageBreakModuleProperties;
 
@@ -57,20 +57,20 @@ export class PageBreakModule implements ReaderModule {
 
   public static async create(config: PageBreakModuleConfig) {
     const pageBreak = new this(
-      config.headerMenu,
       config.delegate,
       config.publication,
-      config as PageBreakModuleProperties
+      config as PageBreakModuleProperties,
+      config.headerMenu
     );
     await pageBreak.start();
     return pageBreak;
   }
 
   private constructor(
-    headerMenu: HTMLElement,
     delegate: IFrameNavigator,
     publication: Publication,
-    properties: PageBreakModuleProperties
+    properties: PageBreakModuleProperties,
+    headerMenu?: HTMLElement | null
   ) {
     this.headerMenu = headerMenu;
     this.delegate = delegate;
@@ -118,7 +118,7 @@ export class PageBreakModule implements ReaderModule {
       if (this.publication.pageList?.length) {
         //
       } else {
-        this.goToPageView.parentElement.removeChild(this.goToPageView);
+        this.goToPageView.parentElement?.removeChild(this.goToPageView);
       }
     }
     setTimeout(() => {
@@ -132,7 +132,7 @@ export class PageBreakModule implements ReaderModule {
       this.goToPageNumberInput.value &&
       (event.key === "Enter" || event.type === "click")
     ) {
-      var filteredPages = this.publication.pageList.filter(
+      var filteredPages = this.publication.pageList?.filter(
         (el: Link) =>
           el.Href.slice(el.Href.indexOf("#") + 1).replace(/[^0-9]/g, "") ===
           this.goToPageNumberInput.value
@@ -165,72 +165,77 @@ export class PageBreakModule implements ReaderModule {
   }
 
   async handleResize() {
-    await this.delegate.highlighter.destroyHighlights(HighlightType.PageBreak);
+    await this.delegate.highlighter?.destroyHighlights(HighlightType.PageBreak);
     await this.drawPageBreaks();
   }
 
   async drawPageBreaks() {
     setTimeout(() => {
-      const body = this.delegate.iframes[0].contentDocument.body;
-      let pageBreaks = body.querySelectorAll('[*|type="pagebreak"]');
+      const body = this.delegate.iframes[0].contentDocument?.body;
+      let pageBreaks = body?.querySelectorAll('[*|type="pagebreak"]');
       let self = this;
 
       function getCssSelector(element: Element): string {
         try {
-          return uniqueCssSelector(
-            element,
-            self.delegate.iframes[0].contentDocument,
-            _getCssSelectorOptions
-          );
+          let doc = self.delegate.iframes[0].contentDocument;
+          if (doc) {
+            return uniqueCssSelector(element, doc, _getCssSelectorOptions);
+          } else {
+            return "";
+          }
         } catch (err) {
           console.log("uniqueCssSelector:");
           console.log(err);
           return "";
         }
       }
+      if (pageBreaks) {
+        for (let i = 0; i < pageBreaks.length; i++) {
+          let img = pageBreaks[i] as HTMLElement;
+          if (IS_DEV) console.log(img);
 
-      for (let i = 0; i < pageBreaks.length; i++) {
-        let img = pageBreaks[i] as HTMLElement;
-        if (IS_DEV) console.log(img);
-
-        let title = img.innerHTML;
-        let hide = false;
-        if (img.innerHTML.length === 0) {
-          title = img.getAttribute("title");
-          img.innerHTML = title;
-          hide = true;
-        }
-        if (img.innerHTML.length === 0) {
-          title = img.getAttribute("id").replace(/[^0-9]/g, "");
-          img.innerHTML = title;
-          hide = true;
-        }
-
-        const range = this.delegate.highlighter
-          .dom(this.delegate.iframes[0].contentDocument.body)
-          .getWindow()
-          .document.createRange();
-        const selection = this.delegate.highlighter
-          .dom(this.delegate.iframes[0].contentDocument.body)
-          .getSelection();
-        selection.removeAllRanges();
-        range.selectNodeContents(img);
-        selection.addRange(range);
-        if (!selection.isCollapsed) {
-          const rangeInfo = convertRange(range, getCssSelector);
-          selection.removeAllRanges();
-          this.createPageBreakHighlight(
-            {
-              rangeInfo: rangeInfo,
-              cleanText: "",
-              rawText: "",
-              range: undefined,
-            },
-            title
-          );
-        }
-        if (hide) {
-          img.innerHTML = "";
+          let title = img.innerHTML;
+          let hide = false;
+          if (img.innerHTML.length === 0) {
+            title = img.getAttribute("title") ?? "";
+            img.innerHTML = title;
+            hide = true;
+          }
+          if (img.innerHTML.length === 0) {
+            title = (img.getAttribute("id") ?? "").replace(/[^0-9]/g, "");
+            img.innerHTML = title;
+            hide = true;
+          }
+          let doc = this.delegate.iframes[0].contentDocument;
+          if (doc) {
+            const range = this.delegate.highlighter
+              ?.dom(doc.body)
+              .getWindow()
+              .document.createRange();
+            const selection = this.delegate.highlighter
+              ?.dom(doc.body)
+              .getSelection();
+            selection.removeAllRanges();
+            range.selectNodeContents(img);
+            selection.addRange(range);
+            if (!selection.isCollapsed) {
+              const rangeInfo = convertRange(range, getCssSelector);
+              selection.removeAllRanges();
+              if (rangeInfo) {
+                this.createPageBreakHighlight(
+                  {
+                    rangeInfo: rangeInfo,
+                    cleanText: "",
+                    rawText: "",
+                  },
+                  title
+                );
+              }
+            }
+          }
+          if (hide) {
+            img.innerHTML = "";
+          }
         }
       }
     }, 200);
@@ -260,12 +265,12 @@ export class PageBreakModule implements ReaderModule {
       };
       _highlights.push(highlight);
 
-      let highlightDom = this.delegate.highlighter.createHighlightDom(
+      let highlightDom = this.delegate.highlighter?.createHighlightDom(
         this.delegate.iframes[0].contentWindow as any,
         highlight
       );
       highlight.position = parseInt(
-        ((highlightDom.hasChildNodes
+        ((highlightDom?.hasChildNodes()
           ? highlightDom.childNodes[0]
           : highlightDom) as HTMLDivElement).style.top.replace("px", "")
       );

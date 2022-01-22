@@ -29,7 +29,7 @@ export class Popup {
 
   async handleFootnote(link: HTMLLIElement, event: MouseEvent | TouchEvent) {
     const href = link.getAttribute("href");
-    if (href.indexOf("#") > 0) {
+    if (href && href.indexOf("#") > 0) {
       const id = href.substring(href.indexOf("#") + 1);
 
       function getAbsoluteHref(href: string): string | null {
@@ -38,31 +38,33 @@ export class Popup {
       }
 
       let absolute = getAbsoluteHref(href);
-      absolute = absolute.substring(0, absolute.indexOf("#"));
-      event.preventDefault();
-      event.stopPropagation();
+      if (absolute) {
+        absolute = absolute.substring(0, absolute.indexOf("#"));
+        event.preventDefault();
+        event.stopPropagation();
 
-      await fetch(absolute)
-        .then((r) => r.text())
-        .then(async (data) => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(data, "text/html");
-          const element = doc.querySelector("#" + id);
-          if (element) {
-            event.preventDefault();
-            event.stopPropagation();
-            this.showPopup(element, event);
-          }
-        });
+        await fetch(absolute)
+          .then((r) => r.text())
+          .then(async (data) => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, "text/html");
+            const element = doc.querySelector("#" + id);
+            if (element) {
+              event.preventDefault();
+              event.stopPropagation();
+              this.showPopup(element, event);
+            }
+          });
+      }
     }
   }
 
   showPopup(element: any, event: MouseEvent | TouchEvent) {
-    let footnote = this.navigator.iframes[0].contentDocument.getElementById(
+    let footnote = this.navigator.iframes[0].contentDocument?.getElementById(
       "d2-popup"
     );
     if (footnote) {
-      footnote.parentElement.removeChild(footnote);
+      footnote.parentElement?.removeChild(footnote);
     }
 
     const d2popup = document.createElement("aside");
@@ -89,10 +91,12 @@ export class Popup {
       });
     }
 
-    const paginated = this.navigator.view.isPaginated();
-    const scrollElement = this.getScrollingElement(
-      this.navigator.iframes[0].contentDocument
-    );
+    const paginated = this.navigator.view?.isPaginated();
+    let doc = this.navigator.iframes[0].contentDocument;
+    if (!doc) {
+      return;
+    }
+    const scrollElement = this.getScrollingElement(doc);
 
     const xOffset = paginated ? scrollElement.scrollLeft : 0;
     const yOffset = paginated ? scrollElement.scrollTop : 0;
@@ -104,23 +108,28 @@ export class Popup {
       d2popup.style.left = left + "px";
     }
 
-    this.navigator.iframes[0].contentDocument.body.appendChild(d2popup);
+    doc.body.appendChild(d2popup);
 
-    let self = this;
-    this.navigator.iframes[0].contentWindow.onclick = function (ev) {
+    let win = this.navigator.iframes[0].contentWindow;
+    if (!win) {
+      return;
+    }
+    win.onclick = function (ev) {
       if (event.target !== ev.target) {
         if (d2popup.parentElement) {
           d2popup.style.display = "none";
           d2popup.parentElement.removeChild(d2popup);
-          self.navigator.iframes[0].contentWindow.onclick = undefined;
+          if (win) {
+            win.onclick = null;
+          }
         }
       }
     };
   }
-  private getScrollingElement = (documant: Document): Element => {
-    if (documant.scrollingElement) {
-      return documant.scrollingElement;
+  private getScrollingElement = (doc: Document): Element => {
+    if (doc.scrollingElement) {
+      return doc.scrollingElement;
     }
-    return documant.body;
+    return doc.body;
   };
 }

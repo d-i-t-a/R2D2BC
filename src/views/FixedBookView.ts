@@ -17,18 +17,16 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import Store from "../store/Store";
 import {
   IFrameNavigator,
   IFrameAttributes,
 } from "../navigator/IFrameNavigator";
 import BookView from "./BookView";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
+import Store from "../store/Store";
 
 export default class FixedBookView implements BookView {
   layout = "fixed";
-  constructor(_store: Store) {}
-
   delegate: IFrameNavigator;
   name: string;
   label: string;
@@ -78,5 +76,13 @@ export default class FixedBookView implements BookView {
 
   isScrollMode() {
     return false;
+  }
+
+  atEnd(): boolean {
+    return true;
+  }
+
+  atStart(): boolean {
+    return true;
   }
 }

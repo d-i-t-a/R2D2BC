@@ -86,28 +86,31 @@ export class TimelineModule implements ReaderModule {
           this.publication.positions) ||
           this.publication.positions)
       ) {
-        this.positionSlider.value = locator.locations.position.toString();
+        this.positionSlider.value = (
+          locator.locations.position ?? 0
+        ).toString();
         this.positionSlider.max = (
-          locator.locations.totalRemainingPositions + locator.locations.position
+          (locator.locations.totalRemainingPositions ?? 0) +
+          (locator.locations.position ?? 0)
         ).toString();
       }
 
       if (this.timelineContainer) {
         this.timelineContainer.innerHTML = "";
       }
-      this.publication.readingOrder.forEach((link) => {
+      this.publication.readingOrder?.forEach((link) => {
         const linkHref = this.publication.getAbsoluteHref(link.Href);
         const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
         const tocHref =
-          tocItemAbs.Href.indexOf("#") !== -1
-            ? tocItemAbs.Href.slice(0, tocItemAbs.Href.indexOf("#"))
+          tocItemAbs?.Href.indexOf("#") !== -1
+            ? tocItemAbs?.Href.slice(0, tocItemAbs?.Href.indexOf("#"))
             : tocItemAbs.Href;
-        const tocHrefAbs = this.publication.getAbsoluteHref(tocHref);
+        const tocHrefAbs = this.publication.getAbsoluteHref(tocHref ?? "");
 
         var chapterHeight;
         if (
           this.publication.positions &&
-          this.delegate.view.layout !== "fixed"
+          this.delegate.view?.layout !== "fixed"
         ) {
           if ((link as Link).contentWeight) {
             chapterHeight = (link as Link).contentWeight;
@@ -115,7 +118,7 @@ export class TimelineModule implements ReaderModule {
             chapterHeight = 1;
           }
         } else {
-          chapterHeight = 100 / this.publication.readingOrder.length;
+          chapterHeight = 100 / (this.publication.readingOrder?.length ?? 0);
         }
 
         var chapter = document.createElement("div");
@@ -123,7 +126,7 @@ export class TimelineModule implements ReaderModule {
         chapter.style.width = "100%";
         chapter.className = "chapter";
 
-        if (tocItemAbs.Title !== undefined) {
+        if (tocItemAbs?.Title !== undefined) {
           var tooltip = document.createElement("span");
           tooltip.innerHTML = tocItemAbs.Title;
           tooltip.className = "chapter-tooltip";

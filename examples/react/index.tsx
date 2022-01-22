@@ -21,15 +21,16 @@ const App = () => {
       url,
       injectables: injectables as any,
       injectablesFixed: [],
+      rights: {},
     }).then(setReader);
   }, []);
 
   function scroll() {
-    reader.scroll(true);
+    reader?.scroll(true);
     didUpdate();
   }
   function paginate() {
-    reader.scroll(false);
+    reader?.scroll(false);
     didUpdate();
   }
 

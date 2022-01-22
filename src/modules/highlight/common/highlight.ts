@@ -82,7 +82,7 @@ export interface IHighlight {
   style?: IStyle | undefined;
 
   position?: number;
-  note?: string | undefined;
+  note?: string | null | undefined;
   definition?: Definition | undefined;
 
   type: HighlightType;

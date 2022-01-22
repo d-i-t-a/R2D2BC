@@ -89,7 +89,7 @@ export default class LocalAnnotator implements Annotator {
         JSON.stringify(savedBookmarksObj)
       );
     } else {
-      let bookmarksAry = [];
+      let bookmarksAry: any[] = [];
       bookmarksAry.push(bookmark);
       this.store.set(LocalAnnotator.BOOKMARKS, JSON.stringify(bookmarksAry));
     }
@@ -140,16 +140,22 @@ export default class LocalAnnotator implements Annotator {
       let bookmarks = JSON.parse(bookmarksString);
       if (href) {
         let filteredResult = bookmarks.filter((el: any) => el.href === href);
-        filteredResult = filteredResult.sort(
-          (n1: Bookmark, n2: Bookmark) =>
-            n1.locations.progression - n2.locations.progression
-        );
+        filteredResult = filteredResult.sort((n1: Bookmark, n2: Bookmark) => {
+          if (n1.locations.progression && n2.locations.progression) {
+            return n1.locations.progression - n2.locations.progression;
+          } else {
+            return undefined;
+          }
+        });
         return filteredResult;
       }
-      bookmarks = bookmarks.sort(
-        (n1: Bookmark, n2: Bookmark) =>
-          n1.locations.progression - n2.locations.progression
-      );
+      bookmarks = bookmarks.sort((n1: Bookmark, n2: Bookmark) => {
+        if (n1.locations.progression && n2.locations.progression) {
+          return n1.locations.progression - n2.locations.progression;
+        } else {
+          return undefined;
+        }
+      });
       return bookmarks;
     }
     return [];
@@ -202,7 +208,7 @@ export default class LocalAnnotator implements Annotator {
       annotations.push(annotation);
       this.store.set(LocalAnnotator.ANNOTATIONS, JSON.stringify(annotations));
     } else {
-      let annotations = [];
+      let annotations: any[] = [];
       annotations.push(annotation);
       this.store.set(LocalAnnotator.ANNOTATIONS, JSON.stringify(annotations));
     }
@@ -224,7 +230,7 @@ export default class LocalAnnotator implements Annotator {
     if (savedAnnotations) {
       let annotations = JSON.parse(savedAnnotations) as Array<any>;
       annotations = annotations.filter(
-        (el: Annotation) => el.highlight.id !== annotation.highlight.id
+        (el: Annotation) => el.highlight?.id !== annotation.highlight.id
       );
       this.store.set(LocalAnnotator.ANNOTATIONS, JSON.stringify(annotations));
     }
@@ -235,10 +241,13 @@ export default class LocalAnnotator implements Annotator {
     const savedAnnotations = this.store.get(LocalAnnotator.ANNOTATIONS);
     if (savedAnnotations) {
       let annotations = JSON.parse(savedAnnotations);
-      annotations = annotations.sort(
-        (n1: Annotation, n2: Annotation) =>
-          n1.locations.progression - n2.locations.progression
-      );
+      annotations = annotations.sort((n1: Annotation, n2: Annotation) => {
+        if (n1.locations.progression && n2.locations.progression) {
+          return n1.locations.progression - n2.locations.progression;
+        } else {
+          return undefined;
+        }
+      });
       return annotations;
     }
     return [];
@@ -259,7 +268,7 @@ export default class LocalAnnotator implements Annotator {
             for (let i = 0; i < foundElement.childNodes.length; i++) {
               let childNode = foundElement.childNodes[i] as HTMLDivElement;
               let top = parseInt(childNode.style.top.replace("px", ""));
-              if (top < position || position == 0) {
+              if (top < position || position === 0) {
                 position = top;
               }
             }
@@ -280,7 +289,7 @@ export default class LocalAnnotator implements Annotator {
     if (savedAnnotations) {
       const annotations = JSON.parse(savedAnnotations);
       const filtered = annotations.filter(
-        (el: Annotation) => el.highlight.id === highlight.id
+        (el: Annotation) => el.highlight?.id === highlight.id
       );
       if (filtered.length > 0) {
         return filtered[0];
@@ -293,7 +302,7 @@ export default class LocalAnnotator implements Annotator {
     if (savedAnnotations) {
       const annotations = JSON.parse(savedAnnotations);
       const filtered = annotations.filter(
-        (el: Annotation) => el.highlight.id === id
+        (el: Annotation) => el.highlight?.id === id
       );
       if (filtered.length > 0) {
         return filtered[0];

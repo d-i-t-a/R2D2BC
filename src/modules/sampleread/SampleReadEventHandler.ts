@@ -28,16 +28,19 @@ export default class SampleReadEventHandler {
 
   enforceSampleRead = debounce((position) => {
     let progress = Math.round(position.locations.totalProgression * 100);
-    let valid = progress <= this.delegate.sample?.limit;
-    if (this.delegate.view.layout === "fixed") {
-      if (
-        !valid &&
-        position.locations.position <= this.delegate.sample?.minimum
-      ) {
-        valid = true;
+    let valid = false;
+    if (this.delegate.sample?.limit) {
+      valid = progress <= this.delegate.sample?.limit;
+      if (this.delegate.view?.layout === "fixed") {
+        if (
+          !valid &&
+          this.delegate.sample?.minimum &&
+          position.locations.position <= this.delegate.sample?.minimum
+        ) {
+          valid = true;
+        }
       }
     }
-
     // left: 37, up: 38, right: 39, down: 40,
     // spacebar: 32, pageup: 33, pagedown: 34, end: 35, home: 36
     let keys = {
@@ -64,31 +67,28 @@ export default class SampleReadEventHandler {
 
     // modern Chrome requires { passive: false } when adding event
     let supportsPassive = false;
-    try {
-      window.addEventListener(
-        "test",
-        null,
-        Object.defineProperty({}, "passive", {
-          get: function () {
-            supportsPassive = true;
-          },
-        })
-      );
-    } catch (e) {}
+
+    let opts =
+      Object.defineProperty &&
+      Object.defineProperty({}, "passive", {
+        // eslint-disable-next-line getter-return
+        get: function () {
+          supportsPassive = true;
+        },
+      });
+    window.addEventListener("test", function () {}, opts);
 
     let wheelOpt = supportsPassive ? { passive: false } : false;
-    // let wheelEvent =
-    //   "onwheel" in document.createElement("div") ? "wheel" : "mousewheel";
 
     function MouseWheelHandler(e) {
       // cross-browser wheel delta
       e = e || window.event; // old IE support
       let delta = Math.max(-1, Math.min(1, e.wheelDelta || -e.detail));
 
-      if (delta == 1) {
+      if (delta === 1) {
         // move up
       }
-      if (delta == -1 && !valid) {
+      if (delta === -1 && !valid) {
         // move down
         e.preventDefault();
         // e.stopPropagation();
@@ -143,7 +143,8 @@ export default class SampleReadEventHandler {
       if (this.delegate.errorMessage) {
         this.delegate.errorMessage.style.display = "block";
         this.delegate.errorMessage.style.backgroundColor = "rgb(255, 255, 255)";
-        this.delegate.errorMessage.innerHTML = this.delegate.sample?.popup;
+        this.delegate.errorMessage.innerHTML =
+          this.delegate.sample?.popup ?? "";
       }
     } else {
       this.delegate.iframes[0].focus();

@@ -61,7 +61,7 @@ export default class LocalStorageStore implements Store {
   }
 
   public get(key: string): any | null {
-    let value: string | null = null;
+    let value: string | null;
     if (!this.fallbackStore) {
       if (this.useLocalStorage) {
         value = window.localStorage.getItem(this.getLocalStorageKey(key));

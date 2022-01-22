@@ -1245,7 +1245,7 @@
             }
         }
         function reload() {
-            let result = d2reader.currentSettings();
+            let result = d2reader.currentSettings;
             console.log(JSON.stringify(result))
             document.getElementById("fontSize").value = result['fontSize'];
             // document.getElementById("appearance").value = result['appearance'];

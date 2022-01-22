@@ -139,7 +139,7 @@ export class BookmarkModule implements ReaderModule {
         this.headerMenu,
         "#menu-button-bookmark"
       );
-      if (this.rights?.enableMaterial) {
+      if (this.rights.enableMaterial) {
         if (menuBookmark)
           menuBookmark.parentElement?.style.removeProperty("display");
         if (menuBookmark)
@@ -182,7 +182,7 @@ export class BookmarkModule implements ReaderModule {
   initialize() {
     return new Promise(async (resolve) => {
       await (document as any).fonts.ready;
-      if (this.rights?.enableBookmarks) {
+      if (this.rights.enableBookmarks) {
         setTimeout(() => {
           this.drawBookmarks();
           this.showBookmarks();
@@ -202,7 +202,7 @@ export class BookmarkModule implements ReaderModule {
         }
         await this.showBookmarks();
         await this.drawBookmarks();
-        if (this.delegate.rights?.enableMaterial) {
+        if (this.delegate.rights.enableMaterial) {
           toast({ html: "bookmark deleted" });
         }
         return deleted;
@@ -214,7 +214,7 @@ export class BookmarkModule implements ReaderModule {
         }
         await this.showBookmarks();
         await this.drawBookmarks();
-        if (this.delegate.rights?.enableMaterial) {
+        if (this.delegate.rights.enableMaterial) {
           toast({ html: "bookmark deleted" });
         }
         return deleted;
@@ -252,8 +252,7 @@ export class BookmarkModule implements ReaderModule {
         const id: string = uuid();
         let bookmark: Bookmark;
         if (
-          ((this.rights?.autoGeneratePositions ?? true) &&
-            this.publication.positions) ||
+          (this.rights.autoGeneratePositions && this.publication.positions) ||
           this.publication.positions
         ) {
           const positions = this.publication.positionsByHref(
@@ -298,7 +297,7 @@ export class BookmarkModule implements ReaderModule {
             if (IS_DEV) {
               console.log("Bookmark added " + JSON.stringify(saved));
             }
-            if (this.delegate.rights?.enableMaterial) {
+            if (this.delegate.rights.enableMaterial) {
               toast({ html: "bookmark added" });
             }
             this.showBookmarks();
@@ -310,7 +309,7 @@ export class BookmarkModule implements ReaderModule {
             if (IS_DEV) {
               console.log("Bookmark added " + JSON.stringify(saved));
             }
-            if (this.delegate.rights?.enableMaterial) {
+            if (this.delegate.rights.enableMaterial) {
               toast({ html: "bookmark added" });
             }
             this.showBookmarks();
@@ -318,7 +317,7 @@ export class BookmarkModule implements ReaderModule {
             return saved;
           }
         } else {
-          if (this.delegate.rights?.enableMaterial) {
+          if (this.delegate.rights.enableMaterial) {
             toast({ html: "bookmark exists" });
           }
         }
@@ -493,8 +492,7 @@ export class BookmarkModule implements ReaderModule {
           }
 
           if (
-            ((this.rights?.autoGeneratePositions ?? true) &&
-              this.publication.positions) ||
+            (this.rights.autoGeneratePositions && this.publication.positions) ||
             this.publication.positions
           ) {
             const positions = this.publication.positionsByHref(
@@ -590,7 +588,7 @@ export class BookmarkModule implements ReaderModule {
   }
 
   async drawBookmarks(): Promise<void> {
-    if (this.rights?.enableBookmarks && this.delegate.highlighter) {
+    if (this.rights.enableBookmarks && this.delegate.highlighter) {
       if (this.api) {
         let highlights: Array<any> = [];
         if (this.annotator) {
@@ -711,7 +709,7 @@ export class BookmarkModule implements ReaderModule {
       }
       await this.showBookmarks();
       await this.drawBookmarks();
-      if (this.delegate.rights?.enableMaterial) {
+      if (this.delegate.rights.enableMaterial) {
         toast({ html: "highlight deleted" });
       }
       return deleted;
@@ -822,8 +820,8 @@ export class BookmarkModule implements ReaderModule {
                 bookmarkItem.appendChild(bookmarkLink);
                 if (
                   (self.delegate.sideNavExpanded &&
-                    self.delegate.rights?.enableMaterial) ||
-                  !self.delegate.rights?.enableMaterial
+                    self.delegate.rights.enableMaterial) ||
+                  !self.delegate.rights.enableMaterial
                 ) {
                   let bookmarkDeleteLink: HTMLElement = document.createElement(
                     "button"

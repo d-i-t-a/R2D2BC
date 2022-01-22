@@ -61,17 +61,19 @@ export class TimelineModule implements ReaderModule {
       document,
       "#container-view-timeline"
     );
-    if (this.delegate.rights?.enableMaterial) {
+    if (this.delegate.rights.enableMaterial) {
       this.positionSlider = HTMLUtilities.findElement(
         document,
         "#positionSlider"
       );
     }
     if (
-      !(this.delegate.rights?.autoGeneratePositions ?? true) &&
-      !this.publication.positions
+      this.delegate.rights.autoGeneratePositions &&
+      this.publication.positions
     ) {
-      this.positionSlider.style.display = "none";
+      if (this.positionSlider) this.positionSlider.style.display = "block";
+    } else {
+      if (this.positionSlider) this.positionSlider.style.display = "none";
     }
   }
 
@@ -81,18 +83,20 @@ export class TimelineModule implements ReaderModule {
 
       let locator = this.delegate.currentLocator();
       if (
-        this.delegate.rights?.enableMaterial &&
-        (((this.delegate.rights?.autoGeneratePositions ?? true) &&
+        this.delegate.rights.enableMaterial &&
+        ((this.delegate.rights.autoGeneratePositions &&
           this.publication.positions) ||
           this.publication.positions)
       ) {
-        this.positionSlider.value = (
-          locator.locations.position ?? 0
-        ).toString();
-        this.positionSlider.max = (
-          (locator.locations.totalRemainingPositions ?? 0) +
-          (locator.locations.position ?? 0)
-        ).toString();
+        if (this.positionSlider)
+          this.positionSlider.value = (
+            locator.locations.position ?? 0
+          ).toString();
+        if (this.positionSlider)
+          this.positionSlider.max = (
+            (locator.locations.totalRemainingPositions ?? 0) +
+            (locator.locations.position ?? 0)
+          ).toString();
       }
 
       if (this.timelineContainer) {
@@ -139,7 +143,7 @@ export class TimelineModule implements ReaderModule {
           var position;
           if (
             this.publication.positions ||
-            ((this.delegate.rights?.autoGeneratePositions ?? true) &&
+            (this.delegate.rights.autoGeneratePositions &&
               this.publication.positions)
           ) {
             position = {

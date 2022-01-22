@@ -98,7 +98,7 @@ export default class ReflowableBookView implements BookView {
       }
       this.setSize();
     }
-    if (this.delegate.rights?.enableContentProtection) {
+    if (this.delegate.rights.enableContentProtection) {
       this.delegate.contentProtectionModule?.recalculate();
     }
   }
@@ -250,7 +250,7 @@ export default class ReflowableBookView implements BookView {
         element.style.height = originalHeight;
         this.setLeftColumnsWidth(roundedLeftWidth);
 
-        if (this.delegate.rights?.enableContentProtection) {
+        if (this.delegate.rights.enableContentProtection) {
           this.delegate.contentProtectionModule?.recalculate(0);
         }
       }
@@ -293,7 +293,7 @@ export default class ReflowableBookView implements BookView {
         // Restore element's original height.
         element.style.height = originalHeight;
         this.setLeftColumnsWidth(roundedLeftWidth);
-        if (this.delegate.rights?.enableContentProtection) {
+        if (this.delegate.rights.enableContentProtection) {
           this.delegate.contentProtectionModule?.recalculate(200);
         }
       }
@@ -359,7 +359,7 @@ export default class ReflowableBookView implements BookView {
       }
       this.delegate.checkResourcePosition();
     }
-    if (this.delegate.rights?.enableContentProtection) {
+    if (this.delegate.rights.enableContentProtection) {
       this.delegate.contentProtectionModule?.recalculate();
     }
   }
@@ -392,7 +392,7 @@ export default class ReflowableBookView implements BookView {
       }
       this.delegate.checkResourcePosition();
     }
-    if (this.delegate.rights?.enableContentProtection) {
+    if (this.delegate.rights.enableContentProtection) {
       this.delegate.contentProtectionModule?.recalculate();
     }
   }

@@ -534,7 +534,7 @@ export class TTSModule implements ReaderModule {
         this.headerMenu,
         "#menu-button-tts"
       );
-      if (this.rights?.enableMaterial) {
+      if (this.rights.enableMaterial) {
         if (menuTTS) menuTTS.parentElement?.style.removeProperty("display");
       } else {
         if (menuTTS)

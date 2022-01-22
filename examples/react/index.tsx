@@ -21,7 +21,6 @@ const App = () => {
       url,
       injectables: injectables as any,
       injectablesFixed: [],
-      rights: {},
     }).then(setReader);
   }, []);
 

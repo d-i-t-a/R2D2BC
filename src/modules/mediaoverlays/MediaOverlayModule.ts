@@ -218,8 +218,8 @@ export class MediaOverlayModule implements ReaderModule {
     if (this.delegate.rights?.enableMediaOverlays) {
       this.settings.playing = false;
       this.audioElement.pause();
-      this.play.style.display = "block";
-      this.pause.style.display = "none";
+      if (this.play) this.play.style.display = "block";
+      if (this.pause) this.pause.style.display = "none";
     }
   }
   async resumeReadAloud() {

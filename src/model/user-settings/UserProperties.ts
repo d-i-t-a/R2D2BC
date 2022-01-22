@@ -111,16 +111,22 @@ export class Incremental extends UserProperty {
   }
 
   increment() {
-    if (this.value <= this.max) {
-      this.value += this.step;
+    const dec = this.countDecimals(this.max);
+    if (parseFloat(this.value.toFixed(dec)) < this.max) {
+      this.value = parseFloat(this.value.toFixed(dec)) + this.step;
     }
   }
 
   decrement() {
-    if (this.value >= this.min) {
-      this.value -= this.step;
+    const dec = this.countDecimals(this.min);
+    if (parseFloat(this.value.toFixed(dec)) > this.min) {
+      this.value = parseFloat(this.value.toFixed(dec)) - this.step;
     }
   }
+  countDecimals = function (value) {
+    if (value % 1 !== 0) return value.toString().split(".")[1].length;
+    return 1;
+  };
 }
 export class Switchable extends UserProperty {
   value: boolean;

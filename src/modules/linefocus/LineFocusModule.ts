@@ -116,7 +116,7 @@ export default class LineFocusModule implements ReaderModule {
     this.isActive = false;
     document.body.style.removeProperty("overflow");
 
-    this.lineFocusContainer.style.display = "none";
+    if (this.lineFocusContainer) this.lineFocusContainer.style.display = "none";
 
     let timeline = document.getElementById("container-view-timeline");
     if (timeline) {

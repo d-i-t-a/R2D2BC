@@ -32,6 +32,7 @@ import {
   MediaOverlayModuleAPI,
   MediaOverlayModuleProperties,
 } from "./MediaOverlayModule";
+import { ReadiumCSS } from "../../model/user-settings/ReadiumCSS";
 
 export const R2_MO_CLASS_ACTIVE = "r2-mo-active";
 
@@ -439,6 +440,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       (this.userProperties.getByRef(
         MEDIAOVERLAYREFS.VOLUME_REF
       ) as Incremental).increment();
+      this.volume = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.VOLUME_REF
+      ).value;
       this.storeProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
       );
@@ -447,6 +451,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       (this.userProperties.getByRef(
         MEDIAOVERLAYREFS.RATE_REF
       ) as Incremental).increment();
+      this.rate = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF).value;
       this.storeProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)
       );
@@ -459,6 +464,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       (this.userProperties.getByRef(
         MEDIAOVERLAYREFS.VOLUME_REF
       ) as Incremental).decrement();
+      this.volume = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.VOLUME_REF
+      ).value;
       this.storeProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
       );
@@ -467,6 +475,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       (this.userProperties.getByRef(
         MEDIAOVERLAYREFS.RATE_REF
       ) as Incremental).decrement();
+      this.rate = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF).value;
       this.storeProperty(
         this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)
       );

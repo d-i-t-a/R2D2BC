@@ -46,10 +46,9 @@ export class TTSModule implements ReaderModule {
   private delegate: IFrameNavigator;
   private body: any;
   private hasEventListener: boolean = false;
-  private readonly headerMenu: HTMLElement;
-  // @ts-ignore
+  private readonly headerMenu?: HTMLElement | null;
   private readonly properties: TTSModuleProperties;
-  private readonly api: TTSModuleAPI;
+  private readonly api?: TTSModuleAPI;
 
   initialize(body: any) {
     if (this.highlighter !== undefined) {
@@ -117,7 +116,7 @@ export class TTSModule implements ReaderModule {
           var preferredLanguageSelector = HTMLUtilities.findElement(
             this.headerMenu,
             "#preferred-languages"
-          ) as HTMLSelectElement;
+          );
           if (preferredLanguageSelector) {
             this.voices.forEach((voice) => {
               var v = document.createElement("option") as HTMLOptionElement;
@@ -175,36 +174,38 @@ export class TTSModule implements ReaderModule {
       if (partial) {
         var allWords = self.body.querySelectorAll("[data-word]");
 
-        var startNode = (selectionInfo as ISelectionInfo).range.startContainer
+        var startNode = (selectionInfo as ISelectionInfo).range?.startContainer
           .parentElement;
-        if (startNode.tagName.toLowerCase() === "a") {
+        if (startNode?.tagName.toLowerCase() === "a") {
           startNode = startNode.parentElement as HTMLElement;
         }
-        if (startNode.dataset === undefined) {
-          startNode = startNode.nextElementSibling as HTMLElement;
+        if (startNode?.dataset === undefined) {
+          startNode = startNode?.nextElementSibling as HTMLElement;
         }
 
-        var endNode = (selectionInfo as ISelectionInfo).range.endContainer
+        var endNode = (selectionInfo as ISelectionInfo).range?.endContainer
           .parentElement;
-        if (endNode.tagName.toLowerCase() === "a") {
-          endNode = endNode.parentElement as HTMLElement;
+        if (endNode?.tagName.toLowerCase() === "a") {
+          endNode = endNode?.parentElement as HTMLElement;
         }
-        if (endNode.dataset === undefined) {
-          endNode = endNode.previousElementSibling as HTMLElement;
+        if (endNode?.dataset === undefined) {
+          endNode = endNode?.previousElementSibling as HTMLElement;
         }
 
-        var startWordIndex = parseInt(startNode.dataset.wordIndex);
-        var endWordIndex = parseInt(endNode.dataset.wordIndex) + 1;
+        var startWordIndex = parseInt(startNode.dataset.wordIndex ?? "");
+        var endWordIndex = parseInt(endNode.dataset.wordIndex ?? "") + 1;
 
         let array = Array.from(allWords);
         this.splittingResult = array.slice(startWordIndex, endWordIndex);
       } else {
-        document.scrollingElement.scrollTop = 0;
+        if (document.scrollingElement) {
+          document.scrollingElement.scrollTop = 0;
+        }
         this.splittingResult = self.body.querySelectorAll("[data-word]");
       }
     }
     const utterance = partial
-      ? new SpeechSynthesisUtterance(selectionInfo.cleanText)
+      ? new SpeechSynthesisUtterance(selectionInfo?.cleanText)
       : new SpeechSynthesisUtterance(this.clean);
     utterance.rate = this.tts.rate;
     utterance.pitch = this.tts.pitch;
@@ -386,16 +387,16 @@ export class TTSModule implements ReaderModule {
       if (IS_DEV) console.log("spokenWordCleaned", spokenWordCleaned);
 
       let splittingWord = self.splittingResult[self.index] as HTMLElement;
-      var splittingWordCleaned = splittingWord?.dataset.word.replace(
+      var splittingWordCleaned = splittingWord?.dataset.word?.replace(
         /[^a-zA-Z0-9 ]/g,
         ""
       );
       if (IS_DEV) console.log("splittingWordCleaned", splittingWordCleaned);
 
-      if (splittingWordCleaned.length === 0) {
+      if (splittingWordCleaned?.length === 0) {
         self.index++;
         splittingWord = self.splittingResult[self.index] as HTMLElement;
-        splittingWordCleaned = splittingWord?.dataset.word.replace(
+        splittingWordCleaned = splittingWord?.dataset.word?.replace(
           /[^a-zA-Z0-9 ]/g,
           ""
         );
@@ -404,9 +405,13 @@ export class TTSModule implements ReaderModule {
 
       if (splittingWord) {
         var isAnchorParent =
-          splittingWord.parentElement.tagName.toLowerCase() === "a";
+          splittingWord.parentElement?.tagName.toLowerCase() === "a";
         if (!isAnchorParent) {
-          if (spokenWordCleaned.length > 0 && splittingWordCleaned.length > 0) {
+          if (
+            spokenWordCleaned.length > 0 &&
+            splittingWordCleaned !== undefined &&
+            splittingWordCleaned.length > 0
+          ) {
             if (
               splittingWordCleaned.startsWith(spokenWordCleaned) ||
               splittingWordCleaned.endsWith(spokenWordCleaned) ||
@@ -431,7 +436,7 @@ export class TTSModule implements ReaderModule {
               }
               splittingWord.dataset.ttsCurrentWord = "true";
               if (
-                self.delegate.view.isScrollMode() &&
+                self.delegate.view?.isScrollMode() &&
                 self.tts.autoScroll &&
                 !self.userScrolled
               ) {
@@ -493,11 +498,11 @@ export class TTSModule implements ReaderModule {
     const tts = new this(
       config.delegate,
       config.tts,
-      config.headerMenu,
       config.rights,
       config.highlighter,
       config as TTSModuleProperties,
-      config.api
+      config.api,
+      config.headerMenu
     );
     await tts.start();
     return tts;
@@ -506,11 +511,11 @@ export class TTSModule implements ReaderModule {
   public constructor(
     delegate: IFrameNavigator,
     tts: TTSSettings,
-    headerMenu: HTMLElement,
     rights: ReaderRights,
     highlighter: TextHighlighter,
-    properties: TTSModuleProperties | null = null,
-    api: TTSModuleAPI | null = null
+    properties: TTSModuleProperties,
+    api?: TTSModuleAPI,
+    headerMenu?: HTMLElement | null
   ) {
     this.delegate = delegate;
     this.tts = tts;
@@ -528,11 +533,12 @@ export class TTSModule implements ReaderModule {
       var menuTTS = HTMLUtilities.findElement(
         this.headerMenu,
         "#menu-button-tts"
-      ) as HTMLLinkElement;
-      if (this.rights?.enableMaterial) {
-        if (menuTTS) menuTTS.parentElement.style.removeProperty("display");
+      );
+      if (this.rights.enableMaterial) {
+        if (menuTTS) menuTTS.parentElement?.style.removeProperty("display");
       } else {
-        if (menuTTS) menuTTS.parentElement.style.setProperty("display", "none");
+        if (menuTTS)
+          menuTTS.parentElement?.style.setProperty("display", "none");
       }
     }
   }

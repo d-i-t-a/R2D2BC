@@ -47,7 +47,7 @@ export interface ContentProtectionModuleProperties {
 
 export interface ContentProtectionModuleConfig
   extends Partial<ContentProtectionModuleProperties> {
-  delegate?: IFrameNavigator;
+  delegate: IFrameNavigator;
   api?: ContentProtectionModuleAPI;
 }
 
@@ -69,7 +69,7 @@ interface ContentProtectionRect {
 export class ContentProtectionModule implements ReaderModule {
   private rects: Array<ContentProtectionRect>;
   private delegate: IFrameNavigator;
-  private properties: ContentProtectionModuleProperties;
+  private properties?: ContentProtectionModuleProperties;
   private hasEventListener: boolean = false;
   private isHacked: boolean = false;
   private securityContainer: HTMLDivElement;
@@ -99,7 +99,7 @@ export class ContentProtectionModule implements ReaderModule {
 
   public constructor(
     delegate: IFrameNavigator,
-    properties: ContentProtectionModuleProperties | null = null
+    properties?: ContentProtectionModuleProperties
   ) {
     this.delegate = delegate;
     this.properties = properties;
@@ -159,12 +159,12 @@ export class ContentProtectionModule implements ReaderModule {
       this.wrapper = HTMLUtilities.findRequiredElement(
         document,
         "#iframe-wrapper"
-      ) as HTMLDivElement;
+      );
 
       this.securityContainer = HTMLUtilities.findElement(
         document,
         "#container-view-security"
-      ) as HTMLDivElement;
+      );
 
       var self = this;
 
@@ -392,14 +392,16 @@ export class ContentProtectionModule implements ReaderModule {
     if (this.properties?.enableObfuscation) {
       this.observe();
       for (const iframe of this.delegate.iframes) {
-        const body = HTMLUtilities.findRequiredIframeElement(
-          iframe.contentDocument,
-          "body"
-        ) as HTMLBodyElement;
-        this.rects = this.findRects(body);
-        this.rects.forEach((rect) =>
-          this.toggleRect(rect, this.securityContainer, this.isHacked)
-        );
+        if (iframe.contentDocument) {
+          const body = HTMLUtilities.findRequiredIframeElement(
+            iframe.contentDocument,
+            "body"
+          ) as HTMLBodyElement;
+          this.rects = this.findRects(body);
+          this.rects.forEach((rect) =>
+            this.toggleRect(rect, this.securityContainer, this.isHacked)
+          );
+        }
       }
     }
   }
@@ -433,7 +435,7 @@ export class ContentProtectionModule implements ReaderModule {
           this.disableSave
         );
         addEventListenerOptional(
-          iframe.contentWindow.document,
+          iframe.contentWindow?.document,
           "keydown",
           this.disableSave
         );
@@ -470,7 +472,7 @@ export class ContentProtectionModule implements ReaderModule {
           this.preventCopy
         );
         addEventListenerOptional(
-          iframe.contentWindow.document,
+          iframe.contentWindow?.document,
           "copy",
           this.preventCopy
         );
@@ -498,7 +500,7 @@ export class ContentProtectionModule implements ReaderModule {
         );
         addEventListenerOptional(iframe.contentWindow, "cut", this.preventCopy);
         addEventListenerOptional(
-          iframe.contentWindow.document,
+          iframe.contentWindow?.document,
           "cut",
           this.preventCopy
         );
@@ -541,7 +543,7 @@ export class ContentProtectionModule implements ReaderModule {
           this.beforePrint.bind(this)
         );
         addEventListenerOptional(
-          iframe.contentWindow.document,
+          iframe.contentWindow?.document,
           "beforeprint",
           this.beforePrint.bind(this)
         );
@@ -589,7 +591,7 @@ export class ContentProtectionModule implements ReaderModule {
           this.afterPrint.bind(this)
         );
         addEventListenerOptional(
-          iframe.contentWindow.document,
+          iframe.contentWindow?.document,
           "afterprint",
           this.afterPrint.bind(this)
         );
@@ -634,7 +636,7 @@ export class ContentProtectionModule implements ReaderModule {
           this.disableContext
         );
         addEventListenerOptional(
-          iframe.contentWindow.document,
+          iframe.contentWindow?.document,
           "contextmenu",
           this.disableContext
         );
@@ -658,30 +660,31 @@ export class ContentProtectionModule implements ReaderModule {
       return new Promise<void>(async (resolve) => {
         await (document as any).fonts.ready;
         for (const iframe of this.delegate.iframes) {
-          const body = HTMLUtilities.findRequiredIframeElement(
-            iframe.contentDocument,
-            "body"
-          ) as HTMLBodyElement;
+          if (iframe.contentDocument) {
+            const body = HTMLUtilities.findRequiredIframeElement(
+              iframe.contentDocument,
+              "body"
+            ) as HTMLBodyElement;
+            this.observe();
 
-          this.observe();
-
-          setTimeout(() => {
-            this.rects = this.findRects(body);
-            this.rects.forEach((rect) =>
-              this.toggleRect(rect, this.securityContainer, this.isHacked)
-            );
-
-            this.setupEvents();
-            if (!this.hasEventListener) {
-              this.hasEventListener = true;
-              addEventListenerOptional(
-                this.wrapper,
-                "scroll",
-                this.handleScroll.bind(this)
+            setTimeout(() => {
+              this.rects = this.findRects(body);
+              this.rects.forEach((rect) =>
+                this.toggleRect(rect, this.securityContainer, this.isHacked)
               );
-            }
-            resolve();
-          }, 10);
+
+              this.setupEvents();
+              if (!this.hasEventListener) {
+                this.hasEventListener = true;
+                addEventListenerOptional(
+                  this.wrapper,
+                  "scroll",
+                  this.handleScroll.bind(this)
+                );
+              }
+              resolve();
+            }, 10);
+          }
         }
       });
     }
@@ -795,24 +798,28 @@ export class ContentProtectionModule implements ReaderModule {
       aElement.click();
     }
     for (const iframe of this.delegate.iframes) {
-      const aElements = iframe.contentDocument.querySelectorAll("a");
+      const aElements = iframe.contentDocument?.querySelectorAll("a");
 
-      aElements.forEach((aElement) => {
+      aElements?.forEach((aElement) => {
         const dataHref = aElement.getAttribute("data-href");
-        if (!dataHref) {
-          aElement.setAttribute("data-href", aElement.getAttribute("href"));
+        const href = aElement.getAttribute("href");
+        if (!dataHref && href) {
+          aElement.setAttribute("data-href", href);
           aElement.setAttribute("data-href-resolved", aElement.href);
         }
       });
 
       if (activate) {
-        aElements.forEach((aElement) => {
+        aElements?.forEach((aElement) => {
           aElement.setAttribute("href", "");
           aElement.addEventListener("click", onAElementClick);
         });
       } else {
-        aElements.forEach((aElement) => {
-          aElement.setAttribute("href", aElement.getAttribute("data-href"));
+        aElements?.forEach((aElement) => {
+          const dataHref = aElement.getAttribute("data-href");
+          if (dataHref) {
+            aElement.setAttribute("href", dataHref);
+          }
           aElement.removeEventListener("click", onAElementClick);
         });
       }
@@ -826,20 +833,21 @@ export class ContentProtectionModule implements ReaderModule {
       evt.preventDefault();
     };
     for (const iframe of this.delegate.iframes) {
-      const bodyStyle = iframe.contentDocument.body.getAttribute("style") || "";
+      const bodyStyle =
+        iframe.contentDocument?.body.getAttribute("style") || "";
 
       if (activate) {
-        iframe.contentDocument.body.addEventListener("dragstart", onDragstart);
-        iframe.contentDocument.body.setAttribute(
+        iframe.contentDocument?.body.addEventListener("dragstart", onDragstart);
+        iframe.contentDocument?.body.setAttribute(
           "style",
           bodyStyle + dragStyle
         );
       } else {
-        iframe.contentDocument.body.removeEventListener(
+        iframe.contentDocument?.body.removeEventListener(
           "dragstart",
           onDragstart
         );
-        iframe.contentDocument.body.setAttribute(
+        iframe.contentDocument?.body.setAttribute(
           "style",
           bodyStyle.replace(dragStyle, "")
         );
@@ -928,20 +936,21 @@ export class ContentProtectionModule implements ReaderModule {
     return textNodes.map((node) => {
       const { top, height, left, width } = this.measureTextNode(node);
       const scrambled =
-        node.parentElement.nodeName === "option" ||
-        node.parentElement.nodeName === "script"
+        node.parentElement?.nodeName === "option" ||
+        node.parentElement?.nodeName === "script"
           ? node.textContent
-          : this.obfuscateText(node.textContent);
-      return {
-        top,
-        height,
-        width,
-        left,
-        node,
-        textContent: node.textContent,
-        scrambledTextContent: scrambled,
+          : this.obfuscateText(node.textContent ?? "");
+      let rect: ContentProtectionRect = {
+        top: top,
+        height: height,
+        width: width,
+        left: left,
+        node: node,
+        textContent: node.textContent ?? "",
+        scrambledTextContent: scrambled ?? "",
         isObfuscated: false,
       };
+      return rect;
     });
   }
 
@@ -1016,7 +1025,7 @@ export class ContentProtectionModule implements ReaderModule {
       }
 
       if (element.nodeType === 3) {
-        if (element.textContent.trim()) {
+        if (element.textContent?.trim()) {
           nodes.push(element);
         }
       }

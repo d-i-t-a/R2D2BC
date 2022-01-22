@@ -56,8 +56,8 @@ export interface MediaOverlayModuleProperties {
 export interface MediaOverlayModuleConfig extends MediaOverlayModuleProperties {
   publication: Publication;
   delegate: IFrameNavigator;
-  api: MediaOverlayModuleAPI;
   settings: MediaOverlaySettings;
+  api?: MediaOverlayModuleAPI;
 }
 
 export class MediaOverlayModule implements ReaderModule {
@@ -65,32 +65,34 @@ export class MediaOverlayModule implements ReaderModule {
   private delegate: IFrameNavigator;
   private audioElement: HTMLMediaElement;
   private settings: MediaOverlaySettings;
+  private properties: MediaOverlayModuleProperties;
   private play: HTMLLinkElement = HTMLUtilities.findElement(
     document,
     "#menu-button-play"
-  ) as HTMLLinkElement;
+  );
   private pause: HTMLLinkElement = HTMLUtilities.findElement(
     document,
     "#menu-button-pause"
-  ) as HTMLLinkElement;
+  );
 
   private currentAudioBegin: number | undefined;
   private currentAudioEnd: number | undefined;
-  private currentLinks: Array<Link>;
+  private currentLinks: Array<Link | undefined>;
   private currentLinkIndex = 0;
   private currentAudioUrl: string | undefined;
   private previousAudioUrl: string | undefined;
   private previousAudioEnd: number | undefined;
   private mediaOverlayRoot: MediaOverlayNode | undefined;
   private mediaOverlayTextAudioPair: MediaOverlayNode | undefined;
-  private pid: string = undefined;
+  private pid: string | undefined = undefined;
   private __ontimeupdate = false;
 
   public static create(config: MediaOverlayModuleConfig) {
     const mediaOverlay = new this(
       config.delegate,
       config.publication,
-      config.settings
+      config.settings,
+      config as MediaOverlayModuleProperties
     );
     mediaOverlay.start();
     return mediaOverlay;
@@ -99,11 +101,13 @@ export class MediaOverlayModule implements ReaderModule {
   private constructor(
     delegate: IFrameNavigator,
     publication: Publication,
-    settings: MediaOverlaySettings
+    settings: MediaOverlaySettings,
+    properties: MediaOverlayModuleProperties
   ) {
     this.delegate = delegate;
     this.publication = publication;
     this.settings = settings;
+    this.properties = properties;
   }
 
   stop() {
@@ -128,7 +132,7 @@ export class MediaOverlayModule implements ReaderModule {
     });
   }
 
-  async initializeResource(links: Array<Link>) {
+  async initializeResource(links: Array<Link | undefined>) {
     this.currentLinks = links;
     this.currentLinkIndex = 0;
     await this.playLink();
@@ -197,7 +201,7 @@ export class MediaOverlayModule implements ReaderModule {
   }
 
   async startReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
+    if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = true;
       const timeToSeekTo = this.currentAudioBegin ? this.currentAudioBegin : 0;
       this.audioElement.currentTime = timeToSeekTo;
@@ -209,7 +213,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
   }
   async stopReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
+    if (this.delegate.rights.enableMediaOverlays) {
       await this.playLink();
       this.settings.playing = false;
       this.audioElement.pause();
@@ -218,7 +222,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
   }
   pauseReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
+    if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = false;
       this.audioElement.pause();
       if (this.play) this.play.style.display = "block";
@@ -226,7 +230,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
   }
   async resumeReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
+    if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = true;
       await this.audioElement.play();
       if (this.play) this.play.style.display = "none";
@@ -802,7 +806,7 @@ export class MediaOverlayModule implements ReaderModule {
     if (!classActive) {
       classActive = this.settings.color;
     }
-    const styleAttr = this.delegate.iframes[0].contentDocument.documentElement.getAttribute(
+    const styleAttr = this.delegate.iframes[0].contentDocument?.documentElement.getAttribute(
       "style"
     );
     const isNight = styleAttr
@@ -827,11 +831,11 @@ export class MediaOverlayModule implements ReaderModule {
       let prevElement;
 
       if (this.currentLinkIndex === 0) {
-        prevElement = this.delegate.iframes[0].contentDocument.getElementById(
+        prevElement = this.delegate.iframes[0].contentDocument?.getElementById(
           this.pid
         );
       } else {
-        prevElement = this.delegate.iframes[1].contentDocument.getElementById(
+        prevElement = this.delegate.iframes[1].contentDocument?.getElementById(
           this.pid
         );
       }
@@ -842,16 +846,17 @@ export class MediaOverlayModule implements ReaderModule {
     }
 
     let current;
-    if (this.currentLinkIndex === 0) {
-      current = this.delegate.iframes[0].contentDocument.getElementById(id);
-    } else {
-      current = this.delegate.iframes[1].contentDocument.getElementById(id);
+    if (id) {
+      if (this.currentLinkIndex === 0) {
+        current = this.delegate.iframes[0].contentDocument?.getElementById(id);
+      } else {
+        current = this.delegate.iframes[1].contentDocument?.getElementById(id);
+      }
+      if (current) {
+        current.classList.add(classActive);
+      }
+      this.pid = id;
     }
-    if (current) {
-      current.classList.add(classActive);
-    }
-
-    this.pid = id;
     if (
       current &&
       (this.publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"

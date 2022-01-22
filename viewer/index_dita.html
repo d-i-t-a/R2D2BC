@@ -423,7 +423,7 @@
         border-style: solid;
         color: black;
         font-size: 9pt;text-transform: uppercase"
-                                onclick="d2reader.applyUserSettings({columnCount:'auto'});setColor('auto')">Auto
+                                onclick="d2reader.applyUserSettings({columnCount:'auto'});setColumns('auto')">Auto
                         </button><button style="width: 30%;
             background-color: white;
     height: 50px;
@@ -432,7 +432,7 @@
         border-width: 1px;
         border-style: solid;
         color: black;
-        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({columnCount:'1'});setColor('1')">
+        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({columnCount:'1'});setColumns('1')">
                         Single
                     </button><button style="width: 30%;
             background-color: white;
@@ -442,7 +442,7 @@
         border-width: 1px;
         border-style: solid;
         color: black;
-        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({columnCount:'2'});setColor('2')">
+        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({columnCount:'2'});setColumns('2')">
                         Double
                     </button>
                     </center>
@@ -530,10 +530,10 @@
 
         <div id="D2Reader-Container" style="border: solid 5px rebeccapurple;">
             <div id="lineFocusContainer" class="d2-line-focus-container" style="display: none">
-                <div id="lineFocusTopBlinder" class="d2-line-focus-top"></div>
+                <div id="lineFocusTopBlinder" class="d2-line-focus-top" ></div>
                 <div id="lineFocusBottomBlinder" class="d2-line-focus-bottom"></div>
             </div>
-            <main style="height: calc(100vh - 75px);" tabindex=-1 id="iframe-wrapper">
+            <main style="height: calc(100vh - 74px);" tabindex=-1 id="iframe-wrapper">
                 <div id="reader-loading" class="loading"></div>
                 <div id="reader-error" class="error"></div>
                 <div id="reader-info-top" class="info top">
@@ -545,7 +545,7 @@
                         <span class="chapter-title"></span>
                     </div>
                     <div class="scrubber">
-                        <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="d2reader.goToPosition( this.value )" />
+                        <input class="range-slider__range" style="width:100%;display: none" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="d2reader.goToPosition( this.value )" />
                     </div>
                 </div>
                 <div style="height: 0px">
@@ -1193,14 +1193,12 @@
                 console.log("listener ready");
             });
 
-            // console.log("instance.bookmarkModule ", instance.bookmarkModule)
-            // console.log("instance.annotationModule ", instance.annotationModule)
         }).catch(error => {
             console.error(error)
             document.getElementById("reader-error").innerText = error.message
         });
 
-        function setColor(columnCount) {
+        function setColumns(columnCount) {
             let buttons = document.getElementById('columnCount').getElementsByTagName('button');
             if (columnCount == 'auto') {
                 buttons[0].style.backgroundColor = '#d7dcdf'
@@ -1246,47 +1244,22 @@
         }
         function reload() {
             let result = d2reader.currentSettings;
-            console.log(JSON.stringify(result))
             document.getElementById("fontSize").value = result['fontSize'];
-            // document.getElementById("appearance").value = result['appearance'];
-            // document.getElementById("scroll").value = result['scroll'];
             document.getElementById("fontFamily").value = result['fontFamily'];
-            // document.getElementById("columnCount").value = result['columnCount'];
 
-            let buttons = document.getElementById('columnCount').getElementsByTagName('button');
             let columnCount = result['columnCount']
-            if (columnCount === 'auto') {
-                buttons[0].style.backgroundColor = '#d7dcdf'
-            } else if (columnCount === '1') {
-                buttons[1].style.backgroundColor = '#d7dcdf'
-            } else if (columnCount === '2') {
-                buttons[2].style.backgroundColor = '#d7dcdf'
-            }
+            setColumns(columnCount)
 
-            let buttonsScroll = document.getElementById('scrollMode').getElementsByTagName('button');
             let scrollMode = result['verticalScroll']
-            if (scrollMode === true) {
-                buttonsScroll[0].style.backgroundColor = '#d7dcdf'
-            } else if (scrollMode === false) {
-                buttonsScroll[1].style.backgroundColor = '#d7dcdf'
-            }
+            setScroll(String(scrollMode).toLowerCase())
 
-            let buttonsAlignment = document.getElementById('textAlignment').getElementsByTagName('button');
             let textAlignment = result['textAlignment']
-            if (textAlignment === 'auto') {
-                buttonsAlignment[0].style.backgroundColor = '#d7dcdf'
-            } else if (textAlignment === 'justify') {
-                buttonsAlignment[1].style.backgroundColor = '#d7dcdf'
-            } else if (textAlignment === 'start') {
-                buttonsAlignment[2].style.backgroundColor = '#d7dcdf'
-            }
+            setAlignment(textAlignment)
 
             document.getElementById("wordSpacing").value = result['wordSpacing'];
             document.getElementById("letterSpacing").value = result['letterSpacing'];
             document.getElementById("lineHeight").value = result['lineHeight'];
             document.getElementById("pageMargins").value = result['pageMargins'];
-
-
         }
     </script>
 

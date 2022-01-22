@@ -53,11 +53,11 @@ export interface TTSModuleProperties {
 
 export interface TTSModuleConfig extends TTSModuleProperties {
   delegate: IFrameNavigator;
-  headerMenu: HTMLElement;
   rights: ReaderRights;
   tts: TTSSettings;
   highlighter: TextHighlighter;
-  api: TTSModuleAPI;
+  headerMenu?: HTMLElement | null;
+  api?: TTSModuleAPI;
 }
 
 export class TTSREFS {
@@ -79,7 +79,7 @@ export class TTSREFS {
 export interface TTSSettingsConfig {
   store: Store;
   initialTTSSettings?: TTSModuleProperties;
-  headerMenu: HTMLElement;
+  headerMenu?: HTMLElement | null;
   api?: TTSModuleAPI;
 }
 
@@ -121,16 +121,16 @@ export class TTSSettings implements ITTSUserSettings {
   private restartCallback: (key?: string) => void = () => {};
 
   private settingsView: HTMLDivElement;
-  private readonly headerMenu: HTMLElement;
+  private readonly headerMenu?: HTMLElement | null;
   private speechRate: HTMLInputElement;
   private speechPitch: HTMLInputElement;
   private speechVolume: HTMLInputElement;
   private speechAutoScroll: HTMLInputElement;
 
-  private readonly api: TTSModuleAPI;
+  private readonly api?: TTSModuleAPI;
 
   public static create(config: TTSSettingsConfig) {
-    const settings = new this(config.store, config.headerMenu, config.api);
+    const settings = new this(config.store, config.api, config.headerMenu);
 
     if (config.initialTTSSettings) {
       let initialTTSSettings = config.initialTTSSettings;
@@ -167,8 +167,8 @@ export class TTSSettings implements ITTSUserSettings {
 
   protected constructor(
     store: Store,
-    headerMenu: HTMLElement,
-    api: TTSModuleAPI
+    api?: TTSModuleAPI,
+    headerMenu?: HTMLElement | null
   ) {
     this.store = store;
     this.api = api;
@@ -234,7 +234,7 @@ export class TTSSettings implements ITTSUserSettings {
       this.settingsView = HTMLUtilities.findElement(
         this.headerMenu,
         "#container-view-tts-settings"
-      ) as HTMLDivElement;
+      );
   }
 
   setControls() {
@@ -246,23 +246,23 @@ export class TTSSettings implements ITTSUserSettings {
       this.speechRate = HTMLUtilities.findElement(
         this.headerMenu,
         "#speechRate"
-      ) as HTMLInputElement;
+      );
     if (this.headerMenu)
       this.speechPitch = HTMLUtilities.findElement(
         this.headerMenu,
         "#speechPitch"
-      ) as HTMLInputElement;
+      );
     if (this.headerMenu)
       this.speechVolume = HTMLUtilities.findElement(
         this.headerMenu,
         "#speechVolume"
-      ) as HTMLInputElement;
+      );
 
     if (this.headerMenu)
       this.speechAutoScroll = HTMLUtilities.findElement(
         this.headerMenu,
         "#autoScroll"
-      ) as HTMLInputElement;
+      );
 
     if (this.speechRate) this.speechRate.value = this.rate.toString();
     if (this.speechPitch) this.speechPitch.value = this.pitch.toString();
@@ -294,12 +294,12 @@ export class TTSSettings implements ITTSUserSettings {
 
   private updateUserSettings() {
     var ttsSettings: ITTSUserSettings = {
-      rate: this.userProperties.getByRef(TTSREFS.RATE_REF).value,
-      pitch: this.userProperties.getByRef(TTSREFS.PITCH_REF).value,
-      volume: this.userProperties.getByRef(TTSREFS.VOLUME_REF).value,
-      voice: this.userProperties.getByRef(TTSREFS.VOLUME_REF).value,
-      color: this.userProperties.getByRef(TTSREFS.COLOR_REF).value,
-      autoScroll: this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF).value,
+      rate: this.userProperties.getByRef(TTSREFS.RATE_REF)?.value,
+      pitch: this.userProperties.getByRef(TTSREFS.PITCH_REF)?.value,
+      volume: this.userProperties.getByRef(TTSREFS.VOLUME_REF)?.value,
+      voice: this.userProperties.getByRef(TTSREFS.VOLUME_REF)?.value,
+      color: this.userProperties.getByRef(TTSREFS.COLOR_REF)?.value,
+      autoScroll: this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF)?.value,
     };
     this.applyTTSSettings(ttsSettings);
     if (this.api?.updateSettings) {
@@ -362,7 +362,7 @@ export class TTSSettings implements ITTSUserSettings {
     return userProperties;
   }
 
-  private saveProperty(property: any): any {
+  private saveProperty(property: UserProperty): any {
     let savedProperties = this.store.get(this.TTSSETTINGS);
     if (savedProperties) {
       let array = JSON.parse(savedProperties);
@@ -370,24 +370,24 @@ export class TTSSettings implements ITTSUserSettings {
       array.push(property);
       this.store.set(this.TTSSETTINGS, JSON.stringify(array));
     } else {
-      let array = [];
+      let array: UserProperty[] = [];
       array.push(property);
       this.store.set(this.TTSSETTINGS, JSON.stringify(array));
     }
     return property;
   }
 
-  getProperty(name: string): UserProperty {
+  getProperty(name: string): UserProperty | undefined {
     let array = this.store.get(this.TTSSETTINGS);
     if (array) {
       let properties = JSON.parse(array) as Array<UserProperty>;
       properties = properties.filter((el: UserProperty) => el.name === name);
       if (properties.length === 0) {
-        return null;
+        return undefined;
       }
       return properties[0];
     }
-    return null;
+    return undefined;
   }
 
   resetTTSSettings() {
@@ -401,48 +401,64 @@ export class TTSSettings implements ITTSUserSettings {
     if (ttsSettings.rate) {
       if (IS_DEV) console.log("rate " + this.rate);
       this.rate = ttsSettings.rate;
-      this.userProperties.getByRef(TTSREFS.RATE_REF).value = this.rate;
-      this.saveProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.RATE_REF);
+      if (prop) {
+        prop.value = this.rate;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
       this.restartCallback();
     }
     if (ttsSettings.pitch) {
       if (IS_DEV) console.log("pitch " + this.pitch);
       this.pitch = ttsSettings.pitch;
-      this.userProperties.getByRef(TTSREFS.PITCH_REF).value = this.pitch;
-      this.saveProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.PITCH_REF);
+      if (prop) {
+        prop.value = this.pitch;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
       this.restartCallback();
     }
     if (ttsSettings.volume) {
       if (IS_DEV) console.log("volume " + this.volume);
       this.volume = ttsSettings.volume;
-      this.userProperties.getByRef(TTSREFS.VOLUME_REF).value = this.volume;
-      this.saveProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.VOLUME_REF);
+      if (prop) {
+        prop.value = this.volume;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
       this.restartCallback();
     }
 
     if (ttsSettings.color) {
       this.color = ttsSettings.color;
-      this.userProperties.getByRef(TTSREFS.COLOR_REF).value = this.color;
-      this.saveProperty(this.userProperties.getByRef(TTSREFS.COLOR_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.COLOR_REF);
+      if (prop) {
+        prop.value = this.color;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
     if (ttsSettings.autoScroll !== undefined) {
       if (IS_DEV) console.log("autoScroll " + this.autoScroll);
       this.autoScroll = ttsSettings.autoScroll;
-      this.userProperties.getByRef(
-        TTSREFS.AUTO_SCROLL_REF
-      ).value = this.autoScroll;
-      this.saveProperty(this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF);
+      if (prop) {
+        prop.value = this.autoScroll;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
     if (ttsSettings.voice) {
       if (IS_DEV) console.log("voice " + this.voice);
       this.voice = ttsSettings.voice;
-      this.userProperties.getByRef(TTSREFS.VOICE_REF).value = this.voice;
-      this.saveProperty(this.userProperties.getByRef(TTSREFS.VOICE_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.VOICE_REF);
+      if (prop) {
+        prop.value = this.voice;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
       this.restartCallback();
     }
@@ -475,21 +491,30 @@ export class TTSSettings implements ITTSUserSettings {
       (this.userProperties.getByRef(
         TTSREFS.RATE_REF
       ) as Incremental).increment();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.RATE_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
       this.restartCallback();
     } else if (incremental === "pitch") {
       (this.userProperties.getByRef(
         TTSREFS.PITCH_REF
       ) as Incremental).increment();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.PITCH_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
       this.restartCallback();
     } else if (incremental === "volume") {
       (this.userProperties.getByRef(
         TTSREFS.VOLUME_REF
       ) as Incremental).increment();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.VOLUME_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
       this.restartCallback();
     }
@@ -500,21 +525,30 @@ export class TTSSettings implements ITTSUserSettings {
       (this.userProperties.getByRef(
         TTSREFS.RATE_REF
       ) as Incremental).decrement();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.RATE_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.RATE_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
       this.restartCallback();
     } else if (incremental === "pitch") {
       (this.userProperties.getByRef(
         TTSREFS.PITCH_REF
       ) as Incremental).decrement();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.PITCH_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.PITCH_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
       this.restartCallback();
     } else if (incremental === "volume") {
       (this.userProperties.getByRef(
         TTSREFS.VOLUME_REF
       ) as Incremental).decrement();
-      this.storeProperty(this.userProperties.getByRef(TTSREFS.VOLUME_REF));
+      let prop = this.userProperties.getByRef(TTSREFS.VOLUME_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
       this.restartCallback();
     }

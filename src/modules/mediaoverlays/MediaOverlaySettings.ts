@@ -53,9 +53,9 @@ export class MEDIAOVERLAYREFS {
 
 export interface MediaOverlayConfig {
   store: Store;
-  initialMediaOverlaySettings: MediaOverlayModuleProperties;
-  headerMenu: HTMLElement;
-  api: MediaOverlayModuleAPI;
+  initialMediaOverlaySettings?: MediaOverlayModuleProperties;
+  headerMenu?: HTMLElement | null;
+  api?: MediaOverlayModuleAPI;
 }
 
 export interface IMediaOverlayUserSettings {
@@ -87,17 +87,17 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   private settingsChangeCallback: (key?: string) => void = () => {};
 
   private settingsView: HTMLDivElement;
-  private readonly headerMenu: HTMLElement;
+  private readonly headerMenu?: HTMLElement | null;
 
   private speechAutoScroll: HTMLInputElement;
   private speechAutoTurn: HTMLInputElement;
   private speechVolume: HTMLInputElement;
   private speechRate: HTMLInputElement;
 
-  private readonly api: MediaOverlayModuleAPI;
+  private readonly api?: MediaOverlayModuleAPI;
 
   public static create(config: MediaOverlayConfig): any {
-    const settings = new this(config.store, config.headerMenu, config.api);
+    const settings = new this(config.store, config.api, config.headerMenu);
 
     if (config.initialMediaOverlaySettings) {
       let initialSettings = config.initialMediaOverlaySettings;
@@ -133,8 +133,8 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
 
   protected constructor(
     store: Store,
-    headerMenu: HTMLElement,
-    api: MediaOverlayModuleAPI
+    api?: MediaOverlayModuleAPI,
+    headerMenu?: HTMLElement | null
   ) {
     this.store = store;
     this.api = api;
@@ -195,7 +195,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       this.settingsView = HTMLUtilities.findElement(
         this.headerMenu,
         "#container-view-mediaoverlay-settings"
-      ) as HTMLDivElement;
+      );
   }
 
   setControls() {
@@ -207,25 +207,25 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       this.speechAutoTurn = HTMLUtilities.findElement(
         this.headerMenu,
         "#mediaOverlayAutoTurn"
-      ) as HTMLInputElement;
+      );
 
     if (this.headerMenu)
       this.speechAutoScroll = HTMLUtilities.findElement(
         this.headerMenu,
         "#mediaOverlayAutoScroll"
-      ) as HTMLInputElement;
+      );
 
     if (this.headerMenu)
       this.speechVolume = HTMLUtilities.findElement(
         this.headerMenu,
         "#mediaOverlayVolume"
-      ) as HTMLInputElement;
+      );
 
     if (this.headerMenu)
       this.speechRate = HTMLUtilities.findElement(
         this.headerMenu,
         "#mediaOverlayRate"
-      ) as HTMLInputElement;
+      );
 
     if (this.speechAutoScroll) this.speechAutoScroll.checked = this.autoScroll;
     if (this.speechAutoTurn) this.speechAutoTurn.checked = this.autoTurn;
@@ -253,13 +253,13 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
 
   private updateUserSettings() {
     let syncSettings: IMediaOverlayUserSettings = {
-      color: this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF).value,
+      color: this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF)?.value,
       autoScroll: this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF)
-        .value,
+        ?.value,
       autoTurn: this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF)
-        .value,
-      volume: this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF).value,
-      rate: this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF).value,
+        ?.value,
+      volume: this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)?.value,
+      rate: this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)?.value,
     };
     this.applyMediaOverlaySettings(syncSettings);
     if (this.api?.updateSettings) {
@@ -315,7 +315,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
     return userProperties;
   }
 
-  private saveProperty(property: any): any {
+  private saveProperty(property: UserProperty): UserProperty {
     let savedProperties = this.store.get(this.MEDIAOVERLAYSETTINGS);
     if (savedProperties) {
       let array = JSON.parse(savedProperties);
@@ -323,14 +323,14 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       array.push(property);
       this.store.set(this.MEDIAOVERLAYSETTINGS, JSON.stringify(array));
     } else {
-      let array = [];
+      let array: UserProperty[] = [];
       array.push(property);
       this.store.set(this.MEDIAOVERLAYSETTINGS, JSON.stringify(array));
     }
     return property;
   }
 
-  getProperty(name: string): UserProperty {
+  getProperty(name: string): UserProperty | null {
     let array = this.store.get(this.MEDIAOVERLAYSETTINGS);
     if (array) {
       let properties = JSON.parse(array) as Array<UserProperty>;
@@ -352,54 +352,51 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   applyMediaOverlaySettings(mediaOverlaySettings: IMediaOverlayUserSettings) {
     if (mediaOverlaySettings.color) {
       this.color = mediaOverlaySettings.color;
-      this.userProperties.getByRef(
-        MEDIAOVERLAYREFS.COLOR_REF
-      ).value = this.color;
-      this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF);
+      if (prop) {
+        prop.value = this.color;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
     if (mediaOverlaySettings.autoScroll !== undefined) {
       if (IS_DEV) console.log("autoScroll " + this.autoScroll);
       this.autoScroll = mediaOverlaySettings.autoScroll;
-      this.userProperties.getByRef(
-        MEDIAOVERLAYREFS.AUTO_SCROLL_REF
-      ).value = this.autoScroll;
-      this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF);
+      if (prop) {
+        prop.value = this.autoScroll;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
     if (mediaOverlaySettings.autoTurn !== undefined) {
       if (IS_DEV) console.log("autoTurn " + this.autoTurn);
       this.autoTurn = mediaOverlaySettings.autoTurn;
-      this.userProperties.getByRef(
-        MEDIAOVERLAYREFS.AUTO_TURN_REF
-      ).value = this.autoTurn;
-      this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF);
+      if (prop) {
+        prop.value = this.autoTurn;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
     if (mediaOverlaySettings.volume) {
       if (IS_DEV) console.log("volume " + this.volume);
       this.volume = mediaOverlaySettings.volume;
-      this.userProperties.getByRef(
-        MEDIAOVERLAYREFS.VOLUME_REF
-      ).value = this.volume;
-      this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF);
+      if (prop) {
+        prop.value = this.volume;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
     if (mediaOverlaySettings.rate) {
       if (IS_DEV) console.log("rate " + this.rate);
       this.rate = mediaOverlaySettings.rate;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF).value = this.rate;
-      this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF);
+      if (prop) {
+        prop.value = this.rate;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
   }
@@ -407,30 +404,27 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   applyMediaOverlaySetting(key: any, value: any) {
     if (key === MEDIAOVERLAYREFS.COLOR_REF) {
       this.color = value;
-      this.userProperties.getByRef(
-        MEDIAOVERLAYREFS.COLOR_REF
-      ).value = this.color;
-      this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF);
+      if (prop) {
+        prop.value = this.color;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     } else if (key === MEDIAOVERLAYREFS.AUTO_SCROLL_REF) {
       this.autoScroll = value;
-      this.userProperties.getByRef(
-        MEDIAOVERLAYREFS.AUTO_SCROLL_REF
-      ).value = this.autoScroll;
-      this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF);
+      if (prop) {
+        prop.value = this.autoScroll;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     } else if (key === MEDIAOVERLAYREFS.AUTO_TURN_REF) {
       this.autoTurn = value;
-      this.userProperties.getByRef(
-        MEDIAOVERLAYREFS.AUTO_TURN_REF
-      ).value = this.autoTurn;
-      this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF);
+      if (prop) {
+        prop.value = this.autoTurn;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
   }
@@ -441,19 +435,23 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       ) as Incremental).increment();
       this.volume = this.userProperties.getByRef(
         MEDIAOVERLAYREFS.VOLUME_REF
-      ).value;
-      this.storeProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
-      );
+      )?.value;
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
     } else if (incremental === "mo_rate") {
       (this.userProperties.getByRef(
         MEDIAOVERLAYREFS.RATE_REF
       ) as Incremental).increment();
-      this.rate = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF).value;
-      this.storeProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)
-      );
+      this.rate = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.RATE_REF
+      )?.value;
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
     }
   }
@@ -465,19 +463,23 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       ) as Incremental).decrement();
       this.volume = this.userProperties.getByRef(
         MEDIAOVERLAYREFS.VOLUME_REF
-      ).value;
-      this.storeProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
-      );
+      )?.value;
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
     } else if (incremental === "mo_rate") {
       (this.userProperties.getByRef(
         MEDIAOVERLAYREFS.RATE_REF
       ) as Incremental).decrement();
-      this.rate = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF).value;
-      this.storeProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)
-      );
+      this.rate = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.RATE_REF
+      )?.value;
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
     }
   }

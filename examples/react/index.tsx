@@ -25,11 +25,11 @@ const App = () => {
   }, []);
 
   function scroll() {
-    reader.scroll(true);
+    reader?.scroll(true);
     didUpdate();
   }
   function paginate() {
-    reader.scroll(false);
+    reader?.scroll(false);
     didUpdate();
   }
 

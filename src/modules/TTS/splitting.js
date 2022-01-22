@@ -219,7 +219,7 @@
       if (next.tagName && !next.hasChildNodes()) {
         // keep elements without child nodes (no text and no children)
         allElements.push(next);
-        return;
+        return allElements;
       }
       if (
         next.tagName === "select" ||
@@ -259,7 +259,7 @@
         next.tagName === "semantics"
       ) {
         allElements.push(next);
-        return;
+        return allElements;
       }
       // Recursively run through child nodes
       if (next.childNodes && next.childNodes.length) {
@@ -268,7 +268,7 @@
           elements,
           splitText(next, key, splitOn, includePrevious, preserveWhitespace)
         );
-        return;
+        return allElements;
       }
 
       // Get the text to split, trimming out the whitespace
@@ -302,6 +302,7 @@
         // add back missing whitespace
         allElements.push(createText(" "));
       }
+      return allElements;
     });
 
     each(allElements, function (el) {

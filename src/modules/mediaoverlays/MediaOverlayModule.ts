@@ -69,11 +69,11 @@ export class MediaOverlayModule implements ReaderModule {
   private play: HTMLLinkElement = HTMLUtilities.findElement(
     document,
     "#menu-button-play"
-  ) as HTMLLinkElement;
+  );
   private pause: HTMLLinkElement = HTMLUtilities.findElement(
     document,
     "#menu-button-pause"
-  ) as HTMLLinkElement;
+  );
 
   private currentAudioBegin: number | undefined;
   private currentAudioEnd: number | undefined;

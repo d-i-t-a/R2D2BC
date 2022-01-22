@@ -62,7 +62,7 @@ export default class ReflowableBookView implements BookView {
           const viewport = HTMLUtilities.findElement(
             head,
             "meta[name=viewport]"
-          ) as HTMLMetaElement;
+          );
           if (viewport) {
             viewport.remove();
           }
@@ -123,7 +123,7 @@ export default class ReflowableBookView implements BookView {
           const viewport = HTMLUtilities.findElement(
             head,
             "meta[name=viewport]"
-          ) as HTMLMetaElement;
+          );
           if (viewport) {
             viewport.remove();
           }
@@ -167,7 +167,7 @@ export default class ReflowableBookView implements BookView {
     const wrapper = HTMLUtilities.findRequiredElement(
       document,
       "#iframe-wrapper"
-    ) as HTMLDivElement;
+    );
 
     if (this.scrollMode) {
       return wrapper.scrollTop / this.scrollingElement.scrollHeight;
@@ -184,7 +184,7 @@ export default class ReflowableBookView implements BookView {
     const wrapper = HTMLUtilities.findRequiredElement(
       document,
       "#iframe-wrapper"
-    ) as HTMLDivElement;
+    );
     if (this.scrollMode) {
       wrapper.scrollTop = this.scrollingElement.scrollHeight * position;
     } else {
@@ -261,7 +261,7 @@ export default class ReflowableBookView implements BookView {
     const wrapper = HTMLUtilities.findRequiredElement(
       document,
       "#iframe-wrapper"
-    ) as HTMLDivElement;
+    );
 
     if (this.scrollMode) {
       if (element) {
@@ -306,7 +306,7 @@ export default class ReflowableBookView implements BookView {
       const wrapper = HTMLUtilities.findRequiredElement(
         document,
         "#iframe-wrapper"
-      ) as HTMLDivElement;
+      );
 
       return wrapper.scrollTop === 0;
     } else {
@@ -321,7 +321,7 @@ export default class ReflowableBookView implements BookView {
       const wrapper = HTMLUtilities.findRequiredElement(
         document,
         "#iframe-wrapper"
-      ) as HTMLDivElement;
+      );
       return (
         Math.ceil(this.scrollingElement.scrollHeight - wrapper.scrollTop) - 1 <=
         BrowserUtilities.getHeight()
@@ -337,7 +337,7 @@ export default class ReflowableBookView implements BookView {
     const wrapper = HTMLUtilities.findRequiredElement(
       document,
       "#iframe-wrapper"
-    ) as HTMLDivElement;
+    );
 
     if (this.scrollMode) {
       const leftHeight = wrapper.scrollTop;
@@ -368,7 +368,7 @@ export default class ReflowableBookView implements BookView {
     const wrapper = HTMLUtilities.findRequiredElement(
       document,
       "#iframe-wrapper"
-    ) as HTMLDivElement;
+    );
 
     if (this.scrollMode) {
       const leftHeight = wrapper.scrollTop;
@@ -473,7 +473,7 @@ export default class ReflowableBookView implements BookView {
     const wrapper = HTMLUtilities.findRequiredElement(
       document,
       "#iframe-wrapper"
-    ) as HTMLDivElement;
+    );
     return wrapper.clientHeight;
   }
 

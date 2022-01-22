@@ -463,16 +463,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       const wrapper = HTMLUtilities.findRequiredElement(
         mainElement,
         "main#iframe-wrapper"
-      ) as HTMLElement;
+      );
       wrapper.style.overflow = "auto";
       let iframe = HTMLUtilities.findElement(
         mainElement,
         "main#iframe-wrapper iframe"
-      ) as HTMLIFrameElement;
-      let iframe2 = HTMLUtilities.findElement(
-        mainElement,
-        "#second"
-      ) as HTMLIFrameElement;
+      );
+      let iframe2 = HTMLUtilities.findElement(mainElement, "#second");
 
       if (iframe) {
         this.iframes.push(iframe);
@@ -553,7 +550,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       this.loadingMessage = HTMLUtilities.findElement(
         mainElement,
         "#reader-loading"
-      ) as HTMLDivElement;
+      );
       if (this.loadingMessage) {
         this.loadingMessage.innerHTML = readerLoading;
         this.loadingMessage.style.display = "none";
@@ -561,7 +558,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       this.errorMessage = HTMLUtilities.findElement(
         mainElement,
         "#reader-error"
-      ) as HTMLDivElement;
+      );
       if (this.errorMessage) {
         this.errorMessage.innerHTML = readerError;
         this.errorMessage.style.display = "none";
@@ -570,126 +567,123 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       this.tryAgainButton = HTMLUtilities.findElement(
         mainElement,
         "button[class=try-again]"
-      ) as HTMLButtonElement;
+      );
       this.goBackButton = HTMLUtilities.findElement(
         mainElement,
         "button[class=go-back]"
-      ) as HTMLButtonElement;
+      );
       this.infoTop = HTMLUtilities.findElement(
         mainElement,
         "div[class='info top']"
-      ) as HTMLDivElement;
+      );
       this.infoBottom = HTMLUtilities.findElement(
         mainElement,
         "div[class='info bottom']"
-      ) as HTMLDivElement;
+      );
 
       if (this.headerMenu)
         this.bookTitle = HTMLUtilities.findElement(
           this.headerMenu,
           "#book-title"
-        ) as HTMLSpanElement;
+        );
 
       if (this.infoBottom)
         this.chapterTitle = HTMLUtilities.findElement(
           this.infoBottom,
           "span[class=chapter-title]"
-        ) as HTMLSpanElement;
+        );
       if (this.infoBottom)
         this.chapterPosition = HTMLUtilities.findElement(
           this.infoBottom,
           "span[class=chapter-position]"
-        ) as HTMLSpanElement;
+        );
       if (this.infoBottom)
         this.remainingPositions = HTMLUtilities.findElement(
           this.infoBottom,
           "span[class=remaining-positions]"
-        ) as HTMLSpanElement;
+        );
 
       if (this.headerMenu)
         this.espandMenuIcon = HTMLUtilities.findElement(
           this.headerMenu,
           "#expand-menu"
-        ) as HTMLElement;
+        );
 
       // Header Menu
 
       if (this.headerMenu)
-        this.links = HTMLUtilities.findElement(
-          this.headerMenu,
-          "ul.links.top"
-        ) as HTMLUListElement;
+        this.links = HTMLUtilities.findElement(this.headerMenu, "ul.links.top");
       if (this.headerMenu)
         this.linksTopLeft = HTMLUtilities.findElement(
           this.headerMenu,
           "#nav-mobile-left"
-        ) as HTMLUListElement;
+        );
 
       if (this.headerMenu)
         this.tocView = HTMLUtilities.findElement(
           this.headerMenu,
           "#container-view-toc"
-        ) as HTMLDivElement;
+        );
 
       if (this.headerMenu)
         this.landmarksView = HTMLUtilities.findElement(
           this.headerMenu,
           "#container-view-landmarks"
-        ) as HTMLDivElement;
+        );
       if (this.headerMenu)
         this.landmarksSection = HTMLUtilities.findElement(
           this.headerMenu,
           "#sidenav-section-landmarks"
-        ) as HTMLDivElement;
+        );
       if (this.headerMenu)
         this.pageListView = HTMLUtilities.findElement(
           this.headerMenu,
           "#container-view-pagelist"
-        ) as HTMLDivElement;
+        );
 
       // Footer Menu
       if (footerMenu)
         this.linksBottom = HTMLUtilities.findElement(
           footerMenu,
           "ul.links.bottom"
-        ) as HTMLUListElement;
+        );
       if (footerMenu)
         this.linksMiddle = HTMLUtilities.findElement(
           footerMenu,
           "ul.links.middle"
-        ) as HTMLUListElement;
+        );
 
       if (this.headerMenu)
         this.nextChapterAnchorElement = HTMLUtilities.findElement(
           this.headerMenu,
           "a[rel=next]"
-        ) as HTMLAnchorElement;
+        );
       if (this.headerMenu)
         this.nextChapterBottomAnchorElement = HTMLUtilities.findElement(
           mainElement,
           "#next-chapter"
-        ) as HTMLAnchorElement;
+        );
       if (footerMenu)
         this.nextPageAnchorElement = HTMLUtilities.findElement(
           footerMenu,
           "a[rel=next]"
-        ) as HTMLAnchorElement;
+        );
 
       if (this.headerMenu)
         this.previousChapterAnchorElement = HTMLUtilities.findElement(
           this.headerMenu,
           "a[rel=prev]"
-        ) as HTMLAnchorElement;
+        );
       if (this.headerMenu)
         this.previousChapterTopAnchorElement = HTMLUtilities.findElement(
           mainElement,
           "#previous-chapter"
-        ) as HTMLAnchorElement;
+        );
       if (footerMenu)
         this.previousPageAnchorElement = HTMLUtilities.findElement(
           footerMenu,
           "a[rel=prev]"
-        ) as HTMLAnchorElement;
+        );
 
       if (this.nextChapterBottomAnchorElement)
         this.nextChapterBottomAnchorElement.style.display = "none";
@@ -722,28 +716,28 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         var menuSearch = HTMLUtilities.findElement(
           this.headerMenu,
           "#menu-button-search"
-        ) as HTMLLinkElement;
+        );
         var menuTTS = HTMLUtilities.findElement(
           this.headerMenu,
           "#menu-button-tts"
-        ) as HTMLLinkElement;
+        );
         var menuBookmark = HTMLUtilities.findElement(
           this.headerMenu,
           "#menu-button-bookmark"
-        ) as HTMLLinkElement;
+        );
 
         var play = HTMLUtilities.findElement(
           this.headerMenu,
           "#menu-button-play"
-        ) as HTMLLinkElement;
+        );
         var pause = HTMLUtilities.findElement(
           this.headerMenu,
           "#menu-button-pause"
-        ) as HTMLLinkElement;
+        );
         var menu = HTMLUtilities.findElement(
           this.headerMenu,
           "#menu-button-mediaoverlay"
-        ) as HTMLLinkElement;
+        );
         if (this.rights?.enableMaterial) {
           if (!this.rights?.enableBookmarks) {
             if (menuBookmark)
@@ -751,7 +745,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             var sideNavSectionBookmarks = HTMLUtilities.findElement(
               this.headerMenu,
               "#sidenav-section-bookmarks"
-            ) as HTMLElement;
+            );
             if (sideNavSectionBookmarks)
               sideNavSectionBookmarks.style.setProperty("display", "none");
           }
@@ -759,7 +753,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             var sideNavSectionHighlights = HTMLUtilities.findElement(
               this.headerMenu,
               "#sidenav-section-highlights"
-            ) as HTMLElement;
+            );
             if (sideNavSectionHighlights)
               sideNavSectionHighlights.style.setProperty("display", "none");
           }
@@ -1066,7 +1060,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           const wrapper = HTMLUtilities.findRequiredElement(
             document,
             "#iframe-wrapper"
-          ) as HTMLDivElement;
+          );
 
           // document.body.style.overflow = "auto";
           wrapper.onscroll = async () => {
@@ -1340,7 +1334,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.upLink = HTMLUtilities.findRequiredElement(
             this.links,
             "a[rel=up]"
-          ) as HTMLAnchorElement;
+          );
         } else {
           this.linksTopLeft.insertBefore(
             upParent,
@@ -1349,7 +1343,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.upLink = HTMLUtilities.findRequiredElement(
             this.linksTopLeft,
             "a[rel=up]"
-          ) as HTMLAnchorElement;
+          );
         }
       }
 
@@ -2127,7 +2121,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               const viewport = HTMLUtilities.findElement(
                 head,
                 "meta[name=viewport]"
-              ) as HTMLMetaElement;
+              );
               if (viewport) {
                 var dimensionsStr = viewport.content;
                 var obj = dimensionsStr.split(",").reduce((obj, s) => {
@@ -2292,10 +2286,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   private handleEditClick(event: MouseEvent): void {
     var element = event.target as HTMLElement;
     if (this.headerMenu) {
-      var sidenav = HTMLUtilities.findElement(
-        this.headerMenu,
-        ".sidenav"
-      ) as HTMLElement;
+      var sidenav = HTMLUtilities.findElement(this.headerMenu, ".sidenav");
 
       if (element.className.indexOf(" active") === -1) {
         element.className += " active";
@@ -2715,7 +2706,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           const viewport = HTMLUtilities.findElement(
             head,
             "meta[name=viewport]"
-          ) as HTMLMetaElement;
+          );
           if (viewport) {
             var dimensionsStr = viewport.content;
             var obj = dimensionsStr.split(",").reduce((obj, s) => {
@@ -3503,7 +3494,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.highlighter?.layerSettings.saveProperty(prop);
     let doc = this.iframes[0].contentDocument;
     if (doc) {
-      const container = HTMLUtilities.findElement(doc, ID) as HTMLDivElement;
+      const container = HTMLUtilities.findElement(doc, ID);
       if (container) {
         container.style.display = "block";
       }
@@ -3548,7 +3539,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
     let doc = this.iframes[0].contentDocument;
     if (doc) {
-      const container = HTMLUtilities.findElement(doc, ID) as HTMLDivElement;
+      const container = HTMLUtilities.findElement(doc, ID);
       if (container) {
         container.style.display = "none";
       }

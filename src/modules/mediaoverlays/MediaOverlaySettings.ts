@@ -195,7 +195,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       this.settingsView = HTMLUtilities.findElement(
         this.headerMenu,
         "#container-view-mediaoverlay-settings"
-      ) as HTMLDivElement;
+      );
   }
 
   setControls() {
@@ -207,25 +207,25 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       this.speechAutoTurn = HTMLUtilities.findElement(
         this.headerMenu,
         "#mediaOverlayAutoTurn"
-      ) as HTMLInputElement;
+      );
 
     if (this.headerMenu)
       this.speechAutoScroll = HTMLUtilities.findElement(
         this.headerMenu,
         "#mediaOverlayAutoScroll"
-      ) as HTMLInputElement;
+      );
 
     if (this.headerMenu)
       this.speechVolume = HTMLUtilities.findElement(
         this.headerMenu,
         "#mediaOverlayVolume"
-      ) as HTMLInputElement;
+      );
 
     if (this.headerMenu)
       this.speechRate = HTMLUtilities.findElement(
         this.headerMenu,
         "#mediaOverlayRate"
-      ) as HTMLInputElement;
+      );
 
     if (this.speechAutoScroll) this.speechAutoScroll.checked = this.autoScroll;
     if (this.speechAutoTurn) this.speechAutoTurn.checked = this.autoTurn;

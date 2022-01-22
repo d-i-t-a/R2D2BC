@@ -1559,7 +1559,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         await this.timelineModule.initialize();
       }
 
-      if (this.mediaOverlayModule !== undefined) {
+      if (
+        this.rights?.enableMediaOverlays &&
+        this.mediaOverlayModule !== undefined &&
+        this.hasMediaOverlays
+      ) {
         await this.mediaOverlayModule.initialize();
       }
 
@@ -1585,7 +1589,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
         this.hideLoadingMessage();
         this.showIframeContents();
-        if (this.mediaOverlayModule !== undefined) {
+        if (
+          this.rights?.enableMediaOverlays &&
+          this.mediaOverlayModule !== undefined &&
+          this.hasMediaOverlays
+        ) {
           await this.mediaOverlayModule.initializeResource(this.currentLink());
         }
         await this.updatePositionInfo();
@@ -2297,7 +2305,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
   startReadAlong() {
-    if (this.rights?.enableMediaOverlays && this.publication.hasMediaOverlays) {
+    if (
+      this.rights?.enableMediaOverlays &&
+      this.mediaOverlayModule !== undefined &&
+      this.hasMediaOverlays
+    ) {
       this.mediaOverlayModule.startReadAloud();
     }
   }
@@ -2312,7 +2324,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
   stopReadAlong() {
-    if (this.rights?.enableMediaOverlays && this.publication.hasMediaOverlays) {
+    if (
+      this.rights?.enableMediaOverlays &&
+      this.mediaOverlayModule !== undefined &&
+      this.hasMediaOverlays
+    ) {
       this.mediaOverlayModule.stopReadAloud();
     }
   }
@@ -2332,7 +2348,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
   pauseReadAlong() {
-    if (this.rights?.enableMediaOverlays && this.publication.hasMediaOverlays) {
+    if (
+      this.rights?.enableMediaOverlays &&
+      this.mediaOverlayModule !== undefined &&
+      this.hasMediaOverlays
+    ) {
       this.mediaOverlayModule.pauseReadAloud();
     }
   }
@@ -2348,7 +2368,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
   resumeReadAlong() {
-    if (this.rights?.enableMediaOverlays && this.publication.hasMediaOverlays) {
+    if (
+      this.rights?.enableMediaOverlays &&
+      this.mediaOverlayModule !== undefined &&
+      this.hasMediaOverlays
+    ) {
       this.mediaOverlayModule.resumeReadAloud();
     }
   }
@@ -3103,7 +3127,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
         if (
           this.rights?.enableMediaOverlays &&
-          this.mediaOverlayModule !== undefined
+          this.mediaOverlayModule !== undefined &&
+          this.hasMediaOverlays
         ) {
           await this.mediaOverlayModule.initializeResource(this.currentLink());
         }

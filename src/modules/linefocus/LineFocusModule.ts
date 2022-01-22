@@ -107,14 +107,39 @@ export default class LineFocusModule implements ReaderModule {
   }
 
   async enableLineFocus() {
+    if (!this.isActive) {
+      const wrapper = HTMLUtilities.findRequiredElement(
+        document,
+        "#iframe-wrapper"
+      ) as HTMLDivElement;
+      wrapper.style.overflow = "hidden";
+      if (wrapper.style.height.length > 0) {
+        this.wrapperHeight = wrapper.style.height;
+      }
+      wrapper.style.height = "100vh";
+    }
     this.isActive = true;
     await this.delegate.settings.scroll(true);
     this.lineFocus();
   }
 
+  wrapperHeight: string | undefined = undefined;
+
   disableLineFocus() {
     this.isActive = false;
-    document.body.style.removeProperty("overflow");
+    // document.body.style.removeProperty("overflow");
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
+
+    wrapper.style.overflow = "auto";
+    if (this.wrapperHeight) {
+      wrapper.style.height = this.wrapperHeight;
+    } else {
+      wrapper.style.removeProperty("height");
+    }
+    this.wrapperHeight = undefined;
 
     if (this.lineFocusContainer) this.lineFocusContainer.style.display = "none";
 
@@ -136,7 +161,10 @@ export default class LineFocusModule implements ReaderModule {
   }
 
   lineFocus() {
-    document.body.style.overflow = "hidden";
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
 
     function insertAfter(referenceNode, newNode) {
       referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
@@ -153,11 +181,6 @@ export default class LineFocusModule implements ReaderModule {
 
     if (this.lineFocusContainer)
       this.lineFocusContainer.style.removeProperty("display");
-
-    const wrapper = HTMLUtilities.findRequiredElement(
-      document,
-      "#iframe-wrapper"
-    ) as HTMLDivElement;
 
     let divBefore = document.getElementById("divBefore");
     if (divBefore) {

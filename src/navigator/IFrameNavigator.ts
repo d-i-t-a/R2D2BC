@@ -510,7 +510,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         this.settings.columnCount = 1;
       }
       if (this.iframes.length === 0) {
-        wrapper.style.overflow = "hidden";
+        wrapper.style.overflow = "auto";
         let iframe = document.createElement("iframe");
         iframe.setAttribute("SCROLLING", "no");
         iframe.setAttribute("allowtransparency", "true");

@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -21,7 +21,8 @@
     "streamed": "node \"./examples/streamed/server/server-cli.inlinesourcemap.js\" ./examples/streamed/epubs/",
     "clean": "rimraf node_modules lib dist examples/streamed/readers/viewer",
     "start": "http-server viewer",
-    "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
+    "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
+    "serve": "npm run build && npm run examples && npm run streamed"
   },
   "dependencies": {
     "browserslist-useragent": "^3.0.3",

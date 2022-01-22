@@ -127,8 +127,9 @@ export default class DefinitionsModule implements ReaderModule {
     await fetch(href)
       .then((r) => r.text())
       .then(async (_data) => {
-        item.terms.forEach((termKey, index) => {
-          searchDocDomSeek(
+        for (const termKey of item.terms) {
+          const tindex = item.terms.indexOf(termKey);
+          await searchDocDomSeek(
             termKey,
             this.delegate.iframes[0].contentDocument,
             tocItem.Href,
@@ -149,7 +150,6 @@ export default class DefinitionsModule implements ReaderModule {
                   rawText: null,
                   range: null,
                 };
-                setTimeout(() => {
                   const highlight = this.createDefinitionHighlight(
                     selectionInfo,
                     item
@@ -160,21 +160,19 @@ export default class DefinitionsModule implements ReaderModule {
                   );
                   this.currentChapterPopupResult.push(searchItem);
                   this.currentPopupHighlights.push(highlight);
-                }, 500);
               }
             });
 
-            if (index == item.terms.length - 1) {
-              setTimeout(() => {
+            if (tindex === item.terms.length - 1) {
                 callback(localSearchDefinitions);
-              }, 500);
             }
           });
-        });
+        }
       });
   }
 
   definitions = debounce(async () => {
+    await this.highlighter.destroyHighlights(HighlightType.Definition);
     for (const item of this.properties.definitions) {
       await this.define(item);
     }
@@ -214,31 +212,14 @@ export default class DefinitionsModule implements ReaderModule {
     });
   }
 
-  drawDefinitions() {
+  async drawDefinitions() {
     setTimeout(async () => {
       await this.definitions();
-      //   this.currentPopupHighlights = [];
-      //   this.currentChapterPopupResult.forEach((searchItem) => {
-      //     var selectionInfo = {
-      //       rangeInfo: searchItem.rangeInfo,
-      //       cleanText: null,
-      //       rawText: null,
-      //       range: null,
-      //     };
-      //     const highlight = this.highlighter.createPopupHighlight(
-      //       selectionInfo,
-      //       searchItem.highlight.definition
-      //     );
-      //
-      //     searchItem.highlight = highlight;
-      //     this.currentPopupHighlights.push(highlight);
-      //   });
     }, 100);
   }
 
   async handleResize() {
-    await this.highlighter.destroyHighlights(HighlightType.Definition);
-    this.drawDefinitions();
+    await this.drawDefinitions();
   }
   createDefinitionHighlight(selectionInfo: ISelectionInfo, item: Definition) {
     try {

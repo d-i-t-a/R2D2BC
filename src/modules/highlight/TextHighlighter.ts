@@ -2598,6 +2598,14 @@ export class TextHighlighter {
             this.removeAllChildNodes(container);
           }
           break;
+        case HighlightType.LineFocus:
+          container = doc.getElementById(
+            HighlightContainer.R2_ID_LINEFOCUS_CONTAINER
+          );
+          if (container) {
+            this.removeAllChildNodes(container);
+          }
+          break;
         default:
           container = doc.getElementById(
             HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER

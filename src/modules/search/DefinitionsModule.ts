@@ -134,9 +134,10 @@ export class DefinitionsModule implements ReaderModule {
       await fetch(href)
         .then((r) => r.text())
         .then(async (_data) => {
-          item.terms.forEach((termKey, index) => {
+          for (const termKey of item.terms) {
+            const tindex = item.terms.indexOf(termKey);
             if (tocItem) {
-              searchDocDomSeek(
+              await searchDocDomSeek(
                 termKey,
                 this.delegate.iframes[0].contentDocument,
                 tocItem.Href,
@@ -144,9 +145,9 @@ export class DefinitionsModule implements ReaderModule {
                 this.delegate.definitionsModule?.properties.fullWordSearch
               ).then((result) => {
                 let i: number | undefined = undefined;
-                if (item.result === 1) {
+                if (item.result == 1) {
                   i = 0;
-                } else if (item.result === 2) {
+                } else if (item.result == 2) {
                   i = Math.floor(Math.random() * result.length - 1) + 1;
                 }
                 result.forEach((searchItem, index) => {
@@ -154,34 +155,31 @@ export class DefinitionsModule implements ReaderModule {
                     const selectionInfo = {
                       rangeInfo: searchItem.rangeInfo,
                     };
-                    setTimeout(() => {
-                      const highlight = this.createDefinitionHighlight(
-                        selectionInfo,
-                        item
-                      );
-                      searchItem.highlight = highlight;
-                      localSearchDefinitions.push(
-                        lodash.omit(highlight, "definition")
-                      );
-                      this.currentChapterPopupResult.push(searchItem);
-                      this.currentPopupHighlights.push(highlight);
-                    }, 500);
+                    const highlight = this.createDefinitionHighlight(
+                      selectionInfo,
+                      item
+                    );
+                    searchItem.highlight = highlight;
+                    localSearchDefinitions.push(
+                      lodash.omit(highlight, "definition")
+                    );
+                    this.currentChapterPopupResult.push(searchItem);
+                    this.currentPopupHighlights.push(highlight);
                   }
                 });
 
-                if (index === item.terms.length - 1) {
-                  setTimeout(() => {
-                    callback(localSearchDefinitions);
-                  }, 500);
+                if (tindex === item.terms.length - 1) {
+                  callback(localSearchDefinitions);
                 }
               });
             }
-          });
+          }
         });
     }
   }
 
   definitions = debounce(async () => {
+    await this.highlighter.destroyHighlights(HighlightType.Definition);
     if (this.properties.definitions) {
       for (const item of this.properties.definitions) {
         await this.define(item);
@@ -226,31 +224,14 @@ export class DefinitionsModule implements ReaderModule {
     });
   }
 
-  drawDefinitions() {
+  async drawDefinitions() {
     setTimeout(async () => {
       await this.definitions();
-      //   this.currentPopupHighlights = [];
-      //   this.currentChapterPopupResult.forEach((searchItem) => {
-      //     var selectionInfo = {
-      //       rangeInfo: searchItem.rangeInfo,
-      //       cleanText: null,
-      //       rawText: null,
-      //       range: null,
-      //     };
-      //     const highlight = this.highlighter.createPopupHighlight(
-      //       selectionInfo,
-      //       searchItem.highlight.definition
-      //     );
-      //
-      //     searchItem.highlight = highlight;
-      //     this.currentPopupHighlights.push(highlight);
-      //   });
     }, 100);
   }
 
   async handleResize() {
-    await this.highlighter.destroyHighlights(HighlightType.Definition);
-    this.drawDefinitions();
+    await this.drawDefinitions();
   }
   createDefinitionHighlight(selectionInfo: ISelectionInfo, item: Definition) {
     try {

@@ -1175,8 +1175,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.definitionsModule !== undefined &&
           this.highlighter !== undefined
         ) {
-          await this.highlighter.destroyHighlights(HighlightType.Definition);
-          this.definitionsModule.drawDefinitions();
+          await this.definitionsModule.drawDefinitions();
         }
       }, 200);
     }
@@ -1591,10 +1590,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         await this.updatePositionInfo();
         await this.view.setSize();
       }, 200);
-
-      if (this.definitionsModule !== undefined) {
-        await this.definitionsModule.definitions();
-      }
 
       return new Promise<void>((resolve) => resolve());
     } catch (err: unknown) {
@@ -3146,7 +3141,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.definitionsModule !== undefined &&
           this.highlighter !== undefined
         ) {
-          await this.highlighter.destroyHighlights(HighlightType.Definition);
           this.definitionsModule.drawDefinitions();
         }
 

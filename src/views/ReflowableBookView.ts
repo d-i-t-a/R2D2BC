@@ -468,6 +468,7 @@ export default class ReflowableBookView implements BookView {
         iframe.height = Math.max(minHeight, height) + "px";
       }
     }, 200);
+    if (iframe) iframe.height = 0;
     d(iframe);
   }
 

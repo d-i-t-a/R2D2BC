@@ -117,17 +117,14 @@ export class SearchModule implements ReaderModule {
       this.searchInput = HTMLUtilities.findElement(
         this.headerMenu,
         "#searchInput"
-      ) as HTMLInputElement;
+      );
       addEventListenerOptional(
         this.searchInput,
         "keypress",
         this.handleSearch.bind(this)
       );
 
-      this.searchGo = HTMLUtilities.findElement(
-        this.headerMenu,
-        "#searchGo"
-      ) as HTMLElement;
+      this.searchGo = HTMLUtilities.findElement(this.headerMenu, "#searchGo");
       addEventListenerOptional(
         this.searchGo,
         "click",
@@ -138,7 +135,7 @@ export class SearchModule implements ReaderModule {
       var menuSearch = HTMLUtilities.findElement(
         this.headerMenu,
         "#menu-button-search"
-      ) as HTMLLinkElement;
+      );
       if (menuSearch) menuSearch.parentElement?.style.removeProperty("display");
     }
     setTimeout(() => {
@@ -164,7 +161,7 @@ export class SearchModule implements ReaderModule {
       var searchResultDiv = HTMLUtilities.findElement(
         this.headerMenu,
         "#searchResultChapter"
-      ) as HTMLDivElement;
+      );
     }
 
     self.currentChapterSearchResult = [];
@@ -534,7 +531,7 @@ export class SearchModule implements ReaderModule {
       var searchResultBook = HTMLUtilities.findElement(
         self.headerMenu,
         "#searchResultBook"
-      ) as HTMLDivElement;
+      );
     }
     goToResultPage(1);
 

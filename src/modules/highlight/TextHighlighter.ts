@@ -1438,7 +1438,7 @@ export class TextHighlighter {
     let wrapper = HTMLUtilities.findRequiredElement(
       document,
       "#iframe-wrapper"
-    ) as HTMLDivElement;
+    );
     const windowLeft = wrapper.scrollLeft;
     const windowRight = windowLeft + wrapper.clientHeight;
     const right = rect.left + rect.width;

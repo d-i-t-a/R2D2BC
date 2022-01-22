@@ -238,7 +238,7 @@ export default class LineFocusModule implements ReaderModule {
       const container = HTMLUtilities.findElement(
         doc,
         "#" + HighlightContainer.R2_ID_LINEFOCUS_CONTAINER
-      ) as HTMLDivElement;
+      );
 
       function random_rgba() {
         const o = Math.round,

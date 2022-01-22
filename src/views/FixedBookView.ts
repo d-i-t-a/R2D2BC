@@ -47,7 +47,7 @@ export default class FixedBookView implements BookView {
     const wrapper = HTMLUtilities.findRequiredElement(
       document,
       "#iframe-wrapper"
-    ) as HTMLDivElement;
+    );
     return wrapper.clientHeight;
   }
 

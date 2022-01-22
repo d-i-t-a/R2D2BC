@@ -116,7 +116,7 @@ export class TTSModule implements ReaderModule {
           var preferredLanguageSelector = HTMLUtilities.findElement(
             this.headerMenu,
             "#preferred-languages"
-          ) as HTMLSelectElement;
+          );
           if (preferredLanguageSelector) {
             this.voices.forEach((voice) => {
               var v = document.createElement("option") as HTMLOptionElement;
@@ -533,7 +533,7 @@ export class TTSModule implements ReaderModule {
       var menuTTS = HTMLUtilities.findElement(
         this.headerMenu,
         "#menu-button-tts"
-      ) as HTMLLinkElement;
+      );
       if (this.rights.enableMaterial) {
         if (menuTTS) menuTTS.parentElement?.style.removeProperty("display");
       } else {

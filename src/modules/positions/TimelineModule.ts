@@ -60,12 +60,12 @@ export class TimelineModule implements ReaderModule {
     this.timelineContainer = HTMLUtilities.findElement(
       document,
       "#container-view-timeline"
-    ) as HTMLDivElement;
+    );
     if (this.delegate.rights.enableMaterial) {
       this.positionSlider = HTMLUtilities.findElement(
         document,
         "#positionSlider"
-      ) as HTMLInputElement;
+      );
     }
     if (
       this.delegate.rights.autoGeneratePositions &&

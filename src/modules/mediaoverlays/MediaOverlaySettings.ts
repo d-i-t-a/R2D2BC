@@ -32,7 +32,6 @@ import {
   MediaOverlayModuleAPI,
   MediaOverlayModuleProperties,
 } from "./MediaOverlayModule";
-import { ReadiumCSS } from "../../model/user-settings/ReadiumCSS";
 
 export const R2_MO_CLASS_ACTIVE = "r2-mo-active";
 

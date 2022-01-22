@@ -199,7 +199,7 @@ export class AnnotationModule implements ReaderModule {
   initialize() {
     return new Promise(async (resolve) => {
       await (document as any).fonts.ready;
-      if (this.rights?.enableAnnotations) {
+      if (this.rights.enableAnnotations) {
         setTimeout(() => {
           this.drawHighlights();
           this.showHighlights();
@@ -314,7 +314,7 @@ export class AnnotationModule implements ReaderModule {
       }
       await this.showHighlights();
       await this.drawHighlights();
-      if (this.delegate.rights?.enableMaterial) {
+      if (this.delegate.rights.enableMaterial) {
         toast({ html: "highlight updated" });
       }
       return added;
@@ -332,7 +332,7 @@ export class AnnotationModule implements ReaderModule {
       }
       await this.showHighlights();
       await this.drawHighlights();
-      if (this.delegate.rights?.enableMaterial) {
+      if (this.delegate.rights.enableMaterial) {
         toast({ html: "highlight deleted" });
       }
       return deleted;
@@ -419,8 +419,7 @@ export class AnnotationModule implements ReaderModule {
           }
 
           if (
-            ((this.rights?.autoGeneratePositions ?? true) &&
-              this.publication.positions) ||
+            (this.rights.autoGeneratePositions && this.publication.positions) ||
             this.publication.positions
           ) {
             const positions = this.publication.positionsByHref(
@@ -513,7 +512,7 @@ export class AnnotationModule implements ReaderModule {
   }
 
   async drawHighlights(): Promise<void> {
-    if (this.rights?.enableAnnotations && this.highlighter) {
+    if (this.rights.enableAnnotations && this.highlighter) {
       if (this.api) {
         let highlights: Array<any> = [];
         if (this.annotator) {
@@ -834,8 +833,8 @@ export class AnnotationModule implements ReaderModule {
                 bookmarkItem.appendChild(bookmarkLink);
                 if (
                   (self.delegate.sideNavExpanded &&
-                    self.delegate.rights?.enableMaterial) ||
-                  !self.delegate.rights?.enableMaterial
+                    self.delegate.rights.enableMaterial) ||
+                  !self.delegate.rights.enableMaterial
                 ) {
                   let bookmarkDeleteLink: HTMLElement = document.createElement(
                     "button"

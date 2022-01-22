@@ -170,13 +170,13 @@ export class SearchModule implements ReaderModule {
     self.currentChapterSearchResult = [];
     self.currentSearchHighlights = [];
     var localSearchResultChapter: any = [];
-    if (this.delegate.rights?.enableContentProtection) {
+    if (this.delegate.rights.enableContentProtection) {
       this.delegate.contentProtectionModule?.deactivate();
     }
     await this.searchAndPaintChapter(searchVal, index, async (result) => {
       localSearchResultChapter = result;
       goToResultPage(1);
-      if (this.delegate.rights?.enableContentProtection) {
+      if (this.delegate.rights.enableContentProtection) {
         this.delegate.contentProtectionModule?.recalculate(200);
       }
     });
@@ -314,7 +314,7 @@ export class SearchModule implements ReaderModule {
 
     // clear search results // needs more works
     this.highlighter?.destroyHighlights(HighlightType.Search);
-    if (this.delegate.rights?.enableSearch) {
+    if (this.delegate.rights.enableSearch) {
       this.drawSearch();
     }
     let i = 0;

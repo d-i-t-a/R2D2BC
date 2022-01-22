@@ -569,7 +569,7 @@ export class TTSModule2 implements ReaderModule {
         this.headerMenu,
         "#menu-button-tts"
       ) as HTMLLinkElement;
-      if (this.rights?.enableMaterial) {
+      if (this.rights.enableMaterial) {
         if (menuTTS) menuTTS.parentElement?.style.removeProperty("display");
       } else {
         if (menuTTS)

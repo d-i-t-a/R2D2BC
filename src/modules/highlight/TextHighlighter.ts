@@ -757,7 +757,7 @@ export class TextHighlighter {
         self.toolboxMode("colors");
       });
 
-      if (this.delegate.rights?.enableAnnotations) {
+      if (this.delegate.rights.enableAnnotations) {
         let index = 10;
         colors.forEach((color) => {
           index--;
@@ -1034,7 +1034,7 @@ export class TextHighlighter {
         let underlineIcon = document.getElementById("underlineIcon");
         let colorIcon = document.getElementById("colorIcon");
         let speakIcon = document.getElementById("speakIcon");
-        if (this.delegate.rights?.enableAnnotations) {
+        if (this.delegate.rights.enableAnnotations) {
           if (highlightIcon) {
             highlightIcon.style.display = "unset";
             if (colorIcon) {
@@ -1090,7 +1090,7 @@ export class TextHighlighter {
             collapseIcon.style.setProperty("display", "none");
           }
         }
-        if (this.delegate.rights?.enableTTS) {
+        if (this.delegate.rights.enableTTS) {
           if (speakIcon) {
             function speakEvent() {
               speakIcon?.removeEventListener("click", speakEvent);
@@ -1152,9 +1152,9 @@ export class TextHighlighter {
 
                     if (
                       (marker === AnnotationMarker.Custom &&
-                        self.delegate.rights?.enableAnnotations) ||
+                        self.delegate.rights.enableAnnotations) ||
                       (marker === AnnotationMarker.Bookmark &&
-                        self.delegate.rights?.enableBookmarks)
+                        self.delegate.rights.enableBookmarks)
                     ) {
                       let doc = self.delegate.iframes[0].contentDocument;
                       if (doc) {
@@ -1170,7 +1170,7 @@ export class TextHighlighter {
                         );
                         self.options.onAfterHighlight(highlight, marker);
 
-                        if (self.delegate.rights?.enableAnnotations) {
+                        if (self.delegate.rights.enableAnnotations) {
                           self.delegate.annotationModule
                             ?.saveAnnotation(highlight[0])
                             .then((anno) => {
@@ -1191,7 +1191,7 @@ export class TextHighlighter {
                                   });
                               }
                             });
-                        } else if (self.delegate.rights?.enableBookmarks) {
+                        } else if (self.delegate.rights.enableBookmarks) {
                           self.delegate.bookmarkModule?.saveAnnotation(
                             highlight[0]
                           );
@@ -1259,12 +1259,12 @@ export class TextHighlighter {
             this.options.onAfterHighlight(highlight, marker);
 
             if (
-              this.delegate.rights?.enableAnnotations &&
+              this.delegate.rights.enableAnnotations &&
               marker !== AnnotationMarker.Bookmark
             ) {
               this.delegate.annotationModule?.saveAnnotation(highlight[0]);
             } else if (
-              this.delegate.rights?.enableBookmarks &&
+              this.delegate.rights.enableBookmarks &&
               marker === AnnotationMarker.Bookmark
             ) {
               this.delegate.bookmarkModule?.saveAnnotation(highlight[0]);
@@ -1288,7 +1288,7 @@ export class TextHighlighter {
   }
 
   speak() {
-    if (this.delegate.rights?.enableTTS) {
+    if (this.delegate.rights.enableTTS) {
       let self = this;
       function getCssSelector(element: Element): string | undefined {
         const options = {
@@ -1338,12 +1338,12 @@ export class TextHighlighter {
     }
   }
   stopReadAloud() {
-    if (this.delegate.rights?.enableTTS) {
+    if (this.delegate.rights.enableTTS) {
       this.doneSpeaking();
     }
   }
   speakAll() {
-    if (this.delegate.rights?.enableTTS) {
+    if (this.delegate.rights.enableTTS) {
       let self = this;
 
       function getCssSelector(element: Element): string | undefined {
@@ -1523,7 +1523,7 @@ export class TextHighlighter {
   }
 
   doneSpeaking(reload: boolean = false) {
-    if (this.delegate.rights?.enableTTS) {
+    if (this.delegate.rights.enableTTS) {
       this.toolboxHide();
       let doc = this.delegate.iframes[0].contentDocument;
       if (doc) {
@@ -2312,11 +2312,11 @@ export class TextHighlighter {
         }
         let self = this;
         let anno;
-        if (self.delegate.rights?.enableAnnotations) {
+        if (self.delegate.rights.enableAnnotations) {
           anno = (await this.delegate.annotationModule?.getAnnotation(
             payload.highlight
           )) as Annotation;
-        } else if (self.delegate.rights?.enableBookmarks) {
+        } else if (self.delegate.rights.enableBookmarks) {
           anno = (await this.delegate.bookmarkModule?.getAnnotation(
             payload.highlight
           )) as Annotation;
@@ -2398,7 +2398,7 @@ export class TextHighlighter {
               }
 
               function deleteH() {
-                if (self.delegate.rights?.enableAnnotations) {
+                if (self.delegate.rights.enableAnnotations) {
                   self.delegate.annotationModule
                     ?.deleteSelectedHighlight(anno)
                     .then(async () => {
@@ -2410,7 +2410,7 @@ export class TextHighlighter {
                       }
                       self.selectionMenuClosed();
                     });
-                } else if (self.delegate.rights?.enableBookmarks) {
+                } else if (self.delegate.rights.enableBookmarks) {
                   self.delegate.bookmarkModule
                     ?.deleteSelectedHighlight(anno)
                     .then(async () => {
@@ -3119,14 +3119,14 @@ export class TextHighlighter {
     ) {
       highlightAreaIcon.addEventListener("click", async function (ev) {
         let anno;
-        if (self.delegate.rights?.enableAnnotations) {
+        if (self.delegate.rights.enableAnnotations) {
           anno = (await self.delegate.annotationModule?.getAnnotationByID(
             highlight.id
           )) as Annotation;
           self.delegate.annotationModule?.api
             ?.selectedAnnotation(anno)
             .then(async () => {});
-        } else if (self.delegate.rights?.enableBookmarks) {
+        } else if (self.delegate.rights.enableBookmarks) {
           anno = (await self.delegate.bookmarkModule?.getAnnotationByID(
             highlight.id
           )) as Annotation;
@@ -3194,7 +3194,7 @@ export class TextHighlighter {
             }
 
             function deleteH() {
-              if (self.delegate.rights?.enableAnnotations) {
+              if (self.delegate.rights.enableAnnotations) {
                 self.delegate.annotationModule
                   ?.deleteSelectedHighlight(anno)
                   .then(async () => {
@@ -3204,7 +3204,7 @@ export class TextHighlighter {
                     toolbox!!.style.display = "none";
                     self.selectionMenuClosed();
                   });
-              } else if (self.delegate.rights?.enableBookmarks) {
+              } else if (self.delegate.rights.enableBookmarks) {
                 self.delegate.bookmarkModule
                   ?.deleteSelectedHighlight(anno)
                   .then(async () => {

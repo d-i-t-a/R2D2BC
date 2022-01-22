@@ -61,14 +61,14 @@ export class TimelineModule implements ReaderModule {
       document,
       "#container-view-timeline"
     ) as HTMLDivElement;
-    if (this.delegate.rights?.enableMaterial) {
+    if (this.delegate.rights.enableMaterial) {
       this.positionSlider = HTMLUtilities.findElement(
         document,
         "#positionSlider"
       ) as HTMLInputElement;
     }
     if (
-      !(this.delegate.rights?.autoGeneratePositions ?? true) &&
+      !this.delegate.rights.autoGeneratePositions &&
       !this.publication.positions
     ) {
       this.positionSlider.style.display = "none";
@@ -81,8 +81,8 @@ export class TimelineModule implements ReaderModule {
 
       let locator = this.delegate.currentLocator();
       if (
-        this.delegate.rights?.enableMaterial &&
-        (((this.delegate.rights?.autoGeneratePositions ?? true) &&
+        this.delegate.rights.enableMaterial &&
+        ((this.delegate.rights.autoGeneratePositions &&
           this.publication.positions) ||
           this.publication.positions)
       ) {
@@ -139,7 +139,7 @@ export class TimelineModule implements ReaderModule {
           var position;
           if (
             this.publication.positions ||
-            ((this.delegate.rights?.autoGeneratePositions ?? true) &&
+            (this.delegate.rights.autoGeneratePositions &&
               this.publication.positions)
           ) {
             position = {

@@ -201,7 +201,7 @@ export class MediaOverlayModule implements ReaderModule {
   }
 
   async startReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
+    if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = true;
       const timeToSeekTo = this.currentAudioBegin ? this.currentAudioBegin : 0;
       this.audioElement.currentTime = timeToSeekTo;
@@ -213,7 +213,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
   }
   async stopReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
+    if (this.delegate.rights.enableMediaOverlays) {
       await this.playLink();
       this.settings.playing = false;
       this.audioElement.pause();
@@ -222,7 +222,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
   }
   pauseReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
+    if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = false;
       this.audioElement.pause();
       if (this.play) this.play.style.display = "block";
@@ -230,7 +230,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
   }
   async resumeReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
+    if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = true;
       await this.audioElement.play();
       if (this.play) this.play.style.display = "none";

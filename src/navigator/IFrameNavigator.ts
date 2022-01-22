@@ -131,7 +131,7 @@ export interface IFrameNavigatorConfig {
   annotator?: Annotator;
   upLink?: UpLinkConfig;
   initialLastReadingPosition?: ReadingPosition;
-  rights?: ReaderRights;
+  rights: ReaderRights;
   material?: ReaderUI;
   api?: NavigatorAPI;
   tts?: TTSModuleConfig;
@@ -163,18 +163,18 @@ export interface Injectable {
 }
 
 export interface ReaderRights {
-  enableBookmarks?: boolean;
-  enableAnnotations?: boolean;
-  enableTTS?: boolean;
-  enableSearch?: boolean;
-  enableDefinitions?: boolean;
-  enableContentProtection?: boolean;
-  enableMaterial?: boolean;
-  enableTimeline?: boolean;
-  autoGeneratePositions?: boolean;
-  enableMediaOverlays?: boolean;
-  enablePageBreaks?: boolean;
-  enableLineFocus?: boolean;
+  enableBookmarks: boolean;
+  enableAnnotations: boolean;
+  enableTTS: boolean;
+  enableSearch: boolean;
+  enableDefinitions: boolean;
+  enableContentProtection: boolean;
+  enableMaterial: boolean;
+  enableTimeline: boolean;
+  autoGeneratePositions: boolean;
+  enableMediaOverlays: boolean;
+  enablePageBreaks: boolean;
+  enableLineFocus: boolean;
 }
 
 export interface ReaderUI {
@@ -186,7 +186,7 @@ export interface ReaderConfig {
   initialAnnotations?: any;
   lastReadingPosition?: any;
   upLinkUrl?: any;
-  rights: ReaderRights;
+  rights?: ReaderRights;
   material?: ReaderUI;
   api?: NavigatorAPI;
   tts?: TTSModuleConfig;
@@ -290,7 +290,20 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   private isLoading: boolean;
   private readonly initialLastReadingPosition?: ReadingPosition;
   api?: NavigatorAPI;
-  rights?: ReaderRights;
+  rights: ReaderRights = {
+    autoGeneratePositions: false,
+    enableAnnotations: false,
+    enableBookmarks: false,
+    enableContentProtection: false,
+    enableDefinitions: false,
+    enableLineFocus: false,
+    enableMaterial: false,
+    enableMediaOverlays: false,
+    enablePageBreaks: false,
+    enableSearch: false,
+    enableTTS: false,
+    enableTimeline: false,
+  };
   tts?: TTSModuleConfig;
   injectables?: Array<Injectable>;
   attributes?: IFrameAttributes;
@@ -354,7 +367,20 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.publication = publication;
     this.material = material;
     this.api = api;
-    this.rights = rights;
+    this.rights = rights ?? {
+      autoGeneratePositions: false,
+      enableAnnotations: false,
+      enableBookmarks: false,
+      enableContentProtection: false,
+      enableDefinitions: false,
+      enableLineFocus: false,
+      enableMaterial: false,
+      enableMediaOverlays: false,
+      enablePageBreaks: false,
+      enableSearch: false,
+      enableTTS: false,
+      enableTimeline: false,
+    };
     this.tts = tts;
     this.injectables = injectables;
     this.attributes = attributes || { margin: 0 };
@@ -428,7 +454,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       removeEventListenerOptional(iframe, "resize", this.onResize);
     });
 
-    if (this.rights?.enableMaterial) {
+    if (this.rights.enableMaterial) {
       if (this.mDropdowns) {
         this.mDropdowns.forEach((element) => {
           (element as any).destroy();
@@ -744,8 +770,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.headerMenu,
           "#menu-button-mediaoverlay"
         ) as HTMLLinkElement;
-        if (this.rights?.enableMaterial) {
-          if (!this.rights?.enableBookmarks) {
+        if (this.rights.enableMaterial) {
+          if (!this.rights.enableBookmarks) {
             if (menuBookmark)
               menuBookmark.parentElement?.style.setProperty("display", "none");
             var sideNavSectionBookmarks = HTMLUtilities.findElement(
@@ -755,7 +781,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             if (sideNavSectionBookmarks)
               sideNavSectionBookmarks.style.setProperty("display", "none");
           }
-          if (!this.rights?.enableAnnotations) {
+          if (!this.rights.enableAnnotations) {
             var sideNavSectionHighlights = HTMLUtilities.findElement(
               this.headerMenu,
               "#sidenav-section-highlights"
@@ -763,11 +789,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             if (sideNavSectionHighlights)
               sideNavSectionHighlights.style.setProperty("display", "none");
           }
-          if (!this.rights?.enableTTS) {
+          if (!this.rights.enableTTS) {
             if (menuTTS)
               menuTTS.parentElement?.style.setProperty("display", "none");
           }
-          if (!this.rights?.enableSearch) {
+          if (!this.rights.enableSearch) {
             if (menuSearch)
               menuSearch.parentElement?.style.setProperty("display", "none");
           }
@@ -795,7 +821,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
       }
 
-      if (this.rights?.enableMaterial) {
+      if (this.rights.enableMaterial) {
         let elements = document.querySelectorAll(".sidenav");
         if (elements) {
           self.mSidenav = Sidenav.init(elements, {
@@ -1171,7 +1197,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
 
         if (
-          this.rights?.enableSearch &&
+          this.rights.enableSearch &&
           this.searchModule !== undefined &&
           this.highlighter !== undefined
         ) {
@@ -1179,7 +1205,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.searchModule.drawSearch();
         }
         if (
-          this.rights?.enableDefinitions &&
+          this.rights.enableDefinitions &&
           this.definitionsModule !== undefined &&
           this.highlighter !== undefined
         ) {
@@ -1508,7 +1534,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         await this.highlighter.initialize();
       }
       const body = this.iframes[0].contentDocument?.body;
-      if (this.rights?.enableTTS && this.tts?.enableSplitter) {
+      if (this.rights.enableTTS && this.tts?.enableSplitter) {
         Splitting({
           target: body,
           by: "lines",
@@ -1524,7 +1550,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         });
       }
 
-      if (this.rights?.enableContentProtection) {
+      if (this.rights.enableContentProtection) {
         if (this.contentProtectionModule !== undefined) {
           await this.contentProtectionModule.initialize();
         }
@@ -1555,7 +1581,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.bookmarkModule !== undefined) {
         await this.bookmarkModule.initialize();
       }
-      if (this.rights?.enableTTS) {
+      if (this.rights.enableTTS) {
         for (const iframe of this.iframes) {
           const body = iframe.contentDocument?.body;
           if (this.ttsModule !== undefined) {
@@ -1575,7 +1601,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       }
 
       if (
-        this.rights?.enableMediaOverlays &&
+        this.rights.enableMediaOverlays &&
         this.mediaOverlayModule !== undefined &&
         this.hasMediaOverlays
       ) {
@@ -1606,7 +1632,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         this.hideLoadingMessage();
         this.showIframeContents();
         if (
-          this.rights?.enableMediaOverlays &&
+          this.rights.enableMediaOverlays &&
           this.mediaOverlayModule !== undefined &&
           this.hasMediaOverlays
         ) {
@@ -2329,7 +2355,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     return this.publication.hasMediaOverlays;
   }
   startReadAloud() {
-    if (this.rights?.enableTTS) {
+    if (this.rights.enableTTS) {
       if (this.tts?.enableSplitter) {
         this.highlighter?.speakAll();
       } else {
@@ -2340,7 +2366,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
   startReadAlong() {
     if (
-      this.rights?.enableMediaOverlays &&
+      this.rights.enableMediaOverlays &&
       this.mediaOverlayModule !== undefined &&
       this.hasMediaOverlays
     ) {
@@ -2348,7 +2374,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
   stopReadAloud() {
-    if (this.rights?.enableTTS) {
+    if (this.rights.enableTTS) {
       this.highlighter?.stopReadAloud();
       if (!this.tts?.enableSplitter) {
         if (this.annotationModule !== undefined) {
@@ -2359,7 +2385,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
   stopReadAlong() {
     if (
-      this.rights?.enableMediaOverlays &&
+      this.rights.enableMediaOverlays &&
       this.mediaOverlayModule !== undefined &&
       this.hasMediaOverlays
     ) {
@@ -2368,7 +2394,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
 
   pauseReadAloud() {
-    if (this.rights?.enableTTS) {
+    if (this.rights.enableTTS) {
       if (this.tts?.enableSplitter) {
         const ttsModule = this.ttsModule as TTSModule;
         ttsModule.speakPause();
@@ -2383,7 +2409,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
   pauseReadAlong() {
     if (
-      this.rights?.enableMediaOverlays &&
+      this.rights.enableMediaOverlays &&
       this.mediaOverlayModule !== undefined &&
       this.hasMediaOverlays
     ) {
@@ -2391,7 +2417,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
   resumeReadAloud() {
-    if (this.rights?.enableTTS) {
+    if (this.rights.enableTTS) {
       if (this.tts?.enableSplitter) {
         const ttsModule = this.ttsModule as TTSModule;
         ttsModule.speakResume();
@@ -2403,7 +2429,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
   resumeReadAlong() {
     if (
-      this.rights?.enableMediaOverlays &&
+      this.rights.enableMediaOverlays &&
       this.mediaOverlayModule !== undefined &&
       this.hasMediaOverlays
     ) {
@@ -2489,8 +2515,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   currentLocator(): Locator {
     let position;
     if (
-      ((this.rights?.autoGeneratePositions ?? false) &&
-        this.publication.positions) ||
+      (this.rights.autoGeneratePositions && this.publication.positions) ||
       this.publication.positions
     ) {
       let positions = this.publication.positionsByHref(
@@ -3181,21 +3206,21 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         this.precessContentForIframe();
 
         if (
-          this.rights?.enableContentProtection &&
+          this.rights.enableContentProtection &&
           this.contentProtectionModule !== undefined
         ) {
           await this.contentProtectionModule.initializeResource();
         }
 
         if (
-          this.rights?.enableMediaOverlays &&
+          this.rights.enableMediaOverlays &&
           this.mediaOverlayModule !== undefined &&
           this.hasMediaOverlays
         ) {
           await this.mediaOverlayModule.initializeResource(this.currentLink());
         }
         if (
-          this.rights?.enableContentProtection &&
+          this.rights.enableContentProtection &&
           this.contentProtectionModule !== undefined
         ) {
           this.contentProtectionModule.recalculate(300);
@@ -3216,7 +3241,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
 
         if (
-          this.rights?.enableSearch &&
+          this.rights.enableSearch &&
           this.searchModule !== undefined &&
           this.highlighter !== undefined
         ) {
@@ -3225,7 +3250,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
 
         if (
-          this.rights?.enableDefinitions &&
+          this.rights.enableDefinitions &&
           this.definitionsModule !== undefined &&
           this.highlighter !== undefined
         ) {
@@ -3383,8 +3408,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
         let position: ReadingPosition | undefined;
         if (
-          ((this.rights?.autoGeneratePositions ?? false) &&
-            this.publication.positions) ||
+          (this.rights.autoGeneratePositions && this.publication.positions) ||
           this.publication.positions
         ) {
           const positions = this.publication.positionsByHref(

@@ -1530,6 +1530,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       }
       if (this.view.layout !== "fixed") {
         if (this.view?.isScrollMode()) {
+          this.iframes[0].height = "0";
           this.view.setIframeHeight(this.iframes[0]);
         }
       }

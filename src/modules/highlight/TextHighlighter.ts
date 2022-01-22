@@ -2500,13 +2500,15 @@ export class TextHighlighter {
           self.processMouseEvent(win, ev);
         }
 
-        doc.body.addEventListener("mousedown", mousedown, false);
-        doc.body.addEventListener("mouseup", mouseup, false);
-        doc.body.addEventListener("mousemove", mousemove, false);
+        if (doc.body) {
+          doc.body.addEventListener("mousedown", mousedown, false);
+          doc.body.addEventListener("mouseup", mouseup, false);
+          doc.body.addEventListener("mousemove", mousemove, false);
 
-        doc.body.addEventListener("touchstart", mousedown, false);
-        doc.body.addEventListener("touchend", mouseup, false);
-        doc.body.addEventListener("touchmove", mousemove, false);
+          doc.body.addEventListener("touchstart", mousedown, false);
+          doc.body.addEventListener("touchend", mouseup, false);
+          doc.body.addEventListener("touchmove", mousemove, false);
+        }
       }
 
       let container = doc.createElement("div");
@@ -2517,8 +2519,9 @@ export class TextHighlighter {
         container.style.setProperty("top", "0");
         container.style.setProperty("left", "0");
       }
-      doc.body.append(container);
-
+      if (doc.body) {
+        doc.body.append(container);
+      }
       if (
         ((await this.layerSettings.getProperty(id)) as Switchable)?.value ===
         false

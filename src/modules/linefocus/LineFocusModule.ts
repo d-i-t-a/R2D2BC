@@ -138,10 +138,6 @@ export default class LineFocusModule implements ReaderModule {
   lineFocus() {
     document.body.style.overflow = "hidden";
 
-    let iframe = document.querySelector(
-      "main#iframe-wrapper iframe"
-    ) as HTMLIFrameElement;
-
     function insertAfter(referenceNode, newNode) {
       referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
     }
@@ -158,29 +154,34 @@ export default class LineFocusModule implements ReaderModule {
     if (this.lineFocusContainer)
       this.lineFocusContainer.style.removeProperty("display");
 
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
+
     let divBefore = document.getElementById("divBefore");
     if (divBefore) {
-      divBefore.style.height = document.documentElement.clientHeight / 2 + "px";
+      divBefore.style.height = wrapper.clientHeight / 2 + "px";
     } else {
       let divBefore = document.createElement("div");
-      divBefore.style.height = document.documentElement.clientHeight / 2 + "px";
+      divBefore.style.height = wrapper.clientHeight / 2 + "px";
       divBefore.id = "divBefore";
-      insertBefore(iframe, divBefore);
+      insertBefore(wrapper, divBefore);
     }
 
     let divAfter = document.getElementById("divAfter");
     if (divAfter) {
-      divAfter.style.height = document.documentElement.clientHeight / 2 + "px";
+      divAfter.style.height = wrapper.clientHeight / 2 + "px";
     } else {
       let divAfter = document.createElement("div");
-      divAfter.style.height = document.documentElement.clientHeight / 2 + "px";
+      divAfter.style.height = wrapper.clientHeight / 2 + "px";
       divAfter.id = "divAfter";
-      insertAfter(iframe, divAfter);
+      insertAfter(wrapper, divAfter);
     }
 
     this.lines = [];
     const self = this;
-    let doc = self.delegate.iframes[0].contentDocument;
+    const doc = self.delegate.iframes[0].contentDocument;
     if (doc) {
       let textNodes = this.findRects(doc.body);
       textNodes = getClientRectsNoOverlap_(textNodes, true);

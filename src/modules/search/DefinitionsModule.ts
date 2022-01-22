@@ -150,21 +150,21 @@ export default class DefinitionsModule implements ReaderModule {
                   rawText: null,
                   range: null,
                 };
-                  const highlight = this.createDefinitionHighlight(
-                    selectionInfo,
-                    item
-                  );
-                  searchItem.highlight = highlight;
-                  localSearchDefinitions.push(
-                    lodash.omit(highlight, "definition")
-                  );
-                  this.currentChapterPopupResult.push(searchItem);
-                  this.currentPopupHighlights.push(highlight);
+                const highlight = this.createDefinitionHighlight(
+                  selectionInfo,
+                  item
+                );
+                searchItem.highlight = highlight;
+                localSearchDefinitions.push(
+                  lodash.omit(highlight, "definition")
+                );
+                this.currentChapterPopupResult.push(searchItem);
+                this.currentPopupHighlights.push(highlight);
               }
             });
 
             if (tindex === item.terms.length - 1) {
-                callback(localSearchDefinitions);
+              callback(localSearchDefinitions);
             }
           });
         }

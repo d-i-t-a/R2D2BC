@@ -19,7 +19,7 @@
     "build": "ts-node -T build.ts",
     "start": "node dev-server.js",
     "sass": "node-sass --source-map true src/styles/sass/ -o dist/",
-    "examples": "node --loader ts-node/esm examples/server.ts",
+    "examples": "npx ts-node examples/server.ts",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --fix",
     "example:react": "parcel examples/react/index.html --dist-dir parcel-dist"
   },

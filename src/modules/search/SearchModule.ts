@@ -433,18 +433,24 @@ export class SearchModule implements ReaderModule {
     let filteredIndexes = this.bookSearchResult.filter(
       (el: any) => el.href === href
     );
-
+    console.log(currentLocation);
+    console.log(filteredIndexes);
+    console.log(href);
+    console.log(absolutehref);
+    console.log(current);
+    console.log(index);
     if (current) {
       item = this.currentChapterSearchResult.filter(
-        (el: any) => el.uuid === index
+        (el: any) => el.uuid == index
       )[0];
       filteredIndex = this.currentChapterSearchResult.findIndex(
-        (el: any) => el.uuid === index
+        (el: any) => el.uuid == index
       );
     } else {
-      item = filteredIndexes.filter((el: any) => el.uuid === index)[0];
-      filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid === index);
+      item = filteredIndexes.filter((el: any) => el.uuid == index)[0];
+      filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid == index);
     }
+    console.log(item);
     if (item !== undefined) {
       if (currentLocation === absolutehref) {
         this.jumpToMark(filteredIndex);
@@ -720,10 +726,10 @@ export class SearchModule implements ReaderModule {
     for (let index = 0; index < this.publication.readingOrder.length; index++) {
       const linkHref = this.publication.getAbsoluteHref(
         this.publication.readingOrder
-          ? this.publication.readingOrder[this.delegate.currentResource() ?? 0]
-              .Href
+          ? this.publication.readingOrder[index].Href
           : ""
       );
+
       let tocItem = this.publication.getTOCItem(linkHref);
       if (tocItem === undefined && this.publication.readingOrder) {
         tocItem = this.publication.readingOrder[index];

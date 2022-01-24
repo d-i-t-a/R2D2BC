@@ -199,28 +199,30 @@
         </ul>
         <!--Search-->
         <ul> <div>Search</div>
-            <button onclick="d2reader.search('attractions', true).then(
+            <button onclick="d2reader.search('shelley', true).then(
             result => {
+                console.log('search in chapter');
                 console.log(JSON.stringify(result))
             })">search in chapter</button><br>
 
-            <button onclick="d2reader.search('attractions', false).then(
+            <button onclick="d2reader.search('shelley', false).then(
             result => {
+                console.log('search in book');
                 console.log(JSON.stringify(result))
             })">search in book</button><br>
 
-            <button onclick="d2reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 2, false)">go to index 2 in
-                chapter OEBPS/Text/intro.xhtml</button><br>
-            <button onclick="d2reader.goToSearchIndex('OEBPS/Text/intro.xhtml', 3, false)">go to index 3 in
-                chapter OEBPS/Text/intro.xhtml</button><br>
-            <button onclick="d2reader.goToSearchID('OEBPS/Text/intro.xhtml', 10, false)">go to uuid 10 in chapter
-                OEBPS/Text/intro.xhtml</button><br>
-            <button onclick="d2reader.goToSearchID('OEBPS/Text/intro.xhtml', 11, false)">go to uuid 11 in chapter
-                OEBPS/Text/intro.xhtml</button><br>
-            <button onclick="d2reader.goToSearchID('OEBPS/Text/intro.xhtml', 2, false)">go to uuid 2 in chapter
-                OEBPS/Text/intro.xhtml</button><br>
-            <button onclick="d2reader.goToSearchID('OEBPS/Text/intro.xhtml', 3, false)">go to uuid 3 in chapter
-                OEBPS/Text/intro.xhtml</button><br>
+            <button onclick="d2reader.goToSearchIndex('OEBPS/Text/bio.xhtml', 2, false)">go to index 2 in
+                chapter OEBPS/Text/bio.xhtml</button><br>
+            <button onclick="d2reader.goToSearchIndex('OEBPS/Text/bio.xhtml', 3, false)">go to index 3 in
+                chapter OEBPS/Text/bio.xhtml</button><br>
+            <button onclick="d2reader.goToSearchID('OEBPS/Text/bio.xhtml', 10, false)">go to uuid 10 in chapter
+                OEBPS/Text/bio.xhtml</button><br>
+            <button onclick="d2reader.goToSearchID('OEBPS/Text/bio.xhtml', 9, false)">go to uuid 9 in chapter
+                OEBPS/Text/bio.xhtml</button><br>
+            <button onclick="d2reader.goToSearchID('OEBPS/Text/bio.xhtml', 8, false)">go to uuid 8 in chapter
+                OEBPS/Text/bio.xhtml</button><br>
+            <button onclick="d2reader.goToSearchID('OEBPS/Text/bio.xhtml', 7, false)">go to uuid 7 in chapter
+                OEBPS/Text/bio.xhtml</button><br>
             <button onclick="d2reader.clearSearch()">clear search</button><br>
         </ul>
 

@@ -17,7 +17,7 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import IFrameNavigator from "../navigator/IFrameNavigator";
+import { IFrameNavigator } from "../navigator/IFrameNavigator";
 
 export default class KeyboardEventHandler {
   delegate: IFrameNavigator;
@@ -25,9 +25,11 @@ export default class KeyboardEventHandler {
   public onBackwardSwipe: (event: UIEvent) => void = () => {};
   public onForwardSwipe: (event: UIEvent) => void = () => {};
 
-  public setupEvents = (element: HTMLElement | Document): void => {
-    this.focusin(element);
-    this.keydown(element);
+  public setupEvents = (element: HTMLElement | Document | null): void => {
+    if (element) {
+      this.focusin(element);
+      this.keydown(element);
+    }
   };
 
   public focusin = (element: HTMLElement | Document): void => {
@@ -35,7 +37,7 @@ export default class KeyboardEventHandler {
     element.addEventListener(
       "focusin",
       function (event: KeyboardEvent) {
-        self.delegate.view.snap(event.target as HTMLElement);
+        self.delegate.view?.snap(event.target as HTMLElement);
       },
       true
     );

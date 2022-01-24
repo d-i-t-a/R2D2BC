@@ -21,7 +21,7 @@ import { Link as R2Link } from "r2-shared-js/dist/es6-es2015/src/models/publicat
 import { JsonObject } from "ta-json-x";
 
 export class D2Link {
-  href?: string;
+  href: string;
   type?: string;
   title?: string;
 }

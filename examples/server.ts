@@ -2,7 +2,7 @@
 import { Server } from "dita-streamer-js";
 import * as express from "express";
 import * as path from "path";
-import * as fs from "fs";
+import recursive from "recursive-readdir";
 
 async function start() {
   // Constructor parameter is optional:
@@ -60,13 +60,13 @@ async function start() {
    * Serve our sample EPUBS from /examples/epubs
    */
   const epubsPath = path.join(__dirname, "./epubs");
-  const files = await fs.promises.readdir(epubsPath);
-  const filePaths = files.map((fileName) =>
-    path.join(__dirname, "./epubs", fileName)
-  );
-  const publicationURLs = server.addPublications(filePaths);
 
-  console.log("Local Publications: ", publicationURLs);
+  recursive(epubsPath, ["!*.epub"], function (err, files) {
+    if (err) return console.error(err);
+    const filePaths = files.map((fileName) => path.join(fileName));
+    const publicationURLs = server.addPublications(filePaths);
+    console.log("Local Publications: ", publicationURLs.length);
+  });
 
   const data = await server.start(4444, false);
 

@@ -17,7 +17,7 @@ const App = () => {
 
   React.useEffect(() => {
     const url = new URL("https://alice.dita.digital/manifest.json");
-    D2Reader.build({
+    D2Reader.load({
       url,
       injectables: injectables as any,
       injectablesFixed: [],
@@ -25,15 +25,15 @@ const App = () => {
   }, []);
 
   function scroll() {
-    reader.scroll(true);
+    reader?.scroll(true);
     didUpdate();
   }
   function paginate() {
-    reader.scroll(false);
+    reader?.scroll(false);
     didUpdate();
   }
 
-  const isScrolling = reader?.currentSettings().verticalScroll ?? false;
+  const isScrolling = reader?.currentSettings.verticalScroll ?? false;
 
   return (
     <div>

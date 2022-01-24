@@ -22,7 +22,7 @@
 export function findElement(
   parentElement: Element | Document,
   selector: string
-): HTMLElement | null {
+): any | null {
   return parentElement.querySelector(selector);
 }
 
@@ -31,12 +31,12 @@ export function findElement(
 export function findRequiredElement(
   parentElement: Element | Document,
   selector: string
-): HTMLElement {
+): any {
   const element = findElement(parentElement, selector);
-  if (!element) {
-    throw new Error("required element " + selector + " not found");
-  } else {
+  if (element && element instanceof HTMLElement) {
     return element;
+  } else {
+    throw new Error("required element " + selector + " not found");
   }
 }
 
@@ -56,7 +56,7 @@ export function findIframeElement(
 /** Returns a single element matching the selector within the parent element in an iframe context,
         or throws an exception if no element matches. */
 export function findRequiredIframeElement(
-  parentElement: Document | null,
+  parentElement: Document,
   selector: string
 ): Element {
   const element = findIframeElement(parentElement, selector);

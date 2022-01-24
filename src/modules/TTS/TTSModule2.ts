@@ -17,8 +17,8 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import ReaderModule from "../ReaderModule";
 import { IS_DEV } from "../../utils";
+import { ReaderModule } from "../ReaderModule";
 import { AnnotationMarker } from "../../model/Locator";
 import {
   TTSModuleAPI,
@@ -32,8 +32,8 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import sanitize from "sanitize-html";
-import IFrameNavigator, { ReaderRights } from "../../navigator/IFrameNavigator";
-import TextHighlighter from "../highlight/TextHighlighter";
+import { IFrameNavigator, ReaderRights } from "../../navigator/IFrameNavigator";
+import { TextHighlighter } from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
@@ -45,7 +45,7 @@ import {
 } from "../highlight/common/selection";
 import { getClientRectsNoOverlap } from "../highlight/common/rect-utils";
 
-export default class TTSModule2 implements ReaderModule {
+export class TTSModule2 implements ReaderModule {
   private tts: TTSSettings;
   private voices: SpeechSynthesisVoice[] = [];
   private clean: any;
@@ -54,10 +54,9 @@ export default class TTSModule2 implements ReaderModule {
   private delegate: IFrameNavigator;
   private body: any;
   private hasEventListener: boolean = false;
-  private readonly headerMenu: HTMLElement;
-  // @ts-ignore
+  private readonly headerMenu?: HTMLElement | null;
   private readonly properties: TTSModuleProperties;
-  private readonly api: TTSModuleAPI;
+  private readonly api?: TTSModuleAPI;
 
   initialize(body: any) {
     if (this.highlighter !== undefined) {
@@ -89,51 +88,56 @@ export default class TTSModule2 implements ReaderModule {
 
   private click(_event: KeyboardEvent | MouseEvent | TrackEvent): void {
     if (window.speechSynthesis.speaking && this.speaking) {
-      const selection = this.highlighter
-        .dom(this.delegate.iframes[0].contentDocument.body)
-        .getSelection();
-      let range = selection.getRangeAt(0);
-      let node = selection.anchorNode;
-
-      // Find starting point
-      while (range.toString().indexOf(" ") != 0) {
-        try {
-          range.setStart(node, range.startOffset - 1);
-        } catch (e) {
-          break;
+      let doc = this.delegate.iframes[0].contentDocument;
+      if (doc) {
+        const selection = this.highlighter.dom(doc.body).getSelection();
+        let range = selection.getRangeAt(0);
+        let node = selection.anchorNode;
+        // Find starting point
+        while (range.toString().indexOf(" ") !== 0) {
+          try {
+            range.setStart(node, range.startOffset - 1);
+          } catch (e) {
+            break;
+          }
         }
-      }
-      range.setStart(node, range.startOffset + 1);
+        range.setStart(node, range.startOffset + 1);
 
-      // Find ending point
-      do {
-        range.setEnd(node, range.endOffset + 1);
-      } while (
-        range.toString().indexOf(" ") == -1 &&
-        range.toString().trim() != ""
-      );
+        // Find ending point
+        do {
+          range.setEnd(
+            node,
+            node.length < range.endOffset ? range.endOffset + 1 : node.length
+          );
+        } while (
+          range.toString().indexOf(" ") === -1 &&
+          range.toString().trim() !== ""
+        );
 
-      // Alert result
-      // var str = range.toString().trim();
-      // alert(str);
+        // Alert result
+        // var str = range.toString().trim();
+        // alert(str);
 
-      let iframe = document.querySelector(
-        "main#iframe-wrapper iframe"
-      ) as HTMLIFrameElement;
-      let rootEl = iframe.contentWindow.document.body;
-      const idx = this.findTtsQueueItemIndex(
-        this.ttsQueue,
-        selection.anchorNode as Element,
-        selection.focusNode,
-        selection.focusOffset,
-        rootEl
-      );
-      selection.removeAllRanges();
+        let iframe = document.querySelector(
+          "main#iframe-wrapper iframe"
+        ) as HTMLIFrameElement;
+        let rootEl = iframe.contentWindow?.document.body;
+        if (this.ttsQueue && rootEl) {
+          const idx = this.findTtsQueueItemIndex(
+            this.ttsQueue,
+            selection.anchorNode as Element,
+            selection.focusNode,
+            selection.focusOffset,
+            rootEl
+          );
+          selection.removeAllRanges();
 
-      if (idx >= 0) {
-        window.speechSynthesis.cancel();
-        this.restartIndex = idx;
-        this.ttsPlayQueueIndexDebounced(this.restartIndex, this.ttsQueue);
+          if (idx >= 0) {
+            window.speechSynthesis.cancel();
+            this.restartIndex = idx;
+            this.ttsPlayQueueIndexDebounced(this.restartIndex, this.ttsQueue);
+          }
+        }
       }
     }
   }
@@ -169,7 +173,7 @@ export default class TTSModule2 implements ReaderModule {
           var preferredLanguageSelector = HTMLUtilities.findElement(
             this.headerMenu,
             "#preferred-languages"
-          ) as HTMLSelectElement;
+          );
           if (preferredLanguageSelector) {
             this.voices.forEach((voice) => {
               var v = document.createElement("option") as HTMLOptionElement;
@@ -185,6 +189,7 @@ export default class TTSModule2 implements ReaderModule {
 
   cancel() {
     if (this.api?.stopped) this.api?.stopped();
+    this.delegate.emit("readaloud.stopped", "stopped");
     this.userScrolled = false;
     this.speaking = false;
     setTimeout(() => {
@@ -192,7 +197,7 @@ export default class TTSModule2 implements ReaderModule {
     }, 0);
 
     if (this._ttsQueueItemHighlightsWord) {
-      this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud);
+      this.delegate.highlighter?.destroyHighlights(HighlightType.ReadAloud);
       this._ttsQueueItemHighlightsWord = undefined;
     }
   }
@@ -205,6 +210,7 @@ export default class TTSModule2 implements ReaderModule {
     callback: () => void
   ): Promise<any> {
     if (this.api?.started) this.api?.started();
+    this.delegate.emit("readaloud.started", "started");
 
     const self = this;
     this.userScrolled = false;
@@ -215,38 +221,43 @@ export default class TTSModule2 implements ReaderModule {
       let iframe = document.querySelector(
         "main#iframe-wrapper iframe"
       ) as HTMLIFrameElement;
-      let rootEl = iframe.contentWindow.document.body;
+      let rootEl = iframe.contentWindow?.document.body;
 
-      const selection = this.highlighter
-        .dom(this.delegate.iframes[0].contentDocument.body)
-        .getSelection();
+      let doc = this.delegate.iframes[0].contentDocument;
+      if (doc) {
+        const selection = this.highlighter.dom(doc.body).getSelection();
 
-      const ttsQueue = this.generateTtsQueue(rootEl, true);
-      if (!ttsQueue.length) {
-        return;
+        if (rootEl) {
+          const ttsQueue = this.generateTtsQueue(rootEl, true);
+          if (!ttsQueue.length) {
+            return;
+          }
+
+          const idx = this.findTtsQueueItemIndex(
+            ttsQueue,
+            selection.anchorNode as Element,
+            selection.focusNode,
+            selection.focusOffset,
+            rootEl
+          );
+
+          const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
+          if (ttsQueueItem && selectionInfo && selectionInfo.cleanText) {
+            const sentence = getTtsQueueItemRefText(ttsQueueItem);
+            const startIndex = sentence.indexOf(selectionInfo.cleanText);
+            utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
+            utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+              console.log(ev);
+              this.updateTTSInfo(
+                ttsQueueItem,
+                ev.charIndex + startIndex,
+                ev.charLength,
+                utterance.text
+              );
+            };
+          }
+        }
       }
-
-      const idx = this.findTtsQueueItemIndex(
-        ttsQueue,
-        selection.anchorNode as Element,
-        selection.focusNode,
-        selection.focusOffset,
-        rootEl
-      );
-
-      const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
-      const sentence = getTtsQueueItemRefText(ttsQueueItem);
-      const startIndex = sentence.indexOf(selectionInfo.cleanText);
-
-      utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
-      utterance.onboundary = (ev: SpeechSynthesisEvent) => {
-        this.updateTTSInfo(
-          ttsQueueItem,
-          ev.charIndex + startIndex,
-          ev.charLength,
-          utterance.text
-        );
-      };
     } else {
       utterance = new SpeechSynthesisUtterance(this.clean);
     }
@@ -390,111 +401,119 @@ export default class TTSModule2 implements ReaderModule {
       if (IS_DEV) console.log("utterance ended");
       self.highlighter.doneSpeaking();
       self.api?.finished();
+      self.delegate.emit("readaloud.finished", "finished");
     };
     callback();
   }
 
   speakPlay() {
-    // function ttsPlay() {
     this.cancel();
+    this.delegate.emit("readaloud.started", "started");
 
     let self = this;
     let iframe = document.querySelector(
       "main#iframe-wrapper iframe"
     ) as HTMLIFrameElement;
-    let rootEl = iframe.contentWindow.document.body;
+    let rootEl = iframe.contentWindow?.document.body;
 
-    const ttsQueue = this.generateTtsQueue(rootEl, true);
-    if (!ttsQueue.length) {
-      return;
-    }
-    let ttsQueueIndex = 0;
-
-    function findVisibleText() {
-      let node = self.highlighter.visibleTextRects[0];
-      const range = self.highlighter
-        .dom(self.delegate.iframes[0].contentDocument.body)
-        .getWindow()
-        .document.createRange();
-
-      const selection = self.highlighter
-        .dom(self.delegate.iframes[0].contentDocument.body)
-        .getSelection();
-      selection.removeAllRanges();
-      range.selectNodeContents(node.node);
-      selection.addRange(range);
-
-      const clientRects = getClientRectsNoOverlap(range, false);
-
-      function isOutsideViewport(rect): boolean {
-        const windowLeft = window.scrollX;
-        const windowRight = windowLeft + window.innerWidth;
-        const right = rect.left + rect.width;
-        const bottom = rect.top + rect.height;
-        const windowTop = window.scrollY;
-        const windowBottom = windowTop + window.innerHeight;
-
-        const isAbove = bottom < windowTop;
-        const isBelow = rect.top > windowBottom;
-
-        const isLeft = right < windowLeft;
-        const isRight = rect.left > windowRight;
-
-        return isAbove || isBelow || isLeft || isRight;
+    if (rootEl) {
+      const ttsQueue = this.generateTtsQueue(rootEl, true);
+      if (!ttsQueue.length) {
+        return;
       }
+      let ttsQueueIndex = 0;
 
-      let index = 0;
-      for (const rect of clientRects) {
-        if (!isOutsideViewport(rect)) {
-          const endNode = selection.focusNode;
-          const endOffset = selection.focusOffset;
+      function findVisibleText() {
+        let node = self.highlighter.visibleTextRects[0];
+        let doc = self.delegate.iframes[0].contentDocument;
+        if (doc) {
+          const range = self.highlighter
+            .dom(doc.body)
+            .getWindow()
+            .document.createRange();
 
-          selection.collapse(selection.anchorNode, selection.anchorOffset);
-
-          for (let i = 0; i < index; i++) {
-            selection.modify("move", "forward", "line");
-          }
-          selection.extend(endNode, endOffset);
-
-          selection.collapse(selection.anchorNode, selection.anchorOffset);
-
-          const idx = self.findTtsQueueItemIndex(
-            ttsQueue,
-            selection.anchorNode,
-            selection.focusNode,
-            selection.focusOffset,
-            rootEl
-          );
-
-          if (idx >= 0) {
-            ttsQueueIndex = idx;
-          }
+          const selection = self.highlighter
+            .dom(self.delegate.iframes[0].contentDocument?.body)
+            .getSelection();
           selection.removeAllRanges();
-          break;
+          range.selectNodeContents(node.node);
+          selection.addRange(range);
+
+          const clientRects = getClientRectsNoOverlap(range, false);
+
+          function isOutsideViewport(rect): boolean {
+            const windowLeft = window.scrollX;
+            const windowRight = windowLeft + window.innerWidth;
+            const right = rect.left + rect.width;
+            const bottom = rect.top + rect.height;
+            const windowTop = window.scrollY;
+            const windowBottom = windowTop + window.innerHeight;
+
+            const isAbove = bottom < windowTop;
+            const isBelow = rect.top > windowBottom;
+
+            const isLeft = right < windowLeft;
+            const isRight = rect.left > windowRight;
+
+            return isAbove || isBelow || isLeft || isRight;
+          }
+
+          let index = 0;
+          for (const rect of clientRects) {
+            if (!isOutsideViewport(rect)) {
+              const endNode = selection.focusNode;
+              const endOffset = selection.focusOffset;
+
+              selection.collapse(selection.anchorNode, selection.anchorOffset);
+
+              for (let i = 0; i < index; i++) {
+                selection.modify("move", "forward", "line");
+              }
+              selection.extend(endNode, endOffset);
+
+              selection.collapse(selection.anchorNode, selection.anchorOffset);
+              if (rootEl) {
+                const idx = self.findTtsQueueItemIndex(
+                  ttsQueue,
+                  selection.anchorNode,
+                  selection.focusNode,
+                  selection.focusOffset,
+                  rootEl
+                );
+                if (idx >= 0) {
+                  ttsQueueIndex = idx;
+                }
+              }
+
+              selection.removeAllRanges();
+              break;
+            }
+            index++;
+          }
         }
-        index++;
       }
-    }
 
-    findVisibleText();
+      findVisibleText();
 
-    if (ttsQueueIndex < 0) {
-      ttsQueueIndex = 0;
+      if (ttsQueueIndex < 0) {
+        ttsQueueIndex = 0;
+      }
+      setTimeout(() => {
+        this.startTTSSession(ttsQueue, ttsQueueIndex);
+      }, 100);
     }
-    setTimeout(() => {
-      this.startTTSSession(ttsQueue, ttsQueueIndex);
-    }, 100);
   }
 
   speakPause() {
     if (window.speechSynthesis.speaking) {
       if (this.api?.paused) this.api?.paused();
+      this.delegate.emit("readaloud.paused", "paused");
       this.userScrolled = false;
       window.speechSynthesis.pause();
       this.speaking = false;
 
       if (this._ttsQueueItemHighlightsWord) {
-        this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud);
+        this.delegate.highlighter?.destroyHighlights(HighlightType.ReadAloud);
         this._ttsQueueItemHighlightsWord = undefined;
       }
     }
@@ -503,6 +522,7 @@ export default class TTSModule2 implements ReaderModule {
   speakResume() {
     if (window.speechSynthesis.speaking) {
       if (this.api?.resumed) this.api?.resumed();
+      this.delegate.emit("readaloud.resumed", "resumed");
       this.userScrolled = false;
       window.speechSynthesis.resume();
       this.speaking = true;
@@ -513,11 +533,11 @@ export default class TTSModule2 implements ReaderModule {
     const tts = new this(
       config.delegate,
       config.tts,
-      config.headerMenu,
       config.rights,
       config.highlighter,
       config as TTSModuleProperties,
-      config.api
+      config.api,
+      config.headerMenu
     );
     await tts.start();
     return tts;
@@ -526,11 +546,11 @@ export default class TTSModule2 implements ReaderModule {
   public constructor(
     delegate: IFrameNavigator,
     tts: TTSSettings,
-    headerMenu: HTMLElement,
     rights: ReaderRights,
     highlighter: TextHighlighter,
-    properties: TTSModuleProperties | null = null,
-    api: TTSModuleAPI | null = null
+    properties: TTSModuleProperties,
+    api?: TTSModuleAPI,
+    headerMenu?: HTMLElement | null
   ) {
     this.delegate = delegate;
     this.tts = tts;
@@ -548,15 +568,16 @@ export default class TTSModule2 implements ReaderModule {
       var menuTTS = HTMLUtilities.findElement(
         this.headerMenu,
         "#menu-button-tts"
-      ) as HTMLLinkElement;
-      if (this.rights?.enableMaterial) {
-        if (menuTTS) menuTTS.parentElement.style.removeProperty("display");
+      );
+      if (this.rights.enableMaterial) {
+        if (menuTTS) menuTTS.parentElement?.style.removeProperty("display");
       } else {
-        if (menuTTS) menuTTS.parentElement.style.setProperty("display", "none");
+        if (menuTTS)
+          menuTTS.parentElement?.style.setProperty("display", "none");
       }
     }
     setTimeout(() => {
-      this.properties.hideLayer
+      this.properties?.hideLayer
         ? this.delegate.hideLayer("readaloud")
         : this.delegate.showLayer("readaloud");
     }, 10);
@@ -1016,6 +1037,7 @@ export default class TTSModule2 implements ReaderModule {
     if (IS_DEV) console.log("navigator.language", navigator.language);
 
     utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+      console.log(ev.name);
       this.updateTTSInfo(
         ttsQueueItem,
         ev.charIndex,
@@ -1031,7 +1053,6 @@ export default class TTSModule2 implements ReaderModule {
       }
     }, 0);
 
-    var self = this;
     utterance.onend = function () {
       if (self.speaking) {
         self.ttsPlayQueueIndexDebounced(ttsQueueIndex + 1, ttsQueue);
@@ -1040,7 +1061,7 @@ export default class TTSModule2 implements ReaderModule {
   }
 
   ttsQueueIndex = -1;
-  ttsQueue = null;
+  ttsQueue?: ITtsQueueItem[] = undefined;
   ttsPlayQueueIndexDebounced = debounce((ttsQueueIndex: number, ttsQueue) => {
     if (this.restartIndex >= 0) {
       this.ttsQueueIndex = this.restartIndex;
@@ -1076,11 +1097,18 @@ export default class TTSModule2 implements ReaderModule {
           ? utteranceText.slice(start)
           : utteranceText.slice(start, right + charIndex);
       const end = start + word.length;
+      let useStart = false;
+      if (!charLength) {
+        charLength = word.length;
+        useStart = true;
+      } else {
+        useStart = false;
+      }
 
       this.wrapHighlightWord(
         ttsQueueItem,
         utteranceText,
-        charIndex,
+        useStart ? start : charIndex,
         charLength,
         word,
         start,
@@ -1102,7 +1130,7 @@ export default class TTSModule2 implements ReaderModule {
     end: number
   ) {
     if (this._ttsQueueItemHighlightsWord) {
-      this.delegate.highlighter.destroyHighlights(HighlightType.ReadAloud);
+      this.delegate.highlighter?.destroyHighlights(HighlightType.ReadAloud);
       this._ttsQueueItemHighlightsWord = undefined;
     }
 
@@ -1163,6 +1191,8 @@ export default class TTSModule2 implements ReaderModule {
       if (rangeStartNode && charIndexEnd <= acc) {
         rangeEndNode = txtNode;
         rangeEndOffset = l - (acc - charIndexEnd);
+      }
+      if (rangeEndNode) {
         break;
       }
     }
@@ -1175,11 +1205,12 @@ export default class TTSModule2 implements ReaderModule {
       var self = this;
       function getCssSelector(element: Element): string {
         try {
-          return uniqueCssSelector(
-            element,
-            self.delegate.iframes[0].contentDocument,
-            _getCssSelectorOptions
-          );
+          let doc = self.delegate.iframes[0].contentDocument;
+          if (doc) {
+            return uniqueCssSelector(element, doc, _getCssSelectorOptions);
+          } else {
+            return "";
+          }
         } catch (err) {
           console.log("uniqueCssSelector:");
           console.log(err);
@@ -1191,7 +1222,7 @@ export default class TTSModule2 implements ReaderModule {
         return;
       }
 
-      let result = this.delegate.highlighter.createHighlight(
+      let result = this.delegate.highlighter?.createHighlight(
         this.delegate.iframes[0].contentWindow as any,
         {
           rangeInfo: rangeInfo,
@@ -1207,24 +1238,26 @@ export default class TTSModule2 implements ReaderModule {
           title: "",
           position: "right",
         },
-        null,
+        undefined,
         {
           defaultClass: this.tts.color,
         },
         HighlightType.ReadAloud,
         "R2_READALOUD_"
       );
-      this._ttsQueueItemHighlightsWord = result[0];
+      if (result) {
+        this._ttsQueueItemHighlightsWord = result[0];
 
-      if (
-        this.delegate.view.isScrollMode() &&
-        this.tts.autoScroll &&
-        !this.userScrolled
-      ) {
-        (result[1].firstChild as HTMLElement).scrollIntoView({
-          block: "center",
-          behavior: "smooth",
-        });
+        if (
+          this.delegate.view?.isScrollMode() &&
+          this.tts.autoScroll &&
+          !this.userScrolled
+        ) {
+          (result[1]?.firstChild as HTMLElement)?.scrollIntoView({
+            block: "center",
+            behavior: "smooth",
+          });
+        }
       }
     }
   }

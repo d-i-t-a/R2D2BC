@@ -35,7 +35,7 @@
     "sourceMap": true,
     "declaration": true,
     "preserveConstEnums": true,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "target": "es6",
     "skipLibCheck": true,
     "jsx": "react",
@@ -47,5 +47,11 @@
       "module": "CommonJS",
       "target": "ESNext",
     }
+  },
+  "typedocOptions": {
+    "entryPoints": ["src/index.ts"],
+    "entryPointStrategy": "expand",
+    "out": "docs",
+    "excludePrivate": true
   }
 }

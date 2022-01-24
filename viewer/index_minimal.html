@@ -30,7 +30,6 @@
 
     <!-- R2 Reader CSS -->
     <link rel="stylesheet" href="reader.css" />
-
     <script src="reader.js"></script>
 
 </head>
@@ -57,14 +56,14 @@
     </div>
 
     <script>
-        var getURLQueryParams = function () {
-            var params = {};
-            var query = window.location.search;
+        let getURLQueryParams = function () {
+            let params = {};
+            let query = window.location.search;
             if (query && query.length) {
                 query = query.substring(1);
-                var keyParams = query.split('&');
-                for (var x = 0; x < keyParams.length; x++) {
-                    var keyVal = keyParams[x].split('=');
+                let keyParams = query.split('&');
+                for (let x = 0; x < keyParams.length; x++) {
+                    let keyVal = keyParams[x].split('=');
                     if (keyVal.length > 1) {
                         params[keyVal[0]] = decodeURIComponent(keyVal[1]);
                     }
@@ -74,15 +73,15 @@
         };
 
 
-        var injectables = [
+        let injectables = [
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
         ]
 
-        var urlParams = getURLQueryParams();
+        let urlParams = getURLQueryParams();
         let d2reader = undefined;
-        D2Reader.build({
+        D2Reader.load({
             url: new URL(urlParams['url']),
             injectables: injectables,
             injectablesFixed: [],

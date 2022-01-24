@@ -16,47 +16,49 @@
  * Developed on behalf of: NYPL, Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
  * Licensed to: NYPL, Bokbasen AS and CAST under one or more contributor license agreements.
  */
-import { Locator } from "./model/Locator";
-import Publication from "./model/Publication";
+import { Annotation, Bookmark, Locator } from "./model/Locator";
+import { Publication } from "./model/Publication";
 import { UserSettingsIncrementable } from "./model/user-settings/UserProperties";
 import { UserSettings } from "./model/user-settings/UserSettings";
-import AnnotationModule from "./modules/AnnotationModule";
-import BookmarkModule from "./modules/BookmarkModule";
-import TextHighlighter from "./modules/highlight/TextHighlighter";
-import MediaOverlayModule from "./modules/mediaoverlays/MediaOverlayModule";
+import { AnnotationModule } from "./modules/AnnotationModule";
+import { BookmarkModule } from "./modules/BookmarkModule";
+import { TextHighlighter } from "./modules/highlight/TextHighlighter";
+import { MediaOverlayModule } from "./modules/mediaoverlays/MediaOverlayModule";
 import {
   MediaOverlaySettings,
   IMediaOverlayUserSettings,
   MediaOverlayIncrementable,
 } from "./modules/mediaoverlays/MediaOverlaySettings";
-import TimelineModule from "./modules/positions/TimelineModule";
-import ContentProtectionModule from "./modules/protection/ContentProtectionModule";
-import SearchModule from "./modules/search/SearchModule";
+import { TimelineModule } from "./modules/positions/TimelineModule";
+import { ContentProtectionModule } from "./modules/protection/ContentProtectionModule";
+import { SearchModule } from "./modules/search/SearchModule";
 import {
   ITTSUserSettings,
   TTSIncrementable,
   TTSSettings,
 } from "./modules/TTS/TTSSettings";
-import IFrameNavigator, {
+import {
+  IFrameNavigator,
   IFrameAttributes,
   ReaderConfig,
   UpLinkConfig,
+  ReaderRights,
 } from "./navigator/IFrameNavigator";
 import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
 import { convertAndCamel } from "./model/Link";
-import PageBreakModule from "./modules/pagebreak/PageBreakModule";
-import TTSModule from "./modules/TTS/TTSModule";
-import TTSModule2 from "./modules/TTS/TTSModule2";
-import ReaderModule from "./modules/ReaderModule";
-import DefinitionsModule from "./modules/search/DefinitionsModule";
 import { LayerSettings } from "./modules/highlight/LayerSettings";
+import { PageBreakModule } from "./modules/pagebreak/PageBreakModule";
+import { TTSModule } from "./modules/TTS/TTSModule";
+import { TTSModule2 } from "./modules/TTS/TTSModule2";
+import { ReaderModule } from "./modules/ReaderModule";
+import { DefinitionsModule } from "./modules/search/DefinitionsModule";
+import LineFocusModule from "./modules/linefocus/LineFocusModule";
 
 /**
  * A class that, once instantiated using the public `.build` method,
  * is the primary interface into the D2 Reader.
- *
  * @TODO :
  *  - Type all function arguments
  *  - DEV logger
@@ -66,31 +68,48 @@ import { LayerSettings } from "./modules/highlight/LayerSettings";
  */
 export default class D2Reader {
   private constructor(
-    readonly settings: UserSettings,
-    readonly ttsSettings: TTSSettings,
-    readonly navigator: IFrameNavigator,
-    readonly highlighter: TextHighlighter,
-    readonly bookmarkModule: BookmarkModule,
-    readonly annotationModule?: AnnotationModule,
-    readonly ttsModule?: ReaderModule,
-    readonly searchModule?: SearchModule,
-    readonly definitionsModule?: DefinitionsModule,
-    readonly contentProtectionModule?: ContentProtectionModule,
-    readonly timelineModule?: TimelineModule,
-    readonly mediaOverlaySettings?: MediaOverlaySettings,
-    readonly mediaOverlayModule?: MediaOverlayModule,
-    readonly pageBreakModule?: PageBreakModule
+    private readonly settings: UserSettings,
+    private readonly navigator: IFrameNavigator,
+    private readonly highlighter: TextHighlighter,
+    private readonly bookmarkModule?: BookmarkModule,
+    private readonly annotationModule?: AnnotationModule,
+    private readonly ttsSettings?: TTSSettings,
+    private readonly ttsModule?: ReaderModule,
+    private readonly searchModule?: SearchModule,
+    private readonly definitionsModule?: DefinitionsModule,
+    private readonly contentProtectionModule?: ContentProtectionModule,
+    private readonly timelineModule?: TimelineModule,
+    private readonly mediaOverlaySettings?: MediaOverlaySettings,
+    private readonly mediaOverlayModule?: MediaOverlayModule,
+    private readonly pageBreakModule?: PageBreakModule,
+    private readonly lineFocusModule?: LineFocusModule
   ) {}
+
+  addEventListener() {
+    this.navigator.addListener(arguments[0], arguments[1]);
+  }
 
   /**
    * The async builder.
    */
-  static async build(initialConfig: ReaderConfig): Promise<D2Reader> {
+  static async load(initialConfig: ReaderConfig): Promise<D2Reader> {
+    let rights: ReaderRights = initialConfig.rights ?? {
+      autoGeneratePositions: false,
+      enableAnnotations: false,
+      enableBookmarks: false,
+      enableContentProtection: false,
+      enableDefinitions: false,
+      enableLineFocus: false,
+      enableMaterial: false,
+      enableMediaOverlays: false,
+      enablePageBreaks: false,
+      enableSearch: false,
+      enableTTS: false,
+      enableTimeline: false,
+    };
+
     // Enforces supported browsers
-    if (
-      initialConfig.rights?.enableContentProtection &&
-      initialConfig.protection
-    ) {
+    if (rights.enableContentProtection && initialConfig.protection) {
       await ContentProtectionModule.setupPreloadProtection(
         initialConfig.protection
       );
@@ -102,9 +121,9 @@ export default class D2Reader {
     const headerMenu = findElement(document, "#headerMenu");
     const footerMenu = findElement(document, "#footerMenu");
 
-    const webpubManifestUrl = initialConfig.url;
+    const webPubManifestUrl = initialConfig.url;
     const store = new LocalStorageStore({
-      prefix: webpubManifestUrl.href,
+      prefix: webPubManifestUrl.href,
       useLocalStorage: initialConfig.useLocalStorage ?? false,
     });
     const settingsStore = new LocalStorageStore({
@@ -113,7 +132,7 @@ export default class D2Reader {
     });
     const layerStore = new LocalStorageStore({
       prefix: "r2d2bc-layers",
-      useLocalStorage: initialConfig.useLocalStorage,
+      useLocalStorage: initialConfig.useLocalStorage ?? false,
     });
 
     const annotator = new LocalAnnotator({ store: store });
@@ -121,28 +140,30 @@ export default class D2Reader {
     const upLink: UpLinkConfig = initialConfig.upLinkUrl ?? undefined;
 
     const publication: Publication = await Publication.fromUrl(
-      webpubManifestUrl
+      webPubManifestUrl
     );
 
-    // update our config based on what we know from the publication
-    const config = updateConfig(initialConfig, publication);
+    publication.sample = initialConfig.sample;
 
-    publication.sample = config.sample;
+    // update our config based on what we know from the publication
+    rights = updateConfig(rights, publication);
 
     /**
      * Set up publication positions and weights by either auto
      * generating them or fetching them from provided services.
      */
-    if (config.rights?.autoGeneratePositions ?? true) {
+    if (rights.autoGeneratePositions) {
       await publication.autoGeneratePositions();
     } else {
-      if (config.services?.positions) {
+      if (initialConfig.services?.positions) {
         await publication.fetchPositionsFromService(
-          config.services?.positions.href
+          initialConfig.services?.positions.href
         );
       }
-      if (config.services?.weight) {
-        await publication.fetchWeightsFromService(config.services?.weight.href);
+      if (initialConfig.services?.weight) {
+        await publication.fetchWeightsFromService(
+          initialConfig.services?.weight.href
+        );
       }
     }
 
@@ -151,14 +172,14 @@ export default class D2Reader {
     // Settings
     const settings = await UserSettings.create({
       store: settingsStore,
-      initialUserSettings: config.userSettings,
+      initialUserSettings: initialConfig.userSettings,
       headerMenu: headerMenu,
-      material: config.material,
-      api: config.api,
+      material: initialConfig.material,
+      api: initialConfig.api,
       injectables:
         (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-          ? config.injectablesFixed
-          : config.injectables,
+          ? initialConfig.injectablesFixed
+          : initialConfig.injectables,
       layout:
         (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
           ? "fixed"
@@ -174,108 +195,112 @@ export default class D2Reader {
       settings,
       annotator: annotator,
       upLink: upLink,
-      initialLastReadingPosition: config.lastReadingPosition,
-      material: config.material,
-      api: config.api,
-      rights: config.rights,
-      tts: config.tts,
-      sample: config.sample,
+      initialLastReadingPosition: initialConfig.lastReadingPosition,
+      material: initialConfig.material,
+      api: initialConfig.api,
+      rights: rights,
+      tts: initialConfig.tts,
+      sample: initialConfig.sample,
       injectables:
         (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-          ? config.injectablesFixed
-          : config.injectables,
-      attributes: config.attributes,
-      services: config.services,
+          ? initialConfig.injectablesFixed
+          : initialConfig.injectables,
+      attributes: initialConfig.attributes,
+      services: initialConfig.services,
     });
 
     // Highlighter
     const highlighter = await TextHighlighter.create({
       delegate: navigator,
       layerSettings: layers,
-      ...config.highlighter,
+      ...initialConfig.highlighter,
     });
 
     // Bookmark Module
-    const bookmarkModule = config.rights?.enableBookmarks
+    const bookmarkModule = rights.enableBookmarks
       ? await BookmarkModule.create({
           annotator: annotator,
           headerMenu: headerMenu,
-          rights: config.rights,
+          rights: rights,
           publication: publication,
           delegate: navigator,
-          initialAnnotations: config.initialAnnotations,
-          ...config.bookmarks,
+          initialAnnotations: initialConfig.initialAnnotations,
+          ...initialConfig.bookmarks,
         })
       : undefined;
 
     // Annotation Module
-    const annotationModule = config.rights?.enableAnnotations
+    const annotationModule = rights.enableAnnotations
       ? await AnnotationModule.create({
           annotator: annotator,
-          headerMenu: headerMenu,
-          rights: config.rights,
+          rights: rights,
           publication: publication,
           delegate: navigator,
-          initialAnnotations: config.initialAnnotations,
+          initialAnnotations: initialConfig.initialAnnotations,
           highlighter: highlighter,
-          ...config.annotations,
+          headerMenu: headerMenu,
+          ...initialConfig.annotations,
         })
       : undefined;
 
     // TTS Module
-    const ttsEnabled = config.rights?.enableTTS;
+    const ttsEnabled = rights.enableTTS;
     const ttsSettings = ttsEnabled
       ? await TTSSettings.create({
           store: settingsStore,
-          initialTTSSettings: config.tts,
+          initialTTSSettings: initialConfig.tts,
           headerMenu: headerMenu,
-          ...config.tts,
         })
       : undefined;
 
-    const ttsModule =
-      ttsEnabled && config.tts.enableSplitter
-        ? await TTSModule.create({
-            delegate: navigator,
-            tts: ttsSettings,
-            headerMenu: headerMenu,
-            rights: config.rights,
-            highlighter: highlighter,
-            ...config.tts,
-          })
-        : ttsEnabled && !config.tts.enableSplitter
-        ? await TTSModule2.create({
-            delegate: navigator,
-            tts: ttsSettings,
-            headerMenu: headerMenu,
-            rights: config.rights,
-            highlighter: highlighter,
-            ...config.tts,
-          })
-        : undefined;
+    let ttsModule: ReaderModule | undefined = undefined;
+
+    if (initialConfig.tts?.enableSplitter ?? false) {
+      if (ttsEnabled && ttsSettings) {
+        ttsModule = await TTSModule.create({
+          delegate: navigator,
+          tts: ttsSettings,
+          headerMenu: headerMenu,
+          rights: rights,
+          highlighter: highlighter,
+          ...initialConfig.tts,
+        });
+      }
+    } else {
+      if (ttsEnabled && ttsSettings) {
+        ttsModule = await TTSModule2.create({
+          delegate: navigator,
+          tts: ttsSettings,
+          headerMenu: headerMenu,
+          rights: rights,
+          highlighter: highlighter,
+          ...initialConfig.tts,
+        });
+      }
+    }
 
     // Search Module
-    const searchModule = config.rights?.enableSearch
+    const searchModule = rights.enableSearch
       ? await SearchModule.create({
           headerMenu: headerMenu,
           delegate: navigator,
           publication: publication,
           highlighter: highlighter,
-          ...config.search,
+          ...initialConfig.search,
         })
       : undefined;
 
-    const definitionsModule = config.rights?.enableDefinitions
+    const definitionsModule = rights.enableDefinitions
       ? await DefinitionsModule.create({
           delegate: navigator,
           publication: publication,
           highlighter: highlighter,
-          ...config.define,
+          ...initialConfig.define,
         })
       : undefined;
 
     // Timeline Module
-    const timelineModule = config.rights?.enableTimeline
+    const timelineModule = rights.enableTimeline
       ? await TimelineModule.create({
           publication: publication,
           delegate: navigator,
@@ -283,51 +308,60 @@ export default class D2Reader {
       : undefined;
 
     // Content Protection Module
-    const contentProtectionModule = config.rights?.enableContentProtection
+    const contentProtectionModule = rights.enableContentProtection
       ? await ContentProtectionModule.create({
           delegate: navigator,
-          ...config.protection,
+          ...initialConfig.protection,
         })
       : undefined;
 
-    const enableMediaOverlays = config.rights?.enableMediaOverlays ?? false;
+    const enableMediaOverlays = rights.enableMediaOverlays;
 
     const mediaOverlaySettings = enableMediaOverlays
       ? await MediaOverlaySettings.create({
           store: settingsStore,
-          initialMediaOverlaySettings: config.mediaOverlays,
+          initialMediaOverlaySettings: initialConfig.mediaOverlays,
           headerMenu: headerMenu,
-          ...config.mediaOverlays,
+          ...initialConfig.mediaOverlays,
         })
       : undefined;
 
     const mediaOverlayModule = enableMediaOverlays
       ? await MediaOverlayModule.create({
           publication: publication,
-          settings: mediaOverlaySettings,
           delegate: navigator,
-          ...config.mediaOverlays,
+          settings: mediaOverlaySettings,
+          ...initialConfig.mediaOverlays,
         })
       : undefined;
 
-    const enablePageBreaks = config.rights?.enablePageBreaks ?? true;
+    const enablePageBreaks = rights.enablePageBreaks;
     const pageBreakModule =
       enablePageBreaks && publication.isReflowable
         ? await PageBreakModule.create({
             publication: publication,
             headerMenu: headerMenu,
             delegate: navigator,
-            ...config.pagebreak,
+            ...initialConfig.pagebreak,
           })
         : undefined;
 
+    const lineFocusModule = rights.enableLineFocus
+      ? await LineFocusModule.create({
+          publication: publication,
+          delegate: navigator,
+          highlighter: highlighter,
+          ...initialConfig.lineFocus,
+        })
+      : undefined;
+
     return new D2Reader(
       settings,
-      ttsSettings,
       navigator,
       highlighter,
       bookmarkModule,
       annotationModule,
+      ttsSettings,
       ttsModule,
       searchModule,
       definitionsModule,
@@ -335,134 +369,157 @@ export default class D2Reader {
       timelineModule,
       mediaOverlaySettings,
       mediaOverlayModule,
-      pageBreakModule
+      pageBreakModule,
+      lineFocusModule
     );
   }
 
   /**
    * Read Aloud
    */
+
+  /** Start TTS Read Aloud */
   startReadAloud = () => {
-    return this.navigator.startReadAloud();
+    this.navigator.startReadAloud();
   };
+  /** Start TTS Read Aloud */
   stopReadAloud = () => {
-    return this.navigator.stopReadAloud();
+    this.navigator.stopReadAloud();
   };
+  /** Start TTS Read Aloud */
   pauseReadAloud = () => {
-    return this.navigator.pauseReadAloud();
+    this.navigator.pauseReadAloud();
   };
+  /** Start TTS Read Aloud */
   resumeReadAloud = () => {
-    return this.navigator.resumeReadAloud();
+    this.navigator.resumeReadAloud();
   };
 
   /**
    * Read Along
    */
+
+  /** Start Media Overlay Read Along */
   startReadAlong = () => {
-    return this.navigator.startReadAlong();
+    this.navigator.startReadAlong();
   };
+  /** Stop Media Overlay Read Along */
   stopReadAlong = () => {
-    return this.navigator.stopReadAlong();
+    this.navigator.stopReadAlong();
   };
+  /** Pause Media Overlay Read Along */
   pauseReadAlong = () => {
-    return this.navigator.pauseReadAlong();
+    this.navigator.pauseReadAlong();
   };
+  /** Resume Media Overlay Read Along */
   resumeReadAlong = () => {
-    return this.navigator.resumeReadAlong();
+    this.navigator.resumeReadAlong();
   };
 
   /**
    * Bookmarks and annotations
    */
+
+  /** Save bookmark by progression */
   saveBookmark = async () => {
-    if (this.navigator.rights?.enableBookmarks) {
-      return await this.bookmarkModule.saveBookmark();
-    }
+    return (await this.bookmarkModule?.saveBookmark()) ?? false;
   };
+  /** Save bookmark by annotation */
   saveBookmarkPlus = async () => {
-    if (this.navigator.rights?.enableBookmarks) {
-      return this.bookmarkModule.saveBookmarkPlus();
-    }
+    return this.bookmarkModule?.saveBookmarkPlus();
   };
-  deleteBookmark = async (bookmark) => {
-    if (this.navigator.rights?.enableBookmarks) {
-      return await this.bookmarkModule.deleteBookmark(bookmark);
-    }
+  /** Delete bookmark */
+  deleteBookmark = async (bookmark: Bookmark) => {
+    return (await this.bookmarkModule?.deleteBookmark(bookmark)) ?? false;
   };
-  deleteAnnotation = async (highlight) => {
-    return await this.annotationModule?.deleteAnnotation(highlight);
+  /** Delete annotation */
+  deleteAnnotation = async (highlight: Annotation) => {
+    return (await this.annotationModule?.deleteAnnotation(highlight)) ?? false;
   };
-  addAnnotation = async (highlight) => {
-    return await this.annotationModule?.addAnnotation(highlight);
+  /** Add annotation */
+  addAnnotation = async (highlight: Annotation) => {
+    return (await this.annotationModule?.addAnnotation(highlight)) ?? false;
   };
 
+  /** Hide Annotation Layer */
   hideAnnotationLayer = () => {
     return this.annotationModule?.hideAnnotationLayer();
   };
+  /** Show Annotation Layer */
   showAnnotationLayer = () => {
     return this.annotationModule?.showAnnotationLayer();
   };
 
+  /** Hide  Layer */
   hideLayer = (layer) => {
     return this.navigator?.hideLayer(layer);
   };
+  /** Show  Layer */
   showLayer = (layer) => {
     return this.navigator?.showLayer(layer);
   };
 
-  activateMarker = (id, position) => {
+  /** Activate Marker <br>
+   * Activated Marker will be used for active annotation creation */
+  activateMarker = (id: string, position: string) => {
     return this.navigator?.activateMarker(id, position);
   };
+  /** Deactivate Marker */
   deactivateMarker = () => {
     return this.navigator?.deactivateMarker();
   };
 
+  /**
+   * Definitions
+   */
+
+  /** Clear current definitions */
   clearDefinitions = async () => {
     await this.definitionsModule?.clearDefinitions();
   };
+  /** Add newt definition */
   addDefinition = async (definition) => {
     await this.definitionsModule?.addDefinition(definition);
   };
 
-  tableOfContents = async () => {
-    return await convertAndCamel(this.navigator.tableOfContents());
-  };
-  readingOrder = async () => {
-    return await convertAndCamel(this.navigator.readingOrder());
-  };
-  bookmarks = async () => {
-    if (this.navigator.rights?.enableBookmarks) {
-      return await this.bookmarkModule.getBookmarks();
-    } else {
-      return [];
-    }
-  };
-  annotations = async () => {
-    return (await this.annotationModule?.getAnnotations()) ?? [];
-  };
+  /** Table of Contents */
+  get tableOfContents() {
+    return convertAndCamel(this.navigator.tableOfContents()) ?? [];
+  }
+  /** Reading Order or Spine */
+  get readingOrder() {
+    return convertAndCamel(this.navigator.readingOrder()) ?? [];
+  }
+  /** Current Bookmarks */
+  get bookmarks() {
+    return this.bookmarkModule?.getBookmarks() ?? [];
+  }
+  /** Current Annotations */
+  get annotations() {
+    return this.annotationModule?.getAnnotations();
+  }
 
   /**
    * Search
    */
+  /** Search by term and current resource or entire book <br>
+   * current = true, will search only current resource <br>
+   * current = false, will search entire publication */
   search = async (term: string, current: boolean) => {
-    if (this.navigator.rights?.enableSearch) {
-      return await this.searchModule?.search(term, current);
-    } else {
-      return [];
-    }
+    return (await this.searchModule?.search(term, current)) ?? [];
   };
   goToSearchIndex = async (href: string, index: number, current: boolean) => {
-    if (this.navigator.rights?.enableSearch) {
+    if (this.navigator.rights.enableSearch) {
       await this.searchModule?.goToSearchIndex(href, index, current);
     }
   };
   goToSearchID = async (href: string, index: number, current: boolean) => {
-    if (this.navigator.rights?.enableSearch) {
+    if (this.navigator.rights.enableSearch) {
       await this.searchModule?.goToSearchID(href, index, current);
     }
   };
   clearSearch = async () => {
-    if (this.navigator.rights?.enableSearch) {
+    if (this.navigator.rights.enableSearch) {
       await this.searchModule?.clearSearch();
     }
   };
@@ -470,30 +527,30 @@ export default class D2Reader {
   /**
    * Resources
    */
-  currentResource = () => {
+  get currentResource() {
     return this.navigator.currentResource();
-  };
-  mostRecentNavigatedTocItem = () => {
+  }
+  get mostRecentNavigatedTocItem() {
     return this.navigator.mostRecentNavigatedTocItem();
-  };
-  totalResources = () => {
+  }
+  get totalResources() {
     return this.navigator.totalResources();
-  };
+  }
+  get publicationLanguage() {
+    return this.navigator.publication.Metadata.Language;
+  }
 
   /**
    * Settings
    */
-  get publicationLanguage() {
-    return this.navigator.publication.Metadata.Language;
+  get currentSettings() {
+    return this.settings.currentSettings;
   }
   resetUserSettings = async () => {
     return await this.settings.resetUserSettings();
   };
   applyUserSettings = async (userSettings: Partial<UserSettings>) => {
     return await this.settings.applyUserSettings(userSettings);
-  };
-  currentSettings = () => {
-    return this.settings.currentSettings;
   };
   scroll = async (value: boolean) => {
     return await this.settings.scroll(value);
@@ -517,7 +574,7 @@ export default class D2Reader {
       | TTSIncrementable
       | MediaOverlayIncrementable
   ): incremental is MediaOverlayIncrementable {
-    return incremental === "mo_volume";
+    return incremental === "mo_rate" || incremental === "mo_volume";
   }
 
   /**
@@ -531,12 +588,12 @@ export default class D2Reader {
       | MediaOverlayIncrementable
   ) => {
     if (this.isTTSIncrementable(incremental)) {
-      if (this.navigator.rights?.enableTTS) {
-        await this.ttsSettings.increase(incremental);
+      if (this.navigator.rights.enableTTS) {
+        await this.ttsSettings?.increase(incremental);
       }
     } else if (this.isMOIncrementable(incremental)) {
-      if (this.navigator.rights?.enableMediaOverlays) {
-        await this.mediaOverlaySettings.increase(incremental);
+      if (this.navigator.rights.enableMediaOverlays) {
+        await this.mediaOverlaySettings?.increase(incremental);
       }
     } else {
       await this.settings.increase(incremental);
@@ -554,12 +611,12 @@ export default class D2Reader {
       | MediaOverlayIncrementable
   ) => {
     if (this.isTTSIncrementable(incremental)) {
-      if (this.navigator.rights?.enableTTS) {
-        await this.ttsSettings.decrease(incremental);
+      if (this.navigator.rights.enableTTS) {
+        await this.ttsSettings?.decrease(incremental);
       }
     } else if (this.isMOIncrementable(incremental)) {
-      if (this.navigator.rights?.enableMediaOverlays) {
-        await this.mediaOverlaySettings.decrease(incremental);
+      if (this.navigator.rights.enableMediaOverlays) {
+        await this.mediaOverlaySettings?.decrease(incremental);
       }
     } else {
       await this.settings.decrease(incremental);
@@ -578,35 +635,42 @@ export default class D2Reader {
    * TTS Settings
    */
   resetTTSSettings = () => {
-    if (this.navigator.rights?.enableTTS) {
-      this.ttsSettings.resetTTSSettings();
+    if (this.navigator.rights.enableTTS) {
+      this.ttsSettings?.resetTTSSettings();
     }
   };
-  applyTTSSettings = (ttsSettings: ITTSUserSettings) => {
-    if (this.navigator.rights?.enableTTS) {
-      this.ttsSettings.applyTTSSettings(ttsSettings);
+  applyTTSSettings = async (ttsSettings: Partial<ITTSUserSettings>) => {
+    if (this.navigator.rights.enableTTS) {
+      await this.ttsSettings?.applyTTSSettings(ttsSettings);
+    }
+  };
+  /**
+   * Disabled
+   */
+  // applyTTSSetting = (key: string, value: any) => {
+  //   if (this.navigator.rights.enableTTS) {
+  //     this.ttsSettings.applyTTSSetting(key, value);
+  //   }
+  // };
+  applyPreferredVoice = async (value: string) => {
+    if (this.navigator.rights.enableTTS) {
+      await this.ttsSettings?.applyPreferredVoice(value);
     }
   };
 
-  applyTTSSetting = (key: string, value: any) => {
-    if (this.navigator.rights?.enableTTS) {
-      this.ttsSettings.applyTTSSetting(key, value);
-    }
-  };
-  applyPreferredVoice = (value: string) => {
-    if (this.navigator.rights?.enableTTS) {
-      this.ttsSettings.applyPreferredVoice(value);
-    }
-  };
-
+  /**
+   * Media Overlay Settings
+   */
   resetMediaOverlaySettings = async () => {
-    if (this.navigator.rights?.enableMediaOverlays) {
-      await this.mediaOverlaySettings.resetMediaOverlaySettings();
+    if (this.navigator.rights.enableMediaOverlays) {
+      await this.mediaOverlaySettings?.resetMediaOverlaySettings();
     }
   };
-  applyMediaOverlaySettings = async (settings: IMediaOverlayUserSettings) => {
-    if (this.navigator.rights?.enableMediaOverlays) {
-      await this.mediaOverlaySettings.applyMediaOverlaySettings(settings);
+  applyMediaOverlaySettings = async (
+    settings: Partial<IMediaOverlayUserSettings>
+  ) => {
+    if (this.navigator.rights.enableMediaOverlays) {
+      await this.mediaOverlaySettings?.applyMediaOverlaySettings(settings);
     }
   };
 
@@ -626,10 +690,10 @@ export default class D2Reader {
   goToPosition = async (value: number) => {
     return this.navigator.goToPosition(value);
   };
-  nextResource = async () => {
+  nextResource = () => {
     this.navigator.nextResource();
   };
-  previousResource = async () => {
+  previousResource = () => {
     this.navigator.previousResource();
   };
   nextPage = async () => {
@@ -638,17 +702,15 @@ export default class D2Reader {
   previousPage = async () => {
     this.navigator.previousPage();
   };
-  atStart = async () => {
+  get atStart() {
     return this.navigator.atStart();
-  };
-  atEnd = async () => {
+  }
+  get atEnd() {
     return this.navigator.atEnd();
+  }
+  snapToSelector = async (selector) => {
+    this.navigator.snapToSelector(selector);
   };
-  // currently not used or functional
-  snapToElement = async (value: HTMLElement) => {
-    this.navigator.snapToElement(value);
-  };
-
   /**
    * You have attributes in the reader when you initialize it. You can set margin, navigationHeight etc...
    * This is in case you change the attributes after initializing the reader.
@@ -656,6 +718,38 @@ export default class D2Reader {
   applyAttributes = (value: IFrameAttributes) => {
     this.navigator.applyAttributes(value);
   };
+
+  async applyLineFocusSettings(userSettings) {
+    if (userSettings.lines) {
+      if (this.lineFocusModule)
+        this.lineFocusModule.properties.lines = parseInt(userSettings.lines);
+      await this.lineFocusModule?.enableLineFocus();
+    }
+    if (userSettings.debug !== undefined) {
+      if (this.lineFocusModule)
+        this.lineFocusModule.isDebug = userSettings.debug;
+      await this.lineFocusModule?.enableLineFocus();
+    }
+  }
+  lineUp() {
+    this.lineFocusModule?.lineUp();
+  }
+  lineDown() {
+    this.lineFocusModule?.lineDown();
+  }
+  async enableLineFocus() {
+    await this.lineFocusModule?.enableLineFocus();
+  }
+  async lineFocus(active: boolean) {
+    if (active) {
+      await this.lineFocusModule?.enableLineFocus();
+    } else {
+      this.lineFocusModule?.disableLineFocus();
+    }
+  }
+  disableLineFocus() {
+    this.lineFocusModule?.disableLineFocus();
+  }
 
   /**
    * Destructor:
@@ -667,7 +761,7 @@ export default class D2Reader {
     this.navigator.stop();
     this.settings.stop();
     this.ttsSettings?.stop();
-    if (this.ttsSettings.enableSplitter) {
+    if (this.ttsSettings?.enableSplitter) {
       (this.ttsModule as TTSModule)?.stop();
     } else {
       (this.ttsModule as TTSModule2)?.stop();
@@ -681,22 +775,35 @@ export default class D2Reader {
     this.mediaOverlaySettings?.stop();
     this.mediaOverlayModule?.stop();
     this.pageBreakModule?.stop();
+    this.lineFocusModule?.stop();
   };
 }
 
 function updateConfig(
-  config: ReaderConfig,
+  rights: ReaderRights,
   publication: Publication
-): ReaderConfig {
+): ReaderRights {
   // Some settings must be disabled for fixed-layout publications
   // maybe we should warn the user we are disabling them here.
   if (publication.isFixedLayout) {
-    if (!config.rights) config.rights = {};
-    config.rights.enableAnnotations = false;
-    config.rights.enableSearch = false;
-    config.rights.enableTTS = false;
+    rights.enableAnnotations = false;
+    rights.enableSearch = false;
+    rights.enableTTS = false;
+    rights.enableDefinitions = false;
+    rights.enablePageBreaks = false;
+    rights.enableLineFocus = false;
     // config.protection.enableObfuscation = false;
   }
+  if (publication.sample) {
+    rights.enableAnnotations = false;
+    rights.enableSearch = false;
+    rights.enableTTS = false;
+    rights.enableDefinitions = false;
+    rights.enableTimeline = false;
+    rights.enableMediaOverlays = false;
+    rights.enablePageBreaks = false;
+    rights.enableLineFocus = false;
+  }
 
-  return config;
+  return rights;
 }

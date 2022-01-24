@@ -30,6 +30,8 @@
     <!-- R2 Reader CSS -->
     <link rel="stylesheet" href="reader.css" />
     <script src="reader.js"></script>
+    <link rel="stylesheet" href="/viewer/injectables/style/linefocus.css" />
+
 </head>
 <body>
 
@@ -250,6 +252,21 @@
             <button onclick="d2reader.resetMediaOverlaySettings()">reset Media Overlay setting</button><br>
         </ul>
 
+        <!--Line Focus-->
+        <ul> <div>Line Focus</div>
+            <button onclick="d2reader.applyLineFocusSettings( {debug:this.checked} )">debug</button><br>
+            <button onclick="d2reader.lineFocus( true )">enable line focus</button><br>
+            <button onclick="d2reader.lineFocus( false )">disable line focus</button><br>
+            <button onclick="d2reader.lineUp()">line up</button><br>
+            <button onclick="d2reader.lineDown()">line down</button><br>
+            <button onclick="d2reader.applyLineFocusSettings({lines:'1'});"><span
+              class="material-icons">looks_one</span></button><br>
+            <button onclick="d2reader.applyLineFocusSettings({lines:'3'});"><span
+              class="material-icons">looks_3</span></button><br>
+            <button onclick="d2reader.applyLineFocusSettings({lines:'5'});"><span
+              class="material-icons">looks_5</span></button><br>
+        </ul>
+
         <!--User Settings-->
         <ul> <div>User settings</div>
             <button onclick="d2reader.resetUserSettings()">reset user setting</button><br>
@@ -294,6 +311,10 @@
 
     <div class="content" id="root">
         <div id="D2Reader-Container" style="border: solid 5px rebeccapurple;margin-left: 300px;margin-right: 50px">
+            <div id="lineFocusContainer" class="d2-line-focus-container" style="display: none">
+                <div id="lineFocusTopBlinder" class="d2-line-focus-top" ></div>
+                <div id="lineFocusBottomBlinder" class="d2-line-focus-bottom"></div>
+            </div>
             <main style="height: calc(100vh - 10px)" tabindex=-1 id="iframe-wrapper">
                 <div id="reader-loading" class="loading"></div>
                 <div id="reader-error" class="error"></div>

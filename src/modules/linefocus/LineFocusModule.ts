@@ -235,11 +235,6 @@ export default class LineFocusModule implements ReaderModule {
 
       this.highlighter.destroyHighlights(HighlightType.LineFocus);
 
-      const container = HTMLUtilities.findElement(
-        doc,
-        "#" + HighlightContainer.R2_ID_LINEFOCUS_CONTAINER
-      );
-
       function random_rgba() {
         const o = Math.round,
           r = Math.random,
@@ -306,127 +301,140 @@ export default class LineFocusModule implements ReaderModule {
         newGroupedLines = textNodes;
       }
 
-      for (const clientRect of newGroupedLines) {
-        const highlightArea = document.createElement(
-          "div"
-        ) as IHTMLDivElementWithRect;
-        highlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
-        let color: any = random_rgba();
-        if (TextHighlighter.isHexColor(color)) {
-          color = TextHighlighter.hexToRgbChannels(color);
-        }
-        // enable debugging color
-        if (this.isDebug) {
-          let extra = `border-bottom: 1px solid rgba(${color.red}, ${color.green}, ${color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY}) !important`;
-          highlightArea.setAttribute(
-            "style",
-            `mix-blend-mode: multiply; border-radius: 1px !important; background-color: rgba(${color.red}, ${color.green}, ${color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY}) !important; ${extra}`
-          );
-        }
-        highlightArea.style.outline = "none";
-        highlightArea.tabIndex = 0;
+      const container = doc.getElementById(
+        HighlightContainer.R2_ID_READALOUD_CONTAINER
+      );
 
-        const documant = (this.delegate.iframes[0].contentWindow as any)
-          .document;
-
-        const paginated = this.delegate.view.isPaginated();
-
-        if (paginated) {
-          documant.body.style.position = "revert";
-        } else {
-          documant.body.style.position = "relative";
-        }
-        const bodyRect = documant.body.getBoundingClientRect();
-        const scrollElement = this.highlighter.getScrollingElement(documant);
-
-        const xOffset = paginated ? -scrollElement.scrollLeft : bodyRect.left;
-        const yOffset = paginated ? -scrollElement.scrollTop : bodyRect.top;
-
-        const scale = 1;
-
-        let size = 24;
-        let left, right;
-        let viewportWidth = this.delegate.iframes[0].contentWindow?.innerWidth;
-        let columnCount = parseInt(
-          getComputedStyle(doc.documentElement).getPropertyValue("column-count")
-        );
-
-        let columnWidth = parseInt(
-          getComputedStyle(doc.documentElement).getPropertyValue("column-width")
-        );
-        let padding = parseInt(
-          getComputedStyle(doc.body).getPropertyValue("padding-left")
-        );
-        if (viewportWidth) {
-          let pageWidth = viewportWidth / (columnCount || 1);
-          if (pageWidth < columnWidth) {
-            pageWidth = viewportWidth;
+      if (container) {
+        for (const clientRect of newGroupedLines) {
+          const highlightArea = document.createElement(
+            "div"
+          ) as IHTMLDivElementWithRect;
+          highlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
+          let color: any = random_rgba();
+          if (TextHighlighter.isHexColor(color)) {
+            color = TextHighlighter.hexToRgbChannels(color);
           }
-          if (!paginated) {
-            pageWidth = parseInt(
-              getComputedStyle(doc.body).width.replace("px", "")
+          // enable debugging color
+          if (this.isDebug) {
+            let extra = `border-bottom: 1px solid rgba(${color.red}, ${color.green}, ${color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY}) !important`;
+            highlightArea.setAttribute(
+              "style",
+              `mix-blend-mode: multiply; border-radius: 1px !important; background-color: rgba(${color.red}, ${color.green}, ${color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY}) !important; ${extra}`
             );
           }
+          highlightArea.style.outline = "none";
+          highlightArea.tabIndex = 0;
 
-          let ratio = this.delegate.settings.fontSize / 100;
-          let addRight = 20 * ratio;
+          const documant = (this.delegate.iframes[0].contentWindow as any)
+            .document;
 
-          if (ratio <= 1) {
-            addRight = -60;
+          const paginated = this.delegate.view.isPaginated();
+
+          if (paginated) {
+            documant.body.style.position = "revert";
+          } else {
+            documant.body.style.position = "relative";
           }
+          const bodyRect = documant.body.getBoundingClientRect();
+          const scrollElement = this.highlighter.getScrollingElement(documant);
 
-          let addLeft = 0;
-          if (ratio <= 1) {
-            addLeft = -60;
-          }
+          const xOffset = paginated ? -scrollElement.scrollLeft : bodyRect.left;
+          const yOffset = paginated ? -scrollElement.scrollTop : bodyRect.top;
 
-          left =
-            Math.floor(clientRect.left / pageWidth) * pageWidth +
-            pageWidth -
-            (size < 40 ? 40 : size) +
-            addLeft;
+          const scale = 1;
 
-          right =
-            Math.floor(clientRect.left / pageWidth) * pageWidth +
-            (size < 40 ? 40 : size) -
-            addRight;
-
-          let pagemargin = parseInt(
-            doc.documentElement.style.getPropertyValue("--USER__pageMargins")
+          let size = 24;
+          let left, right;
+          let viewportWidth = this.delegate.iframes[0].contentWindow
+            ?.innerWidth;
+          let columnCount = parseInt(
+            getComputedStyle(doc.documentElement).getPropertyValue(
+              "column-count"
+            )
           );
-          if (pagemargin >= 2) {
-            right = right + padding / columnCount;
-            left = left - padding / columnCount;
-          }
 
-          if (!paginated) {
-            left = parseInt(getComputedStyle(doc.body).width.replace("px", ""));
+          let columnWidth = parseInt(
+            getComputedStyle(doc.documentElement).getPropertyValue(
+              "column-width"
+            )
+          );
+          let padding = parseInt(
+            getComputedStyle(doc.body).getPropertyValue("padding-left")
+          );
+          if (viewportWidth) {
+            let pageWidth = viewportWidth / (columnCount || 1);
+            if (pageWidth < columnWidth) {
+              pageWidth = viewportWidth;
+            }
+            if (!paginated) {
+              pageWidth = parseInt(
+                getComputedStyle(doc.body).width.replace("px", "")
+              );
+            }
+
+            let ratio = this.delegate.settings.fontSize / 100;
+            let addRight = 20 * ratio;
+
+            if (ratio <= 1) {
+              addRight = -60;
+            }
+
+            let addLeft = 0;
+            if (ratio <= 1) {
+              addLeft = -60;
+            }
+
+            left =
+              Math.floor(clientRect.left / pageWidth) * pageWidth +
+              pageWidth -
+              (size < 40 ? 40 : size) +
+              addLeft;
+
             right =
-              parseInt(getComputedStyle(doc.body).width.replace("px", "")) -
-              pageWidth;
+              Math.floor(clientRect.left / pageWidth) * pageWidth +
+              (size < 40 ? 40 : size) -
+              addRight;
 
+            let pagemargin = parseInt(
+              doc.documentElement.style.getPropertyValue("--USER__pageMargins")
+            );
             if (pagemargin >= 2) {
-              right = right + padding / 2;
-              left = left - padding / 2;
+              right = right + padding / columnCount;
+              left = left - padding / columnCount;
+            }
+
+            if (!paginated) {
+              left = parseInt(
+                getComputedStyle(doc.body).width.replace("px", "")
+              );
+              right =
+                parseInt(getComputedStyle(doc.body).width.replace("px", "")) -
+                pageWidth;
+
+              if (pagemargin >= 2) {
+                right = right + padding / 2;
+                left = left - padding / 2;
+              }
             }
           }
-        }
-        highlightArea.style.setProperty("pointer-events", "none");
-        highlightArea.style.position = "absolute";
-        highlightArea.scale = scale;
-        highlightArea.rect = {
-          height: clientRect.height,
-          left: clientRect.left - xOffset,
-          top: clientRect.top - yOffset,
-          width: clientRect.width,
-        };
-        highlightArea.style.width = `${highlightArea.rect.width * scale}px`;
-        highlightArea.style.height = `${highlightArea.rect.height * scale}px`;
-        highlightArea.style.left = `${highlightArea.rect.left * scale}px`;
-        highlightArea.style.top = `${highlightArea.rect.top * scale}px`;
+          highlightArea.style.setProperty("pointer-events", "none");
+          highlightArea.style.position = "absolute";
+          highlightArea.scale = scale;
+          highlightArea.rect = {
+            height: clientRect.height,
+            left: clientRect.left - xOffset,
+            top: clientRect.top - yOffset,
+            width: clientRect.width,
+          };
+          highlightArea.style.width = `${highlightArea.rect.width * scale}px`;
+          highlightArea.style.height = `${highlightArea.rect.height * scale}px`;
+          highlightArea.style.left = `${highlightArea.rect.left * scale}px`;
+          highlightArea.style.top = `${highlightArea.rect.top * scale}px`;
 
-        this.lines.push(highlightArea);
-        container.append(highlightArea);
+          this.lines.push(highlightArea);
+          container.append(highlightArea);
+        }
       }
       setTimeout(() => {
         this.currentLine();

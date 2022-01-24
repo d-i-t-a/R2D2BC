@@ -433,12 +433,6 @@ export class SearchModule implements ReaderModule {
     let filteredIndexes = this.bookSearchResult.filter(
       (el: any) => el.href === href
     );
-    console.log(currentLocation);
-    console.log(filteredIndexes);
-    console.log(href);
-    console.log(absolutehref);
-    console.log(current);
-    console.log(index);
     if (current) {
       item = this.currentChapterSearchResult.filter(
         (el: any) => el.uuid == index
@@ -450,7 +444,6 @@ export class SearchModule implements ReaderModule {
       item = filteredIndexes.filter((el: any) => el.uuid == index)[0];
       filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid == index);
     }
-    console.log(item);
     if (item !== undefined) {
       if (currentLocation === absolutehref) {
         this.jumpToMark(filteredIndex);

@@ -260,7 +260,7 @@ export class SearchModule implements ReaderModule {
           addEventListenerOptional(element, "click", (event: MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
-            activeElement.className = "waves-effect";
+            if (activeElement) activeElement.className = "waves-effect";
             element.className = "active";
             activeElement = element;
             goToResultPage(index);
@@ -666,7 +666,7 @@ export class SearchModule implements ReaderModule {
           addEventListenerOptional(element, "click", (event: MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
-            activeElement.className = "waves-effect";
+            if (activeElement) activeElement.className = "waves-effect";
             element.className = "active";
             activeElement = element;
             goToResultPage(index);

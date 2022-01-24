@@ -101,6 +101,10 @@
             <button
                     onclick="d2reader.goTo({href:'OEBPS/Text/chapter_01.xhtml', title:'chapter 1', locations:{progression:0}})">go
                 to chapter 1</button><br>
+
+            <button
+              onclick="d2reader.goToPosition(10)">go to position 10</button><br>
+
         </ul>
         <!--Info-->
         <ul> <div>Info</div>
@@ -429,6 +433,7 @@
                 enablePageBreaks:true,
                 enableLineFocus:true,
                 enableContentProtection: false,
+                autoGeneratePositions: true
             },
             tts: {
                 enableSplitter: false,

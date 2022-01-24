@@ -708,11 +708,9 @@ export default class D2Reader {
   get atEnd() {
     return this.navigator.atEnd();
   }
-  // currently, not used or functional
-  snapToElement = async (value: HTMLElement) => {
-    this.navigator.snapToElement(value);
+  snapToSelector = async (selector) => {
+    this.navigator.snapToSelector(selector);
   };
-
   /**
    * You have attributes in the reader when you initialize it. You can set margin, navigationHeight etc...
    * This is in case you change the attributes after initializing the reader.

@@ -331,7 +331,8 @@
 
         <!--other-->
         <ul> <div>other</div>
-            <button onclick="d2reader.applyAttributes({margin:200})">applyAtributes (margin 200 for example)</button><br>
+            <button onClick="d2reader.applyAttributes({margin:200})">applyAtributes (margin 200 for example)</button><br>
+            <button onclick="d2reader.snapToSelector('body > section > div:nth-child(17) > p')">snapToElement</button><br>
         </ul>
     </div>
 
@@ -558,6 +559,10 @@
         }).then(instance => {
             d2reader = instance;
             console.log("D2Reader loaded ", instance);
+            instance.addEventListener("resource.ready", () => {
+                console.log("listener ready");
+            });
+
         }).catch(error => {
             console.error("error.message ", error.message);
         });

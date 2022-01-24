@@ -2558,8 +2558,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       this.goTo(locator);
     }
   }
-  snapToElement(element: HTMLElement) {
-    this.view?.snap(element);
+  snapToSelector(selector) {
+    const doc = this.iframes[0].contentDocument;
+    if (doc) {
+      console.log(selector);
+      let result = doc.querySelectorAll(selector);
+      if (result.length > 0) this.view?.snap(result[0]);
+    }
   }
   applyAttributes(attributes: IFrameAttributes) {
     this.attributes = attributes;

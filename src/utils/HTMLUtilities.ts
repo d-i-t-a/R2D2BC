@@ -23,12 +23,7 @@ export function findElement(
   parentElement: Element | Document,
   selector: string
 ): any | null {
-  const element = parentElement.querySelector(selector);
-  if (element && element instanceof HTMLElement) {
-    return element;
-  } else {
-    return null;
-  }
+  return parentElement.querySelector(selector);
 }
 
 /** Returns a single element matching the selector within the parent element,

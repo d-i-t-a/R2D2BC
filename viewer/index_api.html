@@ -111,8 +111,10 @@
             <button onclick="alert(d2reader.totalResources)">totalResources</button><br>
             <button onclick="alert(d2reader.currentResource)">currentResource</button><br>
             <button onclick="alert(d2reader.mostRecentNavigatedTocItem)">mostRecentNavigatedTocItem</button><br>
-            <button onclick="alert(JSON.stringify(d2reader.currentLocator))">currentProgressInfo</button><br>
-            <button onclick="alert(JSON.stringify(d2reader.positions))">positions</button><br>
+            <button onclick="alert(JSON.stringify(d2reader.currentLocator))">currentLocator</button><br>
+            <button onClick="alert(JSON.stringify(d2reader.positions))">positions</button><br>
+            <button onclick="alert(d2reader.atStart)">atStart</button><br>
+            <button onclick="alert(d2reader.atEnd)">atEnd</button><br>
         </ul>
 
         <!--Bookmarks-->
@@ -122,7 +124,12 @@
                     console.log(result);
                     console.log(d2reader.bookmarks.length)
                 }); ">add bookmark</button><br>
-            <button onclick="d2reader.deleteBookmark({id:0.32616493991327755})">delete bookmark</button><br>
+            <button onclick="d2reader.saveBookmarkPlus().then(
+                result => {
+                    console.log(result);
+                    console.log(d2reader.bookmarks.length)
+                }); ">add bookmark plus (annotation based)</button><br>
+            <button onclick="d2reader.deleteBookmark({id:'3a2ca517-8a94-4272-8ef9-7e1f7432786f'})">delete bookmark</button><br>
             <button onclick="
                     var result = d2reader.bookmarks;
                     console.log(result)
@@ -174,6 +181,10 @@
                 });
                 container.innerHTML = tocString
             ">show annotations</button><br>
+            <button onclick="d2reader.showAnnotationLayer()">show layer</button><br>
+            <button onclick="d2reader.hideAnnotationLayer()">hide layer</button><br>
+            <button onclick="d2reader.showLayer('highlights')">show layer</button><br>
+            <button onclick="d2reader.hideLayer('highlights')">hide layer</button><br>
         </ul>
 
         <!--Search-->

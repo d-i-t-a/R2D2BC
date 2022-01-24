@@ -415,9 +415,9 @@ export default class D2Reader {
   resumeReadAlong = () => {
     this.navigator.resumeReadAlong();
   };
-  hasMediaOverlays = () => {
+  get hasMediaOverlays() {
     return this.navigator.hasMediaOverlays;
-  };
+  }
 
   /**
    * Bookmarks and annotations

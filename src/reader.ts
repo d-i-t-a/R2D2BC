@@ -794,7 +794,7 @@ function updateConfig(
     rights.enableLineFocus = false;
     // config.protection.enableObfuscation = false;
   }
-  if (publication.sample) {
+  if (publication.sample?.isSampleRead) {
     rights.enableAnnotations = false;
     rights.enableSearch = false;
     rights.enableTTS = false;

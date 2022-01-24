@@ -67,10 +67,7 @@ export class TimelineModule implements ReaderModule {
         "#positionSlider"
       );
     }
-    if (
-      this.delegate.rights.autoGeneratePositions &&
-      this.publication.positions
-    ) {
+    if (this.publication.positions) {
       if (this.positionSlider) this.positionSlider.style.display = "block";
     } else {
       if (this.positionSlider) this.positionSlider.style.display = "none";

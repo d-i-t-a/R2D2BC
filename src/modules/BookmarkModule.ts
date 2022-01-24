@@ -47,7 +47,6 @@ import { IS_DEV } from "../utils";
 export interface BookmarkModuleAPI {
   addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
   deleteBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
-  getBookmarks: Array<any>;
 }
 
 export interface BookmarkModuleProperties {

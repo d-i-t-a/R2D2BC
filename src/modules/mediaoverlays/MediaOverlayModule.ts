@@ -203,20 +203,35 @@ export class MediaOverlayModule implements ReaderModule {
   async startReadAloud() {
     if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = true;
-      const timeToSeekTo = this.currentAudioBegin ? this.currentAudioBegin : 0;
-      this.audioElement.currentTime = timeToSeekTo;
-      await this.audioElement.play();
-      this.audioElement.volume = this.settings.volume;
-      this.audioElement.playbackRate = this.settings.rate;
+      if (this.audioElement) {
+        const timeToSeekTo = this.currentAudioBegin
+          ? this.currentAudioBegin
+          : 0;
+        this.audioElement.currentTime = timeToSeekTo;
+        await this.audioElement.play();
+        this.audioElement.volume = this.settings.volume;
+        this.audioElement.playbackRate = this.settings.rate;
+      } else {
+        if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
+          this.currentLinkIndex++;
+          await this.playLink();
+        } else {
+          if (this.settings.autoTurn && this.settings.playing) {
+            this.delegate.nextResource();
+          } else {
+            await this.stopReadAloud();
+          }
+        }
+      }
       if (this.play) this.play.style.display = "none";
       if (this.pause) this.pause.style.display = "block";
     }
   }
   async stopReadAloud() {
     if (this.delegate.rights.enableMediaOverlays) {
-      await this.playLink();
+      if (this.currentLinkIndex > 0) await this.playLink();
       this.settings.playing = false;
-      this.audioElement.pause();
+      this.audioElement?.pause();
       if (this.play) this.play.style.display = "block";
       if (this.pause) this.pause.style.display = "none";
     }

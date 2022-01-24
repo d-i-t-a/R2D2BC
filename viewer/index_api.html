@@ -187,7 +187,16 @@
             <button onclick="d2reader.showAnnotationLayer()">show layer</button><br>
             <button onclick="d2reader.hideAnnotationLayer()">hide layer</button><br>
         </ul>
-
+        <!--Definition-->
+        <ul> <div>Definition</div>
+            <button onclick="d2reader.addDefinition({
+                        order: 2,
+                        result: 2,
+                        terms: ['shelley'],
+            definition: 'Giant hyssop was rarely included, despite being hugely attractive to bees.',
+            })">add definition</button><br>
+            <button onclick="d2reader.clearDefinitions()">clear definitions</button><br>
+        </ul>
         <!--Search-->
         <ul> <div>Search</div>
             <button onclick="d2reader.search('attractions', true).then(
@@ -271,15 +280,15 @@
 
         <!--Line Focus-->
         <ul> <div>Line Focus</div>
-            <button onclick="d2reader.applyLineFocusSettings( {debug:this.checked} )">debug</button><br>
+            <button onclick="d2reader.applyLineFocusSettings( {debug:true} )">debug</button><br>
             <button onclick="d2reader.lineFocus( true )">enable line focus</button><br>
             <button onclick="d2reader.lineFocus( false )">disable line focus</button><br>
             <button onclick="d2reader.lineUp()">line up</button><br>
             <button onclick="d2reader.lineDown()">line down</button><br>
             <button onclick="d2reader.applyLineFocusSettings({lines:'1'});"><span
-              class="material-icons">looks_one</span></button><br>
+              class="material-icons">looks_one</span></button>
             <button onclick="d2reader.applyLineFocusSettings({lines:'3'});"><span
-              class="material-icons">looks_3</span></button><br>
+              class="material-icons">looks_3</span></button>
             <button onclick="d2reader.applyLineFocusSettings({lines:'5'});"><span
               class="material-icons">looks_5</span></button><br>
         </ul>

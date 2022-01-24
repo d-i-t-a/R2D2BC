@@ -301,8 +301,9 @@ export default class LineFocusModule implements ReaderModule {
         newGroupedLines = textNodes;
       }
 
-      const container = doc.getElementById(
-        HighlightContainer.R2_ID_READALOUD_CONTAINER
+      const container = HTMLUtilities.findElement(
+        doc,
+        "#" + HighlightContainer.R2_ID_LINEFOCUS_CONTAINER
       );
 
       if (container) {

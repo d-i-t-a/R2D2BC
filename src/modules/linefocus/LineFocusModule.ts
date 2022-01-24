@@ -125,7 +125,7 @@ export default class LineFocusModule implements ReaderModule {
 
   wrapperHeight: string | undefined = undefined;
 
-  disableLineFocus() {
+  disableLineFocus(resetHeight: boolean = true) {
     this.isActive = false;
     // document.body.style.removeProperty("overflow");
     const wrapper = HTMLUtilities.findRequiredElement(
@@ -136,7 +136,7 @@ export default class LineFocusModule implements ReaderModule {
     wrapper.style.overflow = "auto";
     if (this.wrapperHeight) {
       wrapper.style.height = this.wrapperHeight;
-    } else {
+    } else if (resetHeight) {
       wrapper.style.removeProperty("height");
     }
     this.wrapperHeight = undefined;

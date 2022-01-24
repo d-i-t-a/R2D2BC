@@ -3171,7 +3171,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         await this.updatePositionInfo();
       } else {
         if (this.lineFocusModule !== undefined) {
-          this.lineFocusModule.disableLineFocus();
+          this.lineFocusModule.disableLineFocus(false);
         }
         if (this.searchModule !== undefined) {
           this.searchModule.clearSearch();

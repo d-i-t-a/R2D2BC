@@ -1601,8 +1601,13 @@ export default class IFrameNavigator implements Navigator {
         } else if (bookViewPosition > 0) {
           this.view.goToProgression(bookViewPosition);
         }
-
         this.newPosition = null;
+
+        if (this.rights?.enableContentProtection) {
+          if (this.contentProtectionModule !== undefined) {
+            await this.contentProtectionModule.recalculate(10);
+          }
+        }
 
         this.hideLoadingMessage();
         this.showIframeContents();

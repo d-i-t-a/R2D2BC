@@ -838,21 +838,28 @@ export default class ContentProtectionModule implements ReaderModule {
     }
   }
 
-  recalculate(delay: number = 0) {
-    if (this.properties?.enableObfuscation) {
-      const onDoResize = debounce(() => {
-        this.calcRects(this.rects);
-        if (this.rects !== undefined) {
-          this.rects.forEach((rect) =>
-            this.toggleRect(rect, this.securityContainer, this.isHacked)
-          );
+  recalculate(delay: number = 0): Promise<boolean> {
+    return new Promise(resolve => {
+      if (this.properties?.enableObfuscation) {
+          const onDoResize = debounce(() => {
+            this.calcRects(this.rects);
+            if (this.rects !== undefined) {
+              this.rects.forEach((rect) =>
+                this.toggleRect(rect, this.securityContainer, this.isHacked)
+              );
+            }
+            resolve(true);
+          }, delay);
+        if (this.rects) {
+          this.observe();
+          onDoResize();
+        } else {
+          resolve(false);
         }
-      }, delay);
-      if (this.rects) {
-        this.observe();
-        onDoResize();
+      } else {
+        resolve(false);
       }
-    }
+    });
   }
 
   calcRects(rects: Array<ContentProtectionRect>): void {

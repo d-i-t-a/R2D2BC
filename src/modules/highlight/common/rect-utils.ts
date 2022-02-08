@@ -44,7 +44,7 @@ export function getClientRectsNoOverlap(
 
 // tslint:disable-next-line:max-line-length
 export function getClientRectsNoOverlap_(
-  clientRects: ClientRectList | DOMRectList,
+  clientRects: DOMRectList,
   doNotMergeHorizontallyAlignedRects: boolean
 ): IRect[] {
   const tolerance = 1;

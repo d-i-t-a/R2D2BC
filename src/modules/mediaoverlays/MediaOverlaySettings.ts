@@ -80,6 +80,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   volume = 1.0;
   rate = 1.0;
   playing = false;
+  resourceReady = false;
   wait = 1;
 
   userProperties: UserProperties;

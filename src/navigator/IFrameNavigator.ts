@@ -1635,6 +1635,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
         await this.updatePositionInfo();
         await this.view?.setSize();
+        setTimeout(() => {
+          if (this.mediaOverlayModule !== undefined) {
+            this.mediaOverlayModule.settings.resourceReady = true;
+          }
+        }, 300);
       }, 200);
 
       return new Promise<void>((resolve) => resolve());
@@ -3340,6 +3345,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     if (this.isLoading && this.loadingMessage) {
       this.loadingMessage.style.display = "block";
       this.loadingMessage.classList.add("is-loading");
+    }
+    if (this.mediaOverlayModule !== undefined) {
+      this.mediaOverlayModule.settings.resourceReady = false;
     }
   }
 

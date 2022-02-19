@@ -64,7 +64,7 @@ export class MediaOverlayModule implements ReaderModule {
   private publication: Publication;
   private delegate: IFrameNavigator;
   private audioElement: HTMLMediaElement;
-  private settings: MediaOverlaySettings;
+  settings: MediaOverlaySettings;
   private properties: MediaOverlayModuleProperties;
   private play: HTMLLinkElement = HTMLUtilities.findElement(
     document,
@@ -192,6 +192,7 @@ export class MediaOverlayModule implements ReaderModule {
         await this.playLink();
       } else {
         if (this.settings.autoTurn && this.settings.playing) {
+          this.audioElement.pause();
           this.delegate.nextResource();
         } else {
           this.stopReadAloud();
@@ -393,6 +394,7 @@ export class MediaOverlayModule implements ReaderModule {
         } else {
           this.audioElement.pause();
           if (this.settings.autoTurn && this.settings.playing) {
+            this.audioElement.pause();
             this.delegate.nextResource();
           } else {
             this.stopReadAloud();
@@ -443,6 +445,7 @@ export class MediaOverlayModule implements ReaderModule {
       } else {
         this.audioElement.pause();
         if (this.settings.autoTurn && this.settings.playing) {
+          this.audioElement.pause();
           this.delegate.nextResource();
         } else {
           this.stopReadAloud();
@@ -589,9 +592,18 @@ export class MediaOverlayModule implements ReaderModule {
           this.audioElement.volume = this.settings.volume;
           if (this.settings.playing) {
             if (!initial) {
-              setTimeout(async () => {
-                await this.audioElement.play();
-              }, this.settings.wait);
+              let self = this;
+              function checkReady() {
+                if (!self.settings.resourceReady) {
+                  setTimeout(checkReady, 200);
+                } else {
+                  /* do something*/
+                  setTimeout(async () => {
+                    await self.audioElement.play();
+                  }, self.settings.wait * 1200);
+                }
+              }
+              checkReady();
             } else {
               await this.audioElement.play();
             }
@@ -619,9 +631,18 @@ export class MediaOverlayModule implements ReaderModule {
               this.audioElement.volume = this.settings.volume;
               if (this.settings.playing) {
                 if (!initial) {
-                  setTimeout(async () => {
-                    await this.audioElement.play();
-                  }, this.settings.wait);
+                  let self = this;
+                  function checkReady() {
+                    if (!self.settings.resourceReady) {
+                      setTimeout(checkReady, 200);
+                    } else {
+                      /* do something*/
+                      setTimeout(async () => {
+                        await self.audioElement.play();
+                      }, self.settings.wait * 1200);
+                    }
+                  }
+                  checkReady();
                 } else {
                   await this.audioElement.play();
                 }
@@ -727,6 +748,7 @@ export class MediaOverlayModule implements ReaderModule {
           await this.playLink();
         } else {
           if (this.settings.autoTurn && this.settings.playing) {
+            this.audioElement.pause();
             this.delegate.nextResource();
           } else {
             this.stopReadAloud();

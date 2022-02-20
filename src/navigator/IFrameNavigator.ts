@@ -1623,6 +1623,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
         this.newPosition = undefined;
 
+        if (this.rights?.enableContentProtection) {
+          if (this.contentProtectionModule !== undefined) {
+            await this.contentProtectionModule.recalculate(10);
+          }
+        }
+
         this.hideLoadingMessage();
         this.showIframeContents();
         if (

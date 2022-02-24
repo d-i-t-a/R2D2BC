@@ -141,7 +141,7 @@ export class MediaOverlayModule implements ReaderModule {
   private async playLink() {
     let link = this.currentLinks[this.currentLinkIndex];
     if (link?.Properties?.MediaOverlay) {
-      this.ensureOnTimeUpdate(false);
+      this.ensureOnTimeUpdate(false, false);
       const moUrl = link.Properties?.MediaOverlay;
 
       const moUrlObjFull = new URL(moUrl, this.publication.manifestUrl);
@@ -587,26 +587,23 @@ export class MediaOverlayModule implements ReaderModule {
               "playMediaOverlaysAudio() - playClip() - _currentAudioElement.play()"
             );
           }
-          this.ensureOnTimeUpdate(false);
+          this.ensureOnTimeUpdate(false, false);
           this.audioElement.playbackRate = this.settings.rate;
           this.audioElement.volume = this.settings.volume;
           if (this.settings.playing) {
-            if (!initial) {
-              let self = this;
-              function checkReady() {
-                if (!self.settings.resourceReady) {
-                  setTimeout(checkReady, 200);
-                } else {
-                  /* do something*/
-                  setTimeout(async () => {
-                    await self.audioElement.play();
-                  }, self.settings.wait * 1200);
-                }
+            let self = this;
+            function checkReady() {
+              if (!self.settings.resourceReady) {
+                setTimeout(checkReady, 200);
+              } else {
+                /* do something*/
+                setTimeout(async () => {
+                  await self.audioElement.play();
+                  self.ensureOnTimeUpdate(false, true);
+                }, self.settings.wait * 1200);
               }
-              checkReady();
-            } else {
-              await this.audioElement.play();
             }
+            checkReady();
           }
         } else {
           if (IS_DEV) {
@@ -625,27 +622,24 @@ export class MediaOverlayModule implements ReaderModule {
                 "playMediaOverlaysAudio() - playClip() - ontimeupdateSeeked - .play()"
               );
             }
-            this.ensureOnTimeUpdate(false);
+            this.ensureOnTimeUpdate(false, false);
             if (this.audioElement) {
               this.audioElement.playbackRate = this.settings.rate;
               this.audioElement.volume = this.settings.volume;
               if (this.settings.playing) {
-                if (!initial) {
-                  let self = this;
-                  function checkReady() {
-                    if (!self.settings.resourceReady) {
-                      setTimeout(checkReady, 200);
-                    } else {
-                      /* do something*/
-                      setTimeout(async () => {
-                        await self.audioElement.play();
-                      }, self.settings.wait * 1200);
-                    }
+                let self = this;
+                function checkReady() {
+                  if (!self.settings.resourceReady) {
+                    setTimeout(checkReady, 200);
+                  } else {
+                    /* do something*/
+                    setTimeout(async () => {
+                      await self.audioElement.play();
+                      self.ensureOnTimeUpdate(false, true);
+                    }, self.settings.wait * 1200);
                   }
-                  checkReady();
-                } else {
-                  await this.audioElement.play();
                 }
+                checkReady();
               }
             }
           };
@@ -659,7 +653,7 @@ export class MediaOverlayModule implements ReaderModule {
           this.previousAudioEnd > timeToSeekTo - 0.02 &&
           this.previousAudioEnd <= timeToSeekTo &&
           this.audioElement.currentTime >= timeToSeekTo - 0.1;
-        this.ensureOnTimeUpdate(false);
+        this.ensureOnTimeUpdate(false, false);
         if (contiguous) {
           if (IS_DEV) {
             console.log(
@@ -817,7 +811,7 @@ export class MediaOverlayModule implements ReaderModule {
     if (IS_DEV) console.log("ontimeupdate");
     this.trackCurrentTime();
   };
-  ensureOnTimeUpdate = (remove: boolean) => {
+  ensureOnTimeUpdate = (remove: boolean, replace: boolean) => {
     if (this.audioElement) {
       if (remove) {
         if (this.__ontimeupdate) {
@@ -829,8 +823,14 @@ export class MediaOverlayModule implements ReaderModule {
           cancelAnimationFrame(this.myReq);
         }
       } else {
-        if (!this.__ontimeupdate) {
+        if (!this.__ontimeupdate || replace) {
           this.__ontimeupdate = true;
+          if (replace) {
+            this.audioElement.removeEventListener(
+              "timeupdate",
+              this.ontimeupdate
+            );
+          }
           this.audioElement.addEventListener("timeupdate", this.ontimeupdate);
         }
       }

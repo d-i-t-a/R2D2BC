@@ -341,7 +341,7 @@ export default class ReflowableBookView implements BookView {
 
     if (this.scrollMode) {
       const leftHeight = wrapper.scrollTop;
-      const height = this.getScreenHeight();
+      const height = this.getScreenHeight() - 40;
       const offset = leftHeight - height;
       if (offset >= 0) {
         wrapper.scrollTop = offset;
@@ -372,7 +372,7 @@ export default class ReflowableBookView implements BookView {
 
     if (this.scrollMode) {
       const leftHeight = wrapper.scrollTop;
-      const height = this.getScreenHeight();
+      const height = this.getScreenHeight() - 40;
       const scrollHeight = this.scrollingElement.scrollHeight;
       const offset = leftHeight + height;
       if (offset < scrollHeight) {

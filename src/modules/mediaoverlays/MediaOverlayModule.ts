@@ -210,6 +210,7 @@ export class MediaOverlayModule implements ReaderModule {
           : 0;
         this.audioElement.currentTime = timeToSeekTo;
         await this.audioElement.play();
+        this.ensureOnTimeUpdate(false, true);
         this.audioElement.volume = this.settings.volume;
         this.audioElement.playbackRate = this.settings.rate;
       } else {
@@ -600,7 +601,7 @@ export class MediaOverlayModule implements ReaderModule {
                 setTimeout(async () => {
                   await self.audioElement.play();
                   self.ensureOnTimeUpdate(false, true);
-                }, self.settings.wait * 1200);
+                }, self.settings.wait * 1000);
               }
             }
             checkReady();
@@ -636,7 +637,7 @@ export class MediaOverlayModule implements ReaderModule {
                     setTimeout(async () => {
                       await self.audioElement.play();
                       self.ensureOnTimeUpdate(false, true);
-                    }, self.settings.wait * 1200);
+                    }, self.settings.wait * 1000);
                   }
                 }
                 checkReady();

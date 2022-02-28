@@ -189,8 +189,8 @@ export class TTSModule2 implements ReaderModule {
 
   cancel(api: boolean = true) {
     if (api) {
-    if (this.api?.stopped) this.api?.stopped();
-    this.delegate.emit("readaloud.stopped", "stopped");
+      if (this.api?.stopped) this.api?.stopped();
+      this.delegate.emit("readaloud.stopped", "stopped");
     }
     this.userScrolled = false;
     this.speaking = false;
@@ -442,57 +442,33 @@ export class TTSModule2 implements ReaderModule {
           range.selectNodeContents(node.node);
           selection.addRange(range);
 
-          const clientRects = getClientRectsNoOverlap(range, false);
-
-          function isOutsideViewport(rect): boolean {
-            const windowLeft = window.scrollX;
-            const windowRight = windowLeft + window.innerWidth;
-            const right = rect.left + rect.width;
-            const bottom = rect.top + rect.height;
-            const windowTop = window.scrollY;
-            const windowBottom = windowTop + window.innerHeight;
-
-            const isAbove = bottom < windowTop;
-            const isBelow = rect.top > windowBottom;
-
-            const isLeft = right < windowLeft;
-            const isRight = rect.left > windowRight;
-
-            return isAbove || isBelow || isLeft || isRight;
-          }
 
           let index = 0;
-          for (const rect of clientRects) {
-            if (!isOutsideViewport(rect)) {
-              const endNode = selection.focusNode;
-              const endOffset = selection.focusOffset;
+          const endNode = selection.focusNode;
+          const endOffset = selection.focusOffset;
 
-              selection.collapse(selection.anchorNode, selection.anchorOffset);
+          selection.collapse(selection.anchorNode, selection.anchorOffset);
 
-              for (let i = 0; i < index; i++) {
-                selection.modify("move", "forward", "line");
-              }
-              selection.extend(endNode, endOffset);
-
-              selection.collapse(selection.anchorNode, selection.anchorOffset);
-              if (rootEl) {
-                const idx = self.findTtsQueueItemIndex(
-                  ttsQueue,
-                  selection.anchorNode,
-                  selection.focusNode,
-                  selection.focusOffset,
-                  rootEl
-                );
-                if (idx >= 0) {
-                  ttsQueueIndex = idx;
-                }
-              }
-
-              selection.removeAllRanges();
-              break;
-            }
-            index++;
+          for (let i = 0; i < index; i++) {
+            selection.modify("move", "forward", "line");
           }
+          selection.extend(endNode, endOffset);
+
+          selection.collapse(selection.anchorNode, selection.anchorOffset);
+          if (rootEl) {
+            const idx = self.findTtsQueueItemIndex(
+              ttsQueue,
+              selection.anchorNode,
+              selection.focusNode,
+              selection.focusOffset,
+              rootEl
+            );
+            if (idx >= 0) {
+              ttsQueueIndex = idx;
+            }
+          }
+
+          selection.removeAllRanges();
         }
       }
 
@@ -503,7 +479,7 @@ export class TTSModule2 implements ReaderModule {
       }
       setTimeout(() => {
         this.startTTSSession(ttsQueue, ttsQueueIndex);
-      }, 100);
+      }, 200);
     }
   }
 

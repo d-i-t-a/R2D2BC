@@ -43,7 +43,6 @@ import {
   _getCssSelectorOptions,
   ISelectionInfo,
 } from "../highlight/common/selection";
-import { getClientRectsNoOverlap } from "../highlight/common/rect-utils";
 
 export class TTSModule2 implements ReaderModule {
   private tts: TTSSettings;
@@ -441,7 +440,6 @@ export class TTSModule2 implements ReaderModule {
           selection.removeAllRanges();
           range.selectNodeContents(node.node);
           selection.addRange(range);
-
 
           let index = 0;
           const endNode = selection.focusNode;

@@ -215,7 +215,7 @@ export class DefinitionsModule implements ReaderModule {
               },
               { threshold: 1 }
             );
-            if (highlightFragments) {
+            if (highlightFragments && highlightFragments.length > 0) {
               observer.observe(highlightFragments[0]);
             }
           });

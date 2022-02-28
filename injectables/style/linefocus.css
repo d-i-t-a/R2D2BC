@@ -18,7 +18,7 @@
  */
 
 .d2-line-focus-container {
-    position: fixed;
+    position: sticky;
     height: 100vh;
     width: 100%;
     pointer-events: none;

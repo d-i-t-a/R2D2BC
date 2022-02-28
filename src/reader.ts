@@ -724,14 +724,26 @@ export default class D2Reader {
 
   async applyLineFocusSettings(userSettings) {
     if (userSettings.lines) {
-      if (this.lineFocusModule)
+      if (this.lineFocusModule) {
+        const lines = this.lineFocusModule.properties.lines ?? 1;
+        this.lineFocusModule.index =
+          (this.lineFocusModule.index * lines) / parseInt(userSettings.lines);
+        this.lineFocusModule.index = Math.abs(
+          parseInt(this.lineFocusModule.index.toFixed())
+        );
         this.lineFocusModule.properties.lines = parseInt(userSettings.lines);
-      await this.lineFocusModule?.enableLineFocus();
+        if (this.lineFocusModule.isActive) {
+          await this.lineFocusModule.enableLineFocus();
+        }
+      }
     }
     if (userSettings.debug !== undefined) {
-      if (this.lineFocusModule)
+      if (this.lineFocusModule) {
         this.lineFocusModule.isDebug = userSettings.debug;
-      await this.lineFocusModule?.enableLineFocus();
+        if (this.lineFocusModule.isActive) {
+          await this.lineFocusModule.enableLineFocus();
+        }
+      }
     }
   }
   lineUp() {

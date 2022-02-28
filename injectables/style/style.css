@@ -29,6 +29,8 @@
     --RS__definitionsHoverColor: rgba(255, 111, 111, 0.75);
     --RS__definitionsUnderlineBorderColor: rgba(255, 111, 111, 1);
     --RS__definitionsUnderlineHoverColor: rgba(255, 111, 111, 0.1);
+
+    --USER__maxMediaHeight: --RS__maxMediaHeight;
 }
 
 .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"] {
@@ -247,4 +249,8 @@
     border-right: 10px solid transparent;
     border-top: 5px solid #5b5852;
     margin-left: -10px;
+}
+
+img {
+    max-height: var(--USER__maxMediaHeight) !important;
 }

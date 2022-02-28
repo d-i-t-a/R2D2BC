@@ -34,6 +34,7 @@ import {
   IRect,
 } from "../highlight/common/rect-utils";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import * as BrowserUtilities from "../../utils/BrowserUtilities";
 
 const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.5;
 
@@ -42,6 +43,7 @@ export interface LineFocusModuleAPI {}
 export interface LineFocusModuleProperties {
   api?: LineFocusModuleAPI;
   lines?: number;
+  maxHeight?: number;
 }
 
 export interface LineFocusModuleConfig extends LineFocusModuleProperties {
@@ -63,6 +65,7 @@ export default class LineFocusModule implements ReaderModule {
   isDebug = false;
 
   lineFocusContainer = document.getElementById(`lineFocusContainer`);
+  readerContainer = document.getElementById(`D2Reader-Container`);
   lineFocusTopBlinder = document.getElementById(`lineFocusTopBlinder`);
   lineFocusBottomBlinder = document.getElementById(`lineFocusBottomBlinder`);
 
@@ -98,6 +101,21 @@ export default class LineFocusModule implements ReaderModule {
 
   protected async start(): Promise<void> {
     this.delegate.lineFocusModule = this;
+
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    ) as HTMLDivElement;
+
+    if (wrapper.style.height.length > 0) {
+      this.wrapperHeight = wrapper.style.height;
+      if (this.lineFocusContainer)
+        this.lineFocusContainer.style.height = this.wrapperHeight;
+      if (this.readerContainer) {
+        this.readerContainer.style.height = this.wrapperHeight;
+        this.readerContainer.style.overflow = "hidden";
+      }
+    }
   }
 
   handleResize() {
@@ -112,7 +130,6 @@ export default class LineFocusModule implements ReaderModule {
         document,
         "#iframe-wrapper"
       ) as HTMLDivElement;
-      wrapper.style.overflow = "hidden";
       if (wrapper.style.height.length > 0) {
         this.wrapperHeight = wrapper.style.height;
       }
@@ -133,12 +150,20 @@ export default class LineFocusModule implements ReaderModule {
       "#iframe-wrapper"
     ) as HTMLDivElement;
 
-    wrapper.style.overflow = "auto";
     if (this.wrapperHeight) {
       wrapper.style.height = this.wrapperHeight;
     } else if (resetHeight) {
       wrapper.style.removeProperty("height");
     }
+
+    const doc = this.delegate.iframes[0].contentDocument;
+    const html = HTMLUtilities.findIframeElement(
+      doc,
+      "html"
+    ) as HTMLHtmlElement;
+
+    html.style.removeProperty("--USER__maxMediaHeight");
+
     this.wrapperHeight = undefined;
 
     if (this.lineFocusContainer) this.lineFocusContainer.style.display = "none";
@@ -165,6 +190,18 @@ export default class LineFocusModule implements ReaderModule {
       document,
       "#iframe-wrapper"
     ) as HTMLDivElement;
+
+    const doc = this.delegate.iframes[0].contentDocument;
+    const html = HTMLUtilities.findIframeElement(
+      doc,
+      "html"
+    ) as HTMLHtmlElement;
+
+    let maxHeight = this.properties.maxHeight
+      ? (BrowserUtilities.getHeight() * this.properties.maxHeight) / 100
+      : BrowserUtilities.getHeight() / 2;
+
+    html.style.setProperty("--USER__maxMediaHeight", maxHeight + "px");
 
     function insertAfter(referenceNode, newNode) {
       referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
@@ -203,8 +240,6 @@ export default class LineFocusModule implements ReaderModule {
     }
 
     this.lines = [];
-    const self = this;
-    const doc = self.delegate.iframes[0].contentDocument;
     if (doc) {
       let textNodes = this.findRects(doc.body);
       textNodes = getClientRectsNoOverlap_(textNodes, true);
@@ -445,13 +480,11 @@ export default class LineFocusModule implements ReaderModule {
 
   currentLine() {
     let current = this.lines[this.index];
-    let previous = this.lines[this.index];
-    let next = this.lines[this.index];
 
-    let top = previous.style.top;
+    let top = current.style.top;
     let bottom =
-      parseInt(next.style.top.replace("px", "")) +
-      parseInt(next.style.height.replace("px", ""));
+      parseInt(current.style.top.replace("px", "")) +
+      parseInt(current.style.height.replace("px", ""));
     let height = bottom - parseInt(top.replace("px", ""));
 
     if (this.lineFocusContainer) {
@@ -481,13 +514,11 @@ export default class LineFocusModule implements ReaderModule {
       }
 
       let current = this.lines[this.index];
-      let previous = this.lines[this.index];
-      let next = this.lines[this.index];
 
-      let top = previous.style.top;
+      let top = current.style.top;
       let bottom =
-        parseInt(next.style.top.replace("px", "")) +
-        parseInt(next.style.height.replace("px", ""));
+        parseInt(current.style.top.replace("px", "")) +
+        parseInt(current.style.height.replace("px", ""));
       let height = bottom - parseInt(top.replace("px", ""));
 
       if (this.lineFocusContainer) {
@@ -518,13 +549,11 @@ export default class LineFocusModule implements ReaderModule {
       }
 
       let current = this.lines[this.index];
-      let previous = this.lines[this.index];
-      let next = this.lines[this.index];
 
-      let top = previous.style.top;
+      let top = current.style.top;
       let bottom =
-        parseInt(next.style.top.replace("px", "")) +
-        parseInt(next.style.height.replace("px", ""));
+        parseInt(current.style.top.replace("px", "")) +
+        parseInt(current.style.height.replace("px", ""));
       let height = bottom - parseInt(top.replace("px", ""));
 
       if (this.lineFocusContainer) {
@@ -553,10 +582,14 @@ export default class LineFocusModule implements ReaderModule {
 
   findRects(parent: HTMLElement): any {
     const textNodes = this.findTextNodes(parent);
+    const imageNodes = Array.from(parent.getElementsByTagName("img"));
 
     let newNodes: Array<HTMLElementRect> = [];
     textNodes.forEach((node) => {
       newNodes.push(...this.measureTextNodes(node));
+    });
+    imageNodes.forEach((node) => {
+      newNodes.push(...this.measureImageNodes(node));
     });
     return newNodes;
   }
@@ -598,7 +631,22 @@ export default class LineFocusModule implements ReaderModule {
 
       const rect = Array.from(range.getClientRects());
       range.detach(); // frees up memory in older browsers
+      return rect;
+    } catch (error) {
+      if (IS_DEV) {
+        console.log("measureTextNode " + error);
+        console.log("measureTextNode " + node);
+        console.log(node.textContent);
+      }
+    }
+  }
+  measureImageNodes(node: Element): any {
+    try {
+      const range = document.createRange();
+      range.selectNode(node);
 
+      const rect = Array.from(range.getClientRects());
+      range.detach(); // frees up memory in older browsers
       return rect;
     } catch (error) {
       if (IS_DEV) {

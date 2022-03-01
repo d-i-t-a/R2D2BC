@@ -82,10 +82,12 @@ export default class EventHandler {
 
   private linkInPublication = (readingOrder: Link[], clickedHref: string) =>
     readingOrder.some((link: Link) => {
-      !link.Rel?.includes("external") &&
+      return (
+        !link.Rel?.includes("external") &&
         this.navigator.publication
           .getRelativeHref(clickedHref)
-          .includes(link.Href);
+          .includes(link.Href)
+      );
     });
 
   /**

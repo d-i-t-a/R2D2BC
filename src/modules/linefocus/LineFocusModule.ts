@@ -35,6 +35,10 @@ import {
 } from "../highlight/common/rect-utils";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import * as BrowserUtilities from "../../utils/BrowserUtilities";
+import {
+  addEventListenerOptional,
+  removeEventListenerOptional,
+} from "../../utils/EventHandler";
 
 const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.5;
 
@@ -58,6 +62,7 @@ export default class LineFocusModule implements ReaderModule {
   api?: LineFocusModuleAPI;
   private delegate: IFrameNavigator;
   private highlighter: TextHighlighter;
+  private hasEventListener: boolean = false;
 
   lines: Array<HTMLElement> = [];
   index = 0;
@@ -126,6 +131,34 @@ export default class LineFocusModule implements ReaderModule {
     }
   }
 
+  private keydown(event: KeyboardEvent | MouseEvent | TrackEvent): void {
+    if (event instanceof KeyboardEvent) {
+      const key = event.key;
+      switch (key) {
+        case "ArrowUp":
+          event.stopPropagation();
+          break;
+        case "ArrowDown":
+          event.stopPropagation();
+          break;
+      }
+    }
+  }
+
+  private keyup(event: KeyboardEvent | MouseEvent | TrackEvent): void {
+    if (event instanceof KeyboardEvent) {
+      const key = event.key;
+      switch (key) {
+        case "ArrowUp":
+          this.lineUp();
+          break;
+        case "ArrowDown":
+          this.lineDown();
+          break;
+      }
+    }
+  }
+
   handleResize() {
     if (this.isActive) {
       this.lineFocus();
@@ -136,12 +169,44 @@ export default class LineFocusModule implements ReaderModule {
     this.isActive = true;
     await this.delegate.settings.scroll(true);
     this.lineFocus();
+    if (!this.hasEventListener) {
+      this.hasEventListener = true;
+      addEventListenerOptional(document, "keydown", this.keydown.bind(this));
+      addEventListenerOptional(document, "keyup", this.keyup.bind(this));
+      addEventListenerOptional(
+        this.delegate.iframes[0].contentDocument,
+        "keydown",
+        this.keydown.bind(this)
+      );
+      addEventListenerOptional(
+        this.delegate.iframes[0].contentDocument,
+        "keyup",
+        this.keyup.bind(this)
+      );
+    }
   }
 
   wrapperHeight: string | undefined = undefined;
 
   disableLineFocus(resetHeight: boolean = true) {
     this.isActive = false;
+
+    if (this.hasEventListener) {
+      this.hasEventListener = false;
+      removeEventListenerOptional(document, "keydown", this.keydown.bind(this));
+      removeEventListenerOptional(document, "keyup", this.keyup.bind(this));
+      removeEventListenerOptional(
+        this.delegate.iframes[0].contentDocument,
+        "keydown",
+        this.keydown.bind(this)
+      );
+      removeEventListenerOptional(
+        this.delegate.iframes[0].contentDocument,
+        "keyup",
+        this.keyup.bind(this)
+      );
+    }
+
     // document.body.style.removeProperty("overflow");
     const wrapper = HTMLUtilities.findRequiredElement(
       document,
@@ -501,7 +566,6 @@ export default class LineFocusModule implements ReaderModule {
         this.lineFocusBottomBlinder.style.height = blindersHeight + "px";
     }
 
-    current.focus();
     current.scrollIntoView({
       block: "center",
       behavior: "smooth",
@@ -535,7 +599,6 @@ export default class LineFocusModule implements ReaderModule {
         if (this.lineFocusBottomBlinder)
           this.lineFocusBottomBlinder.style.height = blindersHeight + "px";
       }
-      current.focus();
       current.scrollIntoView({
         block: "center",
         behavior: "smooth",
@@ -570,7 +633,6 @@ export default class LineFocusModule implements ReaderModule {
         if (this.lineFocusBottomBlinder)
           this.lineFocusBottomBlinder.style.height = blindersHeight + "px";
       }
-      current.focus();
       current.scrollIntoView({
         block: "center",
         behavior: "smooth",

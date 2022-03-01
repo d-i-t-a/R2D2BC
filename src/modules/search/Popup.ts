@@ -67,6 +67,11 @@ export class Popup {
     if (footnote) {
       footnote.parentElement?.removeChild(footnote);
     }
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    );
+    wrapper.style.overflow = "auto";
   }
 
   async showPopover(link: HTMLLIElement, event: MouseEvent | TouchEvent) {
@@ -97,6 +102,7 @@ export class Popup {
           document,
           "#iframe-wrapper"
         );
+        wrapper.style.overflow = "hidden";
         d2popover.style.top = wrapper.scrollTop + "px";
         d2popover.style.height = wrapper.clientHeight * 0.9 + "px";
 
@@ -122,11 +128,11 @@ export class Popup {
         if (!win) {
           return;
         }
+        let self = this;
         win.onclick = function (ev) {
           if (event.target !== ev.target) {
             if (d2popover.parentElement) {
-              d2popover.style.display = "none";
-              d2popover.parentElement.removeChild(d2popover);
+              self.hidePopover();
               if (win) {
                 win.onclick = null;
               }

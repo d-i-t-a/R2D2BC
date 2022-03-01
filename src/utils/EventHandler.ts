@@ -80,6 +80,14 @@ export default class EventHandler {
     return null;
   };
 
+  private linkInPublication = (readingOrder: Link[], clickedHref: string) =>
+    readingOrder.some((link: Link) => {
+      !link.Rel?.includes("external") &&
+        this.navigator.publication
+          .getRelativeHref(clickedHref)
+          .includes(link.Href);
+    });
+
   /**
    *
    * This function checks the user clicked link inside the iframe
@@ -88,21 +96,19 @@ export default class EventHandler {
    */
   private isEpubInternal = (clickedLink: HTMLAnchorElement): boolean => {
     if (IS_DEV) console.log("clickedLink: ", clickedLink);
-
-    const linkInReadingOrder = (
-      readingOrder: Link[],
-      clickedPathname: string
-    ) =>
-      readingOrder.some(
-        (link: Link) =>
-          !link.Rel?.includes("external") && link.Href.includes(clickedPathname)
-      );
-
-    const isEpubInternal = linkInReadingOrder(
+    const isEpubInternal = this.linkInPublication(
       this.navigator.publication.readingOrder,
-      clickedLink.pathname
+      clickedLink.href
     );
+    return isEpubInternal;
+  };
 
+  private isResourceInternal = (clickedLink: HTMLAnchorElement): boolean => {
+    if (IS_DEV) console.log("clickedLink: ", clickedLink);
+    const isEpubInternal = this.linkInPublication(
+      this.navigator.publication.resources,
+      clickedLink.href
+    );
     return isEpubInternal;
   };
 
@@ -122,8 +128,13 @@ export default class EventHandler {
       // If epub is hosted, rather than streamed, links to a resource inside the same epub should not be opened externally.
       const isEpubInternal = this.isEpubInternal(link);
 
+      const isResourceInternal = this.isResourceInternal(link);
+      if (!isResourceInternal) {
+        await this.popup.hidePopover();
+      }
+
       const isInternal = link.href.indexOf("#");
-      if (!isSameOrigin && !isEpubInternal) {
+      if (!isSameOrigin && !isEpubInternal && !isResourceInternal) {
         window.open(link.href, "_blank");
         event.preventDefault();
         event.stopPropagation();
@@ -135,6 +146,8 @@ export default class EventHandler {
             const attribute = link.getAttribute("epub:type") === "noteref";
             if (attribute) {
               await this.popup.handleFootnote(link, event);
+            } else if (isResourceInternal) {
+              await this.popup.showPopover(link, event);
             } else {
               this.onInternalLink(event);
             }

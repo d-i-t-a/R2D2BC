@@ -49,6 +49,9 @@ export class Publication extends R2Publication {
   get readingOrder(): Link[] {
     return this.Spine ?? [];
   }
+  get resources(): Link[] {
+    return this.Resources ?? [];
+  }
   get tableOfContents() {
     if (this.sample?.isSampleRead && this.positions?.length > 0) {
       return this.limitedTOC();

@@ -109,10 +109,18 @@ export default class LineFocusModule implements ReaderModule {
 
     if (wrapper.style.height.length > 0) {
       this.wrapperHeight = wrapper.style.height;
-      if (this.lineFocusContainer)
+      if (
+        this.lineFocusContainer &&
+        this.lineFocusContainer.style.height.length == 0
+      )
         this.lineFocusContainer.style.height = this.wrapperHeight;
-      if (this.readerContainer) {
+      if (
+        this.readerContainer &&
+        this.readerContainer.style.height.length == 0
+      ) {
         this.readerContainer.style.height = this.wrapperHeight;
+      }
+      if (this.readerContainer) {
         this.readerContainer.style.overflow = "hidden";
       }
     }
@@ -125,16 +133,6 @@ export default class LineFocusModule implements ReaderModule {
   }
 
   async enableLineFocus() {
-    if (!this.isActive) {
-      const wrapper = HTMLUtilities.findRequiredElement(
-        document,
-        "#iframe-wrapper"
-      ) as HTMLDivElement;
-      if (wrapper.style.height.length > 0) {
-        this.wrapperHeight = wrapper.style.height;
-      }
-      wrapper.style.height = "100vh";
-    }
     this.isActive = true;
     await this.delegate.settings.scroll(true);
     this.lineFocus();
@@ -153,7 +151,11 @@ export default class LineFocusModule implements ReaderModule {
     if (this.wrapperHeight) {
       wrapper.style.height = this.wrapperHeight;
     } else if (resetHeight) {
+      this.index = 0;
       wrapper.style.removeProperty("height");
+    }
+    if (!resetHeight) {
+      this.index = 0;
     }
 
     const doc = this.delegate.iframes[0].contentDocument;

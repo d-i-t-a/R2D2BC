@@ -161,31 +161,31 @@ export default class LineFocusModule implements ReaderModule {
 
   private keydown(event: KeyboardEvent | MouseEvent | TrackEvent): void {
     if (event instanceof KeyboardEvent && this.isActive) {
-      const key = event.key;
-      switch (key) {
-        case "ArrowUp":
+        const key = event.key;
+        switch (key) {
+          case "ArrowUp":
           event.stopPropagation();
-          break;
-        case "ArrowDown":
+            break;
+          case "ArrowDown":
           event.stopPropagation();
-          break;
+            break;
+        }
       }
     }
-  }
 
   private keyup(event: KeyboardEvent | MouseEvent | TrackEvent): void {
     if (event instanceof KeyboardEvent && this.isActive) {
-      const key = event.key;
-      switch (key) {
-        case "ArrowUp":
-          this.lineUp();
-          break;
-        case "ArrowDown":
-          this.lineDown();
-          break;
+        const key = event.key;
+        switch (key) {
+          case "ArrowUp":
+            this.lineUp();
+            break;
+          case "ArrowDown":
+            this.lineDown();
+            break;
+        }
       }
     }
-  }
 
   handleResize() {
     if (this.isActive) {
@@ -212,9 +212,6 @@ export default class LineFocusModule implements ReaderModule {
 
     if (this.wrapperHeight) {
       wrapper.style.height = this.wrapperHeight;
-    } else if (resetHeight) {
-      this.index = 0;
-      wrapper.style.removeProperty("height");
     }
     if (!resetHeight) {
       this.index = 0;

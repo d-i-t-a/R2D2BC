@@ -102,6 +102,19 @@ export default class LineFocusModule implements ReaderModule {
     if (IS_DEV) {
       console.log("Definitions module stop");
     }
+    this.hasEventListener = false;
+    removeEventListenerOptional(document, "keydown", this.keydown.bind(this));
+    removeEventListenerOptional(document, "keyup", this.keyup.bind(this));
+    removeEventListenerOptional(
+      this.delegate.iframes[0].contentDocument,
+      "keydown",
+      this.keydown.bind(this)
+    );
+    removeEventListenerOptional(
+      this.delegate.iframes[0].contentDocument,
+      "keyup",
+      this.keyup.bind(this)
+    );
   }
 
   protected async start(): Promise<void> {
@@ -129,10 +142,25 @@ export default class LineFocusModule implements ReaderModule {
         this.readerContainer.style.overflow = "hidden";
       }
     }
+    if (!this.hasEventListener) {
+      this.hasEventListener = true;
+      addEventListenerOptional(document, "keydown", this.keydown.bind(this));
+      addEventListenerOptional(document, "keyup", this.keyup.bind(this));
+      addEventListenerOptional(
+        this.delegate.iframes[0].contentDocument,
+        "keydown",
+        this.keydown.bind(this)
+      );
+      addEventListenerOptional(
+        this.delegate.iframes[0].contentDocument,
+        "keyup",
+        this.keyup.bind(this)
+      );
+    }
   }
 
   private keydown(event: KeyboardEvent | MouseEvent | TrackEvent): void {
-    if (event instanceof KeyboardEvent) {
+    if (event instanceof KeyboardEvent && this.isActive) {
       const key = event.key;
       switch (key) {
         case "ArrowUp":
@@ -146,7 +174,7 @@ export default class LineFocusModule implements ReaderModule {
   }
 
   private keyup(event: KeyboardEvent | MouseEvent | TrackEvent): void {
-    if (event instanceof KeyboardEvent) {
+    if (event instanceof KeyboardEvent && this.isActive) {
       const key = event.key;
       switch (key) {
         case "ArrowUp":
@@ -169,43 +197,12 @@ export default class LineFocusModule implements ReaderModule {
     this.isActive = true;
     await this.delegate.settings.scroll(true);
     this.lineFocus();
-    if (!this.hasEventListener) {
-      this.hasEventListener = true;
-      addEventListenerOptional(document, "keydown", this.keydown.bind(this));
-      addEventListenerOptional(document, "keyup", this.keyup.bind(this));
-      addEventListenerOptional(
-        this.delegate.iframes[0].contentDocument,
-        "keydown",
-        this.keydown.bind(this)
-      );
-      addEventListenerOptional(
-        this.delegate.iframes[0].contentDocument,
-        "keyup",
-        this.keyup.bind(this)
-      );
-    }
   }
 
   wrapperHeight: string | undefined = undefined;
 
   disableLineFocus(resetHeight: boolean = true) {
     this.isActive = false;
-
-    if (this.hasEventListener) {
-      this.hasEventListener = false;
-      removeEventListenerOptional(document, "keydown", this.keydown.bind(this));
-      removeEventListenerOptional(document, "keyup", this.keyup.bind(this));
-      removeEventListenerOptional(
-        this.delegate.iframes[0].contentDocument,
-        "keydown",
-        this.keydown.bind(this)
-      );
-      removeEventListenerOptional(
-        this.delegate.iframes[0].contentDocument,
-        "keyup",
-        this.keyup.bind(this)
-      );
-    }
 
     // document.body.style.removeProperty("overflow");
     const wrapper = HTMLUtilities.findRequiredElement(

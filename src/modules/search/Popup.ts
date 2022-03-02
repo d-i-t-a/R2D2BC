@@ -74,14 +74,14 @@ export class Popup {
     wrapper.style.overflow = "auto";
   }
 
-  async showPopover(link: HTMLLIElement, event: MouseEvent | TouchEvent) {
+  async showPopover(link: HTMLElement, event: MouseEvent | TouchEvent) {
     const href = link.getAttribute("href");
+    const src = link.getAttribute("src");
+    function getAbsoluteHref(href: string): string | null {
+      const currentUrl = document.location.href;
+      return new URL(href, currentUrl).href;
+    }
     if (href) {
-      function getAbsoluteHref(href: string): string | null {
-        const currentUrl = document.location.href;
-        return new URL(href, currentUrl).href;
-      }
-
       let absolute = getAbsoluteHref(href);
       if (absolute) {
         event.preventDefault();
@@ -123,6 +123,61 @@ export class Popup {
               doc.body.appendChild(d2popover);
             }
           });
+
+        let win = this.navigator.iframes[0].contentWindow;
+        if (!win) {
+          return;
+        }
+        let self = this;
+        win.onclick = function (ev) {
+          if (event.target !== ev.target) {
+            if (d2popover.parentElement) {
+              self.hidePopover();
+              if (win) {
+                win.onclick = null;
+              }
+            }
+          }
+        };
+      }
+    } else if (src) {
+      let absolute = getAbsoluteHref(src);
+      if (absolute) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        let popover = this.navigator.iframes[0].contentDocument?.getElementById(
+          "d2-popover"
+        );
+        if (popover) {
+          popover.parentElement?.removeChild(popover);
+        }
+
+        const d2popover = document.createElement("div");
+        d2popover.id = "d2-popover";
+        d2popover.className = "d2-popover is-active";
+
+        const wrapper = HTMLUtilities.findRequiredElement(
+          document,
+          "#iframe-wrapper"
+        );
+        wrapper.style.overflow = "hidden";
+        d2popover.style.top = wrapper.scrollTop + "px";
+        d2popover.style.height = wrapper.clientHeight * 0.9 + "px";
+
+        const d2wrapper = document.createElement("div");
+        d2wrapper.className = "d2-popover-wrapper";
+        d2popover.appendChild(d2wrapper);
+
+        const d2content = document.createElement("img");
+        d2content.className = "d2-popover-content";
+        d2wrapper.appendChild(d2content);
+
+        d2content.src = src;
+        let doc = this.navigator.iframes[0].contentDocument;
+        if (doc) {
+          doc.body.appendChild(d2popover);
+        }
 
         let win = this.navigator.iframes[0].contentWindow;
         if (!win) {

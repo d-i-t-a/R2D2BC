@@ -258,15 +258,9 @@ export default class ReflowableBookView implements BookView {
   }
 
   goToElement(element: HTMLElement | null, relative?: boolean): void {
-    const wrapper = HTMLUtilities.findRequiredElement(
-      document,
-      "#iframe-wrapper"
-    );
-
     if (this.scrollMode) {
       if (element) {
-        // Put the element as close to the top as possible.
-        wrapper.scrollTop = element.offsetTop;
+        element.scrollIntoView({ block: "center" });
       }
     } else {
       if (element) {

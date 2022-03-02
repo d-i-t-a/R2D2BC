@@ -54,6 +54,17 @@ export default class EventHandler {
 
   public setupEvents(element: HTMLElement | Document | null) {
     if (element !== null) {
+      element.addEventListener(
+        "dblclick",
+        async (event: TouchEvent) => {
+          let htmlElement = event.target as HTMLElement;
+          if (event.target && htmlElement.tagName.toLowerCase() === "img") {
+            await this.popup.showPopover(htmlElement, event);
+          }
+        },
+        true
+      );
+
       // Most click handling is done in the touchend and mouseup event handlers,
       // but if there's a click on an external link we need to cancel the click
       // event to prevent it from opening in the iframe.

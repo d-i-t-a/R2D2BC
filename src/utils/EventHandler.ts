@@ -107,7 +107,9 @@ export default class EventHandler {
    * against the readingOrder list, it is an internal link if found.
    *
    */
-  private isEpubInternal = (clickedLink: HTMLAnchorElement): boolean => {
+  private isReadingOrderInternal = (
+    clickedLink: HTMLAnchorElement
+  ): boolean => {
     if (IS_DEV) console.log("clickedLink: ", clickedLink);
     const isEpubInternal = this.linkInPublication(
       this.navigator.publication.readingOrder,
@@ -139,7 +141,7 @@ export default class EventHandler {
         window.location.hostname === link.hostname;
 
       // If epub is hosted, rather than streamed, links to a resource inside the same epub should not be opened externally.
-      const isEpubInternal = this.isEpubInternal(link);
+      const isEpubInternal = this.isReadingOrderInternal(link);
 
       const isResourceInternal = this.isResourceInternal(link);
       if (!isResourceInternal) {
@@ -159,7 +161,7 @@ export default class EventHandler {
             const attribute = link.getAttribute("epub:type") === "noteref";
             if (attribute) {
               await this.popup.handleFootnote(link, event);
-            } else if (isResourceInternal) {
+            } else if (isResourceInternal && !isEpubInternal) {
               await this.popup.showPopover(link, event);
             } else {
               this.onInternalLink(event);

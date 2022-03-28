@@ -18,6 +18,7 @@
  */
 
 .error {
+  position: fixed;
   z-index: 20;
   background-color: transparentize($ui-white, 0.125);
   color: $error-red;

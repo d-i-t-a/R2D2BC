@@ -227,7 +227,6 @@
     text-overflow: ellipsis;
     max-width: 22rem;
     min-width: 100px;
-    font-size: small;
     z-index: 1000;
     border: 1px dotted #5b5852;
 }

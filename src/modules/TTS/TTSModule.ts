@@ -130,8 +130,11 @@ export class TTSModule implements ReaderModule {
     });
   }
 
-  cancel() {
-    if (this.api?.stopped) this.api?.stopped();
+  cancel(api: boolean = true) {
+    if (api) {
+      if (this.api?.stopped) this.api?.stopped();
+      this.delegate.emit("readaloud.stopped", "stopped");
+    }
     this.userScrolled = false;
     window.speechSynthesis.cancel();
     if (this.splittingResult && this.delegate.tts?.enableSplitter) {
@@ -168,7 +171,7 @@ export class TTSModule implements ReaderModule {
     var self = this;
     this.userScrolled = false;
 
-    this.cancel();
+    this.cancel(false);
 
     if (this.delegate.tts?.enableSplitter) {
       if (partial) {

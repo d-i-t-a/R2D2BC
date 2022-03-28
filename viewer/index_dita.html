@@ -52,7 +52,7 @@
                     <div class="nav-wrapper"><span class="brand-logo  hide-on-med-and-down " id="book-title"></span>
                         <ul id="nav-mobile-right" class="right">
                             <li style="display:none"><a data-target="container-view-note-input" class="dropdown-trigger " id="menu-button-note"><i class="material-icons">speaker_notes</i></a></li>
-                            <li><a class="saveBookmark" id="menu-button-stamp-activate"  onclick="d2reader.activateMarker('bookmarkIcon', 'center')"><i class="material-icons">approval</i></a></li>
+                            <li><a class="saveBookmark" id="menu-button-stamp-activate"  onclick="d2reader.activateMarker('bookmarkIcon', 'left')"><i class="material-icons">approval</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-stamp-deactivate"  onclick="d2reader.deactivateMarker()"><i class="material-icons">approval</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark-range"  onclick="d2reader.saveBookmarkPlus()"><i class="material-icons">bookmark_border</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
@@ -567,6 +567,7 @@
                             <path d="M5 4v3h5.5v12h3V7H19V4z"></path>
                         </svg>
                     </span></button>
+                            <button style="background-color: gainsboro;" id="noteIcon"><i class="material-icons" style="color:black">sticky_note_2</i></button>
                             <button style="background-color: gainsboro;" id="speakIcon"><span style="display: inline-block;width: 24px;height: 24px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="speak-icon">
                             <title id="speak-icon">Speak</title>
@@ -577,6 +578,15 @@
                             <path d="M0 0h24v24H0z" fill="none"></path>
                         </svg>
                     </span></button>
+
+                            <button style="background-color: gainsboro;display: unset;" id="actionIcon" class="action-option"><i class="material-icons" style="color:gray">more_horiz</i></button>
+
+                        </div>
+                        <div id="highlight-toolbox-mode-edit">
+                            <button style="background-color: gainsboro;display: none" id="commentIcon"><i class="material-icons" style="color:black">insert_comment</i></button>
+                            <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons" style="color:black">delete</i></button>
+                        </div>
+                        <div id="highlight-toolbox-mode-action">
                             <button style="background-color: gainsboro;" id="anIcon"><span style="display: inline-block;width: 24px;height: 24px;">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="24" height="24">
                             <path d="M0 0h24v24H0z" fill="none" />
@@ -584,9 +594,12 @@
                               d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z" />
                         </svg>
                     </span></button>
-                        </div>
-                        <div id="highlight-toolbox-mode-edit">
-                            <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons" style="color:gray">delete</i></button>
+                            <button style="background-color: gainsboro;" id="errorIcon"><i class="material-icons" style="color:orangered">error</i></button>
+                            <button style="background-color: gainsboro;" id="helpIcon"><i class="material-icons" style="color:rebeccapurple">help_center</i></button>
+                            <button style="background-color: gainsboro;" id="checkIcon"><i class="material-icons" style="color:limegreen">check</i></button>
+                            <button style="background-color: gainsboro;" id="emoticonIcon"><i class="material-icons" style="color:orange">insert_emoticon</i></button>
+                            <button style="background-color: gainsboro;" id="starIcon"><i class="material-icons" style="color:gold">star</i></button>
+                            <button style="background-color: gainsboro;" id="collapseIcon"><i class="material-icons" style="color:gray">close</i></button>
                         </div>
                     </div>
                 </div>
@@ -756,13 +769,13 @@
                 popup: {
                     // background: `#ffd700`,
                     // textColor: `#000000`,
-                    class: "green",
+                    // class: "green",
                 },
                 highlight: {
                     color: `#ffd700`,
                     style: {
-                        defaultClass: "red",
-                        hoverClass: "blue"
+                        // defaultClass: "red",
+                        // hoverClass: "blue"
                         // default: [{
                         //     property: `border-bottom`,
                         //     value: `1px solid #ffd700`,

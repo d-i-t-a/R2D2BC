@@ -127,7 +127,7 @@ const _blacklistIdClassForCssSelectors = [
 
 let lastMouseDownX = -1;
 let lastMouseDownY = -1;
-let bodyEventListenersSet = false;
+let bodyEventListeners = [];
 
 export interface TextHighlighterProperties {
   selectionMenuItems?: Array<SelectionMenuItem>;
@@ -200,7 +200,7 @@ export class TextHighlighter {
 
     lastMouseDownX = -1;
     lastMouseDownY = -1;
-    bodyEventListenersSet = false;
+    bodyEventListeners = [];
 
     let self = this;
     async function unselect() {
@@ -2459,6 +2459,7 @@ export class TextHighlighter {
           let result = this.delegate.definitionsModule?.properties?.definitions?.filter(
             (el: any) => el.order === Number(foundElement?.dataset.order)
           )[0];
+          console.log(result);
           if (this.delegate.definitionsModule?.api?.click) {
             this.delegate.definitionsModule.api?.click(
               lodash.omit(result, "callbacks"),
@@ -2479,8 +2480,8 @@ export class TextHighlighter {
     const doc = win.document;
     let self = this;
     if (!doc.getElementById(id)) {
-      if (!bodyEventListenersSet) {
-        bodyEventListenersSet = true;
+      if (!bodyEventListeners[id]) {
+        bodyEventListeners[id] = true;
 
         async function mousedown(ev: MouseEvent) {
           lastMouseDownX = ev.clientX;

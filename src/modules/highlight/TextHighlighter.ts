@@ -127,7 +127,6 @@ const _blacklistIdClassForCssSelectors = [
 
 let lastMouseDownX = -1;
 let lastMouseDownY = -1;
-let bodyEventListeners = [];
 
 export interface TextHighlighterProperties {
   selectionMenuItems?: Array<SelectionMenuItem>;
@@ -200,7 +199,6 @@ export class TextHighlighter {
 
     lastMouseDownX = -1;
     lastMouseDownY = -1;
-    bodyEventListeners = [];
 
     let self = this;
     async function unselect() {
@@ -658,7 +656,32 @@ export class TextHighlighter {
       el.addEventListener("contextmenu", this.disableContext);
     }
 
+    el.addEventListener("mousedown", this.mousedown.bind(this));
+    el.addEventListener("mouseup", this.mouseup.bind(this));
+    el.addEventListener("mousemove", this.mousemove.bind(this));
+
+    el.addEventListener("touchstart", this.mousedown.bind(this));
+    el.addEventListener("touchend", this.mouseup.bind(this));
+    el.addEventListener("touchmove", this.mousemove.bind(this));
+
     this.hasEventListener = true;
+  }
+  async mousedown(ev: MouseEvent) {
+    lastMouseDownX = ev.clientX;
+    lastMouseDownY = ev.clientY;
+  }
+
+  async mouseup(ev: MouseEvent) {
+    if (
+      Math.abs(lastMouseDownX - ev.clientX) < 3 &&
+      Math.abs(lastMouseDownY - ev.clientY) < 3
+    ) {
+      await this.processMouseEvent(ev);
+    }
+  }
+
+  async mousemove(ev: MouseEvent) {
+    await this.processMouseEvent(ev);
   }
 
   unbindEvents(el: any, _scope: any) {
@@ -681,6 +704,15 @@ export class TextHighlighter {
     if (this.isAndroid()) {
       el.removeEventListener("contextmenu", this.disableContext);
     }
+
+    el.removeEventListener("mousedown", this.mousedown.bind(this));
+    el.removeEventListener("mouseup", this.mouseup.bind(this));
+    el.removeEventListener("mousemove", this.mousemove.bind(this));
+
+    el.removeEventListener("touchstart", this.mousedown.bind(this));
+    el.removeEventListener("touchend", this.mouseup.bind(this));
+    el.removeEventListener("touchmove", this.mousemove.bind(this));
+
     this.hasEventListener = false;
   }
 
@@ -1753,7 +1785,7 @@ export class TextHighlighter {
     throw new Error("Bad Hex");
   }
 
-  resetHighlightBoundingStyle(_win: any, highlightBounding: HTMLElement) {
+  resetHighlightBoundingStyle(highlightBounding: HTMLElement) {
     highlightBounding.style.outline = "none";
     highlightBounding.style.setProperty(
       "background-color",
@@ -1762,12 +1794,8 @@ export class TextHighlighter {
     );
   }
 
-  resetHighlightAreaStyle(
-    win: any,
-    highlightArea: HTMLElement,
-    id_container: string
-  ) {
-    let doc = win.document;
+  resetHighlightAreaStyle(highlightArea: HTMLElement, id_container: string) {
+    let doc = this.delegate.iframes[0].contentWindow?.document;
     const id =
       highlightArea.parentNode &&
       highlightArea.parentNode.nodeType === Node.ELEMENT_NODE &&
@@ -1881,12 +1909,12 @@ export class TextHighlighter {
         }
 
         let highlightParent;
-
-        let container = doc.getElementById(id_container);
-        if (container) {
-          highlightParent = container.querySelector(`#${highlight.id}`);
+        if (doc) {
+          let container = doc.getElementById(id_container);
+          if (container) {
+            highlightParent = container.querySelector(`#${highlight.id}`);
+          }
         }
-
         if (highlightParent) {
           let nodeList = highlightParent.getElementsByClassName(
             CLASS_HIGHLIGHT_ICON
@@ -1905,11 +1933,10 @@ export class TextHighlighter {
   }
 
   setHighlightAreaStyle(
-    win: any,
+    doc: any,
     highlightAreas: Array<HTMLElement>,
     highlight: IHighlight
   ) {
-    let doc = win.document;
     for (const highlightArea of highlightAreas) {
       if (
         highlight.marker === AnnotationMarker.Custom ||
@@ -2003,7 +2030,6 @@ export class TextHighlighter {
           highlightArea.classList.add("hover");
         }
       }
-
       if (highlight.type !== HighlightType.Definition) {
         let highlightParent = doc
           .getElementById(HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER)
@@ -2149,13 +2175,15 @@ export class TextHighlighter {
     }
   };
 
-  async processMouseEvent(win: any, ev: MouseEvent) {
-    const doc = win.document;
+  async processMouseEvent(ev: MouseEvent) {
+    const doc = this.delegate.iframes[0].contentWindow?.document;
     // relative to fixed window top-left corner
     // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
     const x = ev.clientX;
     const y = ev.clientY;
-
+    if (!doc) {
+      return;
+    }
     if (
       !doc.getElementById(HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER) &&
       !doc.getElementById(HighlightContainer.R2_ID_SEARCH_CONTAINER) &&
@@ -2185,7 +2213,9 @@ export class TextHighlighter {
         let container = doc.getElementById(
           HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER
         );
-        highlightParent = container.querySelector(`#${highlight.id}`); // .${CLASS_HIGHLIGHT_CONTAINER}
+        if (container) {
+          highlightParent = container.querySelector(`#${highlight.id}`); // .${CLASS_HIGHLIGHT_CONTAINER}
+        }
       }
       if (!highlightParent) {
         // what?
@@ -2225,16 +2255,13 @@ export class TextHighlighter {
             `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
           );
           for (const highlightBounding of highlightBoundings) {
-            this.resetHighlightBoundingStyle(
-              win,
-              highlightBounding as HTMLElement
-            );
+            this.resetHighlightBoundingStyle(highlightBounding as HTMLElement);
           }
           const allHighlightAreas = Array.from(
             container.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
           );
           for (const highlightArea of allHighlightAreas) {
-            this.resetHighlightAreaStyle(win, highlightArea as HTMLElement, id);
+            this.resetHighlightAreaStyle(highlightArea as HTMLElement, id);
           }
         }
       }
@@ -2259,18 +2286,14 @@ export class TextHighlighter {
             );
             for (const highlightArea of allHighlightAreas) {
               if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
-                this.resetHighlightAreaStyle(
-                  win,
-                  highlightArea as HTMLElement,
-                  id
-                );
+                this.resetHighlightAreaStyle(highlightArea as HTMLElement, id);
               }
             }
           }
         }
 
         this.setHighlightAreaStyle(
-          win,
+          doc,
           foundElementHighlightAreas as HTMLElement[],
           foundHighlight
         );
@@ -2291,7 +2314,6 @@ export class TextHighlighter {
                 highlightBounding !== foundElementHighlightBounding
               ) {
                 this.resetHighlightBoundingStyle(
-                  win,
                   highlightBounding as HTMLElement
                 );
               }
@@ -2478,39 +2500,7 @@ export class TextHighlighter {
   }
   async ensureHighlightsContainer(win: any, id: string): Promise<HTMLElement> {
     const doc = win.document;
-    let self = this;
     if (!doc.getElementById(id)) {
-      if (!bodyEventListeners[id]) {
-        bodyEventListeners[id] = true;
-
-        async function mousedown(ev: MouseEvent) {
-          lastMouseDownX = ev.clientX;
-          lastMouseDownY = ev.clientY;
-        }
-
-        async function mouseup(ev: MouseEvent) {
-          if (
-            Math.abs(lastMouseDownX - ev.clientX) < 3 &&
-            Math.abs(lastMouseDownY - ev.clientY) < 3
-          ) {
-            self.processMouseEvent(win, ev);
-          }
-        }
-
-        async function mousemove(ev: MouseEvent) {
-          self.processMouseEvent(win, ev);
-        }
-
-        if (doc.body) {
-          doc.body.addEventListener("mousedown", mousedown, false);
-          doc.body.addEventListener("mouseup", mouseup, false);
-          doc.body.addEventListener("mousemove", mousemove, false);
-
-          doc.body.addEventListener("touchstart", mousedown, false);
-          doc.body.addEventListener("touchend", mouseup, false);
-          doc.body.addEventListener("touchmove", mousemove, false);
-        }
-      }
 
       let container = doc.createElement("div");
       container.setAttribute("id", id);
@@ -3248,7 +3238,7 @@ export class TextHighlighter {
           highlightParent.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
         );
         self.setHighlightAreaStyle(
-          win,
+          doc,
           foundElementHighlightAreas as HTMLElement[],
           highlight
         );

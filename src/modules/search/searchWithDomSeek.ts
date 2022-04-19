@@ -61,25 +61,26 @@ export const reset = () => {
 };
 const getCount = counter();
 
-const getCssSelector_ =
-  (doc: Document) =>
-  (element: Element): string => {
-    try {
-      return uniqueCssSelector(element, doc, _getCssSelectorOptions);
-    } catch (err) {
-      console.error("uniqueCssSelector:", err);
-      return "";
-    }
-  };
+const getCssSelector_ = (doc: Document) => (element: Element): string => {
+  try {
+    return uniqueCssSelector(element, doc, _getCssSelectorOptions);
+  } catch (err) {
+    console.error("uniqueCssSelector:", err);
+    return "";
+  }
+};
 
 export async function searchDocDomSeek(
   searchInput: string,
-  doc: Document,
+  doc: Document | null,
   href: string,
   title: string,
   fullWordSearch: boolean = false
 ): Promise<ISearchResult[]> {
-  const text = doc.body.textContent;
+  if (!doc) {
+    return [];
+  }
+  const text = doc.body?.textContent;
   if (!text) {
     return [];
   }
@@ -109,7 +110,7 @@ export async function searchDocDomSeek(
   const snippetLength = 100;
   const snippetLengthNormalized = 30;
   let accumulated = 0;
-  let matches: RegExpExecArray;
+  let matches: RegExpExecArray | null;
   while ((matches = regexp.exec(text))) {
     let i = Math.max(0, matches.index - snippetLength);
     let l = Math.min(snippetLength, matches.index);
@@ -128,18 +129,26 @@ export async function searchDocDomSeek(
     let offset = matches.index;
     while (accumulated <= offset) {
       const nextNode = iter.nextNode();
-      accumulated += nextNode.nodeValue.length;
+      if (nextNode && nextNode.nodeValue) {
+        accumulated += nextNode.nodeValue.length;
+      }
     }
-    let localOffset =
-      iter.referenceNode.nodeValue.length - (accumulated - offset);
+    let localOffset = iter.referenceNode.nodeValue
+      ? iter.referenceNode.nodeValue?.length - (accumulated - offset)
+      : 0;
     range.setStart(iter.referenceNode, localOffset);
 
     offset = matches.index + matches[0].length;
     while (accumulated <= offset) {
       const nextNode = iter.nextNode();
-      accumulated += nextNode.nodeValue.length;
+      let nodeValue = nextNode?.nodeValue;
+      if (nodeValue) {
+        accumulated += nodeValue.length;
+      }
     }
-    localOffset = iter.referenceNode.nodeValue.length - (accumulated - offset);
+    localOffset = iter.referenceNode.nodeValue
+      ? iter.referenceNode.nodeValue?.length - (accumulated - offset)
+      : 0;
     range.setEnd(iter.referenceNode, localOffset);
 
     if (!(doc as any).getCssSelector) {
@@ -147,15 +156,17 @@ export async function searchDocDomSeek(
     }
     const rangeInfo = convertRange(range, (doc as any).getCssSelector); // computeElementCFI
 
-    searchResults.push({
-      textMatch: collapseWhitespaces(matches[0]),
-      textBefore,
-      textAfter,
-      rangeInfo,
-      href,
-      title,
-      uuid: getCount().toString(),
-    });
+    if (rangeInfo) {
+      searchResults.push({
+        textMatch: collapseWhitespaces(matches[0]),
+        textBefore,
+        textAfter,
+        rangeInfo,
+        href,
+        title,
+        uuid: getCount().toString(),
+      });
+    }
   }
 
   return searchResults;

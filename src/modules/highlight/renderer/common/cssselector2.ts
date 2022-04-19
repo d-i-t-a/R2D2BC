@@ -19,7 +19,7 @@
 
 // https://github.com/antonmedv/finder
 
-import * as cssesc from "cssesc";
+import cssesc from "cssesc";
 
 interface CSSNode {
   name: string;

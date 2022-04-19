@@ -19,10 +19,10 @@
 
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
-import IFrameNavigator, { ReaderRights } from "../navigator/IFrameNavigator";
+import { IFrameNavigator, ReaderRights } from "../navigator/IFrameNavigator";
 import { Publication } from "../model/Publication";
-import TextHighlighter, { _highlights } from "./highlight/TextHighlighter";
-import ReaderModule from "./ReaderModule";
+import { TextHighlighter, _highlights } from "./highlight/TextHighlighter";
+import { ReaderModule } from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { HighlightType, IHighlight } from "./highlight/common/highlight";
 import {
@@ -38,7 +38,10 @@ import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
 import { convertRange } from "./highlight/renderer/iframe/selection";
 import { uniqueCssSelector } from "./highlight/renderer/common/cssselector2";
-import { _getCssSelectorOptions } from "./highlight/common/selection";
+import {
+  _getCssSelectorOptions,
+  ISelectionInfo,
+} from "./highlight/common/selection";
 import * as lodash from "lodash";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
@@ -50,46 +53,46 @@ export interface AnnotationModuleAPI {
   selectedAnnotation: Highlight;
 }
 export interface AnnotationModuleProperties {
-  initialAnnotationColor: string;
+  initialAnnotationColor?: string;
   hideLayer?: boolean;
 }
 
 export interface AnnotationModuleConfig extends AnnotationModuleProperties {
   annotator: Annotator;
-  headerMenu: HTMLElement;
+  headerMenu?: HTMLElement | null;
   rights: ReaderRights;
   publication: Publication;
   delegate: IFrameNavigator;
   initialAnnotations?: any;
-  api: AnnotationModuleAPI;
+  api?: AnnotationModuleAPI;
   highlighter: TextHighlighter;
 }
 
-export default class AnnotationModule implements ReaderModule {
+export class AnnotationModule implements ReaderModule {
   readonly annotator: Annotator | null;
   private rights: ReaderRights;
   private publication: Publication;
   private highlightsView: HTMLDivElement;
-  private readonly headerMenu: HTMLElement;
-  private readonly highlighter: TextHighlighter;
+  private readonly headerMenu?: HTMLElement | null;
+  private readonly highlighter?: TextHighlighter;
   private readonly initialAnnotations: any;
   private delegate: IFrameNavigator;
-  properties: AnnotationModuleProperties;
-  api: AnnotationModuleAPI;
+  properties?: AnnotationModuleProperties;
+  api?: AnnotationModuleAPI;
   activeAnnotationMarkerId?: string;
   activeAnnotationMarkerPosition?: string;
 
   public static async create(config: AnnotationModuleConfig) {
     const annotations = new this(
       config.annotator,
-      config.headerMenu,
       config.rights || { enableAnnotations: false, enableTTS: false },
       config.publication,
       config.delegate,
       config.initialAnnotations || null,
       config as AnnotationModuleProperties,
+      config.highlighter,
       config.api,
-      config.highlighter
+      config.headerMenu
     );
     await annotations.start();
     return annotations;
@@ -97,14 +100,14 @@ export default class AnnotationModule implements ReaderModule {
 
   public constructor(
     annotator: Annotator,
-    headerMenu: HTMLElement,
     rights: ReaderRights,
     publication: Publication,
     delegate: IFrameNavigator,
-    initialAnnotations: any | null = null,
-    properties: AnnotationModuleProperties | null = null,
-    api: AnnotationModuleAPI | null = null,
-    highlighter: TextHighlighter
+    initialAnnotations: any,
+    properties: AnnotationModuleProperties,
+    highlighter: TextHighlighter,
+    api?: AnnotationModuleAPI,
+    headerMenu?: HTMLElement | null
   ) {
     this.annotator = annotator;
     this.rights = rights;
@@ -135,11 +138,11 @@ export default class AnnotationModule implements ReaderModule {
     if (this.initialAnnotations) {
       var highlights = this.initialAnnotations["highlights"] || null;
       if (highlights) {
-        this.annotator.initAnnotations(highlights);
+        this.annotator?.initAnnotations(highlights);
       }
     }
     setTimeout(() => {
-      this.properties.hideLayer
+      this.properties?.hideLayer
         ? this.delegate.hideLayer("highlights")
         : this.delegate.showLayer("highlights");
     }, 10);
@@ -147,19 +150,22 @@ export default class AnnotationModule implements ReaderModule {
   private hide: HTMLLinkElement = HTMLUtilities.findElement(
     document,
     "#menu-button-hide"
-  ) as HTMLLinkElement;
+  );
   private show: HTMLLinkElement = HTMLUtilities.findElement(
     document,
     "#menu-button-show"
-  ) as HTMLLinkElement;
+  );
 
   hideAnnotationLayer() {
-    const container = HTMLUtilities.findElement(
-      this.delegate.iframes[0].contentDocument,
-      "#R2_ID_HIGHLIGHTS_CONTAINER"
-    ) as HTMLDivElement;
-    if (container) {
-      container.style.display = "none";
+    let doc = this.delegate.iframes[0].contentDocument;
+    if (doc) {
+      const container = HTMLUtilities.findElement(
+        doc,
+        "#R2_ID_HIGHLIGHTS_CONTAINER"
+      );
+      if (container) {
+        container.style.display = "none";
+      }
     }
     if (this.show && this.hide) {
       this.show.style.display = "block";
@@ -167,12 +173,15 @@ export default class AnnotationModule implements ReaderModule {
     }
   }
   showAnnotationLayer() {
-    const container = HTMLUtilities.findElement(
-      this.delegate.iframes[0].contentDocument,
-      "#R2_ID_HIGHLIGHTS_CONTAINER"
-    ) as HTMLDivElement;
-    if (container) {
-      container.style.display = "block";
+    let doc = this.delegate.iframes[0].contentDocument;
+    if (doc) {
+      const container = HTMLUtilities.findElement(
+        doc,
+        "#R2_ID_HIGHLIGHTS_CONTAINER"
+      );
+      if (container) {
+        container.style.display = "block";
+      }
     }
     if (this.show && this.hide) {
       this.show.style.display = "none";
@@ -190,12 +199,12 @@ export default class AnnotationModule implements ReaderModule {
   initialize() {
     return new Promise(async (resolve) => {
       await (document as any).fonts.ready;
-      if (this.rights?.enableAnnotations) {
+      if (this.rights.enableAnnotations) {
         setTimeout(() => {
           this.drawHighlights();
           this.showHighlights();
           addEventListenerOptional(
-            this.delegate.iframes[0].contentDocument.body,
+            this.delegate.iframes[0].contentDocument?.body,
             "click",
             this.click.bind(this)
           );
@@ -207,10 +216,10 @@ export default class AnnotationModule implements ReaderModule {
 
   private click(_event: KeyboardEvent | MouseEvent | TrackEvent): void {
     if (this.activeAnnotationMarkerId) {
-      let menuItems = this.highlighter.properties?.selectionMenuItems?.filter(
+      let menuItems = this.highlighter?.properties?.selectionMenuItems?.filter(
         (menuItem) => menuItem.id === this.activeAnnotationMarkerId
       );
-      if (menuItems.length > 0) {
+      if (menuItems && menuItems?.length > 0) {
         let menuItem = lodash.cloneDeep(menuItems[0]);
         menuItem.marker = AnnotationMarker.Custom;
         if (this.activeAnnotationMarkerPosition) {
@@ -221,64 +230,64 @@ export default class AnnotationModule implements ReaderModule {
         // menuItem.highlight.color = `#dc491d`;
         menuItem.highlight.style.default = null;
         menuItem.highlight.style.hover = null;
+        let doc = this.delegate.iframes[0].contentDocument;
+        if (doc) {
+          const selection = this.highlighter?.dom(doc.body).getSelection();
+          let range = selection.getRangeAt(0);
+          let node = selection.anchorNode;
+          range.setStart(node, range.startOffset);
+          range.setEnd(node, range.endOffset + 1);
+          selection.removeAllRanges();
+          selection.addRange(range);
 
-        const selection = this.highlighter
-          .dom(this.delegate.iframes[0].contentDocument.body)
-          .getSelection();
-        let range = selection.getRangeAt(0);
-        let node = selection.anchorNode;
-        range.setStart(node, range.startOffset);
-        range.setEnd(node, range.endOffset + 1);
-        selection.removeAllRanges();
-        selection.addRange(range);
+          // Alert result
+          // let str = range.toString().trim();
+          // alert(str);
 
-        // Alert result
-        // let str = range.toString().trim();
-        // alert(str);
+          let self = this;
 
-        let self = this;
-        function getCssSelector(element: Element): string {
-          try {
-            return uniqueCssSelector(
-              element,
-              self.delegate.iframes[0].contentDocument,
-              _getCssSelectorOptions
+          function getCssSelector(element: Element): string {
+            try {
+              let doc = self.delegate.iframes[0].contentDocument;
+              if (doc) {
+                return uniqueCssSelector(element, doc, _getCssSelectorOptions);
+              } else {
+                return "";
+              }
+            } catch (err) {
+              console.log("uniqueCssSelector:");
+              console.log(err);
+              return "";
+            }
+          }
+
+          const rangeInfo = convertRange(range, getCssSelector);
+          selection.removeAllRanges();
+          if (rangeInfo) {
+            let selectionInfo: ISelectionInfo = {
+              rangeInfo: rangeInfo,
+            };
+
+            let book = this.delegate.highlighter?.createHighlight(
+              this.delegate.highlighter?.dom(doc.body).getWindow(),
+              selectionInfo,
+              menuItem.highlight.color,
+              true,
+              AnnotationMarker.Bookmark,
+              menuItem.icon,
+              menuItem.popup,
+              menuItem.highlight.style
             );
-          } catch (err) {
-            console.log("uniqueCssSelector:");
-            console.log(err);
-            return "";
+            if (book) {
+              this.saveAnnotation(book[0]).then((anno) => {
+                if (IS_DEV) {
+                  console.log("saved bookmark " + anno.id);
+                }
+              });
+            }
           }
+          doc.getSelection()?.removeAllRanges();
         }
-        const rangeInfo = convertRange(range, getCssSelector);
-        selection.removeAllRanges();
-        let selectionInfo = {
-          rangeInfo: rangeInfo,
-          cleanText: null,
-          rawText: null,
-          range: null,
-        };
-
-        let book = this.delegate.highlighter.createHighlight(
-          this.delegate.highlighter
-            .dom(self.delegate.iframes[0].contentDocument.body)
-            .getWindow(),
-          selectionInfo,
-          menuItem.highlight.color,
-          true,
-          AnnotationMarker.Bookmark,
-          menuItem.icon,
-          menuItem.popup,
-          menuItem.highlight.style
-        );
-        this.saveAnnotation(book[0]).then((anno) => {
-          if (IS_DEV) {
-            console.log("saved bookmark " + anno.id);
-          }
-        });
-        this.delegate.iframes[0].contentDocument
-          .getSelection()
-          .removeAllRanges();
       }
     }
   }
@@ -287,7 +296,7 @@ export default class AnnotationModule implements ReaderModule {
     if (IS_DEV) {
       console.log("still need to scroll to " + id);
     }
-    var position = await this.annotator.getAnnotationPosition(
+    var position = await this.annotator?.getAnnotationPosition(
       id,
       this.delegate.iframes[0].contentWindow as any
     );
@@ -305,7 +314,7 @@ export default class AnnotationModule implements ReaderModule {
       }
       await this.showHighlights();
       await this.drawHighlights();
-      if (this.delegate.rights?.enableMaterial) {
+      if (this.delegate.rights.enableMaterial) {
         toast({ html: "highlight updated" });
       }
       return added;
@@ -323,7 +332,7 @@ export default class AnnotationModule implements ReaderModule {
       }
       await this.showHighlights();
       await this.drawHighlights();
-      if (this.delegate.rights?.enableMaterial) {
+      if (this.delegate.rights.enableMaterial) {
         toast({ html: "highlight deleted" });
       }
       return deleted;
@@ -333,10 +342,10 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   public async deleteAnnotation(highlight: Annotation): Promise<any> {
-    this.deleteLocalHighlight(highlight.id);
+    await this.deleteLocalHighlight(highlight.id);
   }
   public async addAnnotation(highlight: Annotation): Promise<any> {
-    await this.annotator.saveAnnotation(highlight);
+    await this.annotator?.saveAnnotation(highlight);
     await this.showHighlights();
     await this.drawHighlights();
   }
@@ -377,103 +386,112 @@ export default class AnnotationModule implements ReaderModule {
       var tocItem = this.publication.getTOCItem(
         this.delegate.currentChapterLink.href
       );
-      if (this.delegate.currentTocUrl !== null) {
+      if (this.delegate.currentTocUrl) {
         tocItem = this.publication.getTOCItem(this.delegate.currentTocUrl);
       }
 
-      if (tocItem === null) {
+      if (tocItem === undefined) {
         tocItem = this.publication.getTOCItemAbsolute(
           this.delegate.currentChapterLink.href
         );
       }
 
-      const bookmarkPosition = this.delegate.view.getCurrentPosition();
+      const bookmarkPosition = this.delegate.view?.getCurrentPosition();
 
-      const body = HTMLUtilities.findRequiredIframeElement(
-        this.delegate.iframes[0].contentDocument,
-        "body"
-      ) as HTMLBodyElement;
-      const progression = highlight.position
-        ? highlight.position / body.scrollHeight
-        : bookmarkPosition;
-      const id: string = uuid();
-      let annotation: Annotation;
+      let doc = this.delegate.iframes[0].contentDocument;
+      if (doc) {
+        const body = HTMLUtilities.findRequiredIframeElement(
+          doc,
+          "body"
+        ) as HTMLBodyElement;
 
-      let href = tocItem.Href;
-      if (href.indexOf("#") > 0) {
-        href = href.slice(0, href.indexOf("#"));
+        const progression = highlight.position
+          ? highlight.position / body.scrollHeight
+          : bookmarkPosition;
+
+        const id: string = uuid();
+        let annotation: Annotation | undefined;
+
+        if (tocItem) {
+          let href = tocItem.Href;
+          if (href.indexOf("#") > 0) {
+            href = href.slice(0, href.indexOf("#"));
+          }
+
+          if (
+            (this.rights.autoGeneratePositions && this.publication.positions) ||
+            this.publication.positions
+          ) {
+            const positions = this.publication.positionsByHref(
+              this.publication.getRelativeHref(
+                this.delegate.currentChapterLink.href
+              )
+            );
+            const positionIndex = Math.ceil(
+              (progression ?? 0) * (positions.length - 1)
+            );
+            const locator = positions[positionIndex];
+
+            annotation = {
+              ...locator,
+              id: id,
+              href: href,
+              created: new Date(),
+              title: this.delegate.currentChapterLink.title,
+              highlight: highlight,
+              text: {
+                highlight: highlight.selectionInfo.cleanText,
+              },
+            };
+          } else {
+            annotation = {
+              id: id,
+              href: href,
+              locations: {
+                progression: progression,
+              },
+              created: new Date(),
+              type: this.delegate.currentChapterLink.type,
+              title: this.delegate.currentChapterLink.title,
+              highlight: highlight,
+              text: {
+                highlight: highlight.selectionInfo.cleanText,
+              },
+            };
+          }
+        }
+
+        if (annotation) {
+          if (this.api?.addAnnotation) {
+            let result = await this.api.addAnnotation(annotation);
+            const saved = await this.annotator.saveAnnotation(result);
+            await this.showHighlights();
+            await this.drawHighlights();
+            return new Promise<Annotation>((resolve) => resolve(saved));
+          } else {
+            const saved = await this.annotator.saveAnnotation(annotation);
+            await this.showHighlights();
+            await this.drawHighlights();
+            return new Promise<Annotation>((resolve) => resolve(saved));
+          }
+        }
       }
-
-      if (
-        ((this.rights?.autoGeneratePositions ?? true) &&
-          this.publication.positions) ||
-        this.publication.positions
-      ) {
-        const positions = this.publication.positionsByHref(
-          this.publication.getRelativeHref(
-            this.delegate.currentChapterLink.href
-          )
-        );
-        const positionIndex = Math.ceil(progression * (positions.length - 1));
-        const locator = positions[positionIndex];
-
-        annotation = {
-          ...locator,
-          id: id,
-          href: href,
-          created: new Date(),
-          title: this.delegate.currentChapterLink.title,
-          highlight: highlight,
-          text: {
-            highlight: highlight.selectionInfo.cleanText,
-          },
-        };
-      } else {
-        annotation = {
-          id: id,
-          href: href,
-          locations: {
-            progression: progression,
-          },
-          created: new Date(),
-          type: this.delegate.currentChapterLink.type,
-          title: this.delegate.currentChapterLink.title,
-          highlight: highlight,
-          text: {
-            highlight: highlight.selectionInfo.cleanText,
-          },
-        };
-      }
-
-      if (this.api?.addAnnotation) {
-        let result = await this.api.addAnnotation(annotation);
-        const saved = await this.annotator.saveAnnotation(result);
-        await this.showHighlights();
-        await this.drawHighlights();
-        return new Promise<Annotation>((resolve) => resolve(saved));
-      } else {
-        const saved = await this.annotator.saveAnnotation(annotation);
-        await this.showHighlights();
-        await this.drawHighlights();
-        return new Promise<Annotation>((resolve) => resolve(saved));
-      }
-    } else {
-      return new Promise<any>((resolve) => resolve(null));
     }
+    return new Promise<any>((resolve) => resolve(null));
   }
 
-  async getAnnotations(): Promise<any> {
+  getAnnotations(): any {
     let highlights: Array<any> = [];
     if (this.annotator) {
-      highlights = (await this.annotator.getAnnotations()) as Array<any>;
+      highlights = this.annotator.getAnnotations() as Array<any>;
     }
     return highlights;
   }
 
-  public async showHighlights(): Promise<void> {
+  public showHighlights() {
     let highlights: Array<any> = [];
     if (this.annotator) {
-      highlights = (await this.annotator.getAnnotations()) as Array<any>;
+      highlights = this.annotator.getAnnotations() as Array<any>;
       if (highlights) {
         highlights = highlights.filter(
           (rangeRepresentation) =>
@@ -494,16 +512,16 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   async drawHighlights(): Promise<void> {
-    if (this.rights?.enableAnnotations && this.highlighter) {
+    if (this.rights.enableAnnotations && this.highlighter) {
       if (this.api) {
         let highlights: Array<any> = [];
         if (this.annotator) {
-          highlights = (await this.annotator.getAnnotations()) as Array<any>;
+          highlights = this.annotator.getAnnotations() as Array<any>;
         }
         if (
           this.highlighter &&
           highlights &&
-          this.delegate.iframes[0].contentDocument.readyState === "complete"
+          this.delegate.iframes[0].contentDocument?.readyState === "complete"
         ) {
           await this.highlighter.destroyHighlights(HighlightType.Annotation);
 
@@ -515,7 +533,7 @@ export default class AnnotationModule implements ReaderModule {
             let currentLocation = this.delegate.currentChapterLink.href;
 
             var tocItem = this.publication.getTOCItem(currentLocation);
-            if (this.delegate.currentTocUrl !== null) {
+            if (this.delegate.currentTocUrl !== undefined) {
               tocItem = this.publication.getTOCItem(
                 this.delegate.currentTocUrl
               );
@@ -526,65 +544,66 @@ export default class AnnotationModule implements ReaderModule {
                 this.delegate.currentChapterLink.href
               );
             }
+            if (tocItem) {
+              let href = tocItem.Href;
+              if (href.indexOf("#") > 0) {
+                href = href.slice(0, href.indexOf("#"));
+              }
 
-            let href = tocItem.Href;
-            if (href.indexOf("#") > 0) {
-              href = href.slice(0, href.indexOf("#"));
-            }
+              if (annotation.href === href) {
+                await this.highlighter.createHighlightDom(
+                  this.delegate.iframes[0].contentWindow as any,
+                  rangeRepresentation.highlight
+                );
 
-            if (annotation.href === href) {
-              await this.highlighter.createHighlightDom(
-                this.delegate.iframes[0].contentWindow as any,
-                rangeRepresentation.highlight
-              );
+                setTimeout(async () => {
+                  if (
+                    annotation.highlight?.marker === AnnotationMarker.Underline
+                  ) {
+                    const position = await this.annotator?.getAnnotationPosition(
+                      rangeRepresentation.id,
+                      this.delegate.iframes[0].contentWindow as any
+                    );
 
-              setTimeout(async () => {
-                if (
-                  annotation.highlight.marker === AnnotationMarker.Underline
-                ) {
-                  const position = await this.annotator.getAnnotationPosition(
-                    rangeRepresentation.id,
-                    this.delegate.iframes[0].contentWindow as any
-                  );
+                    const commentTemplate =
+                      `<div class="comment" style="top: ` +
+                      position +
+                      `px;width:20px"></div>`;
 
-                  const commentTemplate =
-                    `<div class="comment" style="top: ` +
-                    position +
-                    `px;width:20px"></div>`;
+                    let comment: HTMLDivElement = document.createElement("div");
+                    comment.innerHTML = commentTemplate;
+                    let div = comment.childNodes[0] as HTMLDivElement;
+                    let icon: HTMLElement = document.createElement("i");
+                    icon.innerHTML = "sticky_note_2";
+                    icon.className = "material-icons";
+                    icon.style.color = annotation.highlight.color;
 
-                  let comment: HTMLDivElement = document.createElement("div");
-                  comment.innerHTML = commentTemplate;
-                  let div = comment.childNodes[0] as HTMLDivElement;
-                  let icon: HTMLElement = document.createElement("i");
-                  icon.innerHTML = "sticky_note_2";
-                  icon.className = "material-icons";
-                  icon.style.color = annotation.highlight.color;
+                    div.appendChild(icon);
 
-                  div.appendChild(icon);
-
-                  addEventListenerOptional(
-                    comment,
-                    "click",
-                    (event: MouseEvent) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      this.scrollToHighlight(annotation.id);
-                    }
-                  );
-                }
-              }, 100);
+                    addEventListenerOptional(
+                      comment,
+                      "click",
+                      (event: MouseEvent) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        this.scrollToHighlight(annotation.id);
+                      }
+                    );
+                  }
+                }, 100);
+              }
             }
           }
         }
       } else {
         let highlights: Array<any> = [];
         if (this.annotator) {
-          highlights = (await this.annotator.getAnnotations()) as Array<any>;
+          highlights = this.annotator.getAnnotations() as Array<any>;
         }
         if (
           this.highlighter &&
           highlights &&
-          this.delegate.iframes[0].contentDocument.readyState === "complete"
+          this.delegate.iframes[0].contentDocument?.readyState === "complete"
         ) {
           await this.highlighter.destroyHighlights(HighlightType.Annotation);
 
@@ -595,8 +614,8 @@ export default class AnnotationModule implements ReaderModule {
 
             let currentLocation = this.delegate.currentChapterLink.href;
 
-            var tocItem = this.publication.getTOCItem(currentLocation);
-            if (this.delegate.currentTocUrl !== null) {
+            let tocItem = this.publication.getTOCItem(currentLocation);
+            if (this.delegate.currentTocUrl) {
               tocItem = this.publication.getTOCItem(
                 this.delegate.currentTocUrl
               );
@@ -608,48 +627,50 @@ export default class AnnotationModule implements ReaderModule {
               );
             }
 
-            let href = tocItem.Href;
-            if (href.indexOf("#") > 0) {
-              href = href.slice(0, href.indexOf("#"));
-            }
+            if (tocItem) {
+              let href = tocItem.Href;
+              if (href.indexOf("#") > 0) {
+                href = href.slice(0, href.indexOf("#"));
+              }
 
-            if (annotation.href === href) {
-              await this.highlighter.createHighlightDom(
-                this.delegate.iframes[0].contentWindow as any,
-                rangeRepresentation.highlight
-              );
+              if (annotation.href === href) {
+                await this.highlighter.createHighlightDom(
+                  this.delegate.iframes[0].contentWindow as any,
+                  rangeRepresentation.highlight
+                );
 
-              setTimeout(async () => {
-                if (
-                  annotation.highlight.marker === AnnotationMarker.Underline
-                ) {
-                  const position = await this.annotator.getAnnotationPosition(
-                    rangeRepresentation.id,
-                    this.delegate.iframes[0].contentWindow as any
-                  );
+                setTimeout(async () => {
+                  if (
+                    annotation.highlight?.marker === AnnotationMarker.Underline
+                  ) {
+                    const position = await this.annotator?.getAnnotationPosition(
+                      rangeRepresentation.id,
+                      this.delegate.iframes[0].contentWindow as any
+                    );
 
-                  const commentTemplate =
-                    `<div class="comment" style="top: ` +
-                    position +
-                    `px;background: ` +
-                    annotation.highlight.color +
-                    `;width:20px"></div>`;
+                    const commentTemplate =
+                      `<div class="comment" style="top: ` +
+                      position +
+                      `px;background: ` +
+                      annotation.highlight?.color +
+                      `;width:20px"></div>`;
 
-                  let comment: HTMLDivElement = document.createElement("div");
-                  comment.innerHTML = commentTemplate;
-                  (comment.childNodes[0] as HTMLDivElement).innerHTML =
-                    IconLib.note;
-                  addEventListenerOptional(
-                    comment,
-                    "click",
-                    (event: MouseEvent) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      this.scrollToHighlight(annotation.id);
-                    }
-                  );
-                }
-              }, 100);
+                    let comment: HTMLDivElement = document.createElement("div");
+                    comment.innerHTML = commentTemplate;
+                    (comment.childNodes[0] as HTMLDivElement).innerHTML =
+                      IconLib.note;
+                    addEventListenerOptional(
+                      comment,
+                      "click",
+                      (event: MouseEvent) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        this.scrollToHighlight(annotation.id);
+                      }
+                    );
+                  }
+                }, 100);
+              }
             }
           }
         }
@@ -685,7 +706,7 @@ export default class AnnotationModule implements ReaderModule {
               const linkHref = this.publication.getAbsoluteHref(link.Href);
               const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
               linkElement.href = linkHref;
-              linkElement.innerHTML = tocItemAbs.Title || "";
+              linkElement.innerHTML = tocItemAbs?.Title || "";
               chapterHeader.appendChild(linkElement);
             } else {
               spanElement.innerHTML = link.Title || "";
@@ -724,8 +745,9 @@ export default class AnnotationModule implements ReaderModule {
               if (link.Href && locator.href.endsWith(href)) {
                 let bookmarkItem: HTMLLIElement = document.createElement("li");
                 bookmarkItem.className = "annotation-item";
-                let bookmarkLink: HTMLAnchorElement =
-                  document.createElement("a");
+                let bookmarkLink: HTMLAnchorElement = document.createElement(
+                  "a"
+                );
                 bookmarkLink.setAttribute("href", locator.href);
 
                 if (type === AnnotationType.Annotation) {
@@ -736,48 +758,54 @@ export default class AnnotationModule implements ReaderModule {
                   marker.innerHTML = locator.highlight.selectionInfo.cleanText;
 
                   if (
-                    (locator as Annotation).highlight.marker ===
+                    (locator as Annotation).highlight?.marker ===
                     AnnotationMarker.Underline
                   ) {
                     if (
-                      typeof (locator as Annotation).highlight.color ===
+                      typeof (locator as Annotation).highlight?.color ===
                       "object"
                     ) {
-                      marker.style.setProperty(
-                        "border-bottom",
-                        `2px solid ${TextHighlighter.hexToRgbA(
-                          (locator as Annotation).highlight.color
-                        )}`,
-                        "important"
-                      );
+                      let color = (locator as Annotation).highlight?.color;
+                      if (color) {
+                        marker.style.setProperty(
+                          "border-bottom",
+                          `2px solid ${TextHighlighter.hexToRgbA(color)}`,
+                          "important"
+                        );
+                      }
                     } else {
                       marker.style.setProperty(
                         "border-bottom",
-                        `2px solid ${(locator as Annotation).highlight.color}`,
+                        `2px solid ${(locator as Annotation).highlight?.color}`,
                         "important"
                       );
                     }
                   } else {
                     if (
-                      typeof (locator as Annotation).highlight.color ===
+                      typeof (locator as Annotation).highlight?.color ===
                       "object"
                     ) {
-                      marker.style.backgroundColor = TextHighlighter.hexToRgbA(
-                        (locator as Annotation).highlight.color
-                      );
+                      let color = (locator as Annotation).highlight?.color;
+                      if (color) {
+                        marker.style.backgroundColor = TextHighlighter.hexToRgbA(
+                          color
+                        );
+                      }
                     } else {
-                      marker.style.backgroundColor = (
-                        locator as Annotation
-                      ).highlight.color;
+                      let color = (locator as Annotation).highlight?.color;
+                      if (color) {
+                        marker.style.backgroundColor = color;
+                      }
                     }
                   }
                   title.appendChild(marker);
                   bookmarkLink.appendChild(title);
 
-                  let subtitle: HTMLSpanElement =
-                    document.createElement("span");
+                  let subtitle: HTMLSpanElement = document.createElement(
+                    "span"
+                  );
                   let formattedProgression =
-                    Math.round(locator.locations.progression!! * 100) +
+                    Math.round((locator.locations.progression ?? 0) * 100) +
                     "% " +
                     "through resource";
                   subtitle.className = "subtitle";
@@ -805,11 +833,12 @@ export default class AnnotationModule implements ReaderModule {
                 bookmarkItem.appendChild(bookmarkLink);
                 if (
                   (self.delegate.sideNavExpanded &&
-                    self.delegate.rights?.enableMaterial) ||
-                  !self.delegate.rights?.enableMaterial
+                    self.delegate.rights.enableMaterial) ||
+                  !self.delegate.rights.enableMaterial
                 ) {
-                  let bookmarkDeleteLink: HTMLElement =
-                    document.createElement("button");
+                  let bookmarkDeleteLink: HTMLElement = document.createElement(
+                    "button"
+                  );
                   bookmarkDeleteLink.className = "delete";
                   bookmarkDeleteLink.innerHTML = IconLib.delete;
 
@@ -890,10 +919,10 @@ export default class AnnotationModule implements ReaderModule {
   }
 
   public async getAnnotation(highlight: IHighlight): Promise<any> {
-    return this.annotator.getAnnotation(highlight);
+    return this.annotator?.getAnnotation(highlight);
   }
 
   public async getAnnotationByID(id: string): Promise<any> {
-    return this.annotator.getAnnotationByID(id);
+    return this.annotator?.getAnnotationByID(id);
   }
 }

@@ -17,14 +17,26 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
+import * as HTMLUtilities from "./HTMLUtilities";
+
 /** Returns the current width of the document. */
 export function getWidth(): number {
-  return document.documentElement.clientWidth;
+  const wrapper = HTMLUtilities.findRequiredElement(
+    document,
+    "#iframe-wrapper"
+  );
+
+  return wrapper.clientWidth;
 }
 
 /** Returns the current height of the document. */
 export function getHeight(): number {
-  return document.documentElement.clientHeight;
+  const wrapper = HTMLUtilities.findRequiredElement(
+    document,
+    "#iframe-wrapper"
+  );
+
+  return wrapper.clientHeight;
 }
 
 /** Returns true if the browser is zoomed in with pinch-to-zoom on mobile. */

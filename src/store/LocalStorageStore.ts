@@ -60,8 +60,8 @@ export default class LocalStorageStore implements Store {
     return this.prefix + "-" + key;
   }
 
-  public async get(key: string): Promise<any | null> {
-    let value: string | null = null;
+  public get(key: string): any | null {
+    let value: string | null;
     if (!this.fallbackStore) {
       if (this.useLocalStorage) {
         value = window.localStorage.getItem(this.getLocalStorageKey(key));
@@ -69,12 +69,12 @@ export default class LocalStorageStore implements Store {
         value = window.sessionStorage.getItem(this.getLocalStorageKey(key));
       }
     } else {
-      value = await this.fallbackStore.get(key);
+      value = this.fallbackStore.get(key);
     }
-    return new Promise<string | null>((resolve) => resolve(value));
+    return value;
   }
 
-  public async set(key: string, value: any): Promise<void> {
+  public set(key: string, value: any) {
     if (!this.fallbackStore) {
       if (this.useLocalStorage) {
         window.localStorage.setItem(this.getLocalStorageKey(key), value);
@@ -82,12 +82,11 @@ export default class LocalStorageStore implements Store {
         window.sessionStorage.setItem(this.getLocalStorageKey(key), value);
       }
     } else {
-      await this.fallbackStore.set(key, value);
+      this.fallbackStore.set(key, value);
     }
-    return new Promise<void>((resolve) => resolve());
   }
 
-  public async remove(key: string): Promise<void> {
+  public remove(key: string) {
     if (!this.fallbackStore) {
       if (this.useLocalStorage) {
         window.localStorage.removeItem(this.getLocalStorageKey(key));
@@ -95,8 +94,7 @@ export default class LocalStorageStore implements Store {
         window.sessionStorage.removeItem(this.getLocalStorageKey(key));
       }
     } else {
-      await this.fallbackStore.remove(key);
+      this.fallbackStore.remove(key);
     }
-    return new Promise<void>((resolve) => resolve());
   }
 }

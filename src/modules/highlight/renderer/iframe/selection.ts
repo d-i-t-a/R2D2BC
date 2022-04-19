@@ -34,7 +34,7 @@ export function clearCurrentSelection(win: Window) {
 
 export function getCurrentSelectionInfo(
   win: Window,
-  getCssSelector: (element: Element) => string
+  getCssSelector: (element: Element) => string | undefined
 ): ISelectionInfo | undefined {
   const selection = win ? win.getSelection() : null;
   if (!selection) {
@@ -171,7 +171,7 @@ export function createOrderedRange(
 
 export function convertRange(
   range: Range,
-  getCssSelector: (element: Element) => string
+  getCssSelector: (element: Element) => string | undefined
 ): IRangeInfo | undefined {
   // -----------------
   const startIsElement = range.startContainer.nodeType === Node.ELEMENT_NODE;
@@ -245,15 +245,19 @@ export function convertRange(
     }
   }
 
-  return {
-    endContainerChildTextNodeIndex,
-    endContainerElementCssSelector,
-    endOffset: range.endOffset,
+  if (endContainerElementCssSelector && startContainerElementCssSelector) {
+    return {
+      endContainerChildTextNodeIndex,
+      endContainerElementCssSelector,
+      endOffset: range.endOffset,
 
-    startContainerChildTextNodeIndex,
-    startContainerElementCssSelector,
-    startOffset: range.startOffset,
-  };
+      startContainerChildTextNodeIndex,
+      startContainerElementCssSelector,
+      startOffset: range.startOffset,
+    };
+  } else {
+    return undefined;
+  }
 }
 
 export function convertRangeInfo(

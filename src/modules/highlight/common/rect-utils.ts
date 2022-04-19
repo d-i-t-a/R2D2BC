@@ -353,7 +353,7 @@ export function replaceOverlappingRects(rects: IRect[]): IRect[] {
         }
 
         if (IS_DEV) {
-          const toCheck = [];
+          const toCheck: IRect[] = [];
           toCheck.push(toPreserve);
           Array.prototype.push.apply(toCheck, toAdd);
           checkOverlaps(toCheck);

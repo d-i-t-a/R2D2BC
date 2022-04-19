@@ -76,14 +76,14 @@ export class LayerSettings implements ILayerSettings {
       array.push(property);
       await this.store.set(this.LAYERSETTINGS, JSON.stringify(array));
     } else {
-      let array = [];
+      let array: UserProperty[] = [];
       array.push(property);
       await this.store.set(this.LAYERSETTINGS, JSON.stringify(array));
     }
     return new Promise((resolve) => resolve(property));
   }
 
-  async getProperty(name: string): Promise<UserProperty> {
+  async getProperty(name: string): Promise<UserProperty | null> {
     let array = await this.store.get(this.LAYERSETTINGS);
     if (array) {
       let properties = JSON.parse(array) as Array<UserProperty>;

@@ -19,8 +19,8 @@
 
 import { IS_DEV } from "../../utils";
 import { Publication } from "../../model/Publication";
-import IFrameNavigator from "../../navigator/IFrameNavigator";
-import ReaderModule from "../ReaderModule";
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { ReaderModule } from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import { Locator } from "../../model/Locator";
@@ -31,7 +31,7 @@ export interface TimelineModuleConfig {
   delegate: IFrameNavigator;
 }
 
-export default class TimelineModule implements ReaderModule {
+export class TimelineModule implements ReaderModule {
   private publication: Publication;
   private delegate: IFrameNavigator;
   private timelineContainer: HTMLDivElement;
@@ -60,18 +60,17 @@ export default class TimelineModule implements ReaderModule {
     this.timelineContainer = HTMLUtilities.findElement(
       document,
       "#container-view-timeline"
-    ) as HTMLDivElement;
-    if (this.delegate.rights?.enableMaterial) {
+    );
+    if (this.delegate.rights.enableMaterial) {
       this.positionSlider = HTMLUtilities.findElement(
         document,
         "#positionSlider"
-      ) as HTMLInputElement;
+      );
     }
-    if (
-      !(this.delegate.rights?.autoGeneratePositions ?? true) &&
-      !this.publication.positions
-    ) {
-      this.positionSlider.style.display = "none";
+    if (this.publication.positions) {
+      if (this.positionSlider) this.positionSlider.style.display = "block";
+    } else {
+      if (this.positionSlider) this.positionSlider.style.display = "none";
     }
   }
 
@@ -81,31 +80,38 @@ export default class TimelineModule implements ReaderModule {
 
       let locator = this.delegate.currentLocator();
       if (
-        this.delegate.rights?.enableMaterial &&
-        (((this.delegate.rights?.autoGeneratePositions ?? true) &&
+        this.delegate.rights.enableMaterial &&
+        ((this.delegate.rights.autoGeneratePositions &&
           this.publication.positions) ||
           this.publication.positions)
       ) {
-        this.positionSlider.value = locator.locations.position.toString();
-        this.positionSlider.max = (
-          locator.locations.totalRemainingPositions + locator.locations.position
-        ).toString();
+        if (this.positionSlider)
+          this.positionSlider.value = (
+            locator.locations.position ?? 0
+          ).toString();
+        if (this.positionSlider)
+          this.positionSlider.max = (
+            (locator.locations.totalRemainingPositions ?? 0) +
+            (locator.locations.position ?? 0)
+          ).toString();
       }
 
-      this.timelineContainer.innerHTML = "";
-      this.publication.readingOrder.forEach((link) => {
+      if (this.timelineContainer) {
+        this.timelineContainer.innerHTML = "";
+      }
+      this.publication.readingOrder?.forEach((link) => {
         const linkHref = this.publication.getAbsoluteHref(link.Href);
         const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
         const tocHref =
-          tocItemAbs.Href.indexOf("#") !== -1
-            ? tocItemAbs.Href.slice(0, tocItemAbs.Href.indexOf("#"))
+          tocItemAbs?.Href.indexOf("#") !== -1
+            ? tocItemAbs?.Href.slice(0, tocItemAbs?.Href.indexOf("#"))
             : tocItemAbs.Href;
-        const tocHrefAbs = this.publication.getAbsoluteHref(tocHref);
+        const tocHrefAbs = this.publication.getAbsoluteHref(tocHref ?? "");
 
         var chapterHeight;
         if (
           this.publication.positions &&
-          this.delegate.view.layout !== "fixed"
+          this.delegate.view?.layout !== "fixed"
         ) {
           if ((link as Link).contentWeight) {
             chapterHeight = (link as Link).contentWeight;
@@ -113,7 +119,7 @@ export default class TimelineModule implements ReaderModule {
             chapterHeight = 1;
           }
         } else {
-          chapterHeight = 100 / this.publication.readingOrder.length;
+          chapterHeight = 100 / (this.publication.readingOrder?.length ?? 0);
         }
 
         var chapter = document.createElement("div");
@@ -121,7 +127,7 @@ export default class TimelineModule implements ReaderModule {
         chapter.style.width = "100%";
         chapter.className = "chapter";
 
-        if (tocItemAbs.Title !== undefined) {
+        if (tocItemAbs?.Title !== undefined) {
           var tooltip = document.createElement("span");
           tooltip.innerHTML = tocItemAbs.Title;
           tooltip.className = "chapter-tooltip";
@@ -134,7 +140,7 @@ export default class TimelineModule implements ReaderModule {
           var position;
           if (
             this.publication.positions ||
-            ((this.delegate.rights?.autoGeneratePositions ?? true) &&
+            (this.delegate.rights.autoGeneratePositions &&
               this.publication.positions)
           ) {
             position = {
@@ -167,7 +173,9 @@ export default class TimelineModule implements ReaderModule {
         // append notes indicator
         // append highlights indicator
 
-        this.timelineContainer.appendChild(chapter);
+        if (this.timelineContainer) {
+          this.timelineContainer.appendChild(chapter);
+        }
       });
 
       resolve();

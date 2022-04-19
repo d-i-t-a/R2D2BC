@@ -17,9 +17,10 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import IFrameNavigator from "../navigator/IFrameNavigator";
-import Popup from "../modules/search/Popup";
-import { IS_DEV } from "./index";
+import { IS_DEV } from "../utils";
+import { Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
+import { IFrameNavigator } from "../navigator/IFrameNavigator";
+import { Popup } from "../modules/search/Popup";
 
 export function addEventListenerOptional(
   element: any,
@@ -53,6 +54,17 @@ export default class EventHandler {
 
   public setupEvents(element: HTMLElement | Document | null) {
     if (element !== null) {
+      element.addEventListener(
+        "dblclick",
+        async (event: TouchEvent) => {
+          let htmlElement = event.target as HTMLElement;
+          if (event.target && htmlElement.tagName.toLowerCase() === "img") {
+            await this.popup.showPopover(htmlElement, event);
+          }
+        },
+        true
+      );
+
       // Most click handling is done in the touchend and mouseup event handlers,
       // but if there's a click on an external link we need to cancel the click
       // event to prevent it from opening in the iframe.
@@ -79,6 +91,42 @@ export default class EventHandler {
     return null;
   };
 
+  private linkInPublication = (readingOrder: Link[], clickedHref: string) =>
+    readingOrder.some((link: Link) => {
+      return (
+        !link.Rel?.includes("external") &&
+        this.navigator.publication
+          .getRelativeHref(clickedHref)
+          .includes(link.Href)
+      );
+    });
+
+  /**
+   *
+   * This function checks the user clicked link inside the iframe
+   * against the readingOrder list, it is an internal link if found.
+   *
+   */
+  private isReadingOrderInternal = (
+    clickedLink: HTMLAnchorElement
+  ): boolean => {
+    if (IS_DEV) console.log("clickedLink: ", clickedLink);
+    const isEpubInternal = this.linkInPublication(
+      this.navigator.publication.readingOrder,
+      clickedLink.href
+    );
+    return isEpubInternal;
+  };
+
+  private isResourceInternal = (clickedLink: HTMLAnchorElement): boolean => {
+    if (IS_DEV) console.log("clickedLink: ", clickedLink);
+    const isEpubInternal = this.linkInPublication(
+      this.navigator.publication.resources,
+      clickedLink.href
+    );
+    return isEpubInternal;
+  };
+
   private handleLinks = async (
     event: MouseEvent | TouchEvent
   ): Promise<void> => {
@@ -93,15 +141,15 @@ export default class EventHandler {
         window.location.hostname === link.hostname;
 
       // If epub is hosted, rather than streamed, links to a resource inside the same epub should not be opened externally.
-      const manifestUrl = this.navigator.publication.manifestUrl;
+      const isEpubInternal = this.isReadingOrderInternal(link);
 
-      const isEpubInternal =
-        manifestUrl.protocol === link.protocol &&
-        manifestUrl.port === link.port &&
-        manifestUrl.hostname === link.hostname;
+      const isResourceInternal = this.isResourceInternal(link);
+      if (!isResourceInternal) {
+        await this.popup.hidePopover();
+      }
 
       const isInternal = link.href.indexOf("#");
-      if (!isSameOrigin && !isEpubInternal) {
+      if (!isSameOrigin && !isEpubInternal && !isResourceInternal) {
         window.open(link.href, "_blank");
         event.preventDefault();
         event.stopPropagation();
@@ -113,6 +161,8 @@ export default class EventHandler {
             const attribute = link.getAttribute("epub:type") === "noteref";
             if (attribute) {
               await this.popup.handleFootnote(link, event);
+            } else if (isResourceInternal && !isEpubInternal) {
+              await this.popup.showPopover(link, event);
             } else {
               this.onInternalLink(event);
             }

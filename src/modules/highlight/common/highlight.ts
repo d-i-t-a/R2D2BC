@@ -66,6 +66,7 @@ export enum HighlightType {
   ReadAloud = 2,
   PageBreak = 3,
   Definition = 4,
+  LineFocus = 5,
 }
 
 export interface IHighlight {
@@ -81,7 +82,7 @@ export interface IHighlight {
   style?: IStyle | undefined;
 
   position?: number;
-  note?: string | undefined;
+  note?: string | null | undefined;
   definition?: Definition | undefined;
 
   type: HighlightType;

@@ -90,7 +90,7 @@ import {
   DefinitionsModule,
   DefinitionsModuleConfig,
 } from "../modules/search/DefinitionsModule";
-import EventEmitter from "events";
+import EventEmitter from "eventemitter3";
 import LineFocusModule, {
   LineFocusModuleConfig,
 } from "../modules/linefocus/LineFocusModule";

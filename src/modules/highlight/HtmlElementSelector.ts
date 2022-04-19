@@ -41,7 +41,7 @@ export const generateSelector = (
   relativeTo: Node
 ): HtmlElementSelector => {
   let currentNode = node as HTMLElement;
-  const tagNames = [];
+  const tagNames: String[] = [];
   let textNodeIndex = 0;
   if (node.parentNode) {
     textNodeIndex = childNodeIndexOf(node.parentNode, node);

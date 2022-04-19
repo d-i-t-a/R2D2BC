@@ -30,6 +30,16 @@ const iconTemplate = (
   <title id="${id}">${title}</title>
   ${path}
 </svg>`;
+const iconTemplateWithViewBox = (
+  id: string,
+  title: string,
+  path: string,
+  viewBox: string,
+  classAttr: string = `icon`
+) => `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH_ATTR}" height="${WIDTH_ATTR}" viewBox="${viewBox}" preserveAspectRatio="xMidYMid meet" role="img" class="${classAttr}" aria-labelledBy="${id}">
+  <title id="${id}">${title}</title>
+  ${path}
+</svg>`;
 export const iconTemplateColored = (
   id: string,
   title: string,
@@ -55,10 +65,11 @@ export const icons = {
     `<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>`,
     `icon active-icon`
   ),
-  loading: iconTemplate(
+  loading: iconTemplateWithViewBox(
     `loading-icon`,
     `Loading`,
-    `<path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z"/>`
+    `<path fill="#BBBBBB" d="M145,241.6c-53.3,0-96.6-43.2-96.6-96.6c0-53.3,43.2-96.6,96.6-96.6c53.3,0,96.6,43.2,96.6,96.6 c0,26.7-10.8,50.9-28.3,68.3l7.6,7.6c19.4-19.4,31.5-46.3,31.5-75.9c0-59.3-48-107.3-107.3-107.3S37.7,85.7,37.7,145 c0,59.3,48,107.3,107.3,107.3V241.6z"/>`,
+    "0 0 290 290"
   ),
   next: iconTemplate(
     `next-icon`,

@@ -30,7 +30,6 @@
     <!-- R2 Reader CSS -->
     <link rel="stylesheet" href="reader.css" />
 
-    <script> var exports = {}; </script>
     <script src="reader.js"></script>
 
     <!-- Material Icons-->
@@ -51,8 +50,8 @@
                 <nav class="navbar">
                     <div class="nav-wrapper"><span class="brand-logo  hide-on-med-and-down " id="book-title"></span>
                         <ul id="nav-mobile-right" class="right">
-                            <li><a style="padding-left: 7px; padding-right: 7px;" onclick="javascript:D2Reader.previousPage()"><i class="material-icons show-on-large">arrow_back_ios</i></a></li>
-                            <li><a style="padding-left: 7px; padding-right: 7px;" onclick="javascript:D2Reader.nextPage()"><i class="material-icons show-on-large">arrow_forward_ios</i></a></li>
+                            <li><a style="padding-left: 7px; padding-right: 7px;" onclick="d2reader.previousPage()"><i class="material-icons show-on-large">arrow_back_ios</i></a></li>
+                            <li><a style="padding-left: 7px; padding-right: 7px;" onclick="d2reader.nextPage()"><i class="material-icons show-on-large">arrow_forward_ios</i></a></li>
                             <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
                             <li><a data-target="container-view-settings-custom" class="dropdown-trigger " id="menu-button-settings" onclick="reload()"><i class="material-icons">settings</i></a></li>
                             <li><a href="#!" data-target="sidenav-left" class="sidenav-trigger left"><i class="material-icons  show-on-large">menu</i></a></li>
@@ -85,14 +84,14 @@
     line-height: 12pt;height: 0px;">Fontsize</label>
                     <input class="range-slider__range_settings" type="range" min="100" max="300" step="25"
                            value="100" id="fontSize" name="fontSize"
-                           onchange="D2Reader.applyUserSettings({ fontSize: this.value })"/>
+                           onchange="d2reader.applyUserSettings({ fontSize: this.value })"/>
                 </div>
                 <div>
                     <label style="display: block;
     text-align: center;
     line-height: 12pt;height: 0px;">Font</label>
                     <center>
-                        <select style="width: 80%;" onchange="D2Reader.applyUserSettings({fontFamily:value});reload();"
+                        <select style="width: 80%;" onchange="d2reader.applyUserSettings({fontFamily:value});reload();"
                                 id="fontFamily">
                             <option value="Original">Publisher</option>
                             <option value="serif">Serif</option>
@@ -111,7 +110,7 @@
     border-width: 1px;
     border-style: solid;
     color: black;
-    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'day'})">DAY
+    font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({appearance:'day'})">DAY
                         </button><button style="width: 30%;
     background-color: wheat;
     height: 50px;
@@ -120,7 +119,7 @@
     border-width: 1px;
     border-style: solid;
     color: black;
-    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'sepia'})">SEPIA
+    font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({appearance:'sepia'})">SEPIA
                     </button><button style="width: 30%;
     background-color: black;
     height: 50px;
@@ -129,7 +128,7 @@
     border-width: 1px;
     border-style: solid;
     color: white;
-    font-size: 9pt;text-transform: uppercase" onclick="D2Reader.applyUserSettings({appearance:'night'})">NIGHT
+    font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({appearance:'night'})">NIGHT
                     </button>
                     </center>
                 </div>
@@ -147,7 +146,7 @@ height: 50px;
     border-style: solid;
     color: black;
     font-size: 9pt; text-transform: uppercase"
-                                onclick="D2Reader.applyUserSettings({verticalScroll:true});setScroll('true')">Scroll
+                                onclick="d2reader.applyUserSettings({verticalScroll:true});setScroll('true')">Scroll
                         </button><button style="width: 100px;
         background-color: white;
 height: 50px;
@@ -157,7 +156,7 @@ height: 50px;
     border-style: solid;
     color: black;
     font-size: 9pt;text-transform: uppercase"
-                                         onclick="D2Reader.applyUserSettings({verticalScroll:false});setScroll('false')">
+                                         onclick="d2reader.applyUserSettings({verticalScroll:false});setScroll('false')">
                         Paginated
                     </button>
                     </center>
@@ -174,15 +173,15 @@ height: 50px;
     border-style: solid;
     color: black;
     font-size: 9pt; text-transform: uppercase"
-                                onclick="D2Reader.resetUserSettings();">Reset
+                                onclick="d2reader.resetUserSettings();">Reset
                         </button>
                     </center>
                 </div>
             </div>
         </header>
 
-        <div id="D2Reader-Container" style="width: 100%; height: 100%; position: relative;">
-            <main style="overflow: hidden" tabindex=-1 id="iframe-wrapper">
+        <div id="D2Reader-Container" style="border: solid 5px rebeccapurple;">
+            <main style="height: calc(100vh - 75px)" tabindex=-1 id="iframe-wrapper">
                 <div id="reader-loading" class="loading"></div>
                 <div id="reader-error" class="error"></div>
                 <div id="reader-info-top" class="info top">
@@ -194,7 +193,7 @@ height: 50px;
                         <span class="chapter-title"></span>
                     </div>
                     <div class="scrubber">
-                        <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="javascript:D2Reader.goToPosition( this.value )" />
+                        <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="d2reader.goToPosition( this.value )" />
                     </div>
                     <div>
                         <span class="remaining-positions"></span>
@@ -252,12 +251,9 @@ height: 50px;
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
-            { type: 'style', url: '/viewer/injectables/pagebreak/pagebreak.css', r2after: true },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
-            { type: 'script', url: '/viewer/injectables/footnotes/footnotes.js' },
-            { type: 'style', url: '/viewer/injectables/footnotes/footnotes.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
         let injectablesFixed = [
@@ -284,6 +280,7 @@ height: 50px;
             }
         ]
 
+        let d2reader;
         D2Reader.load({
             upLinkUrl: upLink,
             url: new URL(urlParams['url']),
@@ -377,7 +374,7 @@ height: 50px;
                 },
                 resourceReady: function () {
                     console.log("resourceReady")
-                    // D2Reader.applyUserSettings({fontFamily: 'opendyslexic'})
+                    // d2reader.applyUserSettings({fontFamily: 'opendyslexic'})
                 },
                 resourceAtStart:function () {
                     console.log("resourceAtStart")
@@ -410,9 +407,8 @@ height: 50px;
             userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {
-            console.log("D2Reader loaded ", instance);
-            // console.log("instance.bookmarkModule ", instance.bookmarkModule)
-            // console.log("instance.annotationModule ", instance.annotationModule)
+            console.log("d2Reader loaded ", instance);
+            d2reader = instance;
         }).catch(error => {
             console.error("error.message ", error.message);
             document.getElementById("reader-error").innerText = error.message
@@ -463,22 +459,13 @@ height: 50px;
             }
         }
         function reload() {
-            D2Reader.currentSettings().then(
-                result => {
-                    console.log(JSON.stringify(result))
-                    document.getElementById("fontSize").value = result['fontSize'];
-                    document.getElementById("fontFamily").value = result['fontFamily'];
+            let result = d2reader.currentSettings;
 
-                    let buttonsScroll = document.getElementById('scrollMode').getElementsByTagName('button');
-                    let scrollMode = result['verticalScroll']
-                    if (scrollMode === true) {
-                        buttonsScroll[0].style.backgroundColor = '#d7dcdf'
-                    } else if (scrollMode === false) {
-                        buttonsScroll[1].style.backgroundColor = '#d7dcdf'
-                    }
+            document.getElementById("fontSize").value = result['fontSize'];
+            document.getElementById("fontFamily").value = result['fontFamily'];
 
-                })
-
+            let scrollMode = result['verticalScroll']
+            setScroll(String(scrollMode).toLowerCase())
         }
     </script>
 

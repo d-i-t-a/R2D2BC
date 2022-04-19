@@ -46,7 +46,7 @@ const cssPath = (node: Node, optimized: boolean): string => {
     return "";
   }
 
-  const steps = [];
+  const steps: String[] = [];
   let contextNode = node;
   while (contextNode) {
     const step = _cssPathStep(contextNode, !!optimized, contextNode === node);

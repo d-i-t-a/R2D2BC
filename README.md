@@ -70,5 +70,10 @@ npm run build && npm run examples
 ```
 Then visit `http://localhost:4444/`. Follow the prompts to view example apps.
 
+### Migration Guides
+- [Version 1.x -> 2.x](MIGRATION.md)
+### Change Log
+- [2.0.x](CHANGELOG.md)
+
 ## Supporters
 [<img src="https://dita.digital/jetbrains.png" width="60">](https://www.jetbrains.com/?from=R2D2BC)

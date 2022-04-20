@@ -46,6 +46,28 @@ Here is the original proposal, initiated by Aferdita Muriqi to the
 
 Subsequent development of R2D2BC has been supported by [DITA](https://github.com/d-i-t-a), [Bokbasen](https://www.bokbasen.no/), and [CAST](http://www.cast.org) - which explains the D2, B, and C in the name.
 
+# Features & Functionalities
+- ePub Reflowable + Fixed Layout
+- Reader Settings
+- Configurable Modules with Callbacks
+- Injectable Fonts, CSS, Javascript
+- Text Selection with Injectable Context Menu
+- Bookmarks
+- Highlights
+- Annotations
+- TTS - Text to speech / Read Aloud
+- Media Overlays - Read Along
+- Search
+- Content Protection
+- Definitions
+- Popup Footnotes
+- Page Breaks - Page Numbers in margin
+- Sample Read
+- Timeline
+- Layers
+- Line Focus (Beta Feature)
+- Popups and Popovers
+
 # Extensions and Implementations
 
 The R2D2BC reader has been used in:

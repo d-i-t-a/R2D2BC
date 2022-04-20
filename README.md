@@ -53,7 +53,8 @@ The R2D2BC reader has been used in:
 - Bokbasen's [Allbok.no](https://www.allbok.no) 
 - Allvir's [Allvit.no](https://www.allvit.no) Reading Platform
 - The UNODC [Fieldguides](https://fieldguides.github.io/library)
-- The DITA Gateway [D2G](https://d2g.dita.digital)
+- The DITA Gateway [D2G](https://d2g.dita.digital) with several open collections
+- [Ekitabu's](https://d2g.dita.digital) Web Reader Implementations through Dita Gateway
 - [NYPL's](https://www.nypl.org/) Web Reader Implementations
 - Bibliotheca's [CloudLibrary](https://www.yourcloudlibrary.com) as Sample Reader and Full ePub Reader
 - Above the Treeline's [Edeweiss+](https://www.edelweiss.plus) 

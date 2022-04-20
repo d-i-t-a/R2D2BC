@@ -50,9 +50,17 @@ Subsequent development of R2D2BC has been supported by [DITA](https://github.com
 
 The R2D2BC reader has been used in:
 - The [Clusive](https://github.com/cast-org/clusive) learning environment
-- Bokbasen's [Allbok.no](https://www.allbok.no) and [Allvit.no](https://www.allvit.no)
-- The UNODC [Fieldguides](https://fieldguides.github.io/library/)
+- Bokbasen's [Allbok.no](https://www.allbok.no) 
+- Allvir's [Allvit.no](https://www.allvit.no) Reading Platform
+- The UNODC [Fieldguides](https://fieldguides.github.io/library)
 - The DITA Gateway [D2G](https://d2g.dita.digital)
+- [NYPL's](https://www.nypl.org/) Web Reader Implementations
+- Bibliotheca's [CloudLibrary](https://www.yourcloudlibrary.com) as Sample Reader and Full ePub Reader
+- Above the Treeline's [Edeweiss+](https://www.edelweiss.plus) 
+- [Bluefire's](https://www.bluefirereader.com) Web Reader Implementations
+- In a Project in the Meta Verse (to be named once public)
+- and a few more... :) 
+
 
 # Contributing
 Contributions are always welcomed! Please see [CONTRIBUTING](CONTRIBUTING.md) for detailed guidelines.

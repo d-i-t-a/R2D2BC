@@ -34,6 +34,7 @@
     "outDir": "lib/",
     "declaration": true,
     "preserveConstEnums": true,
+    "skipLibCheck": true,
     "strictNullChecks": false,
     "target": "ES6",
     "sourceMap": true

@@ -316,52 +316,42 @@ export class SearchModule implements ReaderModule {
     }
     let i = 0;
     if (tocItem) {
-      let href = this.publication.getAbsoluteHref(tocItem.Href);
       let doc = this.delegate.iframes[0].contentDocument;
       if (doc) {
-        await fetch(href)
-          .then((r) => r.text())
-          .then(async (_data) => {
-            // ({ data, tocItem });
-            // TODO: this seems to break with obfuscation
-            // var parser = new DOMParser();
-            // var doc = parser.parseFromString(data, "text/html");
-            if (tocItem) {
-              searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
-                (result) => {
-                  // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
-                  result.forEach((searchItem) => {
-                    let selectionInfo = {
-                      rangeInfo: searchItem.rangeInfo,
-                    };
-                    setTimeout(() => {
-                      let highlight;
-                      if (i === index) {
-                        highlight = this.createSearchHighlight(
-                          selectionInfo,
-                          this.properties?.current!!
-                        );
-                        this.jumpToMark(index);
-                      } else {
-                        highlight = this.createSearchHighlight(
-                          selectionInfo,
-                          this.properties?.color!!
-                        );
-                      }
-                      searchItem.highlight = highlight;
-                      localSearchResultChapter.push(searchItem);
-                      this.currentChapterSearchResult.push(searchItem);
-                      this.currentSearchHighlights.push(highlight);
-                      i++;
-                    }, 500);
-                  });
-                  setTimeout(() => {
-                    callback(localSearchResultChapter);
-                  }, 500);
-                }
-              );
+        if (tocItem) {
+          searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
+            (result) => {
+              result.forEach((searchItem) => {
+                let selectionInfo = {
+                  rangeInfo: searchItem.rangeInfo,
+                };
+                setTimeout(() => {
+                  let highlight;
+                  if (i === index) {
+                    highlight = this.createSearchHighlight(
+                      selectionInfo,
+                      this.properties?.current!!
+                    );
+                    this.jumpToMark(index);
+                  } else {
+                    highlight = this.createSearchHighlight(
+                      selectionInfo,
+                      this.properties?.color!!
+                    );
+                  }
+                  searchItem.highlight = highlight;
+                  localSearchResultChapter.push(searchItem);
+                  this.currentChapterSearchResult.push(searchItem);
+                  this.currentSearchHighlights.push(highlight);
+                  i++;
+                }, 500);
+              });
+              setTimeout(() => {
+                callback(localSearchResultChapter);
+              }, 500);
             }
-          });
+          );
+        }
       }
     }
   }

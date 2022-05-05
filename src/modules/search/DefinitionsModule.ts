@@ -130,51 +130,46 @@ export class DefinitionsModule implements ReaderModule {
     let localSearchDefinitions: any = [];
 
     if (tocItem) {
-      const href = this.publication.getAbsoluteHref(tocItem.Href);
-      await fetch(href)
-        .then((r) => r.text())
-        .then(async (_data) => {
-          for (const termKey of item.terms) {
-            const tindex = item.terms.indexOf(termKey);
-            if (tocItem) {
-              await searchDocDomSeek(
-                termKey,
-                this.delegate.iframes[0].contentDocument,
-                tocItem.Href,
-                tocItem.Title,
-                this.delegate.definitionsModule?.properties.fullWordSearch
-              ).then((result) => {
-                let i: number | undefined = undefined;
-                if (item.result == 1) {
-                  i = 0;
-                } else if (item.result == 2) {
-                  i = Math.floor(Math.random() * result.length - 1) + 1;
-                }
-                result.forEach((searchItem, index) => {
-                  if (i === undefined || i === index) {
-                    const selectionInfo = {
-                      rangeInfo: searchItem.rangeInfo,
-                    };
-                    const highlight = this.createDefinitionHighlight(
-                      selectionInfo,
-                      item
-                    );
-                    searchItem.highlight = highlight;
-                    localSearchDefinitions.push(
-                      lodash.omit(highlight, "definition")
-                    );
-                    this.currentChapterPopupResult.push(searchItem);
-                    this.currentPopupHighlights.push(highlight);
-                  }
-                });
-
-                if (tindex === item.terms.length - 1) {
-                  callback(localSearchDefinitions);
-                }
-              });
+      for (const termKey of item.terms) {
+        const tindex = item.terms.indexOf(termKey);
+        if (tocItem) {
+          await searchDocDomSeek(
+            termKey,
+            this.delegate.iframes[0].contentDocument,
+            tocItem.Href,
+            tocItem.Title,
+            this.delegate.definitionsModule?.properties.fullWordSearch
+          ).then((result) => {
+            let i: number | undefined = undefined;
+            if (item.result == 1) {
+              i = 0;
+            } else if (item.result == 2) {
+              i = Math.floor(Math.random() * result.length - 1) + 1;
             }
-          }
-        });
+            result.forEach((searchItem, index) => {
+              if (i === undefined || i === index) {
+                const selectionInfo = {
+                  rangeInfo: searchItem.rangeInfo,
+                };
+                const highlight = this.createDefinitionHighlight(
+                  selectionInfo,
+                  item
+                );
+                searchItem.highlight = highlight;
+                localSearchDefinitions.push(
+                  lodash.omit(highlight, "definition")
+                );
+                this.currentChapterPopupResult.push(searchItem);
+                this.currentPopupHighlights.push(highlight);
+              }
+            });
+
+            if (tindex === item.terms.length - 1) {
+              callback(localSearchDefinitions);
+            }
+          });
+        }
+      }
     }
   }
 

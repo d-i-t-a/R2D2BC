@@ -175,6 +175,7 @@ export interface ReaderRights {
   enableMediaOverlays: boolean;
   enablePageBreaks: boolean;
   enableLineFocus: boolean;
+  customKeyboardEvents: boolean;
 }
 
 export interface ReaderUI {
@@ -303,6 +304,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     enableSearch: false,
     enableTTS: false,
     enableTimeline: false,
+    customKeyboardEvents: false,
   };
   tts?: TTSModuleConfig;
   injectables?: Array<Injectable>;
@@ -360,8 +362,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.view.attributes = attributes;
     this.view.delegate = this;
     this.eventHandler = new EventHandler(this);
-    this.touchEventHandler = new TouchEventHandler();
-    this.keyboardEventHandler = new KeyboardEventHandler();
+    this.touchEventHandler = new TouchEventHandler(this);
+    this.keyboardEventHandler = new KeyboardEventHandler(this);
     this.upLinkConfig = upLinkConfig;
     this.initialLastReadingPosition = initialLastReadingPosition;
     this.publication = publication;
@@ -380,6 +382,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       enableSearch: false,
       enableTTS: false,
       enableTimeline: false,
+      customKeyboardEvents: false,
     };
     this.tts = tts;
     this.injectables = injectables;
@@ -1574,7 +1577,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
         this.touchEventHandler.setupEvents(this.errorMessage);
         if (!this.didInitKeyboardEventHandler) {
-          this.keyboardEventHandler.delegate = this;
           this.keyboardEventHandler.keydown(document);
           this.didInitKeyboardEventHandler = true;
         }

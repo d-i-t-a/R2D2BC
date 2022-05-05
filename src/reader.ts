@@ -106,6 +106,7 @@ export default class D2Reader {
       enableSearch: false,
       enableTTS: false,
       enableTimeline: false,
+      customKeyboardEvents: false,
     };
 
     // Enforces supported browsers

@@ -268,8 +268,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   private landmarksSection: HTMLDivElement;
   private pageListView: HTMLDivElement;
 
-  private bookmarksControl: HTMLButtonElement;
-  private bookmarksView: HTMLDivElement;
   private links: HTMLUListElement;
   private linksTopLeft: HTMLUListElement;
   private linksBottom: HTMLUListElement;
@@ -441,11 +439,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       IFrameNavigator.goBack.bind(this)
     );
 
-    removeEventListenerOptional(
-      this.bookmarksControl,
-      "keydown",
-      this.hideBookmarksOnEscape.bind(this)
-    );
     removeEventListenerOptional(
       this.espandMenuIcon,
       "click",
@@ -941,12 +934,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     );
 
     addEventListenerOptional(
-      this.bookmarksControl,
-      "keydown",
-      this.hideBookmarksOnEscape.bind(this)
-    );
-
-    addEventListenerOptional(
       this.espandMenuIcon,
       "click",
       this.handleEditClick.bind(this)
@@ -956,41 +943,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     for (const iframe of this.iframes) {
       addEventListenerOptional(iframe, "resize", this.onResize);
     }
-  }
-
-  private setupModalFocusTrap(
-    modal: HTMLDivElement,
-    closeButton: HTMLButtonElement,
-    lastFocusableElement: HTMLButtonElement | HTMLAnchorElement
-  ): void {
-    // Trap keyboard focus in a modal dialog when it's displayed.
-    const TAB_KEY = 9;
-
-    // Going backwards from the close button sends you to the last focusable element.
-    closeButton.addEventListener("keydown", (event: KeyboardEvent) => {
-      if (IFrameNavigator.isDisplayed(modal)) {
-        const tab = event.keyCode === TAB_KEY;
-        const shift = event.shiftKey;
-        if (tab && shift) {
-          lastFocusableElement.focus();
-          event.preventDefault();
-          event.stopPropagation();
-        }
-      }
-    });
-
-    // Going forward from the last focusable element sends you to the close button.
-    lastFocusableElement.addEventListener("keydown", (event: KeyboardEvent) => {
-      if (IFrameNavigator.isDisplayed(modal)) {
-        const tab = event.keyCode === TAB_KEY;
-        const shift = event.shiftKey;
-        if (tab && !shift) {
-          closeButton.focus();
-          event.preventDefault();
-          event.stopPropagation();
-        }
-      }
-    });
   }
 
   isScrolling: boolean;
@@ -1233,23 +1185,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       const createSubmenu = (
         parentElement: Element,
         links: Array<Link>,
-        control?: HTMLButtonElement,
         ol: boolean = false
       ) => {
-        let menuControl: HTMLButtonElement | undefined;
-        let mainElement: HTMLDivElement | undefined;
-        if (control) {
-          menuControl = control;
-          if (parentElement instanceof HTMLDivElement) {
-            mainElement = parentElement;
-          }
-        }
         var listElement: HTMLUListElement = document.createElement("ul");
         if (ol) {
           listElement = document.createElement("ol");
         }
         listElement.className = "sidenav-toc";
-        let lastLink: HTMLAnchorElement | undefined = undefined;
         for (const link of links) {
           const listItemElement: HTMLLIElement = document.createElement("li");
           const linkElement: HTMLAnchorElement = document.createElement("a");
@@ -1268,16 +1210,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             listItemElement.appendChild(spanElement);
           }
           if (link.Children && link.Children.length > 0) {
-            createSubmenu(listItemElement, link.Children, undefined, true);
+            createSubmenu(listItemElement, link.Children, true);
           }
 
           listElement.appendChild(listItemElement);
-          lastLink = linkElement;
-        }
-
-        // Trap keyboard focus inside the TOC while it's open.
-        if (lastLink && menuControl && mainElement) {
-          this.setupModalFocusTrap(mainElement, menuControl, lastLink);
         }
 
         addEventListenerOptional(listElement, "click", (event: Event) => {
@@ -1294,10 +1230,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               // but don't navigate.
               this.hideView();
             } else {
-              // Set focus back to the contents toggle button so screen readers
-              // don't get stuck on a hidden link.
-              menuControl?.focus();
-
               let locations: Locations = {
                 progression: 0,
               };
@@ -2231,122 +2163,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     window.history.back();
   }
 
-  private static isDisplayed(element: HTMLDivElement | HTMLUListElement) {
-    return element ? element.className.indexOf(" active") !== -1 : false;
-  }
-
-  private static showElement(
-    element: HTMLDivElement | HTMLUListElement,
-    control?: HTMLAnchorElement | HTMLButtonElement
-  ) {
-    if (element) {
-      element.className = element.className.replace(" inactive", "");
-      if (element.className.indexOf(" active") === -1) {
-        element.className += " active";
-      }
-      element.setAttribute("aria-hidden", "false");
-      if (control) {
-        control.setAttribute("aria-expanded", "true");
-
-        const openIcon = control.querySelector(".icon.open");
-        if (
-          openIcon &&
-          (openIcon.getAttribute("class") || "").indexOf(" inactive-icon") ===
-            -1
-        ) {
-          const newIconClass =
-            (openIcon.getAttribute("class") || "") + " inactive-icon";
-          openIcon.setAttribute("class", newIconClass);
-        }
-        const closeIcon = control.querySelector(".icon.close");
-        if (closeIcon) {
-          const newIconClass = (closeIcon.getAttribute("class") || "").replace(
-            " inactive-icon",
-            ""
-          );
-          closeIcon.setAttribute("class", newIconClass);
-        }
-      }
-      // Add buttons and links in the element to the tab order.
-      const buttons = Array.prototype.slice.call(
-        element.querySelectorAll("button")
-      );
-      const links = Array.prototype.slice.call(element.querySelectorAll("a"));
-      for (const button of buttons) {
-        button.tabIndex = 0;
-      }
-      for (const link of links) {
-        link.tabIndex = 0;
-      }
-    }
-  }
-
-  private static hideElement(
-    element: HTMLDivElement | HTMLUListElement,
-    control?: HTMLAnchorElement | HTMLButtonElement
-  ) {
-    if (element) {
-      element.className = element.className.replace(" active", "");
-      if (element.className.indexOf(" inactive") === -1) {
-        element.className += " inactive";
-      }
-      element.setAttribute("aria-hidden", "true");
-      if (control) {
-        control.setAttribute("aria-expanded", "false");
-
-        const openIcon = control.querySelector(".icon.open");
-        if (openIcon) {
-          const newIconClass = (openIcon.getAttribute("class") || "").replace(
-            " inactive-icon",
-            ""
-          );
-          openIcon.setAttribute("class", newIconClass);
-        }
-        const closeIcon = control.querySelector(".icon.close");
-        if (
-          closeIcon &&
-          (closeIcon.getAttribute("class") || "").indexOf(" inactive-icon") ===
-            -1
-        ) {
-          const newIconClass =
-            (closeIcon.getAttribute("class") || "") + " inactive-icon";
-          closeIcon.setAttribute("class", newIconClass);
-        }
-      }
-      // Remove buttons and links in the element from the tab order.
-      const buttons = Array.prototype.slice.call(
-        element.querySelectorAll("button")
-      );
-      const links = Array.prototype.slice.call(element.querySelectorAll("a"));
-      for (const button of buttons) {
-        button.tabIndex = -1;
-      }
-      for (const link of links) {
-        link.tabIndex = -1;
-      }
-    }
-  }
-
-  private hideModal(
-    modal: HTMLDivElement,
-    control?: HTMLAnchorElement | HTMLButtonElement
-  ) {
-    // Restore the page for screen readers.
-    for (const iframe of this.iframes) {
-      iframe.setAttribute("aria-hidden", "false");
-    }
-    if (this.upLink) this.upLink.setAttribute("aria-hidden", "false");
-    if (this.linksBottom) this.linksBottom.setAttribute("aria-hidden", "false");
-    if (this.linksMiddle) this.linksMiddle.setAttribute("aria-hidden", "false");
-    if (this.loadingMessage)
-      this.loadingMessage.setAttribute("aria-hidden", "false");
-    if (this.errorMessage)
-      this.errorMessage.setAttribute("aria-hidden", "false");
-    if (this.infoTop) this.infoTop.setAttribute("aria-hidden", "false");
-    if (this.infoBottom) this.infoBottom.setAttribute("aria-hidden", "false");
-    IFrameNavigator.hideElement(modal, control);
-  }
-
   private handleEditClick(event: MouseEvent): void {
     var element = event.target as HTMLElement;
     if (this.headerMenu) {
@@ -3002,16 +2818,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
-    }
-  }
-
-  private hideBookmarksOnEscape(event: KeyboardEvent) {
-    const ESCAPE_KEY = 27;
-    if (
-      IFrameNavigator.isDisplayed(this.bookmarksView) &&
-      event.keyCode === ESCAPE_KEY
-    ) {
-      this.hideModal(this.bookmarksView, this.bookmarksControl);
     }
   }
 

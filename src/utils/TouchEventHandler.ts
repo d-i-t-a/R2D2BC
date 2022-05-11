@@ -17,7 +17,14 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
+import { IFrameNavigator } from "../navigator/IFrameNavigator";
+
 export default class TouchEventHandler {
+  navigator: IFrameNavigator;
+  constructor(navigator: IFrameNavigator) {
+    this.navigator = navigator;
+  }
+
   private static readonly TAP_TOLERANCE = 10;
   private static readonly LONG_PRESS_MS = 500;
   private static readonly SLOW_SWIPE_MS = 500;

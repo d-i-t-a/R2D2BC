@@ -639,7 +639,6 @@ export class TextHighlighter {
   bindEvents(el: any, _scope: any, hasEventListener: boolean) {
     let doc = el.ownerDocument;
 
-    doc.addEventListener("keyup", this.toolboxShowDelayed.bind(this));
     el.addEventListener("mouseup", this.toolboxShowDelayed.bind(this));
     el.addEventListener("touchend", this.toolboxShowDelayed.bind(this));
     doc.addEventListener("selectstart", this.toolboxShowDelayed.bind(this));
@@ -687,7 +686,6 @@ export class TextHighlighter {
   unbindEvents(el: any, _scope: any) {
     let doc = el.ownerDocument;
 
-    doc.removeEventListener("keyup", this.toolboxShowDelayed.bind(this));
     el.removeEventListener("mouseup", this.toolboxShowDelayed.bind(this));
     el.removeEventListener("touchend", this.toolboxShowDelayed.bind(this));
     doc.removeEventListener("selectstart", this.toolboxShowDelayed.bind(this));
@@ -2501,7 +2499,6 @@ export class TextHighlighter {
   async ensureHighlightsContainer(win: any, id: string): Promise<HTMLElement> {
     const doc = win.document;
     if (!doc.getElementById(id)) {
-
       let container = doc.createElement("div");
       container.setAttribute("id", id);
       container.style.setProperty("pointer-events", "none");

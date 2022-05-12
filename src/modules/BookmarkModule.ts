@@ -30,7 +30,6 @@ import {
   Bookmark,
   Locator,
 } from "../model/Locator";
-import { toast } from "materialize-css";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
 import { getCurrentSelectionInfo } from "./highlight/renderer/iframe/selection";
@@ -202,7 +201,7 @@ export class BookmarkModule implements ReaderModule {
         await this.showBookmarks();
         await this.drawBookmarks();
         if (this.delegate.rights.enableMaterial) {
-          toast({ html: "bookmark deleted" });
+          // toast({ html: "bookmark deleted" });
         }
         return deleted;
       } else {
@@ -214,7 +213,7 @@ export class BookmarkModule implements ReaderModule {
         await this.showBookmarks();
         await this.drawBookmarks();
         if (this.delegate.rights.enableMaterial) {
-          toast({ html: "bookmark deleted" });
+          // toast({ html: "bookmark deleted" });
         }
         return deleted;
       }
@@ -297,7 +296,7 @@ export class BookmarkModule implements ReaderModule {
               console.log("Bookmark added " + JSON.stringify(saved));
             }
             if (this.delegate.rights.enableMaterial) {
-              toast({ html: "bookmark added" });
+              // toast({ html: "bookmark added" });
             }
             this.showBookmarks();
             await this.drawBookmarks();
@@ -309,7 +308,7 @@ export class BookmarkModule implements ReaderModule {
               console.log("Bookmark added " + JSON.stringify(saved));
             }
             if (this.delegate.rights.enableMaterial) {
-              toast({ html: "bookmark added" });
+              // toast({ html: "bookmark added" });
             }
             this.showBookmarks();
             await this.drawBookmarks();
@@ -317,7 +316,7 @@ export class BookmarkModule implements ReaderModule {
           }
         } else {
           if (this.delegate.rights.enableMaterial) {
-            toast({ html: "bookmark exists" });
+            // toast({ html: "bookmark exists" });
           }
         }
       }
@@ -709,7 +708,7 @@ export class BookmarkModule implements ReaderModule {
       await this.showBookmarks();
       await this.drawBookmarks();
       if (this.delegate.rights.enableMaterial) {
-        toast({ html: "highlight deleted" });
+        // toast({ html: "highlight deleted" });
       }
       return deleted;
     } else {

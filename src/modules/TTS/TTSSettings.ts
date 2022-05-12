@@ -41,7 +41,6 @@ export interface TTSModuleAPI {
   updateSettings: any;
 }
 export interface TTSModuleProperties {
-  enableSplitter?: boolean;
   color?: string;
   autoScroll?: boolean;
   rate?: number;

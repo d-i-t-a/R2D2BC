@@ -37,7 +37,6 @@ import {
   Locator,
   ReadingPosition,
 } from "../model/Locator";
-import { Collapsible, Dropdown, Sidenav, Tabs } from "materialize-css";
 import {
   UserSettings,
   UserSettingsUIConfig,
@@ -51,8 +50,6 @@ import {
   AnnotationModuleConfig,
 } from "../modules/AnnotationModule";
 import { IS_DEV } from "../utils";
-import { TTSModule } from "../modules/TTS/TTSModule";
-import Splitting from "../modules/TTS/splitting";
 import {
   SearchModule,
   SearchModuleConfig,
@@ -732,8 +729,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         );
       }
 
-      var self = this;
-
       if (this.headerMenu) {
         var menuSearch = HTMLUtilities.findElement(
           this.headerMenu,
@@ -814,34 +809,34 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.rights.enableMaterial) {
         let elements = document.querySelectorAll(".sidenav");
         if (elements) {
-          self.mSidenav = Sidenav.init(elements, {
-            edge: this.attributes?.sideNavPosition ?? "left",
-          });
+          // self.mSidenav = Sidenav.init(elements, {
+          //   edge: this.attributes?.sideNavPosition ?? "left",
+          // });
         }
         let collapsible = document.querySelectorAll(".collapsible");
         if (collapsible) {
-          self.mCollapsibles = Collapsible.init(collapsible, {
-            accordion: true,
-          });
+          // self.mCollapsibles = Collapsible.init(collapsible, {
+          //   accordion: true,
+          // });
         }
         let dropdowns = document.querySelectorAll(".dropdown-trigger");
         if (dropdowns) {
-          self.mDropdowns = Dropdown.init(dropdowns, {
-            alignment: "right",
-            constrainWidth: false,
-            coverTrigger: false,
-            closeOnClick: false,
-            autoTrigger: false,
-            onOpenEnd: function () {
-              self.mTabs.forEach((element) => {
-                (element as any).updateTabIndicator();
-              });
-            },
-          });
+          // self.mDropdowns = Dropdown.init(dropdowns, {
+          //   alignment: "right",
+          //   constrainWidth: false,
+          //   coverTrigger: false,
+          //   closeOnClick: false,
+          //   autoTrigger: false,
+          //   onOpenEnd: function () {
+          //     self.mTabs.forEach((element) => {
+          //       (element as any).updateTabIndicator();
+          //     });
+          //   },
+          // });
         }
         let tabs = document.querySelectorAll(".tabs");
         if (tabs) {
-          self.mTabs = Tabs.init(tabs);
+          // self.mTabs = Tabs.init(tabs);
         }
       }
 
@@ -1479,12 +1474,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         await this.highlighter.initialize();
       }
       const body = this.iframes[0].contentDocument?.body;
-      if (this.rights.enableTTS && this.tts?.enableSplitter) {
-        Splitting({
-          target: body,
-          by: "lines",
-        });
-      }
 
       // resize on toggle details
       let details = body?.querySelector("details");
@@ -1529,13 +1518,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         for (const iframe of this.iframes) {
           const body = iframe.contentDocument?.body;
           if (this.ttsModule !== undefined) {
-            if (this.tts?.enableSplitter) {
-              const ttsModule = this.ttsModule as TTSModule;
-              await ttsModule.initialize(body);
-            } else {
-              const ttsModule = this.ttsModule as TTSModule2;
-              await ttsModule.initialize(body);
-            }
+            const ttsModule = this.ttsModule as TTSModule2;
+            await ttsModule.initialize(body);
           }
         }
       }
@@ -2192,12 +2176,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
   startReadAloud() {
     if (this.rights.enableTTS) {
-      if (this.tts?.enableSplitter) {
-        this.highlighter?.speakAll();
-      } else {
-        const ttsModule = this.ttsModule as TTSModule2;
-        ttsModule.speakPlay();
-      }
+      const ttsModule = this.ttsModule as TTSModule2;
+      ttsModule.speakPlay();
     }
   }
   startReadAlong() {
@@ -2212,11 +2192,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   stopReadAloud() {
     if (this.rights.enableTTS) {
       this.highlighter?.stopReadAloud();
-      if (!this.tts?.enableSplitter) {
-        if (this.annotationModule !== undefined) {
-          this.annotationModule.drawHighlights();
-        }
-      }
     }
   }
   stopReadAlong() {
@@ -2231,15 +2206,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
   pauseReadAloud() {
     if (this.rights.enableTTS) {
-      if (this.tts?.enableSplitter) {
-        const ttsModule = this.ttsModule as TTSModule;
-        ttsModule.speakPause();
-      } else {
-        const ttsModule = this.ttsModule as TTSModule2;
-        ttsModule.speakPause();
-        if (this.annotationModule !== undefined) {
-          this.annotationModule.drawHighlights();
-        }
+      const ttsModule = this.ttsModule as TTSModule2;
+      ttsModule.speakPause();
+      if (this.annotationModule !== undefined) {
+        this.annotationModule.drawHighlights();
       }
     }
   }
@@ -2254,13 +2224,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
   resumeReadAloud() {
     if (this.rights.enableTTS) {
-      if (this.tts?.enableSplitter) {
-        const ttsModule = this.ttsModule as TTSModule;
-        ttsModule.speakResume();
-      } else {
-        const ttsModule = this.ttsModule as TTSModule2;
-        ttsModule.speakResume();
-      }
+      const ttsModule = this.ttsModule as TTSModule2;
+      ttsModule.speakResume();
     }
   }
   resumeReadAlong() {

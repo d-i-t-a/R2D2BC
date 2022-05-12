@@ -32,7 +32,6 @@ import {
   Locator,
 } from "../model/Locator";
 import { IS_DEV } from "../utils";
-import { toast } from "materialize-css";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
@@ -315,7 +314,7 @@ export class AnnotationModule implements ReaderModule {
       await this.showHighlights();
       await this.drawHighlights();
       if (this.delegate.rights.enableMaterial) {
-        toast({ html: "highlight updated" });
+        // toast({ html: "highlight updated" });
       }
       return added;
     } else {
@@ -333,7 +332,7 @@ export class AnnotationModule implements ReaderModule {
       await this.showHighlights();
       await this.drawHighlights();
       if (this.delegate.rights.enableMaterial) {
-        toast({ html: "highlight deleted" });
+        // toast({ html: "highlight deleted" });
       }
       return deleted;
     } else {

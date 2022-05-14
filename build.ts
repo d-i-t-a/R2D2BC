@@ -46,7 +46,7 @@ async function buildTs(
       // note these need to be double quoted if we want to define string constants
       "process.env.NODE_ENV": isProduction ? "'production'" : "'development'",
       // the Node.js util polyfill uses "global" instead of "window" annoyingly
-      // global: "window",
+      global: "globalThis",
     },
     tsconfig: "tsconfig.json",
     ...options,

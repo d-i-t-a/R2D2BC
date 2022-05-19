@@ -20,6 +20,7 @@
     --RS__highlightColor: rgba(255, 255, 0, 0.5);
  }
  .sidenav-annotations {
+    padding-inline-start: 0px;
     .chapter-link {
         display: block;
         white-space: nowrap;
@@ -51,19 +52,19 @@
             svg, i {
                 left: 4px;
                 top: 8px;
-                position: absolute;  
+                position: absolute;
             }
             .title {
                 display: block;
             }
             .subtitle {
                 display: block;
-                line-height: 20px;  
+                line-height: 20px;
                 font-size: 10px;
             }
             .timestamp {
                 display: block;
-                line-height: 20px;  
+                line-height: 20px;
                 font-size: 8px;
             }
         }

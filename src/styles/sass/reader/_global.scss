@@ -32,12 +32,15 @@
   }
 
   button {
-    background: $ui-white;
+    background: none;
     border: 0;
     color: $ui-dark-gray;
     padding: 0.35rem 0.35rem 0.2rem;
     margin: 0;
     -webkit-appearance: none;
+    &:focus {
+      background: none;
+    }
   }
 
   a {
@@ -118,14 +121,7 @@
   [data-viewer-theme="sepia"] {
     background-color: $sepia-bg;
 
-    button {
-      background: $sepia-bg;
-      color: $ui-dark-gray;
-    }
 
-    a {
-      color: $ui-dark-gray;
-    }
 
     .info {
       color: $ui-dark-gray;
@@ -137,14 +133,7 @@
     background-color: $night-bg;
     color: $ui-white;
 
-    button {
-      background: $night-bg;
-      color: $ui-light-gray;
-    }
 
-    a {
-      color: $ui-light-gray;
-    }
 
     .info {
       color: $ui-light-gray;

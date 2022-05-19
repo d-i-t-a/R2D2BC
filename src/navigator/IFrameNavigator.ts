@@ -786,10 +786,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             menuSearch.parentElement?.style.setProperty("display", "none");
           }
           if (this.hasMediaOverlays) {
-            if (play) play.parentElement?.style.setProperty("display", "block");
-            if (pause)
-              pause.parentElement?.style.setProperty("display", "block");
-            if (menu) menu.parentElement?.style.setProperty("display", "block");
+            if (play) play.parentElement?.style.removeProperty("display");
+            if (pause) pause.parentElement?.style.removeProperty("display");
+            if (menu) menu.parentElement?.style.removeProperty("display");
           } else {
             if (play) play.parentElement?.style.setProperty("display", "none");
             if (pause)
@@ -3297,10 +3296,17 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
   activateMarker(id, position) {
     if (this.annotationModule !== undefined) {
-      this.annotationModule.activeAnnotationMarkerId = id;
-      this.annotationModule.activeAnnotationMarkerPosition = position;
-      if (this.highlighter) {
-        this.highlighter.activeAnnotationMarkerId = id;
+      if (
+        this.annotationModule.activeAnnotationMarkerId === undefined ||
+        this.annotationModule.activeAnnotationMarkerId !== id
+      ) {
+        this.annotationModule.activeAnnotationMarkerId = id;
+        this.annotationModule.activeAnnotationMarkerPosition = position;
+        if (this.highlighter) {
+          this.highlighter.activeAnnotationMarkerId = id;
+        }
+      } else {
+        this.deactivateMarker();
       }
     }
   }

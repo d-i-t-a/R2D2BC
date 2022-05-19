@@ -159,7 +159,7 @@ export class SearchModule implements ReaderModule {
     const spineItem = this.publication.getSpineItem(currentLocation);
     if (this.headerMenu) {
       var searchResultDiv = HTMLUtilities.findElement(
-        this.headerMenu,
+        document,
         "#searchResultChapter"
       );
     }
@@ -518,7 +518,7 @@ export class SearchModule implements ReaderModule {
     // var searchResult = undefined
     if (self.headerMenu) {
       var searchResultBook = HTMLUtilities.findElement(
-        self.headerMenu,
+        document,
         "#searchResultBook"
       );
     }

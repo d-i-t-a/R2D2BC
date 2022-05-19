@@ -226,7 +226,7 @@ export class MediaOverlayModule implements ReaderModule {
         }
       }
       if (this.play) this.play.style.display = "none";
-      if (this.pause) this.pause.style.display = "block";
+      if (this.pause) this.pause.style.removeProperty("display");
     }
   }
   async stopReadAloud() {
@@ -234,7 +234,7 @@ export class MediaOverlayModule implements ReaderModule {
       if (this.currentLinkIndex > 0) await this.playLink();
       this.settings.playing = false;
       this.audioElement?.pause();
-      if (this.play) this.play.style.display = "block";
+      if (this.play) this.play.style.removeProperty("display");
       if (this.pause) this.pause.style.display = "none";
     }
   }
@@ -242,7 +242,7 @@ export class MediaOverlayModule implements ReaderModule {
     if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = false;
       this.audioElement.pause();
-      if (this.play) this.play.style.display = "block";
+      if (this.play) this.play.style.removeProperty("display");
       if (this.pause) this.pause.style.display = "none";
     }
   }
@@ -251,7 +251,7 @@ export class MediaOverlayModule implements ReaderModule {
       this.settings.playing = true;
       await this.audioElement.play();
       if (this.play) this.play.style.display = "none";
-      if (this.pause) this.pause.style.display = "block";
+      if (this.pause) this.pause.style.removeProperty("display");
     }
   }
 

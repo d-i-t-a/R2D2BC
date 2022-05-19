@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * Developed on behalf of: DITA
- * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Licensed to: DITA under one or more contributor license agreements.
 -->
 
 <!DOCTYPE html>
@@ -27,290 +27,170 @@
     <meta name="description" content="A viewer application for EPUB files." />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 
-    <!-- R2 Reader CSS -->
-    <link rel="stylesheet" href="reader.css" />
-
-    <script src="reader.js"></script>
-
     <!-- Material Icons-->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-    <!-- START Material CSS -->
-    <!-- Material header and footer CSS  - uncomment if  custom header an d footer is provided-->
-    <link rel="stylesheet" href="material.css" />
-    <!-- END Material CSS -->
+    <!-- START R2 Reader CSS and JS -->
+    <link rel="stylesheet" href="reader.css" />
+    <script src="reader.js"></script>
+    <!-- END R2 Reader CSS and JS -->
 
+    <!-- START MUI CSS and JS -->
+    <link href="https://cdn.muicss.com/mui-latest/css/mui.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.muicss.com/mui-latest/js/mui.min.js"></script>
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <link href="/viewer/injectables/mui/style.css" rel="stylesheet" type="text/css" />
+    <script src="/viewer/injectables/mui/script.js"></script>
+    <!-- END MUI CSS and JS -->
+
+    <!-- START LineFocus CSS -->
     <link rel="stylesheet" href="/viewer/injectables/style/linefocus.css" />
+    <!-- END LineFocus CSS -->
+
 </head>
 
 <body>
 
     <div class="content" id="root">
         <header id="headerMenu">
-            <div class="navbar-fixed">
-                <nav class="navbar">
-                    <div class="nav-wrapper"><span class="brand-logo  hide-on-med-and-down " id="book-title"></span>
-                        <ul id="nav-mobile-right" class="right">
-                            <li style="display:none"><a data-target="container-view-note-input" class="dropdown-trigger " id="menu-button-note"><i class="material-icons">speaker_notes</i></a></li>
-                            <li><a class="saveBookmark" id="menu-button-stamp-activate"  onclick="d2reader.activateMarker('bookmarkIcon', 'left')"><i class="material-icons">approval</i></a></li>
-                            <li><a class="saveBookmark" id="menu-button-stamp-deactivate"  onclick="d2reader.deactivateMarker()"><i class="material-icons">approval</i></a></li>
-                            <li><a class="saveBookmark" id="menu-button-bookmark-range"  onclick="d2reader.saveBookmarkPlus()"><i class="material-icons">bookmark_border</i></a></li>
-                            <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
+            <div id="sidedrawer" class="mui--no-user-select sidenav">
+                <div id="sidedrawer-brand" class="mui--appbar-line-height logo-container">
+                    <span class="mui--text-title">DITA Reader</span>
+                    <i class="material-icons right editAnnotations" id="expand-menu">unfold_more</i>
+                </div>
+                <div class="mui-divider"></div>
+                <ul>
+                    <li style="padding-left: 16px" id="sidenav-section-gotopage">
+                        Go To Page: <input type="text" style="width:100px;" id="goToPageNumberInput" /><button id="goToPageNumberButton">Go</button>
+                    </li>
+                    <li class="bold" id="sidenav-section-toc">
+                        <strong class="collapsible-header">Table of Contents</strong>
+                        <div id="container-view-toc" class="contents-view"></div>
+                    </li>
+                    <li class="bold" id="sidenav-section-bookmarks">
+                        <strong class="collapsible-header">Bookmarks</strong>
+                        <div id="container-view-bookmarks" class="bookmarks-view"></div>
+                    </li>
+                    <li class="bold" id="sidenav-section-highlights">
+                        <strong class="collapsible-header">Annotations</strong>
+                        <div id="container-view-highlights" class="highlights-view"></div>
+                    </li>
+                    <li class="bold" id="sidenav-section-landmarks">
+                        <strong class="collapsible-header">Landmarks</strong>
+                        <div id="container-view-landmarks" class="landmarks-view"></div>
+                    </li>
 
-                            <li><a data-target="container-view-linefocus-settings" class="dropdown-trigger " id="menu-button-linefocus"><i class="material-icons ">filter_center_focus</i></a></li>
-                            <li><a id="menu-button-up" onclick="d2reader.lineUp()"><i class="material-icons">arrow_upward</i></a></li>
-                            <li><a id="menu-button-down" onclick="d2reader.lineDown()"><i class="material-icons">arrow_downward</i></a></li>
+                    <li class="bold" id="sidenav-section-pagelist">
+                        <strong class="collapsible-header">Annotations</strong>
+                        <div id="container-view-pagelist" class="pagelist-view"></div>
+                    </li>
+                </ul>
+            </div>
 
-                            <li><a id="menu-button-play" onclick="d2reader.startReadAlong()"><i class="material-icons">play_arrow</i></a></li>
-                            <li><a id="menu-button-pause" onclick="d2reader.pauseReadAlong()" style="display: none"><i class="material-icons">pause</i></a></li>
-                            <li><a id="menu-button-show" onclick="d2reader.showAnnotationLayer()" style="display: none"><i class="material-icons">toggle_off</i></a></li>
-                            <li><a id="menu-button-hide" onclick="d2reader.hideAnnotationLayer()"><i class="material-icons">toggle_on</i></a></li>
-
-                            <li><a data-target="container-view-tts-settings" class="dropdown-trigger " id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>
-                            <li><a data-target="container-view-layer-settings" class="dropdown-trigger " id="menu-button-layer"><i class="material-icons ">settings</i></a></li>
-                            <li><a data-target="container-view-mediaoverlay-settings" class="dropdown-trigger " id="menu-button-mediaoverlay"><i class="material-icons ">record_voice_over</i></a></li>
-                            <li><a data-target="container-view-settings-custom" class="dropdown-trigger " id="menu-button-settings" onclick="reload()"><i class="material-icons">settings</i></a></li>
-                            <li style="display:none"><a data-target="container-view-search" class="dropdown-trigger " id="menu-button-search"><i class="material-icons">search</i></a></li>
-                        </ul>
-                        <ul id="nav-mobile-left" class="left">
-                            <li><a href="#!" data-target="sidenav-left" class="sidenav-trigger left"><i class="material-icons  show-on-large">menu</i></a></li>
-                            <li><a rel="prev" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons show-on-large">arrow_back_ios</i></a></li>
-                            <li><a rel="next" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons show-on-large">arrow_forward_ios</i></a></li>
-                        </ul>
+            <div id="sidedrawer2">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Text To Speech Settings</span>
+                </div>
+                <div class="mui-divider"></div>
+                <div id="container-view-tts-settings" class="dropdown-content settings" style="width: 250px;padding: 10px;">
+                    <center style="display: flex;
+                                        justify-content: center;padding: 5px">
+                        <button style="width:24%;font-size: 8pt;" onclick="d2reader.startReadAloud()"><i
+                          class="material-icons">play_arrow</i>PLAY
+                        </button>
+                        <button style="width:24%;font-size: 8pt;" onclick="d2reader.stopReadAloud()"><i
+                          class="material-icons">stop</i>STOP
+                        </button>
+                        <button style="width:24%;font-size: 8pt;" onclick="d2reader.pauseReadAloud()"><i
+                          class="material-icons">pause</i>PAUSE
+                        </button>
+                        <button style="width:24%;font-size: 8pt;" onclick="d2reader.resumeReadAloud()"><i
+                          class="material-icons">play_arrow</i>RESUME
+                        </button>
+                    </center>
+                    <center style="display: flex;justify-content: center;padding: 5px;">
+                        <button style="width: 40px" onclick="d2reader.applyTTSSettings({ color: 'orange' })"><i
+                          class="material-icons" style="color: rgba(250, 96, 0, 0.5);font-size: 24pt;">lense</i></button>
+                        <button style="width: 40px" onclick="d2reader.applyTTSSettings({ color: 'red' })"><i
+                          class="material-icons"
+                          style="color: indianred;font-size: 24pt;">lense</i></button>
+                        <button style="width: 40px" onclick="d2reader.applyTTSSettings({ color: 'gray' })"><i
+                          class="material-icons"
+                          style="color: lightslategrey;font-size: 24pt;">lense</i></button>
+                        <button style="width: 40px" onclick="d2reader.applyTTSSettings({ color: 'purple' })"><i
+                          class="material-icons" style="color: mediumpurple;font-size: 24pt;">lense</i></button>
+                        <button style="width: 40px" onclick="d2reader.applyTTSSettings({ color: 'green' })"><i
+                          class="material-icons"
+                          style="color: lightgreen;font-size: 24pt;">lense</i></button>
+                    </center>
+                    <div style="padding: 5px;">
+                        <center style="display: flex;justify-content: center;align-items: center;">
+                            <label style="margin-right: 10px;">Auto Scroll</label>
+                            <input type="checkbox" class="filled" id="autoScroll" name="autoScroll"
+                                   onchange="d2reader.applyTTSSettings({ autoScroll: this.checked })">
+                        </center>
                     </div>
-                </nav>
-            </div>
-            <ul id="sidenav-left" class="sidenav">
-                <li><a href="#" class="logo-container ">Dita Reader<i class="material-icons  left" style="margin-right: 15px">
-                    import_contacts
-                </i><i class="material-icons right  editAnnotations" id="expand-menu">unfold_more</i></a></li>
-                <li class="no-padding ">
-                    <ul class="collapsible collapsible-accordion">
-                        <li style="padding-left: 16px" id="sidenav-section-gotopage">
-                            Go To Page: <input type="text" style="width:100px;" id="goToPageNumberInput" /><button id="goToPageNumberButton">Go</button>
-                        </li>
-                        <li class="bold" id="sidenav-section-toc"><a class="collapsible-header ">Table of Contents<i class="material-icons chevron purple-yellow-text">chevron_left</i></a>
-                            <div id="container-view-toc" class="contents-view collapsible-body active" style="background-color : #ffffff">
-                            </div>
-                        </li>
-                        <li class="bold " id="sidenav-section-bookmarks"><a class="collapsible-header ">Bookmarks <i class="material-icons chevron ">chevron_left</i></a>
-                            <div id="container-view-bookmarks" class="bookmarks-view collapsible-body active" style="background-color : #ffffff">
-                            </div>
-                        </li>
-                        <li class="bold " id="sidenav-section-highlights"><a class="collapsible-header allvit-purple-text">Highlights<i class="material-icons chevron allvit-purple-text">chevron_left</i></a>
-                            <div id="container-view-highlights" class="highlights-view collapsible-body active" style="background-color : #ffffff">
-                            </div>
-                        </li>
-                        <li class="bold" id="sidenav-section-landmarks"><a class="collapsible-header allvit-purple-text">Landmarks<i class="material-icons chevron allvit-purple-text">chevron_left</i></a>
-                            <div id="container-view-landmarks" class="landmarks-view collapsible-body active" style="background-color : #ffffff">
-                            </div>
-                        </li>
-                        <li class="bold" id="sidenav-section-pagelist"><a class="collapsible-header allvit-purple-text">Page
-                            List<i class="material-icons chevron allvit-purple-text">chevron_left</i></a>
-                            <div id="container-view-pagelist" class="pageList-view collapsible-body active" style="background-color : #ffffff">
-                            </div>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-            <div id="container-view-layer-settings" class="dropdown-content settings">
-                <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Layers</label>
-                <center style="display: flex;justify-content: center;align-items: center;">
-                    <label style="margin-right: 10px;">Highlights</label>
-                    <input type="checkbox" class="filled"
-                           onchange="this.checked ? d2reader.showLayer('highlights') : d2reader.hideLayer('highlights')">
-                </center>
-                <center style="display: flex;justify-content: center;align-items: center;">
-                    <label style="margin-right: 10px;">Definitions</label>
-                    <input type="checkbox" class="filled"
-                           onchange="this.checked ? d2reader.showLayer('definitions') : d2reader.hideLayer('definitions')">
-                </center>
-                <center style="display: flex;justify-content: center;align-items: center;">
-                    <label style="margin-right: 10px;">Page Break</label>
-                    <input type="checkbox" class="filled"
-                           onchange="this.checked ? d2reader.showLayer('pagebreak') : d2reader.hideLayer('pagebreak')">
-                </center>
-                <center style="display: flex;justify-content: center;align-items: center;">
-                    <label style="margin-right: 10px;">Search</label>
-                    <input type="checkbox" class="filled"
-                           onchange="this.checked ? d2reader.showLayer('search') : d2reader.hideLayer('search')">
-                </center>
-                <center style="display: flex;justify-content: center;align-items: center;">
-                    <label style="margin-right: 10px;">Read Aloud</label>
-                    <input type="checkbox" class="filled"
-                           onchange="this.checked ? d2reader.showLayer('readaloud') : d2reader.hideLayer('readaloud')">
-                </center>
-
-
-            </div>
-            <div id="container-view-tts-settings" class="dropdown-content settings">
-                <center style="display: flex;
-        justify-content: center;">
-                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="d2reader.startReadAloud()"><i
-                      class="material-icons">play_arrow</i>PLAY
-                    </button>
-                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="d2reader.stopReadAloud()"><i
-                      class="material-icons">stop</i>STOP
-                    </button>
-                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="d2reader.pauseReadAloud()"><i
-                      class="material-icons">pause</i>PAUSE
-                    </button>
-                    <button style="background-color:#f4f4f4;width:24%;font-size: 8pt;" onclick="d2reader.resumeReadAloud()"><i
-                      class="material-icons">play_arrow</i>RESUME
-                    </button>
-                </center>
-                <center style="display: flex;justify-content: center;">
-                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'orange' })"><i
-                      class="material-icons" style="color: rgba(250, 96, 0, 0.5);font-size: 24pt;">lense</i></button>
-                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'red' })"><i
-                      class="material-icons"
-                      style="color: indianred;font-size: 24pt;">lense</i></button>
-                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'gray' })"><i
-                      class="material-icons"
-                      style="color: lightslategrey;font-size: 24pt;">lense</i></button>
-                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'purple' })"><i
-                      class="material-icons" style="color: mediumpurple;font-size: 24pt;">lense</i></button>
-                    <button style="background-color:#f4f4f4;width: 40px" onclick="d2reader.applyTTSSettings({ color: 'green' })"><i
-                      class="material-icons"
-                      style="color: lightgreen;font-size: 24pt;">lense</i></button>
-                </center>
-                <div>
-                    <center style="display: flex;justify-content: center;align-items: center;">
-                        <label style="margin-right: 10px;">Auto Scroll</label>
-                        <input type="checkbox" class="filled" id="autoScroll" name="autoScroll"
-                               onchange="d2reader.applyTTSSettings({ autoScroll: this.checked })">
-                    </center>
-                </div>
-                <div>
-                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Language</label>
-                    <center>
-                        <select style="width: 80%;" onchange="d2reader.applyPreferredVoice(value)"
-                                id="preferred-languages">
-                            <option value="" disabled selected>Choose language</option>
-                        </select>
-                    </center>
-                </div>
-                <div class="range-slider">
-                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Rate</label>
-                    <input class="range-slider__range_settings" type="range" min="0.1" max="10" step="0.1"
-                           value="1" id="speechRate" name="speechRate"
-                           onchange="d2reader.applyTTSSettings({ rate: this.value })"/>
-                </div>
-                <div class="range-slider">
-                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Pitch</label>
-                    <input class="range-slider__range_settings" type="range" min="0.1" max="2" step="0.1"
-                           value="1" id="speechPitch" name="speechPitch"
-                           onchange="d2reader.applyTTSSettings({ pitch: this.value })"/>
-                </div>
-                <div class="range-slider">
-                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Volume</label>
-                    <input class="range-slider__range_settings" type="range" min="0.1" max="1" step="0.1"
-                           value="1" id="speechVolume" name="speechVolume"
-                           onchange="d2reader.applyTTSSettings({ volume: this.value })"/>
-                </div>
-            </div>
-            <div id="container-view-linefocus-settings" class="dropdown-content settings-view settings">
-                <div>
-                    <center tabindex="0" style="display: flex;justify-content: space-around;">
-                        <div style="display: flex;align-items: center;">
-                            <label style="margin-right: 10px;">Line Focus</label>
-                            <input type="checkbox" class="filled" id="lineFocus1" name="lineFocus1" onchange="d2reader.lineFocus( this.checked )">
-                        </div>
-                    </center>
-                </div>
-                <div>
-                    <center tabindex="0" style="display: flex;justify-content: space-around;">
-                        <div style="display: flex;align-items: center;">
-                            <label style="margin-right: 10px;">Debug</label>
-                            <input type="checkbox" class="filled" id="lineFocus2" name="lineFocus2" onchange="d2reader.applyLineFocusSettings( {debug:this.checked} )">
-                        </div>
-                    </center>
-                </div>
-                <div>
-                    <label style="display: block;
-        text-align: center;
-        line-height: 12pt;">Number of Lines</label>
-                    <center>
-                        <button style="width: 30%;
-        background-color: white;
-    height: 50px;
-    border-radius: 25px 0px 0px 25px;
-    border-color: #00000020;
-    border-width: 1px;
-    border-style: solid;
-    color: black;
-    font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyLineFocusSettings({lines:'1'});"><span
-                          class="material-icons">looks_one</span></button><button style="width: 30%;
-        background-color: white;
-    height: 50px;
-    border-color: #00000020;
-    border-width: 1px;
-    border-style: solid;
-    color: black;
-    font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyLineFocusSettings({lines:'3'});"><span
-                      class="material-icons">looks_3</span></button><button style="width: 30%;
-        background-color: white;
-    height: 50px;
-    border-radius: 0px 25px 25px 0px;
-    border-color: #00000020;
-    border-width: 1px;
-    border-style: solid;
-    color: black;
-    font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyLineFocusSettings({lines:'5'});"><span
-                      class="material-icons">looks_5</span></button>
-                    </center>
-                </div>
-            </div>
-            <div id="container-view-mediaoverlay-settings" class="dropdown-content settings">
-                <center tabindex="0" style="display: flex;justify-content: space-around;">
-                    <div style="display: flex;align-items: center;">
-                        <label style="margin-right: 10px;">Auto Scroll</label>
-                        <input type="checkbox" class="filled" id="mediaOverlayAutoScroll" name="mediaOverlayAutoScroll" onchange="d2reader.applyMediaOverlaySettings({ autoScroll: this.checked })">
+                    <div style="padding: 5px;">
+                        <label style="display: block;text-align: center;line-height: 12pt;">Language</label>
+                        <center>
+                            <select style="width: 80%;" onchange="d2reader.applyPreferredVoice(value)"
+                                    id="preferred-languages">
+                                <option value="" disabled selected>Choose language</option>
+                            </select>
+                        </center>
                     </div>
-                    <div style="display: flex;align-items: center;">
-                        <label style="margin-right: 10px;">Auto Page Turn</label>
-                        <input type="checkbox" class="filled" id="mediaOverlayAutoTurn" name="mediaOverlayAutoTurn" onchange="d2reader.applyMediaOverlaySettings({ autoTurn: this.checked })">
+                    <div class="range-slider" style="padding: 5px;">
+                        <label style="display: block;text-align: center;line-height: 12pt;">Rate</label>
+                        <input class="range-slider__range_settings" type="range" min="0.1" max="10" step="0.1"
+                               value="1" id="speechRate" name="speechRate"
+                               onchange="d2reader.applyTTSSettings({ rate: this.value })"/>
                     </div>
-                </center>
-                <div class="range-slider">
-                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Volume</label>
-                    <input class="range-slider__range_settings" type="range" min="0.1" max="1" step="0.1"
-                           value="1" id="mediaOverlayVolume" name="mediaOverlayVolume"
-                           onchange="d2reader.applyMediaOverlaySettings({ volume: this.value })"/>
-                </div>
-                <div class="range-slider">
-                    <label style="display: block;text-align: center;line-height: 12pt;height: 0px;">Rate</label>
-                    <input class="range-slider__range_settings" type="range" min="0.1" max="3" step="0.1"
-                           value="1" id="mediaOverlayRate" name="mediaOverlayRate"
-                           onchange="d2reader.applyMediaOverlaySettings({ rate: this.value })"/>
+                    <div class="range-slider" style="padding: 5px;">
+                        <label style="display: block;text-align: center;line-height: 12pt;">Pitch</label>
+                        <input class="range-slider__range_settings" type="range" min="0.1" max="2" step="0.1"
+                               value="1" id="speechPitch" name="speechPitch"
+                               onchange="d2reader.applyTTSSettings({ pitch: this.value })"/>
+                    </div>
+                    <div class="range-slider" style="padding: 5px;">
+                        <label style="display: block;text-align: center;line-height: 12pt;">Volume</label>
+                        <input class="range-slider__range_settings" type="range" min="0.1" max="1" step="0.1"
+                               value="1" id="speechVolume" name="speechVolume"
+                               onchange="d2reader.applyTTSSettings({ volume: this.value })"/>
+                    </div>
                 </div>
             </div>
-            <div id="container-view-settings-custom" class="dropdown-content settings-view settings">
-                <div class="range-slider">
-                    <label style="display: block;
-        text-align: center;
-        line-height: 12pt;height: 0px;">Fontsize</label>
-                    <input class="range-slider__range_settings" type="range" min="100" max="300" step="25"
-                           value="100" id="fontSize" name="fontSize"
-                           onchange="d2reader.applyUserSettings({ fontSize: this.value })"/>
+            <div id="sidedrawer3">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Reader Settings</span>
                 </div>
-                <div>
-                    <label style="display: block;
+                <div class="mui-divider"></div>
+                <div id="container-view-settings-custom" class="dropdown-content settings-view"
+                     style="width: 300px;padding: 10px;">
+                    <div class="range-slider" style="padding: 5px;">
+                        <label style="display: block;
         text-align: center;
-        line-height: 12pt;height: 0px;">Font</label>
-                    <center>
-                        <select style="width: 80%;" onchange="d2reader.applyUserSettings({fontFamily:value});reload();"
-                                id="fontFamily">
-                            <option value="Original">Publisher</option>
-                            <option value="serif">Serif</option>
-                            <option value="sans-serif">Sans-serif</option>
-                            <option value="opendyslexic">Open Dyslexic</option>
-                        </select>
-                    </center>
-                </div>
-                <div>
-                    <center>
-                        <button style="width: 30%;
+        line-height: 12pt;">Fontsize</label>
+                        <input class="range-slider__range_settings" type="range" min="100" max="300" step="25"
+                               value="100" id="fontSize" name="fontSize"
+                               onchange="d2reader.applyUserSettings({ fontSize: this.value })"/>
+                    </div>
+                    <div style="padding: 5px;">
+                        <label style="display: block;
+        text-align: center;
+        line-height: 12pt;">Font</label>
+                        <center>
+                            <select style="width: 80%;" onchange="d2reader.applyUserSettings({fontFamily:value});reload();"
+                                    id="fontFamily">
+                                <option value="Original">Publisher</option>
+                                <option value="serif">Serif</option>
+                                <option value="sans-serif">Sans-serif</option>
+                                <option value="opendyslexic">Open Dyslexic</option>
+                            </select>
+                        </center>
+                    </div>
+                    <div style="padding: 5px;">
+                        <center>
+                            <button style="width: 30%;
         background-color: white;
         height: 50px;
         border-radius: 25px 0px 0px 25px;
@@ -319,7 +199,7 @@
         border-style: solid;
         color: black;
         font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({appearance:'day'})">DAY
-                        </button><button style="width: 30%;
+                            </button><button style="width: 30%;
         background-color: wheat;
         height: 50px;
         /*border-radius: 25px;*/
@@ -328,7 +208,7 @@
         border-style: solid;
         color: black;
         font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({appearance:'sepia'})">SEPIA
-                    </button><button style="width: 30%;
+                        </button><button style="width: 30%;
         background-color: black;
         height: 50px;
         border-radius: 0px 25px 25px 0px;
@@ -337,15 +217,15 @@
         border-style: solid;
         color: white;
         font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({appearance:'night'})">NIGHT
-                    </button>
-                    </center>
-                </div>
-                <div id="scrollMode" style="padding-bottom: 10px">
-                    <label style="display: block;
+                        </button>
+                        </center>
+                    </div>
+                    <div id="scrollMode" style="padding: 5px;padding-bottom: 10px">
+                        <label style="display: block;
                                    text-align: center;
                                    line-height: 12pt;">Layout</label>
-                    <center>
-                        <button style="width: 100px;
+                        <center>
+                            <button style="width: 100px;
             background-color: white;
     height: 50px;
         border-radius: 25px 0px 0px 25px;
@@ -354,8 +234,8 @@
         border-style: solid;
         color: black;
         font-size: 9pt; text-transform: uppercase"
-                                onclick="d2reader.applyUserSettings({verticalScroll:true});setScroll('true')">Scroll
-                        </button><button style="width: 100px;
+                                    onclick="d2reader.applyUserSettings({verticalScroll:true});setScroll('true')">Scroll
+                            </button><button style="width: 100px;
             background-color: white;
     height: 50px;
         border-radius: 0px 25px 25px 0px;
@@ -364,17 +244,17 @@
         border-style: solid;
         color: black;
         font-size: 9pt;text-transform: uppercase"
-                                         onclick="d2reader.applyUserSettings({verticalScroll:false});setScroll('false')">
-                        Paginated
-                    </button>
-                    </center>
-                </div>
-                <div id="textAlignment">
-                    <label style="display: block;
+                                             onclick="d2reader.applyUserSettings({verticalScroll:false});setScroll('false')">
+                            Paginated
+                        </button>
+                        </center>
+                    </div>
+                    <div id="textAlignment" style="padding: 5px;">
+                        <label style="display: block;
         text-align: center;
         line-height: 12pt;">Alignment</label>
-                    <center>
-                        <button style="width: 30%;
+                        <center>
+                            <button style="width: 30%;
            background-color: white;
      height: 50px;
         border-radius: 25px 0px 0px 25px;
@@ -383,8 +263,8 @@
         border-style: solid;
         color: black;
         font-size: 9pt;text-transform: uppercase"
-                                onclick="d2reader.applyUserSettings({textAlignment:'auto'});setAlignment('auto')">Auto
-                        </button><button style="width: 30%;
+                                    onclick="d2reader.applyUserSettings({textAlignment:'auto'});setAlignment('auto')">Auto
+                            </button><button style="width: 30%;
             background-color: white;
     height: 50px;
         /*border-radius: 25px;*/
@@ -393,9 +273,9 @@
         border-style: solid;
         color: black;
         font-size: 9pt;text-transform: uppercase"
-                                         onclick="d2reader.applyUserSettings({textAlignment:'justify'});setAlignment('justify')">
-                        justify
-                    </button><button style="width: 30%;
+                                             onclick="d2reader.applyUserSettings({textAlignment:'justify'});setAlignment('justify')">
+                            justify
+                        </button><button style="width: 30%;
             background-color: white;
     height: 50px;
         border-radius: 0px 25px 25px 0px;
@@ -404,17 +284,17 @@
         border-style: solid;
         color: black;
         font-size: 9pt;text-transform: uppercase"
-                                     onclick="d2reader.applyUserSettings({textAlignment:'start'});setAlignment('start')">
-                        start
-                    </button>
-                    </center>
-                </div>
-                <div id="columnCount">
-                    <label style="display: block;
+                                         onclick="d2reader.applyUserSettings({textAlignment:'start'});setAlignment('start')">
+                            start
+                        </button>
+                        </center>
+                    </div>
+                    <div id="columnCount" style="padding: 5px;">
+                        <label style="display: block;
         text-align: center;
         line-height: 12pt;">Page Mode</label>
-                    <center>
-                        <button style="width: 30%;
+                        <center>
+                            <button style="width: 30%;
             background-color: white;
     height: 50px;
         border-radius: 25px 0px 0px 25px;
@@ -423,8 +303,8 @@
         border-style: solid;
         color: black;
         font-size: 9pt;text-transform: uppercase"
-                                onclick="d2reader.applyUserSettings({columnCount:'auto'});setColumns('auto')">Auto
-                        </button><button style="width: 30%;
+                                    onclick="d2reader.applyUserSettings({columnCount:'auto'});setColumns('auto')">Auto
+                            </button><button style="width: 30%;
             background-color: white;
     height: 50px;
         /*border-radius: 25px;*/
@@ -433,8 +313,8 @@
         border-style: solid;
         color: black;
         font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({columnCount:'1'});setColumns('1')">
-                        Single
-                    </button><button style="width: 30%;
+                            Single
+                        </button><button style="width: 30%;
             background-color: white;
     height: 50px;
         border-radius: 0px 25px 25px 0px;
@@ -443,47 +323,47 @@
         border-style: solid;
         color: black;
         font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({columnCount:'2'});setColumns('2')">
-                        Double
-                    </button>
-                    </center>
-                </div>
-                <div class="range-slider">
-                    <label  style="display: block;
+                            Double
+                        </button>
+                        </center>
+                    </div>
+                    <div class="range-slider" style="padding: 5px;">
+                        <label  style="display: block;
         text-align: center;
-        line-height: 12pt;height: 0px;">Word Spacing</label>
-                    <input class="range-slider__range_settings"  type="range" min="0" max="1" step="0.25"
-                           value="0" id="wordSpacing" name="wordSpacing"
-                           onchange="d2reader.applyUserSettings({ wordSpacing: this.value});"/>
-                </div>
-                <div class="range-slider">
-                    <label  style="display: block;
+        line-height: 12pt;">Word Spacing</label>
+                        <input class="range-slider__range_settings"  type="range" min="0" max="1" step="0.25"
+                               value="0" id="wordSpacing" name="wordSpacing"
+                               onchange="d2reader.applyUserSettings({ wordSpacing: this.value});"/>
+                    </div>
+                    <div class="range-slider" style="padding: 5px;">
+                        <label  style="display: block;
         text-align: center;
-        line-height: 12pt;height: 0px;">Letter Spacing</label>
-                    <input class="range-slider__range_settings" type="range" min="0" max="0.5"
-                           step="0.0625"
-                           value="0" id="letterSpacing" name="letterSpacing"
-                           onchange="d2reader.applyUserSettings({ letterSpacing: this.value });"/>
-                </div>
-                <div class="range-slider">
-                    <label  style="display: block;
+        line-height: 12pt;">Letter Spacing</label>
+                        <input class="range-slider__range_settings" type="range" min="0" max="0.5"
+                               step="0.0625"
+                               value="0" id="letterSpacing" name="letterSpacing"
+                               onchange="d2reader.applyUserSettings({ letterSpacing: this.value });"/>
+                    </div>
+                    <div class="range-slider" style="padding: 5px;">
+                        <label  style="display: block;
         text-align: center;
-        line-height: 12pt;height: 0px;">Page Margins</label>
-                    <input class="range-slider__range_settings" type="range" min="0.5" max="4" step="0.25"
-                           value="1" id="pageMargins" name="pageMargins"
-                           onchange="d2reader.applyUserSettings({ pageMargins: this.value});"/>
-                </div>
-                <div class="range-slider">
-                    <label  style="display: block;
+        line-height: 12pt;">Page Margins</label>
+                        <input class="range-slider__range_settings" type="range" min="0.5" max="4" step="0.25"
+                               value="1" id="pageMargins" name="pageMargins"
+                               onchange="d2reader.applyUserSettings({ pageMargins: this.value});"/>
+                    </div>
+                    <div class="range-slider" style="padding: 5px;">
+                        <label  style="display: block;
         text-align: center;
-        line-height: 12pt;height: 0px;">Line Height</label>
-                    <input class="range-slider__range_settings"  type="range" min="1" max="2" step="0.25"
-                           value="1" id="lineHeight" name="lineHeight"
-                           onchange="d2reader.applyUserSettings({ lineHeight: this.value});"/>
-                </div>
-                <div id="reset" style="padding-bottom: 10px">
+        line-height: 12pt;">Line Height</label>
+                        <input class="range-slider__range_settings"  type="range" min="1" max="2" step="0.25"
+                               value="1" id="lineHeight" name="lineHeight"
+                               onchange="d2reader.applyUserSettings({ lineHeight: this.value});"/>
+                    </div>
+                    <div id="reset" style="padding: 5px;padding-bottom: 10px">
 
-                    <center>
-                        <button style="width: 100px;
+                        <center>
+                            <button style="width: 100px;
             background-color: white;
         height: 50px;
         border-radius: 25px 25px 25px 25px;
@@ -492,48 +372,250 @@
         border-style: solid;
         color: black;
         font-size: 9pt; text-transform: uppercase"
-                                onclick="d2reader.resetUserSettings();">Reset
-                        </button>
-                    </center>
+                                    onclick="d2reader.resetUserSettings();">Reset
+                            </button>
+                        </center>
+                    </div>
                 </div>
             </div>
-            <div id="container-view-note-input" class="dropdown-content notifications">
-                <ul class="note-menu" role="menu">
-                    <li>
-                        <textarea id="note-input" name="text" wrap="soft" class="note-input" name="note-input" placeholder="type your note here"></textarea><br>
-                        <button id="save-note-button" class="saveNote btn right">
-                            <span>save note</span>
-                        </button>
-                    </li>
-                </ul>
+            <div id="sidedrawer4">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Layers</span>
+                </div>
+                <div class="mui-divider"></div>
+                    <div id="container-view-layer-settings" class="dropdown-content settings" style="width: 300px;padding: 10px;">
+                        <center style="display: flex;justify-content: center;align-items: center;padding: 5px">
+                            <label style="margin-right: 10px;">Highlights</label>
+                            <input type="checkbox" class="filled"
+                                   onchange="this.checked ? d2reader.showLayer('highlights') : d2reader.hideLayer('highlights')">
+                        </center>
+                        <center style="display: flex;justify-content: center;align-items: center;padding: 5px">
+                            <label style="margin-right: 10px;">Definitions</label>
+                            <input type="checkbox" class="filled"
+                                   onchange="this.checked ? d2reader.showLayer('definitions') : d2reader.hideLayer('definitions')">
+                        </center>
+                        <center style="display: flex;justify-content: center;align-items: center;padding: 5px">
+                            <label style="margin-right: 10px;">Page Break</label>
+                            <input type="checkbox" class="filled"
+                                   onchange="this.checked ? d2reader.showLayer('pagebreak') : d2reader.hideLayer('pagebreak')">
+                        </center>
+                        <center style="display: flex;justify-content: center;align-items: center;padding: 5px">
+                            <label style="margin-right: 10px;">Search</label>
+                            <input type="checkbox" class="filled"
+                                   onchange="this.checked ? d2reader.showLayer('search') : d2reader.hideLayer('search')">
+                        </center>
+                        <center style="display: flex;justify-content: center;align-items: center;padding: 5px">
+                            <label style="margin-right: 10px;">Read Aloud</label>
+                            <input type="checkbox" class="filled"
+                                   onchange="this.checked ? d2reader.showLayer('readaloud') : d2reader.hideLayer('readaloud')">
+                        </center>
+
+                    </div>
             </div>
-            <div id="container-view-search" class="dropdown-content dropdown-tabbed notifications">
-                <div class="search-wrapper" tabindex="-1">
-                    <i class="material-icons left" style="margin-right: -25px;position: relative;">search</i><input id="searchInput" placeholder="Search" style="padding-left: 25px; width: 100%;height: 40px;" type="text" />
-                    <ul class="tabs tabs-fixed-width">
-                        <li class="tab"><a href="#test1">Current Chapter</a></li>
-                        <li class="tab"><a href="#test2">Entire Book</a></li>
+            <div id="sidedrawer5">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Read Along Settings</span>
+                </div>
+                <div class="mui-divider"></div>
+                    <div id="container-view-mediaoverlay-settings" class="dropdown-content settings" style="width: 300px;padding: 10px;">
+                        <center tabindex="0" style="display: flex;justify-content: space-around;padding: 5px">
+                            <div style="display: flex;align-items: center;">
+                                <label style="margin-right: 10px;">Auto Scroll</label>
+                                <input type="checkbox" class="filled" id="mediaOverlayAutoScroll" name="mediaOverlayAutoScroll" onchange="d2reader.applyMediaOverlaySettings({ autoScroll: this.checked })">
+                            </div>
+                            <div style="display: flex;align-items: center;">
+                                <label style="margin-right: 10px;">Auto Page Turn</label>
+                                <input type="checkbox" class="filled" id="mediaOverlayAutoTurn" name="mediaOverlayAutoTurn" onchange="d2reader.applyMediaOverlaySettings({ autoTurn: this.checked })">
+                            </div>
+                        </center>
+                        <div class="range-slider" style="padding: 5px">
+                            <label style="display: block;text-align: center;line-height: 12pt;">Volume</label>
+                            <input class="range-slider__range_settings" type="range" min="0.1" max="1" step="0.1"
+                                   value="1" id="mediaOverlayVolume" name="mediaOverlayVolume"
+                                   onchange="d2reader.applyMediaOverlaySettings({ volume: this.value })"/>
+                        </div>
+                        <div class="range-slider" style="padding: 5px">
+                            <label style="display: block;text-align: center;line-height: 12pt;">Rate</label>
+                            <input class="range-slider__range_settings" type="range" min="0.1" max="3" step="0.1"
+                                   value="1" id="mediaOverlayRate" name="mediaOverlayRate"
+                                   onchange="d2reader.applyMediaOverlaySettings({ rate: this.value })"/>
+                        </div>
+                    </div>
+            </div>
+            <div id="sidedrawer6">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Line Focus Settings</span>
+                </div>
+                <div class="mui-divider"></div>
+                <div id="container-view-linefocus-settings" class="dropdown-content settings-view settings"  style="width: 300px;padding: 10px;">
+                    <div style="padding: 5px">
+                        <center tabindex="0" style="display: flex;justify-content: space-around;">
+                            <div style="display: flex;align-items: center;">
+                                <label style="margin-right: 10px;">Line Focus</label>
+                                <input type="checkbox" class="filled" id="lineFocus1" name="lineFocus1" onchange="d2reader.lineFocus( this.checked )">
+                            </div>
+                        </center>
+                    </div>
+                    <div style="padding: 5px">
+                        <center tabindex="0" style="display: flex;justify-content: space-around;">
+                            <div style="display: flex;align-items: center;">
+                                <label style="margin-right: 10px;">Debug</label>
+                                <input type="checkbox" class="filled" id="lineFocus2" name="lineFocus2" onchange="d2reader.applyLineFocusSettings( {debug:this.checked} )">
+                            </div>
+                        </center>
+                    </div>
+                    <div style="padding: 5px">
+                        <label style="display: block;
+            text-align: center;
+            line-height: 12pt;">Number of Lines</label>
+                        <center>
+                            <button style="width: 30%;
+            background-color: white;
+        height: 50px;
+        border-radius: 25px 0px 0px 25px;
+        border-color: #00000020;
+        border-width: 1px;
+        border-style: solid;
+        color: black;
+        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyLineFocusSettings({lines:'1'});"><span
+                              class="material-icons">looks_one</span></button><button style="width: 30%;
+            background-color: white;
+        height: 50px;
+        border-color: #00000020;
+        border-width: 1px;
+        border-style: solid;
+        color: black;
+        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyLineFocusSettings({lines:'3'});"><span
+                          class="material-icons">looks_3</span></button><button style="width: 30%;
+            background-color: white;
+        height: 50px;
+        border-radius: 0px 25px 25px 0px;
+        border-color: #00000020;
+        border-width: 1px;
+        border-style: solid;
+        color: black;
+        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyLineFocusSettings({lines:'5'});"><span
+                          class="material-icons">looks_5</span></button>
+                        </center>
+                    </div>
+                </div>
+            </div>
+            <div id="sidedrawer7">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Stamps</span>
+                </div>
+                <div class="mui-divider"></div>
+                    <ul class="mui-list--inline mui--text-body2" style="width: 300px;padding: 10px;">
+                        <li><a id="bookmarkAnchor" style="display: flex;text-decoration: none;cursor: pointer;align-items: center;" onclick="
+                            d2reader.activateMarker('bookmarkIcon', 'left');
+                            if (this.style.color !== 'green') {
+                                 this.style.color = 'green'
+                                 document.getElementById('emoticonAnchor').style.color = '';
+                                 document.getElementById('starAnchor').style.color = '';
+                            } else {
+                                 this.style.color = ''
+                                 document.getElementById('emoticonAnchor').style.color = '';
+                                 document.getElementById('starAnchor').style.color = '';
+                            }
+                           "><i class="material-icons" style="padding-right: 5px;">bookmark</i> Activate Bookmark Stamp</a></li>
+                        <li><a id="emoticonAnchor" style="display: flex;text-decoration: none;cursor: pointer;align-items: center;" onclick="
+                            d2reader.activateMarker('emoticonIcon', 'left');
+                            if (this.style.color !== 'green') {
+                                 this.style.color = 'green'
+                                 document.getElementById('bookmarkAnchor').style.color = '';
+                                 document.getElementById('starAnchor').style.color = '';
+                            } else {
+                                 this.style.color = ''
+                                 document.getElementById('bookmarkAnchor').style.color = '';
+                                 document.getElementById('starAnchor').style.color = '';
+                            }
+                           "><i class="material-icons" style="padding-right: 5px;">insert_emoticon</i> Activate Emoticon Stamp</a></li>
+                        <li><a id="starAnchor" style="display: flex;text-decoration: none;cursor: pointer;align-items: center;" onclick="
+                            d2reader.activateMarker('starIcon', 'left');
+                            if (this.style.color !== 'green') {
+                                 this.style.color = 'green'
+                                 document.getElementById('bookmarkAnchor').style.color = '';
+                                 document.getElementById('emoticonAnchor').style.color = '';
+                            } else {
+                                 this.style.color = ''
+                                 document.getElementById('bookmarkAnchor').style.color = '';
+                                 document.getElementById('emoticonAnchor').style.color = '';
+                            }
+                           "><i class="material-icons" style="padding-right: 5px;">star</i> Activate Star Stamp</a></li>
                     </ul>
-                    <div id="test1" class="col s12">
-                        <div class="collection" id="searchResultChapter">
-                            <a href="#!" class="collection-item">No Search Result</a>
-                        </div>
-                    </div>
-                    <div id="test2" class="col s12">
-                        <div class="collection" id="searchResultBook">
-                            <a href="#!" class="collection-item">No Search Result</a>
-                        </div>
-                    </div>
+            </div>
+            <div id="sidedrawer8">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Search</span>
                 </div>
+                <div class="mui-divider"></div>
+                <div id="container-view-search" class="dropdown-content dropdown-tabbed notifications" style="width: 410px;padding: 10px;">
+                    <div class="search-wrapper" tabindex="-1">
+                        <i class="material-icons left" style="margin-right: -25px;position: relative;">search</i><input id="searchInput" placeholder="Search" style="padding-left: 25px; width: 100%;height: 40px;" type="text" />
+                    </div>
+                        <ul class="mui-tabs__bar" style="display: flex;justify-content: space-evenly;">
+                            <li class="mui--is-active"><a data-mui-toggle="tab" data-mui-controls="pane-default-1">Current Chapter</a></li>
+                            <li><a data-mui-toggle="tab" data-mui-controls="pane-default-2">Entire Book</a></li>
+                        </ul>
+                        <div class="mui-tabs__pane mui--is-active" id="pane-default-1">
+
+                            <div class="collection" id="searchResultChapter">
+                                <a href="#!" class="collection-item">No Search Result</a>
+                            </div>
+
+                        </div>
+                        <div class="mui-tabs__pane" id="pane-default-2">
+                            <div class="collection" id="searchResultBook">
+                                <a href="#!" class="collection-item">No Search Result</a>
+                            </div>
+                        </div>
+
+                </div>
+
+            </div>
+
+            <div class="mui-appbar mui--appbar-line-height " style="background-color: white;color: black">
+                    <table class="mui--appbar-height">
+                        <tr>
+                            <td class="mui--text-title">
+                                <a class="sidedrawer-toggle mui--visible-inline-block mui--visible-inline-block js-show-sidedrawer">☰</a>
+                                <span class="mui--text-title mui--visible-inline-block mui--visible-inline-block">DITA Reader</span>
+                            </td>
+                            <td align="mui--text-right" style="text-align: right;padding-right: 10px">
+                                <ul class="mui-list--inline mui--text-body2">
+                                    <li><a class="saveBookmark" id="menu-button-bookmark-range"  onclick="d2reader.saveBookmarkPlus()"><i class="material-icons">bookmark_border</i></a></li>
+                                    <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
+                                    <li><a id="menu-button-up" onclick="d2reader.lineUp()"><i class="material-icons">arrow_upward</i></a></li>
+                                    <li><a id="menu-button-down" onclick="d2reader.lineDown()"><i class="material-icons">arrow_downward</i></a></li>
+
+                                    <li><a id="menu-button-play" onclick="d2reader.startReadAlong()"><i class="material-icons">play_arrow</i></a>
+                                    <a id="menu-button-pause" onclick="d2reader.pauseReadAlong()" style="display: none"><i class="material-icons">pause</i></a></li>
+
+                                    <li><i class="material-icons" style="transform: rotate(90deg);color: lightgray">horizontal_rule</i></li>
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer7" data-target="container-view-stamps-settings" id="menu-button-stamp"><i class="material-icons ">approval</i></a></li>
+
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer6" data-target="container-view-linefocus-settings" id="menu-button-linefocus"><i class="material-icons ">filter_center_focus</i></a></li>
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer2" data-target="container-view-tts-settings" data-mui-toggle="dropdown" id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer4"  data-target="container-view-layer-settings" id="menu-button-layer"><i class="material-icons ">toggle_on</i></a></li>
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer5"  data-target="container-view-mediaoverlay-settings" id="menu-button-mediaoverlay"><i class="material-icons ">record_voice_over</i></a></li>
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer3"  data-target="container-view-settings-custom" id="menu-button-settings" onclick="reload()"><i class="material-icons">settings</i></a></li>
+
+                                    <li style="display:none"><a class="mui--visible-inline-block  js-show-sidedrawer8"  data-target="container-view-search"  id="menu-button-search"><i class="material-icons">search</i></a></li>
+
+                                </ul>
+                            </td>
+                        </tr>
+                    </table>
+                <div class="mui-divider"></div>
             </div>
         </header>
 
-        <div id="D2Reader-Container" style="border: solid 5px rebeccapurple;height: calc(100vh - 65px);">
-            <div id="lineFocusContainer" class="d2-line-focus-container" style="display: none;height: calc(100vh - 75px);">
+        <div id="D2Reader-Container" style="height: calc(100vh - 65px);">
+            <div id="lineFocusContainer" class="d2-line-focus-container" style="display: none;height: calc(100vh - 65px);">
                 <div id="lineFocusTopBlinder" class="d2-line-focus-top" ></div>
                 <div id="lineFocusBottomBlinder" class="d2-line-focus-bottom"></div>
             </div>
-            <main style="height: calc(100vh - 75px);" tabindex=-1 id="iframe-wrapper">
+            <main style="height: calc(100vh - 65px);" tabindex=-1 id="iframe-wrapper">
                 <div id="reader-loading" class="loading"></div>
                 <div id="reader-error" class="error"></div>
                 <div id="reader-info-top" class="info top">
@@ -545,7 +627,7 @@
                         <span class="chapter-title"></span>
                     </div>
                     <div class="scrubber">
-                        <input class="range-slider__range" style="width:100%;display: none" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="d2reader.goToPosition( this.value )" />
+                        <input class="range-slider__range" style="margin-left:30px;display: none" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="d2reader.goToPosition( this.value )" />
                     </div>
                 </div>
                 <div style="height: 0px">
@@ -900,7 +982,7 @@
                 enablePageBreaks: true,
                 autoGeneratePositions: true,
                 enableLineFocus: true,
-                customKeyboardEvents: true,
+                customKeyboardEvents: false,
             },
             lineFocus: {
                 lines: 5,
@@ -1278,10 +1360,6 @@
         }
     </script>
 
-    <!-- START Material Scripts -->
-    <!-- Compiled and minified Materialize JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-
     <noscript>
         <style>
             noscript {
@@ -1300,6 +1378,7 @@
         </style>
         <p class="warning">To use this viewer, please enable JavaScript.</p>
     </noscript>
+
 </body>
 
 </html>

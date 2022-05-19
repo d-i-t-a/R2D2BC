@@ -171,10 +171,9 @@ async function buildAll() {
 
   // compile sass files into reader.css and material.css
   const p7 = compileCss("src/styles/sass/reader.scss", "reader");
-  const p8 = compileCss("src/styles/sass/material.scss", "material");
 
   // wait for everything to finish running in parallel
-  await Promise.all([p1, p2, p3, p4, p5, p6, p7, p8]);
+  await Promise.all([p1, p2, p3, p4, p5, p6, p7]);
   console.log("🔥 Build finished.");
 }
 

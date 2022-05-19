@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * Developed on behalf of: CAST (http://www.cast.org)
- * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Licensed to: CAST under one or more contributor license agreements.
  */
 
 import Store from "../../store/Store";

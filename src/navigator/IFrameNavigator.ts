@@ -2149,7 +2149,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   private handleEditClick(event: MouseEvent): void {
     var element = event.target as HTMLElement;
     if (this.headerMenu) {
-      var sidenav = HTMLUtilities.findElement(this.headerMenu, ".sidenav");
+      var sidenav = HTMLUtilities.findElement(document, ".sidenav");
 
       if (element.className.indexOf(" active") === -1) {
         element.className += " active";

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * Developed on behalf of: CAST (http://www.cast.org) and DITA
- * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Licensed to: CAST under one or more contributor license agreements.
  */
 
 import { IS_DEV } from "../../utils";

@@ -166,7 +166,6 @@ export interface ReaderRights {
   enableSearch: boolean;
   enableDefinitions: boolean;
   enableContentProtection: boolean;
-  enableMaterial: boolean;
   enableTimeline: boolean;
   autoGeneratePositions: boolean;
   enableMediaOverlays: boolean;
@@ -293,7 +292,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     enableContentProtection: false,
     enableDefinitions: false,
     enableLineFocus: false,
-    enableMaterial: false,
     enableMediaOverlays: false,
     enablePageBreaks: false,
     enableSearch: false,
@@ -371,7 +369,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       enableContentProtection: false,
       enableDefinitions: false,
       enableLineFocus: false,
-      enableMaterial: false,
       enableMediaOverlays: false,
       enablePageBreaks: false,
       enableSearch: false,
@@ -446,27 +443,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.iframes.forEach((iframe) => {
       removeEventListenerOptional(iframe, "resize", this.onResize);
     });
-
-    if (this.rights.enableMaterial) {
-      if (this.mDropdowns) {
-        this.mDropdowns.forEach((element) => {
-          (element as any).destroy();
-        });
-      }
-      if (this.mCollapsibles) {
-        this.mCollapsibles.forEach((element) => {
-          (element as any).destroy();
-        });
-      }
-      if (this.mSidenav) {
-        (this.mSidenav as any).destroy();
-      }
-      if (this.mTabs) {
-        this.mTabs.forEach((element) => {
-          (element as any).destroy();
-        });
-      }
-    }
   }
   spreads: HTMLDivElement;
   firstSpread: HTMLDivElement;
@@ -755,88 +731,51 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.headerMenu,
           "#menu-button-mediaoverlay"
         );
-        if (this.rights.enableMaterial) {
-          if (!this.rights.enableBookmarks) {
-            if (menuBookmark)
-              menuBookmark.parentElement?.style.setProperty("display", "none");
-            var sideNavSectionBookmarks = HTMLUtilities.findElement(
-              this.headerMenu,
-              "#sidenav-section-bookmarks"
-            );
-            if (sideNavSectionBookmarks)
-              sideNavSectionBookmarks.style.setProperty("display", "none");
-          }
-          if (!this.rights.enableAnnotations) {
-            var sideNavSectionHighlights = HTMLUtilities.findElement(
-              this.headerMenu,
-              "#sidenav-section-highlights"
-            );
-            if (sideNavSectionHighlights)
-              sideNavSectionHighlights.style.setProperty("display", "none");
-          }
-          if (!this.rights.enableTTS) {
-            if (menuTTS)
-              menuTTS.parentElement?.style.setProperty("display", "none");
-          }
-          if (!this.rights.enableSearch) {
-            if (menuSearch)
-              menuSearch.parentElement?.style.setProperty("display", "none");
-          }
-          if (menuSearch && this.view?.delegate.publication.isFixedLayout) {
-            menuSearch.parentElement?.style.setProperty("display", "none");
-          }
-          if (this.hasMediaOverlays) {
-            if (play) play.parentElement?.style.removeProperty("display");
-            if (pause) pause.parentElement?.style.removeProperty("display");
-            if (menu) menu.parentElement?.style.removeProperty("display");
-          } else {
-            if (play) play.parentElement?.style.setProperty("display", "none");
-            if (pause)
-              pause.parentElement?.style.setProperty("display", "none");
-            if (menu) menu.parentElement?.style.setProperty("display", "none");
-          }
-        } else {
-          if (menuSearch)
-            menuSearch.parentElement?.style.setProperty("display", "none");
-          if (menuTTS)
-            menuTTS.parentElement?.style.setProperty("display", "none");
+        if (!this.rights.enableBookmarks) {
           if (menuBookmark)
             menuBookmark.parentElement?.style.setProperty("display", "none");
+          var sideNavSectionBookmarks = HTMLUtilities.findElement(
+            this.headerMenu,
+            "#sidenav-section-bookmarks"
+          );
+          if (sideNavSectionBookmarks)
+            sideNavSectionBookmarks.style.setProperty("display", "none");
         }
-      }
-
-      if (this.rights.enableMaterial) {
-        let elements = document.querySelectorAll(".sidenav");
-        if (elements) {
-          // self.mSidenav = Sidenav.init(elements, {
-          //   edge: this.attributes?.sideNavPosition ?? "left",
-          // });
+        if (!this.rights.enableAnnotations) {
+          var sideNavSectionHighlights = HTMLUtilities.findElement(
+            this.headerMenu,
+            "#sidenav-section-highlights"
+          );
+          if (sideNavSectionHighlights)
+            sideNavSectionHighlights.style.setProperty("display", "none");
         }
-        let collapsible = document.querySelectorAll(".collapsible");
-        if (collapsible) {
-          // self.mCollapsibles = Collapsible.init(collapsible, {
-          //   accordion: true,
-          // });
+        if (!this.rights.enableTTS) {
+          if (menuTTS)
+            menuTTS.parentElement?.style.setProperty("display", "none");
         }
-        let dropdowns = document.querySelectorAll(".dropdown-trigger");
-        if (dropdowns) {
-          // self.mDropdowns = Dropdown.init(dropdowns, {
-          //   alignment: "right",
-          //   constrainWidth: false,
-          //   coverTrigger: false,
-          //   closeOnClick: false,
-          //   autoTrigger: false,
-          //   onOpenEnd: function () {
-          //     self.mTabs.forEach((element) => {
-          //       (element as any).updateTabIndicator();
-          //     });
-          //   },
-          // });
+        if (!this.rights.enableSearch) {
+          if (menuSearch)
+            menuSearch.parentElement?.style.setProperty("display", "none");
         }
-        let tabs = document.querySelectorAll(".tabs");
-        if (tabs) {
-          // self.mTabs = Tabs.init(tabs);
+        if (menuSearch && this.view?.delegate.publication.isFixedLayout) {
+          menuSearch.parentElement?.style.setProperty("display", "none");
         }
+        if (this.hasMediaOverlays) {
+          if (play) play.parentElement?.style.removeProperty("display");
+          if (pause) pause.parentElement?.style.removeProperty("display");
+          if (menu) menu.parentElement?.style.removeProperty("display");
+        } else {
+          if (play) play.parentElement?.style.setProperty("display", "none");
+          if (pause) pause.parentElement?.style.setProperty("display", "none");
+          if (menu) menu.parentElement?.style.setProperty("display", "none");
+        }
+      } else {
+        if (menuSearch)
+          menuSearch.parentElement?.style.setProperty("display", "none");
+        if (menuTTS)
+          menuTTS.parentElement?.style.setProperty("display", "none");
+        if (menuBookmark)
+          menuBookmark.parentElement?.style.setProperty("display", "none");
       }
 
       return await this.loadManifest();

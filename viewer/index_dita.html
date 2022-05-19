@@ -36,16 +36,20 @@
     <!-- END R2 Reader CSS and JS -->
 
     <!-- START MUI CSS and JS -->
-    <link href="https://cdn.muicss.com/mui-latest/css/mui.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdn.muicss.com/mui-latest/css/mui.min.css" />
     <script src="https://cdn.muicss.com/mui-latest/js/mui.min.js"></script>
     <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-    <link href="/viewer/injectables/mui/style.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/viewer/injectables/mui/style.css"/>
     <script src="/viewer/injectables/mui/script.js"></script>
     <!-- END MUI CSS and JS -->
 
     <!-- START LineFocus CSS -->
     <link rel="stylesheet" href="/viewer/injectables/style/linefocus.css" />
     <!-- END LineFocus CSS -->
+
+    <!-- START Toast CSS -->
+    <link rel="stylesheet" href="/viewer/injectables/style/toast.css" />
+    <!-- END Toast CSS -->
 
 </head>
 
@@ -711,6 +715,9 @@
                         position: relative;">keyboard_arrow_right</i>
             </a>
         </footer>
+
+        <div id="toast"><div id="description"></div></div>
+
     </div>
 
     <script>
@@ -970,7 +977,6 @@
                 sideNavPosition: 'left'
             },
             rights: {
-                enableMaterial: true,
                 enableBookmarks: true,
                 enableAnnotations: true,
                 enableTTS: true,
@@ -1145,6 +1151,7 @@
                 api: {
                     addAnnotation: function (highlight) {
                         console.log("addAnnotation")
+                        toast("Annotation added");
                         return new Promise(function (resolve, reject) {
                             highlight.id = Math.random()
                             resolve(
@@ -1154,6 +1161,7 @@
                     },
                     deleteAnnotation: function (highlight) {
                         console.log("deleteAnnotation")
+                        toast("Annotation deleted");
                         return new Promise(function (resolve, reject) {
                             resolve()
                         })
@@ -1174,6 +1182,7 @@
                 api: {
                     addBookmark: function (bookmark) {
                         console.log("addBookmark")
+                        toast("Bookmark added");
                         return new Promise(function (resolve, reject) {
                             bookmark.id = Math.random()
                             resolve(
@@ -1183,6 +1192,7 @@
                     },
                     deleteBookmark: function (bookmark) {
                         console.log("deleteBookmark")
+                        toast("Bookmark deleted");
                         return new Promise(function (resolve, reject) {
                             resolve(
                                 bookmark
@@ -1358,6 +1368,17 @@
             document.getElementById("lineHeight").value = result['lineHeight'];
             document.getElementById("pageMargins").value = result['pageMargins'];
         }
+
+        function toast(text) {
+            const toastDiv = document.getElementById("toast");
+            const toastDescription = document.getElementById("description");
+            toastDiv.className = "show";
+            toastDescription.innerText = text;
+            setTimeout(function() {
+                toastDiv.className = toastDiv.className.replace("show", "");
+            }, 5000);
+        }
+
     </script>
 
     <noscript>

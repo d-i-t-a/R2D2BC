@@ -546,12 +546,7 @@ export class TTSModule2 implements ReaderModule {
         this.headerMenu,
         "#menu-button-tts"
       );
-      if (this.rights.enableMaterial) {
-        if (menuTTS) menuTTS.parentElement?.style.removeProperty("display");
-      } else {
-        if (menuTTS)
-          menuTTS.parentElement?.style.setProperty("display", "none");
-      }
+      if (menuTTS) menuTTS.parentElement?.style.removeProperty("display");
     }
     setTimeout(() => {
       this.properties?.hideLayer

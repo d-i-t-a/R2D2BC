@@ -99,7 +99,6 @@ export default class D2Reader {
       enableContentProtection: false,
       enableDefinitions: false,
       enableLineFocus: false,
-      enableMaterial: false,
       enableMediaOverlays: false,
       enablePageBreaks: false,
       enableSearch: false,

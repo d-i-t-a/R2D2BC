@@ -61,12 +61,11 @@ export class TimelineModule implements ReaderModule {
       document,
       "#container-view-timeline"
     );
-    if (this.delegate.rights.enableMaterial) {
-      this.positionSlider = HTMLUtilities.findElement(
-        document,
-        "#positionSlider"
-      );
-    }
+    this.positionSlider = HTMLUtilities.findElement(
+      document,
+      "#positionSlider"
+    );
+
     if (this.publication.positions) {
       if (this.positionSlider) this.positionSlider.style.display = "block";
     } else {
@@ -80,10 +79,9 @@ export class TimelineModule implements ReaderModule {
 
       let locator = this.delegate.currentLocator();
       if (
-        this.delegate.rights.enableMaterial &&
-        ((this.delegate.rights.autoGeneratePositions &&
+        (this.delegate.rights.autoGeneratePositions &&
           this.publication.positions) ||
-          this.publication.positions)
+        this.publication.positions
       ) {
         if (this.positionSlider)
           this.positionSlider.value = (

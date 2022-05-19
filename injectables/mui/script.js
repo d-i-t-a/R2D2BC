@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-undef
 jQuery(function ($) {
   var $bodyEl = $("body"),
     $sidedrawerEl = $("#sidedrawer"),
@@ -20,6 +21,7 @@ jQuery(function ($) {
       },
     };
 
+    // eslint-disable-next-line no-undef
     var $overlayEl = $(mui.overlay("on", options));
 
     // show element
@@ -41,6 +43,7 @@ jQuery(function ($) {
       },
     };
 
+    // eslint-disable-next-line no-undef
     var $overlayEl = $(mui.overlay("on", options));
 
     // show element
@@ -57,6 +60,7 @@ jQuery(function ($) {
       },
     };
 
+    // eslint-disable-next-line no-undef
     var $overlayEl = $(mui.overlay("on", options));
 
     // show element
@@ -73,6 +77,7 @@ jQuery(function ($) {
       },
     };
 
+    // eslint-disable-next-line no-undef
     var $overlayEl = $(mui.overlay("on", options));
 
     // show element
@@ -89,6 +94,7 @@ jQuery(function ($) {
       },
     };
 
+    // eslint-disable-next-line no-undef
     var $overlayEl = $(mui.overlay("on", options));
 
     // show element
@@ -105,6 +111,7 @@ jQuery(function ($) {
       },
     };
 
+    // eslint-disable-next-line no-undef
     var $overlayEl = $(mui.overlay("on", options));
 
     // show element
@@ -121,6 +128,7 @@ jQuery(function ($) {
       },
     };
 
+    // eslint-disable-next-line no-undef
     var $overlayEl = $(mui.overlay("on", options));
 
     // show element
@@ -137,6 +145,7 @@ jQuery(function ($) {
       },
     };
 
+    // eslint-disable-next-line no-undef
     var $overlayEl = $(mui.overlay("on", options));
 
     // show element

@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-undef
 jQuery(function ($) {
-  var $bodyEl = $("body"),
+  const $bodyEl = $("body"),
     $sidedrawerEl = $("#sidedrawer"),
     $sidedrawer2El = $("#sidedrawer2"),
     $sidedrawer3El = $("#sidedrawer3"),
@@ -15,14 +15,14 @@ jQuery(function ($) {
   // ==========================================================================
   function showSidedrawer() {
     // show overlay
-    var options = {
+    let options = {
       onclose: function () {
         $sidedrawerEl.removeClass("active").appendTo(document.body);
       },
     };
 
     // eslint-disable-next-line no-undef
-    var $overlayEl = $(mui.overlay("on", options));
+    const $overlayEl = $(mui.overlay("on", options));
 
     // show element
     $sidedrawerEl.appendTo($overlayEl);
@@ -37,14 +37,14 @@ jQuery(function ($) {
 
   function showSidedrawer2() {
     // show overlay
-    var options = {
+    let options = {
       onclose: function () {
         $sidedrawer2El.removeClass("active").appendTo(document.body);
       },
     };
 
     // eslint-disable-next-line no-undef
-    var $overlayEl = $(mui.overlay("on", options));
+    const $overlayEl = $(mui.overlay("on", options));
 
     // show element
     $sidedrawer2El.appendTo($overlayEl);
@@ -54,14 +54,14 @@ jQuery(function ($) {
   }
   function showSidedrawer3() {
     // show overlay
-    var options = {
+    let options = {
       onclose: function () {
         $sidedrawer3El.removeClass("active").appendTo(document.body);
       },
     };
 
     // eslint-disable-next-line no-undef
-    var $overlayEl = $(mui.overlay("on", options));
+    const $overlayEl = $(mui.overlay("on", options));
 
     // show element
     $sidedrawer3El.appendTo($overlayEl);
@@ -71,14 +71,14 @@ jQuery(function ($) {
   }
   function showSidedrawer4() {
     // show overlay
-    var options = {
+    let options = {
       onclose: function () {
         $sidedrawer4El.removeClass("active").appendTo(document.body);
       },
     };
 
     // eslint-disable-next-line no-undef
-    var $overlayEl = $(mui.overlay("on", options));
+    const $overlayEl = $(mui.overlay("on", options));
 
     // show element
     $sidedrawer4El.appendTo($overlayEl);
@@ -88,14 +88,14 @@ jQuery(function ($) {
   }
   function showSidedrawer5() {
     // show overlay
-    var options = {
+    let options = {
       onclose: function () {
         $sidedrawer5El.removeClass("active").appendTo(document.body);
       },
     };
 
     // eslint-disable-next-line no-undef
-    var $overlayEl = $(mui.overlay("on", options));
+    const $overlayEl = $(mui.overlay("on", options));
 
     // show element
     $sidedrawer5El.appendTo($overlayEl);
@@ -105,14 +105,14 @@ jQuery(function ($) {
   }
   function showSidedrawer6() {
     // show overlay
-    var options = {
+    let options = {
       onclose: function () {
         $sidedrawer6El.removeClass("active").appendTo(document.body);
       },
     };
 
     // eslint-disable-next-line no-undef
-    var $overlayEl = $(mui.overlay("on", options));
+    const $overlayEl = $(mui.overlay("on", options));
 
     // show element
     $sidedrawer6El.appendTo($overlayEl);
@@ -122,14 +122,14 @@ jQuery(function ($) {
   }
   function showSidedrawer7() {
     // show overlay
-    var options = {
+    let options = {
       onclose: function () {
         $sidedrawer7El.removeClass("active").appendTo(document.body);
       },
     };
 
     // eslint-disable-next-line no-undef
-    var $overlayEl = $(mui.overlay("on", options));
+    const $overlayEl = $(mui.overlay("on", options));
 
     // show element
     $sidedrawer7El.appendTo($overlayEl);
@@ -139,14 +139,14 @@ jQuery(function ($) {
   }
   function showSidedrawer8() {
     // show overlay
-    var options = {
+    let options = {
       onclose: function () {
         $sidedrawer8El.removeClass("active").appendTo(document.body);
       },
     };
 
     // eslint-disable-next-line no-undef
-    var $overlayEl = $(mui.overlay("on", options));
+    const $overlayEl = $(mui.overlay("on", options));
 
     // show element
     $sidedrawer8El.appendTo($overlayEl);
@@ -175,7 +175,7 @@ jQuery(function ($) {
   // ==========================================================================
   // Animate menu
   // ==========================================================================
-  var $titleEls = $("strong", $sidedrawerEl);
+  const $titleEls = $("strong", $sidedrawerEl);
 
   $titleEls.next().hide();
 

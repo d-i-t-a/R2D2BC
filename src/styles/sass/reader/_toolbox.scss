@@ -22,9 +22,10 @@
   animation: toolsAnimateIn 100ms ease-out both;
   transform-origin: bottom;
   z-index: 999;
-  position: absolute;
+  position: relative;
   background: gainsboro;
   display: none;
+  width: fit-content;
   &:before {
       $size: 0.4rem;
       content: '';
@@ -39,10 +40,6 @@
   > div > button {
     display: inline-block;
   }
-}
-
-.color-option {
-  background-color: gainsboro;
 }
 
 .color-option span {

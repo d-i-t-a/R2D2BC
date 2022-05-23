@@ -19,26 +19,26 @@
 
 import { ReadingPosition } from "../model/Locator";
 import { IHighlight } from "../modules/highlight/common/highlight";
-import { IReadiumIFrameWindow } from "../modules/highlight/renderer/iframe/state";
 
 interface Annotator {
-  initLastReadingPosition(position: ReadingPosition): Promise<void>;
-  getLastReadingPosition(): Promise<any>;
-  saveLastReadingPosition(position: any): Promise<void>;
+  initLastReadingPosition(position: ReadingPosition);
+  getLastReadingPosition(): any;
+  saveLastReadingPosition(position: any);
 
-  initBookmarks(list: any): Promise<any>;
-  saveBookmark(bookmark: any): Promise<any>;
-  deleteBookmark(bookmark: any): Promise<any>;
-  getBookmarks(href?: string): Promise<any>;
-  locatorExists(locator: any, type: AnnotationType): Promise<any>;
+  initBookmarks(list: any): any;
+  saveBookmark(bookmark: any): any;
+  deleteBookmark(bookmark: any): any;
+  getBookmarks(href?: string): any;
+  locatorExists(locator: any, type: AnnotationType): any;
 
-  initAnnotations(list: any): Promise<any>;
-  saveAnnotation(annotation: any): Promise<any>;
-  deleteAnnotation(id: any): Promise<any>;
-  deleteSelectedAnnotation(annotation: any): Promise<any>;
-  getAnnotations(): Promise<any>;
-  getAnnotation(annotation: IHighlight): Promise<any>;
-  getAnnotationPosition(id: any, iframeWin: IReadiumIFrameWindow): Promise<any>;
+  initAnnotations(list: any): any;
+  saveAnnotation(annotation: any): any;
+  deleteAnnotation(id: any): any;
+  deleteSelectedAnnotation(annotation: any): any;
+  getAnnotations(): any;
+  getAnnotation(annotation: IHighlight): any;
+  getAnnotationByID(id: string): any;
+  getAnnotationPosition(id: any, iframeWin: any): any;
 }
 
 export enum AnnotationType {

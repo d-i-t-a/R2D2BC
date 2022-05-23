@@ -17,10 +17,10 @@
  * Licensed to: Bibliotheca LLC under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { Publication } from "../../model/Publication";
-import IFrameNavigator from "../../navigator/IFrameNavigator";
-import ReaderModule from "../ReaderModule";
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { ReaderModule } from "../ReaderModule";
 import { Link } from "../../model/Link";
 import { MediaOverlayNode } from "r2-shared-js/dist/es6-es2015/src/models/media-overlay";
 import { TaJsonDeserialize } from "../../utils/JsonUtil";
@@ -49,66 +49,72 @@ export interface MediaOverlayModuleProperties {
   autoScroll?: boolean;
   autoTurn?: boolean;
   volume?: number;
+  rate?: number;
   wait?: number;
+  hideLayer?: boolean;
 }
 export interface MediaOverlayModuleConfig extends MediaOverlayModuleProperties {
   publication: Publication;
   delegate: IFrameNavigator;
-  api: MediaOverlayModuleAPI;
   settings: MediaOverlaySettings;
+  api?: MediaOverlayModuleAPI;
 }
 
-export default class MediaOverlayModule implements ReaderModule {
+export class MediaOverlayModule implements ReaderModule {
   private publication: Publication;
   private delegate: IFrameNavigator;
   private audioElement: HTMLMediaElement;
-  private settings: MediaOverlaySettings;
+  settings: MediaOverlaySettings;
+  private properties: MediaOverlayModuleProperties;
   private play: HTMLLinkElement = HTMLUtilities.findElement(
     document,
     "#menu-button-play"
-  ) as HTMLLinkElement;
+  );
   private pause: HTMLLinkElement = HTMLUtilities.findElement(
     document,
     "#menu-button-pause"
-  ) as HTMLLinkElement;
+  );
 
   private currentAudioBegin: number | undefined;
   private currentAudioEnd: number | undefined;
-  private currentLinks: Array<Link>;
+  private currentLinks: Array<Link | undefined>;
   private currentLinkIndex = 0;
-  private mediaOverlaysPlaybackRate = 1;
   private currentAudioUrl: string | undefined;
   private previousAudioUrl: string | undefined;
   private previousAudioEnd: number | undefined;
   private mediaOverlayRoot: MediaOverlayNode | undefined;
   private mediaOverlayTextAudioPair: MediaOverlayNode | undefined;
-  private pid: string = undefined;
+  private pid: string | undefined = undefined;
+  private __ontimeupdate = false;
 
-  public static async create(config: MediaOverlayModuleConfig) {
+  public static create(config: MediaOverlayModuleConfig) {
     const mediaOverlay = new this(
       config.delegate,
       config.publication,
-      config.settings
+      config.settings,
+      config as MediaOverlayModuleProperties
     );
-    await mediaOverlay.start();
+    mediaOverlay.start();
     return mediaOverlay;
   }
 
   private constructor(
     delegate: IFrameNavigator,
     publication: Publication,
-    settings: MediaOverlaySettings
+    settings: MediaOverlaySettings,
+    properties: MediaOverlayModuleProperties
   ) {
     this.delegate = delegate;
     this.publication = publication;
     this.settings = settings;
+    this.properties = properties;
   }
 
-  async stop() {
+  stop() {
     if (IS_DEV) console.log("MediaOverlay module stop");
   }
 
-  protected async start(): Promise<void> {
+  protected start() {
     this.delegate.mediaOverlayModule = this;
     if (IS_DEV) console.log("MediaOverlay module start");
   }
@@ -120,13 +126,13 @@ export default class MediaOverlayModule implements ReaderModule {
       this.settings.setControls();
       this.settings.onSettingsChange(() => {
         this.audioElement.volume = this.settings.volume;
+        this.audioElement.playbackRate = this.settings.rate;
       });
-
       resolve();
     });
   }
 
-  async initializeResource(links: Array<Link>) {
+  async initializeResource(links: Array<Link | undefined>) {
     this.currentLinks = links;
     this.currentLinkIndex = 0;
     await this.playLink();
@@ -135,7 +141,7 @@ export default class MediaOverlayModule implements ReaderModule {
   private async playLink() {
     let link = this.currentLinks[this.currentLinkIndex];
     if (link?.Properties?.MediaOverlay) {
-      console.log(link.Properties?.MediaOverlay);
+      this.ensureOnTimeUpdate(false, false);
       const moUrl = link.Properties?.MediaOverlay;
 
       const moUrlObjFull = new URL(moUrl, this.publication.manifestUrl);
@@ -181,46 +187,67 @@ export default class MediaOverlayModule implements ReaderModule {
       if (this.audioElement) {
         await this.audioElement.pause();
       }
-      if (this.currentLinks.length > 1 && this.currentLinkIndex == 0) {
+      if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
         this.currentLinkIndex++;
         await this.playLink();
       } else {
         if (this.settings.autoTurn && this.settings.playing) {
+          this.audioElement.pause();
           this.delegate.nextResource();
+        } else {
+          this.stopReadAloud();
         }
       }
     }
   }
 
   async startReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
+    if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = true;
-      const timeToSeekTo = this.currentAudioBegin ? this.currentAudioBegin : 0;
-      this.audioElement.currentTime = timeToSeekTo;
-      await this.audioElement.play();
-      this.audioElement.volume = this.settings.volume;
+      if (this.audioElement) {
+        const timeToSeekTo = this.currentAudioBegin
+          ? this.currentAudioBegin
+          : 0;
+        this.audioElement.currentTime = timeToSeekTo;
+        await this.audioElement.play();
+        this.ensureOnTimeUpdate(false, true);
+        this.audioElement.volume = this.settings.volume;
+        this.audioElement.playbackRate = this.settings.rate;
+      } else {
+        if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
+          this.currentLinkIndex++;
+          await this.playLink();
+        } else {
+          if (this.settings.autoTurn && this.settings.playing) {
+            this.delegate.nextResource();
+          } else {
+            await this.stopReadAloud();
+          }
+        }
+      }
       if (this.play) this.play.style.display = "none";
       if (this.pause) this.pause.style.display = "block";
     }
   }
-  stopReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
+  async stopReadAloud() {
+    if (this.delegate.rights.enableMediaOverlays) {
+      if (this.currentLinkIndex > 0) await this.playLink();
+      this.settings.playing = false;
+      this.audioElement?.pause();
+      if (this.play) this.play.style.display = "block";
+      if (this.pause) this.pause.style.display = "none";
+    }
+  }
+  pauseReadAloud() {
+    if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = false;
       this.audioElement.pause();
       if (this.play) this.play.style.display = "block";
       if (this.pause) this.pause.style.display = "none";
     }
   }
-  pauseReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
-      this.settings.playing = false;
-      this.audioElement.pause();
-      this.play.style.display = "block";
-      this.pause.style.display = "none";
-    }
-  }
   async resumeReadAloud() {
-    if (this.delegate.rights?.enableMediaOverlays) {
+    if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = true;
       await this.audioElement.play();
       if (this.play) this.play.style.display = "none";
@@ -323,38 +350,33 @@ export default class MediaOverlayModule implements ReaderModule {
     }
     return undefined;
   }
-  ontimeupdate = async (ev: Event) => {
-    if (IS_DEV) console.log("ontimeupdate");
-    const currentAudioElement = ev.currentTarget as HTMLAudioElement;
-    if (
-      this.currentAudioEnd &&
-      currentAudioElement.currentTime >= this.currentAudioEnd - 0.05
-    ) {
-      if (IS_DEV) console.log("ontimeupdate - mediaOverlaysNext()");
-      this.mediaOverlaysNext();
-    }
-  };
-  ensureOnTimeUpdate = (remove: boolean) => {
-    if (this.audioElement) {
-      if (remove) {
-        if ((this.audioElement as any).__ontimeupdate) {
-          (this.audioElement as any).__ontimeupdate = false;
-          this.audioElement.removeEventListener(
-            "timeupdate",
-            this.ontimeupdate
-          );
+  myReq;
+  trackCurrentTime() {
+    cancelAnimationFrame(this.myReq);
+
+    if (this.mediaOverlayTextAudioPair) {
+      try {
+        if (
+          this.currentAudioEnd &&
+          this.audioElement.currentTime >= this.currentAudioEnd - 0.05
+        ) {
+          if (IS_DEV) console.log("ontimeupdate - mediaOverlaysNext()");
+          this.mediaOverlaysNext();
         }
-      } else {
-        if (!(this.audioElement as any).__ontimeupdate) {
-          (this.audioElement as any).__ontimeupdate = true;
-          this.audioElement.addEventListener("timeupdate", this.ontimeupdate);
-        }
-      }
+        const match_i = this.mediaOverlayTextAudioPair.Text.lastIndexOf("#");
+        const match_id = this.mediaOverlayTextAudioPair.Text.substr(
+          match_i + 1
+        );
+
+        this.mediaOverlayHighlight(match_id);
+
+        this.myReq = requestAnimationFrame(this.trackCurrentTime.bind(this));
+      } catch (e) {}
     }
-  };
+  }
+
   mediaOverlaysNext(escape?: boolean) {
     if (IS_DEV) console.log("mediaOverlaysNext()");
-    this.ensureOnTimeUpdate(true);
 
     if (this.mediaOverlayRoot && this.mediaOverlayTextAudioPair) {
       const nextTextAudioPair = this.findNextTextAudioPair(
@@ -367,13 +389,16 @@ export default class MediaOverlayModule implements ReaderModule {
         if (IS_DEV) console.log("mediaOverlaysNext() - navLeftOrRight()");
         this.mediaOverlaysStop();
 
-        if (this.currentLinks.length > 1 && this.currentLinkIndex == 0) {
+        if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
           this.currentLinkIndex++;
           this.playLink();
         } else {
           this.audioElement.pause();
           if (this.settings.autoTurn && this.settings.playing) {
+            this.audioElement.pause();
             this.delegate.nextResource();
+          } else {
+            this.stopReadAloud();
           }
         }
       } else {
@@ -415,13 +440,16 @@ export default class MediaOverlayModule implements ReaderModule {
       if (IS_DEV) console.log("mediaOverlaysNext() - navLeftOrRight() 2");
       this.mediaOverlaysStop();
 
-      if (this.currentLinks.length > 1 && this.currentLinkIndex == 0) {
+      if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
         this.currentLinkIndex++;
         this.playLink();
       } else {
         this.audioElement.pause();
         if (this.settings.autoTurn && this.settings.playing) {
+          this.audioElement.pause();
           this.delegate.nextResource();
+        } else {
+          this.stopReadAloud();
         }
       }
     }
@@ -437,9 +465,8 @@ export default class MediaOverlayModule implements ReaderModule {
   mediaOverlaysPause() {
     if (IS_DEV) console.log("mediaOverlaysPause()");
 
-    this.mediaOverlayHighlight(undefined, undefined);
+    this.mediaOverlayHighlight(undefined);
 
-    this.ensureOnTimeUpdate(true);
     if (this.audioElement) {
       this.audioElement.pause();
     }
@@ -451,12 +478,6 @@ export default class MediaOverlayModule implements ReaderModule {
     escape: boolean
   ): MediaOverlayNode | undefined | null {
     if (!mo.Children || !mo.Children.length) {
-      const i = mo.Text.lastIndexOf("#");
-      const id = mo.Text.substr(i + 1);
-      console.log("## " + this.currentLinkIndex);
-
-      this.mediaOverlayHighlight(undefined, id);
-
       if (previousMo?.prev === moToMatch) {
         if (IS_DEV)
           console.log("findNextTextAudioPair() - prevMo === moToMatch");
@@ -523,7 +544,7 @@ export default class MediaOverlayModule implements ReaderModule {
 
     if (!hasBegin && !hasEnd) {
       if (urlObjFull.hash) {
-        const matches = urlObjFull.hash.match(/t=([0-9\.]+)(,([0-9\.]+))?/);
+        const matches = urlObjFull.hash.match(/t=([0-9.]+)(,([0-9.]+))?/);
         if (matches && matches.length >= 1) {
           const b = matches[1];
           try {
@@ -555,7 +576,6 @@ export default class MediaOverlayModule implements ReaderModule {
       if (!this.audioElement) {
         return;
       }
-
       const timeToSeekTo = this.currentAudioBegin ? this.currentAudioBegin : 0;
 
       if (initial || this.audioElement.paused) {
@@ -568,17 +588,23 @@ export default class MediaOverlayModule implements ReaderModule {
               "playMediaOverlaysAudio() - playClip() - _currentAudioElement.play()"
             );
           }
-          this.ensureOnTimeUpdate(false);
-          this.audioElement.playbackRate = this.mediaOverlaysPlaybackRate;
+          this.ensureOnTimeUpdate(false, false);
+          this.audioElement.playbackRate = this.settings.rate;
           this.audioElement.volume = this.settings.volume;
           if (this.settings.playing) {
-            if (!initial) {
-              setTimeout(async () => {
-                await this.audioElement.play();
-              }, this.settings.wait * 1200);
-            } else {
-              await this.audioElement.play();
+            let self = this;
+            function checkReady() {
+              if (!self.settings.resourceReady) {
+                setTimeout(checkReady, 200);
+              } else {
+                /* do something*/
+                setTimeout(async () => {
+                  await self.audioElement.play();
+                  self.ensureOnTimeUpdate(false, true);
+                }, self.settings.wait * 1000);
+              }
             }
+            checkReady();
           }
         } else {
           if (IS_DEV) {
@@ -586,9 +612,8 @@ export default class MediaOverlayModule implements ReaderModule {
               "playMediaOverlaysAudio() - playClip() - ontimeupdateSeeked"
             );
           }
-          const ontimeupdateSeeked = async (ev: Event) => {
-            const currentAudioElement = ev.currentTarget as HTMLAudioElement;
-            currentAudioElement.removeEventListener(
+          const ontimeupdateSeeked = async (_ev: Event) => {
+            this.audioElement.removeEventListener(
               "timeupdate",
               ontimeupdateSeeked
             );
@@ -598,18 +623,24 @@ export default class MediaOverlayModule implements ReaderModule {
                 "playMediaOverlaysAudio() - playClip() - ontimeupdateSeeked - .play()"
               );
             }
-            this.ensureOnTimeUpdate(false);
+            this.ensureOnTimeUpdate(false, false);
             if (this.audioElement) {
-              this.audioElement.playbackRate = this.mediaOverlaysPlaybackRate;
+              this.audioElement.playbackRate = this.settings.rate;
               this.audioElement.volume = this.settings.volume;
               if (this.settings.playing) {
-                if (!initial) {
-                  setTimeout(async () => {
-                    await this.audioElement.play();
-                  }, this.settings.wait * 1200);
-                } else {
-                  await this.audioElement.play();
+                let self = this;
+                function checkReady() {
+                  if (!self.settings.resourceReady) {
+                    setTimeout(checkReady, 200);
+                  } else {
+                    /* do something*/
+                    setTimeout(async () => {
+                      await self.audioElement.play();
+                      self.ensureOnTimeUpdate(false, true);
+                    }, self.settings.wait * 1000);
+                  }
                 }
+                checkReady();
               }
             }
           };
@@ -623,7 +654,7 @@ export default class MediaOverlayModule implements ReaderModule {
           this.previousAudioEnd > timeToSeekTo - 0.02 &&
           this.previousAudioEnd <= timeToSeekTo &&
           this.audioElement.currentTime >= timeToSeekTo - 0.1;
-        this.ensureOnTimeUpdate(false);
+        this.ensureOnTimeUpdate(false, false);
         if (contiguous) {
           if (IS_DEV) {
             console.log(
@@ -656,7 +687,7 @@ export default class MediaOverlayModule implements ReaderModule {
       this.audioElement = document.getElementById(
         "AUDIO_MO_ID"
       ) as HTMLAudioElement;
-      this.ensureOnTimeUpdate(true);
+
       if (this.audioElement) {
         this.audioElement.pause();
         this.audioElement.setAttribute("src", "");
@@ -669,6 +700,7 @@ export default class MediaOverlayModule implements ReaderModule {
       this.audioElement.setAttribute("id", "AUDIO_MO_ID");
       this.audioElement.setAttribute("role", "media-overlays");
       this.audioElement.volume = this.settings.volume;
+      this.audioElement.playbackRate = this.settings.rate;
 
       document.body.appendChild(this.audioElement);
 
@@ -706,18 +738,21 @@ export default class MediaOverlayModule implements ReaderModule {
 
       const onended = async (_ev: Event) => {
         if (IS_DEV) console.log("onended");
-        if (this.currentLinks.length > 1 && this.currentLinkIndex == 0) {
+        if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
           this.currentLinkIndex++;
           await this.playLink();
         } else {
           if (this.settings.autoTurn && this.settings.playing) {
+            this.audioElement.pause();
             this.delegate.nextResource();
+          } else {
+            this.stopReadAloud();
           }
         }
       };
       this.audioElement.addEventListener("ended", onended);
 
-      this.audioElement.playbackRate = this.mediaOverlaysPlaybackRate;
+      this.audioElement.playbackRate = this.settings.rate;
       this.audioElement.setAttribute("src", this.currentAudioUrl);
     } else {
       if (IS_DEV) console.log("playMediaOverlaysAudio() - playClip()");
@@ -773,16 +808,45 @@ export default class MediaOverlayModule implements ReaderModule {
         console.log("playMediaOverlays() - !moTextAudioPair " + textHref);
     }
   }
-  mediaOverlayHighlight(href: string | undefined, id: string | undefined) {
-    if (IS_DEV) console.log("moHighlight: " + href + " ## " + id);
+  ontimeupdate = async (_v: Event) => {
+    if (IS_DEV) console.log("ontimeupdate");
+    this.trackCurrentTime();
+  };
+  ensureOnTimeUpdate = (remove: boolean, replace: boolean) => {
+    if (this.audioElement) {
+      if (remove) {
+        if (this.__ontimeupdate) {
+          this.__ontimeupdate = false;
+          this.audioElement.removeEventListener(
+            "timeupdate",
+            this.ontimeupdate
+          );
+          cancelAnimationFrame(this.myReq);
+        }
+      } else {
+        if (!this.__ontimeupdate || replace) {
+          this.__ontimeupdate = true;
+          if (replace) {
+            this.audioElement.removeEventListener(
+              "timeupdate",
+              this.ontimeupdate
+            );
+          }
+          this.audioElement.addEventListener("timeupdate", this.ontimeupdate);
+        }
+      }
+    }
+  };
+
+  mediaOverlayHighlight(id: string | undefined) {
+    if (IS_DEV) console.log("moHighlight:  ## " + id);
     let classActive = this.publication.Metadata?.MediaOverlay?.ActiveClass;
     if (!classActive) {
       classActive = this.settings.color;
     }
-    const styleAttr =
-      this.delegate.iframes[0].contentDocument.documentElement.getAttribute(
-        "style"
-      );
+    const styleAttr = this.delegate.iframes[0].contentDocument?.documentElement.getAttribute(
+      "style"
+    );
     const isNight = styleAttr
       ? styleAttr.indexOf("readium-night-on") > 0
       : false;
@@ -805,11 +869,11 @@ export default class MediaOverlayModule implements ReaderModule {
       let prevElement;
 
       if (this.currentLinkIndex === 0) {
-        prevElement = this.delegate.iframes[0].contentDocument.getElementById(
+        prevElement = this.delegate.iframes[0].contentDocument?.getElementById(
           this.pid
         );
       } else {
-        prevElement = this.delegate.iframes[1].contentDocument.getElementById(
+        prevElement = this.delegate.iframes[1].contentDocument?.getElementById(
           this.pid
         );
       }
@@ -820,16 +884,17 @@ export default class MediaOverlayModule implements ReaderModule {
     }
 
     let current;
-    if (this.currentLinkIndex === 0) {
-      current = this.delegate.iframes[0].contentDocument.getElementById(id);
-    } else {
-      current = this.delegate.iframes[1].contentDocument.getElementById(id);
+    if (id) {
+      if (this.currentLinkIndex === 0) {
+        current = this.delegate.iframes[0].contentDocument?.getElementById(id);
+      } else {
+        current = this.delegate.iframes[1].contentDocument?.getElementById(id);
+      }
+      if (current) {
+        current.classList.add(classActive);
+      }
+      this.pid = id;
     }
-    if (current) {
-      current.classList.add(classActive);
-    }
-
-    this.pid = id;
     if (
       current &&
       (this.publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"

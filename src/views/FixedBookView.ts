@@ -17,16 +17,15 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import Store from "../store/Store";
-import IFrameNavigator, {
+import {
+  IFrameNavigator,
   IFrameAttributes,
 } from "../navigator/IFrameNavigator";
 import BookView from "./BookView";
+import * as HTMLUtilities from "../utils/HTMLUtilities";
 
 export default class FixedBookView implements BookView {
   layout = "fixed";
-  constructor(_store: Store) {}
-
   delegate: IFrameNavigator;
   name: string;
   label: string;
@@ -44,7 +43,15 @@ export default class FixedBookView implements BookView {
     return 0;
   }
 
-  goToPosition(_position: number): void {}
+  getScreenHeight(): number {
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    );
+    return wrapper.clientHeight;
+  }
+
+  goToProgression(_position: number): void {}
 
   goToCssSelector(_cssSelector: string, _relative?: boolean): void {}
 
@@ -58,5 +65,23 @@ export default class FixedBookView implements BookView {
 
   getPageCount(): number {
     return 1;
+  }
+
+  setSize(): void {}
+
+  isPaginated() {
+    return true;
+  }
+
+  isScrollMode() {
+    return false;
+  }
+
+  atEnd(): boolean {
+    return true;
+  }
+
+  atStart(): boolean {
+    return true;
   }
 }

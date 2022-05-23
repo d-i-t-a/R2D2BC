@@ -17,17 +17,22 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import IFrameNavigator from "../navigator/IFrameNavigator";
+import { IFrameNavigator } from "../navigator/IFrameNavigator";
 
 export default class KeyboardEventHandler {
-  delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
+  constructor(navigator: IFrameNavigator) {
+    this.navigator = navigator;
+  }
 
   public onBackwardSwipe: (event: UIEvent) => void = () => {};
   public onForwardSwipe: (event: UIEvent) => void = () => {};
 
-  public setupEvents = (element: HTMLElement | Document): void => {
-    this.focusin(element);
-    this.keydown(element);
+  public setupEvents = (element: HTMLElement | Document | null): void => {
+    if (element) {
+      this.focusin(element);
+      this.keydown(element);
+    }
   };
 
   public focusin = (element: HTMLElement | Document): void => {
@@ -35,7 +40,7 @@ export default class KeyboardEventHandler {
     element.addEventListener(
       "focusin",
       function (event: KeyboardEvent) {
-        self.delegate.view.snap(event.target as HTMLElement);
+        self.navigator.view?.snap(event.target as HTMLElement);
       },
       true
     );
@@ -43,20 +48,37 @@ export default class KeyboardEventHandler {
 
   public keydown = (element: HTMLElement | Document): void => {
     const self = this;
-    element.addEventListener(
-      "keydown",
-      function (event: KeyboardEvent) {
-        const key = event.key;
-        switch (key) {
-          case "ArrowRight":
-            self.onForwardSwipe(event);
-            break;
-          case "ArrowLeft":
-            self.onBackwardSwipe(event);
-            break;
-        }
-      },
-      false
-    );
+    if (!this.navigator.rights.customKeyboardEvents) {
+      element.addEventListener(
+        "keydown",
+        function (event: KeyboardEvent) {
+          // Ignore input elements
+          const eventTarget = event.target as HTMLElement;
+          if (/input|select|option|textarea/i.test(eventTarget.tagName)) {
+            return;
+          }
+
+          // Ignore when active text selection
+          const ownerDocument = (eventTarget.ownerDocument ||
+            eventTarget) as HTMLDocument;
+          const ownerWindow = ownerDocument.defaultView as Window;
+          const selection = ownerWindow.getSelection() as Selection;
+          if (!selection.isCollapsed) {
+            return;
+          }
+
+          const key = event.key;
+          switch (key) {
+            case "ArrowRight":
+              self.onForwardSwipe(event);
+              break;
+            case "ArrowLeft":
+              self.onBackwardSwipe(event);
+              break;
+          }
+        },
+        false
+      );
+    }
   };
 }

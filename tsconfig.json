@@ -18,25 +18,40 @@
  */
 
 {
-  "include": ["src/**/*"],
+  "include": ["src"],
+  "exclude": ["examples", "injectables", "viewer"],
+  "compileOnSave": true,
   "compilerOptions": {
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "CommonJS",
+    "module": "es6",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": false,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": false,
     "moduleResolution": "node",
-    "outDir": "lib/",
+    "outDir": "../dist",
+    "sourceMap": true,
     "declaration": true,
     "preserveConstEnums": true,
+    "strictNullChecks": true,
+    "target": "es6",
     "skipLibCheck": true,
-    "strictNullChecks": false,
-    "target": "ES6",
-    "sourceMap": true
+    "jsx": "react",
+    "esModuleInterop": true
+  },
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "CommonJS",
+      "target": "ESNext",
+    }
+  },
+  "typedocOptions": {
+    "entryPoints": ["src/index.ts"],
+    "entryPointStrategy": "expand",
+    "out": "docs",
+    "excludePrivate": true
   }
 }

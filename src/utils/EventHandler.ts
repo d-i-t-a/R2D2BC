@@ -17,7 +17,10 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "..";
+import { IS_DEV } from "../utils";
+import { Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
+import { IFrameNavigator } from "../navigator/IFrameNavigator";
+import { Popup } from "../modules/search/Popup";
 
 export function addEventListenerOptional(
   element: any,
@@ -39,11 +42,29 @@ export function removeEventListenerOptional(
 }
 
 export default class EventHandler {
+  navigator: IFrameNavigator;
+  popup: Popup;
+  constructor(navigator: IFrameNavigator) {
+    this.navigator = navigator;
+    this.popup = new Popup(this.navigator);
+  }
+
   public onInternalLink: (event: UIEvent) => void = () => {};
   public onClickThrough: (event: UIEvent) => void = () => {};
 
   public setupEvents(element: HTMLElement | Document | null) {
     if (element !== null) {
+      element.addEventListener(
+        "dblclick",
+        async (event: TouchEvent) => {
+          let htmlElement = event.target as HTMLElement;
+          if (event.target && htmlElement.tagName.toLowerCase() === "img") {
+            await this.popup.showPopover(htmlElement, event);
+          }
+        },
+        true
+      );
+
       // Most click handling is done in the touchend and mouseup event handlers,
       // but if there's a click on an external link we need to cancel the click
       // event to prevent it from opening in the iframe.
@@ -70,7 +91,45 @@ export default class EventHandler {
     return null;
   };
 
-  private handleLinks = (event: MouseEvent | TouchEvent): void => {
+  private linkInPublication = (readingOrder: Link[], clickedHref: string) =>
+    readingOrder.some((link: Link) => {
+      return (
+        !link.Rel?.includes("external") &&
+        this.navigator.publication
+          .getRelativeHref(clickedHref)
+          .includes(link.Href)
+      );
+    });
+
+  /**
+   *
+   * This function checks the user clicked link inside the iframe
+   * against the readingOrder list, it is an internal link if found.
+   *
+   */
+  private isReadingOrderInternal = (
+    clickedLink: HTMLAnchorElement
+  ): boolean => {
+    if (IS_DEV) console.log("clickedLink: ", clickedLink);
+    const isEpubInternal = this.linkInPublication(
+      this.navigator.publication.readingOrder,
+      clickedLink.href
+    );
+    return isEpubInternal;
+  };
+
+  private isResourceInternal = (clickedLink: HTMLAnchorElement): boolean => {
+    if (IS_DEV) console.log("clickedLink: ", clickedLink);
+    const isEpubInternal = this.linkInPublication(
+      this.navigator.publication.resources,
+      clickedLink.href
+    );
+    return isEpubInternal;
+  };
+
+  private handleLinks = async (
+    event: MouseEvent | TouchEvent
+  ): Promise<void> => {
     if (IS_DEV) console.log("R2 Click Handler");
 
     const link = this.checkForLink(event);
@@ -80,16 +139,37 @@ export default class EventHandler {
         window.location.protocol === link.protocol &&
         window.location.port === link.port &&
         window.location.hostname === link.hostname;
+
+      // If epub is hosted, rather than streamed, links to a resource inside the same epub should not be opened externally.
+      const isEpubInternal = this.isReadingOrderInternal(link);
+
+      const isResourceInternal = this.isResourceInternal(link);
+      if (!isResourceInternal) {
+        await this.popup.hidePopover();
+      }
+
       const isInternal = link.href.indexOf("#");
-      if (!isSameOrigin) {
+      if (!isSameOrigin && !isEpubInternal && !isResourceInternal) {
         window.open(link.href, "_blank");
         event.preventDefault();
         event.stopPropagation();
       } else {
         (event.target as HTMLAnchorElement).href = link.href;
-        if (isSameOrigin && isInternal !== -1) {
-          this.onInternalLink(event);
-        } else if (isSameOrigin && isInternal === -1) {
+        if ((isSameOrigin || isEpubInternal) && isInternal !== -1) {
+          const link = event.target as HTMLLIElement;
+          if (link) {
+            const attribute = link.getAttribute("epub:type") === "noteref";
+            if (attribute) {
+              await this.popup.handleFootnote(link, event);
+            } else if (isResourceInternal && !isEpubInternal) {
+              await this.popup.showPopover(link, event);
+            } else {
+              this.onInternalLink(event);
+            }
+          } else {
+            this.onInternalLink(event);
+          }
+        } else if ((isSameOrigin || isEpubInternal) && isInternal === -1) {
           // TODO needs some more refactoring when handling other types of links or elements
           // link.click();
           this.onInternalLink(event);

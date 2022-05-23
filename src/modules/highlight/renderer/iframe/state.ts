@@ -25,9 +25,6 @@ export interface IReadiumIFrameWindowState {
   locationHashOverride: Element | undefined;
   locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
 }
-export interface IReadiumIFrameWindow extends Window {
-  READIUM2: IReadiumIFrameWindowState;
-}
 
 export interface IReadiumIFrameState {
   id: number;

@@ -17,7 +17,7 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../../..";
+import { IS_DEV } from "../../../utils";
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Selection
 // https://developer.mozilla.org/en-US/docs/Web/API/Range
@@ -83,9 +83,9 @@ export function sameRanges(r1: IRangeInfo, r2: IRangeInfo): boolean {
 
 export interface ISelectionInfo {
   rangeInfo: IRangeInfo;
-  cleanText: string;
-  rawText: string;
-  range: Range;
+  cleanText?: string;
+  rawText?: string;
+  range?: Range;
 }
 
 export function sameSelections(
@@ -112,3 +112,15 @@ export function sameSelections(
   }
   return true;
 }
+
+export const _getCssSelectorOptions = {
+  className: (_str: string) => {
+    return true;
+  },
+  idName: (_str: string) => {
+    return true;
+  },
+  tagName: (_str: string) => {
+    return true;
+  },
+};

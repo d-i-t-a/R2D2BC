@@ -16,15 +16,15 @@
  * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
- 
+
 .error {
+  position: fixed;
   z-index: 20;
   background-color: transparentize($ui-white, 0.125);
   color: $error-red;
   height: 100%;
   top: 0;
   padding-top: 40vh;
-  position: fixed;
   text-align: center;
   width: 100%;
   -webkit-user-select: none;
@@ -65,7 +65,7 @@
 [data-viewer-theme="sepia"] {
   .error {
     background-color: transparentize($sepia-bg, 0.125);
-  
+
     button {
       background-color: $ui-white;
       color: $error-red;
@@ -77,7 +77,7 @@
 [data-viewer-theme="night"] {
   .error {
     background-color: transparentize($night-bg, 0.125);
-  
+
     button {
       background-color: lighten($night-bg, 10%);
       color: $error-red;

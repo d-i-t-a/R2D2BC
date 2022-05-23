@@ -19,54 +19,59 @@
 
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { Publication } from "../../model/Publication";
-import IFrameNavigator from "../../navigator/IFrameNavigator";
-import ReaderModule from "../ReaderModule";
+import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { ReaderModule } from "../ReaderModule";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
-import { Locator, Locations } from "../../model/Locator";
-import { IS_DEV } from "../..";
+import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
+import { IS_DEV } from "../../utils";
+import { DEFAULT_BACKGROUND_COLOR } from "../highlight/TextHighlighter";
+import { HighlightType, IHighlight } from "../highlight/common/highlight";
+import { ISelectionInfo } from "../highlight/common/selection";
+import { SHA256 } from "jscrypto";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
-import TextHighlighter from "../highlight/TextHighlighter";
+import { TextHighlighter } from "../highlight/TextHighlighter";
 
 export interface SearchModuleAPI {}
 
 export interface SearchModuleProperties {
-  color: string;
-  current: string;
+  color?: string;
+  current?: string;
+  hideLayer?: boolean;
 }
 
 export interface SearchModuleConfig extends SearchModuleProperties {
-  api: SearchModuleAPI;
+  api?: SearchModuleAPI;
   publication: Publication;
-  headerMenu: HTMLElement;
+  headerMenu?: HTMLElement | null;
   delegate: IFrameNavigator;
   highlighter: TextHighlighter;
 }
 
-export default class SearchModule implements ReaderModule {
+export class SearchModule implements ReaderModule {
   private properties: SearchModuleProperties;
   // @ts-ignore
-  private api: SearchModuleAPI;
+  private api?: SearchModuleAPI;
   private publication: Publication;
-  private readonly headerMenu: HTMLElement;
+  private readonly headerMenu?: HTMLElement | null;
   private delegate: IFrameNavigator;
   private searchInput: HTMLInputElement;
   private searchGo: HTMLElement;
   private currentChapterSearchResult: any = [];
   private bookSearchResult: any = [];
-  private currentHighlights: any = [];
-  private highlighter: TextHighlighter;
+  private currentSearchHighlights: any = [];
+  private highlighter?: TextHighlighter;
 
   public static async create(config: SearchModuleConfig) {
     const search = new this(
-      config.headerMenu,
       config.delegate,
       config.publication,
       config as SearchModuleProperties,
+      config.highlighter,
       config.api,
-      config.highlighter
+      config.headerMenu
     );
 
     await search.start();
@@ -74,12 +79,12 @@ export default class SearchModule implements ReaderModule {
   }
 
   private constructor(
-    headerMenu: HTMLElement,
     delegate: IFrameNavigator,
     publication: Publication,
     properties: SearchModuleProperties,
-    api: SearchModuleAPI,
-    highlighter: TextHighlighter
+    highlighter: TextHighlighter,
+    api?: SearchModuleAPI,
+    headerMenu?: HTMLElement | null
   ) {
     this.delegate = delegate;
     this.headerMenu = headerMenu;
@@ -112,17 +117,14 @@ export default class SearchModule implements ReaderModule {
       this.searchInput = HTMLUtilities.findElement(
         this.headerMenu,
         "#searchInput"
-      ) as HTMLInputElement;
+      );
       addEventListenerOptional(
         this.searchInput,
         "keypress",
         this.handleSearch.bind(this)
       );
 
-      this.searchGo = HTMLUtilities.findElement(
-        this.headerMenu,
-        "#searchGo"
-      ) as HTMLElement;
+      this.searchGo = HTMLUtilities.findElement(this.headerMenu, "#searchGo");
       addEventListenerOptional(
         this.searchGo,
         "click",
@@ -133,9 +135,14 @@ export default class SearchModule implements ReaderModule {
       var menuSearch = HTMLUtilities.findElement(
         this.headerMenu,
         "#menu-button-search"
-      ) as HTMLLinkElement;
-      if (menuSearch) menuSearch.parentElement.style.removeProperty("display");
+      );
+      if (menuSearch) menuSearch.parentElement?.style.removeProperty("display");
     }
+    setTimeout(() => {
+      this.properties.hideLayer
+        ? this.delegate.hideLayer("search")
+        : this.delegate.showLayer("search");
+    }, 10);
   }
 
   private async handleSearch(event: any): Promise<void> {
@@ -150,36 +157,39 @@ export default class SearchModule implements ReaderModule {
     var searchVal = this.searchInput.value;
     let currentLocation = this.delegate.currentChapterLink.href;
     const spineItem = this.publication.getSpineItem(currentLocation);
-    var searchResultDiv = HTMLUtilities.findElement(
-      this.headerMenu,
-      "#searchResultChapter"
-    ) as HTMLDivElement;
+    if (this.headerMenu) {
+      var searchResultDiv = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#searchResultChapter"
+      );
+    }
 
     self.currentChapterSearchResult = [];
-    self.currentHighlights = [];
+    self.currentSearchHighlights = [];
     var localSearchResultChapter: any = [];
-    if (this.delegate.rights?.enableContentProtection) {
-      this.delegate.contentProtectionModule.deactivate();
+    if (this.delegate.rights.enableContentProtection) {
+      this.delegate.contentProtectionModule?.deactivate();
     }
     await this.searchAndPaintChapter(searchVal, index, async (result) => {
       localSearchResultChapter = result;
       goToResultPage(1);
-      if (this.delegate.rights?.enableContentProtection) {
-        this.delegate.contentProtectionModule.recalculate(200);
+      if (this.delegate.rights.enableContentProtection) {
+        this.delegate.contentProtectionModule?.recalculate(200);
       }
     });
 
     async function goToResultPage(page: number) {
-      searchResultDiv.innerHTML = null;
+      searchResultDiv.innerHTML = "";
       var paginated: {
         page: number;
         per_page: number;
-        pre_page: number;
-        next_page: number;
+        pre_page?: number | undefined;
+        next_page?: number | undefined;
         total: number;
         total_pages: number;
         data: any[];
       };
+
       paginated = self.paginate(localSearchResultChapter, page, 5);
       if (paginated.total === 0) {
         const linkElement: HTMLAnchorElement = document.createElement("a");
@@ -191,7 +201,7 @@ export default class SearchModule implements ReaderModule {
           const linkElement: HTMLAnchorElement = document.createElement("a");
           const element = paginated.data[index];
           linkElement.className = "collection-item";
-          linkElement.href = spineItem.Href;
+          linkElement.href = spineItem?.Href ?? "";
           linkElement.innerHTML =
             "..." +
             element.textBefore +
@@ -222,7 +232,8 @@ export default class SearchModule implements ReaderModule {
         previousResultPage.className = "disabled";
 
         previousResultPage.innerHTML = '<a href="#!">left</a>';
-        if (paginated.pre_page != null) {
+        if (paginated.pre_page !== undefined) {
+          const pre_page = paginated.pre_page;
           previousResultPage.className = "waves-effect";
           addEventListenerOptional(
             previousResultPage,
@@ -230,14 +241,14 @@ export default class SearchModule implements ReaderModule {
             (event: MouseEvent) => {
               event.preventDefault();
               event.stopPropagation();
-              goToResultPage(paginated.pre_page);
+              goToResultPage(pre_page);
             }
           );
         }
         pagination.appendChild(previousResultPage);
 
-        var activeElement: HTMLLIElement;
         for (let index = 1; index <= paginated.total_pages; index++) {
+          let activeElement: HTMLLIElement;
           let element: HTMLLIElement = document.createElement("li");
           element.className = "waves-effect";
           if (index === paginated.page) {
@@ -249,7 +260,7 @@ export default class SearchModule implements ReaderModule {
           addEventListenerOptional(element, "click", (event: MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
-            activeElement.className = "waves-effect";
+            if (activeElement) activeElement.className = "waves-effect";
             element.className = "active";
             activeElement = element;
             goToResultPage(index);
@@ -261,7 +272,8 @@ export default class SearchModule implements ReaderModule {
         let nextResultPage: HTMLLIElement = document.createElement("li");
         nextResultPage.className = "disabled";
         nextResultPage.innerHTML = '<a href="#!">right</a>';
-        if (paginated.next_page != null) {
+        if (paginated.next_page !== undefined) {
+          const next_page = paginated.next_page;
           nextResultPage.className = "waves-effect";
           addEventListenerOptional(
             nextResultPage,
@@ -269,7 +281,7 @@ export default class SearchModule implements ReaderModule {
             (event: MouseEvent) => {
               event.preventDefault();
               event.stopPropagation();
-              goToResultPage(paginated.next_page);
+              goToResultPage(next_page);
             }
           );
         }
@@ -279,6 +291,7 @@ export default class SearchModule implements ReaderModule {
       }
     }
   }
+
   // Search Current Resource
   async searchAndPaintChapter(
     term: string,
@@ -286,89 +299,108 @@ export default class SearchModule implements ReaderModule {
     callback: (result: any) => any
   ) {
     const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder[this.delegate.currentResource()].Href
+      this.publication.readingOrder[this.delegate.currentResource() ?? 0].Href
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
-      tocItem = this.publication.readingOrder[this.delegate.currentResource()];
+      tocItem = this.publication.readingOrder[
+        this.delegate.currentResource() ?? 0
+      ];
     }
-    var localSearchResultChapter: any = [];
+    let localSearchResultChapter: any = [];
 
     // clear search results // needs more works
-    for (const iframe of this.delegate.iframes) {
-      this.highlighter.destroyAllhighlights(iframe.contentDocument);
+    this.highlighter?.destroyHighlights(HighlightType.Search);
+    if (this.delegate.rights.enableSearch) {
+      this.drawSearch();
     }
-    if (this.delegate.rights?.enableAnnotations) {
-      this.delegate.annotationModule.drawHighlights();
-    } else {
-      if (this.delegate.rights?.enableSearch) {
-        this.drawSearch();
+    let i = 0;
+    if (tocItem) {
+      let doc = this.delegate.iframes[0].contentDocument;
+      if (doc) {
+        if (tocItem) {
+          searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
+            (result) => {
+              result.forEach((searchItem) => {
+                let selectionInfo = {
+                  rangeInfo: searchItem.rangeInfo,
+                };
+                setTimeout(() => {
+                  let highlight;
+                  if (i === index) {
+                    highlight = this.createSearchHighlight(
+                      selectionInfo,
+                      this.properties?.current!!
+                    );
+                    this.jumpToMark(index);
+                  } else {
+                    highlight = this.createSearchHighlight(
+                      selectionInfo,
+                      this.properties?.color!!
+                    );
+                  }
+                  searchItem.highlight = highlight;
+                  localSearchResultChapter.push(searchItem);
+                  this.currentChapterSearchResult.push(searchItem);
+                  this.currentSearchHighlights.push(highlight);
+                  i++;
+                }, 500);
+              });
+              setTimeout(() => {
+                callback(localSearchResultChapter);
+              }, 500);
+            }
+          );
+        }
       }
     }
-    var i = 0;
-
-    var href = this.publication.getAbsoluteHref(tocItem.Href);
-    await fetch(href)
-      .then((r) => r.text())
-      .then(async (_data) => {
-        // ({ data, tocItem });
-        // TODO: this seems to break with obfuscation
-        // var parser = new DOMParser();
-        // var doc = parser.parseFromString(data, "text/html");
-        searchDocDomSeek(
-          term,
-          this.delegate.iframes[0].contentDocument,
-          tocItem.Href,
-          tocItem.Title
-        ).then((result) => {
-          // searchDocDomSeek(searchVal, doc, tocItem.href, tocItem.title).then(result => {
-          result.forEach((searchItem) => {
-            var selectionInfo = {
-              rangeInfo: searchItem.rangeInfo,
-              cleanText: null,
-              rawText: null,
-              range: null,
-            };
-            setTimeout(() => {
-              var highlight;
-              if (i === index) {
-                highlight = this.highlighter.createSearchHighlight(
-                  selectionInfo,
-                  this.properties?.current
-                );
-                this.jumpToMark(index);
-              } else {
-                highlight = this.highlighter.createSearchHighlight(
-                  selectionInfo,
-                  this.properties?.color
-                );
-              }
-              searchItem.highlight = highlight;
-              localSearchResultChapter.push(searchItem);
-              this.currentChapterSearchResult.push(searchItem);
-              this.currentHighlights.push(highlight);
-              i++;
-            }, 500);
-          });
-          setTimeout(() => {
-            callback(localSearchResultChapter);
-          }, 500);
-        });
-      });
   }
+
+  createSearchHighlight(selectionInfo: ISelectionInfo, color: string) {
+    try {
+      var createColor: any = color;
+      if (TextHighlighter.isHexColor(createColor)) {
+        createColor = TextHighlighter.hexToRgbChannels(createColor);
+      }
+
+      const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
+      const sha256Hex = SHA256.hash(uniqueStr);
+      const id = "R2_SEARCH_" + sha256Hex;
+
+      var pointerInteraction = false;
+      const highlight: IHighlight = {
+        color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
+        id,
+        pointerInteraction,
+        selectionInfo,
+        marker: AnnotationMarker.Highlight,
+        type: HighlightType.Search,
+      };
+
+      let highlightDom = this.highlighter?.createHighlightDom(
+        this.delegate.iframes[0].contentWindow as any,
+        highlight
+      );
+      highlight.position = parseInt(
+        ((highlightDom?.hasChildNodes()
+          ? highlightDom.childNodes[0]
+          : highlightDom) as HTMLDivElement).style.top.replace("px", "")
+      );
+      return highlight;
+    } catch (e) {
+      throw "Can't create highlight: " + e;
+    }
+  }
+
   clearSearch() {
     this.currentChapterSearchResult = [];
-    this.currentHighlights = [];
-    for (const iframe of this.delegate.iframes) {
-      this.highlighter.destroyAllhighlights(iframe.contentDocument);
-    }
-    if (this.delegate.rights?.enableAnnotations) {
-      this.delegate.annotationModule.drawHighlights();
-    }
+    this.currentSearchHighlights = [];
+    this.highlighter?.destroyHighlights(HighlightType.Search);
   }
-  async search(term: any, current: boolean): Promise<any> {
+
+  async search(term: string, current: boolean): Promise<any> {
     this.currentChapterSearchResult = [];
-    this.currentHighlights = [];
+    this.currentSearchHighlights = [];
     this.bookSearchResult = [];
     reset();
 
@@ -383,7 +415,7 @@ export default class SearchModule implements ReaderModule {
       return book;
     }
   }
-  async goToSearchID(href: any, index: number, current: boolean) {
+  async goToSearchID(href: string, index: number, current: boolean) {
     var filteredIndex = index;
     var item;
     let currentLocation = this.delegate.currentChapterLink.href;
@@ -391,17 +423,16 @@ export default class SearchModule implements ReaderModule {
     let filteredIndexes = this.bookSearchResult.filter(
       (el: any) => el.href === href
     );
-
     if (current) {
       item = this.currentChapterSearchResult.filter(
-        (el: any) => el.uuid === index
+        (el: any) => el.uuid == index
       )[0];
       filteredIndex = this.currentChapterSearchResult.findIndex(
-        (el: any) => el.uuid === index
+        (el: any) => el.uuid == index
       );
     } else {
-      item = filteredIndexes.filter((el: any) => el.uuid === index)[0];
-      filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid === index);
+      item = filteredIndexes.filter((el: any) => el.uuid == index)[0];
+      filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid == index);
     }
     if (item !== undefined) {
       if (currentLocation === absolutehref) {
@@ -435,7 +466,7 @@ export default class SearchModule implements ReaderModule {
     }
   }
 
-  async goToSearchIndex(href: any, index: number, current: boolean) {
+  async goToSearchIndex(href: string, index: number, current: boolean) {
     var filteredIndex = index;
     var item;
     let currentLocation = this.delegate.currentChapterLink.href;
@@ -485,19 +516,21 @@ export default class SearchModule implements ReaderModule {
     var self = this;
     var searchVal = this.searchInput.value;
     // var searchResult = undefined
-    var searchResultBook = HTMLUtilities.findElement(
-      self.headerMenu,
-      "#searchResultBook"
-    ) as HTMLDivElement;
+    if (self.headerMenu) {
+      var searchResultBook = HTMLUtilities.findElement(
+        self.headerMenu,
+        "#searchResultBook"
+      );
+    }
     goToResultPage(1);
 
     async function goToResultPage(page: number) {
-      searchResultBook.innerHTML = null;
+      searchResultBook.innerHTML = "";
       var paginated: {
         page: number;
         per_page: number;
-        pre_page: number;
-        next_page: number;
+        pre_page?: number | undefined;
+        next_page?: number | undefined;
         total: number;
         total_pages: number;
         data: any[];
@@ -596,6 +629,7 @@ export default class SearchModule implements ReaderModule {
         previousResultPage.className = "disabled";
         previousResultPage.innerHTML = '<a href="#!">left</a>';
         if (paginated.pre_page != null) {
+          let pre_page = paginated.pre_page;
           previousResultPage.className = "waves-effect";
           addEventListenerOptional(
             previousResultPage,
@@ -603,14 +637,14 @@ export default class SearchModule implements ReaderModule {
             (event: MouseEvent) => {
               event.preventDefault();
               event.stopPropagation();
-              goToResultPage(paginated.pre_page);
+              goToResultPage(pre_page);
             }
           );
         }
         pagination.appendChild(previousResultPage);
 
-        var activeElement: HTMLLIElement;
         for (let index = 1; index <= paginated.total_pages; index++) {
+          let activeElement: HTMLLIElement;
           let element: HTMLLIElement = document.createElement("li");
           element.className = "waves-effect";
           if (index === paginated.page) {
@@ -622,7 +656,7 @@ export default class SearchModule implements ReaderModule {
           addEventListenerOptional(element, "click", (event: MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
-            activeElement.className = "waves-effect";
+            if (activeElement) activeElement.className = "waves-effect";
             element.className = "active";
             activeElement = element;
             goToResultPage(index);
@@ -635,6 +669,7 @@ export default class SearchModule implements ReaderModule {
         nextResultPage.className = "disabled";
         nextResultPage.innerHTML = '<a href="#!">right</a>';
         if (paginated.next_page != null) {
+          let next_page = paginated.next_page;
           nextResultPage.className = "waves-effect";
           addEventListenerOptional(
             nextResultPage,
@@ -642,7 +677,7 @@ export default class SearchModule implements ReaderModule {
             (event: MouseEvent) => {
               event.preventDefault();
               event.stopPropagation();
-              goToResultPage(paginated.next_page);
+              goToResultPage(next_page);
             }
           );
         }
@@ -670,89 +705,98 @@ export default class SearchModule implements ReaderModule {
   async searchBook(term: string): Promise<any> {
     this.bookSearchResult = [];
 
-    var localSearchResultBook: any = [];
+    let localSearchResultBook: any = [];
     for (let index = 0; index < this.publication.readingOrder.length; index++) {
       const linkHref = this.publication.getAbsoluteHref(
-        this.publication.readingOrder[index].Href
+        this.publication.readingOrder
+          ? this.publication.readingOrder[index].Href
+          : ""
       );
+
       let tocItem = this.publication.getTOCItem(linkHref);
-      if (tocItem === null) {
+      if (tocItem === undefined && this.publication.readingOrder) {
         tocItem = this.publication.readingOrder[index];
       }
-      var href = this.publication.getAbsoluteHref(tocItem.Href);
-      await fetch(href)
-        .then((r) => r.text())
-        .then(async (data) => {
-          // ({ data, tocItem });
-          var parser = new DOMParser();
-          var doc = parser.parseFromString(data, "application/xhtml+xml");
-          searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
-            (result) => {
-              result.forEach((searchItem) => {
-                localSearchResultBook.push(searchItem);
-                this.bookSearchResult.push(searchItem);
-              });
+      if (tocItem) {
+        let href = this.publication.getAbsoluteHref(tocItem.Href);
+        await fetch(href)
+          .then((r) => r.text())
+          .then(async (data) => {
+            // ({ data, tocItem });
+            let parser = new DOMParser();
+            let doc = parser.parseFromString(data, "application/xhtml+xml");
+            if (tocItem) {
+              searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
+                (result) => {
+                  result.forEach((searchItem) => {
+                    localSearchResultBook.push(searchItem);
+                    this.bookSearchResult.push(searchItem);
+                  });
+                }
+              );
             }
-          );
-        });
-
+          });
+      }
       if (index === this.publication.readingOrder.length - 1) {
         return localSearchResultBook;
       }
     }
   }
   async searchChapter(term: string): Promise<any> {
-    var localSearchResultBook: any = [];
+    let localSearchResultBook: any = [];
     const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder[this.delegate.currentResource()].Href
+      this.publication.readingOrder[this.delegate.currentResource() ?? 0].Href
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
-      tocItem = this.publication.readingOrder[this.delegate.currentResource()];
+      tocItem = this.publication.readingOrder[
+        this.delegate.currentResource() ?? 0
+      ];
     }
-    var href = this.publication.getAbsoluteHref(tocItem.Href);
-    await fetch(href)
-      .then((r) => r.text())
-      .then(async (data) => {
-        // ({ data, tocItem });
-        var parser = new DOMParser();
-        var doc = parser.parseFromString(data, "application/xhtml+xml");
-        searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
-          (result) => {
-            result.forEach((searchItem) => {
-              localSearchResultBook.push(searchItem);
-            });
+    if (tocItem) {
+      let href = this.publication.getAbsoluteHref(tocItem.Href);
+      await fetch(href)
+        .then((r) => r.text())
+        .then(async (data) => {
+          // ({ data, tocItem });
+          let parser = new DOMParser();
+          let doc = parser.parseFromString(data, "application/xhtml+xml");
+          if (tocItem) {
+            searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
+              (result) => {
+                result.forEach((searchItem) => {
+                  localSearchResultBook.push(searchItem);
+                });
+              }
+            );
           }
-        );
-      });
+        });
+    }
 
     return localSearchResultBook;
   }
 
   drawSearch() {
     setTimeout(() => {
-      this.currentHighlights = [];
+      this.currentSearchHighlights = [];
       this.currentChapterSearchResult.forEach((searchItem) => {
-        var selectionInfo = {
+        let selectionInfo = {
           rangeInfo: searchItem.rangeInfo,
-          cleanText: null,
-          rawText: null,
-          range: null,
         };
-        var highlight = this.highlighter.createSearchHighlight(
-          selectionInfo,
-          this.properties?.color
-        );
-        searchItem.highlight = highlight;
-        this.currentHighlights.push(highlight);
+        if (this.properties?.color) {
+          let highlight = this.createSearchHighlight(
+            selectionInfo,
+            this.properties?.color
+          );
+          searchItem.highlight = highlight;
+          this.currentSearchHighlights.push(highlight);
+        }
       });
     }, 100);
   }
 
   async handleResize() {
-    for (const iframe of this.delegate.iframes) {
-      await this.highlighter.destroyAllhighlights(iframe.contentDocument);
-    }
+    await this.highlighter?.destroyHighlights(HighlightType.Search);
     this.drawSearch();
   }
 
@@ -760,7 +804,7 @@ export default class SearchModule implements ReaderModule {
     setTimeout(() => {
       if (this.currentChapterSearchResult.length) {
         var current = this.currentChapterSearchResult[index];
-        this.currentHighlights.forEach((highlight) => {
+        this.currentSearchHighlights.forEach((highlight) => {
           var createColor: any = this.properties?.color;
           if (TextHighlighter.isHexColor(createColor)) {
             createColor = TextHighlighter.hexToRgbChannels(createColor);
@@ -772,12 +816,12 @@ export default class SearchModule implements ReaderModule {
           currentColor = TextHighlighter.hexToRgbChannels(currentColor);
         }
         current.highlight.color = currentColor;
-        this.highlighter.setAndResetSearchHighlight(
+        this.highlighter?.setAndResetSearchHighlight(
           current.highlight,
-          this.currentHighlights
+          this.currentSearchHighlights
         );
 
-        this.delegate.view.goToCssSelector(
+        this.delegate.view?.goToCssSelector(
           current.rangeInfo.startContainerElementCssSelector
         );
         this.delegate.updatePositionInfo();
@@ -786,16 +830,16 @@ export default class SearchModule implements ReaderModule {
   }
 
   paginate(items: Array<any>, page: number, per_page: number) {
-    var page = page || 1,
-      per_page = per_page || 10,
-      offset = (page - 1) * per_page,
-      paginatedItems = items.slice(offset).slice(0, per_page),
-      total_pages = Math.ceil(items.length / per_page);
+    let _page = page || 1,
+      _per_page = per_page || 10,
+      offset = (_page - 1) * _per_page,
+      paginatedItems = items.slice(offset).slice(0, _per_page),
+      total_pages = Math.ceil(items.length / _per_page);
     return {
-      page: page,
-      per_page: per_page,
-      pre_page: page - 1 ? page - 1 : null,
-      next_page: total_pages > page ? page + 1 : null,
+      page: _page,
+      per_page: _per_page,
+      pre_page: _page - 1 ? _page - 1 : undefined,
+      next_page: total_pages > _page ? _page + 1 : undefined,
       total: items.length,
       total_pages: total_pages,
       data: paginatedItems,

@@ -46,13 +46,44 @@ Here is the original proposal, initiated by Aferdita Muriqi to the
 
 Subsequent development of R2D2BC has been supported by [DITA](https://github.com/d-i-t-a), [Bokbasen](https://www.bokbasen.no/), and [CAST](http://www.cast.org) - which explains the D2, B, and C in the name.
 
+# Features & Functionalities
+- ePub Reflowable + Fixed Layout
+- Reader Settings
+- Configurable Modules with Callbacks
+- Injectable Fonts, CSS, Javascript
+- Text Selection with Injectable Context Menu
+- Bookmarks
+- Highlights
+- Annotations
+- TTS - Text to speech / Read Aloud
+- Media Overlays - Read Along
+- Search
+- Content Protection
+- Definitions
+- Popup Footnotes
+- Page Breaks - Page Numbers in margin
+- Sample Read
+- Timeline
+- Layers
+- Line Focus (Beta Feature)
+- Popups and Popovers
+
 # Extensions and Implementations
 
 The R2D2BC reader has been used in:
 - The [Clusive](https://github.com/cast-org/clusive) learning environment
-- Bokbasen's [Allbok.no](https://www.allbok.no) and [Allvit.no](https://www.allvit.no)
-- The UNODC [Fieldguides](https://fieldguides.github.io/library/)
-- The DITA Gateway [D2G](https://d2g.dita.digital)
+- Bokbasen's [Allbok.no](https://www.allbok.no) 
+- Allvir's [Allvit.no](https://www.allvit.no) Reading Platform
+- The UNODC [Fieldguides](https://fieldguides.github.io/library)
+- The DITA Gateway [D2G](https://d2g.dita.digital) with several open collections
+- [Ekitabu's](https://d2g.dita.digital) Web Reader Implementations through Dita Gateway
+- [NYPL's](https://www.nypl.org/) Web Reader Implementations
+- Bibliotheca's [CloudLibrary](https://www.yourcloudlibrary.com) as Sample Reader and Full ePub Reader
+- Above the Treeline's [Edeweiss+](https://www.edelweiss.plus) 
+- [Bluefire's](https://www.bluefirereader.com) Web Reader Implementations
+- In a Project in the Meta Verse (to be named once public)
+- and a few more... :) 
+
 
 # Contributing
 Contributions are always welcomed! Please see [CONTRIBUTING](CONTRIBUTING.md) for detailed guidelines.
@@ -61,14 +92,22 @@ Contributions are always welcomed! Please see [CONTRIBUTING](CONTRIBUTING.md) fo
 
 # Get Started
 
-Download ebook examples here: https://standardebooks.org/ebooks and copy them to `./examples/streamed/epubs`. Then:
+Download ebook examples here: https://standardebooks.org/ebooks and copy them to `./examples/epubs`. Then:
 
 ```
 npm install
 
-npm run build && npm run examples && npm run streamed
+npm run build && npm run examples
 ```
-Then visit `http://localhost:4444/`. Follow the prompts to view example apps. The most up-to-date example is "D2 Reader" /viewer/index_dita.html.
+Then visit `http://localhost:4444/`. Follow the prompts to view example apps.
+
+### WIKI
+- [Implementation Guides and Examples](https://github.com/d-i-t-a/R2D2BC/wiki)
+
+### Migration Guides
+- [Version 1.x -> 2.x](MIGRATION.md)
+### Change Log
+- [2.0.x](CHANGELOG.md)
 
 ## Supporters
 [<img src="https://dita.digital/jetbrains.png" width="60">](https://www.jetbrains.com/?from=R2D2BC)

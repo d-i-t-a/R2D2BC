@@ -26,7 +26,7 @@ import {
   Incremental,
 } from "../../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { IS_DEV } from "../..";
+import { IS_DEV } from "../../utils";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import {
   MediaOverlayModuleAPI,
@@ -40,6 +40,7 @@ export class MEDIAOVERLAYREFS {
   static readonly AUTO_SCROLL_REF = "autoscroll";
   static readonly AUTO_TURN_REF = "autoturn";
   static readonly VOLUME_REF = "volume";
+  static readonly RATE_REF = "rate";
 
   static readonly COLOR_KEY = "mediaoverlay-" + MEDIAOVERLAYREFS.COLOR_REF;
   static readonly AUTO_SCROLL_KEY =
@@ -47,13 +48,14 @@ export class MEDIAOVERLAYREFS {
   static readonly AUTO_TURN_KEY =
     "mediaoverlay-" + MEDIAOVERLAYREFS.AUTO_TURN_REF;
   static readonly VOLUME_KEY = "mediaoverlay-" + MEDIAOVERLAYREFS.VOLUME_REF;
+  static readonly RATE_KEY = "mediaoverlay-" + MEDIAOVERLAYREFS.RATE_REF;
 }
 
 export interface MediaOverlayConfig {
   store: Store;
-  initialMediaOverlaySettings: MediaOverlayModuleProperties;
-  headerMenu: HTMLElement;
-  api: MediaOverlayModuleAPI;
+  initialMediaOverlaySettings?: MediaOverlayModuleProperties;
+  headerMenu?: HTMLElement | null;
+  api?: MediaOverlayModuleAPI;
 }
 
 export interface IMediaOverlayUserSettings {
@@ -61,9 +63,12 @@ export interface IMediaOverlayUserSettings {
   autoScroll?: boolean;
   autoTurn?: boolean;
   volume?: number;
+  rate?: number;
   playing?: boolean;
   wait?: number;
 }
+
+export type MediaOverlayIncrementable = "mo_volume" | "mo_rate";
 
 export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   private readonly store: Store;
@@ -73,7 +78,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   autoScroll = true;
   autoTurn = true;
   volume = 1.0;
+  rate = 1.0;
   playing = false;
+  resourceReady = false;
   wait = 1;
 
   userProperties: UserProperties;
@@ -81,18 +88,17 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   private settingsChangeCallback: (key?: string) => void = () => {};
 
   private settingsView: HTMLDivElement;
-  private readonly headerMenu: HTMLElement;
-
-  private volumeButtons: { [key: string]: HTMLButtonElement };
+  private readonly headerMenu?: HTMLElement | null;
 
   private speechAutoScroll: HTMLInputElement;
   private speechAutoTurn: HTMLInputElement;
   private speechVolume: HTMLInputElement;
+  private speechRate: HTMLInputElement;
 
-  private readonly api: MediaOverlayModuleAPI;
+  private readonly api?: MediaOverlayModuleAPI;
 
-  public static async create(config: MediaOverlayConfig): Promise<any> {
-    const settings = new this(config.store, config.headerMenu, config.api);
+  public static create(config: MediaOverlayConfig): any {
+    const settings = new this(config.store, config.api, config.headerMenu);
 
     if (config.initialMediaOverlaySettings) {
       let initialSettings = config.initialMediaOverlaySettings;
@@ -112,20 +118,24 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
         settings.volume = initialSettings.volume;
         if (IS_DEV) console.log(settings.volume);
       }
+      if (initialSettings?.rate) {
+        settings.rate = initialSettings.rate;
+        if (IS_DEV) console.log(settings.rate);
+      }
       if (initialSettings?.wait) {
         settings.wait = initialSettings.wait;
         if (IS_DEV) console.log(settings.wait);
       }
     }
 
-    await settings.initializeSelections();
-    return new Promise((resolve) => resolve(settings));
+    settings.initializeSelections();
+    return settings;
   }
 
   protected constructor(
     store: Store,
-    headerMenu: HTMLElement,
-    api: MediaOverlayModuleAPI
+    api?: MediaOverlayModuleAPI,
+    headerMenu?: HTMLElement | null
   ) {
     this.store = store;
     this.api = api;
@@ -134,99 +144,94 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
     console.log(this.api);
   }
 
-  async stop() {
+  stop() {
     if (IS_DEV) {
       console.log("MediaOverlay settings stop");
     }
   }
 
-  private async initialise() {
+  private initialise() {
     this.autoScroll =
-      (await this.getProperty(MEDIAOVERLAYREFS.AUTO_SCROLL_KEY)) != null
-        ? (
-            (await this.getProperty(
-              MEDIAOVERLAYREFS.AUTO_SCROLL_KEY
-            )) as Switchable
-          ).value
+      this.getProperty(MEDIAOVERLAYREFS.AUTO_SCROLL_KEY) != null
+        ? (this.getProperty(MEDIAOVERLAYREFS.AUTO_SCROLL_KEY) as Switchable)
+            .value
         : this.autoScroll;
 
     this.autoTurn =
-      (await this.getProperty(MEDIAOVERLAYREFS.AUTO_TURN_KEY)) != null
-        ? (
-            (await this.getProperty(
-              MEDIAOVERLAYREFS.AUTO_TURN_KEY
-            )) as Switchable
-          ).value
+      this.getProperty(MEDIAOVERLAYREFS.AUTO_TURN_KEY) != null
+        ? (this.getProperty(MEDIAOVERLAYREFS.AUTO_TURN_KEY) as Switchable).value
         : this.autoTurn;
 
     this.color =
-      (await this.getProperty(MEDIAOVERLAYREFS.COLOR_KEY)) != null
-        ? ((await this.getProperty(MEDIAOVERLAYREFS.COLOR_KEY)) as Stringable)
-            .value
+      this.getProperty(MEDIAOVERLAYREFS.COLOR_KEY) != null
+        ? (this.getProperty(MEDIAOVERLAYREFS.COLOR_KEY) as Stringable).value
         : this.color;
 
     this.volume =
-      (await this.getProperty(MEDIAOVERLAYREFS.VOLUME_KEY)) != null
-        ? ((await this.getProperty(MEDIAOVERLAYREFS.VOLUME_KEY)) as Incremental)
-            .value
+      this.getProperty(MEDIAOVERLAYREFS.VOLUME_KEY) != null
+        ? (this.getProperty(MEDIAOVERLAYREFS.VOLUME_KEY) as Incremental).value
         : this.volume;
+
+    this.rate =
+      this.getProperty(MEDIAOVERLAYREFS.RATE_KEY) != null
+        ? (this.getProperty(MEDIAOVERLAYREFS.RATE_KEY) as Incremental).value
+        : this.rate;
 
     this.userProperties = this.getMediaOverlaySettings();
   }
 
-  private async reset() {
+  private reset() {
     this.color = "redtext";
     this.autoScroll = true;
     this.autoTurn = true;
     this.volume = 1.0;
+    this.rate = 1.0;
     this.wait = 1;
 
     this.userProperties = this.getMediaOverlaySettings();
   }
 
-  private async initializeSelections(): Promise<void> {
+  private initializeSelections() {
     if (this.headerMenu)
       this.settingsView = HTMLUtilities.findElement(
         this.headerMenu,
         "#container-view-mediaoverlay-settings"
-      ) as HTMLDivElement;
+      );
   }
 
   setControls() {
     if (this.settingsView) this.renderControls(this.settingsView);
   }
 
-  private renderControls(element: HTMLElement): void {
-    this.volumeButtons = {};
-    for (const volumeName of ["decrease", "increase"]) {
-      this.volumeButtons[volumeName] = HTMLUtilities.findElement(
-        element,
-        "#" + volumeName + "-volume"
-      ) as HTMLButtonElement;
-    }
-
+  private renderControls(element: HTMLElement) {
     if (this.headerMenu)
       this.speechAutoTurn = HTMLUtilities.findElement(
         this.headerMenu,
         "#mediaOverlayAutoTurn"
-      ) as HTMLInputElement;
+      );
 
     if (this.headerMenu)
       this.speechAutoScroll = HTMLUtilities.findElement(
         this.headerMenu,
         "#mediaOverlayAutoScroll"
-      ) as HTMLInputElement;
+      );
+
     if (this.headerMenu)
       this.speechVolume = HTMLUtilities.findElement(
         this.headerMenu,
         "#mediaOverlayVolume"
-      ) as HTMLInputElement;
+      );
 
-    this.setupEvents();
+    if (this.headerMenu)
+      this.speechRate = HTMLUtilities.findElement(
+        this.headerMenu,
+        "#mediaOverlayRate"
+      );
 
     if (this.speechAutoScroll) this.speechAutoScroll.checked = this.autoScroll;
     if (this.speechAutoTurn) this.speechAutoTurn.checked = this.autoTurn;
     if (this.speechVolume) this.speechVolume.value = this.volume.toString();
+    if (this.speechRate) this.speechRate.value = this.volume.toString();
 
     // Clicking the settings view outside the ul hides it, but clicking inside the ul keeps it up.
     addEventListenerOptional(
@@ -242,56 +247,20 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
     this.settingsChangeCallback = callback;
   }
 
-  private async setupEvents(): Promise<void> {
-    addEventListenerOptional(
-      this.volumeButtons["decrease"],
-      "click",
-      (event: MouseEvent) => {
-        if (IS_DEV) console.log(MEDIAOVERLAYREFS.VOLUME_REF);
-        (
-          this.userProperties.getByRef(
-            MEDIAOVERLAYREFS.VOLUME_REF
-          ) as Incremental
-        ).decrement();
-        this.storeProperty(
-          this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
-        );
-        this.settingsChangeCallback();
-        event.preventDefault();
-      }
-    );
-    addEventListenerOptional(
-      this.volumeButtons["increase"],
-      "click",
-      (event: MouseEvent) => {
-        if (IS_DEV) console.log(MEDIAOVERLAYREFS.VOLUME_REF);
-        (
-          this.userProperties.getByRef(
-            MEDIAOVERLAYREFS.VOLUME_REF
-          ) as Incremental
-        ).increment();
-        this.storeProperty(
-          this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
-        );
-        this.settingsChangeCallback();
-        event.preventDefault();
-      }
-    );
-  }
-
-  private async storeProperty(property: UserProperty): Promise<void> {
+  private storeProperty(property: UserProperty) {
     this.updateUserSettings();
     this.saveProperty(property);
   }
 
-  private async updateUserSettings() {
-    var syncSettings: IMediaOverlayUserSettings = {
-      color: this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF).value,
+  private updateUserSettings() {
+    let syncSettings: IMediaOverlayUserSettings = {
+      color: this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF)?.value,
       autoScroll: this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF)
-        .value,
+        ?.value,
       autoTurn: this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF)
-        .value,
-      volume: this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF).value,
+        ?.value,
+      volume: this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)?.value,
+      rate: this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)?.value,
     };
     this.applyMediaOverlaySettings(syncSettings);
     if (this.api?.updateSettings) {
@@ -304,7 +273,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
   }
 
   private getMediaOverlaySettings(): UserProperties {
-    var userProperties = new UserProperties();
+    let userProperties = new UserProperties();
 
     userProperties.addSwitchable(
       "mediaoverlay-auto-scroll-off",
@@ -334,27 +303,36 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       MEDIAOVERLAYREFS.VOLUME_REF,
       MEDIAOVERLAYREFS.VOLUME_KEY
     );
+    userProperties.addIncremental(
+      this.rate,
+      0.1,
+      3,
+      0.1,
+      "",
+      MEDIAOVERLAYREFS.RATE_REF,
+      MEDIAOVERLAYREFS.RATE_KEY
+    );
 
     return userProperties;
   }
 
-  private async saveProperty(property: any): Promise<any> {
-    let savedProperties = await this.store.get(this.MEDIAOVERLAYSETTINGS);
+  private saveProperty(property: UserProperty): UserProperty {
+    let savedProperties = this.store.get(this.MEDIAOVERLAYSETTINGS);
     if (savedProperties) {
       let array = JSON.parse(savedProperties);
       array = array.filter((el: any) => el.name !== property.name);
       array.push(property);
-      await this.store.set(this.MEDIAOVERLAYSETTINGS, JSON.stringify(array));
+      this.store.set(this.MEDIAOVERLAYSETTINGS, JSON.stringify(array));
     } else {
-      let array = [];
+      let array: UserProperty[] = [];
       array.push(property);
-      await this.store.set(this.MEDIAOVERLAYSETTINGS, JSON.stringify(array));
+      this.store.set(this.MEDIAOVERLAYSETTINGS, JSON.stringify(array));
     }
-    return new Promise((resolve) => resolve(property));
+    return property;
   }
 
-  async getProperty(name: string): Promise<UserProperty> {
-    let array = await this.store.get(this.MEDIAOVERLAYSETTINGS);
+  getProperty(name: string): UserProperty | null {
+    let array = this.store.get(this.MEDIAOVERLAYSETTINGS);
     if (array) {
       let properties = JSON.parse(array) as Array<UserProperty>;
       properties = properties.filter((el: UserProperty) => el.name === name);
@@ -366,103 +344,143 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
     return null;
   }
 
-  async resetMediaOverlaySettings(): Promise<void> {
-    await this.store.remove(this.MEDIAOVERLAYSETTINGS);
-    await this.reset();
+  resetMediaOverlaySettings() {
+    this.store.remove(this.MEDIAOVERLAYSETTINGS);
+    this.reset();
     this.settingsChangeCallback();
   }
 
-  async applyMediaOverlaySettings(
-    mediaOverlaySettings: IMediaOverlayUserSettings
-  ): Promise<void> {
+  applyMediaOverlaySettings(mediaOverlaySettings: IMediaOverlayUserSettings) {
     if (mediaOverlaySettings.color) {
       this.color = mediaOverlaySettings.color;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF).value =
-        this.color;
-      await this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF);
+      if (prop) {
+        prop.value = this.color;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
     if (mediaOverlaySettings.autoScroll !== undefined) {
       if (IS_DEV) console.log("autoScroll " + this.autoScroll);
       this.autoScroll = mediaOverlaySettings.autoScroll;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF).value =
-        this.autoScroll;
-      await this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF);
+      if (prop) {
+        prop.value = this.autoScroll;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
     if (mediaOverlaySettings.autoTurn !== undefined) {
       if (IS_DEV) console.log("autoTurn " + this.autoTurn);
       this.autoTurn = mediaOverlaySettings.autoTurn;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF).value =
-        this.autoTurn;
-      await this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF);
+      if (prop) {
+        prop.value = this.autoTurn;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
     if (mediaOverlaySettings.volume) {
       if (IS_DEV) console.log("volume " + this.volume);
       this.volume = mediaOverlaySettings.volume;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF).value =
-        this.volume;
-      await this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF);
+      if (prop) {
+        prop.value = this.volume;
+        this.saveProperty(prop);
+      }
+      this.settingsChangeCallback();
+    }
+    if (mediaOverlaySettings.rate) {
+      if (IS_DEV) console.log("rate " + this.rate);
+      this.rate = mediaOverlaySettings.rate;
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF);
+      if (prop) {
+        prop.value = this.rate;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
   }
 
-  async applyMediaOverlaySetting(key: any, value: any) {
+  applyMediaOverlaySetting(key: any, value: any) {
     if (key === MEDIAOVERLAYREFS.COLOR_REF) {
       this.color = value;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF).value =
-        this.color;
-      await this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.COLOR_REF);
+      if (prop) {
+        prop.value = this.color;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     } else if (key === MEDIAOVERLAYREFS.AUTO_SCROLL_REF) {
       this.autoScroll = value;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF).value =
-        this.autoScroll;
-      await this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF);
+      if (prop) {
+        prop.value = this.autoScroll;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     } else if (key === MEDIAOVERLAYREFS.AUTO_TURN_REF) {
       this.autoTurn = value;
-      this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF).value =
-        this.autoTurn;
-      await this.saveProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF)
-      );
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF);
+      if (prop) {
+        prop.value = this.autoTurn;
+        this.saveProperty(prop);
+      }
       this.settingsChangeCallback();
     }
   }
-  async increase(incremental: string): Promise<void> {
-    if (incremental === "volume") {
-      (
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF) as Incremental
-      ).increment();
-      this.storeProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
-      );
+  increase(incremental: MediaOverlayIncrementable) {
+    if (incremental === "mo_volume") {
+      (this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.VOLUME_REF
+      ) as Incremental).increment();
+      this.volume = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.VOLUME_REF
+      )?.value;
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
+      this.settingsChangeCallback();
+    } else if (incremental === "mo_rate") {
+      (this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.RATE_REF
+      ) as Incremental).increment();
+      this.rate = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.RATE_REF
+      )?.value;
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
     }
   }
 
-  async decrease(incremental: string): Promise<void> {
-    if (incremental === "volume") {
-      (
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF) as Incremental
-      ).decrement();
-      this.storeProperty(
-        this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
-      );
+  decrease(incremental: MediaOverlayIncrementable) {
+    if (incremental === "mo_volume") {
+      (this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.VOLUME_REF
+      ) as Incremental).decrement();
+      this.volume = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.VOLUME_REF
+      )?.value;
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
+      this.settingsChangeCallback();
+    } else if (incremental === "mo_rate") {
+      (this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.RATE_REF
+      ) as Incremental).decrement();
+      this.rate = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.RATE_REF
+      )?.value;
+      let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF);
+      if (prop) {
+        this.storeProperty(prop);
+      }
       this.settingsChangeCallback();
     }
   }

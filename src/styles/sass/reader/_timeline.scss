@@ -16,9 +16,9 @@
  * Developed on behalf of: DITA
  * Licensed to: Bibliotheca LLC, Bokbasen AS and CAST under one or more contributor license agreements.
  */
- 
+
  @media only screen and (max-width: 600px) {
-    .timeline, .scrubber > input, #nav-mobile-left  > li > a[rel=next], #nav-mobile-left  > li > a[rel=prev] {
+    .timeline, .scrubber > input {
         display: none;
     }
 }

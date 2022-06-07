@@ -2,6 +2,7 @@
 jQuery(function ($) {
   const $bodyEl = $("body"),
     $sidedrawerEl = $("#sidedrawer"),
+    $sidedrawerRightEl = $("#sidedrawerRight"),
     $sidedrawer2El = $("#sidedrawer2"),
     $sidedrawer3El = $("#sidedrawer3"),
     $sidedrawer4El = $("#sidedrawer4"),
@@ -33,6 +34,23 @@ jQuery(function ($) {
 
   function hideSidedrawer() {
     $bodyEl.toggleClass("hide-sidedrawer");
+  }
+  function showSidedrawerRight() {
+    // show overlay
+    let options = {
+      onclose: function () {
+        $sidedrawerRightEl.removeClass("active").appendTo(document.body);
+      },
+    };
+
+    // eslint-disable-next-line no-undef
+    const $overlayEl = $(mui.overlay("on", options));
+
+    // show element
+    $sidedrawerRightEl.appendTo($overlayEl);
+    setTimeout(function () {
+      $sidedrawerRightEl.addClass("active");
+    }, 20);
   }
 
   function showSidedrawer2() {
@@ -157,6 +175,8 @@ jQuery(function ($) {
 
   $(".js-show-sidedrawer").on("click", showSidedrawer);
   $(".js-hide-sidedrawer").on("click", hideSidedrawer);
+  $(".js-show-sidedrawerRight").on("click", showSidedrawerRight);
+  $(".js-hide-sidedrawerRight").on("click", hideSidedrawer);
   $(".js-show-sidedrawer2").on("click", showSidedrawer2);
   $(".js-hide-sidedrawer2").on("click", hideSidedrawer);
   $(".js-show-sidedrawer3").on("click", showSidedrawer3);

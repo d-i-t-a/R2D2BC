@@ -57,6 +57,17 @@ header table {
   background-color: #fff;
   transition: transform 0.2s;
 }
+#sidedrawerRight {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 300px;
+  right: -300px;
+  overflow: auto;
+  z-index: 2;
+  background-color: #fff;
+  transition: transform 0.2s;
+}
 #sidedrawer2 {
   position: fixed;
   top: 0;
@@ -164,6 +175,9 @@ header table {
  */
 #sidedrawer.active {
   transform: translate(300px);
+}
+#sidedrawerRight.active {
+  transform: translate(-300px);
 }
 #sidedrawer2.active {
   transform: translate(-280px);

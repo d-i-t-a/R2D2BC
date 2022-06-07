@@ -190,7 +190,7 @@ export class SearchModule implements ReaderModule {
         data: any[];
       };
 
-      paginated = self.paginate(localSearchResultChapter, page, 5);
+      paginated = self.paginate(localSearchResultChapter, page, 10);
       if (paginated.total === 0) {
         const linkElement: HTMLAnchorElement = document.createElement("a");
         linkElement.className = "collection-item";
@@ -216,7 +216,7 @@ export class SearchModule implements ReaderModule {
             (event: MouseEvent) => {
               event.preventDefault();
               event.stopPropagation();
-              self.jumpToMark(index + page * 5 - 5);
+              self.jumpToMark(index + page * 10 - 10);
             }
           );
           searchResultDiv.appendChild(linkElement);
@@ -231,7 +231,7 @@ export class SearchModule implements ReaderModule {
         let previousResultPage: HTMLLIElement = document.createElement("li");
         previousResultPage.className = "disabled";
 
-        previousResultPage.innerHTML = '<a href="#!">left</a>';
+        previousResultPage.innerHTML = '<a href="#!"> < </a>';
         if (paginated.pre_page !== undefined) {
           const pre_page = paginated.pre_page;
           previousResultPage.className = "waves-effect";
@@ -271,7 +271,7 @@ export class SearchModule implements ReaderModule {
 
         let nextResultPage: HTMLLIElement = document.createElement("li");
         nextResultPage.className = "disabled";
-        nextResultPage.innerHTML = '<a href="#!">right</a>';
+        nextResultPage.innerHTML = '<a href="#!"> > </a>';
         if (paginated.next_page !== undefined) {
           const next_page = paginated.next_page;
           nextResultPage.className = "waves-effect";
@@ -536,7 +536,7 @@ export class SearchModule implements ReaderModule {
         data: any[];
       };
       var localSearchResultBook = await self.searchBook(searchVal);
-      paginated = self.paginate(localSearchResultBook, page, 5);
+      paginated = self.paginate(localSearchResultBook, page, 10);
 
       if (paginated.total === 0) {
         const linkElement: HTMLAnchorElement = document.createElement("a");
@@ -627,7 +627,7 @@ export class SearchModule implements ReaderModule {
 
         let previousResultPage: HTMLLIElement = document.createElement("li");
         previousResultPage.className = "disabled";
-        previousResultPage.innerHTML = '<a href="#!">left</a>';
+        previousResultPage.innerHTML = '<a href="#!"> < </a>';
         if (paginated.pre_page != null) {
           let pre_page = paginated.pre_page;
           previousResultPage.className = "waves-effect";
@@ -667,7 +667,7 @@ export class SearchModule implements ReaderModule {
 
         let nextResultPage: HTMLLIElement = document.createElement("li");
         nextResultPage.className = "disabled";
-        nextResultPage.innerHTML = '<a href="#!">right</a>';
+        nextResultPage.innerHTML = '<a href="#!"> > </a>';
         if (paginated.next_page != null) {
           let next_page = paginated.next_page;
           nextResultPage.className = "waves-effect";

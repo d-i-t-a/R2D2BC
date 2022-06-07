@@ -42,7 +42,6 @@ import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { IS_DEV } from "../../utils";
 import { icons, iconTemplateColored } from "../../utils/IconLib";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
-import { TTSModule } from "../TTS/TTSModule";
 import { TTSModule2 } from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import * as lodash from "lodash";
@@ -1340,19 +1339,11 @@ export class TextHighlighter {
       if (win) {
         const selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
         if (selectionInfo !== undefined) {
-          if (this.delegate.tts?.enableSplitter) {
-            (this.delegate.ttsModule as TTSModule).speak(
-              selectionInfo as any,
-              true,
-              () => {}
-            );
-          } else {
-            (this.delegate.ttsModule as TTSModule2).speak(
-              selectionInfo as any,
-              true,
-              () => {}
-            );
-          }
+          (this.delegate.ttsModule as TTSModule2).speak(
+            selectionInfo as any,
+            true,
+            () => {}
+          );
         }
       }
       let doc = self.delegate.iframes[0].contentDocument;
@@ -1421,31 +1412,17 @@ export class TextHighlighter {
             const selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
 
             if (selectionInfo !== undefined && selectionInfo.cleanText) {
-              if (this.delegate.tts?.enableSplitter) {
-                (this.delegate.ttsModule as TTSModule).speak(
-                  selectionInfo as any,
-                  false,
-                  () => {
-                    if (doc) {
-                      let selection = self.dom(doc.body).getSelection();
-                      selection.removeAllRanges();
-                    }
-                    self.toolboxHide();
+              (this.delegate.ttsModule as TTSModule2).speak(
+                selectionInfo as any,
+                false,
+                () => {
+                  if (doc) {
+                    let selection = self.dom(doc.body).getSelection();
+                    selection.removeAllRanges();
                   }
-                );
-              } else {
-                (this.delegate.ttsModule as TTSModule2).speak(
-                  selectionInfo as any,
-                  false,
-                  () => {
-                    if (doc) {
-                      let selection = self.dom(doc.body).getSelection();
-                      selection.removeAllRanges();
-                    }
-                    self.toolboxHide();
-                  }
-                );
-              }
+                  self.toolboxHide();
+                }
+              );
             } else {
               self.dom(doc.body).getSelection().removeAllRanges();
               self.toolboxHide();
@@ -1559,11 +1536,7 @@ export class TextHighlighter {
       if (doc) {
         this.dom(doc.body).removeAllRanges();
       }
-      if (this.delegate.tts?.enableSplitter) {
-        (this.delegate.ttsModule as TTSModule).cancel();
-      } else {
-        (this.delegate.ttsModule as TTSModule2).cancel();
-      }
+      (this.delegate.ttsModule as TTSModule2).cancel();
       if (reload) {
         this.delegate.reload();
       }

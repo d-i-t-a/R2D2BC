@@ -66,6 +66,19 @@
         max-width: 22rem;
     }
 }
-
+[data-viewer-theme="night"] {
+    .timeline {
+        .chapter {
+            border: 1px solid $ui-black;
+        }
+    }
+}
+[data-viewer-theme="sepia"] {
+    .timeline {
+        .chapter {
+            border: 1px solid $sepia-bg;
+        }
+    }
+}
 
 

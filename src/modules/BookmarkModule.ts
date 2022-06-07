@@ -30,7 +30,6 @@ import {
   Bookmark,
   Locator,
 } from "../model/Locator";
-import { toast } from "materialize-css";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
 import { getCurrentSelectionInfo } from "./highlight/renderer/iframe/selection";
@@ -134,29 +133,22 @@ export class BookmarkModule implements ReaderModule {
       );
 
     if (this.headerMenu) {
-      var menuBookmark = HTMLUtilities.findElement(
+      const menuBookmark = HTMLUtilities.findElement(
         this.headerMenu,
         "#menu-button-bookmark"
       );
-      if (this.rights.enableMaterial) {
-        if (menuBookmark)
-          menuBookmark.parentElement?.style.removeProperty("display");
-        if (menuBookmark)
-          addEventListenerOptional(
-            menuBookmark,
-            "click",
-            this.saveBookmark.bind(this)
-          );
-      } else {
-        if (menuBookmark)
-          menuBookmark.parentElement?.style.setProperty("display", "none");
-        if (this.sideNavSectionBookmarks)
-          this.sideNavSectionBookmarks.style.setProperty("display", "none");
-      }
+      if (menuBookmark)
+        menuBookmark.parentElement?.style.removeProperty("display");
+      if (menuBookmark)
+        addEventListenerOptional(
+          menuBookmark,
+          "click",
+          this.saveBookmark.bind(this)
+        );
     }
 
     if (this.initialAnnotations) {
-      var bookmarks = this.initialAnnotations["bookmarks"] || null;
+      const bookmarks = this.initialAnnotations["bookmarks"] || null;
       if (bookmarks) {
         this.annotator?.initBookmarks(bookmarks);
       }
@@ -201,9 +193,6 @@ export class BookmarkModule implements ReaderModule {
         }
         await this.showBookmarks();
         await this.drawBookmarks();
-        if (this.delegate.rights.enableMaterial) {
-          toast({ html: "bookmark deleted" });
-        }
         return deleted;
       } else {
         let deleted = await this.annotator.deleteBookmark(bookmark);
@@ -213,9 +202,6 @@ export class BookmarkModule implements ReaderModule {
         }
         await this.showBookmarks();
         await this.drawBookmarks();
-        if (this.delegate.rights.enableMaterial) {
-          toast({ html: "bookmark deleted" });
-        }
         return deleted;
       }
     } else {
@@ -296,9 +282,6 @@ export class BookmarkModule implements ReaderModule {
             if (IS_DEV) {
               console.log("Bookmark added " + JSON.stringify(saved));
             }
-            if (this.delegate.rights.enableMaterial) {
-              toast({ html: "bookmark added" });
-            }
             this.showBookmarks();
             await this.drawBookmarks();
             return saved;
@@ -308,16 +291,9 @@ export class BookmarkModule implements ReaderModule {
             if (IS_DEV) {
               console.log("Bookmark added " + JSON.stringify(saved));
             }
-            if (this.delegate.rights.enableMaterial) {
-              toast({ html: "bookmark added" });
-            }
             this.showBookmarks();
             await this.drawBookmarks();
             return saved;
-          }
-        } else {
-          if (this.delegate.rights.enableMaterial) {
-            toast({ html: "bookmark exists" });
           }
         }
       }
@@ -708,9 +684,6 @@ export class BookmarkModule implements ReaderModule {
       }
       await this.showBookmarks();
       await this.drawBookmarks();
-      if (this.delegate.rights.enableMaterial) {
-        toast({ html: "highlight deleted" });
-      }
       return deleted;
     } else {
       return new Promise<any>((resolve) => resolve(null));
@@ -817,11 +790,7 @@ export class BookmarkModule implements ReaderModule {
                 );
 
                 bookmarkItem.appendChild(bookmarkLink);
-                if (
-                  (self.delegate.sideNavExpanded &&
-                    self.delegate.rights.enableMaterial) ||
-                  !self.delegate.rights.enableMaterial
-                ) {
+                if (self.delegate.sideNavExpanded) {
                   let bookmarkDeleteLink: HTMLElement = document.createElement(
                     "button"
                   );

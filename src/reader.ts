@@ -50,7 +50,6 @@ import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
 import { convertAndCamel } from "./model/Link";
 import { LayerSettings } from "./modules/highlight/LayerSettings";
 import { PageBreakModule } from "./modules/pagebreak/PageBreakModule";
-import { TTSModule } from "./modules/TTS/TTSModule";
 import { TTSModule2 } from "./modules/TTS/TTSModule2";
 import { ReaderModule } from "./modules/ReaderModule";
 import { DefinitionsModule } from "./modules/search/DefinitionsModule";
@@ -100,7 +99,6 @@ export default class D2Reader {
       enableContentProtection: false,
       enableDefinitions: false,
       enableLineFocus: false,
-      enableMaterial: false,
       enableMediaOverlays: false,
       enablePageBreaks: false,
       enableSearch: false,
@@ -256,28 +254,15 @@ export default class D2Reader {
 
     let ttsModule: ReaderModule | undefined = undefined;
 
-    if (initialConfig.tts?.enableSplitter ?? false) {
-      if (ttsEnabled && ttsSettings) {
-        ttsModule = await TTSModule.create({
-          delegate: navigator,
-          tts: ttsSettings,
-          headerMenu: headerMenu,
-          rights: rights,
-          highlighter: highlighter,
-          ...initialConfig.tts,
-        });
-      }
-    } else {
-      if (ttsEnabled && ttsSettings) {
-        ttsModule = await TTSModule2.create({
-          delegate: navigator,
-          tts: ttsSettings,
-          headerMenu: headerMenu,
-          rights: rights,
-          highlighter: highlighter,
-          ...initialConfig.tts,
-        });
-      }
+    if (ttsEnabled && ttsSettings) {
+      ttsModule = await TTSModule2.create({
+        delegate: navigator,
+        tts: ttsSettings,
+        headerMenu: headerMenu,
+        rights: rights,
+        highlighter: highlighter,
+        ...initialConfig.tts,
+      });
     }
 
     // Search Module
@@ -777,11 +762,7 @@ export default class D2Reader {
     this.navigator.stop();
     this.settings.stop();
     this.ttsSettings?.stop();
-    if (this.ttsSettings?.enableSplitter) {
-      (this.ttsModule as TTSModule)?.stop();
-    } else {
-      (this.ttsModule as TTSModule2)?.stop();
-    }
+    (this.ttsModule as TTSModule2)?.stop();
     this.bookmarkModule?.stop();
     this.annotationModule?.stop();
     this.searchModule?.stop();

@@ -37,7 +37,6 @@ import {
   Locator,
   ReadingPosition,
 } from "../model/Locator";
-import { Collapsible, Dropdown, Sidenav, Tabs } from "materialize-css";
 import {
   UserSettings,
   UserSettingsUIConfig,
@@ -51,8 +50,6 @@ import {
   AnnotationModuleConfig,
 } from "../modules/AnnotationModule";
 import { IS_DEV } from "../utils";
-import { TTSModule } from "../modules/TTS/TTSModule";
-import Splitting from "../modules/TTS/splitting";
 import {
   SearchModule,
   SearchModuleConfig,
@@ -169,7 +166,6 @@ export interface ReaderRights {
   enableSearch: boolean;
   enableDefinitions: boolean;
   enableContentProtection: boolean;
-  enableMaterial: boolean;
   enableTimeline: boolean;
   autoGeneratePositions: boolean;
   enableMediaOverlays: boolean;
@@ -296,7 +292,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     enableContentProtection: false,
     enableDefinitions: false,
     enableLineFocus: false,
-    enableMaterial: false,
     enableMediaOverlays: false,
     enablePageBreaks: false,
     enableSearch: false,
@@ -374,7 +369,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       enableContentProtection: false,
       enableDefinitions: false,
       enableLineFocus: false,
-      enableMaterial: false,
       enableMediaOverlays: false,
       enablePageBreaks: false,
       enableSearch: false,
@@ -449,27 +443,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.iframes.forEach((iframe) => {
       removeEventListenerOptional(iframe, "resize", this.onResize);
     });
-
-    if (this.rights.enableMaterial) {
-      if (this.mDropdowns) {
-        this.mDropdowns.forEach((element) => {
-          (element as any).destroy();
-        });
-      }
-      if (this.mCollapsibles) {
-        this.mCollapsibles.forEach((element) => {
-          (element as any).destroy();
-        });
-      }
-      if (this.mSidenav) {
-        (this.mSidenav as any).destroy();
-      }
-      if (this.mTabs) {
-        this.mTabs.forEach((element) => {
-          (element as any).destroy();
-        });
-      }
-    }
   }
   spreads: HTMLDivElement;
   firstSpread: HTMLDivElement;
@@ -732,8 +705,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         );
       }
 
-      var self = this;
-
       if (this.headerMenu) {
         var menuSearch = HTMLUtilities.findElement(
           this.headerMenu,
@@ -760,89 +731,51 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.headerMenu,
           "#menu-button-mediaoverlay"
         );
-        if (this.rights.enableMaterial) {
-          if (!this.rights.enableBookmarks) {
-            if (menuBookmark)
-              menuBookmark.parentElement?.style.setProperty("display", "none");
-            var sideNavSectionBookmarks = HTMLUtilities.findElement(
-              this.headerMenu,
-              "#sidenav-section-bookmarks"
-            );
-            if (sideNavSectionBookmarks)
-              sideNavSectionBookmarks.style.setProperty("display", "none");
-          }
-          if (!this.rights.enableAnnotations) {
-            var sideNavSectionHighlights = HTMLUtilities.findElement(
-              this.headerMenu,
-              "#sidenav-section-highlights"
-            );
-            if (sideNavSectionHighlights)
-              sideNavSectionHighlights.style.setProperty("display", "none");
-          }
-          if (!this.rights.enableTTS) {
-            if (menuTTS)
-              menuTTS.parentElement?.style.setProperty("display", "none");
-          }
-          if (!this.rights.enableSearch) {
-            if (menuSearch)
-              menuSearch.parentElement?.style.setProperty("display", "none");
-          }
-          if (menuSearch && this.view?.delegate.publication.isFixedLayout) {
-            menuSearch.parentElement?.style.setProperty("display", "none");
-          }
-          if (this.hasMediaOverlays) {
-            if (play) play.parentElement?.style.setProperty("display", "block");
-            if (pause)
-              pause.parentElement?.style.setProperty("display", "block");
-            if (menu) menu.parentElement?.style.setProperty("display", "block");
-          } else {
-            if (play) play.parentElement?.style.setProperty("display", "none");
-            if (pause)
-              pause.parentElement?.style.setProperty("display", "none");
-            if (menu) menu.parentElement?.style.setProperty("display", "none");
-          }
-        } else {
-          if (menuSearch)
-            menuSearch.parentElement?.style.setProperty("display", "none");
-          if (menuTTS)
-            menuTTS.parentElement?.style.setProperty("display", "none");
+        if (!this.rights.enableBookmarks) {
           if (menuBookmark)
             menuBookmark.parentElement?.style.setProperty("display", "none");
+          var sideNavSectionBookmarks = HTMLUtilities.findElement(
+            this.headerMenu,
+            "#sidenav-section-bookmarks"
+          );
+          if (sideNavSectionBookmarks)
+            sideNavSectionBookmarks.style.setProperty("display", "none");
         }
-      }
-
-      if (this.rights.enableMaterial) {
-        let elements = document.querySelectorAll(".sidenav");
-        if (elements) {
-          self.mSidenav = Sidenav.init(elements, {
-            edge: this.attributes?.sideNavPosition ?? "left",
-          });
+        if (!this.rights.enableAnnotations) {
+          var sideNavSectionHighlights = HTMLUtilities.findElement(
+            this.headerMenu,
+            "#sidenav-section-highlights"
+          );
+          if (sideNavSectionHighlights)
+            sideNavSectionHighlights.style.setProperty("display", "none");
         }
-        let collapsible = document.querySelectorAll(".collapsible");
-        if (collapsible) {
-          self.mCollapsibles = Collapsible.init(collapsible, {
-            accordion: true,
-          });
+        if (!this.rights.enableTTS) {
+          if (menuTTS)
+            menuTTS.parentElement?.style.setProperty("display", "none");
         }
-        let dropdowns = document.querySelectorAll(".dropdown-trigger");
-        if (dropdowns) {
-          self.mDropdowns = Dropdown.init(dropdowns, {
-            alignment: "right",
-            constrainWidth: false,
-            coverTrigger: false,
-            closeOnClick: false,
-            autoTrigger: false,
-            onOpenEnd: function () {
-              self.mTabs.forEach((element) => {
-                (element as any).updateTabIndicator();
-              });
-            },
-          });
+        if (!this.rights.enableSearch) {
+          if (menuSearch)
+            menuSearch.parentElement?.style.setProperty("display", "none");
         }
-        let tabs = document.querySelectorAll(".tabs");
-        if (tabs) {
-          self.mTabs = Tabs.init(tabs);
+        if (menuSearch && this.view?.delegate.publication.isFixedLayout) {
+          menuSearch.parentElement?.style.setProperty("display", "none");
         }
+        if (this.hasMediaOverlays) {
+          if (play) play.parentElement?.style.removeProperty("display");
+          if (pause) pause.parentElement?.style.removeProperty("display");
+          if (menu) menu.parentElement?.style.removeProperty("display");
+        } else {
+          if (play) play.parentElement?.style.setProperty("display", "none");
+          if (pause) pause.parentElement?.style.setProperty("display", "none");
+          if (menu) menu.parentElement?.style.setProperty("display", "none");
+        }
+      } else {
+        if (menuSearch)
+          menuSearch.parentElement?.style.setProperty("display", "none");
+        if (menuTTS)
+          menuTTS.parentElement?.style.setProperty("display", "none");
+        if (menuBookmark)
+          menuBookmark.parentElement?.style.setProperty("display", "none");
       }
 
       return await this.loadManifest();
@@ -1479,12 +1412,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         await this.highlighter.initialize();
       }
       const body = this.iframes[0].contentDocument?.body;
-      if (this.rights.enableTTS && this.tts?.enableSplitter) {
-        Splitting({
-          target: body,
-          by: "lines",
-        });
-      }
 
       // resize on toggle details
       let details = body?.querySelector("details");
@@ -1529,13 +1456,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         for (const iframe of this.iframes) {
           const body = iframe.contentDocument?.body;
           if (this.ttsModule !== undefined) {
-            if (this.tts?.enableSplitter) {
-              const ttsModule = this.ttsModule as TTSModule;
-              await ttsModule.initialize(body);
-            } else {
-              const ttsModule = this.ttsModule as TTSModule2;
-              await ttsModule.initialize(body);
-            }
+            const ttsModule = this.ttsModule as TTSModule2;
+            await ttsModule.initialize(body);
           }
         }
       }
@@ -2166,7 +2088,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   private handleEditClick(event: MouseEvent): void {
     var element = event.target as HTMLElement;
     if (this.headerMenu) {
-      var sidenav = HTMLUtilities.findElement(this.headerMenu, ".sidenav");
+      var sidenav = HTMLUtilities.findElement(document, ".sidenav");
 
       if (element.className.indexOf(" active") === -1) {
         element.className += " active";
@@ -2192,12 +2114,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
   startReadAloud() {
     if (this.rights.enableTTS) {
-      if (this.tts?.enableSplitter) {
-        this.highlighter?.speakAll();
-      } else {
-        const ttsModule = this.ttsModule as TTSModule2;
-        ttsModule.speakPlay();
-      }
+      const ttsModule = this.ttsModule as TTSModule2;
+      ttsModule.speakPlay();
     }
   }
   startReadAlong() {
@@ -2212,11 +2130,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   stopReadAloud() {
     if (this.rights.enableTTS) {
       this.highlighter?.stopReadAloud();
-      if (!this.tts?.enableSplitter) {
-        if (this.annotationModule !== undefined) {
-          this.annotationModule.drawHighlights();
-        }
-      }
     }
   }
   stopReadAlong() {
@@ -2231,15 +2144,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
   pauseReadAloud() {
     if (this.rights.enableTTS) {
-      if (this.tts?.enableSplitter) {
-        const ttsModule = this.ttsModule as TTSModule;
-        ttsModule.speakPause();
-      } else {
-        const ttsModule = this.ttsModule as TTSModule2;
-        ttsModule.speakPause();
-        if (this.annotationModule !== undefined) {
-          this.annotationModule.drawHighlights();
-        }
+      const ttsModule = this.ttsModule as TTSModule2;
+      ttsModule.speakPause();
+      if (this.annotationModule !== undefined) {
+        this.annotationModule.drawHighlights();
       }
     }
   }
@@ -2254,13 +2162,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
   resumeReadAloud() {
     if (this.rights.enableTTS) {
-      if (this.tts?.enableSplitter) {
-        const ttsModule = this.ttsModule as TTSModule;
-        ttsModule.speakResume();
-      } else {
-        const ttsModule = this.ttsModule as TTSModule2;
-        ttsModule.speakResume();
-      }
+      const ttsModule = this.ttsModule as TTSModule2;
+      ttsModule.speakResume();
     }
   }
   resumeReadAlong() {
@@ -3332,10 +3235,17 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
   activateMarker(id, position) {
     if (this.annotationModule !== undefined) {
-      this.annotationModule.activeAnnotationMarkerId = id;
-      this.annotationModule.activeAnnotationMarkerPosition = position;
-      if (this.highlighter) {
-        this.highlighter.activeAnnotationMarkerId = id;
+      if (
+        this.annotationModule.activeAnnotationMarkerId === undefined ||
+        this.annotationModule.activeAnnotationMarkerId !== id
+      ) {
+        this.annotationModule.activeAnnotationMarkerId = id;
+        this.annotationModule.activeAnnotationMarkerPosition = position;
+        if (this.highlighter) {
+          this.highlighter.activeAnnotationMarkerId = id;
+        }
+      } else {
+        this.deactivateMarker();
       }
     }
   }

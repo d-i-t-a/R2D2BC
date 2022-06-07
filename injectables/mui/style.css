@@ -1,0 +1,271 @@
+/**
+ * Body CSS
+ */
+
+
+html,
+body {
+  height: 100%;
+  background-color: #eee;
+}
+
+html,
+body,
+input,
+textarea,
+buttons {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.004);
+}
+
+
+/**
+ * Layout CSS
+ */
+
+#header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  transition: left 0.2s;
+}
+
+header ul.mui-list--inline {
+  margin-bottom: 0;
+}
+
+header a {
+  color: black;
+  cursor: pointer;
+}
+
+header table {
+  width: 100%;
+}
+
+#sidedrawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 300px;
+  left: -300px;
+  overflow: auto;
+  z-index: 2;
+  background-color: #fff;
+  transition: transform 0.2s;
+}
+#sidedrawerRight {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 300px;
+  right: -300px;
+  overflow: auto;
+  z-index: 2;
+  background-color: #fff;
+  transition: transform 0.2s;
+}
+#sidedrawer2 {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 280px;
+  right: -280px;
+  overflow: auto;
+  z-index: 2;
+  background-color: #fff;
+  transition: transform 0.2s;
+}
+#sidedrawer3 {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 330px;
+  right: -330px;
+  overflow: auto;
+  z-index: 2;
+  background-color: #fff;
+  transition: transform 0.2s;
+}
+#sidedrawer4 {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 330px;
+  right: -330px;
+  overflow: auto;
+  z-index: 2;
+  background-color: #fff;
+  transition: transform 0.2s;
+}
+#sidedrawer5 {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 330px;
+  right: -330px;
+  overflow: auto;
+  z-index: 2;
+  background-color: #fff;
+  transition: transform 0.2s;
+}
+#sidedrawer6 {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 330px;
+  right: -330px;
+  overflow: auto;
+  z-index: 2;
+  background-color: #fff;
+  transition: transform 0.2s;
+}
+#sidedrawer7 {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 330px;
+  right: -330px;
+  overflow: auto;
+  z-index: 2;
+  background-color: #fff;
+  transition: transform 0.2s;
+}
+#sidedrawer8 {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 430px;
+  right: -430px;
+  overflow: auto;
+  z-index: 2;
+  background-color: #fff;
+  transition: transform 0.2s;
+}
+
+
+
+
+#content-wrapper {
+  min-height: 100%;
+  overflow-x: hidden;
+  margin-left: 0px;
+  transition: margin-left 0.2s;
+
+  /* sticky bottom */
+  box-sizing: border-box;
+  margin-bottom: -160px;
+  padding-bottom: 160px;
+}
+
+#footer {
+  box-sizing: border-box;
+  height: 160px;
+  margin-left: 0px;
+  transition: margin-left 0.2s;
+}
+
+
+
+/**
+ * Toggle Sidedrawer
+ */
+#sidedrawer.active {
+  transform: translate(300px);
+}
+#sidedrawerRight.active {
+  transform: translate(-300px);
+}
+#sidedrawer2.active {
+  transform: translate(-280px);
+}
+#sidedrawer3.active {
+  transform: translate(-330px);
+}
+#sidedrawer4.active {
+  transform: translate(-330px);
+}
+#sidedrawer5.active {
+  transform: translate(-330px);
+}
+#sidedrawer6.active {
+  transform: translate(-330px);
+}
+#sidedrawer7.active {
+  transform: translate(-330px);
+}
+#sidedrawer8.active {
+  transform: translate(-430px);
+}
+
+
+/**
+ * Header CSS
+ */
+
+.sidedrawer-toggle {
+  /*color: #fff;*/
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 20px;
+  margin-right: 10px;
+  margin-left: 10px;
+}
+
+.sidedrawer-toggle:hover {
+  /*color: #fff;*/
+  text-decoration: none;
+}
+
+
+/**
+ * Sidedrawer CSS
+ */
+
+#sidedrawer-brand {
+  padding-left: 20px;
+}
+
+#sidedrawer ul {
+  list-style: none;
+}
+
+#sidedrawer > ul {
+  padding-left: 0px;
+}
+
+/*#sidedrawer > ul > li:first-child {*/
+/*  padding-top: 15px;*/
+/*}*/
+
+#sidedrawer strong {
+  display: block;
+  padding: 15px 1rem;
+  cursor: pointer;
+}
+
+#sidedrawer strong:hover {
+  background-color: #E0E0E0;
+}
+
+#sidedrawer strong + ul > li {
+  padding: 6px 0px;
+}
+
+
+/**
+ * Footer CSS
+ */
+
+#footer {
+  background-color: #0288D1;
+  color: #fff;
+}
+
+#footer a {
+  color: #fff;
+  text-decoration: underline;
+}

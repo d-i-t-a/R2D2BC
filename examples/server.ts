@@ -33,10 +33,6 @@ async function start() {
         title: "API Example",
         getUrl: (url) => `/viewer/index_api.html?url=${url}`,
       },
-      {
-        title: "Material Example",
-        getUrl: (url) => `/viewer/index_material.html?url=${url}`,
-      },
     ],
   });
 

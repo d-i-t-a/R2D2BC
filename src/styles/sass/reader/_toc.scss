@@ -16,13 +16,14 @@
  * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
- 
+
 //////////////////////////////
 // Table of Contents Styles //
 //////////////////////////////
 
 .sidenav-toc {
-    .chapter-link {
+  padding-inline-start: 0px;
+  .chapter-link {
         display: block;
         white-space: nowrap;
         overflow: hidden;
@@ -35,7 +36,9 @@
     }
 }
 
-
+.collapsible-header {
+  border-bottom: 1px solid rgba(0,0,0,.12);
+}
 .contents-view, .pageList-view, .landmarks-view {
   background-color: $ui-white;
   overflow: scroll;
@@ -46,7 +49,7 @@
   -ms-user-select: none;
   user-select: none;
 
-  ol li, 
+  ol li,
   ul li {
     margin-top: 0;
 
@@ -60,7 +63,7 @@
 
       @media screen and (min-width: 60rem) {
         &:hover {
-          background: $ui-dark-gray;
+          background: $ui-hover-gray;
           color: $ui-black;
         }
       }
@@ -71,7 +74,7 @@
       }
 
       &.active:hover {
-        background: $ui-black;
+        background: $ui-dark-gray;
         color: $ui-light-gray;
       }
     }
@@ -91,7 +94,7 @@
   .contents-view, .pageList-view, .landmarks-view {
     background-color: $sepia-bg;
 
-    ol li, 
+    ol li,
     ul li {
         a {
         color: $ui-dark-gray;
@@ -99,7 +102,7 @@
 
         @media screen and (min-width: 60rem) {
           &:hover {
-            background: $ui-dark-gray;
+            background: $ui-hover-gray;
             color: $sepia-bg;
           }
         }
@@ -110,7 +113,7 @@
         }
 
         &.active:hover {
-          background: $ui-black;
+          background: $ui-dark-gray;
           color: $ui-light-gray;
         }
       }
@@ -127,7 +130,7 @@
   .contents-view, .pageList-view, .landmarks-view {
     background-color: $night-bg;
 
-    ol li, 
+    ol li,
     ul li {
         a {
         color: $ui-dark-gray;
@@ -135,7 +138,7 @@
 
         @media screen and (min-width: 60rem) {
           &:hover {
-            background: $ui-dark-gray;
+            background: $ui-hover-gray;
             color: $ui-white;
           }
         }
@@ -146,7 +149,7 @@
         }
 
         &.active:hover {
-          background: $night-bg;
+          background: $ui-dark-gray;
           color: $ui-light-gray;
         }
       }

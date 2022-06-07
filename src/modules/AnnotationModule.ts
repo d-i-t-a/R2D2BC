@@ -32,7 +32,6 @@ import {
   Locator,
 } from "../model/Locator";
 import { IS_DEV } from "../utils";
-import { toast } from "materialize-css";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
@@ -314,9 +313,6 @@ export class AnnotationModule implements ReaderModule {
       }
       await this.showHighlights();
       await this.drawHighlights();
-      if (this.delegate.rights.enableMaterial) {
-        toast({ html: "highlight updated" });
-      }
       return added;
     } else {
       return new Promise<any>((resolve) => resolve(null));
@@ -332,9 +328,6 @@ export class AnnotationModule implements ReaderModule {
       }
       await this.showHighlights();
       await this.drawHighlights();
-      if (this.delegate.rights.enableMaterial) {
-        toast({ html: "highlight deleted" });
-      }
       return deleted;
     } else {
       return new Promise<any>((resolve) => resolve(null));
@@ -831,11 +824,7 @@ export class AnnotationModule implements ReaderModule {
                 );
 
                 bookmarkItem.appendChild(bookmarkLink);
-                if (
-                  (self.delegate.sideNavExpanded &&
-                    self.delegate.rights.enableMaterial) ||
-                  !self.delegate.rights.enableMaterial
-                ) {
+                if (self.delegate.sideNavExpanded) {
                   let bookmarkDeleteLink: HTMLElement = document.createElement(
                     "button"
                   );

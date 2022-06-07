@@ -30,7 +30,7 @@
     --RS__definitionsUnderlineBorderColor: rgba(255, 111, 111, 1);
     --RS__definitionsUnderlineHoverColor: rgba(255, 111, 111, 0.1);
 
-    --USER__maxMediaHeight: --RS__maxMediaHeight;
+    --USER__maxMediaHeight: 95vh;
 }
 
 .R2_CLASS_HIGHLIGHT_AREA[data-marker="0"] {

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * Developed on behalf of: CAST (http://www.cast.org) and DITA
- * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Licensed to: CAST under one or more contributor license agreements.
  */
 
 import { IS_DEV } from "../../utils";
@@ -546,12 +546,7 @@ export class TTSModule2 implements ReaderModule {
         this.headerMenu,
         "#menu-button-tts"
       );
-      if (this.rights.enableMaterial) {
-        if (menuTTS) menuTTS.parentElement?.style.removeProperty("display");
-      } else {
-        if (menuTTS)
-          menuTTS.parentElement?.style.setProperty("display", "none");
-      }
+      if (menuTTS) menuTTS.parentElement?.style.removeProperty("display");
     }
     setTimeout(() => {
       this.properties?.hideLayer

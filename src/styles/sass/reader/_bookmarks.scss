@@ -16,7 +16,7 @@
  * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
- 
+
 //////////////////////////////
 // Bookmarks Styles         //
 //////////////////////////////
@@ -31,7 +31,7 @@
   -ms-user-select: none;
   user-select: none;
 
-  ol li, 
+  ol li,
   ul li {
     margin-top: 0;
 
@@ -45,7 +45,7 @@
 
       @media screen and (min-width: 60rem) {
         &:hover {
-          background: $ui-dark-gray;
+          background: $ui-hover-gray;
           color: $ui-black;
         }
       }
@@ -56,7 +56,7 @@
       }
 
       &.active:hover {
-        background: $ui-black;
+        background: $ui-dark-gray;
         color: $ui-light-gray;
       }
     }
@@ -68,7 +68,7 @@
     .bookmarks-view, .highlights-view {
         background-color: $sepia-bg;
 
-    ol li, 
+    ol li,
     ul li {
         a {
         color: $ui-dark-gray;
@@ -76,7 +76,7 @@
 
         @media screen and (min-width: 60rem) {
           &:hover {
-            background: $ui-dark-gray;
+            background: $ui-hover-gray;
             color: $sepia-bg;
           }
         }
@@ -94,7 +94,6 @@
 
       span {
         color: $ui-dark-gray;
-        border-bottom: 1px solid darken($sepia-bg, 20%);
       }
     }
   }
@@ -104,7 +103,7 @@
     .bookmarks-view, .highlights-view {
         background-color: $night-bg;
 
-    ol li, 
+    ol li,
     ul li {
         a {
         color: $ui-dark-gray;
@@ -112,7 +111,7 @@
 
         @media screen and (min-width: 60rem) {
           &:hover {
-            background: $ui-dark-gray;
+            background: $ui-hover-gray;
             color: $ui-white;
           }
         }
@@ -123,7 +122,7 @@
         }
 
         &.active:hover {
-          background: $night-bg;
+          background: $ui-dark-gray;
           color: $ui-light-gray;
         }
       }

@@ -46,7 +46,7 @@ async function buildTs(
       // note these need to be double quoted if we want to define string constants
       "process.env.NODE_ENV": isProduction ? "'production'" : "'development'",
       // the Node.js util polyfill uses "global" instead of "window" annoyingly
-      global: "window",
+      global: "globalThis",
     },
     tsconfig: "tsconfig.json",
     ...options,
@@ -87,6 +87,14 @@ async function copyCssInjectables() {
   try {
     await copy("injectables/**/*.css", "dist/injectables");
     logBundled("Copied CSS injectables", "dist/injectables/**/*.css");
+  } catch (e) {
+    err("CSS Copy Error: ", e);
+  }
+}
+async function copyJsInjectables() {
+  try {
+    await copy("injectables/**/*.js", "dist/injectables");
+    logBundled("Copied JS injectables", "dist/injectables/**/*.js");
   } catch (e) {
     err("CSS Copy Error: ", e);
   }
@@ -156,12 +164,13 @@ async function buildAll() {
     "Compiled injectables",
     "dist/injectables/"
   );
-  // copy over the css injectables
+
+  // copy over the css and js injectables
   const p5 = copyCssInjectables();
+  const p6 = copyJsInjectables();
 
   // compile sass files into reader.css and material.css
-  const p6 = compileCss("src/styles/sass/reader.scss", "reader");
-  const p7 = compileCss("src/styles/sass/material.scss", "material");
+  const p7 = compileCss("src/styles/sass/reader.scss", "reader");
 
   // wait for everything to finish running in parallel
   await Promise.all([p1, p2, p3, p4, p5, p6, p7]);

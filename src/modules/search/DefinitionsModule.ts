@@ -141,9 +141,9 @@ export class DefinitionsModule implements ReaderModule {
             this.delegate.definitionsModule?.properties.fullWordSearch
           ).then((result) => {
             let i: number | undefined = undefined;
-            if (item.result == 1) {
+            if (item.result === 1) {
               i = 0;
-            } else if (item.result == 2) {
+            } else if (item.result === 2) {
               i = Math.floor(Math.random() * result.length - 1) + 1;
             }
             result.forEach((searchItem, index) => {

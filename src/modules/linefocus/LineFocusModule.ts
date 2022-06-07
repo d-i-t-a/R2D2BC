@@ -129,12 +129,12 @@ export default class LineFocusModule implements ReaderModule {
       this.wrapperHeight = wrapper.style.height;
       if (
         this.lineFocusContainer &&
-        this.lineFocusContainer.style.height.length == 0
+        this.lineFocusContainer.style.height.length === 0
       )
         this.lineFocusContainer.style.height = this.wrapperHeight;
       if (
         this.readerContainer &&
-        this.readerContainer.style.height.length == 0
+        this.readerContainer.style.height.length === 0
       ) {
         this.readerContainer.style.height = this.wrapperHeight;
       }

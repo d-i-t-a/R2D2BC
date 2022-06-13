@@ -1398,17 +1398,16 @@ export class TextHighlighter {
       document,
       "#iframe-wrapper"
     );
-    const windowLeft = wrapper.scrollLeft;
-    const windowRight = windowLeft + wrapper.clientHeight;
-    const right = rect.left + rect.width;
     const windowTop = wrapper.scrollTop;
     const windowBottom = windowTop + wrapper.clientHeight;
-
     const isAbove = rect.top + 20 >= windowTop;
     const isBelow = rect.top <= windowBottom;
 
-    const isLeft = right > windowLeft;
-    const isRight = rect.left < windowRight;
+    const windowLeft = wrapper.scrollLeft;
+    const windowRight = windowLeft + wrapper.clientWidth;
+    const right = rect.left + rect.width;
+    const isLeft = rect.left > windowLeft;
+    const isRight = right < windowRight;
 
     return isAbove && isBelow && isLeft && isRight;
   }

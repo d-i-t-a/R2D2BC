@@ -928,17 +928,30 @@ export class TextHighlighter {
       // modify() method. IE 9 has both selection APIs but no modify() method.
       if (self.dom(doc.body)) {
         if (selection && !selection?.isCollapsed) {
+          const text = selection.toString();
+          const startOffsetTemp = text.length - text.trimStart().length;
+          const endOffsetTemp = text.length - text.trimEnd().length;
+
           // Detect if selection is backwards
           let range = document.createRange();
-          range.setStart(selection.anchorNode, selection.anchorOffset);
-          range.setEnd(selection.focusNode, selection.focusOffset);
+          range.setStart(
+            selection.anchorNode,
+            selection.anchorOffset + startOffsetTemp
+          );
+          range.setEnd(
+            selection.focusNode,
+            selection.focusOffset - endOffsetTemp
+          );
           let backwards = range.collapsed;
           range.detach();
 
           // modify() works on the focus of the selection
           let endNode = selection.focusNode,
-            endOffset = selection.focusOffset;
-          selection.collapse(selection.anchorNode, selection.anchorOffset);
+            endOffset = selection.focusOffset - endOffsetTemp;
+          selection.collapse(
+            selection.anchorNode,
+            selection.anchorOffset + startOffsetTemp
+          );
 
           let direction = ["forward", "backward"];
           if (backwards) {
@@ -1378,7 +1391,7 @@ export class TextHighlighter {
       "#iframe-wrapper"
     );
     const windowLeft = wrapper.scrollLeft;
-    const windowRight = windowLeft + wrapper.clientHeight;
+    const windowRight = windowLeft + wrapper.clientWidth;
     const right = rect.left + rect.width;
     const bottom = rect.top + rect.height;
     const windowTop = wrapper.scrollTop;

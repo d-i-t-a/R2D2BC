@@ -928,17 +928,30 @@ export class TextHighlighter {
       // modify() method. IE 9 has both selection APIs but no modify() method.
       if (self.dom(doc.body)) {
         if (selection && !selection?.isCollapsed) {
+          const text = selection.toString();
+          const startOffsetTemp = text.length - text.trimStart().length;
+          const endOffsetTemp = text.length - text.trimEnd().length;
+
           // Detect if selection is backwards
           let range = document.createRange();
-          range.setStart(selection.anchorNode, selection.anchorOffset);
-          range.setEnd(selection.focusNode, selection.focusOffset);
+          range.setStart(
+            selection.anchorNode,
+            selection.anchorOffset + startOffsetTemp
+          );
+          range.setEnd(
+            selection.focusNode,
+            selection.focusOffset - endOffsetTemp
+          );
           let backwards = range.collapsed;
           range.detach();
 
           // modify() works on the focus of the selection
           let endNode = selection.focusNode,
-            endOffset = selection.focusOffset;
-          selection.collapse(selection.anchorNode, selection.anchorOffset);
+            endOffset = selection.focusOffset - endOffsetTemp;
+          selection.collapse(
+            selection.anchorNode,
+            selection.anchorOffset + startOffsetTemp
+          );
 
           let direction = ["forward", "backward"];
           if (backwards) {
@@ -1363,75 +1376,6 @@ export class TextHighlighter {
       this.doneSpeaking();
     }
   }
-  speakAll() {
-    if (this.delegate.rights.enableTTS) {
-      let self = this;
-
-      function getCssSelector(element: Element): string | undefined {
-        const options = {
-          className: (str: string) => {
-            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-          },
-          idName: (str: string) => {
-            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-          },
-        };
-        let doc = self.delegate.iframes[0].contentDocument;
-        if (doc) {
-          return uniqueCssSelector(
-            element,
-            self.dom(doc.body).getDocument(),
-            options
-          );
-        } else {
-          return undefined;
-        }
-      }
-
-      let doc = this.delegate.iframes[0].contentDocument;
-      if (doc) {
-        const selectionInfo = getCurrentSelectionInfo(
-          this.dom(doc.body).getWindow(),
-          getCssSelector
-        );
-
-        if (selectionInfo !== undefined) {
-          self.speak();
-        } else {
-          var node = this.dom(
-            self.delegate.iframes[0].contentDocument?.body
-          ).getWindow().document.body;
-          if (IS_DEV) console.log(doc);
-          const selection = self.dom(doc.body).getSelection();
-          const range = this.dom(doc.body).getWindow().document.createRange();
-          range.selectNodeContents(node);
-          selection.removeAllRanges();
-          selection.addRange(range);
-          let win = this.delegate.iframes[0].contentWindow;
-          if (win) {
-            const selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
-
-            if (selectionInfo !== undefined && selectionInfo.cleanText) {
-              (this.delegate.ttsModule as TTSModule2).speak(
-                selectionInfo as any,
-                false,
-                () => {
-                  if (doc) {
-                    let selection = self.dom(doc.body).getSelection();
-                    selection.removeAllRanges();
-                  }
-                  self.toolboxHide();
-                }
-              );
-            } else {
-              self.dom(doc.body).getSelection().removeAllRanges();
-              self.toolboxHide();
-            }
-          }
-        }
-      }
-    }
-  }
 
   callbackComplete() {
     this.toolboxHide();
@@ -1447,7 +1391,7 @@ export class TextHighlighter {
       "#iframe-wrapper"
     );
     const windowLeft = wrapper.scrollLeft;
-    const windowRight = windowLeft + wrapper.clientHeight;
+    const windowRight = windowLeft + wrapper.clientWidth;
     const right = rect.left + rect.width;
     const bottom = rect.top + rect.height;
     const windowTop = wrapper.scrollTop;
@@ -1460,6 +1404,25 @@ export class TextHighlighter {
     const isRight = rect.left > windowRight;
 
     return isAbove || isBelow || isLeft || isRight;
+  }
+
+  isInsideViewport(rect): boolean {
+    let wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    );
+    const windowTop = wrapper.scrollTop;
+    const windowBottom = windowTop + wrapper.clientHeight;
+    const isAbove = rect.top + 20 >= windowTop;
+    const isBelow = rect.top <= windowBottom;
+
+    const windowLeft = wrapper.scrollLeft;
+    const windowRight = windowLeft + wrapper.clientWidth;
+    const right = rect.left + rect.width;
+    const isLeft = rect.left > windowLeft;
+    const isRight = right < windowRight;
+
+    return isAbove && isBelow && isLeft && isRight;
   }
 
   get visibleTextRects() {
@@ -1524,7 +1487,7 @@ export class TextHighlighter {
       }
 
       const textNodes = findRects(body);
-      return textNodes.filter((rect) => !this.isOutsideViewport(rect));
+      return textNodes.filter((rect) => this.isInsideViewport(rect));
     }
     return [];
   }

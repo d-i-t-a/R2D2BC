@@ -425,14 +425,14 @@ export class SearchModule implements ReaderModule {
     );
     if (current) {
       item = this.currentChapterSearchResult.filter(
-        (el: any) => el.uuid == index
+        (el: any) => el.uuid === index
       )[0];
       filteredIndex = this.currentChapterSearchResult.findIndex(
-        (el: any) => el.uuid == index
+        (el: any) => el.uuid === index
       );
     } else {
-      item = filteredIndexes.filter((el: any) => el.uuid == index)[0];
-      filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid == index);
+      item = filteredIndexes.filter((el: any) => el.uuid === index)[0];
+      filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid === index);
     }
     if (item !== undefined) {
       if (currentLocation === absolutehref) {

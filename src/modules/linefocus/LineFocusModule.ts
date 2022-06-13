@@ -159,7 +159,7 @@ export default class LineFocusModule implements ReaderModule {
     }
   }
 
-  private keydown(event: KeyboardEvent | MouseEvent | TrackEvent): void {
+  private keydown(event: KeyboardEvent | MouseEvent | TouchEvent): void {
     if (event instanceof KeyboardEvent && this.isActive) {
       const key = event.key;
       switch (key) {
@@ -173,7 +173,7 @@ export default class LineFocusModule implements ReaderModule {
     }
   }
 
-  private keyup(event: KeyboardEvent | MouseEvent | TrackEvent): void {
+  private keyup(event: KeyboardEvent | MouseEvent | TouchEvent): void {
     if (event instanceof KeyboardEvent && this.isActive) {
       const key = event.key;
       switch (key) {

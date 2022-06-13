@@ -81,12 +81,40 @@ export class TTSModule2 implements ReaderModule {
           this.wheel.bind(this)
         );
       }
-      addEventListenerOptional(this.body, "click", this.click.bind(this));
+      addEventListenerOptional(
+        this.body,
+        "mousedown",
+        this.clickStart.bind(this)
+      );
+      addEventListenerOptional(this.body, "mouseup", this.click.bind(this));
     }
   }
+  startX = 0;
+  startY = 0;
+  private clickStart(event: KeyboardEvent | MouseEvent | TouchEvent): void {
+    if ("clientX" in event) {
+      this.startX = event.clientX;
+    }
+    if ("clientY" in event) {
+      this.startY = event.clientY;
+    }
+  }
+  private click(event: KeyboardEvent | MouseEvent | TouchEvent): void {
+    let startX = 0;
+    let startY = 0;
+    if ("clientX" in event) {
+      startX = event.clientX;
+    }
+    if ("clientY" in event) {
+      startY = event.clientY;
+    }
 
-  private click(_event: KeyboardEvent | MouseEvent | TrackEvent): void {
-    if (window.speechSynthesis.speaking && this.speaking) {
+    if (
+      window.speechSynthesis.speaking &&
+      this.speaking &&
+      startX == this.startX &&
+      startY == this.startY
+    ) {
       let doc = this.delegate.iframes[0].contentDocument;
       if (doc) {
         const selection = this.highlighter.dom(doc.body).getSelection();
@@ -559,7 +587,7 @@ export class TTSModule2 implements ReaderModule {
   userScrolled = false;
   scrollPartial = false;
 
-  private wheel(event: KeyboardEvent | MouseEvent | TrackEvent): void {
+  private wheel(event: KeyboardEvent | MouseEvent | TouchEvent): void {
     if (event instanceof KeyboardEvent) {
       const key = event.key;
       switch (key) {

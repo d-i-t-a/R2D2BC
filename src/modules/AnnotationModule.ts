@@ -213,7 +213,7 @@ export class AnnotationModule implements ReaderModule {
     });
   }
 
-  private click(_event: KeyboardEvent | MouseEvent | TrackEvent): void {
+  private click(_event: KeyboardEvent | MouseEvent | TouchEvent): void {
     if (this.activeAnnotationMarkerId) {
       let menuItems = this.highlighter?.properties?.selectionMenuItems?.filter(
         (menuItem) => menuItem.id === this.activeAnnotationMarkerId

@@ -1393,6 +1393,26 @@ export class TextHighlighter {
     return isAbove || isBelow || isLeft || isRight;
   }
 
+  isInsideViewport(rect): boolean {
+    let wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    );
+    const windowLeft = wrapper.scrollLeft;
+    const windowRight = windowLeft + wrapper.clientHeight;
+    const right = rect.left + rect.width;
+    const windowTop = wrapper.scrollTop;
+    const windowBottom = windowTop + wrapper.clientHeight;
+
+    const isAbove = rect.top + 20 >= windowTop;
+    const isBelow = rect.top <= windowBottom;
+
+    const isLeft = right > windowLeft;
+    const isRight = rect.left < windowRight;
+
+    return isAbove && isBelow && isLeft && isRight;
+  }
+
   get visibleTextRects() {
     let doc = this.delegate.iframes[0].contentDocument;
     if (doc) {
@@ -1455,7 +1475,7 @@ export class TextHighlighter {
       }
 
       const textNodes = findRects(body);
-      return textNodes.filter((rect) => !this.isOutsideViewport(rect));
+      return textNodes.filter((rect) => this.isInsideViewport(rect));
     }
     return [];
   }

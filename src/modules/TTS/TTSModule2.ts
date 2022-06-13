@@ -1233,6 +1233,8 @@ export class TTSModule2 implements ReaderModule {
             block: "center",
             behavior: "smooth",
           });
+        } else if (this.delegate.view?.isPaginated()) {
+          self.delegate.view?.snap(result[1]?.firstChild as HTMLElement);
         }
       }
     }

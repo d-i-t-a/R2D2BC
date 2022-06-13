@@ -408,6 +408,7 @@ export class TTSModule2 implements ReaderModule {
   }
 
   speakPlay() {
+    this.scrollPartial = true;
     this.cancel(false);
     if (this.api?.started) this.api?.started();
     this.delegate.emit("readaloud.started", "started");
@@ -556,6 +557,8 @@ export class TTSModule2 implements ReaderModule {
   }
 
   userScrolled = false;
+  scrollPartial = false;
+
   private wheel(event: KeyboardEvent | MouseEvent | TrackEvent): void {
     if (event instanceof KeyboardEvent) {
       const key = event.key;
@@ -1223,7 +1226,8 @@ export class TTSModule2 implements ReaderModule {
         if (
           this.delegate.view?.isScrollMode() &&
           this.tts.autoScroll &&
-          !this.userScrolled
+          !this.userScrolled &&
+          this.scrollPartial
         ) {
           (result[1]?.firstChild as HTMLElement)?.scrollIntoView({
             block: "center",

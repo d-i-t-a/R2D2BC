@@ -112,8 +112,8 @@ export class TTSModule2 implements ReaderModule {
     if (
       window.speechSynthesis.speaking &&
       this.speaking &&
-      startX == this.startX &&
-      startY == this.startY
+      startX === this.startX &&
+      startY === this.startY
     ) {
       let doc = this.delegate.iframes[0].contentDocument;
       if (doc) {

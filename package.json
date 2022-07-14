@@ -101,7 +101,7 @@
     "json-schema": ">=0.4.0",
     "mocha": "^9.2.2",
     "minimist": "^1.2.6",
-    "moment": "^2.29.3",
+    "moment": "^2.29.4",
     "urijs": "^1.19.11",
     "node-sass": "^7.0.1",
     "npm-force-resolutions": "0.0.10",

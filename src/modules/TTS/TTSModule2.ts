@@ -56,6 +56,7 @@ export class TTSModule2 implements ReaderModule {
   private readonly headerMenu?: HTMLElement | null;
   private readonly properties: TTSModuleProperties;
   private readonly api?: TTSModuleAPI;
+  private wrapper: HTMLDivElement;
 
   initialize(body: any) {
     if (this.highlighter !== undefined) {
@@ -66,6 +67,10 @@ export class TTSModule2 implements ReaderModule {
         allowedTags: [],
         allowedAttributes: {},
       });
+      this.wrapper = HTMLUtilities.findRequiredElement(
+        document,
+        "#iframe-wrapper"
+      );
 
       window.speechSynthesis.getVoices();
       this.initVoices(true);
@@ -1250,12 +1255,17 @@ export class TTSModule2 implements ReaderModule {
       );
       if (result) {
         this._ttsQueueItemHighlightsWord = result[0];
+        const viewportOffset = (result[1]
+          ?.firstChild as HTMLElement)?.getBoundingClientRect();
+        const top = viewportOffset.top - this.wrapper.scrollTop;
+        const shouldScroll = top > window.innerHeight / 2 - 65;
 
         if (
           this.delegate.view?.isScrollMode() &&
           this.tts.autoScroll &&
           !this.userScrolled &&
-          this.scrollPartial
+          this.scrollPartial &&
+          shouldScroll
         ) {
           (result[1]?.firstChild as HTMLElement)?.scrollIntoView({
             block: "center",

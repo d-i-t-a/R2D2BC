@@ -640,7 +640,7 @@ export class TextHighlighter {
 
     el.addEventListener("mouseup", this.toolboxShowDelayed.bind(this));
     el.addEventListener("touchend", this.toolboxShowDelayed.bind(this));
-    doc.addEventListener("selectstart", this.toolboxShowDelayed.bind(this));
+    // doc.addEventListener("selectstart", this.toolboxShowDelayed.bind(this));
 
     if (!hasEventListener) {
       window.addEventListener("resize", this.toolboxPlacement.bind(this));
@@ -687,7 +687,7 @@ export class TextHighlighter {
 
     el.removeEventListener("mouseup", this.toolboxShowDelayed.bind(this));
     el.removeEventListener("touchend", this.toolboxShowDelayed.bind(this));
-    doc.removeEventListener("selectstart", this.toolboxShowDelayed.bind(this));
+    // doc.removeEventListener("selectstart", this.toolboxShowDelayed.bind(this));
 
     window.removeEventListener("resize", this.toolboxPlacement.bind(this));
     doc.removeEventListener(
@@ -909,17 +909,17 @@ export class TextHighlighter {
 
   // Use short timeout to let the selection updated to 'finish', otherwise some
   // browsers can get wrong or incomplete selection data.
-  toolboxShowDelayed() {
+  toolboxShowDelayed(ev: any) {
     let self = this;
     setTimeout(function () {
       if (!self.isAndroid()) {
-        self.snapSelectionToWord();
+        self.snapSelectionToWord(ev.detail === 1);
       }
       self.toolboxShow();
     }, 100);
   }
 
-  snapSelectionToWord() {
+  snapSelectionToWord(trimmed: boolean = false) {
     let self = this;
     let doc = this.delegate.iframes[0].contentDocument;
     if (doc) {
@@ -928,41 +928,73 @@ export class TextHighlighter {
       // modify() method. IE 9 has both selection APIs but no modify() method.
       if (self.dom(doc.body)) {
         if (selection && !selection?.isCollapsed) {
-          const text = selection.toString();
-          const startOffsetTemp = text.length - text.trimStart().length;
-          const endOffsetTemp = text.length - text.trimEnd().length;
+          let text = selection.toString();
+          let startOffsetTemp = text.length - text.trimStart().length;
+          let endOffsetTemp = text.length - text.trimEnd().length;
+          function removeTrailingPunctuation(text) {
+            const match = text.match(new RegExp(`[^a-zA-Z0-9]+$`));
+            // No match found
+            if (!match || !match.index) {
+              return text;
+            }
+            // Return sliced text
+            return text.slice(0, match.index);
+          }
+
+          let length = text.length;
+          var regex_symbols = /[-!$%^&*()_+|~=`{}\[\]:\/;<>?,.@#]/;
+          text = text.replace(regex_symbols, "");
+          startOffsetTemp = length - text.trimStart().length;
+          text = removeTrailingPunctuation(text);
+          endOffsetTemp = length - text.trimEnd().length;
 
           // Detect if selection is backwards
           let range = document.createRange();
-          range.setStart(
-            selection.anchorNode,
-            selection.anchorOffset + startOffsetTemp
-          );
-          range.setEnd(
-            selection.focusNode,
-            selection.focusOffset - endOffsetTemp
-          );
+          if (trimmed) {
+            range.setStart(
+              selection.anchorNode,
+              selection.anchorOffset + startOffsetTemp
+            );
+            range.setEnd(
+              selection.focusNode,
+              selection.focusOffset - endOffsetTemp
+            );
+          } else {
+            range.setStart(selection.anchorNode, selection.anchorOffset);
+            range.setEnd(selection.focusNode, selection.focusOffset);
+          }
+
           let backwards = range.collapsed;
           range.detach();
 
           // modify() works on the focus of the selection
-          let endNode = selection.focusNode,
+          let endNode = selection.focusNode;
+          let endOffset;
+          if (trimmed) {
             endOffset = selection.focusOffset - endOffsetTemp;
-          selection.collapse(
-            selection.anchorNode,
-            selection.anchorOffset + startOffsetTemp
-          );
+            selection.collapse(
+              selection.anchorNode,
+              selection.anchorOffset + startOffsetTemp
+            );
+          } else {
+            endOffset = selection.focusOffset;
+            selection.collapse(selection.anchorNode, selection.anchorOffset);
+          }
 
           let direction = ["forward", "backward"];
           if (backwards) {
             direction = ["backward", "forward"];
           }
 
-          selection.modify("move", direction[0], "character");
-          selection.modify("move", direction[1], "word");
-          selection.extend(endNode, endOffset);
-          selection.modify("extend", direction[1], "character");
-          selection.modify("extend", direction[0], "word");
+          if (trimmed) {
+            selection.modify("move", direction[0], "character");
+            selection.modify("move", direction[1], "word");
+            selection.extend(endNode, endOffset);
+            selection.modify("extend", direction[1], "character");
+            selection.modify("extend", direction[0], "word");
+          } else {
+            selection.extend(endNode, endOffset);
+          }
           this.selection(selection.toString(), selection);
         }
       }

@@ -327,9 +327,8 @@ export class Publication extends R2Publication {
         (el: Locator) => el.href === decodeURI(locator.href)
       );
       const positionIndex = Math.ceil(
-        locator.locations.progression
-          ? locator.locations.progression
-          : 0 * (resource.length - 1)
+        (locator.locations.progression ? locator.locations.progression : 0) *
+          (resource.length - 1)
       );
       if (locator.locations.position) {
         locator.locations.totalProgression =

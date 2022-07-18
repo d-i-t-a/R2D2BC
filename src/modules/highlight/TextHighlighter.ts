@@ -640,7 +640,7 @@ export class TextHighlighter {
 
     el.addEventListener("mouseup", this.toolboxShowDelayed.bind(this));
     el.addEventListener("touchend", this.toolboxShowDelayed.bind(this));
-    doc.addEventListener("selectstart", this.toolboxShowDelayed.bind(this));
+    // doc.addEventListener("selectstart", this.toolboxShowDelayed.bind(this));
 
     if (!hasEventListener) {
       window.addEventListener("resize", this.toolboxPlacement.bind(this));
@@ -687,7 +687,7 @@ export class TextHighlighter {
 
     el.removeEventListener("mouseup", this.toolboxShowDelayed.bind(this));
     el.removeEventListener("touchend", this.toolboxShowDelayed.bind(this));
-    doc.removeEventListener("selectstart", this.toolboxShowDelayed.bind(this));
+    // doc.removeEventListener("selectstart", this.toolboxShowDelayed.bind(this));
 
     window.removeEventListener("resize", this.toolboxPlacement.bind(this));
     doc.removeEventListener(
@@ -928,9 +928,25 @@ export class TextHighlighter {
       // modify() method. IE 9 has both selection APIs but no modify() method.
       if (self.dom(doc.body)) {
         if (selection && !selection?.isCollapsed) {
-          const text = selection.toString();
-          const startOffsetTemp = text.length - text.trimStart().length;
-          const endOffsetTemp = text.length - text.trimEnd().length;
+          let text = selection.toString();
+          let startOffsetTemp = text.length - text.trimStart().length;
+          let endOffsetTemp = text.length - text.trimEnd().length;
+          function removeTrailingPunctuation(text) {
+            const match = text.match(new RegExp(`[^a-zA-Z0-9]+$`));
+            // No match found
+            if (!match || !match.index) {
+              return text;
+            }
+            // Return sliced text
+            return text.slice(0, match.index);
+          }
+
+          let length = text.length;
+          var regex_symbols = /[-!$%^&*()_+|~=`{}\[\]:\/;<>?,.@#]/;
+          text = text.replace(regex_symbols, "");
+          startOffsetTemp = length - text.trimStart().length;
+          text = removeTrailingPunctuation(text);
+          endOffsetTemp = length - text.trimEnd().length;
 
           // Detect if selection is backwards
           let range = document.createRange();
@@ -970,11 +986,15 @@ export class TextHighlighter {
             direction = ["backward", "forward"];
           }
 
+          if (trimmed) {
           selection.modify("move", direction[0], "character");
           selection.modify("move", direction[1], "word");
           selection.extend(endNode, endOffset);
           selection.modify("extend", direction[1], "character");
           selection.modify("extend", direction[0], "word");
+          } else {
+            selection.extend(endNode, endOffset);
+          }
           this.selection(selection.toString(), selection);
         }
       }

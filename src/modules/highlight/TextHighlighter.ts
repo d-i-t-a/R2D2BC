@@ -909,17 +909,17 @@ export class TextHighlighter {
 
   // Use short timeout to let the selection updated to 'finish', otherwise some
   // browsers can get wrong or incomplete selection data.
-  toolboxShowDelayed() {
+  toolboxShowDelayed(ev: any) {
     let self = this;
     setTimeout(function () {
       if (!self.isAndroid()) {
-        self.snapSelectionToWord();
+        self.snapSelectionToWord(ev.detail === 1);
       }
       self.toolboxShow();
     }, 100);
   }
 
-  snapSelectionToWord() {
+  snapSelectionToWord(trimmed: boolean = false) {
     let self = this;
     let doc = this.delegate.iframes[0].contentDocument;
     if (doc) {
@@ -934,24 +934,36 @@ export class TextHighlighter {
 
           // Detect if selection is backwards
           let range = document.createRange();
-          range.setStart(
-            selection.anchorNode,
-            selection.anchorOffset + startOffsetTemp
-          );
-          range.setEnd(
-            selection.focusNode,
-            selection.focusOffset - endOffsetTemp
-          );
+          if (trimmed) {
+            range.setStart(
+              selection.anchorNode,
+              selection.anchorOffset + startOffsetTemp
+            );
+            range.setEnd(
+              selection.focusNode,
+              selection.focusOffset - endOffsetTemp
+            );
+          } else {
+            range.setStart(selection.anchorNode, selection.anchorOffset);
+            range.setEnd(selection.focusNode, selection.focusOffset);
+          }
+
           let backwards = range.collapsed;
           range.detach();
 
           // modify() works on the focus of the selection
-          let endNode = selection.focusNode,
+          let endNode = selection.focusNode;
+          let endOffset;
+          if (trimmed) {
             endOffset = selection.focusOffset - endOffsetTemp;
-          selection.collapse(
-            selection.anchorNode,
-            selection.anchorOffset + startOffsetTemp
-          );
+            selection.collapse(
+              selection.anchorNode,
+              selection.anchorOffset + startOffsetTemp
+            );
+          } else {
+            endOffset = selection.focusOffset;
+            selection.collapse(selection.anchorNode, selection.anchorOffset);
+          }
 
           let direction = ["forward", "backward"];
           if (backwards) {

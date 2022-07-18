@@ -987,11 +987,11 @@ export class TextHighlighter {
           }
 
           if (trimmed) {
-          selection.modify("move", direction[0], "character");
-          selection.modify("move", direction[1], "word");
-          selection.extend(endNode, endOffset);
-          selection.modify("extend", direction[1], "character");
-          selection.modify("extend", direction[0], "word");
+            selection.modify("move", direction[0], "character");
+            selection.modify("move", direction[1], "word");
+            selection.extend(endNode, endOffset);
+            selection.modify("extend", direction[1], "character");
+            selection.modify("extend", direction[0], "word");
           } else {
             selection.extend(endNode, endOffset);
           }

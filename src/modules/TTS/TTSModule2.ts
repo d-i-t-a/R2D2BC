@@ -297,10 +297,9 @@ export class TTSModule2 implements ReaderModule {
               );
               textToBeSpoken = sentence.slice(startIndex, sentence.length);
 
-              restOfTheText = selectionInfo.cleanText.replace(
-                textToBeSpoken,
-                ""
-              );
+              restOfTheText = selectionInfo.cleanText
+                .replace(textToBeSpoken, "")
+                .trim();
             } else if (idxEnd > idx) {
               let mergedSentenses = "";
               for (let i = idx + 1; i < idxEnd; i++) {

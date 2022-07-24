@@ -54,10 +54,7 @@ import { TTSModule2 } from "./modules/TTS/TTSModule2";
 import { ReaderModule } from "./modules/ReaderModule";
 import { DefinitionsModule } from "./modules/search/DefinitionsModule";
 import LineFocusModule from "./modules/linefocus/LineFocusModule";
-import {
-  HistoryModule,
-  HistoryModuleProperties,
-} from "./modules/history/HistoryModule";
+import { HistoryModule } from "./modules/history/HistoryModule";
 
 /**
  * A class that, once instantiated using the public `.build` method,

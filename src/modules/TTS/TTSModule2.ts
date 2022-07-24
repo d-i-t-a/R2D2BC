@@ -38,7 +38,6 @@ import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
 import { debounce } from "debounce";
-import { split } from "sentence-splitter";
 import {
   _getCssSelectorOptions,
   ISelectionInfo,
@@ -158,8 +157,8 @@ export class TTSModule2 implements ReaderModule {
           const idx = this.findTtsQueueItemIndex(
             this.ttsQueue,
             selection.anchorNode as Element,
-            selection.focusNode,
-            selection.focusOffset,
+            selection.anchorNode,
+            selection.anchorOffset,
             rootEl
           );
           selection.removeAllRanges();
@@ -262,26 +261,77 @@ export class TTSModule2 implements ReaderModule {
         const selection = this.highlighter.dom(doc.body).getSelection();
 
         if (rootEl) {
-          const ttsQueue = this.generateTtsQueue(rootEl, true);
+          var ttsQueue = this.generateTtsQueue(rootEl);
           if (!ttsQueue.length) {
             return;
           }
 
-          const idx = this.findTtsQueueItemIndex(
+          var idx = this.findTtsQueueItemIndex(
             ttsQueue,
             selection.anchorNode as Element,
+            selection.anchorNode,
+            selection.anchorOffset,
+            rootEl
+          );
+          const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
+
+          var idxEnd = this.findTtsQueueItemIndex(
+            ttsQueue,
+            selection.focusNode as Element,
             selection.focusNode,
             selection.focusOffset,
             rootEl
           );
+          const ttsQueueItemEnd = getTtsQueueItemRef(ttsQueue, idxEnd);
 
-          const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
+          var restOfTheText;
           if (ttsQueueItem && selectionInfo && selectionInfo.cleanText) {
             const sentence = getTtsQueueItemRefText(ttsQueueItem);
-            const startIndex = sentence.indexOf(selectionInfo.cleanText);
-            utterance = new SpeechSynthesisUtterance(selectionInfo.cleanText);
+            let startIndex = sentence.indexOf(selectionInfo.cleanText);
+            let textToBeSpoken = selectionInfo.cleanText;
+
+            if (ttsQueueItemEnd && idx + 1 === idxEnd) {
+              const sentenceEnd = getTtsQueueItemRefText(ttsQueueItemEnd);
+              startIndex = (sentence + " " + sentenceEnd).indexOf(
+                selectionInfo.cleanText
+              );
+              textToBeSpoken = sentence.slice(startIndex, sentence.length);
+
+              restOfTheText = selectionInfo.cleanText.replace(
+                textToBeSpoken,
+                ""
+              );
+            } else if (idxEnd > idx) {
+              let mergedSentenses = "";
+              for (let i = idx + 1; i < idxEnd; i++) {
+                const ttsQueueItemInBetween = getTtsQueueItemRef(ttsQueue, i);
+                if (ttsQueueItemInBetween) {
+                  const sentenceInBetween = getTtsQueueItemRefText(
+                    ttsQueueItemInBetween
+                  );
+                  mergedSentenses += sentenceInBetween;
+                  restOfTheText = selectionInfo.cleanText.replace(
+                    sentenceInBetween,
+                    ""
+                  );
+                }
+              }
+
+              if (ttsQueueItemEnd) {
+                const sentenceEnd = getTtsQueueItemRefText(ttsQueueItemEnd);
+                mergedSentenses += " " + sentenceEnd;
+              }
+              startIndex = (sentence + " " + mergedSentenses).indexOf(
+                selectionInfo.cleanText
+              );
+
+              textToBeSpoken = sentence.slice(startIndex, sentence.length);
+
+              restOfTheText = restOfTheText.replace(textToBeSpoken, "").trim();
+            }
+
+            utterance = new SpeechSynthesisUtterance(textToBeSpoken);
             utterance.onboundary = (ev: SpeechSynthesisEvent) => {
-              console.log(ev);
               this.updateTTSInfo(
                 ttsQueueItem,
                 ev.charIndex + startIndex,
@@ -431,12 +481,62 @@ export class TTSModule2 implements ReaderModule {
 
     this.index = 0;
 
-    utterance.onend = function () {
-      if (IS_DEV) console.log("utterance ended");
-      self.highlighter.doneSpeaking();
-      self.api?.finished();
-      self.delegate.emit("readaloud.finished", "finished");
-    };
+    function onend() {
+      utterance.onend = function () {
+        if (idxEnd > idx) {
+          idx = idx + 1;
+          if (idx !== idxEnd) {
+            const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
+            if (ttsQueueItem) {
+              const sentence = getTtsQueueItemRefText(ttsQueueItem);
+              utterance = new SpeechSynthesisUtterance(sentence);
+              utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+                self.updateTTSInfo(
+                  ttsQueueItem,
+                  ev.charIndex,
+                  ev.charLength,
+                  utterance.text
+                );
+              };
+              setTimeout(() => {
+                window.speechSynthesis.speak(utterance);
+              }, 0);
+              onend();
+            }
+          } else {
+            const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
+            if (ttsQueueItem) {
+              utterance = new SpeechSynthesisUtterance(restOfTheText);
+              utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+                self.updateTTSInfo(
+                  ttsQueueItem,
+                  ev.charIndex,
+                  ev.charLength,
+                  utterance.text
+                );
+              };
+              setTimeout(() => {
+                window.speechSynthesis.speak(utterance);
+              }, 0);
+              onend();
+            }
+            if (idx > idxEnd) {
+              if (IS_DEV) console.log("utterance ended");
+              self.highlighter.doneSpeaking();
+              self.api?.finished();
+              self.delegate.emit("readaloud.finished", "finished");
+            }
+          }
+        } else {
+          if (IS_DEV) console.log("utterance ended");
+          self.highlighter.doneSpeaking();
+          self.api?.finished();
+          self.delegate.emit("readaloud.finished", "finished");
+        }
+      };
+    }
+
+    onend();
     callback();
   }
 
@@ -453,7 +553,7 @@ export class TTSModule2 implements ReaderModule {
     let rootEl = iframe.contentWindow?.document.body;
 
     if (rootEl) {
-      const ttsQueue = this.generateTtsQueue(rootEl, true);
+      const ttsQueue = this.generateTtsQueue(rootEl);
       if (!ttsQueue.length) {
         return;
       }
@@ -491,8 +591,8 @@ export class TTSModule2 implements ReaderModule {
             const idx = self.findTtsQueueItemIndex(
               ttsQueue,
               selection.anchorNode,
-              selection.focusNode,
-              selection.focusOffset,
+              selection.anchorNode,
+              selection.anchorOffset,
               rootEl
             );
             if (idx >= 0) {
@@ -623,10 +723,7 @@ export class TTSModule2 implements ReaderModule {
     removeEventListenerOptional(this.body, "click", this.click.bind(this));
   }
 
-  generateTtsQueue(
-    rootElement: Element,
-    splitSentences: boolean
-  ): ITtsQueueItem[] {
+  generateTtsQueue(rootElement: Element): ITtsQueueItem[] {
     const ttsQueue: ITtsQueueItem[] = [];
     const elementStack: Element[] = [];
 
@@ -659,9 +756,6 @@ export class TTSModule2 implements ReaderModule {
       ) {
         current = {
           combinedText: "",
-          combinedTextSentences: undefined,
-          combinedTextSentencesRangeBegin: undefined,
-          combinedTextSentencesRangeEnd: undefined,
           dir,
           lang,
           parentElement,
@@ -713,9 +807,6 @@ export class TTSModule2 implements ReaderModule {
                   const dir = undefined;
                   ttsQueue.push({
                     combinedText: txt,
-                    combinedTextSentences: undefined,
-                    combinedTextSentencesRangeBegin: undefined,
-                    combinedTextSentencesRangeEnd: undefined,
                     dir,
                     lang,
                     parentElement: childElement,
@@ -747,7 +838,6 @@ export class TTSModule2 implements ReaderModule {
         if (!ttsQueueItem.combinedText || !ttsQueueItem.combinedText.length) {
           ttsQueueItem.combinedText = "";
         }
-        ttsQueueItem.combinedTextSentences = undefined;
         return;
       }
 
@@ -755,7 +845,6 @@ export class TTSModule2 implements ReaderModule {
         ttsQueueItem.textNodes,
         true
       ).replace(/[\r\n]/g, " ");
-      let skipSplitSentences = false;
       let parent: Element | null = ttsQueueItem.parentElement;
       while (parent) {
         if (parent.tagName) {
@@ -766,44 +855,10 @@ export class TTSModule2 implements ReaderModule {
             tag === "video" ||
             tag === "audio"
           ) {
-            skipSplitSentences = true;
             break;
           }
         }
         parent = parent.parentElement;
-      }
-      if (splitSentences && !skipSplitSentences) {
-        try {
-          const txt = ttsQueueItem.combinedText;
-          ttsQueueItem.combinedTextSentences = undefined;
-          const sentences = split(txt);
-          ttsQueueItem.combinedTextSentences = [];
-          ttsQueueItem.combinedTextSentencesRangeBegin = [];
-          ttsQueueItem.combinedTextSentencesRangeEnd = [];
-          for (const sentence of sentences) {
-            if (sentence.type === "Sentence") {
-              ttsQueueItem.combinedTextSentences.push(sentence.raw);
-              ttsQueueItem.combinedTextSentencesRangeBegin.push(
-                sentence.range[0]
-              );
-              ttsQueueItem.combinedTextSentencesRangeEnd.push(
-                sentence.range[1]
-              );
-            }
-          }
-          if (
-            ttsQueueItem.combinedTextSentences.length === 0 ||
-            ttsQueueItem.combinedTextSentences.length === 1
-          ) {
-            ttsQueueItem.combinedTextSentences = undefined;
-          } else {
-          }
-        } catch (err) {
-          console.log(err);
-          ttsQueueItem.combinedTextSentences = undefined;
-        }
-      } else {
-        ttsQueueItem.combinedTextSentences = undefined;
       }
     }
 
@@ -825,34 +880,7 @@ export class TTSModule2 implements ReaderModule {
     for (const ttsQueueItem of ttsQueue) {
       if (startTextNode && ttsQueueItem.textNodes) {
         if (ttsQueueItem.textNodes.includes(startTextNode)) {
-          if (
-            ttsQueueItem.combinedTextSentences &&
-            ttsQueueItem.combinedTextSentencesRangeBegin &&
-            ttsQueueItem.combinedTextSentencesRangeEnd
-          ) {
-            let offset = 0;
-            for (const txtNode of ttsQueueItem.textNodes) {
-              if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
-                continue;
-              }
-              if (txtNode === startTextNode) {
-                offset += startTextNodeOffset;
-                break;
-              }
-              offset += txtNode.nodeValue.length;
-            }
-            let j = i - 1;
-            for (const end of ttsQueueItem.combinedTextSentencesRangeEnd) {
-              j++;
-              if (end < offset) {
-                continue;
-              }
-              return j;
-            }
-            return i;
-          } else {
-            return i;
-          }
+          return i;
         }
       } else if (
         element === ttsQueueItem.parentElement ||
@@ -864,11 +892,7 @@ export class TTSModule2 implements ReaderModule {
       ) {
         return i;
       }
-      if (ttsQueueItem.combinedTextSentences) {
-        i += ttsQueueItem.combinedTextSentences.length;
-      } else {
-        i++;
-      }
+      i++;
     }
     return -1;
   }
@@ -1145,18 +1169,6 @@ export class TTSModule2 implements ReaderModule {
     const ttsQueueItem = ttsQueueItemRef.item;
     let txtToCheck = ttsQueueItemRef.item.combinedText;
     let charIndexAdjusted = charIndex;
-    if (
-      ttsQueueItem.combinedTextSentences &&
-      ttsQueueItem.combinedTextSentencesRangeBegin &&
-      ttsQueueItem.combinedTextSentencesRangeEnd &&
-      ttsQueueItemRef.iSentence >= 0
-    ) {
-      const sentOffset =
-        ttsQueueItem.combinedTextSentencesRangeBegin[ttsQueueItemRef.iSentence];
-      charIndexAdjusted += sentOffset;
-      txtToCheck =
-        ttsQueueItem.combinedTextSentences[ttsQueueItemRef.iSentence];
-    }
 
     if (IS_DEV) {
       if (utteranceText !== txtToCheck) {
@@ -1285,9 +1297,6 @@ export interface ITtsQueueItem {
   parentElement: Element;
   textNodes: Node[];
   combinedText: string;
-  combinedTextSentences: string[] | undefined;
-  combinedTextSentencesRangeBegin: number[] | undefined;
-  combinedTextSentencesRangeEnd: number[] | undefined;
 }
 export interface ITtsQueueItemReference {
   item: ITtsQueueItem;
@@ -1367,41 +1376,14 @@ export function getTtsQueueItemRef(
   let k = -1;
   for (const it of items) {
     k++;
-    if (it.combinedTextSentences) {
-      let j = -1;
-      for (const _sent of it.combinedTextSentences) {
-        j++;
-        i++;
-        if (index === i) {
-          return { item: it, iArray: k, iGlobal: i, iSentence: j };
-        }
-      }
-    } else {
-      i++;
-      if (index === i) {
-        return { item: it, iArray: k, iGlobal: i, iSentence: -1 };
-      }
+    i++;
+    if (index === i) {
+      return { item: it, iArray: k, iGlobal: i, iSentence: -1 };
     }
   }
   return undefined;
 }
-export function getTtsQueueLength(items: ITtsQueueItem[]) {
-  let l = 0;
-  for (const it of items) {
-    if (it.combinedTextSentences) {
-      l += it.combinedTextSentences.length;
-    } else {
-      l++;
-    }
-  }
-  return l;
-}
+
 export function getTtsQueueItemRefText(obj: ITtsQueueItemReference): string {
-  if (obj.iSentence === -1) {
-    return obj.item.combinedText;
-  }
-  if (obj.item.combinedTextSentences) {
-    return obj.item.combinedTextSentences[obj.iSentence];
-  }
-  return "";
+  return obj.item.combinedText;
 }

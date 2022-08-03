@@ -197,7 +197,10 @@ export default class CitationModule implements ReaderModule {
           let mlaString = "";
           let apaString = "";
 
-          if (self.publication.Metadata.Publisher[0].Name) {
+          if (
+            self.publication.Metadata.Publisher &&
+            self.publication.Metadata.Publisher[0].Name
+          ) {
             mlaString =
               mlaString + self.publication.Metadata.Publisher[0].Name + ", ";
             chicagoString =
@@ -281,7 +284,10 @@ export default class CitationModule implements ReaderModule {
           let mlaString = "";
           let apaString = "";
 
-          if (self.publication.Metadata.Publisher[0].Name) {
+          if (
+            self.publication.Metadata.Publisher &&
+            self.publication.Metadata.Publisher[0].Name
+          ) {
             mlaString =
               mlaString + self.publication.Metadata.Publisher[0].Name + ", ";
             chicagoString =

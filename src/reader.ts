@@ -54,6 +54,8 @@ import { TTSModule2 } from "./modules/TTS/TTSModule2";
 import { ReaderModule } from "./modules/ReaderModule";
 import { DefinitionsModule } from "./modules/search/DefinitionsModule";
 import LineFocusModule from "./modules/linefocus/LineFocusModule";
+import { HistoryModule } from "./modules/history/HistoryModule";
+import CitationModule from "./modules/citation/CitationModule";
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -81,7 +83,9 @@ export default class D2Reader {
     private readonly mediaOverlaySettings?: MediaOverlaySettings,
     private readonly mediaOverlayModule?: MediaOverlayModule,
     private readonly pageBreakModule?: PageBreakModule,
-    private readonly lineFocusModule?: LineFocusModule
+    private readonly lineFocusModule?: LineFocusModule,
+    private readonly historyModule?: HistoryModule,
+    private readonly citationModule?: CitationModule
   ) {}
 
   addEventListener() {
@@ -105,6 +109,8 @@ export default class D2Reader {
       enableTTS: false,
       enableTimeline: false,
       customKeyboardEvents: false,
+      enableHistory: false,
+      enableCitations: false,
     };
 
     // Enforces supported browsers
@@ -341,6 +347,24 @@ export default class D2Reader {
         })
       : undefined;
 
+    const historyModule = rights.enableHistory
+      ? await HistoryModule.create({
+          annotator: annotator,
+          publication: publication,
+          delegate: navigator,
+          headerMenu: headerMenu,
+        })
+      : undefined;
+
+    const citationModule = rights.enableCitations
+      ? await CitationModule.create({
+          publication: publication,
+          delegate: navigator,
+          highlighter: highlighter,
+          ...initialConfig.citations,
+        })
+      : undefined;
+
     return new D2Reader(
       settings,
       navigator,
@@ -356,7 +380,9 @@ export default class D2Reader {
       mediaOverlaySettings,
       mediaOverlayModule,
       pageBreakModule,
-      lineFocusModule
+      lineFocusModule,
+      historyModule,
+      citationModule
     );
   }
 

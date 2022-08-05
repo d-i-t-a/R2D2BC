@@ -91,6 +91,10 @@ import EventEmitter from "eventemitter3";
 import LineFocusModule, {
   LineFocusModuleConfig,
 } from "../modules/linefocus/LineFocusModule";
+import { HistoryModule } from "../modules/history/HistoryModule";
+import CitationModule, {
+  CitationModuleConfig,
+} from "../modules/citation/CitationModule";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -172,6 +176,8 @@ export interface ReaderRights {
   enablePageBreaks: boolean;
   enableLineFocus: boolean;
   customKeyboardEvents: boolean;
+  enableHistory: boolean;
+  enableCitations: boolean;
 }
 
 export interface ReaderUI {
@@ -195,6 +201,7 @@ export interface ReaderConfig {
   annotations?: AnnotationModuleConfig;
   bookmarks?: BookmarkModuleConfig;
   lineFocus?: LineFocusModuleConfig;
+  citations?: CitationModuleConfig;
   highlighter?: TextHighlighterConfig;
   injectables: Array<Injectable>;
   injectablesFixed: Array<Injectable>;
@@ -224,14 +231,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   pageBreakModule?: PageBreakModule;
   mediaOverlayModule?: MediaOverlayModule;
   lineFocusModule?: LineFocusModule;
+  historyModule?: HistoryModule;
+  citationModule?: CitationModule;
 
   sideNavExpanded: boolean = false;
   material: boolean = false;
-
-  mTabs: Array<any>;
-  mDropdowns: Array<any>;
-  mCollapsibles: Array<any>;
-  mSidenav: any;
 
   currentChapterLink: D2Link = { href: "" };
   currentSpreadLinks: { left?: D2Link; right?: D2Link } = {};
@@ -298,6 +302,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     enableTTS: false,
     enableTimeline: false,
     customKeyboardEvents: false,
+    enableHistory: false,
+    enableCitations: false,
   };
   tts?: TTSModuleConfig;
   injectables?: Array<Injectable>;
@@ -375,6 +381,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       enableTTS: false,
       enableTimeline: false,
       customKeyboardEvents: false,
+      enableHistory: false,
+      enableCitations: false,
     };
     this.tts = tts;
     this.injectables = injectables;
@@ -690,8 +698,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       this.isBeingStyled = true;
       this.isLoading = true;
 
-      this.setupEvents();
-
       this.settings.setIframe(this.iframes[0]);
       this.settings.onSettingsChange(this.handleResize.bind(this));
       this.settings.onColumnSettingsChange(
@@ -777,6 +783,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         if (menuBookmark)
           menuBookmark.parentElement?.style.setProperty("display", "none");
       }
+      this.setupEvents();
 
       return await this.loadManifest();
     } catch (err: unknown) {
@@ -1360,6 +1367,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.nextChapterAnchorElement.removeAttribute("href");
           this.nextChapterAnchorElement.className += " disabled";
         }
+      }
+      if (this.historyModule) {
+        this.historyModule.setup();
       }
 
       if (this.currentTocUrl !== undefined) {
@@ -2394,13 +2404,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
 
-  private handleClickThrough(_event: MouseEvent | TouchEvent) {
-    if (this.mDropdowns) {
-      this.mDropdowns.forEach((element) => {
-        (element as any).close();
-      });
-    }
-  }
+  private handleClickThrough(_event: MouseEvent | TouchEvent) {}
 
   private handleInternalLink(event: MouseEvent | TouchEvent) {
     const element = event.target;
@@ -2608,6 +2612,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.lineFocusModule !== undefined) {
         this.lineFocusModule.handleResize();
       }
+      if (this.historyModule !== undefined) {
+        this.historyModule.handleResize();
+      }
     }, 150);
   }
 
@@ -2749,7 +2756,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
 
-  async navigate(locator: Locator): Promise<void> {
+  async navigate(locator: Locator, history: boolean = true): Promise<void> {
+    if (this.historyModule) {
+      this.historyModule.push(locator, history);
+    }
+
     const exists = this.publication.getTOCItem(locator.href);
     if (exists) {
       var isCurrentLoaded = false;

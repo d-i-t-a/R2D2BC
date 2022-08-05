@@ -584,6 +584,10 @@
                             <td class="mui--text-title">
                                 <a class="sidedrawer-toggle mui--visible-inline-block mui--visible-inline-block js-show-sidedrawer">☰</a>
                                 <span class="mui--text-title mui--visible-inline-block mui--visible-inline-block">DITA Reader</span>
+                                <a id="history-back" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_back_ios</i></a>
+                                History
+                                <a id="history-forward" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_forward_ios</i></a>
+
                             </td>
                             <td align="mui--text-right" style="text-align: right;padding-right: 10px">
                                 <ul class="mui-list--inline mui--text-body2">
@@ -664,6 +668,8 @@
                             <path d="M0 0h24v24H0z" fill="none"></path>
                         </svg>
                     </span></button>
+
+                            <button style="background-color: gainsboro;" id="citationIcon"><i class="material-icons">format_quote</i></button>
 
                             <button style="background-color: gainsboro;display: unset;" id="actionIcon" class="action-option"><i class="material-icons" style="color:gray">more_horiz</i></button>
 
@@ -748,10 +754,6 @@
             { type: 'style', url: '/viewer/injectables/style/popup.css' },
             { type: 'style', url: '/viewer/injectables/style/popover.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
-        ]
-        let injectablesFixed = [
-            { type: 'style', url: '/viewer/injectables/style/popup.css' },
-            { type: 'style', url: '/viewer/injectables/style/popover.css' },
         ]
         let userSettings = {
             // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
@@ -964,345 +966,345 @@
         ]
 
         let d2reader;
-        console.log(d2reader)
-        D2Reader.load({
-            upLinkUrl: upLink,
-            url: new URL(urlParams['url']),
-            attributes: { // TODO: review these attributes and eventually needs better naming.
-                margin: 60, // subtract this from the iframe height , when setting the iframe minimum height
-                navHeight: 65, // used for positioning the toolbox
-                iframePaddingTop: 20, // top padding inside iframe
-                bottomInfoHeight: 75, // #reader-info-bottom height
-                sideNavPosition: 'left'
-            },
-            rights: {
-                enableBookmarks: true,
-                enableAnnotations: true,
-                enableTTS: true,
-                enableSearch: true,
-                enableTimeline: true,
-                enableDefinitions: true,
-                enableContentProtection: false,
-                enableMediaOverlays: true,
-                enablePageBreaks: true,
-                autoGeneratePositions: true,
-                enableLineFocus: true,
-                customKeyboardEvents: false,
-            },
-            lineFocus: {
-                lines: 5,
-                maxHeight: 30, // image max height in percent
-            },
-            // services: {
-            //     positions: new URL("https://alice.dita.digital/positions.json"),
-            //     weight: new URL("https://alice.dita.digital/weight.json"),
-            // },
-            // sample: {
-            //     isSampleRead: true,
-            //     limit: 10, // in percent e.g. 5%
-            //     minimum: 5, // in pages
-            //     popup: "You can borrow the book to continue reading."
-            // },
-            mediaOverlays: {
-                autoScroll: true,
-                autoTurn: true,
-                // color: "redtext",
-                volume: 0.7,
-                rate: 1.2,
-                wait: 1,
-                // hideLayer:true,
+            D2Reader.load({
+                upLinkUrl: upLink,
+                url: new URL(urlParams['url']),
+                attributes: { // TODO: review these attributes and eventually needs better naming.
+                    margin: 60, // subtract this from the iframe height , when setting the iframe minimum height
+                    navHeight: 65, // used for positioning the toolbox
+                    iframePaddingTop: 20, // top padding inside iframe
+                    bottomInfoHeight: 75, // #reader-info-bottom height
+                    sideNavPosition: 'left'
+                },
+                rights: {
+                    enableBookmarks: true,
+                    enableAnnotations: true,
+                    enableTTS: true,
+                    enableSearch: true,
+                    enableTimeline: true,
+                    enableDefinitions: true,
+                    enableContentProtection: false,
+                    enableMediaOverlays: true,
+                    enablePageBreaks: true,
+                    autoGeneratePositions: true,
+                    enableLineFocus: true,
+                    customKeyboardEvents: false,
+                    enableHistory: true,
+                    enableCitations: true,
+                },
+                lineFocus: {
+                    lines: 5,
+                    maxHeight: 30, // image max height in percent
+                },
+                citations: {
+                    characters: 100,
+                    appName: "r2d2bc",
+                    appLink: "localhost",
+                    library: "library",
+                    styles: ["Chicago","MLA", "APA"]
+                },
+                // services: {
+                //     positions: new URL("https://alice.dita.digital/positions.json"),
+                //     weight: new URL("https://alice.dita.digital/weight.json"),
+                // },
+                // sample: {
+                //     isSampleRead: true,
+                //     limit: 10, // in percent e.g. 5%
+                //     minimum: 5, // in pages
+                //     popup: "You can borrow the book to continue reading."
+                // },
+                mediaOverlays: {
+                    autoScroll: true,
+                    autoTurn: true,
+                    // color: "redtext",
+                    volume: 0.7,
+                    rate: 1.2,
+                    wait: 1,
+                    // hideLayer:true,
                 api: {
 
                 }
-            },
-            tts: {
-                enableSplitter: false,
-                color: "orange",
-                autoScroll: true,
-                // hideLayer:true,
-                voice: {
-                    usePublication: false//, // true = will be used no matter if an initial language is set, false = ignore publicaiton language
-                    // lang: "de_DE" // initial language, default system language will be used it this language can't be found
-                    // name: "Karen" // will be only used together with the lang, if lang is not given, name will be ignored
+                },
+                tts: {
+                    enableSplitter: false,
+                    color: "orange",
+                    autoScroll: true,
+                    // hideLayer:true,
+                    voice: {
+                        usePublication: false//, // true = will be used no matter if an initial language is set, false = ignore publicaiton language
+                        // lang: "de_DE" // initial language, default system language will be used it this language can't be found
+                        // name: "Karen" // will be only used together with the lang, if lang is not given, name will be ignored
+                    },
+                    api: {
+                        started: function() {
+                            console.log("started")
+                            return new Promise(function(resolve, reject) {
+                                resolve
+                            })
+                        },
+                        stopped: function() {
+                            console.log("stopped")
+                            return new Promise(function(resolve, reject) {
+                                resolve()
+                            })
+                        },
+                        paused: function() {
+                            console.log("paused")
+                            return new Promise(function(resolve, reject) {
+                                resolve()
+                            })
+                        },
+                        resumed: function() {
+                            console.log("resumed")
+                            return new Promise(function(resolve, reject) {
+                                resolve()
+                            })
+                        },
+                        finished: function() {
+                            console.log("finished")
+                            return new Promise(function(resolve, reject) {
+                                resolve()
+                            })
+                        },
+                        updateSettings: function(settings) {
+                            console.log("updateSettings")
+                            return new Promise(function(resolve, reject) {
+                                resolve(
+                                  settings
+                                )
+                            })
+                        }
+                    }
+                },
+                search: {
+                    color: "#fce300",
+                    current: "#ed7138",
+                    // hideLayer:true,
+                api: {
+
+                }
+                },
+                define: {
+                    // color: "#40E0D0",
+                    color: "var(--RS__definitionsColor)",
+                    fullWordSearch: true,
+                    // hideLayer:true,
+                    api: {
+                        click: function(item, element) {
+                            console.log("click");
+                            console.log(item);
+                            console.log(element);
+                        },
+                        success: function(item, elements) {
+                            console.log("success");
+                            console.log(item);
+                            console.log(elements);
+                        },
+                        visible: function(item, element) {
+                            console.log("visible");
+                            console.log(item);
+                            console.log(element);
+                        },
+                    },
+                    definitions: [
+                        {
+                            order: 2,
+                            result: 2,
+                            terms: ["shelley"],
+                            definition: "Giant hyssop was rarely included, despite being hugely attractive to bees.",
+                        },
+                        {
+                            order: 0,
+                            result: 1, // 1 = first, 2 = random, 0 = all
+                            terms: ["lavender", "lavandula"],
+                            definition: "Lavandula (common name lavender) is a genus of 47 known species of flowering plants in the mint family, Lamiaceae.",
+                        },
+                        {
+                            order: 1,
+                            result: 0, // 1 = first, 2 = random, 0 = all
+                            terms: ["Belle"],
+                            definition: "But over time, Belle became friends\n" +
+                              "with the staff. Then she and the Beast fell\n" +
+                              "in love. The whole household became a\n" +
+                              "family.",
+                        },
+                        {
+                            order: 2,
+                            result: 0,
+                            terms: ["Dahlia"],
+                            definition: "Giant hyssop was rarely included, despite being hugely attractive to bees.",
+                        },
+                        {
+                            order: 3,
+                            result: 0, // 1 = first, 2 = random, 0 = all
+                            terms: ["allium"],
+                            definition: "a bulbous plant of a genus that includes the onion and its relatives (e.g. garlic, leek, and chives).",
+                        }
+                    ],
+                },
+                highlighter: {
+                    selectionMenuItems: selectionMenuItems,
+                    api: {
+                        selectionMenuOpen: function() {
+                            console.log("selectionMenuOpen")
+                        },
+                        selectionMenuClose: function() {
+                            console.log("selectionMenuClose")
+                        },
+                    }
+                },
+                annotations: {
+                    // initialAnnotationColor: "var(--RS__highlightColor)",
+                    // initialAnnotationColor: "#ff8500",
+                    // hideLayer:true,
+                    api: {
+                        addAnnotation: function(highlight) {
+                            console.log("addAnnotation")
+                            toast("Annotation added");
+                            return new Promise(function(resolve, reject) {
+                                highlight.id = Math.random()
+                                resolve(
+                                  highlight
+                                )
+                            })
+                        },
+                        deleteAnnotation: function(highlight) {
+                            console.log("deleteAnnotation")
+                            toast("Annotation deleted");
+                            return new Promise(function(resolve, reject) {
+                                resolve()
+                            })
+                        },
+                        selectedAnnotation: function(highlight) {
+                            console.log("selectedAnnotation")
+                            return new Promise(function(resolve, reject) {
+                                resolve()
+                            })
+                        }
+                    }
+                },
+                pagebreak: {
+                    // hideLayer:false,
+                },
+                bookmarks: {
+                    // hideLayer:true,
+                    api: {
+                        addBookmark: function(bookmark) {
+                            console.log("addBookmark")
+                            toast("Bookmark added");
+                            return new Promise(function(resolve, reject) {
+                                bookmark.id = Math.random()
+                                resolve(
+                                  bookmark
+                                )
+                            })
+                        },
+                        deleteBookmark: function(bookmark) {
+                            console.log("deleteBookmark")
+                            toast("Bookmark deleted");
+                            return new Promise(function(resolve, reject) {
+                                resolve(
+                                  bookmark
+                                )
+                            })
+                        }
+                    }
+                },
+                protection: {
+                    enforceSupportedBrowsers: true,
+                    enableEncryption: true,
+                    enableObfuscation: true,
+                    disablePrint: true,
+                    disableCopy: true,
+                    detectInspect: false,
+                    clearOnInspect: true, // make sure detectInspect is true, otherwise this won't work
+                    disableKeys: true,
+                    disableContextMenu: true,
+                    hideTargetUrl: true,
+                    disableDrag: false,
+                    supportedBrowsers: [ // this will only be used if enforceSupportedBrowsers is true, and has nothing to do with the r2d2bc modules supported browsers
+                        "Chrome", "ChromeAndroid", "Edge", "Firefox", "iOS", "Safari"
+                    ],
+                    api: {
+                        // make sure detectInspect is true, otherwise this won't be called
+                        // this callback will be executed in a loop while inspect is visible
+                        inspectDetected: function() {
+                            console.log("inspect detected")
+                        }
+                    }
                 },
                 api: {
-                    started: function () {
-                        console.log("started")
-                        return new Promise(function (resolve, reject) {
-                            resolve
+                    resourceReady: function() {
+                        console.log("resourceReady")
+                        // d2reader.applyUserSettings({fontFamily: 'opendyslexic'})
+                    },
+                    resourceAtStart: function() {
+                        console.log("resourceAtStart")
+                    },
+                    resourceAtEnd: function() {
+                        console.log("resourceAtEnd")
+                    },
+                    resourceFitsScreen: function() {
+                        console.log("resourceFitsScreen")
+                    },
+                    updateCurrentLocation: function(location) {
+                        console.log("updateCurrentLocation " + location.locations.progression)
+                        return new Promise(function(resolve, reject) {
+                            resolve(
+                              location
+                            )
                         })
                     },
-                    stopped: function () {
-                        console.log("stopped")
-                        return new Promise(function (resolve, reject) {
-                            resolve()
-                        })
-                    },
-                    paused: function () {
-                        console.log("paused")
-                        return new Promise(function (resolve, reject) {
-                            resolve()
-                        })
-                    },
-                    resumed: function () {
-                        console.log("resumed")
-                        return new Promise(function (resolve, reject) {
-                            resolve()
-                        })
-                    },
-                    finished: function () {
-                        console.log("finished")
-                        return new Promise(function (resolve, reject) {
-                            resolve()
-                        })
-                    },
-                    updateSettings: function (settings) {
+                    updateSettings: function(settings) {
                         console.log("updateSettings")
-                        return new Promise(function (resolve, reject) {
+                        return new Promise(function(resolve, reject) {
                             resolve(
-                                settings
+                              settings
                             )
                         })
                     }
-                }
-            },
-            search: {
-                color: "#fce300",
-                current: "#ed7138",
-                // hideLayer:true,
-                api: {
+                },
+                injectables: injectables,
+                injectablesFixed: [],
+                userSettings: userSettings,
+                useLocalStorage: true // true = uses local storage, false = uses session storage (default)
+            }).then(instance => {
+                console.log("D2reader instance ready", instance);
+                d2reader = instance;
 
-                }
-            },
-            define: {
-                // color: "#40E0D0",
-                color: "var(--RS__definitionsColor)",
-                fullWordSearch: true,
-                // hideLayer:true,
-                api: {
-                    click: function (item, element) {
-                        console.log("click");
-                        console.log(item);
-                        console.log(element);
-                    },
-                    success: function (item, elements) {
-                        console.log("success");
-                        console.log(item);
-                        console.log(elements);
-                    },
-                    visible: function (item, element) {
-                        console.log("visible");
-                        console.log(item);
-                        console.log(element);
-                    },
-                },
-                definitions: [
-                    {
-                        order: 2,
-                        result: 2,
-                        terms: ["shelley"],
-                        definition: "Giant hyssop was rarely included, despite being hugely attractive to bees.",
-                    },
-                    {
-                        order: 0,
-                        result: 1, // 1 = first, 2 = random, 0 = all
-                        terms: ["lavender", "lavandula"],
-                        definition: "Lavandula (common name lavender) is a genus of 47 known species of flowering plants in the mint family, Lamiaceae.",
-                    },
-                    {
-                        order: 1,
-                        result: 0, // 1 = first, 2 = random, 0 = all
-                        terms: ["Belle"],
-                        definition: "But over time, Belle became friends\n" +
-                            "with the staff. Then she and the Beast fell\n" +
-                            "in love. The whole household became a\n" +
-                            "family.",
-                    },
-                    {
-                        order: 2,
-                        result: 0,
-                        terms: ["Dahlia"],
-                        definition: "Giant hyssop was rarely included, despite being hugely attractive to bees.",
-                    },
-                    {
-                        order: 3,
-                        result: 0, // 1 = first, 2 = random, 0 = all
-                        terms: ["allium"],
-                        definition: "a bulbous plant of a genus that includes the onion and its relatives (e.g. garlic, leek, and chives).",
-                    }
-                ],
-            },
-            highlighter: {
-                selectionMenuItems: selectionMenuItems,
-                api: {
-                    selectionMenuOpen: function () {
-                        console.log("selectionMenuOpen")
-                    },
-                    selectionMenuClose: function () {
-                        console.log("selectionMenuClose")
-                    },
-                }
-            },
-            annotations: {
-                // initialAnnotationColor: "var(--RS__highlightColor)",
-                // initialAnnotationColor: "#ff8500",
-                // hideLayer:true,
-                api: {
-                    addAnnotation: function (highlight) {
-                        console.log("addAnnotation")
-                        toast("Annotation added");
-                        return new Promise(function (resolve, reject) {
-                            highlight.id = Math.random()
-                            resolve(
-                                highlight
-                            )
-                        })
-                    },
-                    deleteAnnotation: function (highlight) {
-                        console.log("deleteAnnotation")
-                        toast("Annotation deleted");
-                        return new Promise(function (resolve, reject) {
-                            resolve()
-                        })
-                    },
-                    selectedAnnotation: function (highlight) {
-                        console.log("selectedAnnotation")
-                        return new Promise(function (resolve, reject) {
-                            resolve()
-                        })
-                    }
-                }
-            },
-            pagebreak: {
-                // hideLayer:false,
-            },
-            bookmarks: {
-                // hideLayer:true,
-                api: {
-                    addBookmark: function (bookmark) {
-                        console.log("addBookmark")
-                        toast("Bookmark added");
-                        return new Promise(function (resolve, reject) {
-                            bookmark.id = Math.random()
-                            resolve(
-                                bookmark
-                            )
-                        })
-                    },
-                    deleteBookmark: function (bookmark) {
-                        console.log("deleteBookmark")
-                        toast("Bookmark deleted");
-                        return new Promise(function (resolve, reject) {
-                            resolve(
-                                bookmark
-                            )
-                        })
-                    }
-                }
-            },
-            protection: {
-                enforceSupportedBrowsers: true,
-                enableEncryption: true,
-                enableObfuscation: true,
-                disablePrint: true,
-                disableCopy: true,
-                detectInspect: false,
-                clearOnInspect: true, // make sure detectInspect is true, otherwise this won't work
-                disableKeys: true,
-                disableContextMenu: true,
-                hideTargetUrl: true,
-                disableDrag: false,
-                supportedBrowsers: [ // this will only be used if enforceSupportedBrowsers is true, and has nothing to do with the r2d2bc modules supported browsers
-                    "Chrome", "ChromeAndroid", "Edge", "Firefox", "iOS", "Safari"
-                ],
-                api: {
-                    // make sure detectInspect is true, otherwise this won't be called
-                    // this callback will be executed in a loop while inspect is visible
-                    inspectDetected: function () {
-                        console.log("inspect detected")
-                    }
-                }
-            },
-            api: {
-                getContent: function (href) {
-                    console.log("getContent")
-                    return new Promise(function (resolve, reject) {
-                        resolve(
-                            // 'test, <a xmlns="http://www.w3.org/1999/xhtml" href="chapter_04.xhtml">Chapter 4</a>'
-                        )
-                    })
-                },
-                resourceReady: function () {
-                    console.log("resourceReady")
-                    // d2reader.applyUserSettings({fontFamily: 'opendyslexic'})
-                },
-                resourceAtStart:function () {
-                    console.log("resourceAtStart")
-                },
-                resourceAtEnd:function () {
-                    console.log("resourceAtEnd")
-                },
-                resourceFitsScreen:function () {
-                    console.log("resourceFitsScreen")
-                },
-                updateCurrentLocation: function (location) {
-                    console.log("updateCurrentLocation " + location.locations.progression)
-                    return new Promise(function (resolve, reject) {
-                        resolve(
-                            location
-                        )
-                    })
-                },
-                updateSettings: function (settings) {
-                    console.log("updateSettings")
-                    return new Promise(function (resolve, reject) {
-                        resolve(
-                            settings
-                        )
-                    })
-                }
-            },
-            injectables: injectables,
-            injectablesFixed: [],
-            userSettings: userSettings,
-            useLocalStorage: true // true = uses local storage, false = uses session storage (default)
-        }).then(instance => {
-            console.log("D2reader instance ready", instance);
-            d2reader = instance;
+                instance.addEventListener("readalong.started", (detail) => {
+                    console.log("Something in the annotations has changed. ");
+                    console.log("listener " + detail);
+                });
+                instance.addEventListener("readaloud.started", (detail) => {
+                    console.log("listener " + detail);
+                });
+                instance.addEventListener("readaloud.stopped", (detail) => {
+                    console.log("listener " + detail);
+                });
+                instance.addEventListener("readaloud.paused", (detail) => {
+                    console.log("listener " + detail);
+                });
+                instance.addEventListener("readaloud.resumed", (detail) => {
+                    console.log("listener " + detail);
+                });
+                instance.addEventListener("resource.start", () => {
+                    console.log("listener start");
+                });
+                instance.addEventListener("resource.end", () => {
+                    console.log("listener end");
+                });
+                instance.addEventListener("resource.fits", () => {
+                    console.log("listener fits");
+                });
+                instance.addEventListener("resource.ready", () => {
+                    console.log("listener ready");
+                });
 
-            instance.addEventListener("readalong.started", (detail) => {
-                console.log("Something in the annotations has changed. ");
-                console.log("listener " + detail);
+            }).catch(error => {
+                console.error(error)
+                document.getElementById("reader-error").innerText = error.message
             });
-            instance.addEventListener("readaloud.started", (detail) => {
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("readaloud.stopped", (detail) => {
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("readaloud.paused", (detail) => {
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("readaloud.resumed", (detail) => {
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("resource.start", () => {
-                console.log("listener start");
-            });
-            instance.addEventListener("resource.end", () => {
-                console.log("listener end");
-            });
-            instance.addEventListener("resource.fits", () => {
-                console.log("listener fits");
-            });
-            instance.addEventListener("resource.ready", () => {
-                console.log("listener ready");
-            });
-
-        }).catch(error => {
-            console.error(error)
-            document.getElementById("reader-error").innerText = error.message
-        });
 
         function setColumns(columnCount) {
             let buttons = document.getElementById('columnCount').getElementsByTagName('button');

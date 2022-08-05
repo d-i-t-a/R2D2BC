@@ -27,12 +27,7 @@ import {
 import { debounce } from "debounce";
 import { delay, IS_DEV } from "../../utils";
 import { getUserAgentRegExp } from "browserslist-useragent-regexp";
-import {
-  addListener,
-  checkers,
-  DevtoolsDetector,
-  launch,
-} from "devtools-detector";
+import { addListener, launch } from "devtools-detector";
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;

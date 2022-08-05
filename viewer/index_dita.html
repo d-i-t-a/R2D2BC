@@ -755,11 +755,6 @@
             { type: 'style', url: '/viewer/injectables/style/popover.css' },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
-        let injectablesFixed = [
-            { type: 'style', url: '/viewer/injectables/style/popup.css' },
-            { type: 'style', url: '/viewer/injectables/style/popover.css' },
-            { type: 'style', url: '/viewer/injectables/style/style.css' },
-        ]
         let userSettings = {
             // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
             // fontFamily: "serif", //Original, serif, sans-serif
@@ -1270,8 +1265,8 @@
                     }
                 },
                 injectables: injectables,
-                injectablesFixed: injectablesFixed,
-            userSettings: userSettings,
+                injectablesFixed: [],
+                userSettings: userSettings,
                 useLocalStorage: true // true = uses local storage, false = uses session storage (default)
             }).then(instance => {
                 console.log("D2reader instance ready", instance);

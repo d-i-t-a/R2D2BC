@@ -752,7 +752,6 @@
         let injectablesFixed = [
             { type: 'style', url: '/viewer/injectables/style/popup.css' },
             { type: 'style', url: '/viewer/injectables/style/popover.css' },
-            { type: 'style', url: '/viewer/injectables/style/style.css' },
         ]
         let userSettings = {
             // appearance: "readium-sepia-on", //readium-default-on, readium-night-on, readium-sepia-on
@@ -1264,7 +1263,7 @@
                 }
             },
             injectables: injectables,
-            injectablesFixed: injectablesFixed,
+            injectablesFixed: [],
             userSettings: userSettings,
             useLocalStorage: true // true = uses local storage, false = uses session storage (default)
         }).then(instance => {

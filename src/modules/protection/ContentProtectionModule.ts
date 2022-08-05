@@ -27,7 +27,7 @@ import {
 import { debounce } from "debounce";
 import { delay, IS_DEV } from "../../utils";
 import { getUserAgentRegExp } from "browserslist-useragent-regexp";
-import { checkers, DevtoolsDetector } from "devtools-detector";
+import { addListener, launch } from "devtools-detector";
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;
@@ -108,29 +108,22 @@ export class ContentProtectionModule implements ReaderModule {
   private static async startInspectorProtection(
     config: Partial<ContentProtectionModuleConfig>
   ): Promise<void> {
-    const onInspectorOpened = (): void => {
-      if (config.clearOnInspect) {
-        console.clear();
-        window.localStorage.clear();
-        window.sessionStorage.clear();
-        window.location.replace(window.location.origin);
-      }
-      if (typeof config.api?.inspectDetected === "function") {
-        config.api.inspectDetected();
+    const onInspectorOpened = (isOpen): void => {
+      if (isOpen) {
+        if (config.clearOnInspect) {
+          console.clear();
+          window.localStorage.clear();
+          window.sessionStorage.clear();
+          window.location.replace(window.location.origin);
+        }
+        if (typeof config.api?.inspectDetected === "function") {
+          config.api.inspectDetected();
+        }
       }
     };
-    const detector = new DevtoolsDetector({
-      checkers: [
-        checkers.elementIdChecker,
-        checkers.regToStringChecker,
-        checkers.functionToStringChecker,
-        checkers.depRegToStringChecker,
-        checkers.dateToStringChecker,
-      ],
-    });
-    detector.addListener(onInspectorOpened);
-    detector.launch();
-    await delay(config.detectInspectInitDelay ?? 50);
+    addListener(onInspectorOpened);
+    launch();
+    await delay(config.detectInspectInitDelay ?? 100);
   }
 
   private static isCurrentBrowserSupported(
@@ -856,17 +849,17 @@ export class ContentProtectionModule implements ReaderModule {
   }
 
   recalculate(delay: number = 0): Promise<boolean> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       if (this.properties?.enableObfuscation) {
-          const onDoResize = debounce(() => {
-            this.calcRects(this.rects);
-            if (this.rects !== undefined) {
-              this.rects.forEach((rect) =>
-                this.toggleRect(rect, this.securityContainer, this.isHacked)
-              );
-            }
-            resolve(true);
-          }, delay);
+        const onDoResize = debounce(() => {
+          this.calcRects(this.rects);
+          if (this.rects !== undefined) {
+            this.rects.forEach((rect) =>
+              this.toggleRect(rect, this.securityContainer, this.isHacked)
+            );
+          }
+          resolve(true);
+        }, delay);
         if (this.rects) {
           this.observe();
           onDoResize();

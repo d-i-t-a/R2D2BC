@@ -55,6 +55,7 @@ import { ReaderModule } from "./modules/ReaderModule";
 import { DefinitionsModule } from "./modules/search/DefinitionsModule";
 import LineFocusModule from "./modules/linefocus/LineFocusModule";
 import { HistoryModule } from "./modules/history/HistoryModule";
+import CitationModule from "./modules/citation/CitationModule";
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -83,7 +84,8 @@ export default class D2Reader {
     private readonly mediaOverlayModule?: MediaOverlayModule,
     private readonly pageBreakModule?: PageBreakModule,
     private readonly lineFocusModule?: LineFocusModule,
-    private readonly historyModule?: HistoryModule
+    private readonly historyModule?: HistoryModule,
+    private readonly citationModule?: CitationModule
   ) {}
 
   addEventListener() {
@@ -108,6 +110,7 @@ export default class D2Reader {
       enableTimeline: false,
       customKeyboardEvents: false,
       enableHistory: false,
+      enableCitations: false,
     };
 
     // Enforces supported browsers
@@ -353,6 +356,15 @@ export default class D2Reader {
         })
       : undefined;
 
+    const citationModule = rights.enableCitations
+      ? await CitationModule.create({
+          publication: publication,
+          delegate: navigator,
+          highlighter: highlighter,
+          ...initialConfig.citations,
+        })
+      : undefined;
+
     return new D2Reader(
       settings,
       navigator,
@@ -369,7 +381,8 @@ export default class D2Reader {
       mediaOverlayModule,
       pageBreakModule,
       lineFocusModule,
-      historyModule
+      historyModule,
+      citationModule
     );
   }
 

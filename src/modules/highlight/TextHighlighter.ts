@@ -3271,4 +3271,10 @@ export class TextHighlighter {
 
     return highlightParent;
   }
+
+  addSelectionMenuItem(citationIconMenu: SelectionMenuItem) {
+    if (this.properties?.selectionMenuItems ?? []) {
+      (this.properties?.selectionMenuItems ?? []).push(citationIconMenu);
+    }
+  }
 }

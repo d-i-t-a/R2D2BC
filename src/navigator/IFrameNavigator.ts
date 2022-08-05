@@ -92,6 +92,9 @@ import LineFocusModule, {
   LineFocusModuleConfig,
 } from "../modules/linefocus/LineFocusModule";
 import { HistoryModule } from "../modules/history/HistoryModule";
+import CitationModule, {
+  CitationModuleConfig,
+} from "../modules/citation/CitationModule";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (href: string) => Promise<number>;
@@ -174,6 +177,7 @@ export interface ReaderRights {
   enableLineFocus: boolean;
   customKeyboardEvents: boolean;
   enableHistory: boolean;
+  enableCitations: boolean;
 }
 
 export interface ReaderUI {
@@ -197,6 +201,7 @@ export interface ReaderConfig {
   annotations?: AnnotationModuleConfig;
   bookmarks?: BookmarkModuleConfig;
   lineFocus?: LineFocusModuleConfig;
+  citations?: CitationModuleConfig;
   highlighter?: TextHighlighterConfig;
   injectables: Array<Injectable>;
   injectablesFixed: Array<Injectable>;
@@ -227,6 +232,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   mediaOverlayModule?: MediaOverlayModule;
   lineFocusModule?: LineFocusModule;
   historyModule?: HistoryModule;
+  citationModule?: CitationModule;
 
   sideNavExpanded: boolean = false;
   material: boolean = false;
@@ -297,6 +303,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     enableTimeline: false,
     customKeyboardEvents: false,
     enableHistory: false,
+    enableCitations: false,
   };
   tts?: TTSModuleConfig;
   injectables?: Array<Injectable>;
@@ -375,6 +382,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       enableTimeline: false,
       customKeyboardEvents: false,
       enableHistory: false,
+      enableCitations: false,
     };
     this.tts = tts;
     this.injectables = injectables;
@@ -1363,7 +1371,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.historyModule) {
         this.historyModule.setup();
       }
-
 
       if (this.currentTocUrl !== undefined) {
         this.setActiveTOCItem(this.currentTocUrl);

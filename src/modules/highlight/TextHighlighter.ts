@@ -909,15 +909,19 @@ export class TextHighlighter {
 
   // Use short timeout to let the selection updated to 'finish', otherwise some
   // browsers can get wrong or incomplete selection data.
-  toolboxShowDelayed(ev: any) {
-    let self = this;
-    setTimeout(function () {
-      if (!self.isAndroid()) {
-        self.snapSelectionToWord(ev.detail === 1);
-      }
-      self.toolboxShow();
-    }, 100);
+  toolboxShowDelayed(event: TouchEvent | MouseEvent) {
+    this.showTool(event.detail === 1);
   }
+
+  showTool = debounce(
+    (b: boolean) => {
+      if (!this.isAndroid()) {
+        this.snapSelectionToWord(b);
+      }
+      this.toolboxShow();
+    },
+    navigator.userAgent.toLowerCase().indexOf("firefox") > -1 ? 200 : 100
+  );
 
   snapSelectionToWord(trimmed: boolean = false) {
     let self = this;

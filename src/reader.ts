@@ -56,6 +56,7 @@ import { DefinitionsModule } from "./modules/search/DefinitionsModule";
 import LineFocusModule from "./modules/linefocus/LineFocusModule";
 import { HistoryModule } from "./modules/history/HistoryModule";
 import CitationModule from "./modules/citation/CitationModule";
+import { TaJsonDeserialize } from "./utils/JsonUtil";
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -126,11 +127,26 @@ export default class D2Reader {
     const headerMenu = findElement(document, "#headerMenu");
     const footerMenu = findElement(document, "#footerMenu");
 
-    const webPubManifestUrl = initialConfig.url;
+    let webPubManifestUrl = initialConfig.url;
+    let publication;
+    if (initialConfig.publication) {
+      publication = TaJsonDeserialize<Publication>(
+        initialConfig.publication,
+        Publication
+      );
+      publication.manifestUrl = new URL(webPubManifestUrl);
+    } else {
+      publication = await Publication.fromUrl(
+        webPubManifestUrl,
+        initialConfig.requestInit
+      );
+    }
+
     const store = new LocalStorageStore({
-      prefix: webPubManifestUrl.href,
+      prefix: publication.manifestUrl,
       useLocalStorage: initialConfig.useLocalStorage ?? false,
     });
+
     const settingsStore = new LocalStorageStore({
       prefix: "r2d2bc-reader",
       useLocalStorage: initialConfig.useLocalStorage ?? false,
@@ -144,10 +160,6 @@ export default class D2Reader {
 
     const upLink: UpLinkConfig = initialConfig.upLinkUrl ?? undefined;
 
-    const publication: Publication = await Publication.fromUrl(
-      webPubManifestUrl
-    );
-
     publication.sample = initialConfig.sample;
 
     // update our config based on what we know from the publication
@@ -158,16 +170,18 @@ export default class D2Reader {
      * generating them or fetching them from provided services.
      */
     if (rights.autoGeneratePositions) {
-      await publication.autoGeneratePositions();
+      await publication.autoGeneratePositions(initialConfig.requestInit);
     } else {
       if (initialConfig.services?.positions) {
         await publication.fetchPositionsFromService(
-          initialConfig.services?.positions.href
+          initialConfig.services?.positions.href,
+          initialConfig.requestInit
         );
       }
       if (initialConfig.services?.weight) {
         await publication.fetchWeightsFromService(
-          initialConfig.services?.weight.href
+          initialConfig.services?.weight.href,
+          initialConfig.requestInit
         );
       }
     }
@@ -206,6 +220,7 @@ export default class D2Reader {
       rights: rights,
       tts: initialConfig.tts,
       sample: initialConfig.sample,
+      requestInit: initialConfig.requestInit,
       injectables:
         (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
           ? initialConfig.injectablesFixed

@@ -42,7 +42,7 @@ export interface ContentProtectionModuleProperties {
   disableContextMenu: boolean;
   hideTargetUrl: boolean;
   disableDrag: boolean;
-  supportedBrowsers: [];
+  supportedBrowsers: string[];
 }
 
 export interface ContentProtectionModuleConfig

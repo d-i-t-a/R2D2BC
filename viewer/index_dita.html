@@ -969,6 +969,11 @@
             D2Reader.load({
                 upLinkUrl: upLink,
                 url: new URL(urlParams['url']),
+                requestInit: {
+                    method: "GET",
+                    mode: "cors",
+                    credentials: "include",
+                },
                 attributes: { // TODO: review these attributes and eventually needs better naming.
                     margin: 60, // subtract this from the iframe height , when setting the iframe minimum height
                     navHeight: 65, // used for positioning the toolbox

@@ -719,7 +719,7 @@ export class SearchModule implements ReaderModule {
       }
       if (tocItem) {
         let href = this.publication.getAbsoluteHref(tocItem.Href);
-        await fetch(href)
+        await fetch(href, this.delegate.requestInit)
           .then((r) => r.text())
           .then(async (data) => {
             // ({ data, tocItem });

@@ -36,10 +36,11 @@ export class Publication extends R2Publication {
   /**
    * Initialize a publication from a manifest URL
    */
-  static async fromUrl(url: URL): Promise<Publication> {
-    const response = await fetch(url.href, {
-      credentials: "same-origin",
-    });
+  static async fromUrl(
+    url: URL,
+    requestInit?: RequestInit
+  ): Promise<Publication> {
+    const response = await fetch(url.href, requestInit);
     const manifestJSON = await response.json();
     let publication = TaJsonDeserialize<Publication>(manifestJSON, Publication);
     publication.manifestUrl = url;
@@ -255,6 +256,7 @@ export class Publication extends R2Publication {
    * at least for fluid layout pubs
    */
   async autoGeneratePositions(
+    requestInit?: RequestInit,
     // allows passing in custom login to get length of resource, but defaults
     // to fetching the resource
     getContentBytesLength: GetContentBytesLength = fetchContentBytesLength
@@ -284,7 +286,7 @@ export class Publication extends R2Publication {
           startPosition = startPosition + 1;
         } else {
           let href = this.getAbsoluteHref(link.Href);
-          let length = await getContentBytesLength(href);
+          let length = await getContentBytesLength(href, requestInit);
           link.contentLength = length;
           totalContentLength += length;
           let positionLength = 1024;
@@ -350,8 +352,8 @@ export class Publication extends R2Publication {
   /**
    * Fetches the positions from a given service href
    */
-  async fetchPositionsFromService(href: string) {
-    const result = await fetch(href);
+  async fetchPositionsFromService(href: string, requestInit?: RequestInit) {
+    const result = await fetch(href, requestInit);
     const content = await result.json();
     this.positions = content.positions;
   }
@@ -359,14 +361,14 @@ export class Publication extends R2Publication {
   /**
    * Fetches weights from a given service href
    */
-  async fetchWeightsFromService(href: string) {
+  async fetchWeightsFromService(href: string, requestInit?: RequestInit) {
     if (this.isFixedLayout) {
       console.warn(
         "Not fetching weights from service for fixed layout publication."
       );
       return;
     }
-    const result = await fetch(href);
+    const result = await fetch(href, requestInit);
     const weights = await result.json();
     if (this.readingOrder !== undefined) {
       this.readingOrder.forEach((link) => {
@@ -376,8 +378,11 @@ export class Publication extends R2Publication {
   }
 }
 
-const fetchContentBytesLength = async (href: string): Promise<number> => {
-  const r = await fetch(href);
+const fetchContentBytesLength = async (
+  href: string,
+  requestInit?: RequestInit
+): Promise<number> => {
+  const r = await fetch(href, requestInit);
   const b = await r.blob();
   return b.size;
 };

@@ -287,7 +287,7 @@ export class TTSModule2 implements ReaderModule {
           var restOfTheText;
           if (ttsQueueItem && selectionInfo && selectionInfo.cleanText) {
             const sentence = getTtsQueueItemRefText(ttsQueueItem);
-            let startIndex = sentence.indexOf(selectionInfo.cleanText);
+            let startIndex = selectionInfo.rangeInfo.startOffset;
             let textToBeSpoken = selectionInfo.cleanText;
 
             if (ttsQueueItemEnd && idx + 1 === idxEnd) {
@@ -301,14 +301,14 @@ export class TTSModule2 implements ReaderModule {
                 .replace(textToBeSpoken, "")
                 .trim();
             } else if (idxEnd > idx) {
-              let mergedSentenses = "";
+              let mergedSentences = "";
               for (let i = idx + 1; i < idxEnd; i++) {
                 const ttsQueueItemInBetween = getTtsQueueItemRef(ttsQueue, i);
                 if (ttsQueueItemInBetween) {
                   const sentenceInBetween = getTtsQueueItemRefText(
                     ttsQueueItemInBetween
                   );
-                  mergedSentenses += sentenceInBetween;
+                  mergedSentences += sentenceInBetween;
                   restOfTheText = selectionInfo.cleanText.replace(
                     sentenceInBetween,
                     ""
@@ -318,9 +318,9 @@ export class TTSModule2 implements ReaderModule {
 
               if (ttsQueueItemEnd) {
                 const sentenceEnd = getTtsQueueItemRefText(ttsQueueItemEnd);
-                mergedSentenses += " " + sentenceEnd;
+                mergedSentences += " " + sentenceEnd;
               }
-              startIndex = (sentence + " " + mergedSentenses).indexOf(
+              startIndex = (sentence + " " + mergedSentences).indexOf(
                 selectionInfo.cleanText
               );
 

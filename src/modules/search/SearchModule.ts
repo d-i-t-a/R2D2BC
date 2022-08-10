@@ -19,7 +19,10 @@
 
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { Publication } from "../../model/Publication";
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import {
+  IFrameNavigator,
+  RequestConfig,
+} from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
 import {
   addEventListenerOptional,
@@ -47,6 +50,7 @@ export interface SearchModuleConfig extends SearchModuleProperties {
   publication: Publication;
   headerMenu?: HTMLElement | null;
   delegate: IFrameNavigator;
+  requestConfig?: RequestConfig;
   highlighter: TextHighlighter;
 }
 
@@ -63,6 +67,7 @@ export class SearchModule implements ReaderModule {
   private bookSearchResult: any = [];
   private currentSearchHighlights: any = [];
   private highlighter?: TextHighlighter;
+  private requestConfig?: RequestConfig;
 
   public static async create(config: SearchModuleConfig) {
     const search = new this(
@@ -70,6 +75,7 @@ export class SearchModule implements ReaderModule {
       config.publication,
       config as SearchModuleProperties,
       config.highlighter,
+      config.requestConfig,
       config.api,
       config.headerMenu
     );
@@ -83,6 +89,7 @@ export class SearchModule implements ReaderModule {
     publication: Publication,
     properties: SearchModuleProperties,
     highlighter: TextHighlighter,
+    requestConfig?: RequestConfig,
     api?: SearchModuleAPI,
     headerMenu?: HTMLElement | null
   ) {
@@ -92,6 +99,7 @@ export class SearchModule implements ReaderModule {
     this.properties = properties;
     this.api = api;
     this.highlighter = highlighter;
+    this.requestConfig = requestConfig;
   }
 
   async stop() {
@@ -719,12 +727,15 @@ export class SearchModule implements ReaderModule {
       }
       if (tocItem) {
         let href = this.publication.getAbsoluteHref(tocItem.Href);
-        await fetch(href, this.delegate.requestInit)
+        await fetch(href, this.requestConfig)
           .then((r) => r.text())
           .then(async (data) => {
             // ({ data, tocItem });
             let parser = new DOMParser();
-            let doc = parser.parseFromString(data, "application/xhtml+xml");
+            let doc = parser.parseFromString(
+              this.requestConfig?.encoded ? this.decodeBase64(data) : data,
+              "application/xhtml+xml"
+            );
             if (tocItem) {
               searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
                 (result) => {
@@ -742,6 +753,18 @@ export class SearchModule implements ReaderModule {
       }
     }
   }
+
+  decodeBase64(base64: any) {
+    const text = atob(base64);
+    const length = text.length;
+    const bytes = new Uint8Array(length);
+    for (let i = 0; i < length; i++) {
+      bytes[i] = text.charCodeAt(i);
+    }
+    const decoder = new TextDecoder();
+    return decoder.decode(bytes);
+  }
+
   async searchChapter(term: string): Promise<any> {
     let localSearchResultBook: any = [];
     const linkHref = this.publication.getAbsoluteHref(
@@ -755,12 +778,15 @@ export class SearchModule implements ReaderModule {
     }
     if (tocItem) {
       let href = this.publication.getAbsoluteHref(tocItem.Href);
-      await fetch(href)
+      await fetch(href, this.requestConfig)
         .then((r) => r.text())
         .then(async (data) => {
           // ({ data, tocItem });
           let parser = new DOMParser();
-          let doc = parser.parseFromString(data, "application/xhtml+xml");
+          let doc = parser.parseFromString(
+            this.requestConfig?.encoded ? this.decodeBase64(data) : data,
+            "application/xhtml+xml"
+          );
           if (tocItem) {
             searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
               (result) => {

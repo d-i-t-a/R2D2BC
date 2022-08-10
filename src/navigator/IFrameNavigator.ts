@@ -99,8 +99,12 @@ import CitationModule, {
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (
   href: string,
-  requestInit?: RequestInit
+  requestConfig?: RequestConfig
 ) => Promise<number>;
+
+export interface RequestConfig extends RequestInit {
+  encoded?: boolean;
+}
 
 export interface NavigatorAPI {
   updateSettings: any;
@@ -135,15 +139,14 @@ export interface IFrameNavigatorConfig {
   annotator?: Annotator;
   upLink?: UpLinkConfig;
   initialLastReadingPosition?: ReadingPosition;
-  rights: ReaderRights;
-  material?: ReaderUI;
-  api?: NavigatorAPI;
-  tts?: TTSModuleConfig;
+  rights: Partial<ReaderRights>;
+  api?: Partial<NavigatorAPI>;
+  tts?: Partial<TTSModuleConfig>;
   injectables: Array<Injectable>;
   attributes?: IFrameAttributes;
   services?: PublicationServices;
   sample?: SampleRead;
-  requestInit?: RequestInit;
+  requestConfig?: RequestConfig;
 }
 export interface PublicationServices {
   positions?: URL;
@@ -194,27 +197,26 @@ export interface ReaderConfig {
   initialAnnotations?: any;
   lastReadingPosition?: any;
   upLinkUrl?: any;
-  rights?: ReaderRights;
-  material?: ReaderUI;
-  api?: NavigatorAPI;
-  tts?: TTSModuleConfig;
-  search?: SearchModuleConfig;
-  define?: DefinitionsModuleConfig;
-  protection?: ContentProtectionModuleConfig;
-  mediaOverlays?: MediaOverlayModuleConfig;
-  pagebreak?: PageBreakModuleConfig;
-  annotations?: AnnotationModuleConfig;
-  bookmarks?: BookmarkModuleConfig;
-  lineFocus?: LineFocusModuleConfig;
-  citations?: CitationModuleConfig;
-  highlighter?: TextHighlighterConfig;
+  rights?: Partial<ReaderRights>;
+  api?: Partial<NavigatorAPI>;
+  tts?: Partial<TTSModuleConfig>;
+  search?: Partial<SearchModuleConfig>;
+  define?: Partial<DefinitionsModuleConfig>;
+  protection?: Partial<ContentProtectionModuleConfig>;
+  mediaOverlays?: Partial<MediaOverlayModuleConfig>;
+  pagebreak?: Partial<PageBreakModuleConfig>;
+  annotations?: Partial<AnnotationModuleConfig>;
+  bookmarks?: Partial<BookmarkModuleConfig>;
+  lineFocus?: Partial<LineFocusModuleConfig>;
+  citations?: Partial<CitationModuleConfig>;
+  highlighter?: Partial<TextHighlighterConfig>;
   injectables: Array<Injectable>;
-  injectablesFixed: Array<Injectable>;
+  injectablesFixed?: Array<Injectable>;
   useLocalStorage?: boolean;
   attributes?: IFrameAttributes;
   services?: PublicationServices;
   sample?: SampleRead;
-  requestInit?: RequestInit;
+  requestConfig?: RequestConfig;
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -241,7 +243,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   citationModule?: CitationModule;
 
   sideNavExpanded: boolean = false;
-  material: boolean = false;
 
   currentChapterLink: D2Link = { href: "" };
   currentSpreadLinks: { left?: D2Link; right?: D2Link } = {};
@@ -294,8 +295,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   private isBeingStyled: boolean;
   private isLoading: boolean;
   private readonly initialLastReadingPosition?: ReadingPosition;
-  api?: NavigatorAPI;
-  rights: ReaderRights = {
+  api?: Partial<NavigatorAPI>;
+  rights: Partial<ReaderRights> = {
     autoGeneratePositions: false,
     enableAnnotations: false,
     enableBookmarks: false,
@@ -311,12 +312,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     enableHistory: false,
     enableCitations: false,
   };
-  tts?: TTSModuleConfig;
+  tts?: Partial<TTSModuleConfig>;
   injectables?: Array<Injectable>;
   attributes?: IFrameAttributes;
   services?: PublicationServices;
   sample?: SampleRead;
-  requestInit?: RequestInit;
+  requestConfig?: RequestConfig;
   private didInitKeyboardEventHandler: boolean = false;
 
   public static async create(
@@ -328,7 +329,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       config.upLink || undefined,
       config.initialLastReadingPosition || undefined,
       config.publication,
-      config.material,
       config.api,
       config.rights,
       config.tts,
@@ -352,15 +352,14 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     upLinkConfig: UpLinkConfig | undefined = undefined,
     initialLastReadingPosition: ReadingPosition | undefined = undefined,
     publication: Publication,
-    material: any,
-    api?: NavigatorAPI,
-    rights?: ReaderRights,
-    tts?: TTSModuleConfig,
+    api?: Partial<NavigatorAPI>,
+    rights?: Partial<ReaderRights>,
+    tts?: Partial<TTSModuleConfig>,
     injectables?: Array<Injectable>,
     attributes?: IFrameAttributes,
     services?: PublicationServices,
     sample?: SampleRead,
-    requestInit?: RequestInit
+    requestConfig?: RequestConfig
   ) {
     super();
     this.settings = settings;
@@ -374,7 +373,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.upLinkConfig = upLinkConfig;
     this.initialLastReadingPosition = initialLastReadingPosition;
     this.publication = publication;
-    this.material = material;
     this.api = api;
     this.rights = rights ?? {
       autoGeneratePositions: false,
@@ -397,7 +395,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.attributes = attributes || { margin: 0 };
     this.services = services;
     this.sample = sample;
-    this.requestInit = requestInit;
+    this.requestConfig = requestConfig;
     this.sampleReadEventHandler = new SampleReadEventHandler(this);
   }
 
@@ -1722,7 +1720,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                   if (isSameOrigin) {
                     this.iframes[0].src = this.currentChapterLink.href;
                   } else {
-                    fetch(this.currentChapterLink.href, this.requestInit)
+                    fetch(this.currentChapterLink.href, this.requestConfig)
                       .then((r) => r.text())
                       .then(async (content) => {
                         writeIframeDoc.call(
@@ -1755,7 +1753,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                       if (isSameOrigin) {
                         this.iframes[1].src = href;
                       } else {
-                        fetch(href, this.requestInit)
+                        fetch(href, this.requestConfig)
                           .then((r) => r.text())
                           .then(async (content) => {
                             writeIframe2Doc.call(this, content, href);
@@ -1788,7 +1786,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                     if (isSameOrigin) {
                       this.iframes[0].src = href;
                     } else {
-                      fetch(href, this.requestInit)
+                      fetch(href, this.requestConfig)
                         .then((r) => r.text())
                         .then(async (content) => {
                           writeIframeDoc.call(this, content, href);
@@ -1814,7 +1812,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                     if (isSameOrigin) {
                       this.iframes[1].src = this.currentChapterLink.href;
                     } else {
-                      fetch(this.currentChapterLink.href, this.requestInit)
+                      fetch(this.currentChapterLink.href, this.requestConfig)
                         .then((r) => r.text())
                         .then(async (content) => {
                           writeIframe2Doc.call(
@@ -1843,7 +1841,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               if (isSameOrigin) {
                 this.iframes[0].src = this.currentChapterLink.href;
               } else {
-                fetch(this.currentChapterLink.href, this.requestInit)
+                fetch(this.currentChapterLink.href, this.requestConfig)
                   .then((r) => r.text())
                   .then(async (content) => {
                     writeIframeDoc.call(
@@ -1868,7 +1866,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             if (isSameOrigin) {
               this.iframes[0].src = this.currentChapterLink.href;
             } else {
-              fetch(this.currentChapterLink.href, this.requestInit)
+              fetch(this.currentChapterLink.href, this.requestConfig)
                 .then((r) => r.text())
                 .then(async (content) => {
                   writeIframeDoc.call(
@@ -1910,7 +1908,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                 }
               }
             } else {
-              fetch(this.currentChapterLink.href, this.requestInit)
+              fetch(this.currentChapterLink.href, this.requestConfig)
                 .then((r) => r.text())
                 .then(async (content) => {
                   writeIframeDoc.call(
@@ -1930,7 +1928,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                       href: href,
                     };
 
-                    fetch(href, this.requestInit)
+                    fetch(href, this.requestConfig)
                       .then((r) => r.text())
                       .then(async (content) => {
                         writeIframe2Doc.call(this, content, href);
@@ -1957,7 +1955,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                     this.iframes[1].src = this.currentChapterLink.href;
                   }
                 } else {
-                  fetch(href, this.requestInit)
+                  fetch(href, this.requestConfig)
                     .then((r) => r.text())
                     .then(async (content) => {
                       writeIframeDoc.call(this, content, href);
@@ -1966,7 +1964,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                     this.currentSpreadLinks.right = {
                       href: this.currentChapterLink.href,
                     };
-                    fetch(this.currentChapterLink.href, this.requestInit)
+                    fetch(this.currentChapterLink.href, this.requestConfig)
                       .then((r) => r.text())
                       .then(async (content) => {
                         writeIframe2Doc.call(
@@ -1989,7 +1987,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               if (isSameOrigin) {
                 this.iframes[1].src = this.currentChapterLink.href;
               } else {
-                fetch(this.currentChapterLink.href, this.requestInit)
+                fetch(this.currentChapterLink.href, this.requestConfig)
                   .then((r) => r.text())
                   .then(async (content) => {
                     writeIframe2Doc.call(
@@ -2008,7 +2006,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           if (isSameOrigin) {
             this.iframes[0].src = this.currentChapterLink.href;
           } else {
-            fetch(this.currentChapterLink.href, this.requestInit)
+            fetch(this.currentChapterLink.href, this.requestConfig)
               .then((r) => r.text())
               .then(async (content) => {
                 writeIframeDoc.call(
@@ -2026,7 +2024,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         if (isSameOrigin) {
           this.iframes[0].src = this.currentChapterLink.href;
         } else {
-          fetch(this.currentChapterLink.href, this.requestInit)
+          fetch(this.currentChapterLink.href, this.requestConfig)
             .then((r) => r.text())
             .then(async (content) => {
               writeIframeDoc.call(this, content, this.currentChapterLink.href);

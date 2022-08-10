@@ -149,7 +149,7 @@ export class MediaOverlayModule implements ReaderModule {
 
       let response: Response;
       try {
-        response = await fetch(moUrlFull, this.delegate.requestInit);
+        response = await fetch(moUrlFull, this.delegate.requestConfig);
       } catch (e) {
         console.error(e, moUrlFull);
         return;

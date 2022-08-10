@@ -77,7 +77,7 @@ export class ContentProtectionModule implements ReaderModule {
   private wrapper: HTMLDivElement;
 
   public static async setupPreloadProtection(
-    config: ContentProtectionModuleConfig
+    config: Partial<ContentProtectionModuleConfig>
   ): Promise<void> {
     if (this.isCurrentBrowserSupported(config)) {
       if (config.detectInspect) {
@@ -127,7 +127,7 @@ export class ContentProtectionModule implements ReaderModule {
   }
 
   private static isCurrentBrowserSupported(
-    config: ContentProtectionModuleConfig
+    config: Partial<ContentProtectionModuleConfig>
   ): boolean {
     if (!config.enforceSupportedBrowsers) {
       return true;

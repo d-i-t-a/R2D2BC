@@ -55,7 +55,7 @@ export interface BookmarkModuleProperties {
 export interface BookmarkModuleConfig extends BookmarkModuleProperties {
   annotator: Annotator;
   headerMenu?: HTMLElement | null;
-  rights: ReaderRights;
+  rights: Partial<ReaderRights>;
   publication: Publication;
   delegate: IFrameNavigator;
   initialAnnotations?: any;
@@ -65,7 +65,7 @@ export interface BookmarkModuleConfig extends BookmarkModuleProperties {
 
 export class BookmarkModule implements ReaderModule {
   private readonly annotator: Annotator | null;
-  private rights: ReaderRights;
+  private rights: Partial<ReaderRights>;
   private publication: Publication;
   private bookmarksView: HTMLDivElement;
   private sideNavSectionBookmarks: HTMLElement;
@@ -93,7 +93,7 @@ export class BookmarkModule implements ReaderModule {
 
   public constructor(
     annotator: Annotator,
-    rights: ReaderRights,
+    rights: Partial<ReaderRights>,
     publication: Publication,
     delegate: IFrameNavigator,
     properties: BookmarkModuleProperties,

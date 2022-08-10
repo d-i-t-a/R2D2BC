@@ -52,7 +52,7 @@ export interface TTSModuleProperties {
 
 export interface TTSModuleConfig extends TTSModuleProperties {
   delegate: IFrameNavigator;
-  rights: ReaderRights;
+  rights: Partial<ReaderRights>;
   tts: TTSSettings;
   highlighter: TextHighlighter;
   headerMenu?: HTMLElement | null;

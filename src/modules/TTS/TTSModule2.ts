@@ -47,7 +47,7 @@ export class TTSModule2 implements ReaderModule {
   private tts: TTSSettings;
   private voices: SpeechSynthesisVoice[] = [];
   private clean: any;
-  private rights: ReaderRights;
+  private rights: Partial<ReaderRights>;
   private readonly highlighter: TextHighlighter;
   private delegate: IFrameNavigator;
   private body: any;
@@ -656,7 +656,7 @@ export class TTSModule2 implements ReaderModule {
   public constructor(
     delegate: IFrameNavigator,
     tts: TTSSettings,
-    rights: ReaderRights,
+    rights: Partial<ReaderRights>,
     highlighter: TextHighlighter,
     properties: TTSModuleProperties,
     api?: TTSModuleAPI,

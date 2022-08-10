@@ -97,7 +97,7 @@ export default class D2Reader {
    * The async builder.
    */
   static async load(initialConfig: ReaderConfig): Promise<D2Reader> {
-    let rights: ReaderRights = initialConfig.rights ?? {
+    let rights: Partial<ReaderRights> = initialConfig.rights ?? {
       autoGeneratePositions: false,
       enableAnnotations: false,
       enableBookmarks: false,
@@ -138,7 +138,7 @@ export default class D2Reader {
     } else {
       publication = await Publication.fromUrl(
         webPubManifestUrl,
-        initialConfig.requestInit
+        initialConfig.requestConfig
       );
     }
 
@@ -170,18 +170,18 @@ export default class D2Reader {
      * generating them or fetching them from provided services.
      */
     if (rights.autoGeneratePositions) {
-      await publication.autoGeneratePositions(initialConfig.requestInit);
+      await publication.autoGeneratePositions(initialConfig.requestConfig);
     } else {
       if (initialConfig.services?.positions) {
         await publication.fetchPositionsFromService(
           initialConfig.services?.positions.href,
-          initialConfig.requestInit
+          initialConfig.requestConfig
         );
       }
       if (initialConfig.services?.weight) {
         await publication.fetchWeightsFromService(
           initialConfig.services?.weight.href,
-          initialConfig.requestInit
+          initialConfig.requestConfig
         );
       }
     }
@@ -193,7 +193,6 @@ export default class D2Reader {
       store: settingsStore,
       initialUserSettings: initialConfig.userSettings,
       headerMenu: headerMenu,
-      material: initialConfig.material,
       api: initialConfig.api,
       injectables:
         (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
@@ -215,15 +214,14 @@ export default class D2Reader {
       annotator: annotator,
       upLink: upLink,
       initialLastReadingPosition: initialConfig.lastReadingPosition,
-      material: initialConfig.material,
       api: initialConfig.api,
       rights: rights,
       tts: initialConfig.tts,
       sample: initialConfig.sample,
-      requestInit: initialConfig.requestInit,
+      requestConfig: initialConfig.requestConfig,
       injectables:
         (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-          ? initialConfig.injectablesFixed
+          ? initialConfig.injectablesFixed ?? []
           : initialConfig.injectables,
       attributes: initialConfig.attributes,
       services: initialConfig.services,
@@ -293,6 +291,7 @@ export default class D2Reader {
           delegate: navigator,
           publication: publication,
           highlighter: highlighter,
+          requestConfig: initialConfig.requestConfig,
           ...initialConfig.search,
         })
       : undefined;
@@ -818,9 +817,9 @@ export default class D2Reader {
 }
 
 function updateConfig(
-  rights: ReaderRights,
+  rights: Partial<ReaderRights>,
   publication: Publication
-): ReaderRights {
+): Partial<ReaderRights> {
   // Some settings must be disabled for fixed-layout publications
   // maybe we should warn the user we are disabling them here.
   if (publication.isFixedLayout) {

@@ -196,7 +196,6 @@ export interface ReaderConfig {
   userSettings?: any;
   initialAnnotations?: any;
   lastReadingPosition?: any;
-  upLinkUrl?: any;
   rights?: Partial<ReaderRights>;
   api?: Partial<NavigatorAPI>;
   tts?: Partial<TTSModuleConfig>;

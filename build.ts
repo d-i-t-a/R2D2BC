@@ -1,17 +1,16 @@
 import { build as esbuild, BuildOptions } from "esbuild";
-import util from "util";
+import * as util from "util";
 import chalk from "chalk";
-import { Options as SassOptions } from "node-sass";
 import { promises as fs } from "fs";
 import { watch } from "chokidar";
 import { debounce } from "debounce";
 const copy = util.promisify(require("copy"));
 const rimraf = util.promisify(require("rimraf"));
 const exec = util.promisify(require("child_process").exec);
-const sass = util.promisify(require("node-sass").render);
+const sass = util.promisify(require("sass").render);
 
 const isWatchEnabled = process.argv[2] === "-w";
-// for now we bundle for production whenever we aren't in watch mode
+// for now, we bundle for production whenever we aren't in watch mode
 const isProduction = !isWatchEnabled;
 
 /**
@@ -65,17 +64,18 @@ async function buildTs(
  * Compiles SASS to CSS and writes it to the filesystem
  */
 async function compileCss(input: string, filename: string) {
-  const options: SassOptions = {
+  const options = {
     file: input,
     sourceMap: true,
     outFile: `dist/${filename}.css`,
     bundle: false,
+    outputStyle: "compressed",
   };
   try {
     const result = await sass(options);
     const fullPath = `dist/${filename}`;
     const p1 = fs.writeFile(`${fullPath}.css`, result.css);
-    const p2 = fs.writeFile(`${fullPath}.map.css`, result.map);
+    const p2 = fs.writeFile(`${fullPath}.css.map`, result.map);
     await Promise.all([p1, p2]);
     logBundled("Compiled SASS", `${fullPath}.css`);
   } catch (e) {

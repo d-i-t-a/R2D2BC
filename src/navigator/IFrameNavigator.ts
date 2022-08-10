@@ -26,11 +26,7 @@ import EventHandler, {
 } from "../utils/EventHandler";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
-import {
-  readerError,
-  readerLoading,
-  simpleUpLinkTemplate,
-} from "../utils/HTMLTemplates";
+import { readerError, readerLoading } from "../utils/HTMLTemplates";
 import {
   Annotation,
   Locations,
@@ -118,11 +114,6 @@ export interface NavigatorAPI {
   onError?: (e: Error) => void;
 }
 
-export interface UpLinkConfig {
-  url?: URL;
-  label?: string;
-  ariaLabel?: string;
-}
 export interface IFrameAttributes {
   margin: number;
   navHeight?: number;
@@ -137,7 +128,6 @@ export interface IFrameNavigatorConfig {
   publication: Publication;
   settings: UserSettings;
   annotator?: Annotator;
-  upLink?: UpLinkConfig;
   initialLastReadingPosition?: ReadingPosition;
   rights: Partial<ReaderRights>;
   api?: Partial<NavigatorAPI>;
@@ -196,7 +186,6 @@ export interface ReaderConfig {
   userSettings?: any;
   initialAnnotations?: any;
   lastReadingPosition?: any;
-  upLinkUrl?: any;
   rights?: Partial<ReaderRights>;
   api?: Partial<NavigatorAPI>;
   tts?: Partial<TTSModuleConfig>;
@@ -258,8 +247,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   private readonly touchEventHandler: TouchEventHandler;
   private readonly keyboardEventHandler: KeyboardEventHandler;
   private readonly sampleReadEventHandler: SampleReadEventHandler;
-  private readonly upLinkConfig: UpLinkConfig | undefined;
-  private upLink: HTMLAnchorElement | undefined = undefined;
 
   private nextChapterBottomAnchorElement: HTMLAnchorElement;
   private previousChapterTopAnchorElement: HTMLAnchorElement;
@@ -326,7 +313,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     const navigator = new this(
       config.settings,
       config.annotator || undefined,
-      config.upLink || undefined,
       config.initialLastReadingPosition || undefined,
       config.publication,
       config.api,
@@ -349,7 +335,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   protected constructor(
     settings: UserSettings,
     annotator: Annotator | undefined = undefined,
-    upLinkConfig: UpLinkConfig | undefined = undefined,
     initialLastReadingPosition: ReadingPosition | undefined = undefined,
     publication: Publication,
     api?: Partial<NavigatorAPI>,
@@ -370,7 +355,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.eventHandler = new EventHandler(this);
     this.touchEventHandler = new TouchEventHandler(this);
     this.keyboardEventHandler = new KeyboardEventHandler(this);
-    this.upLinkConfig = upLinkConfig;
     this.initialLastReadingPosition = initialLastReadingPosition;
     this.publication = publication;
     this.api = api;
@@ -1237,36 +1221,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         } else {
           this.landmarksSection.parentElement?.removeChild(
             this.landmarksSection
-          );
-        }
-      }
-
-      if (
-        (this.links || this.linksTopLeft) &&
-        this.upLinkConfig &&
-        this.upLinkConfig.url
-      ) {
-        const upUrl = this.upLinkConfig.url;
-        const upLabel = this.upLinkConfig.label || "";
-        const upAriaLabel = this.upLinkConfig.ariaLabel || upLabel;
-        var upHTML = simpleUpLinkTemplate(upUrl.href, upLabel, upAriaLabel);
-        const upParent: HTMLLIElement = document.createElement("li");
-        upParent.classList.add("uplink-wrapper");
-        upParent.innerHTML = upHTML;
-        if (this.links) {
-          this.links.insertBefore(upParent, this.links.firstChild);
-          this.upLink = HTMLUtilities.findRequiredElement(
-            this.links,
-            "a[rel=up]"
-          );
-        } else {
-          this.linksTopLeft.insertBefore(
-            upParent,
-            this.linksTopLeft.firstChild
-          );
-          this.upLink = HTMLUtilities.findRequiredElement(
-            this.linksTopLeft,
-            "a[rel=up]"
           );
         }
       }

@@ -41,7 +41,6 @@ import {
   IFrameNavigator,
   IFrameAttributes,
   ReaderConfig,
-  UpLinkConfig,
   ReaderRights,
 } from "./navigator/IFrameNavigator";
 import LocalAnnotator from "./store/LocalAnnotator";
@@ -158,8 +157,6 @@ export default class D2Reader {
 
     const annotator = new LocalAnnotator({ store: store });
 
-    const upLink: UpLinkConfig = initialConfig.upLinkUrl ?? undefined;
-
     publication.sample = initialConfig.sample;
 
     // update our config based on what we know from the publication
@@ -212,7 +209,6 @@ export default class D2Reader {
       publication: publication,
       settings,
       annotator: annotator,
-      upLink: upLink,
       initialLastReadingPosition: initialConfig.lastReadingPosition,
       api: initialConfig.api,
       rights: rights,

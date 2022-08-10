@@ -236,7 +236,6 @@
             return params;
         };
         let urlParams = getURLQueryParams();
-        let upLink = { url: new URL("/", window.location.href), label: "Back", ariaLabel: "Go back" };
         let injectables = [
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
@@ -269,7 +268,6 @@
 
         let d2reader;
         D2Reader.load({
-            upLinkUrl: upLink,
             url: new URL(urlParams['url']),
             attributes: {
                 margin: 120,

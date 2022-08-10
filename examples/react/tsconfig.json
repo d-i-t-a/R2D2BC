@@ -35,6 +35,7 @@
     "declaration": true,
     "preserveConstEnums": true,
     "strictNullChecks": true,
+    "strict": true,
     "target": "es6",
     "skipLibCheck": true,
     "jsx": "react",

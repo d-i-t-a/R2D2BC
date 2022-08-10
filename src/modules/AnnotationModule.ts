@@ -59,7 +59,7 @@ export interface AnnotationModuleProperties {
 export interface AnnotationModuleConfig extends AnnotationModuleProperties {
   annotator: Annotator;
   headerMenu?: HTMLElement | null;
-  rights: ReaderRights;
+  rights: Partial<ReaderRights>;
   publication: Publication;
   delegate: IFrameNavigator;
   initialAnnotations?: any;
@@ -69,7 +69,7 @@ export interface AnnotationModuleConfig extends AnnotationModuleProperties {
 
 export class AnnotationModule implements ReaderModule {
   readonly annotator: Annotator | null;
-  private rights: ReaderRights;
+  private rights: Partial<ReaderRights>;
   private publication: Publication;
   private highlightsView: HTMLDivElement;
   private readonly headerMenu?: HTMLElement | null;
@@ -99,7 +99,7 @@ export class AnnotationModule implements ReaderModule {
 
   public constructor(
     annotator: Annotator,
-    rights: ReaderRights,
+    rights: Partial<ReaderRights>,
     publication: Publication,
     delegate: IFrameNavigator,
     initialAnnotations: any,

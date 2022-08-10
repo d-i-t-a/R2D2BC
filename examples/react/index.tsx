@@ -19,7 +19,7 @@ const App = () => {
     const url = new URL("https://alice.dita.digital/manifest.json");
     D2Reader.load({
       url,
-      injectables: injectables as any,
+      injectables: injectables,
       injectablesFixed: [],
     }).then(setReader);
   }, []);

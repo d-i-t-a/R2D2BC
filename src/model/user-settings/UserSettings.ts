@@ -30,11 +30,7 @@ import { ReadiumCSS } from "./ReadiumCSS";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { IS_DEV } from "../../utils";
 import { addEventListenerOptional } from "../../utils/EventHandler";
-import {
-  Injectable,
-  NavigatorAPI,
-  ReaderUI,
-} from "../../navigator/IFrameNavigator";
+import { Injectable, NavigatorAPI } from "../../navigator/IFrameNavigator";
 import ReflowableBookView from "../../views/ReflowableBookView";
 import FixedBookView from "../../views/FixedBookView";
 import BookView from "../../views/BookView";
@@ -44,8 +40,7 @@ export interface UserSettingsConfig {
   store: Store;
   initialUserSettings: InitialUserSettings;
   headerMenu?: HTMLElement | null;
-  material?: ReaderUI;
-  api?: NavigatorAPI;
+  api?: Partial<NavigatorAPI>;
   injectables?: Array<Injectable>;
   layout: string;
 }
@@ -161,7 +156,7 @@ export class UserSettings implements IUserSettings {
 
   private settingsView: HTMLDivElement;
   private readonly headerMenu?: HTMLElement | null;
-  api?: NavigatorAPI;
+  api?: Partial<NavigatorAPI>;
   injectables?: Array<Injectable>;
 
   private iframe: HTMLIFrameElement;
@@ -305,7 +300,7 @@ export class UserSettings implements IUserSettings {
   protected constructor(
     store: Store,
     headerMenu?: HTMLElement | null,
-    api?: NavigatorAPI,
+    api?: Partial<NavigatorAPI>,
     injectables?: Array<Injectable>,
     layout?: string
   ) {

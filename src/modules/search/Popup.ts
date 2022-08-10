@@ -44,7 +44,7 @@ export class Popup {
         event.preventDefault();
         event.stopPropagation();
 
-        await fetch(absolute, this.navigator.requestInit)
+        await fetch(absolute, this.navigator.requestConfig)
           .then((r) => r.text())
           .then(async (data) => {
             const parser = new DOMParser();
@@ -114,7 +114,7 @@ export class Popup {
         d2content.className = "d2-popover-content";
         d2wrapper.appendChild(d2content);
 
-        await fetch(absolute, this.navigator.requestInit)
+        await fetch(absolute, this.navigator.requestConfig)
           .then((r) => r.text())
           .then(async (data) => {
             d2content.innerHTML = data;

@@ -17,10 +17,10 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../utils";
 import { Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
 import { IFrameNavigator } from "../navigator/IFrameNavigator";
 import { Popup } from "../modules/search/Popup";
+import log from "loglevel";
 
 export function addEventListenerOptional(
   element: any,
@@ -110,7 +110,7 @@ export default class EventHandler {
   private isReadingOrderInternal = (
     clickedLink: HTMLAnchorElement
   ): boolean => {
-    if (IS_DEV) console.log("clickedLink: ", clickedLink);
+    log.log("clickedLink: ", clickedLink);
     const isEpubInternal = this.linkInPublication(
       this.navigator.publication.readingOrder,
       clickedLink.href
@@ -119,7 +119,7 @@ export default class EventHandler {
   };
 
   private isResourceInternal = (clickedLink: HTMLAnchorElement): boolean => {
-    if (IS_DEV) console.log("clickedLink: ", clickedLink);
+    log.log("clickedLink: ", clickedLink);
     const isEpubInternal = this.linkInPublication(
       this.navigator.publication.resources,
       clickedLink.href
@@ -130,7 +130,7 @@ export default class EventHandler {
   private handleLinks = async (
     event: MouseEvent | TouchEvent
   ): Promise<void> => {
-    if (IS_DEV) console.log("R2 Click Handler");
+    log.log("R2 Click Handler");
 
     const link = this.checkForLink(event);
     if (link) {

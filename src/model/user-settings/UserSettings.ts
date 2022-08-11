@@ -28,12 +28,12 @@ import {
 } from "./UserProperties";
 import { ReadiumCSS } from "./ReadiumCSS";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { IS_DEV } from "../../utils";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import { Injectable, NavigatorAPI } from "../../navigator/IFrameNavigator";
 import ReflowableBookView from "../../views/ReflowableBookView";
 import FixedBookView from "../../views/FixedBookView";
 import BookView from "../../views/BookView";
+import log from "loglevel";
 
 export interface UserSettingsConfig {
   /** Store to save the user's selections in. */
@@ -113,7 +113,7 @@ export class UserSettings implements IUserSettings {
       ReadiumCSS.SCROLL_KEY
     );
 
-    return scroll === false;
+    return !scroll;
   }
   async isScrollMode() {
     return !(await this.isPaginated());
@@ -185,7 +185,7 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.verticalScroll;
           await settings.saveProperty(prop);
         }
-        if (IS_DEV) console.log(settings.verticalScroll);
+        log.log(settings.verticalScroll);
       }
       if (initialUserSettings.appearance) {
         settings.appearance = UserSettings.appearanceValues.findIndex(
@@ -196,7 +196,7 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.appearance;
           await settings.saveProperty(prop);
         }
-        if (IS_DEV) console.log(settings.appearance);
+        log.log(settings.appearance);
       }
       if (initialUserSettings.fontSize) {
         settings.fontSize = initialUserSettings.fontSize;
@@ -205,7 +205,7 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.fontSize;
           await settings.saveProperty(prop);
         }
-        if (IS_DEV) console.log(settings.fontSize);
+        log.log(settings.fontSize);
       }
       if (initialUserSettings.fontFamily) {
         settings.fontFamily = UserSettings.fontFamilyValues.findIndex(
@@ -216,7 +216,7 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.fontFamily;
           await settings.saveProperty(prop);
         }
-        if (IS_DEV) console.log(settings.fontFamily);
+        log.log(settings.fontFamily);
         if (settings.fontFamily !== 0) {
           settings.fontOverride = true;
         }
@@ -233,7 +233,7 @@ export class UserSettings implements IUserSettings {
           await settings.saveProperty(prop);
         }
         // settings.publisherDefaults = false;
-        if (IS_DEV) console.log(settings.textAlignment);
+        log.log(settings.textAlignment);
       }
       if (initialUserSettings.columnCount) {
         settings.columnCount = UserSettings.columnCountValues.findIndex(
@@ -246,7 +246,7 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.columnCount;
           await settings.saveProperty(prop);
         }
-        if (IS_DEV) console.log(settings.columnCount);
+        log.log(settings.columnCount);
       }
       if (initialUserSettings.wordSpacing) {
         settings.wordSpacing = initialUserSettings.wordSpacing;
@@ -257,7 +257,7 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.wordSpacing;
           await settings.saveProperty(prop);
         }
-        if (IS_DEV) console.log(settings.wordSpacing);
+        log.log(settings.wordSpacing);
       }
       if (initialUserSettings.letterSpacing) {
         settings.letterSpacing = initialUserSettings.letterSpacing;
@@ -268,7 +268,7 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.letterSpacing;
           await settings.saveProperty(prop);
         }
-        if (IS_DEV) console.log(settings.letterSpacing);
+        log.log(settings.letterSpacing);
       }
       if (initialUserSettings.pageMargins) {
         settings.pageMargins = initialUserSettings.pageMargins;
@@ -279,7 +279,7 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.pageMargins;
           await settings.saveProperty(prop);
         }
-        if (IS_DEV) console.log(settings.pageMargins);
+        log.log(settings.pageMargins);
       }
       if (initialUserSettings.lineHeight) {
         settings.lineHeight = initialUserSettings.lineHeight;
@@ -288,7 +288,7 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.lineHeight;
           await settings.saveProperty(prop);
         }
-        if (IS_DEV) console.log(settings.lineHeight);
+        log.log(settings.lineHeight);
       }
       settings.userProperties = settings.getUserSettings();
       await settings.initialise();
@@ -328,9 +328,7 @@ export class UserSettings implements IUserSettings {
   }
 
   stop() {
-    if (IS_DEV) {
-      console.log("book settings stop");
-    }
+    log.log("book settings stop");
   }
 
   private async initialise() {
@@ -717,10 +715,10 @@ export class UserSettings implements IUserSettings {
     if (this.view) {
       this.view.iframe = iframe;
     }
-    if (this.settingsView) this.renderControls(this.settingsView);
+    if (this.settingsView) UserSettings.renderControls(this.settingsView);
   }
 
-  private renderControls(element: HTMLElement): void {
+  private static renderControls(element: HTMLElement): void {
     // Clicking the settings view outside the ul hides it, but clicking inside the ul keeps it up.
     addEventListenerOptional(
       HTMLUtilities.findElement(element, "ul"),
@@ -801,9 +799,7 @@ export class UserSettings implements IUserSettings {
     };
     if (this.api?.updateSettings) {
       this.api?.updateSettings(userSettings).then((_) => {
-        if (IS_DEV) {
-          console.log("api updated user settings", userSettings);
-        }
+        log.log("api updated user settings", JSON.stringify(userSettings));
       });
     }
   }

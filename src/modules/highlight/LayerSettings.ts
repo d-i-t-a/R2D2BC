@@ -22,7 +22,7 @@ import {
   UserProperty,
   UserProperties,
 } from "../../model/user-settings/UserProperties";
-import { IS_DEV } from "../../utils";
+import log from "loglevel";
 
 export interface LayerConfig {
   store: Store;
@@ -47,9 +47,7 @@ export class LayerSettings implements ILayerSettings {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("MediaOverlay settings stop");
-    }
+    log.log("MediaOverlay settings stop");
   }
 
   private async initialize() {

@@ -39,7 +39,6 @@ import {
 } from "./renderer/iframe/selection";
 import { uniqueCssSelector } from "./renderer/common/cssselector2";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
-import { IS_DEV } from "../../utils";
 import { icons, iconTemplateColored } from "../../utils/IconLib";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { TTSModule2 } from "../TTS/TTSModule2";
@@ -48,6 +47,7 @@ import * as lodash from "lodash";
 import { LayerSettings } from "./LayerSettings";
 import { Switchable } from "../../model/user-settings/UserProperties";
 import { Popup } from "../search/Popup";
+import log from "loglevel";
 
 export enum HighlightContainer {
   R2_ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER",
@@ -1261,11 +1261,7 @@ export class TextHighlighter {
                                 self.delegate.annotationModule
                                   ?.updateAnnotation(anno)
                                   .then(async () => {
-                                    if (IS_DEV) {
-                                      console.log(
-                                        "update highlight " + anno.id
-                                      );
-                                    }
+                                    log.log("update highlight " + anno.id);
                                   });
                               }
                             });
@@ -1514,11 +1510,9 @@ export class TextHighlighter {
 
           return rect;
         } catch (error) {
-          if (IS_DEV) {
-            console.log("measureTextNode " + error);
-            console.log("measureTextNode " + node);
-            console.log(node.textContent);
-          }
+          log.log("measureTextNode " + error);
+          log.log("measureTextNode " + node);
+          log.log(`${node.textContent}`);
         }
       }
 
@@ -2299,9 +2293,7 @@ export class TextHighlighter {
         const payload: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK = {
           highlight: foundHighlight,
         };
-        if (IS_DEV) {
-          console.log(payload);
-        }
+        log.log(JSON.stringify(payload));
         let self = this;
         let anno;
         if (self.delegate.rights.enableAnnotations) {
@@ -2321,9 +2313,7 @@ export class TextHighlighter {
         }
 
         if (anno?.id) {
-          if (IS_DEV) {
-            console.log("selected highlight " + anno.id);
-          }
+          log.log("selected highlight " + anno.id);
           self.lastSelectedHighlight = anno.id;
 
           let toolbox = document.getElementById("highlight-toolbox");
@@ -2352,9 +2342,7 @@ export class TextHighlighter {
                 self.delegate.annotationModule
                   ?.updateAnnotation(anno)
                   .then(async () => {
-                    if (IS_DEV) {
-                      console.log("update highlight " + anno.id);
-                    }
+                    log.log("update highlight " + anno.id);
                     if (toolbox) {
                       toolbox.style.display = "none";
                     }
@@ -2394,9 +2382,7 @@ export class TextHighlighter {
                   self.delegate.annotationModule
                     ?.deleteSelectedHighlight(anno)
                     .then(async () => {
-                      if (IS_DEV) {
-                        console.log("delete highlight " + anno.id);
-                      }
+                      log.log("delete highlight " + anno.id);
                       if (toolbox) {
                         toolbox.style.display = "none";
                       }
@@ -2406,9 +2392,7 @@ export class TextHighlighter {
                   self.delegate.bookmarkModule
                     ?.deleteSelectedHighlight(anno)
                     .then(async () => {
-                      if (IS_DEV) {
-                        console.log("delete highlight " + anno.id);
-                      }
+                      log.log("delete highlight " + anno.id);
                       if (toolbox) {
                         toolbox.style.display = "none";
                       }
@@ -2451,7 +2435,7 @@ export class TextHighlighter {
           let result = this.delegate.definitionsModule?.properties?.definitions?.filter(
             (el: any) => el.order === Number(foundElement?.dataset.order)
           )[0];
-          console.log(result);
+          log.log(result);
           if (this.delegate.definitionsModule?.api?.click) {
             this.delegate.definitionsModule.api?.click(
               lodash.omit(result, "callbacks"),
@@ -3092,9 +3076,7 @@ export class TextHighlighter {
           )) as Annotation;
         }
 
-        if (IS_DEV) {
-          console.log("selected highlight " + anno.id);
-        }
+        log.log("selected highlight " + anno.id);
 
         self.lastSelectedHighlight = anno.id;
         let toolbox = document.getElementById("highlight-toolbox");
@@ -3122,9 +3104,7 @@ export class TextHighlighter {
               self.delegate.annotationModule
                 ?.updateAnnotation(anno)
                 .then(async () => {
-                  if (IS_DEV) {
-                    console.log("update highlight " + anno.id);
-                  }
+                  log.log("update highlight " + anno.id);
                   toolbox!!.style.display = "none";
                   self.selectionMenuClosed();
                 });
@@ -3158,9 +3138,7 @@ export class TextHighlighter {
                 self.delegate.annotationModule
                   ?.deleteSelectedHighlight(anno)
                   .then(async () => {
-                    if (IS_DEV) {
-                      console.log("delete highlight " + anno.id);
-                    }
+                    log.log("delete highlight " + anno.id);
                     toolbox!!.style.display = "none";
                     self.selectionMenuClosed();
                   });
@@ -3168,9 +3146,7 @@ export class TextHighlighter {
                 self.delegate.bookmarkModule
                   ?.deleteSelectedHighlight(anno)
                   .then(async () => {
-                    if (IS_DEV) {
-                      console.log("delete highlight " + anno.id);
-                    }
+                    log.log("delete highlight " + anno.id);
                     toolbox!!.style.display = "none";
                     self.selectionMenuClosed();
                   });

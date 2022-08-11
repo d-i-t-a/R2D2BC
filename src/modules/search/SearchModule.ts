@@ -29,13 +29,13 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
-import { IS_DEV } from "../../utils";
 import { DEFAULT_BACKGROUND_COLOR } from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { ISelectionInfo } from "../highlight/common/selection";
 import { SHA256 } from "jscrypto";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import { TextHighlighter } from "../highlight/TextHighlighter";
+import log from "loglevel";
 
 export interface SearchModuleAPI {}
 
@@ -103,9 +103,7 @@ export class SearchModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Search module stop");
-    }
+    log.log("Search module stop");
     removeEventListenerOptional(
       this.searchInput,
       "keypress",

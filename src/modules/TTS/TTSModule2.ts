@@ -17,7 +17,6 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../../utils";
 import { ReaderModule } from "../ReaderModule";
 import { AnnotationMarker } from "../../model/Locator";
 import {
@@ -42,6 +41,7 @@ import {
   _getCssSelectorOptions,
   ISelectionInfo,
 } from "../highlight/common/selection";
+import log from "loglevel";
 
 export class TTSModule2 implements ReaderModule {
   private tts: TTSSettings;
@@ -190,14 +190,14 @@ export class TTSModule2 implements ReaderModule {
 
     let s = setSpeech();
     s.then(async (voices: SpeechSynthesisVoice[]) => {
-      if (IS_DEV) console.log(voices);
+      log.log(voices);
       this.voices = [];
       voices.forEach((voice) => {
         if (voice.localService === true) {
           this.voices.push(voice);
         }
       });
-      if (IS_DEV) console.log(this.voices);
+      log.log(this.voices);
       if (first) {
         // preferred-languages
         if (this.headerMenu) {
@@ -349,7 +349,7 @@ export class TTSModule2 implements ReaderModule {
     utterance.pitch = this.tts.pitch;
     utterance.volume = this.tts.volume;
 
-    if (IS_DEV) console.log("this.tts.voice.lang", this.tts.voice.lang);
+    log.log("this.tts.voice.lang", this.tts.voice.lang);
 
     var initialVoiceHasHyphen = true;
     if (this.tts.voice && this.tts.voice.lang) {
@@ -359,8 +359,8 @@ export class TTSModule2 implements ReaderModule {
         initialVoiceHasHyphen = true;
       }
     }
-    if (IS_DEV) console.log("initialVoiceHasHyphen", initialVoiceHasHyphen);
-    if (IS_DEV) console.log("voices", this.voices);
+    log.log("initialVoiceHasHyphen", initialVoiceHasHyphen);
+    log.log("voices", this.voices);
     var initialVoice;
     if (initialVoiceHasHyphen === true) {
       initialVoice =
@@ -396,12 +396,11 @@ export class TTSModule2 implements ReaderModule {
             : undefined;
       }
     }
-    if (IS_DEV) console.log("initialVoice", initialVoice);
+    log.log("initialVoice", initialVoice);
 
     var publicationVoiceHasHyphen =
       self.delegate.publication.Metadata.Language[0].indexOf("-") !== -1;
-    if (IS_DEV)
-      console.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
+    log.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
     var publicationVoice;
     if (publicationVoiceHasHyphen === true) {
       publicationVoice =
@@ -433,10 +432,10 @@ export class TTSModule2 implements ReaderModule {
             })[0]
           : undefined;
     }
-    if (IS_DEV) console.log("publicationVoice", publicationVoice);
+    log.log("publicationVoice", publicationVoice);
 
     var defaultVoiceHasHyphen = navigator.language.indexOf("-") !== -1;
-    if (IS_DEV) console.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen);
+    log.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen);
     var defaultVoice;
     if (defaultVoiceHasHyphen === true) {
       defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
@@ -455,24 +454,24 @@ export class TTSModule2 implements ReaderModule {
         return lang.includes(navigator.language) && voice.localService === true;
       })[0];
     }
-    if (IS_DEV) console.log("defaultVoice", defaultVoice);
+    log.log("defaultVoice", defaultVoice);
 
     if (initialVoice) {
-      if (IS_DEV) console.log("initialVoice");
+      log.log("initialVoice");
       utterance.voice = initialVoice;
     } else if (publicationVoice) {
-      if (IS_DEV) console.log("publicationVoice");
+      log.log("publicationVoice");
       utterance.voice = publicationVoice;
     } else if (defaultVoice) {
-      if (IS_DEV) console.log("defaultVoice");
+      log.log("defaultVoice");
       utterance.voice = defaultVoice;
     }
     if (utterance.voice !== undefined && utterance.voice !== null) {
       utterance.lang = utterance.voice.lang;
-      if (IS_DEV) console.log("utterance.voice.lang", utterance.voice.lang);
-      if (IS_DEV) console.log("utterance.lang", utterance.lang);
+      log.log("utterance.voice.lang", utterance.voice.lang);
+      log.log("utterance.lang", utterance.lang);
     }
-    if (IS_DEV) console.log("navigator.language", navigator.language);
+    log.log("navigator.language", navigator.language);
 
     setTimeout(() => {
       window.speechSynthesis.speak(utterance);
@@ -520,14 +519,14 @@ export class TTSModule2 implements ReaderModule {
               onend();
             }
             if (idx > idxEnd) {
-              if (IS_DEV) console.log("utterance ended");
+              log.log("utterance ended");
               self.highlighter.doneSpeaking();
               self.api?.finished();
               self.delegate.emit("readaloud.finished", "finished");
             }
           }
         } else {
-          if (IS_DEV) console.log("utterance ended");
+          log.log("utterance ended");
           self.highlighter.doneSpeaking();
           self.api?.finished();
           self.delegate.emit("readaloud.finished", "finished");
@@ -708,9 +707,7 @@ export class TTSModule2 implements ReaderModule {
   }
 
   stop() {
-    if (IS_DEV) {
-      console.log("TTS module stop");
-    }
+    log.log("TTS module stop");
     removeEventListenerOptional(document, "wheel", this.wheel.bind(this));
     removeEventListenerOptional(this.body, "wheel", this.wheel.bind(this));
     removeEventListenerOptional(document, "keydown", this.wheel.bind(this));
@@ -941,7 +938,7 @@ export class TTSModule2 implements ReaderModule {
     utterance.pitch = this.tts.pitch;
     utterance.volume = this.tts.volume;
 
-    if (IS_DEV) console.log("this.tts.voice.lang", this.tts.voice.lang);
+    log.log("this.tts.voice.lang", this.tts.voice.lang);
 
     var initialVoiceHasHyphen = true;
     if (this.tts.voice && this.tts.voice.lang) {
@@ -951,8 +948,8 @@ export class TTSModule2 implements ReaderModule {
         initialVoiceHasHyphen = true;
       }
     }
-    if (IS_DEV) console.log("initialVoiceHasHyphen", initialVoiceHasHyphen);
-    if (IS_DEV) console.log("voices", this.voices);
+    log.log("initialVoiceHasHyphen", initialVoiceHasHyphen);
+    log.log("voices", this.voices);
     var initialVoice;
     if (initialVoiceHasHyphen === true) {
       initialVoice =
@@ -988,13 +985,12 @@ export class TTSModule2 implements ReaderModule {
             : undefined;
       }
     }
-    if (IS_DEV) console.log("initialVoice", initialVoice);
+    log.log("initialVoice", initialVoice);
 
     var self = this;
     var publicationVoiceHasHyphen =
       self.delegate.publication.Metadata.Language[0].indexOf("-") !== -1;
-    if (IS_DEV)
-      console.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
+    log.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
     var publicationVoice;
     if (publicationVoiceHasHyphen === true) {
       publicationVoice =
@@ -1026,10 +1022,10 @@ export class TTSModule2 implements ReaderModule {
             })[0]
           : undefined;
     }
-    if (IS_DEV) console.log("publicationVoice", publicationVoice);
+    log.log("publicationVoice", publicationVoice);
 
     var defaultVoiceHasHyphen = navigator.language.indexOf("-") !== -1;
-    if (IS_DEV) console.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen);
+    log.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen);
     var defaultVoice;
     if (defaultVoiceHasHyphen === true) {
       defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
@@ -1048,27 +1044,27 @@ export class TTSModule2 implements ReaderModule {
         return lang.includes(navigator.language) && voice.localService === true;
       })[0];
     }
-    if (IS_DEV) console.log("defaultVoice", defaultVoice);
+    log.log("defaultVoice", defaultVoice);
 
     if (initialVoice) {
-      if (IS_DEV) console.log("initialVoice");
+      log.log("initialVoice");
       utterance.voice = initialVoice;
     } else if (publicationVoice) {
-      if (IS_DEV) console.log("publicationVoice");
+      log.log("publicationVoice");
       utterance.voice = publicationVoice;
     } else if (defaultVoice) {
-      if (IS_DEV) console.log("defaultVoice");
+      log.log("defaultVoice");
       utterance.voice = defaultVoice;
     }
     if (utterance.voice !== undefined && utterance.voice !== null) {
       utterance.lang = utterance.voice.lang;
-      if (IS_DEV) console.log("utterance.voice.lang", utterance.voice.lang);
-      if (IS_DEV) console.log("utterance.lang", utterance.lang);
+      log.log("utterance.voice.lang", utterance.voice.lang);
+      log.log("utterance.lang", utterance.lang);
     }
-    if (IS_DEV) console.log("navigator.language", navigator.language);
+    log.log("navigator.language", navigator.language);
 
     utterance.onboundary = (ev: SpeechSynthesisEvent) => {
-      console.log(ev.name);
+      log.log(ev.name);
       this.updateTTSInfo(
         ttsQueueItem,
         ev.charIndex,
@@ -1169,24 +1165,22 @@ export class TTSModule2 implements ReaderModule {
     let txtToCheck = ttsQueueItemRef.item.combinedText;
     let charIndexAdjusted = charIndex;
 
-    if (IS_DEV) {
-      if (utteranceText !== txtToCheck) {
-        console.log(
-          "TTS utteranceText DIFF?? ",
-          `[[${utteranceText}]]`,
-          `[[${txtToCheck}]]`
-        );
-      }
-      const ttsWord = utteranceText.substr(charIndex, charLength);
-      if (ttsWord !== word) {
-        console.log(
-          "TTS word DIFF?? ",
-          `[[${ttsWord}]]`,
-          `[[${word}]]`,
-          `${charIndex}--${charLength}`,
-          `${start}--${end - start}`
-        );
-      }
+    if (utteranceText !== txtToCheck) {
+      log.log(
+        "TTS utteranceText DIFF?? ",
+        `[[${utteranceText}]]`,
+        `[[${txtToCheck}]]`
+      );
+    }
+    const ttsWord = utteranceText.substr(charIndex, charLength);
+    if (ttsWord !== word) {
+      log.log(
+        "TTS word DIFF?? ",
+        `[[${ttsWord}]]`,
+        `[[${word}]]`,
+        `${charIndex}--${charLength}`,
+        `${start}--${end - start}`
+      );
     }
 
     let acc = 0;
@@ -1231,8 +1225,8 @@ export class TTSModule2 implements ReaderModule {
             return "";
           }
         } catch (err) {
-          console.log("uniqueCssSelector:");
-          console.log(err);
+          log.log("uniqueCssSelector:");
+          log.error(err);
           return "";
         }
       }

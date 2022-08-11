@@ -41,7 +41,7 @@ import {
 } from "./highlight/common/highlight";
 import { getClientRectsNoOverlap } from "./highlight/common/rect-utils";
 import { _highlights } from "./highlight/TextHighlighter";
-import { IS_DEV } from "../utils";
+import log from "loglevel";
 
 export interface BookmarkModuleAPI {
   addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
@@ -112,9 +112,7 @@ export class BookmarkModule implements ReaderModule {
   }
 
   stop() {
-    if (IS_DEV) {
-      console.log("Bookmark module stop");
-    }
+    log.log("Bookmark module stop");
   }
 
   protected async start(): Promise<void> {
@@ -188,18 +186,14 @@ export class BookmarkModule implements ReaderModule {
         await this.api?.deleteBookmark(bookmark);
         let deleted = await this.annotator.deleteBookmark(bookmark);
 
-        if (IS_DEV) {
-          console.log("Bookmark deleted " + JSON.stringify(deleted));
-        }
+        log.log("Bookmark deleted " + JSON.stringify(deleted));
         await this.showBookmarks();
         await this.drawBookmarks();
         return deleted;
       } else {
         let deleted = await this.annotator.deleteBookmark(bookmark);
 
-        if (IS_DEV) {
-          console.log("Bookmark deleted " + JSON.stringify(deleted));
-        }
+        log.log("Bookmark deleted " + JSON.stringify(deleted));
         await this.showBookmarks();
         await this.drawBookmarks();
         return deleted;
@@ -276,21 +270,17 @@ export class BookmarkModule implements ReaderModule {
             if (result) {
               bookmark = result;
             }
-            if (IS_DEV) console.log(bookmark);
+            log.log(bookmark);
             let saved = this.annotator.saveBookmark(bookmark);
 
-            if (IS_DEV) {
-              console.log("Bookmark added " + JSON.stringify(saved));
-            }
+            log.log("Bookmark added " + JSON.stringify(saved));
             this.showBookmarks();
             await this.drawBookmarks();
             return saved;
           } else {
             let saved = this.annotator.saveBookmark(bookmark);
 
-            if (IS_DEV) {
-              console.log("Bookmark added " + JSON.stringify(saved));
-            }
+            log.log("Bookmark added " + JSON.stringify(saved));
             this.showBookmarks();
             await this.drawBookmarks();
             return saved;
@@ -418,9 +408,7 @@ export class BookmarkModule implements ReaderModule {
           ?.removeAllRanges();
         if (book) {
           return this.saveAnnotation(book[0]).then((anno) => {
-            if (IS_DEV) {
-              console.log("saved bookmark " + anno?.id);
-            }
+            log.log("saved bookmark " + anno?.id);
           });
         }
       }
@@ -679,9 +667,7 @@ export class BookmarkModule implements ReaderModule {
     if (this.annotator) {
       var deleted = await this.annotator.deleteAnnotation(id);
 
-      if (IS_DEV) {
-        console.log("Highlight deleted " + JSON.stringify(deleted));
-      }
+      log.log("Highlight deleted " + JSON.stringify(deleted));
       await this.showBookmarks();
       await this.drawBookmarks();
       return deleted;
@@ -843,9 +829,7 @@ export class BookmarkModule implements ReaderModule {
       this.delegate.stopReadAloud();
       this.delegate.navigate(locator);
     } else {
-      if (IS_DEV) {
-        console.log("bookmark data missing: ", event);
-      }
+      log.log("bookmark data missing: ", event);
     }
   }
 
@@ -854,17 +838,13 @@ export class BookmarkModule implements ReaderModule {
     event: MouseEvent,
     locator: any
   ): void {
-    if (IS_DEV) {
-      console.log("bookmark data locator: ", locator);
-    }
+    log.log("bookmark data locator: ", locator);
     if (locator) {
       if (type === AnnotationType.Bookmark) {
         this.deleteBookmark(locator);
       }
     } else {
-      if (IS_DEV) {
-        console.log("bookmark data missing: ", event);
-      }
+      log.log("bookmark data missing: ", event);
     }
   }
 

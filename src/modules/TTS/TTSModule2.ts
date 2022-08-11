@@ -330,6 +330,27 @@ export class TTSModule2 implements ReaderModule {
             }
 
             utterance = new SpeechSynthesisUtterance(textToBeSpoken);
+            log.log(selectionInfo);
+            log.log(
+              textToBeSpoken,
+              selectionInfo.range?.commonAncestorContainer.textContent
+            );
+            log.log(ttsQueueItem);
+            log.log(ttsQueueItem.item.textNodes);
+            log.log(startIndex);
+            for (let i = 0; i < ttsQueueItem.item.textNodes.length; i++) {
+              let node: any = ttsQueueItem.item.textNodes[i];
+              if (node === selectionInfo.range?.commonAncestorContainer) {
+                break;
+              }
+              log.log(node.length);
+              startIndex += node.length;
+            }
+            let node = ttsQueueItem.item.textNodes.filter((node) => {
+              return node === selectionInfo.range?.commonAncestorContainer;
+            })[0];
+            log.log(node);
+
             utterance.onboundary = (ev: SpeechSynthesisEvent) => {
               this.updateTTSInfo(
                 ttsQueueItem,

@@ -17,7 +17,6 @@
  * Licensed to: Allvit under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../../utils";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
@@ -28,6 +27,7 @@ import {
 import { Locator, ReadingPosition } from "../../model/Locator";
 import { Publication } from "../../model/Publication";
 import Annotator from "../../store/Annotator";
+import log from "loglevel";
 
 export interface HistoryModuleProperties {
   hideLayer?: boolean;
@@ -79,9 +79,7 @@ export class HistoryModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Page Break module stop");
-    }
+    log.log("Page Break module stop");
     removeEventListenerOptional(
       this.historyForwardAnchorElement,
       "click",
@@ -150,8 +148,8 @@ export class HistoryModule implements ReaderModule {
           const linkHref = this.publication.getAbsoluteHref(
             lastReadingPosition.href
           );
-          if (IS_DEV) console.log(lastReadingPosition.href);
-          if (IS_DEV) console.log(linkHref);
+          log.log(lastReadingPosition.href);
+          log.log(linkHref);
           lastReadingPosition.href = linkHref;
 
           this.history.push(lastReadingPosition);

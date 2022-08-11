@@ -17,7 +17,6 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../../utils";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
@@ -34,6 +33,7 @@ import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
 import { SHA256 } from "jscrypto/es6/SHA256";
 import { _highlights } from "../highlight/TextHighlighter";
 import { Publication } from "../../model/Publication";
+import log from "loglevel";
 
 export interface PageBreakModuleProperties {
   hideLayer?: boolean;
@@ -79,9 +79,7 @@ export class PageBreakModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Page Break module stop");
-    }
+    log.log("Page Break module stop");
   }
 
   protected async start(): Promise<void> {
@@ -184,15 +182,15 @@ export class PageBreakModule implements ReaderModule {
             return "";
           }
         } catch (err) {
-          console.log("uniqueCssSelector:");
-          console.log(err);
+          log.log("uniqueCssSelector:");
+          log.error(err);
           return "";
         }
       }
       if (pageBreaks) {
         for (let i = 0; i < pageBreaks.length; i++) {
           let img = pageBreaks[i] as HTMLElement;
-          if (IS_DEV) console.log(img);
+          log.log(img);
 
           let title = img.innerHTML;
           let hide = false;

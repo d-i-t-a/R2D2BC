@@ -18,9 +18,7 @@
  */
 
 import { IRangeInfo, ISelectionInfo } from "../../common/selection";
-
-const IS_DEV =
-  process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
+import log from "loglevel";
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Selection
 
@@ -41,18 +39,14 @@ export function getCurrentSelectionInfo(
     return undefined;
   }
   if (selection.isCollapsed) {
-    if (IS_DEV) {
-      console.log("^^^ SELECTION COLLAPSED.");
-    }
+    log.log("^^^ SELECTION COLLAPSED.");
     return undefined;
   }
 
   const rawText = selection.toString();
   const cleanText = rawText.trim().replace(/\n/g, " ").replace(/\s\s+/g, " ");
   if (cleanText.length === 0) {
-    if (IS_DEV) {
-      console.log("^^^ SELECTION TEXT EMPTY.");
-    }
+    log.log("^^^ SELECTION TEXT EMPTY.");
     return undefined;
   }
 
@@ -69,57 +63,41 @@ export function getCurrentSelectionInfo(
           selection.focusOffset
         );
   if (!r || r.collapsed) {
-    if (IS_DEV) {
-      console.log(
-        "$$$$$$$$$$$$$$$$$ CANNOT GET NON-COLLAPSED SELECTION RANGE?!"
-      );
-    }
+    log.log("$$$$$$$$$$$$$$$$$ CANNOT GET NON-COLLAPSED SELECTION RANGE?!");
     return undefined;
   }
 
   const range = normalizeRange(r);
-  if (IS_DEV) {
-    if (range.startContainer !== r.startContainer) {
-      if (IS_DEV) {
-        console.log(
-          ">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: startContainer"
-        );
-        console.log(range.startContainer);
-        console.log(r.startContainer);
-      }
-    }
-    if (range.startOffset !== r.startOffset) {
-      if (IS_DEV) {
-        console.log(
-          ">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: startOffset"
-        );
-        console.log(`${range.startOffset} !== ${r.startOffset}`);
-      }
-    }
-    if (range.endContainer !== r.endContainer) {
-      if (IS_DEV) {
-        console.log(
-          ">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: endContainer"
-        );
-        console.log(range.endContainer);
-        console.log(r.endContainer);
-      }
-    }
-    if (range.endOffset !== r.endOffset) {
-      if (IS_DEV) {
-        console.log(
-          ">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: endOffset"
-        );
-        console.log(`${range.endOffset} !== ${r.endOffset}`);
-      }
-    }
+  if (range.startContainer !== r.startContainer) {
+    log.log(
+      ">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: startContainer"
+    );
+    log.log(range.startContainer);
+    log.log(r.startContainer);
+  }
+  if (range.startOffset !== r.startOffset) {
+    log.log(
+      ">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: startOffset"
+    );
+    log.log(`${range.startOffset} !== ${r.startOffset}`);
+  }
+  if (range.endContainer !== r.endContainer) {
+    log.log(
+      ">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: endContainer"
+    );
+    log.log(range.endContainer);
+    log.log(r.endContainer);
+  }
+  if (range.endOffset !== r.endOffset) {
+    log.log(
+      ">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: endOffset"
+    );
+    log.log(`${range.endOffset} !== ${r.endOffset}`);
   }
 
   const rangeInfo = convertRange(range, getCssSelector);
   if (!rangeInfo) {
-    if (IS_DEV) {
-      console.log("^^^ SELECTION RANGE INFO FAIL?!");
-    }
+    log.log("^^^ SELECTION RANGE INFO FAIL?!");
     return undefined;
   }
 
@@ -140,28 +118,20 @@ export function createOrderedRange(
     range.setStart(startNode, startOffset);
     range.setEnd(endNode, endOffset);
     if (!range.collapsed) {
-      if (IS_DEV) {
-        console.log(">>> createOrderedRange RANGE OK");
-      }
+      log.log(">>> createOrderedRange RANGE OK");
       return range;
     }
 
-    if (IS_DEV) {
-      console.log(">>> createOrderedRange COLLAPSED ... RANGE REVERSE?");
-    }
+    log.log(">>> createOrderedRange COLLAPSED ... RANGE REVERSE?");
     const rangeReverse = new Range(); // document.createRange()
     rangeReverse.setStart(endNode, endOffset);
     rangeReverse.setEnd(startNode, startOffset);
     if (!rangeReverse.collapsed) {
-      if (IS_DEV) {
-        console.log(">>> createOrderedRange RANGE REVERSE OK.");
-      }
+      log.log(">>> createOrderedRange RANGE REVERSE OK.");
       return range;
     }
 
-    if (IS_DEV) {
-      console.log(">>> createOrderedRange RANGE REVERSE ALSO COLLAPSED?!");
-    }
+    log.log(">>> createOrderedRange RANGE REVERSE ALSO COLLAPSED?!");
     return undefined;
   } catch (err) {
     console.warn(err.message);
@@ -221,9 +191,7 @@ export function convertRange(
     range.endContainer
   );
   if (!commonElementAncestor) {
-    if (IS_DEV) {
-      console.log("^^^ NO RANGE COMMON ANCESTOR?!");
-    }
+    log.log("^^^ NO RANGE COMMON ANCESTOR?!");
     return undefined;
   }
   if (range.commonAncestorContainer) {
@@ -236,11 +204,9 @@ export function convertRange(
       rangeCommonAncestorElement.nodeType === Node.ELEMENT_NODE
     ) {
       if (commonElementAncestor !== rangeCommonAncestorElement) {
-        if (IS_DEV) {
-          console.log(">>>>>> COMMON ANCESTOR CONTAINER DIFF??!");
-          console.log(getCssSelector(commonElementAncestor));
-          console.log(getCssSelector(rangeCommonAncestorElement as Element));
-        }
+        log.log(">>>>>> COMMON ANCESTOR CONTAINER DIFF??!");
+        log.log(getCssSelector(commonElementAncestor));
+        log.log(getCssSelector(rangeCommonAncestorElement as Element));
       }
     }
   }
@@ -268,9 +234,7 @@ export function convertRangeInfo(
     rangeInfo.startContainerElementCssSelector
   );
   if (!startElement) {
-    if (IS_DEV) {
-      console.log("^^^ convertRangeInfo NO START ELEMENT CSS SELECTOR?!");
-    }
+    log.log("^^^ convertRangeInfo NO START ELEMENT CSS SELECTOR?!");
     return undefined;
   }
   let startContainer: Node = startElement;
@@ -279,21 +243,17 @@ export function convertRangeInfo(
       rangeInfo.startContainerChildTextNodeIndex >=
       startElement.childNodes.length
     ) {
-      if (IS_DEV) {
-        console.log(
-          "^^^ convertRangeInfo rangeInfo.startContainerChildTextNodeIndex >= startElement.childNodes.length?!"
-        );
-      }
+      log.log(
+        "^^^ convertRangeInfo rangeInfo.startContainerChildTextNodeIndex >= startElement.childNodes.length?!"
+      );
       return undefined;
     }
     startContainer =
       startElement.childNodes[rangeInfo.startContainerChildTextNodeIndex];
     if (startContainer.nodeType !== Node.TEXT_NODE) {
-      if (IS_DEV) {
-        console.log(
-          "^^^ convertRangeInfo startContainer.nodeType !== Node.TEXT_NODE?!"
-        );
-      }
+      log.log(
+        "^^^ convertRangeInfo startContainer.nodeType !== Node.TEXT_NODE?!"
+      );
       return undefined;
     }
   }
@@ -301,9 +261,7 @@ export function convertRangeInfo(
     rangeInfo.endContainerElementCssSelector
   );
   if (!endElement) {
-    if (IS_DEV) {
-      console.log("^^^ convertRangeInfo NO END ELEMENT CSS SELECTOR?!");
-    }
+    log.log("^^^ convertRangeInfo NO END ELEMENT CSS SELECTOR?!");
     return undefined;
   }
   let endContainer: Node = endElement;
@@ -311,21 +269,17 @@ export function convertRangeInfo(
     if (
       rangeInfo.endContainerChildTextNodeIndex >= endElement.childNodes.length
     ) {
-      if (IS_DEV) {
-        console.log(
-          "^^^ convertRangeInfo rangeInfo.endContainerChildTextNodeIndex >= endElement.childNodes.length?!"
-        );
-      }
+      log.log(
+        "^^^ convertRangeInfo rangeInfo.endContainerChildTextNodeIndex >= endElement.childNodes.length?!"
+      );
       return undefined;
     }
     endContainer =
       endElement.childNodes[rangeInfo.endContainerChildTextNodeIndex];
     if (endContainer.nodeType !== Node.TEXT_NODE) {
-      if (IS_DEV) {
-        console.log(
-          "^^^ convertRangeInfo endContainer.nodeType !== Node.TEXT_NODE?!"
-        );
-      }
+      log.log(
+        "^^^ convertRangeInfo endContainer.nodeType !== Node.TEXT_NODE?!"
+      );
       return undefined;
     }
   }

@@ -17,13 +17,13 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../../../utils";
-
 // https://developer.mozilla.org/en-US/docs/Web/API/Selection
 // https://developer.mozilla.org/en-US/docs/Web/API/Range
 
 // A serializable mapping with DOM Range
 // (simply encodes a CSS Selector for element, and if text node, then encodes its parent element)
+import log from "loglevel";
+
 export interface IRangeInfo {
   // always references an element,
   // either Range.startContainer if its nodeType == Node.ELEMENT_NODE
@@ -99,15 +99,11 @@ export function sameSelections(
     return false;
   }
   if (sel1.cleanText !== sel2.cleanText) {
-    if (IS_DEV) {
-      console.log("SAME RANGES BUT DIFFERENT CLEAN TEXT??");
-    }
+    log.log("SAME RANGES BUT DIFFERENT CLEAN TEXT??");
     return false;
   }
   if (sel1.rawText !== sel2.rawText) {
-    if (IS_DEV) {
-      console.log("SAME RANGES BUT DIFFERENT RAW TEXT??");
-    }
+    log.log("SAME RANGES BUT DIFFERENT RAW TEXT??");
     return false;
   }
   return true;

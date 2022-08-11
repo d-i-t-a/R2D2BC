@@ -45,7 +45,6 @@ import {
   AnnotationModule,
   AnnotationModuleConfig,
 } from "../modules/AnnotationModule";
-import { IS_DEV } from "../utils";
 import {
   SearchModule,
   SearchModuleConfig,
@@ -75,10 +74,12 @@ import { ReaderModule } from "../modules/ReaderModule";
 import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
 
 import { HighlightType } from "../modules/highlight/common/highlight";
-import { PageBreakModuleConfig } from "../modules/pagebreak/PageBreakModule";
+import {
+  PageBreakModule,
+  PageBreakModuleConfig,
+} from "../modules/pagebreak/PageBreakModule";
 import { Switchable } from "../model/user-settings/UserProperties";
 import { TTSModule2 } from "../modules/TTS/TTSModule2";
-import { PageBreakModule } from "../modules/pagebreak/PageBreakModule";
 import {
   DefinitionsModule,
   DefinitionsModuleConfig,
@@ -91,6 +92,7 @@ import { HistoryModule } from "../modules/history/HistoryModule";
 import CitationModule, {
   CitationModuleConfig,
 } from "../modules/citation/CitationModule";
+import log from "loglevel";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (
@@ -384,9 +386,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
 
   stop() {
-    if (IS_DEV) {
-      console.log("Iframe navigator stop");
-    }
+    log.log("Iframe navigator stop");
 
     removeEventListenerOptional(
       this.previousChapterAnchorElement,
@@ -780,7 +780,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     } catch (err: unknown) {
       // There's a mismatch between the template and the selectors above,
       // or we weren't able to insert the template in the element.
-      console.error(err);
+      log.error(err);
       this.abortOnError(err);
       return Promise.reject(err);
     }
@@ -804,8 +804,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       const linkHref = this.publication.getAbsoluteHref(
         lastReadingPosition.href
       );
-      if (IS_DEV) console.log(lastReadingPosition.href);
-      if (IS_DEV) console.log(linkHref);
+      log.log(lastReadingPosition.href);
+      log.log(linkHref);
       lastReadingPosition.href = linkHref;
       await this.navigate(lastReadingPosition);
     }
@@ -1242,8 +1242,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         const linkHref = this.publication.getAbsoluteHref(
           lastReadingPosition.href
         );
-        if (IS_DEV) console.log(lastReadingPosition.href);
-        if (IS_DEV) console.log(linkHref);
+        log.log(lastReadingPosition.href);
+        log.log(linkHref);
         lastReadingPosition.href = linkHref;
         await this.navigate(lastReadingPosition);
       } else if (startUrl) {
@@ -1261,7 +1261,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
       return new Promise<void>((resolve) => resolve());
     } catch (err: unknown) {
-      console.error(err);
+      log.error(err);
       this.abortOnError(err);
       return new Promise<void>((_, reject) => reject(err)).catch(() => {});
     }
@@ -1493,7 +1493,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
       return new Promise<void>((resolve) => resolve());
     } catch (err: unknown) {
-      console.error(err);
+      log.error(err);
       this.abortOnError(err);
       return Promise.reject(err);
     }
@@ -2216,8 +2216,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     position.locations = locations;
 
     const linkHref = this.publication.getAbsoluteHref(locator.href);
-    if (IS_DEV) console.log(locator.href);
-    if (IS_DEV) console.log(linkHref);
+    log.log(locator.href);
+    log.log(linkHref);
     position.href = linkHref;
     this.stopReadAloud();
     this.navigate(position);
@@ -2280,7 +2280,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   snapToSelector(selector) {
     const doc = this.iframes[0].contentDocument;
     if (doc) {
-      console.log(selector);
+      log.log(selector);
       let result = doc.querySelectorAll(selector);
       if (result.length > 0) this.view?.snap(result[0]);
     }
@@ -3156,15 +3156,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
           if (this.api?.updateCurrentLocation) {
             this.api?.updateCurrentLocation(position).then(async (_) => {
-              if (IS_DEV) {
-                console.log("api updated current location", position);
-              }
+              log.log("api updated current location", position);
               return this.annotator?.saveLastReadingPosition(position);
             });
           } else {
-            if (IS_DEV) {
-              console.log("save last reading position", position);
-            }
+            log.log("save last reading position", position);
             this.annotator.saveLastReadingPosition(position);
           }
         }

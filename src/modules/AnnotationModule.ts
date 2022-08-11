@@ -31,7 +31,6 @@ import {
   Bookmark,
   Locator,
 } from "../model/Locator";
-import { IS_DEV } from "../utils";
 import { icons as IconLib } from "../utils/IconLib";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
@@ -42,6 +41,7 @@ import {
   ISelectionInfo,
 } from "./highlight/common/selection";
 import * as lodash from "lodash";
+import log from "loglevel";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
 
@@ -120,9 +120,7 @@ export class AnnotationModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Annotation module stop");
-    }
+    log.log("Annotation module stop");
   }
 
   protected async start(): Promise<void> {
@@ -254,8 +252,8 @@ export class AnnotationModule implements ReaderModule {
                 return "";
               }
             } catch (err) {
-              console.log("uniqueCssSelector:");
-              console.log(err);
+              log.log("uniqueCssSelector:");
+              log.error(err);
               return "";
             }
           }
@@ -279,9 +277,7 @@ export class AnnotationModule implements ReaderModule {
             );
             if (book) {
               this.saveAnnotation(book[0]).then((anno) => {
-                if (IS_DEV) {
-                  console.log("saved bookmark " + anno.id);
-                }
+                log.log("saved bookmark " + anno.id);
               });
             }
           }
@@ -292,9 +288,7 @@ export class AnnotationModule implements ReaderModule {
   }
 
   async scrollToHighlight(id: any): Promise<any> {
-    if (IS_DEV) {
-      console.log("still need to scroll to " + id);
-    }
+    log.log("still need to scroll to " + id);
     var position = await this.annotator?.getAnnotationPosition(
       id,
       this.delegate.iframes[0].contentWindow as any
@@ -307,10 +301,8 @@ export class AnnotationModule implements ReaderModule {
       let deleted = await this.annotator.deleteAnnotation(annotation.id);
       let added = await this.addAnnotation(annotation);
 
-      if (IS_DEV) {
-        console.log("Highlight deleted " + JSON.stringify(deleted));
-        console.log("Highlight added " + JSON.stringify(added));
-      }
+      log.log("Highlight deleted " + JSON.stringify(deleted));
+      log.log("Highlight added " + JSON.stringify(added));
       await this.showHighlights();
       await this.drawHighlights();
       return added;
@@ -323,9 +315,7 @@ export class AnnotationModule implements ReaderModule {
     if (this.annotator) {
       var deleted = await this.annotator.deleteAnnotation(id);
 
-      if (IS_DEV) {
-        console.log("Highlight deleted " + JSON.stringify(deleted));
-      }
+      log.log("Highlight deleted " + JSON.stringify(deleted));
       await this.showHighlights();
       await this.drawHighlights();
       return deleted;
@@ -877,9 +867,7 @@ export class AnnotationModule implements ReaderModule {
       this.delegate.stopReadAloud();
       this.delegate.navigate(locator);
     } else {
-      if (IS_DEV) {
-        console.log("annotation data missing: ", event);
-      }
+      log.log("annotation data missing: ", event);
     }
   }
 
@@ -888,17 +876,13 @@ export class AnnotationModule implements ReaderModule {
     event: MouseEvent,
     locator: any
   ): void {
-    if (IS_DEV) {
-      console.log("annotation data locator: ", locator);
-    }
+    log.log("annotation data locator: ", locator);
     if (locator) {
       if (type === AnnotationType.Annotation) {
         this.deleteHighlight(locator);
       }
     } else {
-      if (IS_DEV) {
-        console.log("annotation data missing: ", event);
-      }
+      log.log("annotation data missing: ", event);
     }
   }
 

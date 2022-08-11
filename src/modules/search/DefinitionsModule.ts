@@ -17,7 +17,6 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../../utils";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
 import {
@@ -34,6 +33,7 @@ import { ISelectionInfo } from "../highlight/common/selection";
 import { SHA256 } from "jscrypto/es6/SHA256";
 import { AnnotationMarker } from "../../model/Locator";
 import { Publication } from "../../model/Publication";
+import log from "loglevel";
 
 export interface DefinitionsModuleAPI {
   success: any;
@@ -100,9 +100,7 @@ export class DefinitionsModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Definitions module stop");
-    }
+    log.log("Definitions module stop");
   }
 
   protected async start(): Promise<void> {

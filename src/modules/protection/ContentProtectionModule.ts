@@ -25,9 +25,10 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
-import { delay, IS_DEV } from "../../utils";
+import { delay } from "../../utils";
 import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 import { addListener, launch } from "devtools-detector";
+import log from "loglevel";
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;
@@ -164,9 +165,7 @@ export class ContentProtectionModule implements ReaderModule {
       // create an observer instance
       this.mutationObserver = new MutationObserver(function (mutations) {
         mutations.forEach(function (mutation) {
-          if (IS_DEV) {
-            console.log(mutation.type);
-          }
+          log.log(mutation.type);
           self.isHacked = true;
         });
       });
@@ -174,9 +173,7 @@ export class ContentProtectionModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Protection module stop");
-    }
+    log.log("Protection module stop");
     this.mutationObserver.disconnect();
 
     if (this.properties?.disableKeys) {
@@ -738,9 +735,7 @@ export class ContentProtectionModule implements ReaderModule {
     preventDefault: () => void;
     stopPropagation: () => void;
   }) {
-    if (IS_DEV) {
-      console.log("copy action initiated");
-    }
+    log.log("copy action initiated");
     event.clipboardData.setData("text/plain", "copy not allowed");
     event.stopPropagation();
     event.preventDefault();
@@ -751,9 +746,7 @@ export class ContentProtectionModule implements ReaderModule {
     preventDefault: () => void;
     stopPropagation: () => void;
   }) {
-    if (IS_DEV) {
-      console.log("before print");
-    }
+    log.log("before print");
 
     if (this.delegate && this.delegate.headerMenu) {
       this.delegate.headerMenu.style.display = "none";
@@ -768,9 +761,7 @@ export class ContentProtectionModule implements ReaderModule {
     preventDefault: () => void;
     stopPropagation: () => void;
   }) {
-    if (IS_DEV) {
-      console.log("after print");
-    }
+    log.log("after print");
 
     if (this.delegate && this.delegate.headerMenu) {
       this.delegate.headerMenu.style.removeProperty("display");
@@ -882,14 +873,12 @@ export class ContentProtectionModule implements ReaderModule {
           rect.width = width;
           rect.left = left;
         } catch (error) {
-          if (IS_DEV) {
-            console.log("error " + error);
-            console.log(rect);
-            console.log(rect.node);
-            console.log("scrambledTextContent " + rect.scrambledTextContent);
-            console.log("textContent " + rect.textContent);
-            console.log("isObfuscated " + rect.isObfuscated);
-          }
+          log.log("error " + error);
+          log.log(rect);
+          log.log(rect.node);
+          log.log("scrambledTextContent " + rect.scrambledTextContent);
+          log.log("textContent " + rect.textContent);
+          log.log("isObfuscated " + rect.isObfuscated);
         }
       });
     }
@@ -968,11 +957,9 @@ export class ContentProtectionModule implements ReaderModule {
 
       return rect;
     } catch (error) {
-      if (IS_DEV) {
-        console.log("measureTextNode " + error);
-        console.log("measureTextNode " + node);
-        console.log(node.textContent);
-      }
+      log.log("measureTextNode " + error);
+      log.log("measureTextNode " + node);
+      log.log(node.textContent);
     }
   }
 
@@ -983,7 +970,7 @@ export class ContentProtectionModule implements ReaderModule {
       element.style.position ||
       element.hasAttribute("style")
     ) {
-      if (IS_DEV) console.log("content being hacked");
+      log.log("content being hacked");
       return true;
     }
     return false;

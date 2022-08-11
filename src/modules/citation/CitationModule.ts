@@ -20,8 +20,8 @@
 import { Publication } from "../../model/Publication";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
-import { IS_DEV } from "../../utils";
 import { TextHighlighter } from "../highlight/TextHighlighter";
+import log from "loglevel";
 
 export enum CitationStyle {
   Chicago = 0,
@@ -80,9 +80,7 @@ export default class CitationModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Timeline module stop");
-    }
+    log.log("Timeline module stop");
   }
 
   copyToClipboard(textToClipboard) {

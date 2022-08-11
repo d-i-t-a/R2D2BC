@@ -330,6 +330,7 @@ export class TTSModule2 implements ReaderModule {
             }
 
             utterance = new SpeechSynthesisUtterance(textToBeSpoken);
+
             log.log(selectionInfo);
             log.log(
               textToBeSpoken,
@@ -338,13 +339,16 @@ export class TTSModule2 implements ReaderModule {
             log.log(ttsQueueItem);
             log.log(ttsQueueItem.item.textNodes);
             log.log(startIndex);
-            for (let i = 0; i < ttsQueueItem.item.textNodes.length; i++) {
-              let node: any = ttsQueueItem.item.textNodes[i];
-              if (node === selectionInfo.range?.commonAncestorContainer) {
-                break;
+            log.log(ttsQueueItem.item.combinedText);
+            if (!ttsQueueItem.item.combinedText?.startsWith(textToBeSpoken)) {
+              for (let i = 0; i < ttsQueueItem.item.textNodes.length; i++) {
+                let node: any = ttsQueueItem.item.textNodes[i];
+                if (node === selectionInfo.range?.commonAncestorContainer) {
+                  break;
+                }
+                log.log(node.length);
+                startIndex += node.length;
               }
-              log.log(node.length);
-              startIndex += node.length;
             }
             let node = ttsQueueItem.item.textNodes.filter((node) => {
               return node === selectionInfo.range?.commonAncestorContainer;
@@ -1132,6 +1136,7 @@ export class TTSModule2 implements ReaderModule {
     if (!ttsQueueItem) {
       return undefined;
     }
+    log.log(ttsQueueItem, charIndex, charLength, utteranceText);
 
     const ttsQueueItemText = utteranceText
       ? utteranceText
@@ -1177,6 +1182,10 @@ export class TTSModule2 implements ReaderModule {
     start: number,
     end: number
   ) {
+    log.log(ttsQueueItemRef);
+    log.log(utteranceText);
+    log.log(charIndex, charLength, word, start, end);
+
     if (this._ttsQueueItemHighlightsWord) {
       this.delegate.highlighter?.destroyHighlights(HighlightType.ReadAloud);
       this._ttsQueueItemHighlightsWord = undefined;

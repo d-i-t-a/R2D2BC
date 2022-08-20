@@ -323,7 +323,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       config.injectables,
       config.attributes || { margin: 0 },
       config.services,
-      config.sample
+      config.sample,
+      config.requestConfig
     );
 
     await navigator.start(

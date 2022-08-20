@@ -102,7 +102,7 @@
     margin: 0;
     background-color: #fafafa;
     border-radius: 0.5em;
-    line-height: 0;
+    /*line-height: 1;*/
     max-width: 353px;
 }
 .d2-popup-content {
@@ -117,5 +117,5 @@
     background: #fafafa;
     border-radius: 0.5em;
     -webkit-font-smoothing: subpixel-antialiased;
-    line-height: normal;
+    line-height: normal !important;
 }

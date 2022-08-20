@@ -287,7 +287,6 @@ export default class D2Reader {
           delegate: navigator,
           publication: publication,
           highlighter: highlighter,
-          requestConfig: initialConfig.requestConfig,
           ...initialConfig.search,
         })
       : undefined;

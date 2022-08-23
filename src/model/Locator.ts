@@ -64,8 +64,3 @@ export interface Annotation extends Locator {
   created: Date;
   highlight?: IHighlight;
 }
-
-export interface ChapterWeight {
-  chapterHref: string;
-  weight: number;
-}

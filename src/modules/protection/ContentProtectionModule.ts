@@ -117,7 +117,10 @@ export class ContentProtectionModule implements ReaderModule {
           window.sessionStorage.clear();
           window.location.replace(window.location.origin);
         }
-        if (typeof config.api?.inspectDetected === "function") {
+        if (
+          config.detectInspect &&
+          typeof config.api?.inspectDetected === "function"
+        ) {
           config.api.inspectDetected();
         }
       }

@@ -927,7 +927,7 @@ export class TextHighlighter {
     let self = this;
     let doc = this.delegate.iframes[0].contentDocument;
     if (doc) {
-      let selection = self.dom(doc.body)?.getWindow()?.getSelection();
+      let selection = self.dom(doc.body)?.getSelection();
       // Check for existence of window.getSelection() and that it has a
       // modify() method. IE 9 has both selection APIs but no modify() method.
       if (self.dom(doc.body)) {
@@ -1024,13 +1024,7 @@ export class TextHighlighter {
         return;
       }
 
-      // Hide the iOS Safari context menu
-      // Reference: https://stackoverflow.com/a/30046936
       if (this.isIOS()) {
-        this.delegate.iframes[0].contentDocument?.body.removeEventListener(
-          "selectionchange",
-          this.toolboxPlacement.bind(this)
-        );
         setTimeout(function () {
           let doc = self.delegate.iframes[0].contentDocument;
           if (doc) {
@@ -1038,6 +1032,31 @@ export class TextHighlighter {
             selection.removeAllRanges();
             setTimeout(function () {
               selection.addRange(range);
+              function getCssSelector(element: Element): string | undefined {
+                const options = {
+                  className: (str: string) => {
+                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                  },
+                  idName: (str: string) => {
+                    return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+                  },
+                };
+                let doc = self.delegate.iframes[0].contentDocument;
+                if (doc) {
+                  return uniqueCssSelector(element, doc, options);
+                } else {
+                  return undefined;
+                }
+              }
+
+              let win = self.delegate.iframes[0].contentWindow;
+              const selectionInfo = getCurrentSelectionInfo(
+                win!,
+                getCssSelector
+              );
+              self.delegate.annotationModule?.annotator?.saveTemporarySelectionInfo(
+                selectionInfo
+              );
             }, 5);
           }
         }, 100);
@@ -1174,7 +1193,10 @@ export class TextHighlighter {
               speakIcon?.removeEventListener("click", speakEvent);
               self.speak();
             }
-            speakIcon.addEventListener("click", speakEvent);
+            const clone = speakIcon.cloneNode(true);
+            speakIcon?.parentNode?.replaceChild(clone, speakIcon);
+            speakIcon = document.getElementById("speakIcon");
+            speakIcon?.addEventListener("click", speakEvent);
           }
         } else {
           if (speakIcon) {

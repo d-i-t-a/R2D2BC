@@ -24,7 +24,6 @@ import { Publication } from "../model/Publication";
 import {
   TextHighlighter,
   _highlights,
-  CLASS_HIGHLIGHT_ICON,
   CLASS_HIGHLIGHT_AREA,
   HighlightContainer,
 } from "./highlight/TextHighlighter";
@@ -1023,11 +1022,7 @@ export class AnnotationModule implements ReaderModule {
   syncPosition(highlights: Array<any>) {
     let doc = this.delegate.iframes[0].contentDocument;
 
-    const positionAnnotations = (
-      newArray: Array<any>,
-      currentElement: any,
-      currentIndex: number
-    ) => {
+    const positionAnnotations = (newArray: Array<any>, currentElement: any) => {
       let container = doc!.getElementById("R2_ID_HIGHLIGHTS_CONTAINER");
       let highlightArea;
       let highlightIcon;

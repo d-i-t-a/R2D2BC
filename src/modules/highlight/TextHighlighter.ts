@@ -954,7 +954,7 @@ export class TextHighlighter {
           }
 
           let length = text.length;
-          var regex_symbols = /[-!$%^&*()_+|~=`{}\[\]:\/;<>?,.@#]/;
+          var regex_symbols = /[-!$%^&*()_+|~=`{}[\]:/;<>?,.@#]/;
           text = text.replace(regex_symbols, "");
           startOffsetTemp = length - text.trimStart().length;
           text = removeTrailingPunctuation(text);

@@ -149,8 +149,8 @@ export default class EventHandler {
       }
 
       const isInternal = link.href.indexOf("#");
-      if (!isSameOrigin && !isEpubInternal && !isResourceInternal) {
-        window.open(link.href, "_blank");
+      if (!isEpubInternal && !isResourceInternal) {
+        window.open(link.href, link.target ?? "_blank");
         event.preventDefault();
         event.stopPropagation();
       } else {

@@ -1004,7 +1004,17 @@
                     appName: "r2d2bc",
                     appLink: "localhost",
                     library: "library",
-                    styles: ["Chicago","MLA", "APA"]
+                    styles: ["Chicago","MLA", "APA"],
+                    api : {
+                        citationCreated: function(message) {
+                            console.log("citationCreated")
+                            toast(message);
+                        },
+                        citationFailed: function(message) {
+                            console.log("citationFailed")
+                            toast(message);
+                        },
+                    }
                 },
                 // services: {
                 //     positions: new URL("https://alice.dita.digital/positions.json"),

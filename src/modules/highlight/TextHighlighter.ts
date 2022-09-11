@@ -57,6 +57,7 @@ export enum HighlightContainer {
   R2_ID_SEARCH_CONTAINER = "R2_ID_SEARCH_CONTAINER",
   R2_ID_DEFINITIONS_CONTAINER = "R2_ID_DEFINITIONS_CONTAINER",
   R2_ID_LINEFOCUS_CONTAINER = "R2_ID_LINEFOCUS_CONTAINER",
+  R2_ID_GUTTER_RIGHT_CONTAINER = "R2_ID_GUTTER_RIGHT_CONTAINER",
 }
 
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
@@ -119,6 +120,7 @@ const _blacklistIdClassForCssSelectors = [
   HighlightContainer.R2_ID_BOOKMAKRS_CONTAINER,
   HighlightContainer.R2_ID_DEFINITIONS_CONTAINER,
   HighlightContainer.R2_ID_LINEFOCUS_CONTAINER,
+  HighlightContainer.R2_ID_GUTTER_RIGHT_CONTAINER,
   CLASS_HIGHLIGHT_CONTAINER,
   CLASS_HIGHLIGHT_AREA,
   CLASS_HIGHLIGHT_BOUNDING_AREA,
@@ -816,8 +818,6 @@ export class TextHighlighter {
         colorButton.style.display = "unset";
         colorElements.push(colorButton);
 
-        const highlightIcon = document.getElementById("highlightIcon");
-        const underlineIcon = document.getElementById("underlineIcon");
         // Set color and close color options
         if (colorIcon) {
           colorButton.addEventListener("click", function () {
@@ -826,6 +826,9 @@ export class TextHighlighter {
             if (colorIconSymbol) {
               colorIconSymbol.style.backgroundColor = color;
             }
+            const highlightIcon = document.getElementById("highlightIcon");
+            const underlineIcon = document.getElementById("underlineIcon");
+            const noteIcon = document.getElementById("noteIcon");
             if (
               (highlightIcon?.getElementsByTagName?.("span").length ?? 0) > 0
             ) {
@@ -837,6 +840,11 @@ export class TextHighlighter {
               (underlineIcon?.getElementsByTagName?.("span").length ?? 0) > 0
             ) {
               (underlineIcon?.getElementsByTagName(
+                "span"
+              )[0] as HTMLSpanElement).style.borderBottomColor = self.getColor();
+            }
+            if ((noteIcon?.getElementsByTagName?.("span").length ?? 0) > 0) {
+              (noteIcon?.getElementsByTagName(
                 "span"
               )[0] as HTMLSpanElement).style.borderBottomColor = self.getColor();
             }
@@ -1129,6 +1137,7 @@ export class TextHighlighter {
         let highlightIcon = document.getElementById("highlightIcon");
         let collapseIcon = document.getElementById("collapseIcon");
         let underlineIcon = document.getElementById("underlineIcon");
+        let noteIcon = document.getElementById("noteIcon");
         let colorIcon = document.getElementById("colorIcon");
         let speakIcon = document.getElementById("speakIcon");
         if (this.delegate.rights.enableAnnotations) {
@@ -1152,6 +1161,17 @@ export class TextHighlighter {
               }
             }
           }
+          if (noteIcon) {
+            noteIcon.style.display = "unset";
+            if (colorIcon) {
+              if (noteIcon.getElementsByTagName("span").length > 0) {
+                (noteIcon.getElementsByTagName(
+                  "span"
+                )[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+              }
+            }
+          }
+
           if (colorIcon) {
             colorIcon.style.display = "unset";
             let colorIconSymbol = colorIcon.lastChild as HTMLElement;
@@ -1179,12 +1199,26 @@ export class TextHighlighter {
             underlineIcon = document.getElementById("underlineIcon");
             underlineIcon?.addEventListener("click", commentEvent);
           }
+          if (noteIcon) {
+            function commentEvent() {
+              self.doHighlight(false, AnnotationMarker.Comment);
+              self.toolboxHide();
+              noteIcon?.removeEventListener("click", commentEvent);
+            }
+            const clone = noteIcon.cloneNode(true);
+            noteIcon?.parentNode?.replaceChild(clone, noteIcon);
+            noteIcon = document.getElementById("noteIcon");
+            noteIcon?.addEventListener("click", commentEvent);
+          }
         } else {
           if (highlightIcon) {
             highlightIcon.style.setProperty("display", "none");
           }
           if (underlineIcon) {
             underlineIcon.style.setProperty("display", "none");
+          }
+          if (noteIcon) {
+            noteIcon.style.setProperty("display", "none");
           }
           if (colorIcon) {
             colorIcon.style.setProperty("display", "none");
@@ -1215,7 +1249,7 @@ export class TextHighlighter {
             if (menuItem.icon) {
               menuItem.icon.id = menuItem.id;
             }
-            const itemElement = document.getElementById(menuItem.id);
+            let itemElement = document.getElementById(menuItem.id);
             const self = this;
 
             function itemEvent() {
@@ -1289,15 +1323,19 @@ export class TextHighlighter {
                             .then((anno) => {
                               if (menuItem?.note) {
                                 if (anno.highlight) {
-                                  anno.highlight.note = prompt(
-                                    "Add your note here:"
-                                  );
+                                  // notes on custom icons , new note
+                                  self.delegate.annotationModule?.api
+                                    ?.addCommentToAnnotation(anno)
+                                    .then((result) => {
+                                      self.delegate.annotationModule
+                                        ?.updateAnnotation(result)
+                                        .then(async () => {
+                                          log.log(
+                                            "update highlight " + result.id
+                                          );
+                                        });
+                                    });
                                 }
-                                self.delegate.annotationModule
-                                  ?.updateAnnotation(anno)
-                                  .then(async () => {
-                                    log.log("update highlight " + anno.id);
-                                  });
                               }
                             });
                         } else if (self.delegate.rights.enableBookmarks) {
@@ -1313,7 +1351,10 @@ export class TextHighlighter {
               self.callbackComplete();
             }
             if (itemElement) {
-              itemElement.addEventListener("click", itemEvent);
+              const clone = itemElement.cloneNode(true);
+              itemElement?.parentNode?.replaceChild(clone, itemElement);
+              itemElement = document.getElementById(menuItem.id);
+              itemElement?.addEventListener("click", itemEvent);
             }
           });
         }
@@ -1868,7 +1909,10 @@ export class TextHighlighter {
               highlightArea.classList.remove("hover");
             }
           }
-        } else if (highlight.marker === AnnotationMarker.Underline) {
+        } else if (
+          highlight.marker === AnnotationMarker.Underline ||
+          highlight.marker === AnnotationMarker.Comment
+        ) {
           // Highlight color as string check
           if (typeof highlight.color === "object") {
             let color = highlight.color as IColor;
@@ -1995,7 +2039,10 @@ export class TextHighlighter {
             highlightArea.classList.add("hover");
           }
         }
-      } else if (highlight.marker === AnnotationMarker.Underline) {
+      } else if (
+        highlight.marker === AnnotationMarker.Underline ||
+        highlight.marker === AnnotationMarker.Comment
+      ) {
         // Highlight color as string check
         if (typeof highlight.color === "object") {
           let color = highlight.color as IColor;
@@ -2388,22 +2435,25 @@ export class TextHighlighter {
                 highlightIcon.style.display = "none";
               }
               function noteH() {
-                anno.highlight.note = prompt("Add your note here:");
-                self.delegate.annotationModule
-                  ?.updateAnnotation(anno)
-                  .then(async () => {
-                    log.log("update highlight " + anno.id);
+                // existing note
+                self.delegate.annotationModule?.api
+                  ?.addCommentToAnnotation(anno)
+                  .then((result) => {
+                    self.delegate.annotationModule
+                      ?.updateAnnotation(result)
+                      .then(async () => {
+                        log.log("update highlight " + result.id);
+                        if (toolbox) {
+                          toolbox.style.display = "none";
+                        }
+                        self.selectionMenuClosed();
+                      });
                     if (toolbox) {
                       toolbox.style.display = "none";
                     }
                     self.selectionMenuClosed();
+                    commentIcon?.removeEventListener("click", noteH, false);
                   });
-
-                if (toolbox) {
-                  toolbox.style.display = "none";
-                }
-                self.selectionMenuClosed();
-                commentIcon?.removeEventListener("click", noteH, false);
               }
               let commentIcon = document.getElementById("commentIcon");
               let cloneCommentIcon = document.getElementById(
@@ -2507,7 +2557,9 @@ export class TextHighlighter {
     if (!doc.getElementById(id)) {
       let container = doc.createElement("div");
       container.setAttribute("id", id);
-      container.style.setProperty("pointer-events", "none");
+      if (id !== HighlightContainer.R2_ID_GUTTER_RIGHT_CONTAINER) {
+        container.style.setProperty("pointer-events", "none");
+      }
       if (this.delegate.view?.layout === "fixed") {
         container.style.setProperty("position", "absolute");
         container.style.setProperty("top", "0");
@@ -2595,6 +2647,14 @@ export class TextHighlighter {
         case HighlightType.LineFocus:
           container = doc.getElementById(
             HighlightContainer.R2_ID_LINEFOCUS_CONTAINER
+          );
+          if (container) {
+            this.removeAllChildNodes(container);
+          }
+          break;
+        case HighlightType.Comment:
+          container = doc.getElementById(
+            HighlightContainer.R2_ID_GUTTER_RIGHT_CONTAINER
           );
           if (container) {
             this.removeAllChildNodes(container);
@@ -2754,7 +2814,8 @@ export class TextHighlighter {
       if (
         drawUnderline &&
         highlight.marker !== AnnotationMarker.Custom &&
-        highlight.marker !== AnnotationMarker.Bookmark
+        highlight.marker !== AnnotationMarker.Bookmark &&
+        highlight.marker !== AnnotationMarker.Comment
       ) {
         let color: any = highlight.color;
         if (TextHighlighter.isHexColor(color)) {
@@ -2788,7 +2849,10 @@ export class TextHighlighter {
             `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; ${extra}`
           );
         }
-      } else if (highlight.marker === AnnotationMarker.Underline) {
+      } else if (
+        highlight.marker === AnnotationMarker.Underline ||
+        highlight.marker === AnnotationMarker.Comment
+      ) {
         // Highlight color as string check
         if (typeof highlight.color === "object") {
           let color = highlight.color as IColor;
@@ -3047,7 +3111,10 @@ export class TextHighlighter {
       if (
         highlight.note &&
         highlight.marker !== AnnotationMarker.Custom &&
-        highlight.marker !== AnnotationMarker.Bookmark
+        highlight.marker !== AnnotationMarker.Bookmark &&
+        highlight.marker !== AnnotationMarker.Comment &&
+        highlight.marker !== AnnotationMarker.Highlight &&
+        highlight.marker !== AnnotationMarker.Underline
       ) {
         highlightAreaIcon.setAttribute(
           "style",
@@ -3055,6 +3122,20 @@ export class TextHighlighter {
             parseInt(highlightBounding.style.left.replace("px", "")) +
             parseInt(highlightBounding.style.width.replace("px", "")) -
             size / 2
+          }px;height:${size}px; width:${size}px;`
+        );
+      } else if (
+        (highlight.note && highlight.marker === AnnotationMarker.Comment) ||
+        highlight.marker === AnnotationMarker.Highlight ||
+        highlight.marker === AnnotationMarker.Underline
+      ) {
+        // TODO: double check !!!!
+        highlightAreaIcon.setAttribute(
+          "style",
+          `position: absolute;top:${position}px;left:${
+            left +
+            this.delegate.iframes[0].contentDocument?.scrollingElement
+              ?.scrollLeft
           }px;height:${size}px; width:${size}px;`
         );
       } else {
@@ -3085,7 +3166,7 @@ export class TextHighlighter {
           size,
           `${highlight.icon?.color} !important`
         );
-      } else {
+      } else if (highlight.icon?.title) {
         highlightAreaIcon.innerHTML = highlight.icon?.title;
       }
     } else {
@@ -3094,14 +3175,29 @@ export class TextHighlighter {
         if (TextHighlighter.isHexColor(color)) {
           color = TextHighlighter.hexToRgbChannels(color);
         }
-        highlightAreaIcon.innerHTML = iconTemplateColored(
-          `note-icon`,
-          `Note`,
-          `<rect fill="none" height="24" width="24"/><path d="M19,5v9l-5,0l0,5H5V5H19 M19,3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h10l6-6V5C21,3.9,20.1,3,19,3z M12,14H7v-2h5V14z M17,10H7V8h10V10z"/>`,
-          `icon open`,
-          size,
-          `rgba(${color.red}, ${color.green}, ${color.blue}, 1) !important`
-        );
+        if (
+          highlight.marker === AnnotationMarker.Comment ||
+          highlight.marker === AnnotationMarker.Highlight ||
+          highlight.marker === AnnotationMarker.Underline
+        ) {
+          highlightAreaIcon.innerHTML = iconTemplateColored(
+            ``,
+            ``,
+            `<path d="M24 24H0V0h24v24z" fill="none"/><circle cx="12" cy="12" r="14"/>`,
+            `icon open`,
+            size / 2,
+            `rgba(${color.red}, ${color.green}, ${color.blue}, 1) !important`
+          );
+        } else {
+          highlightAreaIcon.innerHTML = iconTemplateColored(
+            `note-icon`,
+            `Note`,
+            `<rect fill="none" height="24" width="24"/><path d="M19,5v9l-5,0l0,5H5V5H19 M19,3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h10l6-6V5C21,3.9,20.1,3,19,3z M12,14H7v-2h5V14z M17,10H7V8h10V10z"/>`,
+            `icon open`,
+            size,
+            `rgba(${color.red}, ${color.green}, ${color.blue}, 1) !important`
+          );
+        }
       }
     }
 
@@ -3149,18 +3245,20 @@ export class TextHighlighter {
               highlightIcon.style.display = "none";
             }
             function noteH() {
-              anno.highlight.note = prompt("Add your note here:");
-
-              self.delegate.annotationModule
-                ?.updateAnnotation(anno)
-                .then(async () => {
-                  log.log("update highlight " + anno.id);
+              // notes adding by clicking on gutter icon
+              self.delegate.annotationModule?.api
+                ?.addCommentToAnnotation(anno)
+                .then((result) => {
+                  self.delegate.annotationModule
+                    ?.updateAnnotation(result)
+                    .then(async () => {
+                      log.log("update highlight " + result.id);
+                      toolbox!!.style.display = "none";
+                      self.selectionMenuClosed();
+                    });
                   toolbox!!.style.display = "none";
                   self.selectionMenuClosed();
                 });
-
-              toolbox!!.style.display = "none";
-              self.selectionMenuClosed();
             }
 
             let commentIcon = document.getElementById("commentIcon");
@@ -3261,12 +3359,14 @@ export class TextHighlighter {
         tooltip.style.setProperty("background", "lightyellow");
         tooltip.style.setProperty("color", "black");
       }
-      highlightAreaIcon.insertBefore(tooltip, highlightAreaIcon.childNodes[0]);
+      // highlightAreaIcon.insertBefore(tooltip, highlightAreaIcon.childNodes[0]);
     }
     if (
       highlight.note ||
       highlight.marker === AnnotationMarker.Custom ||
       highlight.marker === AnnotationMarker.Bookmark
+      // &&
+      // highlight.marker !== AnnotationMarker.Comment
     ) {
       highlightParent.append(highlightAreaIcon);
     }

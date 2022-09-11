@@ -57,6 +57,7 @@ export enum AnnotationMarker {
   Underline,
   Bookmark,
   Custom,
+  Comment,
 }
 
 export interface Annotation extends Locator {

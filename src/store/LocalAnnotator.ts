@@ -308,6 +308,39 @@ export default class LocalAnnotator implements Annotator {
     return null;
   }
 
+  public getAnnotationElement(id: any, iframeWin): any {
+    const savedAnnotations = this.store.get(LocalAnnotator.ANNOTATIONS);
+    if (savedAnnotations) {
+      const annotations = JSON.parse(savedAnnotations);
+      const filtered = annotations.filter(
+        (el: Annotation) => el.highlight?.id === id
+      );
+      if (filtered.length > 0) {
+        let foundElement = iframeWin.document.getElementById(
+          `${filtered[0].highlight.id}`
+        );
+        if (foundElement) {
+          let position = 0;
+          if (foundElement.hasChildNodes) {
+            for (let i = 0; i < foundElement.childNodes.length; i++) {
+              let childNode = foundElement.childNodes[i] as HTMLDivElement;
+              let top = parseInt(childNode.style.top.replace("px", ""));
+              if (top < position || position === 0) {
+                position = top;
+                return childNode;
+              }
+            }
+          } else {
+            position = parseInt(
+              (foundElement as HTMLDivElement).style.top.replace("px", "")
+            );
+          }
+          return foundElement;
+        }
+      }
+    }
+    return null;
+  }
   public getAnnotation(highlight: IHighlight): any {
     const savedAnnotations = this.store.get(LocalAnnotator.ANNOTATIONS);
     if (savedAnnotations) {

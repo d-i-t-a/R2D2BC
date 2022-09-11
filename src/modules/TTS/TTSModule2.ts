@@ -121,7 +121,15 @@ export class TTSModule2 implements ReaderModule {
     ) {
       let doc = this.delegate.iframes[0].contentDocument;
       if (doc) {
-        const selection = this.highlighter.dom(doc.body).getSelection();
+        let selection = this.highlighter.dom(doc.body).getSelection();
+        if (selection.isCollapsed) {
+          let doc = this.delegate.iframes[0].contentDocument;
+          const selectionInfo = this.delegate.annotationModule?.annotator?.getTemporarySelectionInfo(
+            doc
+          );
+          selection.addRange(selectionInfo.range);
+        }
+
         let range = selection.getRangeAt(0);
         let node = selection.anchorNode;
         // Find starting point
@@ -144,10 +152,6 @@ export class TTSModule2 implements ReaderModule {
           range.toString().indexOf(" ") === -1 &&
           range.toString().trim() !== ""
         );
-
-        // Alert result
-        // var str = range.toString().trim();
-        // alert(str);
 
         let iframe = document.querySelector(
           "main#iframe-wrapper iframe"
@@ -258,7 +262,14 @@ export class TTSModule2 implements ReaderModule {
 
       let doc = this.delegate.iframes[0].contentDocument;
       if (doc) {
-        const selection = this.highlighter.dom(doc.body).getSelection();
+        let selection = this.highlighter.dom(doc.body).getSelection();
+        if (selection.isCollapsed) {
+          let doc = self.delegate.iframes[0].contentDocument;
+          const selectionInfo = self.delegate.annotationModule?.annotator?.getTemporarySelectionInfo(
+            doc
+          );
+          selection.addRange(selectionInfo.range);
+        }
 
         if (rootEl) {
           var ttsQueue = this.generateTtsQueue(rootEl);
@@ -273,7 +284,6 @@ export class TTSModule2 implements ReaderModule {
             selection.anchorOffset,
             rootEl
           );
-          const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
 
           var idxEnd = this.findTtsQueueItemIndex(
             ttsQueue,
@@ -282,6 +292,8 @@ export class TTSModule2 implements ReaderModule {
             selection.focusOffset,
             rootEl
           );
+
+          const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
           const ttsQueueItemEnd = getTtsQueueItemRef(ttsQueue, idxEnd);
 
           var restOfTheText;
@@ -340,16 +352,6 @@ export class TTSModule2 implements ReaderModule {
             log.log(ttsQueueItem.item.textNodes);
             log.log(startIndex);
             log.log(ttsQueueItem.item.combinedText);
-            if (!ttsQueueItem.item.combinedText?.startsWith(textToBeSpoken)) {
-              for (let i = 0; i < ttsQueueItem.item.textNodes.length; i++) {
-                let node: any = ttsQueueItem.item.textNodes[i];
-                if (node === selectionInfo.range?.commonAncestorContainer) {
-                  break;
-                }
-                log.log(node.length);
-                startIndex += node.length;
-              }
-            }
             let node = ttsQueueItem.item.textNodes.filter((node) => {
               return node === selectionInfo.range?.commonAncestorContainer;
             })[0];
@@ -358,8 +360,9 @@ export class TTSModule2 implements ReaderModule {
             utterance.onboundary = (ev: SpeechSynthesisEvent) => {
               this.updateTTSInfo(
                 ttsQueueItem,
-                ev.charIndex + startIndex,
+                ev.charIndex,
                 ev.charLength,
+                startIndex,
                 utterance.text
               );
             };
@@ -518,6 +521,7 @@ export class TTSModule2 implements ReaderModule {
                   ttsQueueItem,
                   ev.charIndex,
                   ev.charLength,
+                  0,
                   utterance.text
                 );
               };
@@ -535,6 +539,7 @@ export class TTSModule2 implements ReaderModule {
                   ttsQueueItem,
                   ev.charIndex,
                   ev.charLength,
+                  0,
                   utterance.text
                 );
               };
@@ -1094,6 +1099,7 @@ export class TTSModule2 implements ReaderModule {
         ttsQueueItem,
         ev.charIndex,
         ev.charLength,
+        0,
         utterance.text
       );
     };
@@ -1131,6 +1137,7 @@ export class TTSModule2 implements ReaderModule {
     ttsQueueItem,
     charIndex: number,
     charLength: number,
+    startIndex: number,
     utteranceText: string | undefined
   ): string | undefined {
     if (!ttsQueueItem) {
@@ -1150,18 +1157,23 @@ export class TTSModule2 implements ReaderModule {
           ? utteranceText.slice(start)
           : utteranceText.slice(start, right + charIndex);
       const end = start + word.length;
-      let useStart = false;
-      if (!charLength) {
+
+      if (charLength === undefined) {
+        // Safari doesn't provide charLength, so fall back to a regex to find the current word and its length (probably misses some edge cases, but good enough for this demo)
+        const match = utteranceText.substring(charIndex).match(/^[a-z\d']*/i);
+        if (match) {
+          charLength = match[0].length;
+        }
+      }
+
+      if (charLength === undefined) {
         charLength = word.length;
-        useStart = true;
-      } else {
-        useStart = false;
       }
 
       this.wrapHighlightWord(
         ttsQueueItem,
         utteranceText,
-        useStart ? start : charIndex,
+        charIndex + startIndex,
         charLength,
         word,
         start,
@@ -1192,26 +1204,8 @@ export class TTSModule2 implements ReaderModule {
     }
 
     const ttsQueueItem = ttsQueueItemRef.item;
-    let txtToCheck = ttsQueueItemRef.item.combinedText;
     let charIndexAdjusted = charIndex;
 
-    if (utteranceText !== txtToCheck) {
-      log.log(
-        "TTS utteranceText DIFF?? ",
-        `[[${utteranceText}]]`,
-        `[[${txtToCheck}]]`
-      );
-    }
-    const ttsWord = utteranceText.substr(charIndex, charLength);
-    if (ttsWord !== word) {
-      log.log(
-        "TTS word DIFF?? ",
-        `[[${ttsWord}]]`,
-        `[[${word}]]`,
-        `${charIndex}--${charLength}`,
-        `${start}--${end - start}`
-      );
-    }
 
     let acc = 0;
     let rangeStartNode: Node | undefined;

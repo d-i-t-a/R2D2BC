@@ -1163,7 +1163,10 @@ export class TextHighlighter {
               self.toolboxHide();
               highlightIcon?.removeEventListener("click", highlightEvent);
             }
-            highlightIcon.addEventListener("click", highlightEvent);
+            const clone = highlightIcon.cloneNode(true);
+            highlightIcon?.parentNode?.replaceChild(clone, highlightIcon);
+            highlightIcon = document.getElementById("highlightIcon");
+            highlightIcon?.addEventListener("click", highlightEvent);
           }
           if (underlineIcon) {
             function commentEvent() {
@@ -1171,7 +1174,10 @@ export class TextHighlighter {
               self.toolboxHide();
               underlineIcon?.removeEventListener("click", commentEvent);
             }
-            underlineIcon.addEventListener("click", commentEvent);
+            const clone = underlineIcon.cloneNode(true);
+            underlineIcon?.parentNode?.replaceChild(clone, underlineIcon);
+            underlineIcon = document.getElementById("underlineIcon");
+            underlineIcon?.addEventListener("click", commentEvent);
           }
         } else {
           if (highlightIcon) {
@@ -1234,10 +1240,17 @@ export class TextHighlighter {
 
               let win = self.delegate.iframes[0].contentWindow;
               if (win) {
-                const selectionInfo = getCurrentSelectionInfo(
+                let selectionInfo = getCurrentSelectionInfo(
                   win,
                   getCssSelector
                 );
+                if (selectionInfo === undefined) {
+                  let doc = self.delegate.iframes[0].contentDocument;
+                  selectionInfo = self.delegate.annotationModule?.annotator?.getTemporarySelectionInfo(
+                    doc
+                  );
+                }
+
                 if (selectionInfo !== undefined) {
                   if (menuItem.callback) {
                     menuItem.callback(
@@ -1334,7 +1347,15 @@ export class TextHighlighter {
     }
     let win = self.delegate.iframes[0].contentWindow;
     if (win) {
-      const selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
+      let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
+
+      if (selectionInfo === undefined) {
+        let doc = self.delegate.iframes[0].contentDocument;
+        selectionInfo = this.delegate.annotationModule?.annotator?.getTemporarySelectionInfo(
+          doc
+        );
+      }
+
       if (selectionInfo) {
         if (this.options.onBeforeHighlight(selectionInfo) === true) {
           let createColor: any;
@@ -1404,7 +1425,14 @@ export class TextHighlighter {
       }
       let win = self.delegate.iframes[0].contentWindow;
       if (win) {
-        const selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
+        let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
+        if (selectionInfo === undefined) {
+          let doc = self.delegate.iframes[0].contentDocument;
+          selectionInfo = self.delegate.annotationModule?.annotator?.getTemporarySelectionInfo(
+            doc
+          );
+        }
+
         if (selectionInfo !== undefined) {
           (this.delegate.ttsModule as TTSModule2).speak(
             selectionInfo as any,

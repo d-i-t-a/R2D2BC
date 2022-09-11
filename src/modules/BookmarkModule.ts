@@ -390,7 +390,13 @@ export class BookmarkModule implements ReaderModule {
       },
     };
     if (win !== null) {
-      const selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
+      let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
+      if (selectionInfo === undefined) {
+        let doc = self.delegate.iframes[0].contentDocument;
+        selectionInfo = this.delegate.annotationModule?.annotator?.getTemporarySelectionInfo(
+          doc
+        );
+      }
       let doc = self.delegate.iframes[0].contentDocument;
       if (selectionInfo && doc) {
         let book = this.delegate.highlighter?.createHighlight(

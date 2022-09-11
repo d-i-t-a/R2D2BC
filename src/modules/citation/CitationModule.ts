@@ -43,11 +43,16 @@ export interface CitationModuleProperties {
   library?: string;
   styles?: string[];
 }
+export interface CitationModuleAPI {
+  citationCreated: any;
+  citationFailed: any;
+}
 
 export interface CitationModuleConfig extends CitationModuleProperties {
   publication: Publication;
   delegate: IFrameNavigator;
   highlighter: TextHighlighter;
+  api?: CitationModuleAPI;
 }
 
 export default class CitationModule implements ReaderModule {
@@ -55,17 +60,20 @@ export default class CitationModule implements ReaderModule {
   private delegate: IFrameNavigator;
   private properties: CitationModuleProperties;
   private readonly highlighter?: TextHighlighter;
+  api?: CitationModuleAPI;
 
   private constructor(
     delegate: IFrameNavigator,
     publication: Publication,
     highlighter: TextHighlighter,
-    properties: CitationModuleProperties
+    properties: CitationModuleProperties,
+    api?: CitationModuleAPI
   ) {
     this.highlighter = highlighter;
     this.delegate = delegate;
     this.properties = properties;
     this.publication = publication;
+    this.api = api;
   }
 
   public static async create(config: CitationModuleConfig) {
@@ -73,7 +81,8 @@ export default class CitationModule implements ReaderModule {
       config.delegate,
       config.publication,
       config.highlighter,
-      config as CitationModuleProperties
+      config as CitationModuleProperties,
+      config.api
     );
     await module.start();
     return module;
@@ -120,9 +129,9 @@ export default class CitationModule implements ReaderModule {
     }
 
     if (success) {
-      alert("The text was copied to the clipboard!");
+      this.api?.citationCreated("The text was copied to the clipboard!");
     } else {
-      alert("Your browser doesn't allow clipboard access!");
+      this.api?.citationFailed("Your browser doesn't allow clipboard access!");
     }
   }
 

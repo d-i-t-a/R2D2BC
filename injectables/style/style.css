@@ -253,3 +253,9 @@
 img {
     max-height: var(--USER__maxMediaHeight) !important;
 }
+
+#R2_ID_GUTTER_RIGHT_CONTAINER {
+    position: absolute;
+    top: 0;
+    right: -20px;
+}

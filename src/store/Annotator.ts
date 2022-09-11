@@ -39,6 +39,8 @@ interface Annotator {
   getAnnotation(annotation: IHighlight): any;
   getAnnotationByID(id: string): any;
   getAnnotationPosition(id: any, iframeWin: any): any;
+  getAnnotationElement(id: any, iframeWin: any): any;
+
   saveTemporarySelectionInfo(selectionInfo: any);
   getTemporarySelectionInfo(doc: any): any;
   deleteTemporarySelectionInfo();

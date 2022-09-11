@@ -1206,7 +1206,6 @@ export class TTSModule2 implements ReaderModule {
     const ttsQueueItem = ttsQueueItemRef.item;
     let charIndexAdjusted = charIndex;
 
-
     let acc = 0;
     let rangeStartNode: Node | undefined;
     let rangeStartOffset = -1;

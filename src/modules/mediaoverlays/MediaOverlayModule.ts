@@ -185,14 +185,14 @@ export class MediaOverlayModule implements ReaderModule {
       );
     } else {
       if (this.audioElement) {
-        await this.audioElement.pause();
+        await this.audioElement?.pause();
       }
       if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
         this.currentLinkIndex++;
         await this.playLink();
       } else {
         if (this.settings.autoTurn && this.settings.playing) {
-          this.audioElement.pause();
+          this.audioElement?.pause();
           this.delegate.nextResource();
         } else {
           this.stopReadAloud();
@@ -241,7 +241,7 @@ export class MediaOverlayModule implements ReaderModule {
   pauseReadAloud() {
     if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = false;
-      this.audioElement.pause();
+      this.audioElement?.pause();
       if (this.play) this.play.style.removeProperty("display");
       if (this.pause) this.pause.style.display = "none";
     }
@@ -377,9 +377,9 @@ export class MediaOverlayModule implements ReaderModule {
           this.currentLinkIndex++;
           this.playLink();
         } else {
-          this.audioElement.pause();
+          this.audioElement?.pause();
           if (this.settings.autoTurn && this.settings.playing) {
-            this.audioElement.pause();
+            this.audioElement?.pause();
             this.delegate.nextResource();
           } else {
             this.stopReadAloud();
@@ -425,9 +425,9 @@ export class MediaOverlayModule implements ReaderModule {
         this.currentLinkIndex++;
         this.playLink();
       } else {
-        this.audioElement.pause();
+        this.audioElement?.pause();
         if (this.settings.autoTurn && this.settings.playing) {
-          this.audioElement.pause();
+          this.audioElement?.pause();
           this.delegate.nextResource();
         } else {
           this.stopReadAloud();
@@ -449,7 +449,7 @@ export class MediaOverlayModule implements ReaderModule {
     this.mediaOverlayHighlight(undefined);
 
     if (this.audioElement) {
-      this.audioElement.pause();
+      this.audioElement?.pause();
     }
   }
   findNextTextAudioPair(
@@ -645,7 +645,7 @@ export class MediaOverlayModule implements ReaderModule {
       ) as HTMLAudioElement;
 
       if (this.audioElement) {
-        this.audioElement.pause();
+        this.audioElement?.pause();
         this.audioElement.setAttribute("src", "");
         if (this.audioElement.parentNode) {
           this.audioElement.parentNode.removeChild(this.audioElement);
@@ -699,7 +699,7 @@ export class MediaOverlayModule implements ReaderModule {
           await this.playLink();
         } else {
           if (this.settings.autoTurn && this.settings.playing) {
-            this.audioElement.pause();
+            this.audioElement?.pause();
             this.delegate.nextResource();
           } else {
             this.stopReadAloud();

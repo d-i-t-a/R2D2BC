@@ -185,17 +185,19 @@ export class MediaOverlayModule implements ReaderModule {
       );
     } else {
       if (this.audioElement) {
-        await this.audioElement?.pause();
+        await this.audioElement.pause();
       }
       if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
         this.currentLinkIndex++;
         await this.playLink();
       } else {
         if (this.settings.autoTurn && this.settings.playing) {
-          this.audioElement?.pause();
+          if (this.audioElement) {
+            await this.audioElement.pause();
+          }
           this.delegate.nextResource();
         } else {
-          this.stopReadAloud();
+          await this.stopReadAloud();
         }
       }
     }
@@ -204,7 +206,10 @@ export class MediaOverlayModule implements ReaderModule {
   async startReadAloud() {
     if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = true;
-      if (this.audioElement) {
+      if (
+        this.audioElement &&
+        this.currentLinks[this.currentLinkIndex]?.Properties.MediaOverlay
+      ) {
         const timeToSeekTo = this.currentAudioBegin
           ? this.currentAudioBegin
           : 0;
@@ -231,9 +236,9 @@ export class MediaOverlayModule implements ReaderModule {
   }
   async stopReadAloud() {
     if (this.delegate.rights.enableMediaOverlays) {
-      if (this.currentLinkIndex > 0) await this.playLink();
       this.settings.playing = false;
-      this.audioElement?.pause();
+      this.audioElement.pause();
+
       if (this.play) this.play.style.removeProperty("display");
       if (this.pause) this.pause.style.display = "none";
     }
@@ -241,7 +246,7 @@ export class MediaOverlayModule implements ReaderModule {
   pauseReadAloud() {
     if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = false;
-      this.audioElement?.pause();
+      this.audioElement.pause();
       if (this.play) this.play.style.removeProperty("display");
       if (this.pause) this.pause.style.display = "none";
     }
@@ -334,6 +339,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
     return undefined;
   }
+
   myReq;
   trackCurrentTime() {
     cancelAnimationFrame(this.myReq);
@@ -377,9 +383,9 @@ export class MediaOverlayModule implements ReaderModule {
           this.currentLinkIndex++;
           this.playLink();
         } else {
-          this.audioElement?.pause();
+          this.audioElement.pause();
           if (this.settings.autoTurn && this.settings.playing) {
-            this.audioElement?.pause();
+            this.audioElement.pause();
             this.delegate.nextResource();
           } else {
             this.stopReadAloud();
@@ -425,9 +431,9 @@ export class MediaOverlayModule implements ReaderModule {
         this.currentLinkIndex++;
         this.playLink();
       } else {
-        this.audioElement?.pause();
+        this.audioElement.pause();
         if (this.settings.autoTurn && this.settings.playing) {
-          this.audioElement?.pause();
+          this.audioElement.pause();
           this.delegate.nextResource();
         } else {
           this.stopReadAloud();
@@ -449,7 +455,7 @@ export class MediaOverlayModule implements ReaderModule {
     this.mediaOverlayHighlight(undefined);
 
     if (this.audioElement) {
-      this.audioElement?.pause();
+      this.audioElement.pause();
     }
   }
   findNextTextAudioPair(
@@ -645,7 +651,7 @@ export class MediaOverlayModule implements ReaderModule {
       ) as HTMLAudioElement;
 
       if (this.audioElement) {
-        this.audioElement?.pause();
+        this.audioElement.pause();
         this.audioElement.setAttribute("src", "");
         if (this.audioElement.parentNode) {
           this.audioElement.parentNode.removeChild(this.audioElement);
@@ -699,7 +705,7 @@ export class MediaOverlayModule implements ReaderModule {
           await this.playLink();
         } else {
           if (this.settings.autoTurn && this.settings.playing) {
-            this.audioElement?.pause();
+            this.audioElement.pause();
             this.delegate.nextResource();
           } else {
             this.stopReadAloud();
@@ -765,20 +771,22 @@ export class MediaOverlayModule implements ReaderModule {
     this.trackCurrentTime();
   };
   ensureOnTimeUpdate = (remove: boolean, replace: boolean) => {
-    if (this.audioElement) {
-      if (remove) {
-        if (this.__ontimeupdate) {
-          this.__ontimeupdate = false;
+    if (remove) {
+      if (this.__ontimeupdate) {
+        this.__ontimeupdate = false;
+        if (this.audioElement) {
           this.audioElement.removeEventListener(
             "timeupdate",
             this.ontimeupdate
           );
-          cancelAnimationFrame(this.myReq);
         }
-      } else {
-        if (!this.__ontimeupdate || replace) {
-          this.__ontimeupdate = true;
-          if (replace) {
+        cancelAnimationFrame(this.myReq);
+      }
+    } else {
+      if (!this.__ontimeupdate || replace) {
+        this.__ontimeupdate = true;
+        if (replace) {
+          if (this.audioElement) {
             this.audioElement.removeEventListener(
               "timeupdate",
               this.ontimeupdate

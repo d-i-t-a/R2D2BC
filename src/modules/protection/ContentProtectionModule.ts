@@ -25,9 +25,10 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
-import { delay, IS_DEV } from "../../utils";
+import { delay } from "../../utils";
 import { getUserAgentRegExp } from "browserslist-useragent-regexp";
-import { checkers, DevtoolsDetector } from "devtools-detector";
+import { addListener, launch } from "devtools-detector";
+import log from "loglevel";
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;
@@ -42,7 +43,7 @@ export interface ContentProtectionModuleProperties {
   disableContextMenu: boolean;
   hideTargetUrl: boolean;
   disableDrag: boolean;
-  supportedBrowsers: [];
+  supportedBrowsers: string[];
 }
 
 export interface ContentProtectionModuleConfig
@@ -77,7 +78,7 @@ export class ContentProtectionModule implements ReaderModule {
   private wrapper: HTMLDivElement;
 
   public static async setupPreloadProtection(
-    config: ContentProtectionModuleConfig
+    config: Partial<ContentProtectionModuleConfig>
   ): Promise<void> {
     if (this.isCurrentBrowserSupported(config)) {
       if (config.detectInspect) {
@@ -108,33 +109,29 @@ export class ContentProtectionModule implements ReaderModule {
   private static async startInspectorProtection(
     config: Partial<ContentProtectionModuleConfig>
   ): Promise<void> {
-    const onInspectorOpened = (): void => {
-      if (config.clearOnInspect) {
-        console.clear();
-        window.localStorage.clear();
-        window.sessionStorage.clear();
-        window.location.replace(window.location.origin);
-      }
-      if (typeof config.api?.inspectDetected === "function") {
-        config.api.inspectDetected();
+    const onInspectorOpened = (isOpen): void => {
+      if (isOpen) {
+        if (config.clearOnInspect) {
+          console.clear();
+          window.localStorage.clear();
+          window.sessionStorage.clear();
+          window.location.replace(window.location.origin);
+        }
+        if (
+          config.detectInspect &&
+          typeof config.api?.inspectDetected === "function"
+        ) {
+          config.api.inspectDetected();
+        }
       }
     };
-    const detector = new DevtoolsDetector({
-      checkers: [
-        checkers.elementIdChecker,
-        checkers.regToStringChecker,
-        checkers.functionToStringChecker,
-        checkers.depRegToStringChecker,
-        checkers.dateToStringChecker,
-      ],
-    });
-    detector.addListener(onInspectorOpened);
-    detector.launch();
-    await delay(config.detectInspectInitDelay ?? 50);
+    addListener(onInspectorOpened);
+    launch();
+    await delay(config.detectInspectInitDelay ?? 100);
   }
 
   private static isCurrentBrowserSupported(
-    config: ContentProtectionModuleConfig
+    config: Partial<ContentProtectionModuleConfig>
   ): boolean {
     if (!config.enforceSupportedBrowsers) {
       return true;
@@ -171,9 +168,7 @@ export class ContentProtectionModule implements ReaderModule {
       // create an observer instance
       this.mutationObserver = new MutationObserver(function (mutations) {
         mutations.forEach(function (mutation) {
-          if (IS_DEV) {
-            console.log(mutation.type);
-          }
+          log.log(mutation.type);
           self.isHacked = true;
         });
       });
@@ -181,9 +176,7 @@ export class ContentProtectionModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Protection module stop");
-    }
+    log.log("Protection module stop");
     this.mutationObserver.disconnect();
 
     if (this.properties?.disableKeys) {
@@ -745,9 +738,7 @@ export class ContentProtectionModule implements ReaderModule {
     preventDefault: () => void;
     stopPropagation: () => void;
   }) {
-    if (IS_DEV) {
-      console.log("copy action initiated");
-    }
+    log.log("copy action initiated");
     event.clipboardData.setData("text/plain", "copy not allowed");
     event.stopPropagation();
     event.preventDefault();
@@ -758,9 +749,7 @@ export class ContentProtectionModule implements ReaderModule {
     preventDefault: () => void;
     stopPropagation: () => void;
   }) {
-    if (IS_DEV) {
-      console.log("before print");
-    }
+    log.log("before print");
 
     if (this.delegate && this.delegate.headerMenu) {
       this.delegate.headerMenu.style.display = "none";
@@ -775,9 +764,7 @@ export class ContentProtectionModule implements ReaderModule {
     preventDefault: () => void;
     stopPropagation: () => void;
   }) {
-    if (IS_DEV) {
-      console.log("after print");
-    }
+    log.log("after print");
 
     if (this.delegate && this.delegate.headerMenu) {
       this.delegate.headerMenu.style.removeProperty("display");
@@ -856,17 +843,17 @@ export class ContentProtectionModule implements ReaderModule {
   }
 
   recalculate(delay: number = 0): Promise<boolean> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       if (this.properties?.enableObfuscation) {
-          const onDoResize = debounce(() => {
-            this.calcRects(this.rects);
-            if (this.rects !== undefined) {
-              this.rects.forEach((rect) =>
-                this.toggleRect(rect, this.securityContainer, this.isHacked)
-              );
-            }
-            resolve(true);
-          }, delay);
+        const onDoResize = debounce(() => {
+          this.calcRects(this.rects);
+          if (this.rects !== undefined) {
+            this.rects.forEach((rect) =>
+              this.toggleRect(rect, this.securityContainer, this.isHacked)
+            );
+          }
+          resolve(true);
+        }, delay);
         if (this.rects) {
           this.observe();
           onDoResize();
@@ -889,14 +876,12 @@ export class ContentProtectionModule implements ReaderModule {
           rect.width = width;
           rect.left = left;
         } catch (error) {
-          if (IS_DEV) {
-            console.log("error " + error);
-            console.log(rect);
-            console.log(rect.node);
-            console.log("scrambledTextContent " + rect.scrambledTextContent);
-            console.log("textContent " + rect.textContent);
-            console.log("isObfuscated " + rect.isObfuscated);
-          }
+          log.log("error " + error);
+          log.log(rect);
+          log.log(rect.node);
+          log.log("scrambledTextContent " + rect.scrambledTextContent);
+          log.log("textContent " + rect.textContent);
+          log.log("isObfuscated " + rect.isObfuscated);
         }
       });
     }
@@ -975,11 +960,9 @@ export class ContentProtectionModule implements ReaderModule {
 
       return rect;
     } catch (error) {
-      if (IS_DEV) {
-        console.log("measureTextNode " + error);
-        console.log("measureTextNode " + node);
-        console.log(node.textContent);
-      }
+      log.log("measureTextNode " + error);
+      log.log("measureTextNode " + node);
+      log.log(node.textContent);
     }
   }
 
@@ -990,7 +973,7 @@ export class ContentProtectionModule implements ReaderModule {
       element.style.position ||
       element.hasAttribute("style")
     ) {
-      if (IS_DEV) console.log("content being hacked");
+      log.log("content being hacked");
       return true;
     }
     return false;

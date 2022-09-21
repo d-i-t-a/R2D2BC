@@ -20,7 +20,6 @@
 import { Publication } from "../../model/Publication";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
-import { IS_DEV } from "../../utils";
 import {
   TextHighlighter,
   CLASS_HIGHLIGHT_AREA,
@@ -39,6 +38,7 @@ import {
   addEventListenerOptional,
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
+import log from "loglevel";
 
 const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.5;
 
@@ -99,9 +99,7 @@ export default class LineFocusModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Definitions module stop");
-    }
+    log.log("Definitions module stop");
     this.hasEventListener = false;
     removeEventListenerOptional(document, "keydown", this.keydown.bind(this));
     removeEventListenerOptional(document, "keyup", this.keyup.bind(this));
@@ -159,7 +157,7 @@ export default class LineFocusModule implements ReaderModule {
     }
   }
 
-  private keydown(event: KeyboardEvent | MouseEvent | TrackEvent): void {
+  private keydown(event: KeyboardEvent | MouseEvent | TouchEvent): void {
     if (event instanceof KeyboardEvent && this.isActive) {
       const key = event.key;
       switch (key) {
@@ -173,7 +171,7 @@ export default class LineFocusModule implements ReaderModule {
     }
   }
 
-  private keyup(event: KeyboardEvent | MouseEvent | TrackEvent): void {
+  private keyup(event: KeyboardEvent | MouseEvent | TouchEvent): void {
     if (event instanceof KeyboardEvent && this.isActive) {
       const key = event.key;
       switch (key) {
@@ -691,11 +689,9 @@ export default class LineFocusModule implements ReaderModule {
       range.detach(); // frees up memory in older browsers
       return rect;
     } catch (error) {
-      if (IS_DEV) {
-        console.log("measureTextNode " + error);
-        console.log("measureTextNode " + node);
-        console.log(node.textContent);
-      }
+      log.log("measureTextNode " + error);
+      log.log("measureTextNode " + node);
+      log.log(`${node.textContent}`);
     }
   }
   measureImageNodes(node: Element): any {
@@ -707,11 +703,9 @@ export default class LineFocusModule implements ReaderModule {
       range.detach(); // frees up memory in older browsers
       return rect;
     } catch (error) {
-      if (IS_DEV) {
-        console.log("measureTextNode " + error);
-        console.log("measureTextNode " + node);
-        console.log(node.textContent);
-      }
+      log.log("measureTextNode " + error);
+      log.log("measureTextNode " + node);
+      log.log(`${node.textContent}`);
     }
   }
 }

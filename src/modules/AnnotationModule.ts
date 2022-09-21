@@ -21,7 +21,12 @@ import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
 import { IFrameNavigator, ReaderRights } from "../navigator/IFrameNavigator";
 import { Publication } from "../model/Publication";
-import { TextHighlighter, _highlights } from "./highlight/TextHighlighter";
+import {
+  TextHighlighter,
+  _highlights,
+  CLASS_HIGHLIGHT_AREA,
+  HighlightContainer,
+} from "./highlight/TextHighlighter";
 import { ReaderModule } from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { HighlightType, IHighlight } from "./highlight/common/highlight";
@@ -31,8 +36,7 @@ import {
   Bookmark,
   Locator,
 } from "../model/Locator";
-import { IS_DEV } from "../utils";
-import { icons as IconLib } from "../utils/IconLib";
+import { icons as IconLib, iconTemplateColored } from "../utils/IconLib";
 import { v4 as uuid } from "uuid";
 import { Link } from "../model/Link";
 import { convertRange } from "./highlight/renderer/iframe/selection";
@@ -42,6 +46,7 @@ import {
   ISelectionInfo,
 } from "./highlight/common/selection";
 import * as lodash from "lodash";
+import log from "loglevel";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
 
@@ -50,16 +55,18 @@ export interface AnnotationModuleAPI {
   deleteAnnotation: Highlight;
   updateAnnotation: Highlight;
   selectedAnnotation: Highlight;
+  addCommentToAnnotation: Highlight;
 }
 export interface AnnotationModuleProperties {
   initialAnnotationColor?: string;
   hideLayer?: boolean;
+  enableComments?: boolean;
 }
 
 export interface AnnotationModuleConfig extends AnnotationModuleProperties {
   annotator: Annotator;
   headerMenu?: HTMLElement | null;
-  rights: ReaderRights;
+  rights: Partial<ReaderRights>;
   publication: Publication;
   delegate: IFrameNavigator;
   initialAnnotations?: any;
@@ -69,9 +76,10 @@ export interface AnnotationModuleConfig extends AnnotationModuleProperties {
 
 export class AnnotationModule implements ReaderModule {
   readonly annotator: Annotator | null;
-  private rights: ReaderRights;
+  private rights: Partial<ReaderRights>;
   private publication: Publication;
   private highlightsView: HTMLDivElement;
+  private commentGutter?: HTMLDivElement | null;
   private readonly headerMenu?: HTMLElement | null;
   private readonly highlighter?: TextHighlighter;
   private readonly initialAnnotations: any;
@@ -99,7 +107,7 @@ export class AnnotationModule implements ReaderModule {
 
   public constructor(
     annotator: Annotator,
-    rights: ReaderRights,
+    rights: Partial<ReaderRights>,
     publication: Publication,
     delegate: IFrameNavigator,
     initialAnnotations: any,
@@ -120,9 +128,7 @@ export class AnnotationModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Annotation module stop");
-    }
+    log.log("Annotation module stop");
   }
 
   protected async start(): Promise<void> {
@@ -140,6 +146,7 @@ export class AnnotationModule implements ReaderModule {
         this.annotator?.initAnnotations(highlights);
       }
     }
+
     setTimeout(() => {
       this.properties?.hideLayer
         ? this.delegate.hideLayer("highlights")
@@ -192,7 +199,7 @@ export class AnnotationModule implements ReaderModule {
     setTimeout(async () => {
       await this.drawHighlights();
       await this.showHighlights();
-    }, 100);
+    }, 200);
   }
 
   initialize() {
@@ -213,7 +220,7 @@ export class AnnotationModule implements ReaderModule {
     });
   }
 
-  private click(_event: KeyboardEvent | MouseEvent | TrackEvent): void {
+  private click(_event: KeyboardEvent | MouseEvent | TouchEvent): void {
     if (this.activeAnnotationMarkerId) {
       let menuItems = this.highlighter?.properties?.selectionMenuItems?.filter(
         (menuItem) => menuItem.id === this.activeAnnotationMarkerId
@@ -239,10 +246,6 @@ export class AnnotationModule implements ReaderModule {
           selection.removeAllRanges();
           selection.addRange(range);
 
-          // Alert result
-          // let str = range.toString().trim();
-          // alert(str);
-
           let self = this;
 
           function getCssSelector(element: Element): string {
@@ -254,8 +257,8 @@ export class AnnotationModule implements ReaderModule {
                 return "";
               }
             } catch (err) {
-              console.log("uniqueCssSelector:");
-              console.log(err);
+              log.log("uniqueCssSelector:");
+              log.error(err);
               return "";
             }
           }
@@ -279,9 +282,7 @@ export class AnnotationModule implements ReaderModule {
             );
             if (book) {
               this.saveAnnotation(book[0]).then((anno) => {
-                if (IS_DEV) {
-                  console.log("saved bookmark " + anno.id);
-                }
+                log.log("saved bookmark " + anno.id);
               });
             }
           }
@@ -292,14 +293,15 @@ export class AnnotationModule implements ReaderModule {
   }
 
   async scrollToHighlight(id: any): Promise<any> {
-    if (IS_DEV) {
-      console.log("still need to scroll to " + id);
-    }
-    var position = await this.annotator?.getAnnotationPosition(
+    log.log("still need to scroll to " + id);
+    var element = await this.annotator?.getAnnotationElement(
       id,
       this.delegate.iframes[0].contentWindow as any
     );
-    window.scrollTo(0, position - window.innerHeight / 3);
+    element.scrollIntoView({
+      block: "center",
+      behavior: "smooth",
+    });
   }
 
   async updateLocalHighlight(annotation: Annotation): Promise<any> {
@@ -307,10 +309,8 @@ export class AnnotationModule implements ReaderModule {
       let deleted = await this.annotator.deleteAnnotation(annotation.id);
       let added = await this.addAnnotation(annotation);
 
-      if (IS_DEV) {
-        console.log("Highlight deleted " + JSON.stringify(deleted));
-        console.log("Highlight added " + JSON.stringify(added));
-      }
+      log.log("Highlight deleted " + JSON.stringify(deleted));
+      log.log("Highlight added " + JSON.stringify(added));
       await this.showHighlights();
       await this.drawHighlights();
       return added;
@@ -323,9 +323,7 @@ export class AnnotationModule implements ReaderModule {
     if (this.annotator) {
       var deleted = await this.annotator.deleteAnnotation(id);
 
-      if (IS_DEV) {
-        console.log("Highlight deleted " + JSON.stringify(deleted));
-      }
+      log.log("Highlight deleted " + JSON.stringify(deleted));
       await this.showHighlights();
       await this.drawHighlights();
       return deleted;
@@ -456,11 +454,16 @@ export class AnnotationModule implements ReaderModule {
 
         if (annotation) {
           if (this.api?.addAnnotation) {
-            let result = await this.api.addAnnotation(annotation);
-            const saved = await this.annotator.saveAnnotation(result);
-            await this.showHighlights();
-            await this.drawHighlights();
-            return new Promise<Annotation>((resolve) => resolve(saved));
+            try {
+              let result = await this.api.addAnnotation(annotation);
+              const saved = await this.annotator.saveAnnotation(result);
+              await this.showHighlights();
+              await this.drawHighlights();
+              return new Promise<Annotation>((resolve) => resolve(saved));
+            } catch (error) {
+              await this.showHighlights();
+              await this.drawHighlights();
+            }
           } else {
             const saved = await this.annotator.saveAnnotation(annotation);
             await this.showHighlights();
@@ -671,6 +674,114 @@ export class AnnotationModule implements ReaderModule {
       if (this.properties?.initialAnnotationColor) {
         this.highlighter.setColor(this.properties?.initialAnnotationColor);
       }
+      this.repositionGutters();
+    }
+  }
+
+  repositionGutters(): any {
+    let doc = this.delegate.iframes[0].contentDocument;
+    if (doc) {
+      this.commentGutter = doc.getElementById(
+        HighlightContainer.R2_ID_GUTTER_RIGHT_CONTAINER
+      ) as HTMLDivElement;
+      if (
+        this.delegate.view?.isScrollMode() &&
+        this.properties?.enableComments
+      ) {
+        this.commentGutter.style.removeProperty("display");
+      } else {
+        this.commentGutter.style.setProperty("display", "none");
+      }
+      if (this.commentGutter && this.delegate.view?.isScrollMode()) {
+        this.commentGutter.innerHTML = "";
+
+        let highlights: Array<any> = [];
+        if (this.annotator) {
+          highlights = this.annotator.getAnnotations() as Array<any>;
+          if (highlights) {
+            highlights = highlights.filter(
+              (rangeRepresentation) =>
+                rangeRepresentation.highlight?.note?.length > 0
+            );
+            highlights = this.syncPosition(highlights);
+            highlights = this.reposition(highlights);
+
+            highlights.forEach((rangeRepresentation) => {
+              let icon: HTMLElement = document.createElement("i");
+              icon.innerHTML = "sticky_note_2";
+              icon.className = "material-icons";
+              icon.style.color = rangeRepresentation.highlight.color;
+
+              let container = doc!.getElementById("R2_ID_HIGHLIGHTS_CONTAINER");
+              let highlightArea;
+              let highlightIcon;
+              if (container) {
+                highlightArea = container.querySelector(
+                  `#${rangeRepresentation.highlight.id}`
+                );
+              }
+
+              let nodeList = highlightArea.getElementsByClassName(
+                CLASS_HIGHLIGHT_AREA
+              );
+              highlightIcon = nodeList[0];
+
+              const size = parseInt(
+                highlightIcon.style.height.replace("px", "")
+              );
+
+              const position = rangeRepresentation.highlight.position;
+
+              const highlightAreaIcon = doc!.createElement("div");
+
+              highlightAreaIcon.setAttribute(
+                "style",
+                `position: absolute;top:${
+                  // position - size / 2
+                  position
+                }px;display: flex;max-width: 250px !important;height:${size}px;width: 200px;align-items: center;`
+              );
+
+              const iconSpan = doc!.createElement("div");
+              highlightAreaIcon.appendChild(iconSpan);
+
+              let color: any = rangeRepresentation.highlight.color;
+              if (TextHighlighter.isHexColor(color)) {
+                color = TextHighlighter.hexToRgbChannels(color);
+              }
+
+              highlightAreaIcon.innerHTML = iconTemplateColored(
+                ``,
+                ``,
+                `<path d="M24 24H0V0h24v24z" fill="none"/><circle cx="12" cy="12" r="8"/>`,
+                `icon open`,
+                10,
+                `rgba(${color.red}, ${color.green}, ${color.blue}, 1) !important`
+              );
+
+              const span = doc!.createElement("div");
+              span.innerHTML = rangeRepresentation.highlight?.note;
+              span.setAttribute(
+                "style",
+                `height:${size}px;overflow: hidden;padding-left: 5px;`
+              );
+
+              highlightAreaIcon.appendChild(span);
+
+              addEventListenerOptional(
+                highlightAreaIcon,
+                "click",
+                (event: MouseEvent) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  this.scrollToHighlight(rangeRepresentation.highlight.id);
+                }
+              );
+              this.commentGutter?.appendChild(highlightAreaIcon);
+            });
+          }
+        }
+      }
     }
   }
 
@@ -877,9 +988,7 @@ export class AnnotationModule implements ReaderModule {
       this.delegate.stopReadAloud();
       this.delegate.navigate(locator);
     } else {
-      if (IS_DEV) {
-        console.log("annotation data missing: ", event);
-      }
+      log.log("annotation data missing: ", event);
     }
   }
 
@@ -888,17 +997,13 @@ export class AnnotationModule implements ReaderModule {
     event: MouseEvent,
     locator: any
   ): void {
-    if (IS_DEV) {
-      console.log("annotation data locator: ", locator);
-    }
+    log.log("annotation data locator: ", locator);
     if (locator) {
       if (type === AnnotationType.Annotation) {
         this.deleteHighlight(locator);
       }
     } else {
-      if (IS_DEV) {
-        console.log("annotation data missing: ", event);
-      }
+      log.log("annotation data missing: ", event);
     }
   }
 
@@ -914,4 +1019,123 @@ export class AnnotationModule implements ReaderModule {
   public async getAnnotationByID(id: string): Promise<any> {
     return this.annotator?.getAnnotationByID(id);
   }
+  syncPosition(highlights: Array<any>) {
+    let doc = this.delegate.iframes[0].contentDocument;
+
+    const positionAnnotations = (newArray: Array<any>, currentElement: any) => {
+      let container = doc!.getElementById("R2_ID_HIGHLIGHTS_CONTAINER");
+      let highlightArea;
+      let highlightIcon;
+      if (container) {
+        highlightArea = container.querySelector(
+          `#${currentElement.highlight.id}`
+        );
+      }
+
+      let nodeList = highlightArea.getElementsByClassName(CLASS_HIGHLIGHT_AREA);
+      highlightIcon = nodeList[0];
+
+      const newY = parseInt(highlightIcon.style.top.replace("px", ""));
+
+      const updatedAnnotation = {
+        ...currentElement,
+        highlight: {
+          ...currentElement.highlight,
+          position: newY,
+        },
+      };
+
+      return [...newArray, updatedAnnotation];
+    };
+
+    return highlights.reduce(positionAnnotations, []);
+  }
+
+  reposition(highlights: Array<any>) {
+    let doc = this.delegate.iframes[0].contentDocument;
+
+    const positionAnnotations = (
+      newArray: Array<any>,
+      currentElement: any,
+      currentIndex: number
+    ) => {
+      const high = highlights[0];
+
+      let container = doc!.getElementById("R2_ID_HIGHLIGHTS_CONTAINER");
+      let highlightArea;
+      let highlightIcon;
+      if (container) {
+        highlightArea = container.querySelector(`#${high.highlight.id}`);
+      }
+
+      let nodeList = highlightArea.getElementsByClassName(CLASS_HIGHLIGHT_AREA);
+      highlightIcon = nodeList[0];
+
+      const size = parseInt(highlightIcon.style.height.replace("px", ""));
+
+      let originY = currentElement.highlight.position;
+
+      const preY =
+        newArray[currentIndex - 1] &&
+        newArray[currentIndex - 1].highlight.position;
+
+      const preHeight = size;
+
+      const preBottomY = currentIndex === 0 ? 0 : preY + preHeight + 0;
+      const newY = preBottomY > originY ? preBottomY : originY;
+
+      const updatedAnnotation = {
+        ...currentElement,
+        highlight: {
+          ...currentElement.highlight,
+          position: newY,
+        },
+      };
+      return [...newArray, updatedAnnotation];
+    };
+
+    return highlights
+      .sort(function (a: any, b: any) {
+        return a.highlight.position - b.highlight.position;
+      })
+      .reduce(positionAnnotations, []);
+  }
+}
+
+export function repositionHighlights(highlights: Array<any>) {
+  const positionAnnotations = (
+    newArray: Array<any>,
+    currentElement: any,
+    currentIndex: number
+  ) => {
+    let originY = currentElement.position;
+
+    if (currentElement?.icon?.position === "right") {
+    } else {
+      originY = 0;
+    }
+
+    const preY =
+      newArray[currentIndex - 1] && newArray[currentIndex - 1].position;
+
+    const preHeight = newArray[currentIndex - 1] && 24;
+
+    const preBottomY = currentIndex === 0 ? 0 : preY + preHeight + 0;
+    const newY =
+      preBottomY > originY && currentElement?.icon?.position === "right"
+        ? preBottomY
+        : originY;
+
+    const updatedAnnotation = {
+      ...currentElement,
+      position: newY,
+    };
+    return [...newArray, updatedAnnotation];
+  };
+
+  return highlights
+    .sort(function (a: any, b: any) {
+      return a.position - b.position;
+    })
+    .reduce(positionAnnotations, []);
 }

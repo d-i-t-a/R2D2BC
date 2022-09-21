@@ -17,7 +17,6 @@
  * Licensed to: Bibliotheca LLC under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../../utils";
 import { Publication } from "../../model/Publication";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
@@ -25,10 +24,11 @@ import { Link } from "../../model/Link";
 import { MediaOverlayNode } from "r2-shared-js/dist/es6-es2015/src/models/media-overlay";
 import { TaJsonDeserialize } from "../../utils/JsonUtil";
 import {
-  R2_MO_CLASS_ACTIVE,
   MediaOverlaySettings,
+  R2_MO_CLASS_ACTIVE,
 } from "./MediaOverlaySettings";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import log from "loglevel";
 
 // Media Overlays
 // Synchronized Narration
@@ -111,12 +111,12 @@ export class MediaOverlayModule implements ReaderModule {
   }
 
   stop() {
-    if (IS_DEV) console.log("MediaOverlay module stop");
+    log.log("MediaOverlay module stop");
   }
 
   protected start() {
     this.delegate.mediaOverlayModule = this;
-    if (IS_DEV) console.log("MediaOverlay module start");
+    log.log("MediaOverlay module start");
   }
 
   async initialize() {
@@ -149,13 +149,13 @@ export class MediaOverlayModule implements ReaderModule {
 
       let response: Response;
       try {
-        response = await fetch(moUrlFull);
+        response = await fetch(moUrlFull, this.delegate.requestConfig);
       } catch (e) {
         console.error(e, moUrlFull);
         return;
       }
       if (!response.ok) {
-        if (IS_DEV) console.log("BAD RESPONSE?!");
+        log.log("BAD RESPONSE?!");
       }
 
       let moJson: any | undefined;
@@ -165,7 +165,7 @@ export class MediaOverlayModule implements ReaderModule {
         console.error(e);
       }
       if (!moJson) {
-        if (IS_DEV) console.log("## moJson" + moJson);
+        log.log("## moJson" + moJson);
         return;
       }
 
@@ -192,10 +192,12 @@ export class MediaOverlayModule implements ReaderModule {
         await this.playLink();
       } else {
         if (this.settings.autoTurn && this.settings.playing) {
-          this.audioElement.pause();
+          if (this.audioElement) {
+            await this.audioElement.pause();
+          }
           this.delegate.nextResource();
         } else {
-          this.stopReadAloud();
+          await this.stopReadAloud();
         }
       }
     }
@@ -204,7 +206,10 @@ export class MediaOverlayModule implements ReaderModule {
   async startReadAloud() {
     if (this.delegate.rights.enableMediaOverlays) {
       this.settings.playing = true;
-      if (this.audioElement) {
+      if (
+        this.audioElement &&
+        this.currentLinks[this.currentLinkIndex]?.Properties.MediaOverlay
+      ) {
         const timeToSeekTo = this.currentAudioBegin
           ? this.currentAudioBegin
           : 0;
@@ -231,9 +236,9 @@ export class MediaOverlayModule implements ReaderModule {
   }
   async stopReadAloud() {
     if (this.delegate.rights.enableMediaOverlays) {
-      if (this.currentLinkIndex > 0) await this.playLink();
       this.settings.playing = false;
-      this.audioElement?.pause();
+      this.audioElement.pause();
+
       if (this.play) this.play.style.removeProperty("display");
       if (this.pause) this.pause.style.display = "none";
     }
@@ -260,7 +265,7 @@ export class MediaOverlayModule implements ReaderModule {
     mo: MediaOverlayNode,
     textFragmentIDChain: Array<string | null> | undefined
   ): MediaOverlayNode | undefined | null {
-    if (IS_DEV) console.log("findDepthFirstTextAudioPair()");
+    log.log("findDepthFirstTextAudioPair()");
 
     let isTextUrlMatch: boolean | undefined;
     let isFragmentIDMatch: boolean | undefined;
@@ -284,23 +289,18 @@ export class MediaOverlayModule implements ReaderModule {
       }
     }
 
-    if (IS_DEV) {
-      console.log("isFragmentIDMatch: " + isFragmentIDMatch);
-      console.log("isTextUrlMatch: " + isTextUrlMatch);
-    }
+    log.log("isFragmentIDMatch: " + isFragmentIDMatch);
+    log.log("isTextUrlMatch: " + isTextUrlMatch);
     if (!mo.Children || !mo.Children.length) {
-      if (IS_DEV)
-        console.log("findDepthFirstTextAudioPair() - leaf text/audio pair");
+      log.log("findDepthFirstTextAudioPair() - leaf text/audio pair");
       if (!isTextUrlMatch) {
-        if (IS_DEV)
-          console.log("findDepthFirstTextAudioPair() - leaf - !isTextUrlMatch");
+        log.log("findDepthFirstTextAudioPair() - leaf - !isTextUrlMatch");
         return undefined;
       }
       if (isFragmentIDMatch || (isTextUrlMatch && !textFragmentIDChain)) {
-        if (IS_DEV)
-          console.log(
-            "findDepthFirstTextAudioPair() - leaf - isFragmentIDMatch || (isTextUrlMatch && !textFragmentIDChain"
-          );
+        log.log(
+          "findDepthFirstTextAudioPair() - leaf - isFragmentIDMatch || (isTextUrlMatch && !textFragmentIDChain"
+        );
         return mo;
       }
       return undefined;
@@ -308,38 +308,27 @@ export class MediaOverlayModule implements ReaderModule {
     const textFragmentIDChainOriginal = textFragmentIDChain;
     let frags = textFragmentIDChain;
     for (const child of mo.Children) {
-      if (IS_DEV) {
-        console.log("findDepthFirstTextAudioPair() - child");
-        console.log(JSON.stringify(child));
-      }
+      log.log("findDepthFirstTextAudioPair() - child");
+      log.log(JSON.stringify(child));
       const match = this.findDepthFirstTextAudioPair(textHref, child, frags);
       if (match === null) {
-        if (IS_DEV) {
-          console.log(
-            "findDepthFirstTextAudioPair() - child - match null (skip)"
-          );
-        }
+        log.log("findDepthFirstTextAudioPair() - child - match null (skip)");
         frags = undefined;
       }
       if (match) {
-        if (IS_DEV) {
-          console.log("findDepthFirstTextAudioPair() - child - match");
-          console.log(JSON.stringify(match));
-        }
+        log.log("findDepthFirstTextAudioPair() - child - match");
+        log.log(JSON.stringify(match));
         return match;
       }
     }
     if (isFragmentIDMatch) {
-      if (IS_DEV)
-        console.log("findDepthFirstTextAudioPair() - post isFragmentIDMatch");
+      log.log("findDepthFirstTextAudioPair() - post isFragmentIDMatch");
       const match = this.findDepthFirstTextAudioPair(textHref, mo, undefined);
       if (match) {
-        if (IS_DEV) {
-          console.log(
-            "findDepthFirstTextAudioPair() - post isFragmentIDMatch - match"
-          );
-          console.log(JSON.stringify(match));
-        }
+        log.log(
+          "findDepthFirstTextAudioPair() - post isFragmentIDMatch - match"
+        );
+        log.log(JSON.stringify(match));
         return match;
       } else {
         return match;
@@ -350,6 +339,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
     return undefined;
   }
+
   myReq;
   trackCurrentTime() {
     cancelAnimationFrame(this.myReq);
@@ -360,7 +350,7 @@ export class MediaOverlayModule implements ReaderModule {
           this.currentAudioEnd &&
           this.audioElement.currentTime >= this.currentAudioEnd - 0.05
         ) {
-          if (IS_DEV) console.log("ontimeupdate - mediaOverlaysNext()");
+          log.log("ontimeupdate - mediaOverlaysNext()");
           this.mediaOverlaysNext();
         }
         const match_i = this.mediaOverlayTextAudioPair.Text.lastIndexOf("#");
@@ -376,7 +366,7 @@ export class MediaOverlayModule implements ReaderModule {
   }
 
   mediaOverlaysNext(escape?: boolean) {
-    if (IS_DEV) console.log("mediaOverlaysNext()");
+    log.log("mediaOverlaysNext()");
 
     if (this.mediaOverlayRoot && this.mediaOverlayTextAudioPair) {
       const nextTextAudioPair = this.findNextTextAudioPair(
@@ -386,7 +376,7 @@ export class MediaOverlayModule implements ReaderModule {
         escape ? true : false
       );
       if (!nextTextAudioPair) {
-        if (IS_DEV) console.log("mediaOverlaysNext() - navLeftOrRight()");
+        log.log("mediaOverlaysNext() - navLeftOrRight()");
         this.mediaOverlaysStop();
 
         if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
@@ -411,22 +401,19 @@ export class MediaOverlayModule implements ReaderModule {
             "https://dita.digital/" + nextTextAudioPair.Text
           );
           if (hrefUrlObj1.pathname !== hrefUrlObj2.pathname) {
-            if (IS_DEV) {
-              console.log(
-                "mediaOverlaysNext() SWITCH! " +
-                  hrefUrlObj1.pathname +
-                  " != " +
-                  hrefUrlObj2.pathname
-              );
-            }
+            log.log(
+              "mediaOverlaysNext() SWITCH! " +
+                hrefUrlObj1.pathname +
+                " != " +
+                hrefUrlObj2.pathname
+            );
             switchDoc = true;
           }
         }
         if (switchDoc) {
           this.mediaOverlaysStop();
         } else {
-          if (IS_DEV)
-            console.log("mediaOverlaysNext() - playMediaOverlaysAudio()");
+          log.log("mediaOverlaysNext() - playMediaOverlaysAudio()");
           setTimeout(async () => {
             await this.playMediaOverlaysAudio(
               nextTextAudioPair,
@@ -437,7 +424,7 @@ export class MediaOverlayModule implements ReaderModule {
         }
       }
     } else {
-      if (IS_DEV) console.log("mediaOverlaysNext() - navLeftOrRight() 2");
+      log.log("mediaOverlaysNext() - navLeftOrRight() 2");
       this.mediaOverlaysStop();
 
       if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
@@ -455,7 +442,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
   }
   mediaOverlaysStop() {
-    if (IS_DEV) console.log("mediaOverlaysStop()");
+    log.log("mediaOverlaysStop()");
 
     this.mediaOverlaysPause();
 
@@ -463,7 +450,7 @@ export class MediaOverlayModule implements ReaderModule {
     this.mediaOverlayTextAudioPair = undefined;
   }
   mediaOverlaysPause() {
-    if (IS_DEV) console.log("mediaOverlaysPause()");
+    log.log("mediaOverlaysPause()");
 
     this.mediaOverlayHighlight(undefined);
 
@@ -479,22 +466,17 @@ export class MediaOverlayModule implements ReaderModule {
   ): MediaOverlayNode | undefined | null {
     if (!mo.Children || !mo.Children.length) {
       if (previousMo?.prev === moToMatch) {
-        if (IS_DEV)
-          console.log("findNextTextAudioPair() - prevMo === moToMatch");
+        log.log("findNextTextAudioPair() - prevMo === moToMatch");
         return mo;
       }
-      if (IS_DEV) {
-        console.log("findNextTextAudioPair() - set previous");
-        console.log(JSON.stringify(mo));
-      }
+      log.log("findNextTextAudioPair() - set previous");
+      log.log(JSON.stringify(mo));
       previousMo.prev = mo;
       return undefined;
     }
     for (const child of mo.Children) {
-      if (IS_DEV) {
-        console.log("findNextTextAudioPair() - child");
-        console.log(JSON.stringify(child));
-      }
+      log.log("findNextTextAudioPair() - child");
+      log.log(JSON.stringify(child));
       const match = this.findNextTextAudioPair(
         child,
         moToMatch,
@@ -502,10 +484,8 @@ export class MediaOverlayModule implements ReaderModule {
         escape
       );
       if (match) {
-        if (IS_DEV) {
-          console.log("findNextTextAudioPair() - match");
-          console.log(JSON.stringify(match));
-        }
+        log.log("findNextTextAudioPair() - match");
+        log.log(JSON.stringify(match));
         return match;
       }
     }
@@ -516,7 +496,7 @@ export class MediaOverlayModule implements ReaderModule {
     begin: number | undefined,
     end: number | undefined
   ) {
-    if (IS_DEV) console.log("playMediaOverlaysAudio()");
+    log.log("playMediaOverlaysAudio()");
 
     this.mediaOverlayTextAudioPair = moTextAudioPair;
 
@@ -550,14 +530,14 @@ export class MediaOverlayModule implements ReaderModule {
           try {
             this.currentAudioBegin = parseFloat(b);
           } catch (err) {
-            console.log(err);
+            log.error(err);
           }
           if (matches.length >= 3) {
             const e = matches[3];
             try {
               this.currentAudioEnd = parseFloat(e);
             } catch (err) {
-              console.log(err);
+              log.error(err);
             }
           }
         }
@@ -566,11 +546,9 @@ export class MediaOverlayModule implements ReaderModule {
       this.currentAudioBegin = begin;
       this.currentAudioEnd = end;
     }
-    if (IS_DEV) {
-      console.log(
-        `${urlFull} => [${this.currentAudioBegin}-${this.currentAudioEnd}]`
-      );
-    }
+    log.log(
+      `${urlFull} => [${this.currentAudioBegin}-${this.currentAudioEnd}]`
+    );
 
     const playClip = async (initial: boolean) => {
       if (!this.audioElement) {
@@ -583,11 +561,9 @@ export class MediaOverlayModule implements ReaderModule {
           (initial && !timeToSeekTo) ||
           this.audioElement.currentTime === timeToSeekTo
         ) {
-          if (IS_DEV) {
-            console.log(
-              "playMediaOverlaysAudio() - playClip() - _currentAudioElement.play()"
-            );
-          }
+          log.log(
+            "playMediaOverlaysAudio() - playClip() - _currentAudioElement.play()"
+          );
           this.ensureOnTimeUpdate(false, false);
           this.audioElement.playbackRate = this.settings.rate;
           this.audioElement.volume = this.settings.volume;
@@ -607,22 +583,16 @@ export class MediaOverlayModule implements ReaderModule {
             checkReady();
           }
         } else {
-          if (IS_DEV) {
-            console.log(
-              "playMediaOverlaysAudio() - playClip() - ontimeupdateSeeked"
-            );
-          }
+          log.log("playMediaOverlaysAudio() - playClip() - ontimeupdateSeeked");
           const ontimeupdateSeeked = async (_ev: Event) => {
             this.audioElement.removeEventListener(
               "timeupdate",
               ontimeupdateSeeked
             );
 
-            if (IS_DEV) {
-              console.log(
-                "playMediaOverlaysAudio() - playClip() - ontimeupdateSeeked - .play()"
-              );
-            }
+            log.log(
+              "playMediaOverlaysAudio() - playClip() - ontimeupdateSeeked - .play()"
+            );
             this.ensureOnTimeUpdate(false, false);
             if (this.audioElement) {
               this.audioElement.playbackRate = this.settings.rate;
@@ -656,17 +626,11 @@ export class MediaOverlayModule implements ReaderModule {
           this.audioElement.currentTime >= timeToSeekTo - 0.1;
         this.ensureOnTimeUpdate(false, false);
         if (contiguous) {
-          if (IS_DEV) {
-            console.log(
-              "playMediaOverlaysAudio() - playClip() - ensureOnTimeUpdate"
-            );
-          }
+          log.log("playMediaOverlaysAudio() - playClip() - ensureOnTimeUpdate");
         } else {
-          if (IS_DEV) {
-            console.log(
-              "playMediaOverlaysAudio() - playClip() - currentTime = timeToSeekTo"
-            );
-          }
+          log.log(
+            "playMediaOverlaysAudio() - playClip() - currentTime = timeToSeekTo"
+          );
           this.audioElement.currentTime = timeToSeekTo;
         }
       }
@@ -675,14 +639,12 @@ export class MediaOverlayModule implements ReaderModule {
     this.previousAudioUrl = this.currentAudioUrl;
     if (!this.currentAudioUrl || urlNoQuery !== this.currentAudioUrl) {
       this.currentAudioUrl = urlNoQuery;
-      if (IS_DEV) {
-        console.log(
-          "playMediaOverlaysAudio() - RESET: " +
-            this.previousAudioUrl +
-            " => " +
-            this.currentAudioUrl
-        );
-      }
+      log.log(
+        "playMediaOverlaysAudio() - RESET: " +
+          this.previousAudioUrl +
+          " => " +
+          this.currentAudioUrl
+      );
 
       this.audioElement = document.getElementById(
         "AUDIO_MO_ID"
@@ -705,7 +667,7 @@ export class MediaOverlayModule implements ReaderModule {
       document.body.appendChild(this.audioElement);
 
       this.audioElement.addEventListener("error", (ev) => {
-        console.log(
+        log.log(
           "-1) error: " +
             (this.currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src
               ? this.currentAudioUrl + " -- "
@@ -720,8 +682,8 @@ export class MediaOverlayModule implements ReaderModule {
           // 2 === MEDIA_ERR_NETWORK
           // 3 === MEDIA_ERR_DECODE
           // 4 === MEDIA_ERR_SRC_NOT_SUPPORTED
-          console.log(this.audioElement.error.code);
-          console.log(this.audioElement.error.message);
+          log.log(this.audioElement.error.code);
+          log.log(this.audioElement.error.message);
         }
       });
 
@@ -731,13 +693,13 @@ export class MediaOverlayModule implements ReaderModule {
           "canplaythrough",
           oncanplaythrough
         );
-        if (IS_DEV) console.log("oncanplaythrough");
+        log.log("oncanplaythrough");
         await playClip(true);
       };
       this.audioElement.addEventListener("canplaythrough", oncanplaythrough);
 
       const onended = async (_ev: Event) => {
-        if (IS_DEV) console.log("onended");
+        log.log("onended");
         if (this.currentLinks.length > 1 && this.currentLinkIndex === 0) {
           this.currentLinkIndex++;
           await this.playLink();
@@ -755,7 +717,7 @@ export class MediaOverlayModule implements ReaderModule {
       this.audioElement.playbackRate = this.settings.rate;
       this.audioElement.setAttribute("src", this.currentAudioUrl);
     } else {
-      if (IS_DEV) console.log("playMediaOverlaysAudio() - playClip()");
+      log.log("playMediaOverlaysAudio() - playClip()");
       await playClip(false);
     }
   }
@@ -764,7 +726,7 @@ export class MediaOverlayModule implements ReaderModule {
     rootMo: MediaOverlayNode,
     textFragmentIDChain: Array<string | null> | undefined
   ) {
-    if (IS_DEV) console.log("playMediaOverlays()");
+    log.log("playMediaOverlays()");
 
     let textFragmentIDChain_ = textFragmentIDChain
       ? textFragmentIDChain.filter((id) => id)
@@ -779,13 +741,11 @@ export class MediaOverlayModule implements ReaderModule {
       textFragmentIDChain_
     );
     if (!moTextAudioPair && textFragmentIDChain_) {
-      if (IS_DEV) {
-        console.log(
-          "playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE "
-        );
-        console.log(JSON.stringify(textFragmentIDChain_, null, 4));
-        console.log(JSON.stringify(rootMo, null, 4));
-      }
+      log.log(
+        "playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE "
+      );
+      log.log(JSON.stringify(textFragmentIDChain_, null, 4));
+      log.log(JSON.stringify(rootMo, null, 4));
       moTextAudioPair = this.findDepthFirstTextAudioPair(
         textHref,
         rootMo,
@@ -794,8 +754,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
     if (moTextAudioPair) {
       if (moTextAudioPair.Audio) {
-        if (IS_DEV)
-          console.log("playMediaOverlays() - playMediaOverlaysAudio()");
+        log.log("playMediaOverlays() - playMediaOverlaysAudio()");
         this.mediaOverlayRoot = rootMo;
         await this.playMediaOverlaysAudio(
           moTextAudioPair,
@@ -804,29 +763,30 @@ export class MediaOverlayModule implements ReaderModule {
         );
       }
     } else {
-      if (IS_DEV)
-        console.log("playMediaOverlays() - !moTextAudioPair " + textHref);
+      log.log("playMediaOverlays() - !moTextAudioPair " + textHref);
     }
   }
   ontimeupdate = async (_v: Event) => {
-    if (IS_DEV) console.log("ontimeupdate");
+    log.log("ontimeupdate");
     this.trackCurrentTime();
   };
   ensureOnTimeUpdate = (remove: boolean, replace: boolean) => {
-    if (this.audioElement) {
-      if (remove) {
-        if (this.__ontimeupdate) {
-          this.__ontimeupdate = false;
+    if (remove) {
+      if (this.__ontimeupdate) {
+        this.__ontimeupdate = false;
+        if (this.audioElement) {
           this.audioElement.removeEventListener(
             "timeupdate",
             this.ontimeupdate
           );
-          cancelAnimationFrame(this.myReq);
         }
-      } else {
-        if (!this.__ontimeupdate || replace) {
-          this.__ontimeupdate = true;
-          if (replace) {
+        cancelAnimationFrame(this.myReq);
+      }
+    } else {
+      if (!this.__ontimeupdate || replace) {
+        this.__ontimeupdate = true;
+        if (replace) {
+          if (this.audioElement) {
             this.audioElement.removeEventListener(
               "timeupdate",
               this.ontimeupdate
@@ -839,7 +799,7 @@ export class MediaOverlayModule implements ReaderModule {
   };
 
   mediaOverlayHighlight(id: string | undefined) {
-    if (IS_DEV) console.log("moHighlight:  ## " + id);
+    log.log("moHighlight:  ## " + id);
     let classActive = this.publication.Metadata?.MediaOverlay?.ActiveClass;
     if (!classActive) {
       classActive = this.settings.color;

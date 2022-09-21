@@ -26,12 +26,13 @@ import {
   Incremental,
 } from "../../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { IS_DEV } from "../../utils";
+
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import {
   MediaOverlayModuleAPI,
   MediaOverlayModuleProperties,
 } from "./MediaOverlayModule";
+import log from "loglevel";
 
 export const R2_MO_CLASS_ACTIVE = "r2-mo-active";
 
@@ -104,27 +105,27 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       let initialSettings = config.initialMediaOverlaySettings;
       if (initialSettings?.color) {
         settings.color = initialSettings.color;
-        if (IS_DEV) console.log(settings.color);
+        log.log(settings.color);
       }
       if (initialSettings?.autoScroll) {
         settings.autoScroll = initialSettings.autoScroll;
-        if (IS_DEV) console.log(settings.autoScroll);
+        log.log(settings.autoScroll);
       }
       if (initialSettings?.autoTurn) {
         settings.autoTurn = initialSettings.autoTurn;
-        if (IS_DEV) console.log(settings.autoTurn);
+        log.log(settings.autoScroll);
       }
       if (initialSettings?.volume) {
         settings.volume = initialSettings.volume;
-        if (IS_DEV) console.log(settings.volume);
+        log.log(settings.volume);
       }
       if (initialSettings?.rate) {
         settings.rate = initialSettings.rate;
-        if (IS_DEV) console.log(settings.rate);
+        log.log(settings.rate);
       }
       if (initialSettings?.wait) {
         settings.wait = initialSettings.wait;
-        if (IS_DEV) console.log(settings.wait);
+        log.log(settings.wait);
       }
     }
 
@@ -141,13 +142,11 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
     this.api = api;
     this.headerMenu = headerMenu;
     this.initialise();
-    console.log(this.api);
+    log.log(this.api);
   }
 
   stop() {
-    if (IS_DEV) {
-      console.log("MediaOverlay settings stop");
-    }
+    log.log("MediaOverlay settings stop");
   }
 
   private initialise() {
@@ -265,9 +264,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
     this.applyMediaOverlaySettings(syncSettings);
     if (this.api?.updateSettings) {
       this.api?.updateSettings(syncSettings).then(async (settings) => {
-        if (IS_DEV) {
-          console.log("api updated sync settings", settings);
-        }
+        log.log("api updated sync settings", settings);
       });
     }
   }
@@ -361,7 +358,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       this.settingsChangeCallback();
     }
     if (mediaOverlaySettings.autoScroll !== undefined) {
-      if (IS_DEV) console.log("autoScroll " + this.autoScroll);
+      log.log("autoScroll " + this.autoScroll);
       this.autoScroll = mediaOverlaySettings.autoScroll;
       let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_SCROLL_REF);
       if (prop) {
@@ -371,7 +368,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       this.settingsChangeCallback();
     }
     if (mediaOverlaySettings.autoTurn !== undefined) {
-      if (IS_DEV) console.log("autoTurn " + this.autoTurn);
+      log.log("autoTurn " + this.autoTurn);
       this.autoTurn = mediaOverlaySettings.autoTurn;
       let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.AUTO_TURN_REF);
       if (prop) {
@@ -381,7 +378,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       this.settingsChangeCallback();
     }
     if (mediaOverlaySettings.volume) {
-      if (IS_DEV) console.log("volume " + this.volume);
+      log.log("volume " + this.volume);
       this.volume = mediaOverlaySettings.volume;
       let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF);
       if (prop) {
@@ -391,7 +388,7 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       this.settingsChangeCallback();
     }
     if (mediaOverlaySettings.rate) {
-      if (IS_DEV) console.log("rate " + this.rate);
+      log.log("rate " + this.rate);
       this.rate = mediaOverlaySettings.rate;
       let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF);
       if (prop) {

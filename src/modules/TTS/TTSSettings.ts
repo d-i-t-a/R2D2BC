@@ -27,10 +27,10 @@ import {
   JSONable,
 } from "../../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { IS_DEV } from "../../utils";
 import { IFrameNavigator, ReaderRights } from "../../navigator/IFrameNavigator";
 import { TextHighlighter } from "../highlight/TextHighlighter";
 import { addEventListenerOptional } from "../../utils/EventHandler";
+import log from "loglevel";
 
 export interface TTSModuleAPI {
   started: any;
@@ -52,7 +52,7 @@ export interface TTSModuleProperties {
 
 export interface TTSModuleConfig extends TTSModuleProperties {
   delegate: IFrameNavigator;
-  rights: ReaderRights;
+  rights: Partial<ReaderRights>;
   tts: TTSSettings;
   highlighter: TextHighlighter;
   headerMenu?: HTMLElement | null;
@@ -136,27 +136,27 @@ export class TTSSettings implements ITTSUserSettings {
 
       if (initialTTSSettings?.rate) {
         settings.rate = initialTTSSettings.rate;
-        if (IS_DEV) console.log(settings.rate);
+        log.log(settings.rate);
       }
       if (initialTTSSettings?.pitch) {
         settings.pitch = initialTTSSettings.pitch;
-        if (IS_DEV) console.log(settings.pitch);
+        log.log(settings.pitch);
       }
       if (initialTTSSettings?.volume) {
         settings.volume = initialTTSSettings.volume;
-        if (IS_DEV) console.log(settings.volume);
+        log.log(settings.volume);
       }
       if (initialTTSSettings?.color) {
         settings.color = initialTTSSettings.color;
-        if (IS_DEV) console.log(settings.color);
+        log.log(settings.color);
       }
       if (initialTTSSettings?.autoScroll) {
         settings.autoScroll = initialTTSSettings.autoScroll;
-        if (IS_DEV) console.log(settings.autoScroll);
+        log.log(settings.autoScroll);
       }
       if (initialTTSSettings?.voice) {
         settings.voice = initialTTSSettings.voice;
-        if (IS_DEV) console.log(settings.voice);
+        log.log(settings.voice);
       }
     }
 
@@ -178,9 +178,7 @@ export class TTSSettings implements ITTSUserSettings {
   enableSplitter?: boolean;
 
   stop() {
-    if (IS_DEV) {
-      console.log("tts settings stop");
-    }
+    log.log("tts settings stop");
   }
 
   private initialise() {
@@ -303,9 +301,7 @@ export class TTSSettings implements ITTSUserSettings {
     this.applyTTSSettings(ttsSettings);
     if (this.api?.updateSettings) {
       this.api?.updateSettings(ttsSettings).then(async (settings) => {
-        if (IS_DEV) {
-          console.log("api updated tts settings", settings);
-        }
+        log.log("api updated tts settings", settings);
       });
     }
   }
@@ -398,7 +394,7 @@ export class TTSSettings implements ITTSUserSettings {
 
   applyTTSSettings(ttsSettings: Partial<ITTSUserSettings>) {
     if (ttsSettings.rate) {
-      if (IS_DEV) console.log("rate " + this.rate);
+      log.log("rate " + this.rate);
       this.rate = ttsSettings.rate;
       let prop = this.userProperties.getByRef(TTSREFS.RATE_REF);
       if (prop) {
@@ -409,7 +405,7 @@ export class TTSSettings implements ITTSUserSettings {
       this.restartCallback();
     }
     if (ttsSettings.pitch) {
-      if (IS_DEV) console.log("pitch " + this.pitch);
+      log.log("pitch " + this.pitch);
       this.pitch = ttsSettings.pitch;
       let prop = this.userProperties.getByRef(TTSREFS.PITCH_REF);
       if (prop) {
@@ -420,7 +416,7 @@ export class TTSSettings implements ITTSUserSettings {
       this.restartCallback();
     }
     if (ttsSettings.volume) {
-      if (IS_DEV) console.log("volume " + this.volume);
+      log.log("volume " + this.volume);
       this.volume = ttsSettings.volume;
       let prop = this.userProperties.getByRef(TTSREFS.VOLUME_REF);
       if (prop) {
@@ -441,7 +437,7 @@ export class TTSSettings implements ITTSUserSettings {
       this.settingsChangeCallback();
     }
     if (ttsSettings.autoScroll !== undefined) {
-      if (IS_DEV) console.log("autoScroll " + this.autoScroll);
+      log.log("autoScroll " + this.autoScroll);
       this.autoScroll = ttsSettings.autoScroll;
       let prop = this.userProperties.getByRef(TTSREFS.AUTO_SCROLL_REF);
       if (prop) {
@@ -451,7 +447,7 @@ export class TTSSettings implements ITTSUserSettings {
       this.settingsChangeCallback();
     }
     if (ttsSettings.voice) {
-      if (IS_DEV) console.log("voice " + this.voice);
+      log.log("voice " + this.voice);
       this.voice = ttsSettings.voice;
       let prop = this.userProperties.getByRef(TTSREFS.VOICE_REF);
       if (prop) {

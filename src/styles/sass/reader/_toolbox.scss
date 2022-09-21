@@ -16,6 +16,7 @@
  * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
+@use "sass:math";
 
  .highlight-toolbox {
   transform: translate(-50%, -100%);
@@ -32,8 +33,8 @@
       position: absolute;
       width: $size;
       height: $size;
-      bottom: -($size / 2);
-      left: calc(50% - #{$size / 2});
+      bottom: - math.div($size, 2);
+      left: calc(50% - #{math.div($size, 2)});
       background-color: inherit;
       transform: rotate(45deg);
   }

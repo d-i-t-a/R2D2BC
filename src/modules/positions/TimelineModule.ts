@@ -17,7 +17,6 @@
  * Licensed to: Bibliotheca LLC, Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IS_DEV } from "../../utils";
 import { Publication } from "../../model/Publication";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
@@ -25,6 +24,7 @@ import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import { Locator } from "../../model/Locator";
 import { Link } from "../../model/Link";
+import log from "loglevel";
 
 export interface TimelineModuleConfig {
   publication: Publication;
@@ -49,9 +49,7 @@ export class TimelineModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Timeline module stop");
-    }
+    log.log("Timeline module stop");
   }
 
   protected async start(): Promise<void> {
@@ -157,7 +155,7 @@ export class TimelineModule implements ReaderModule {
               title: link.Title,
             };
           }
-          if (IS_DEV) console.log(position);
+          log.log(position);
           this.delegate.navigate(position);
         });
 

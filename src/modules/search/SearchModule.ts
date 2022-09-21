@@ -26,13 +26,13 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
-import { IS_DEV } from "../../utils";
 import { DEFAULT_BACKGROUND_COLOR } from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { ISelectionInfo } from "../highlight/common/selection";
 import { SHA256 } from "jscrypto";
 import { searchDocDomSeek, reset } from "./searchWithDomSeek";
 import { TextHighlighter } from "../highlight/TextHighlighter";
+import log from "loglevel";
 
 export interface SearchModuleAPI {}
 
@@ -95,9 +95,7 @@ export class SearchModule implements ReaderModule {
   }
 
   async stop() {
-    if (IS_DEV) {
-      console.log("Search module stop");
-    }
+    log.log("Search module stop");
     removeEventListenerOptional(
       this.searchInput,
       "keypress",
@@ -425,14 +423,14 @@ export class SearchModule implements ReaderModule {
     );
     if (current) {
       item = this.currentChapterSearchResult.filter(
-        (el: any) => el.uuid == index
+        (el: any) => el.uuid === index
       )[0];
       filteredIndex = this.currentChapterSearchResult.findIndex(
-        (el: any) => el.uuid == index
+        (el: any) => el.uuid === index
       );
     } else {
-      item = filteredIndexes.filter((el: any) => el.uuid == index)[0];
-      filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid == index);
+      item = filteredIndexes.filter((el: any) => el.uuid === index)[0];
+      filteredIndex = filteredIndexes.findIndex((el: any) => el.uuid === index);
     }
     if (item !== undefined) {
       if (currentLocation === absolutehref) {
@@ -719,12 +717,17 @@ export class SearchModule implements ReaderModule {
       }
       if (tocItem) {
         let href = this.publication.getAbsoluteHref(tocItem.Href);
-        await fetch(href)
+        await fetch(href, this.delegate.requestConfig)
           .then((r) => r.text())
           .then(async (data) => {
             // ({ data, tocItem });
             let parser = new DOMParser();
-            let doc = parser.parseFromString(data, "application/xhtml+xml");
+            let doc = parser.parseFromString(
+              this.delegate.requestConfig?.encoded
+                ? this.decodeBase64(data)
+                : data,
+              "application/xhtml+xml"
+            );
             if (tocItem) {
               searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
                 (result) => {
@@ -742,6 +745,18 @@ export class SearchModule implements ReaderModule {
       }
     }
   }
+
+  decodeBase64(base64: any) {
+    const text = atob(base64);
+    const length = text.length;
+    const bytes = new Uint8Array(length);
+    for (let i = 0; i < length; i++) {
+      bytes[i] = text.charCodeAt(i);
+    }
+    const decoder = new TextDecoder();
+    return decoder.decode(bytes);
+  }
+
   async searchChapter(term: string): Promise<any> {
     let localSearchResultBook: any = [];
     const linkHref = this.publication.getAbsoluteHref(
@@ -755,12 +770,17 @@ export class SearchModule implements ReaderModule {
     }
     if (tocItem) {
       let href = this.publication.getAbsoluteHref(tocItem.Href);
-      await fetch(href)
+      await fetch(href, this.delegate.requestConfig)
         .then((r) => r.text())
         .then(async (data) => {
           // ({ data, tocItem });
           let parser = new DOMParser();
-          let doc = parser.parseFromString(data, "application/xhtml+xml");
+          let doc = parser.parseFromString(
+            this.delegate.requestConfig?.encoded
+              ? this.decodeBase64(data)
+              : data,
+            "application/xhtml+xml"
+          );
           if (tocItem) {
             searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
               (result) => {

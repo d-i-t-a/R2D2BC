@@ -57,15 +57,11 @@ export enum AnnotationMarker {
   Underline,
   Bookmark,
   Custom,
+  Comment,
 }
 
 export interface Annotation extends Locator {
   id?: any;
   created: Date;
   highlight?: IHighlight;
-}
-
-export interface ChapterWeight {
-  chapterHref: string;
-  weight: number;
 }

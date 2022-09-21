@@ -41,7 +41,6 @@ import {
   IFrameNavigator,
   IFrameAttributes,
   ReaderConfig,
-  UpLinkConfig,
   ReaderRights,
 } from "./navigator/IFrameNavigator";
 import LocalAnnotator from "./store/LocalAnnotator";
@@ -54,6 +53,9 @@ import { TTSModule2 } from "./modules/TTS/TTSModule2";
 import { ReaderModule } from "./modules/ReaderModule";
 import { DefinitionsModule } from "./modules/search/DefinitionsModule";
 import LineFocusModule from "./modules/linefocus/LineFocusModule";
+import { HistoryModule } from "./modules/history/HistoryModule";
+import CitationModule from "./modules/citation/CitationModule";
+import { TaJsonDeserialize } from "./utils/JsonUtil";
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -81,7 +83,9 @@ export default class D2Reader {
     private readonly mediaOverlaySettings?: MediaOverlaySettings,
     private readonly mediaOverlayModule?: MediaOverlayModule,
     private readonly pageBreakModule?: PageBreakModule,
-    private readonly lineFocusModule?: LineFocusModule
+    private readonly lineFocusModule?: LineFocusModule,
+    private readonly historyModule?: HistoryModule,
+    private readonly citationModule?: CitationModule
   ) {}
 
   addEventListener() {
@@ -92,7 +96,7 @@ export default class D2Reader {
    * The async builder.
    */
   static async load(initialConfig: ReaderConfig): Promise<D2Reader> {
-    let rights: ReaderRights = initialConfig.rights ?? {
+    let rights: Partial<ReaderRights> = initialConfig.rights ?? {
       autoGeneratePositions: false,
       enableAnnotations: false,
       enableBookmarks: false,
@@ -105,6 +109,8 @@ export default class D2Reader {
       enableTTS: false,
       enableTimeline: false,
       customKeyboardEvents: false,
+      enableHistory: false,
+      enableCitations: false,
     };
 
     // Enforces supported browsers
@@ -120,11 +126,26 @@ export default class D2Reader {
     const headerMenu = findElement(document, "#headerMenu");
     const footerMenu = findElement(document, "#footerMenu");
 
-    const webPubManifestUrl = initialConfig.url;
+    let webPubManifestUrl = initialConfig.url;
+    let publication;
+    if (initialConfig.publication) {
+      publication = TaJsonDeserialize<Publication>(
+        initialConfig.publication,
+        Publication
+      );
+      publication.manifestUrl = new URL(webPubManifestUrl);
+    } else {
+      publication = await Publication.fromUrl(
+        webPubManifestUrl,
+        initialConfig.requestConfig
+      );
+    }
+
     const store = new LocalStorageStore({
-      prefix: webPubManifestUrl.href,
+      prefix: publication.manifestUrl,
       useLocalStorage: initialConfig.useLocalStorage ?? false,
     });
+
     const settingsStore = new LocalStorageStore({
       prefix: "r2d2bc-reader",
       useLocalStorage: initialConfig.useLocalStorage ?? false,
@@ -136,12 +157,6 @@ export default class D2Reader {
 
     const annotator = new LocalAnnotator({ store: store });
 
-    const upLink: UpLinkConfig = initialConfig.upLinkUrl ?? undefined;
-
-    const publication: Publication = await Publication.fromUrl(
-      webPubManifestUrl
-    );
-
     publication.sample = initialConfig.sample;
 
     // update our config based on what we know from the publication
@@ -152,16 +167,18 @@ export default class D2Reader {
      * generating them or fetching them from provided services.
      */
     if (rights.autoGeneratePositions) {
-      await publication.autoGeneratePositions();
+      await publication.autoGeneratePositions(initialConfig.requestConfig);
     } else {
       if (initialConfig.services?.positions) {
         await publication.fetchPositionsFromService(
-          initialConfig.services?.positions.href
+          initialConfig.services?.positions.href,
+          initialConfig.requestConfig
         );
       }
       if (initialConfig.services?.weight) {
         await publication.fetchWeightsFromService(
-          initialConfig.services?.weight.href
+          initialConfig.services?.weight.href,
+          initialConfig.requestConfig
         );
       }
     }
@@ -173,7 +190,6 @@ export default class D2Reader {
       store: settingsStore,
       initialUserSettings: initialConfig.userSettings,
       headerMenu: headerMenu,
-      material: initialConfig.material,
       api: initialConfig.api,
       injectables:
         (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
@@ -193,16 +209,15 @@ export default class D2Reader {
       publication: publication,
       settings,
       annotator: annotator,
-      upLink: upLink,
       initialLastReadingPosition: initialConfig.lastReadingPosition,
-      material: initialConfig.material,
       api: initialConfig.api,
       rights: rights,
       tts: initialConfig.tts,
       sample: initialConfig.sample,
+      requestConfig: initialConfig.requestConfig,
       injectables:
         (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-          ? initialConfig.injectablesFixed
+          ? initialConfig.injectablesFixed ?? []
           : initialConfig.injectables,
       attributes: initialConfig.attributes,
       services: initialConfig.services,
@@ -341,6 +356,24 @@ export default class D2Reader {
         })
       : undefined;
 
+    const historyModule = rights.enableHistory
+      ? await HistoryModule.create({
+          annotator: annotator,
+          publication: publication,
+          delegate: navigator,
+          headerMenu: headerMenu,
+        })
+      : undefined;
+
+    const citationModule = rights.enableCitations
+      ? await CitationModule.create({
+          publication: publication,
+          delegate: navigator,
+          highlighter: highlighter,
+          ...initialConfig.citations,
+        })
+      : undefined;
+
     return new D2Reader(
       settings,
       navigator,
@@ -356,7 +389,9 @@ export default class D2Reader {
       mediaOverlaySettings,
       mediaOverlayModule,
       pageBreakModule,
-      lineFocusModule
+      lineFocusModule,
+      historyModule,
+      citationModule
     );
   }
 
@@ -777,9 +812,9 @@ export default class D2Reader {
 }
 
 function updateConfig(
-  rights: ReaderRights,
+  rights: Partial<ReaderRights>,
   publication: Publication
-): ReaderRights {
+): Partial<ReaderRights> {
   // Some settings must be disabled for fixed-layout publications
   // maybe we should warn the user we are disabling them here.
   if (publication.isFixedLayout) {

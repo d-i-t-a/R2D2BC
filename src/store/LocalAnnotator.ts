@@ -22,6 +22,7 @@ import Store from "./Store";
 import { Annotation, Bookmark, ReadingPosition } from "../model/Locator";
 import { IHighlight } from "../modules/highlight/common/highlight";
 import { TextHighlighter } from "../modules/highlight/TextHighlighter";
+import { convertRangeInfo } from "../modules/highlight/renderer/iframe/selection";
 
 export interface LocalAnnotatorConfig {
   store: Store;
@@ -33,6 +34,7 @@ export default class LocalAnnotator implements Annotator {
   private static readonly LAST_READING_POSITION = "last-reading-position";
   private static readonly BOOKMARKS = "bookmarks";
   private static readonly ANNOTATIONS = "annotations";
+  private static readonly SELECTIONINFO = "selectionInfo";
 
   public constructor(config: LocalAnnotatorConfig) {
     this.store = config.store;
@@ -177,8 +179,12 @@ export default class LocalAnnotator implements Annotator {
       rangeRepresentation.highlight.id = "R2_HIGHLIGHT_" + sha256Hex;
 
       // Highlight color as string passthrough
-      var rangeColor: any;
-      rangeColor = rangeRepresentation.color;
+      let rangeColor: any;
+      if (rangeRepresentation.highlight.color) {
+        rangeColor = rangeRepresentation.highlight.color;
+      } else if (rangeRepresentation.color) {
+        rangeColor = rangeRepresentation.color;
+      }
       if (TextHighlighter.isHexColor(rangeColor)) {
         rangeColor = TextHighlighter.hexToRgbString(rangeColor);
       }
@@ -199,6 +205,22 @@ export default class LocalAnnotator implements Annotator {
       JSON.stringify(annotationsToStore)
     );
     return annotationsToStore;
+  }
+
+  public saveTemporarySelectionInfo(selectionInfo: any) {
+    this.store.set(LocalAnnotator.SELECTIONINFO, JSON.stringify(selectionInfo));
+  }
+  public getTemporarySelectionInfo(doc: any): any {
+    const selectionInfos = this.store.get(LocalAnnotator.SELECTIONINFO);
+    if (selectionInfos) {
+      let selectionInfo = JSON.parse(selectionInfos);
+      selectionInfo!.range = convertRangeInfo(doc!, selectionInfo!.rangeInfo);
+      return selectionInfo;
+    }
+    return [];
+  }
+  public deleteTemporarySelectionInfo() {
+    this.store.remove(LocalAnnotator.SELECTIONINFO);
   }
 
   public saveAnnotation(annotation: any): any {
@@ -257,7 +279,9 @@ export default class LocalAnnotator implements Annotator {
     const savedAnnotations = this.store.get(LocalAnnotator.ANNOTATIONS);
     if (savedAnnotations) {
       const annotations = JSON.parse(savedAnnotations);
-      const filtered = annotations.filter((el: Annotation) => el.id === id);
+      const filtered = annotations.filter(
+        (el: Annotation) => el.highlight?.id === id || el.id === id
+      );
       if (filtered.length > 0) {
         let foundElement = iframeWin.document.getElementById(
           `${filtered[0].highlight.id}`
@@ -284,6 +308,39 @@ export default class LocalAnnotator implements Annotator {
     return null;
   }
 
+  public getAnnotationElement(id: any, iframeWin): any {
+    const savedAnnotations = this.store.get(LocalAnnotator.ANNOTATIONS);
+    if (savedAnnotations) {
+      const annotations = JSON.parse(savedAnnotations);
+      const filtered = annotations.filter(
+        (el: Annotation) => el.highlight?.id === id
+      );
+      if (filtered.length > 0) {
+        let foundElement = iframeWin.document.getElementById(
+          `${filtered[0].highlight.id}`
+        );
+        if (foundElement) {
+          let position = 0;
+          if (foundElement.hasChildNodes) {
+            for (let i = 0; i < foundElement.childNodes.length; i++) {
+              let childNode = foundElement.childNodes[i] as HTMLDivElement;
+              let top = parseInt(childNode.style.top.replace("px", ""));
+              if (top < position || position === 0) {
+                position = top;
+                return childNode;
+              }
+            }
+          } else {
+            position = parseInt(
+              (foundElement as HTMLDivElement).style.top.replace("px", "")
+            );
+          }
+          return foundElement;
+        }
+      }
+    }
+    return null;
+  }
   public getAnnotation(highlight: IHighlight): any {
     const savedAnnotations = this.store.get(LocalAnnotator.ANNOTATIONS);
     if (savedAnnotations) {

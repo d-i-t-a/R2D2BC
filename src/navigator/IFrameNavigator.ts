@@ -26,11 +26,7 @@ import EventHandler, {
 } from "../utils/EventHandler";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
-import {
-  readerError,
-  readerLoading,
-  simpleUpLinkTemplate,
-} from "../utils/HTMLTemplates";
+import { readerError, readerLoading } from "../utils/HTMLTemplates";
 import {
   Annotation,
   Locations,
@@ -49,7 +45,6 @@ import {
   AnnotationModule,
   AnnotationModuleConfig,
 } from "../modules/AnnotationModule";
-import { IS_DEV } from "../utils";
 import {
   SearchModule,
   SearchModuleConfig,
@@ -79,10 +74,12 @@ import { ReaderModule } from "../modules/ReaderModule";
 import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
 
 import { HighlightType } from "../modules/highlight/common/highlight";
-import { PageBreakModuleConfig } from "../modules/pagebreak/PageBreakModule";
+import {
+  PageBreakModule,
+  PageBreakModuleConfig,
+} from "../modules/pagebreak/PageBreakModule";
 import { Switchable } from "../model/user-settings/UserProperties";
 import { TTSModule2 } from "../modules/TTS/TTSModule2";
-import { PageBreakModule } from "../modules/pagebreak/PageBreakModule";
 import {
   DefinitionsModule,
   DefinitionsModuleConfig,
@@ -91,9 +88,21 @@ import EventEmitter from "eventemitter3";
 import LineFocusModule, {
   LineFocusModuleConfig,
 } from "../modules/linefocus/LineFocusModule";
+import { HistoryModule } from "../modules/history/HistoryModule";
+import CitationModule, {
+  CitationModuleConfig,
+} from "../modules/citation/CitationModule";
+import log from "loglevel";
 
 export type GetContent = (href: string) => Promise<string>;
-export type GetContentBytesLength = (href: string) => Promise<number>;
+export type GetContentBytesLength = (
+  href: string,
+  requestConfig?: RequestConfig
+) => Promise<number>;
+
+export interface RequestConfig extends RequestInit {
+  encoded?: boolean;
+}
 
 export interface NavigatorAPI {
   updateSettings: any;
@@ -107,11 +116,6 @@ export interface NavigatorAPI {
   onError?: (e: Error) => void;
 }
 
-export interface UpLinkConfig {
-  url?: URL;
-  label?: string;
-  ariaLabel?: string;
-}
 export interface IFrameAttributes {
   margin: number;
   navHeight?: number;
@@ -126,16 +130,15 @@ export interface IFrameNavigatorConfig {
   publication: Publication;
   settings: UserSettings;
   annotator?: Annotator;
-  upLink?: UpLinkConfig;
   initialLastReadingPosition?: ReadingPosition;
-  rights: ReaderRights;
-  material?: ReaderUI;
-  api?: NavigatorAPI;
-  tts?: TTSModuleConfig;
+  rights: Partial<ReaderRights>;
+  api?: Partial<NavigatorAPI>;
+  tts?: Partial<TTSModuleConfig>;
   injectables: Array<Injectable>;
   attributes?: IFrameAttributes;
   services?: PublicationServices;
   sample?: SampleRead;
+  requestConfig?: RequestConfig;
 }
 export interface PublicationServices {
   positions?: URL;
@@ -172,36 +175,39 @@ export interface ReaderRights {
   enablePageBreaks: boolean;
   enableLineFocus: boolean;
   customKeyboardEvents: boolean;
+  enableHistory: boolean;
+  enableCitations: boolean;
 }
 
 export interface ReaderUI {
   settings: UserSettingsUIConfig;
 }
 export interface ReaderConfig {
+  publication?: any;
   url: URL;
   userSettings?: any;
   initialAnnotations?: any;
   lastReadingPosition?: any;
-  upLinkUrl?: any;
-  rights?: ReaderRights;
-  material?: ReaderUI;
-  api?: NavigatorAPI;
-  tts?: TTSModuleConfig;
-  search?: SearchModuleConfig;
-  define?: DefinitionsModuleConfig;
-  protection?: ContentProtectionModuleConfig;
-  mediaOverlays?: MediaOverlayModuleConfig;
-  pagebreak?: PageBreakModuleConfig;
-  annotations?: AnnotationModuleConfig;
-  bookmarks?: BookmarkModuleConfig;
-  lineFocus?: LineFocusModuleConfig;
-  highlighter?: TextHighlighterConfig;
+  rights?: Partial<ReaderRights>;
+  api?: Partial<NavigatorAPI>;
+  tts?: Partial<TTSModuleConfig>;
+  search?: Partial<SearchModuleConfig>;
+  define?: Partial<DefinitionsModuleConfig>;
+  protection?: Partial<ContentProtectionModuleConfig>;
+  mediaOverlays?: Partial<MediaOverlayModuleConfig>;
+  pagebreak?: Partial<PageBreakModuleConfig>;
+  annotations?: Partial<AnnotationModuleConfig>;
+  bookmarks?: Partial<BookmarkModuleConfig>;
+  lineFocus?: Partial<LineFocusModuleConfig>;
+  citations?: Partial<CitationModuleConfig>;
+  highlighter?: Partial<TextHighlighterConfig>;
   injectables: Array<Injectable>;
-  injectablesFixed: Array<Injectable>;
+  injectablesFixed?: Array<Injectable>;
   useLocalStorage?: boolean;
   attributes?: IFrameAttributes;
   services?: PublicationServices;
   sample?: SampleRead;
+  requestConfig?: RequestConfig;
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
@@ -224,14 +230,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   pageBreakModule?: PageBreakModule;
   mediaOverlayModule?: MediaOverlayModule;
   lineFocusModule?: LineFocusModule;
+  historyModule?: HistoryModule;
+  citationModule?: CitationModule;
 
   sideNavExpanded: boolean = false;
-  material: boolean = false;
-
-  mTabs: Array<any>;
-  mDropdowns: Array<any>;
-  mCollapsibles: Array<any>;
-  mSidenav: any;
 
   currentChapterLink: D2Link = { href: "" };
   currentSpreadLinks: { left?: D2Link; right?: D2Link } = {};
@@ -247,8 +249,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   private readonly touchEventHandler: TouchEventHandler;
   private readonly keyboardEventHandler: KeyboardEventHandler;
   private readonly sampleReadEventHandler: SampleReadEventHandler;
-  private readonly upLinkConfig: UpLinkConfig | undefined;
-  private upLink: HTMLAnchorElement | undefined = undefined;
 
   private nextChapterBottomAnchorElement: HTMLAnchorElement;
   private previousChapterTopAnchorElement: HTMLAnchorElement;
@@ -284,8 +284,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   private isBeingStyled: boolean;
   private isLoading: boolean;
   private readonly initialLastReadingPosition?: ReadingPosition;
-  api?: NavigatorAPI;
-  rights: ReaderRights = {
+  api?: Partial<NavigatorAPI>;
+  rights: Partial<ReaderRights> = {
     autoGeneratePositions: false,
     enableAnnotations: false,
     enableBookmarks: false,
@@ -298,12 +298,15 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     enableTTS: false,
     enableTimeline: false,
     customKeyboardEvents: false,
+    enableHistory: false,
+    enableCitations: false,
   };
-  tts?: TTSModuleConfig;
+  tts?: Partial<TTSModuleConfig>;
   injectables?: Array<Injectable>;
   attributes?: IFrameAttributes;
   services?: PublicationServices;
   sample?: SampleRead;
+  requestConfig?: RequestConfig;
   private didInitKeyboardEventHandler: boolean = false;
 
   public static async create(
@@ -312,17 +315,16 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     const navigator = new this(
       config.settings,
       config.annotator || undefined,
-      config.upLink || undefined,
       config.initialLastReadingPosition || undefined,
       config.publication,
-      config.material,
       config.api,
       config.rights,
       config.tts,
       config.injectables,
       config.attributes || { margin: 0 },
       config.services,
-      config.sample
+      config.sample,
+      config.requestConfig
     );
 
     await navigator.start(
@@ -336,17 +338,16 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   protected constructor(
     settings: UserSettings,
     annotator: Annotator | undefined = undefined,
-    upLinkConfig: UpLinkConfig | undefined = undefined,
     initialLastReadingPosition: ReadingPosition | undefined = undefined,
     publication: Publication,
-    material: any,
-    api?: NavigatorAPI,
-    rights?: ReaderRights,
-    tts?: TTSModuleConfig,
+    api?: Partial<NavigatorAPI>,
+    rights?: Partial<ReaderRights>,
+    tts?: Partial<TTSModuleConfig>,
     injectables?: Array<Injectable>,
     attributes?: IFrameAttributes,
     services?: PublicationServices,
-    sample?: SampleRead
+    sample?: SampleRead,
+    requestConfig?: RequestConfig
   ) {
     super();
     this.settings = settings;
@@ -357,10 +358,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.eventHandler = new EventHandler(this);
     this.touchEventHandler = new TouchEventHandler(this);
     this.keyboardEventHandler = new KeyboardEventHandler(this);
-    this.upLinkConfig = upLinkConfig;
     this.initialLastReadingPosition = initialLastReadingPosition;
     this.publication = publication;
-    this.material = material;
     this.api = api;
     this.rights = rights ?? {
       autoGeneratePositions: false,
@@ -375,19 +374,20 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       enableTTS: false,
       enableTimeline: false,
       customKeyboardEvents: false,
+      enableHistory: false,
+      enableCitations: false,
     };
     this.tts = tts;
     this.injectables = injectables;
     this.attributes = attributes || { margin: 0 };
     this.services = services;
     this.sample = sample;
+    this.requestConfig = requestConfig;
     this.sampleReadEventHandler = new SampleReadEventHandler(this);
   }
 
   stop() {
-    if (IS_DEV) {
-      console.log("Iframe navigator stop");
-    }
+    log.log("Iframe navigator stop");
 
     removeEventListenerOptional(
       this.previousChapterAnchorElement,
@@ -690,8 +690,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       this.isBeingStyled = true;
       this.isLoading = true;
 
-      this.setupEvents();
-
       this.settings.setIframe(this.iframes[0]);
       this.settings.onSettingsChange(this.handleResize.bind(this));
       this.settings.onColumnSettingsChange(
@@ -777,12 +775,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         if (menuBookmark)
           menuBookmark.parentElement?.style.setProperty("display", "none");
       }
+      this.setupEvents();
 
       return await this.loadManifest();
     } catch (err: unknown) {
       // There's a mismatch between the template and the selectors above,
       // or we weren't able to insert the template in the element.
-      console.error(err);
+      log.error(err);
       this.abortOnError(err);
       return Promise.reject(err);
     }
@@ -806,8 +805,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       const linkHref = this.publication.getAbsoluteHref(
         lastReadingPosition.href
       );
-      if (IS_DEV) console.log(lastReadingPosition.href);
-      if (IS_DEV) console.log(linkHref);
+      log.log(lastReadingPosition.href);
+      log.log(linkHref);
       lastReadingPosition.href = linkHref;
       await this.navigate(lastReadingPosition);
     }
@@ -1227,36 +1226,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
       }
 
-      if (
-        (this.links || this.linksTopLeft) &&
-        this.upLinkConfig &&
-        this.upLinkConfig.url
-      ) {
-        const upUrl = this.upLinkConfig.url;
-        const upLabel = this.upLinkConfig.label || "";
-        const upAriaLabel = this.upLinkConfig.ariaLabel || upLabel;
-        var upHTML = simpleUpLinkTemplate(upUrl.href, upLabel, upAriaLabel);
-        const upParent: HTMLLIElement = document.createElement("li");
-        upParent.classList.add("uplink-wrapper");
-        upParent.innerHTML = upHTML;
-        if (this.links) {
-          this.links.insertBefore(upParent, this.links.firstChild);
-          this.upLink = HTMLUtilities.findRequiredElement(
-            this.links,
-            "a[rel=up]"
-          );
-        } else {
-          this.linksTopLeft.insertBefore(
-            upParent,
-            this.linksTopLeft.firstChild
-          );
-          this.upLink = HTMLUtilities.findRequiredElement(
-            this.linksTopLeft,
-            "a[rel=up]"
-          );
-        }
-      }
-
       let lastReadingPosition: ReadingPosition | undefined = undefined;
       if (this.annotator) {
         lastReadingPosition = (await this.annotator.getLastReadingPosition()) as
@@ -1274,8 +1243,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         const linkHref = this.publication.getAbsoluteHref(
           lastReadingPosition.href
         );
-        if (IS_DEV) console.log(lastReadingPosition.href);
-        if (IS_DEV) console.log(linkHref);
+        log.log(lastReadingPosition.href);
+        log.log(linkHref);
         lastReadingPosition.href = linkHref;
         await this.navigate(lastReadingPosition);
       } else if (startUrl) {
@@ -1293,7 +1262,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
       return new Promise<void>((resolve) => resolve());
     } catch (err: unknown) {
-      console.error(err);
+      log.error(err);
       this.abortOnError(err);
       return new Promise<void>((_, reject) => reject(err)).catch(() => {});
     }
@@ -1360,6 +1329,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.nextChapterAnchorElement.removeAttribute("href");
           this.nextChapterAnchorElement.className += " disabled";
         }
+      }
+      if (this.historyModule) {
+        this.historyModule.setup();
       }
 
       if (this.currentTocUrl !== undefined) {
@@ -1522,7 +1494,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
       return new Promise<void>((resolve) => resolve());
     } catch (err: unknown) {
-      console.error(err);
+      log.error(err);
       this.abortOnError(err);
       return Promise.reject(err);
     }
@@ -1703,7 +1675,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                   if (isSameOrigin) {
                     this.iframes[0].src = this.currentChapterLink.href;
                   } else {
-                    fetch(this.currentChapterLink.href)
+                    fetch(this.currentChapterLink.href, this.requestConfig)
                       .then((r) => r.text())
                       .then(async (content) => {
                         writeIframeDoc.call(
@@ -1736,7 +1708,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                       if (isSameOrigin) {
                         this.iframes[1].src = href;
                       } else {
-                        fetch(href)
+                        fetch(href, this.requestConfig)
                           .then((r) => r.text())
                           .then(async (content) => {
                             writeIframe2Doc.call(this, content, href);
@@ -1769,7 +1741,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                     if (isSameOrigin) {
                       this.iframes[0].src = href;
                     } else {
-                      fetch(href)
+                      fetch(href, this.requestConfig)
                         .then((r) => r.text())
                         .then(async (content) => {
                           writeIframeDoc.call(this, content, href);
@@ -1795,7 +1767,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                     if (isSameOrigin) {
                       this.iframes[1].src = this.currentChapterLink.href;
                     } else {
-                      fetch(this.currentChapterLink.href)
+                      fetch(this.currentChapterLink.href, this.requestConfig)
                         .then((r) => r.text())
                         .then(async (content) => {
                           writeIframe2Doc.call(
@@ -1824,7 +1796,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               if (isSameOrigin) {
                 this.iframes[0].src = this.currentChapterLink.href;
               } else {
-                fetch(this.currentChapterLink.href)
+                fetch(this.currentChapterLink.href, this.requestConfig)
                   .then((r) => r.text())
                   .then(async (content) => {
                     writeIframeDoc.call(
@@ -1849,7 +1821,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             if (isSameOrigin) {
               this.iframes[0].src = this.currentChapterLink.href;
             } else {
-              fetch(this.currentChapterLink.href)
+              fetch(this.currentChapterLink.href, this.requestConfig)
                 .then((r) => r.text())
                 .then(async (content) => {
                   writeIframeDoc.call(
@@ -1891,7 +1863,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                 }
               }
             } else {
-              fetch(this.currentChapterLink.href)
+              fetch(this.currentChapterLink.href, this.requestConfig)
                 .then((r) => r.text())
                 .then(async (content) => {
                   writeIframeDoc.call(
@@ -1911,7 +1883,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                       href: href,
                     };
 
-                    fetch(href)
+                    fetch(href, this.requestConfig)
                       .then((r) => r.text())
                       .then(async (content) => {
                         writeIframe2Doc.call(this, content, href);
@@ -1938,7 +1910,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                     this.iframes[1].src = this.currentChapterLink.href;
                   }
                 } else {
-                  fetch(href)
+                  fetch(href, this.requestConfig)
                     .then((r) => r.text())
                     .then(async (content) => {
                       writeIframeDoc.call(this, content, href);
@@ -1947,7 +1919,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                     this.currentSpreadLinks.right = {
                       href: this.currentChapterLink.href,
                     };
-                    fetch(this.currentChapterLink.href)
+                    fetch(this.currentChapterLink.href, this.requestConfig)
                       .then((r) => r.text())
                       .then(async (content) => {
                         writeIframe2Doc.call(
@@ -1970,7 +1942,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               if (isSameOrigin) {
                 this.iframes[1].src = this.currentChapterLink.href;
               } else {
-                fetch(this.currentChapterLink.href)
+                fetch(this.currentChapterLink.href, this.requestConfig)
                   .then((r) => r.text())
                   .then(async (content) => {
                     writeIframe2Doc.call(
@@ -1989,7 +1961,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           if (isSameOrigin) {
             this.iframes[0].src = this.currentChapterLink.href;
           } else {
-            fetch(this.currentChapterLink.href)
+            fetch(this.currentChapterLink.href, this.requestConfig)
               .then((r) => r.text())
               .then(async (content) => {
                 writeIframeDoc.call(
@@ -2007,7 +1979,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         if (isSameOrigin) {
           this.iframes[0].src = this.currentChapterLink.href;
         } else {
-          fetch(this.currentChapterLink.href)
+          fetch(this.currentChapterLink.href, this.requestConfig)
             .then((r) => r.text())
             .then(async (content) => {
               writeIframeDoc.call(this, content, this.currentChapterLink.href);
@@ -2245,8 +2217,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     position.locations = locations;
 
     const linkHref = this.publication.getAbsoluteHref(locator.href);
-    if (IS_DEV) console.log(locator.href);
-    if (IS_DEV) console.log(linkHref);
+    log.log(locator.href);
+    log.log(linkHref);
     position.href = linkHref;
     this.stopReadAloud();
     this.navigate(position);
@@ -2309,7 +2281,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   snapToSelector(selector) {
     const doc = this.iframes[0].contentDocument;
     if (doc) {
-      console.log(selector);
+      log.log(selector);
       let result = doc.querySelectorAll(selector);
       if (result.length > 0) this.view?.snap(result[0]);
     }
@@ -2394,13 +2366,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
 
-  private handleClickThrough(_event: MouseEvent | TouchEvent) {
-    if (this.mDropdowns) {
-      this.mDropdowns.forEach((element) => {
-        (element as any).close();
-      });
-    }
-  }
+  private handleClickThrough(_event: MouseEvent | TouchEvent) {}
 
   private handleInternalLink(event: MouseEvent | TouchEvent) {
     const element = event.target;
@@ -2608,6 +2574,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.lineFocusModule !== undefined) {
         this.lineFocusModule.handleResize();
       }
+      if (this.historyModule !== undefined) {
+        this.historyModule.handleResize();
+      }
     }, 150);
   }
 
@@ -2749,7 +2718,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
 
-  async navigate(locator: Locator): Promise<void> {
+  async navigate(locator: Locator, history: boolean = true): Promise<void> {
+    if (this.historyModule) {
+      this.historyModule.push(locator, history);
+    }
+
     const exists = this.publication.getTOCItem(locator.href);
     if (exists) {
       var isCurrentLoaded = false;
@@ -3184,15 +3157,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
           if (this.api?.updateCurrentLocation) {
             this.api?.updateCurrentLocation(position).then(async (_) => {
-              if (IS_DEV) {
-                console.log("api updated current location", position);
-              }
+              log.log("api updated current location", position);
               return this.annotator?.saveLastReadingPosition(position);
             });
           } else {
-            if (IS_DEV) {
-              console.log("save last reading position", position);
-            }
+            log.log("save last reading position", position);
             this.annotator.saveLastReadingPosition(position);
           }
         }

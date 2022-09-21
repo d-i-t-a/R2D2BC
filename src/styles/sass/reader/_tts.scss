@@ -1,3 +1,4 @@
+@use "sass:math";
 
 
 
@@ -24,7 +25,7 @@ input[type=range] + .thumb .value {
 // radios
 $checkbox-size: 16px;
 $margin: 16px;
-$margin-small: $margin / 2;
+$margin-small: math.div($margin, 2);
 $text-lighter: #ccc;
 $brand: rgb(16, 16, 16);;
 
@@ -54,12 +55,12 @@ input[type=checkbox] {
     border: 2px solid $text-lighter;
     transition: 0.2s border-color ease;
   }
-  
+
   &:checked:before {
     border-color: $brand;
     transition: 0.5s border-color ease;
   }
-  
+
   &:disabled:before {
     border-color: $text-lighter;
     background-color: $text-lighter;
@@ -100,7 +101,7 @@ input[type=checkbox] {
 
   &[type="checkbox"] {
     &:before {
-      border-radius: $checkbox-size / 4;
+      border-radius: math.div($checkbox-size, 4);
     }
 
     &:after {
@@ -116,13 +117,13 @@ input[type=checkbox] {
       animation: toggleOnCheckbox 0.2s ease forwards;
     }
   }
-  
+
   &[type="checkbox"].filled  {
     &:before {
-      border-radius: $checkbox-size / 4;
+      border-radius: math.div($checkbox-size, 4);
       transition: 0.2s border-color ease, 0.2s background-color ease;
     }
-    
+
     &:checked:not(:disabled):before {
       background-color: $brand;
     }
@@ -143,7 +144,7 @@ input[type=checkbox] {
     opacity: 1;
     transform: translate(-50%, -85%) scale(0.9) rotate(45deg);
   }
-  
+
   100% {
     transform: translate(-50%, -85%) scale(0.8) rotate(45deg);
   }
@@ -159,7 +160,7 @@ input[type=checkbox] {
     opacity: 1;
     transform: translate(-50%, -50%) scale(0.9);
   }
-  
+
   100% {
     transform: translate(-50%, -50%) scale(0.8);
   }
@@ -170,8 +171,8 @@ $shade-10: #2c3e50 !default;
 $shade-1: #d7dcdf !default;
 $shade-0: #fff !default;
 $teal: #1abc9c !default;
-  
-  
+
+
 // Range Slider
 $range-width: 100% !default;
 
@@ -238,7 +239,7 @@ margin: 0;
 
 // Focus state
 &:focus {
-    
+
     &::-webkit-slider-thumb {
     box-shadow: 0 0 0 3px $shade-0,
                 0 0 0 6px $teal;
@@ -338,6 +339,6 @@ margin-left: 8px;
 }
 
 input::-moz-focus-inner,
-input::-moz-focus-outer { 
-border: 0; 
+input::-moz-focus-outer {
+border: 0;
 }

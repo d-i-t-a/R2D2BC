@@ -1527,10 +1527,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     for (const iframe of this.iframes) {
       const head = iframe.contentDocument?.head;
       if (head) {
-        head.insertBefore(
-          IFrameNavigator.createBase(this.currentChapterLink.href),
-          head.firstChild
-        );
+        const bases = iframe.contentDocument.getElementsByTagName("base");
+        if (bases.length === 0) {
+          head.insertBefore(
+            IFrameNavigator.createBase(this.currentChapterLink.href),
+            head.firstChild
+          );
+        }
 
         this.injectables?.forEach((injectable) => {
           if (injectable.type === "style") {
@@ -1622,10 +1625,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       const parser = new DOMParser();
       const doc = parser.parseFromString(content, "application/xhtml+xml");
       if (doc.head) {
-        doc.head.insertBefore(
-          IFrameNavigator.createBase(href),
-          doc.head.firstChild
-        );
+        const bases = doc.getElementsByTagName("base");
+        if (bases.length === 0) {
+          doc.head.insertBefore(
+            IFrameNavigator.createBase(href),
+            doc.head.firstChild
+          );
+        }
       }
       const newHTML = doc.documentElement.outerHTML;
       const iframeDoc = self.iframes[0].contentDocument;
@@ -1640,10 +1646,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       const parser = new DOMParser();
       const doc = parser.parseFromString(content, "application/xhtml+xml");
       if (doc.head) {
-        doc.head.insertBefore(
-          IFrameNavigator.createBase(href),
-          doc.head.firstChild
-        );
+        const bases = doc.getElementsByTagName("base");
+        if (bases.length === 0) {
+          doc.head.insertBefore(
+            IFrameNavigator.createBase(href),
+            doc.head.firstChild
+          );
+        }
       }
       const newHTML = doc.documentElement.outerHTML;
       const iframeDoc = self.iframes[1].contentDocument;

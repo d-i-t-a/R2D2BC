@@ -171,6 +171,9 @@ export class PageBreakModule implements ReaderModule {
     setTimeout(() => {
       const body = this.delegate.iframes[0].contentDocument?.body;
       let pageBreaks = body?.querySelectorAll('[*|type="pagebreak"]');
+      if (pageBreaks?.length === 0) {
+        pageBreaks = body?.querySelectorAll("[epub\\:type='pagebreak']");
+      }
       let self = this;
 
       function getCssSelector(element: Element): string {

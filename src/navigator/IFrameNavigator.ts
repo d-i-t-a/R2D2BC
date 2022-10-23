@@ -93,6 +93,7 @@ import CitationModule, {
   CitationModuleConfig,
 } from "../modules/citation/CitationModule";
 import log from "loglevel";
+import { AnalyticsModule } from "../modules/analytics/analyticsModule";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (
@@ -177,6 +178,7 @@ export interface ReaderRights {
   customKeyboardEvents: boolean;
   enableHistory: boolean;
   enableCitations: boolean;
+  enableAnalytics: boolean;
 }
 
 export interface ReaderUI {
@@ -232,6 +234,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   lineFocusModule?: LineFocusModule;
   historyModule?: HistoryModule;
   citationModule?: CitationModule;
+  analyticsModule?: AnalyticsModule;
 
   sideNavExpanded: boolean = false;
 
@@ -300,6 +303,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     customKeyboardEvents: false,
     enableHistory: false,
     enableCitations: false,
+    enableAnalytics: false,
   };
   tts?: Partial<TTSModuleConfig>;
   injectables?: Array<Injectable>;
@@ -376,6 +380,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       customKeyboardEvents: false,
       enableHistory: false,
       enableCitations: false,
+      enableAnalytics: false,
     };
     this.tts = tts;
     this.injectables = injectables;
@@ -1332,6 +1337,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       }
       if (this.historyModule) {
         this.historyModule.setup();
+      }
+
+      if(this.analyticsModule){
+        this.analyticsModule.setup();
       }
 
       if (this.currentTocUrl !== undefined) {
@@ -2586,6 +2595,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.historyModule !== undefined) {
         this.historyModule.handleResize();
       }
+      if (this.analyticsModule !== undefined) {
+        this.analyticsModule.handleResize();
+      }
     }, 150);
   }
 
@@ -2728,8 +2740,14 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
 
   async navigate(locator: Locator, history: boolean = true): Promise<void> {
+    console.log('push')
     if (this.historyModule) {
       this.historyModule.push(locator, history);
+    }
+
+    if (this.analyticsModule) {
+      console.log('push -> analytics')
+      this.analyticsModule.push(locator);
     }
 
     const exists = this.publication.getTOCItem(locator.href);

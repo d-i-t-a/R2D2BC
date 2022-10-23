@@ -56,6 +56,7 @@ import LineFocusModule from "./modules/linefocus/LineFocusModule";
 import { HistoryModule } from "./modules/history/HistoryModule";
 import CitationModule from "./modules/citation/CitationModule";
 import { TaJsonDeserialize } from "./utils/JsonUtil";
+import { AnalyticsModule } from "./modules/analytics/analyticsModule";
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -373,6 +374,15 @@ export default class D2Reader {
           ...initialConfig.citations,
         })
       : undefined;
+
+    const analyticsModule = rights.enableAnalytics
+    ? await AnalyticsModule.create({
+          annotator: annotator,
+          publication: publication,
+          delegate: navigator,
+          headerMenu: headerMenu,
+      })
+    : undefined;
 
     return new D2Reader(
       settings,

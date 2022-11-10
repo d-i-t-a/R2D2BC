@@ -28,7 +28,7 @@ import { Locator, ReadingPosition } from "../../model/Locator";
 import { Publication } from "../../model/Publication";
 import Annotator from "../../store/Annotator";
 import log from "loglevel";
-import { xActor, xStatement } from "./xStatement";
+import { xActivity, xActor, xObject, xStatement } from "./xStatement";
 
 export interface AnalyticsModuleProperties {
   hideLayer?: boolean;
@@ -193,15 +193,43 @@ export class AnalyticsModule implements ReaderModule {
   }
 
   private async handleSlider(event: MouseEvent) {
-    console.log("hello");
+    console.log(this.publication);
     var s: xStatement = new xStatement();
-    s.actor = new xActor();
+    s.timestamp = Math.floor((new Date()).getTime() / 1000)+'';
     s.actor.name = "user user";
+    s.object.name = this.publication.Metadata.Title.toString();
+    s.object.id = this.publication.Metadata.Identifier;
+    s.verb.id = "https://ekitabu.com/verbs/OpenBook";
+    s.verb.display = "OpenBook";
     const json = JSON.stringify(s);
-    console.log(json);
+    
+    const msg = JSON.stringify({
+      "apiKey": '76F0D95041D26A24F034BD2AD7780E9153D89DA772C602143E2BE082805C07A6',
+      "json": s,
+    })
+    this.sendToMerlin(s);
+    console.log(s);
     event.preventDefault();
     event.stopPropagation();
   }
+
+
+  private sendToMerlin(msg: xStatement){
+  fetch('https://localhost:5001/Analytics/IngestAction', {
+      method: 'POST',
+      headers: {
+          'Accept': 'application/json, text/plain',
+          'Content-Type': 'application/json;charset=UTF-8'
+      },
+      body: JSON.stringify({
+        apiKey: '76F0D95041D26A24F034BD2AD7780E9153D89DA772C602143E2BE082805C07A6',
+        json: JSON.stringify(msg),
+      }),
+  }).then(response => response.text())
+      .then(data => console.log(data))    
+      .catch(error => console.log("Error detected: " + error))
+
+}
 
   
 }

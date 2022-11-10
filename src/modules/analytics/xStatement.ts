@@ -5,13 +5,13 @@ export class xStatement {
     public timestamp: string;
     public stored: string;
     public actor: xActor;
-    public activity: xActivity;
+    public verb: xVerb;
     public object: xObject;
     version: "2.0.0";
     constructor() {
       this.id = uuidv4();
       this.actor = new xActor();
-      this.activity = new xActivity();
+      this.verb = new xVerb();
       this.object = new xObject();
     }
    
@@ -27,12 +27,12 @@ export class xActor {
 }
 
 export class xVerb {
-  public id: string;
-  display: {  "en-US": "experienced"  };
+  public id: string = "";
+  public display: string = "";
 }
 
 export class xActivity {
-
+  
 }
 
 export class xObject {

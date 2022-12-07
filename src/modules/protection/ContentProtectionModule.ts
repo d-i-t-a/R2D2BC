@@ -29,6 +29,9 @@ import { delay } from "../../utils";
 import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 import { addListener, launch } from "devtools-detector";
 import log from "loglevel";
+import { getCurrentSelectionInfo } from "../highlight/renderer/iframe/selection";
+import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
+import { _blacklistIdClassForCssSelectors } from "../highlight/TextHighlighter";
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;
@@ -36,6 +39,8 @@ export interface ContentProtectionModuleProperties {
   enableObfuscation: boolean;
   disablePrint: boolean;
   disableCopy: boolean;
+  canCopy: boolean;
+  charactersToCopy: number;
   detectInspect: boolean;
   clearOnInspect: boolean;
   detectInspectInitDelay: number;
@@ -256,6 +261,104 @@ export class ContentProtectionModule implements ReaderModule {
       }
       removeEventListenerOptional(window, "cut", this.preventCopy);
       removeEventListenerOptional(document, "cut", this.preventCopy);
+      removeEventListenerOptional(
+        this.delegate.mainElement,
+        "keydown",
+        this.preventCopyKey
+      );
+      removeEventListenerOptional(
+        this.delegate.headerMenu,
+        "keydown",
+        this.preventCopyKey
+      );
+      for (const iframe of this.delegate.iframes) {
+        removeEventListenerOptional(
+          iframe.contentDocument,
+          "keydown",
+          this.preventCopyKey
+        );
+        removeEventListenerOptional(
+          iframe.contentWindow,
+          "keydown",
+          this.preventCopyKey
+        );
+      }
+      removeEventListenerOptional(window, "keydown", this.preventCopyKey);
+      removeEventListenerOptional(document, "keydown", this.preventCopyKey);
+    } else if (this.properties?.canCopy) {
+      removeEventListenerOptional(
+        this.delegate.mainElement,
+        "copy",
+        this.restrictCopy
+      );
+      removeEventListenerOptional(
+        this.delegate.headerMenu,
+        "copy",
+        this.restrictCopy
+      );
+      for (const iframe of this.delegate.iframes) {
+        removeEventListenerOptional(
+          iframe.contentDocument,
+          "copy",
+          this.restrictCopy
+        );
+        removeEventListenerOptional(
+          iframe.contentWindow,
+          "copy",
+          this.restrictCopy
+        );
+      }
+
+      removeEventListenerOptional(window, "copy", this.restrictCopy);
+      removeEventListenerOptional(document, "copy", this.restrictCopy);
+      removeEventListenerOptional(
+        this.delegate.mainElement,
+        "cut",
+        this.restrictCopy
+      );
+      removeEventListenerOptional(
+        this.delegate.headerMenu,
+        "cut",
+        this.restrictCopy
+      );
+      for (const iframe of this.delegate.iframes) {
+        removeEventListenerOptional(
+          iframe.contentDocument,
+          "cut",
+          this.restrictCopy
+        );
+        removeEventListenerOptional(
+          iframe.contentWindow,
+          "cut",
+          this.restrictCopy
+        );
+      }
+      removeEventListenerOptional(window, "cut", this.restrictCopy);
+      removeEventListenerOptional(document, "cut", this.restrictCopy);
+      removeEventListenerOptional(
+        this.delegate.mainElement,
+        "keydown",
+        this.restrictCopyKey
+      );
+      removeEventListenerOptional(
+        this.delegate.headerMenu,
+        "keydown",
+        this.restrictCopyKey
+      );
+      for (const iframe of this.delegate.iframes) {
+        removeEventListenerOptional(
+          iframe.contentDocument,
+          "keydown",
+          this.restrictCopyKey
+        );
+        removeEventListenerOptional(
+          iframe.contentWindow,
+          "keydown",
+          this.restrictCopyKey
+        );
+      }
+      removeEventListenerOptional(window, "keydown", this.restrictCopyKey);
+      removeEventListenerOptional(document, "keydown", this.restrictCopyKey);
     }
     if (this.properties?.disablePrint) {
       removeEventListenerOptional(
@@ -501,8 +604,162 @@ export class ContentProtectionModule implements ReaderModule {
 
       addEventListenerOptional(window, "cut", this.preventCopy);
       addEventListenerOptional(document, "cut", this.preventCopy);
-    }
+      addEventListenerOptional(
+        this.delegate.mainElement,
+        "keydown",
+        this.preventCopyKey
+      );
+      addEventListenerOptional(
+        this.delegate.headerMenu,
+        "keydown",
+        this.preventCopyKey
+      );
+      for (const iframe of this.delegate.iframes) {
+        addEventListenerOptional(iframe, "keydown", this.preventCopyKey);
+        addEventListenerOptional(
+          iframe.ownerDocument,
+          "keydown",
+          this.preventCopyKey
+        );
+        addEventListenerOptional(
+          iframe.contentDocument,
+          "keydown",
+          this.preventCopyKey
+        );
+        addEventListenerOptional(
+          iframe.contentWindow,
+          "keydown",
+          this.preventCopyKey
+        );
+        addEventListenerOptional(
+          iframe.contentWindow?.document,
+          "keydown",
+          this.preventCopyKey
+        );
+      }
+      addEventListenerOptional(window, "keydown", this.preventCopyKey);
+      addEventListenerOptional(document, "keydown", this.preventCopyKey);
+    } else if (this.properties?.canCopy) {
+      addEventListenerOptional(
+        this.delegate.mainElement,
+        "copy",
+        this.restrictCopy.bind(this)
+      );
+      addEventListenerOptional(
+        this.delegate.headerMenu,
+        "copy",
+        this.restrictCopy.bind(this)
+      );
+      for (const iframe of this.delegate.iframes) {
+        addEventListenerOptional(iframe, "copy", this.restrictCopy);
+        addEventListenerOptional(
+          iframe.ownerDocument,
+          "copy",
+          this.restrictCopy.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.contentDocument,
+          "copy",
+          this.restrictCopy.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.contentWindow,
+          "copy",
+          this.restrictCopy.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.contentWindow?.document,
+          "copy",
+          this.restrictCopy.bind(this)
+        );
+      }
+      addEventListenerOptional(window, "copy", this.restrictCopy.bind(this));
+      addEventListenerOptional(document, "copy", this.restrictCopy.bind(this));
 
+      addEventListenerOptional(
+        this.delegate.mainElement,
+        "cut",
+        this.restrictCopy.bind(this)
+      );
+      addEventListenerOptional(
+        this.delegate.headerMenu,
+        "cut",
+        this.restrictCopy.bind(this)
+      );
+      for (const iframe of this.delegate.iframes) {
+        addEventListenerOptional(iframe, "cut", this.restrictCopy.bind(this));
+        addEventListenerOptional(
+          iframe.ownerDocument,
+          "cut",
+          this.restrictCopy.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.contentDocument,
+          "cut",
+          this.restrictCopy.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.contentWindow,
+          "cut",
+          this.restrictCopy.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.contentWindow?.document,
+          "cut",
+          this.restrictCopy.bind(this)
+        );
+      }
+
+      addEventListenerOptional(window, "cut", this.restrictCopy.bind(this));
+      addEventListenerOptional(document, "cut", this.restrictCopy.bind(this));
+      addEventListenerOptional(
+        this.delegate.mainElement,
+        "keydown",
+        this.restrictCopyKey.bind(this)
+      );
+      addEventListenerOptional(
+        this.delegate.headerMenu,
+        "keydown",
+        this.restrictCopyKey.bind(this)
+      );
+      for (const iframe of this.delegate.iframes) {
+        addEventListenerOptional(
+          iframe,
+          "keydown",
+          this.restrictCopyKey.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.ownerDocument,
+          "keydown",
+          this.restrictCopyKey.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.contentDocument,
+          "keydown",
+          this.restrictCopyKey.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.contentWindow,
+          "keydown",
+          this.restrictCopyKey.bind(this)
+        );
+        addEventListenerOptional(
+          iframe.contentWindow?.document,
+          "keydown",
+          this.restrictCopyKey.bind(this)
+        );
+      }
+      addEventListenerOptional(
+        window,
+        "keydown",
+        this.restrictCopyKey.bind(this)
+      );
+      addEventListenerOptional(
+        document,
+        "keydown",
+        this.restrictCopyKey.bind(this)
+      );
+    }
     if (this.properties?.disablePrint) {
       addEventListenerOptional(
         this.delegate.mainElement,
@@ -744,7 +1001,199 @@ export class ContentProtectionModule implements ReaderModule {
     event.preventDefault();
     return false;
   }
+  preventCopyKey(event: {
+    keyCode: any;
+    metaKey: any;
+    ctrlKey: any;
+    key: string;
+    preventDefault: () => void;
+    stopPropagation: () => void;
+  }) {
+    if (
+      navigator.platform === "MacIntel" || navigator.platform.match("Mac")
+        ? event.metaKey
+        : event.ctrlKey && (event.key === "c" || event.keyCode === 67)
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    }
+    return true;
+  }
 
+  restrictCopy(event: {
+    clipboardData: {
+      getData: (arg0: string) => any;
+      setData: (arg0: string, arg1: any) => void;
+    };
+    preventDefault: () => void;
+    stopPropagation: () => void;
+  }) {
+    log.log("copy action initiated");
+    let win = this.delegate.iframes[0].contentWindow;
+    if (win) {
+      let self = this;
+      function getCssSelector(element: Element): string | undefined {
+        const options = {
+          className: (str: string) => {
+            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+          },
+          idName: (str: string) => {
+            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+          },
+        };
+        let doc = self.delegate.iframes[0].contentDocument;
+        if (doc) {
+          return uniqueCssSelector(element, doc, options);
+        } else {
+          return undefined;
+        }
+      }
+      let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
+      if (selectionInfo === undefined) {
+        let doc = this.delegate.iframes[0].contentDocument;
+        selectionInfo = this.delegate.annotationModule?.annotator?.getTemporarySelectionInfo(
+          doc
+        );
+      }
+
+      event.clipboardData.setData(
+        "text/plain",
+        selectionInfo?.cleanText?.substring(
+          0,
+          this.properties?.charactersToCopy ?? 0
+        )
+      );
+    } else {
+      event.clipboardData.setData("text/plain", "");
+    }
+
+    event.stopPropagation();
+    event.preventDefault();
+    return false;
+  }
+  restrictCopyKey(event) {
+    if (
+      navigator.platform === "MacIntel" || navigator.platform.match("Mac")
+        ? event.metaKey
+        : event.ctrlKey && (event.key === "c" || event.keyCode === 67)
+    ) {
+      let win = this.delegate.iframes[0].contentWindow;
+      if (win) {
+        let self = this;
+        function getCssSelector(element: Element): string | undefined {
+          const options = {
+            className: (str: string) => {
+              return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+            },
+            idName: (str: string) => {
+              return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+            },
+          };
+          let doc = self.delegate.iframes[0].contentDocument;
+          if (doc) {
+            return uniqueCssSelector(element, doc, options);
+          } else {
+            return undefined;
+          }
+        }
+        let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
+        if (selectionInfo === undefined) {
+          let doc = this.delegate.iframes[0].contentDocument;
+          selectionInfo = this.delegate.annotationModule?.annotator?.getTemporarySelectionInfo(
+            doc
+          );
+        }
+        this.copyToClipboard(
+          selectionInfo?.cleanText?.substring(
+            0,
+            this.properties?.charactersToCopy ?? 0
+          )
+        );
+        // event.clipboardData.setData(
+        //   "text/plain",
+        //   selectionInfo?.cleanText?.substring(
+        //     0,
+        //     this.properties?.charactersToCopy ?? 0
+        //   )
+        // );
+      } else {
+        this.copyToClipboard("");
+
+        // event.clipboardData.setData("text/plain", "");
+      }
+
+      event.stopPropagation();
+      event.preventDefault();
+      return false;
+    }
+    return true;
+  }
+  copyToClipboard(textToClipboard) {
+    textToClipboard = textToClipboard.substring(
+      0,
+      this.properties?.charactersToCopy ?? 0
+    );
+
+    // @ts-ignore
+    if (window.clipboardData) {
+      // Internet Explorer
+      // @ts-ignore
+      window.clipboardData.setData("text/plain", textToClipboard);
+    } else {
+      // create a temporary element for the execCommand method
+      const forExecElement = this.createElementForExecCommand(textToClipboard);
+
+      /* Select the contents of the element
+          (the execCommand for 'copy' method works on the selection) */
+      this.selectContent(forExecElement);
+
+      // UniversalXPConnect privilege is required for clipboard access in Firefox
+      try {
+        // @ts-ignore
+        if (window.netscape && netscape.security) {
+          // @ts-ignore
+          netscape.security.PrivilegeManager.enablePrivilege(
+            "UniversalXPConnect"
+          );
+        }
+
+        // Copy the selected content to the clipboard
+        // Works in Firefox and in Safari before version 5
+        document.execCommand("copy", false);
+      } catch (e) {
+        //
+      }
+
+      // remove the temporary element
+      document.body.removeChild(forExecElement);
+    }
+  }
+
+  createElementForExecCommand(textToClipboard) {
+    const forExecElement = document.createElement("div");
+    // place outside the visible area
+    forExecElement.style.position = "absolute";
+    forExecElement.style.left = "-10000px";
+    forExecElement.style.top = "-10000px";
+    // write the necessary text into the element and append to the document
+    forExecElement.innerHTML = textToClipboard;
+    document.body.appendChild(forExecElement);
+    // the contentEditable mode is necessary for the  execCommand method in Firefox
+    // @ts-ignore
+    forExecElement.contentEditable = true;
+    return forExecElement;
+  }
+
+  selectContent(element) {
+    // first create a range
+    const rangeToSelect = document.createRange();
+    rangeToSelect.selectNodeContents(element);
+    // select the contents
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(rangeToSelect);
+  }
   beforePrint(event: {
     preventDefault: () => void;
     stopPropagation: () => void;

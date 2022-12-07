@@ -714,6 +714,9 @@ export default class D2Reader {
   goToPosition = async (value: number) => {
     return this.navigator.goToPosition(value);
   };
+  goToPage = async (page: number) => {
+    await this.navigator.goToPage(page);
+  };
   nextResource = () => {
     this.navigator.nextResource();
   };

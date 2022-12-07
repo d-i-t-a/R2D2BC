@@ -125,7 +125,7 @@ export class PageBreakModule implements ReaderModule {
         : this.delegate.showLayer("pagebreak");
     }, 10);
   }
-  private async goToPageNumber(event: any): Promise<any> {
+  async goToPageNumber(event: any): Promise<any> {
     if (
       this.goToPageNumberInput.value &&
       (event.key === "Enter" || event.type === "click")

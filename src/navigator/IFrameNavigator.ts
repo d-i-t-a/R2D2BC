@@ -2287,6 +2287,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       this.goTo(locator);
     }
   }
+  async goToPage(page: number) {
+    if (this.pageBreakModule !== undefined) {
+      await this.pageBreakModule.goToPageNumber(page);
+    }
+  }
   snapToSelector(selector) {
     const doc = this.iframes[0].contentDocument;
     if (doc) {

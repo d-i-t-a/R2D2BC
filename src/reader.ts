@@ -717,6 +717,9 @@ export default class D2Reader {
   goToPage = async (page: number) => {
     await this.navigator.goToPage(page);
   };
+  copyToClipboard = (text) => {
+    this.contentProtectionModule?.copyToClipboard(text);
+  };
   nextResource = () => {
     this.navigator.nextResource();
   };

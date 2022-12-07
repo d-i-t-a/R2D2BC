@@ -112,7 +112,7 @@ let NODE_TYPE = {
   TEXT_NODE: 3,
 };
 
-const _blacklistIdClassForCssSelectors = [
+export const _blacklistIdClassForCssSelectors = [
   HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER,
   HighlightContainer.R2_ID_PAGEBREAK_CONTAINER,
   HighlightContainer.R2_ID_SEARCH_CONTAINER,

@@ -158,12 +158,12 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     if (this.resourceIndex >= this.publication.readingOrder.length - 1) {
       return;
     }
-    self.pageNum = 1;
     self.resourceIndex++;
     self.resource = this.publication.readingOrder[self.resourceIndex];
     console.log(this.resource.Href1);
     getDocument(this.resource.Href1).promise.then(function (pdfDoc_) {
       self.pdfDoc = pdfDoc_;
+      self.pageNum = 1;
       self.renderPage(self.pageNum);
     });
   }
@@ -174,13 +174,12 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     if (this.resourceIndex === 0) {
       return;
     }
-    // TODO: how to know last page of previous resource
-    self.pageNum = 1;
     self.resourceIndex--;
     self.resource = this.publication.readingOrder[self.resourceIndex];
     console.log(this.resource.Href1);
     getDocument(this.resource.Href1).promise.then(function (pdfDoc_) {
       self.pdfDoc = pdfDoc_;
+      self.pageNum = self.pdfDoc.numPages;
       self.renderPage(self.pageNum);
     });
   }
@@ -191,6 +190,10 @@ export class PDFNavigator extends EventEmitter implements Navigator {
 
   goToPosition(value: number): void {
     console.log(value);
+  }
+
+  async goToPage(page: number) {
+    console.log(page);
   }
 
   stop(): void {}

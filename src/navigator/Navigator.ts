@@ -69,6 +69,8 @@ interface Navigator {
 
   goToPosition(value: number);
 
+  goToPage(page: number);
+
   nextResource(): void;
 
   previousResource(): void;

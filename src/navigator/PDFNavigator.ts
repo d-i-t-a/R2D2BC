@@ -5,6 +5,11 @@ import { Publication } from "../model/Publication";
 import { Locator } from "../model/Locator";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import { findRequiredElement } from "../utils/HTMLUtilities";
+import {
+  addEventListenerOptional,
+  removeEventListenerOptional,
+} from "../utils/EventHandler";
+import * as HTMLUtilities from "../utils/HTMLUtilities";
 
 export interface PDFNavigatorConfig {
   mainElement: HTMLElement;
@@ -12,6 +17,10 @@ export interface PDFNavigatorConfig {
   footerMenu?: HTMLElement | null;
   publication: Publication;
   settings: UserSettings;
+}
+export enum ScaleType {
+  Page = 0,
+  Width = 1,
 }
 
 export class PDFNavigator extends EventEmitter implements Navigator {
@@ -24,6 +33,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
 
   pdfDoc: any = null;
   pageNum = 1;
+  scaleType: ScaleType = ScaleType.Page;
   pageRendering = false;
   pageNumPending: any = null;
   scale = 1.0;
@@ -74,21 +84,49 @@ export class PDFNavigator extends EventEmitter implements Navigator {
 
     getDocument(this.resource.Href1).promise.then(function (pdfDoc_) {
       self.pdfDoc = pdfDoc_;
-      self.renderPage(self.pageNum);
+      self.renderPage(self.pageNum, self.scaleType);
     });
+    this.setupEvents();
   }
 
-  renderPage(num) {
+  timeout: any;
+
+  onResize = () => {
+    clearTimeout(this.timeout);
+    this.timeout = setTimeout(this.handleResize.bind(this), 200);
+  };
+  async handleResize(): Promise<void> {
+    this.renderPage(this.pageNum, this.scaleType);
+  }
+  private setupEvents(): void {
+    addEventListenerOptional(window, "resize", this.onResize);
+  }
+
+  renderPage(num, type) {
     const self = this;
     const main = findRequiredElement(this.mainElement, "main");
     self.pageRendering = true;
+    const wrapper = HTMLUtilities.findRequiredElement(
+      self.mainElement,
+      "main#iframe-wrapper"
+    );
+    wrapper.style.height = "calc(100vh - 10px)";
 
     self.pdfDoc.getPage(num).then(function (page) {
       let viewport = page.getViewport({ scale: self.scale });
 
-      const sc = main.clientHeight / viewport.height;
-      viewport = page.getViewport({ scale: sc });
-
+      if (self.scale === 1.0) {
+        const fitPage = main.clientHeight / viewport.height;
+        const fitWidth = main.clientWidth / viewport.width;
+        console.log(fitPage, fitWidth);
+        if (type === ScaleType.Page) {
+          viewport = page.getViewport({
+            scale: fitPage < fitWidth ? fitPage : fitWidth,
+          });
+        } else {
+          viewport = page.getViewport({ scale: fitWidth });
+        }
+      }
       self.canvas.height = viewport.height;
       self.canvas.width = viewport.width;
 
@@ -104,7 +142,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
         self.pageRendering = false;
         if (self.pageNumPending !== null) {
           // New page rendering is pending
-          self.renderPage(self.pageNumPending);
+          self.renderPage(self.pageNumPending, type);
           self.pageNumPending = null;
         }
       });
@@ -116,7 +154,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     if (self.pageRendering) {
       self.pageNumPending = num;
     } else {
-      self.renderPage(num);
+      self.renderPage(num, self.scaleType);
     }
   }
 
@@ -164,7 +202,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     getDocument(this.resource.Href1).promise.then(function (pdfDoc_) {
       self.pdfDoc = pdfDoc_;
       self.pageNum = 1;
-      self.renderPage(self.pageNum);
+      self.renderPage(self.pageNum, self.scaleType);
     });
   }
 
@@ -180,7 +218,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     getDocument(this.resource.Href1).promise.then(function (pdfDoc_) {
       self.pdfDoc = pdfDoc_;
       self.pageNum = self.pdfDoc.numPages;
-      self.renderPage(self.pageNum);
+      self.renderPage(self.pageNum, self.scaleType);
     });
   }
 
@@ -194,7 +232,29 @@ export class PDFNavigator extends EventEmitter implements Navigator {
 
   async goToPage(page: number) {
     console.log(page);
+    this.queueRenderPage(page);
   }
-
-  stop(): void {}
+  fitToWidth(): void {
+    console.log("fit to width");
+    this.scale = 1.0;
+    this.scaleType = ScaleType.Width;
+    this.renderPage(this.pageNum, this.scaleType);
+  }
+  fitToPage(): void {
+    console.log("fit to page");
+    this.scale = 1.0;
+    this.scaleType = ScaleType.Page;
+    this.renderPage(this.pageNum, this.scaleType);
+  }
+  zoomIn(): void {
+    this.scale = this.scale + 0.2;
+    this.renderPage(this.pageNum, this.scaleType);
+  }
+  zoomOut(): void {
+    this.scale = this.scale - 0.2;
+    this.renderPage(this.pageNum, this.scaleType);
+  }
+  stop(): void {
+    removeEventListenerOptional(window, "resize", this.onResize);
+  }
 }

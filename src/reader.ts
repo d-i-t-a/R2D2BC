@@ -805,6 +805,26 @@ export default class D2Reader {
   goToPage = async (page: number) => {
     await this.navigator.goToPage(page);
   };
+  fitToPage = () => {
+    if (this.navigator instanceof PDFNavigator) {
+      (this.navigator as PDFNavigator).fitToPage();
+    }
+  };
+  fitToWidth = () => {
+    if (this.navigator instanceof PDFNavigator) {
+      (this.navigator as PDFNavigator).fitToWidth();
+    }
+  };
+  zoomIn = () => {
+    if (this.navigator instanceof PDFNavigator) {
+      (this.navigator as PDFNavigator).zoomIn();
+    }
+  };
+  zoomOut = () => {
+    if (this.navigator instanceof PDFNavigator) {
+      (this.navigator as PDFNavigator).zoomOut();
+    }
+  };
   copyToClipboard = (text) => {
     this.contentProtectionModule?.copyToClipboard(text);
   };

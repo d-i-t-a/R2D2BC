@@ -42,7 +42,7 @@
         <button onclick="javascript:d2reader.previousPage()">previous page</button><br>
         <button onclick="javascript:d2reader.nextPage()">next page</button><br>
 
-        <button>Go to Page #</button><br><br>
+        <button onclick="javascript:d2reader.goToPage(5)">Go to Page #5</button><br><br>
 
         <button>paginated</button><br>
         <button>horizontal scroll</button><br>
@@ -52,9 +52,10 @@
         <button>Bookmarks</button><br>
         <button>Highlights</button><br><br>
 
-        <button>zoom</button><br>
-        <button>Fit to Page</button><br>
-        <button>Fit to Width</button><br><br>
+        <button onclick="javascript:d2reader.zoomIn()">zoom in</button><br>
+        <button onclick="javascript:d2reader.zoomOut()">zoom out</button><br>
+        <button onclick="javascript:d2reader.fitToPage()">Fit to Page</button><br>
+        <button onclick="javascript:d2reader.fitToWidth()">Fit to Width</button><br><br>
 
         <button>Read Aloud</button><br>
         <button>Appearance</button><br>
@@ -65,7 +66,7 @@
 
     <div class="content" id="root">
         <div id="D2Reader-Container" style="border: solid 5px rebeccapurple;margin-left: 200px;margin-right: 50px">
-            <main style="height: calc(100vh - 10px);display: flex;align-items: center;justify-content: center;" tabindex=-1 id="iframe-wrapper" >
+            <main style="height: calc(100vh - 10px);overflow:auto;display: flex;align-items: center;justify-content: center;" tabindex=-1 id="iframe-wrapper" >
                 <canvas id="the-canvas"></canvas>
             </main>
         </div>

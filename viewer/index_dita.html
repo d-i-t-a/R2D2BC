@@ -777,6 +777,12 @@
                 }
             },
             {
+                id: 'copyIcon',
+                callback: function (selection, element) {
+                    d2reader.copyToClipboard(selection)
+                }
+            },
+            {
                 id: `errorIcon`,
                 note: false,
                 icon: {
@@ -953,7 +959,7 @@
                     enableSearch: true,
                     enableTimeline: true,
                     enableDefinitions: true,
-                    enableContentProtection: false,
+                    enableContentProtection: true,
                     enableMediaOverlays: true,
                     enablePageBreaks: true,
                     autoGeneratePositions: true,
@@ -1254,7 +1260,9 @@
                     enableEncryption: true,
                     enableObfuscation: true,
                     disablePrint: true,
-                    disableCopy: true,
+                    disableCopy: false,
+                    canCopy: true,
+                    charactersToCopy: 100,
                     detectInspect: false,
                     clearOnInspect: true, // make sure detectInspect is true, otherwise this won't work
                     disableKeys: true,

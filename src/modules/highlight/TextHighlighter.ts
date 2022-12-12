@@ -112,7 +112,7 @@ let NODE_TYPE = {
   TEXT_NODE: 3,
 };
 
-const _blacklistIdClassForCssSelectors = [
+export const _blacklistIdClassForCssSelectors = [
   HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER,
   HighlightContainer.R2_ID_PAGEBREAK_CONTAINER,
   HighlightContainer.R2_ID_SEARCH_CONTAINER,
@@ -642,6 +642,8 @@ export class TextHighlighter {
 
     el.addEventListener("mouseup", this.toolboxShowDelayed.bind(this));
     el.addEventListener("touchend", this.toolboxShowDelayed.bind(this));
+    doc.addEventListener("mouseup", this.toolboxShowDelayed.bind(this));
+    doc.addEventListener("touchend", this.toolboxShowDelayed.bind(this));
     // doc.addEventListener("selectstart", this.toolboxShowDelayed.bind(this));
 
     if (!hasEventListener) {
@@ -689,6 +691,8 @@ export class TextHighlighter {
 
     el.removeEventListener("mouseup", this.toolboxShowDelayed.bind(this));
     el.removeEventListener("touchend", this.toolboxShowDelayed.bind(this));
+    doc.removeEventListener("mouseup", this.toolboxShowDelayed.bind(this));
+    doc.removeEventListener("touchend", this.toolboxShowDelayed.bind(this));
     // doc.removeEventListener("selectstart", this.toolboxShowDelayed.bind(this));
 
     window.removeEventListener("resize", this.toolboxPlacement.bind(this));

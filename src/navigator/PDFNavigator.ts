@@ -4,7 +4,6 @@ import { UserSettings } from "../model/user-settings/UserSettings";
 import { Publication } from "../model/Publication";
 import { Locator } from "../model/Locator";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
-import { findRequiredElement } from "../utils/HTMLUtilities";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
@@ -37,7 +36,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
   pageRendering = false;
   pageNumPending: any = null;
   scale = 1.0;
-  canvas: HTMLCanvasElement;
+  canvas: HTMLCanvasElement | null;
   ctx: CanvasRenderingContext2D | null;
   resourceIndex = 0;
   resource: any;
@@ -76,13 +75,26 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     console.log(this.resource.Href1);
 
     GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js`;
+    const wrapper = HTMLUtilities.findRequiredElement(
+      this.mainElement,
+      "main#iframe-wrapper"
+    );
 
-    this.canvas = document.getElementById("the-canvas") as HTMLCanvasElement;
+    this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    if (this.canvas == null) {
+      const newCanvas = document.createElement("canvas");
+      newCanvas.id = "canvas";
+      wrapper.appendChild(newCanvas);
+      this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    }
+
     this.ctx = this.canvas.getContext("2d");
 
     const self = this;
 
-    getDocument(this.resource.Href1).promise.then(function (pdfDoc_) {
+    getDocument(
+      this.publication.getAbsoluteHref(this.resource.Href)
+    ).promise.then(function (pdfDoc_) {
       self.pdfDoc = pdfDoc_;
       self.renderPage(self.pageNum, self.scaleType);
     });
@@ -104,7 +116,6 @@ export class PDFNavigator extends EventEmitter implements Navigator {
 
   renderPage(num, type) {
     const self = this;
-    const main = findRequiredElement(this.mainElement, "main");
     self.pageRendering = true;
     const wrapper = HTMLUtilities.findRequiredElement(
       self.mainElement,
@@ -116,8 +127,8 @@ export class PDFNavigator extends EventEmitter implements Navigator {
       let viewport = page.getViewport({ scale: self.scale });
 
       if (self.scale === 1.0) {
-        const fitPage = main.clientHeight / viewport.height;
-        const fitWidth = main.clientWidth / viewport.width;
+        const fitPage = wrapper.clientHeight / viewport.height;
+        const fitWidth = wrapper.clientWidth / viewport.width;
         console.log(fitPage, fitWidth);
         if (type === ScaleType.Page) {
           viewport = page.getViewport({
@@ -127,8 +138,8 @@ export class PDFNavigator extends EventEmitter implements Navigator {
           viewport = page.getViewport({ scale: fitWidth });
         }
       }
-      self.canvas.height = viewport.height;
-      self.canvas.width = viewport.width;
+      self.canvas!.height = viewport.height;
+      self.canvas!.width = viewport.width;
 
       // Render PDF page into canvas context
       const renderContext = {
@@ -199,7 +210,9 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     self.resourceIndex++;
     self.resource = this.publication.readingOrder[self.resourceIndex];
     console.log(this.resource.Href1);
-    getDocument(this.resource.Href1).promise.then(function (pdfDoc_) {
+    getDocument(
+      this.publication.getAbsoluteHref(this.resource.Href)
+    ).promise.then(function (pdfDoc_) {
       self.pdfDoc = pdfDoc_;
       self.pageNum = 1;
       self.renderPage(self.pageNum, self.scaleType);
@@ -215,7 +228,9 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     self.resourceIndex--;
     self.resource = this.publication.readingOrder[self.resourceIndex];
     console.log(this.resource.Href1);
-    getDocument(this.resource.Href1).promise.then(function (pdfDoc_) {
+    getDocument(
+      this.publication.getAbsoluteHref(this.resource.Href)
+    ).promise.then(function (pdfDoc_) {
       self.pdfDoc = pdfDoc_;
       self.pageNum = self.pdfDoc.numPages;
       self.renderPage(self.pageNum, self.scaleType);

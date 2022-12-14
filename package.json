@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -28,7 +28,7 @@
     "browserslist-useragent": "^3.0.3",
     "cssesc": "^3.0.0",
     "detect-browser": "^5.2.0",
-    "devtools-detector": "^2.0.10",
+    "devtools-detector": "^2.0.14",
     "eventemitter3": "^4.0.7",
     "jscrypto": "^1.0.3",
     "lodash.clonedeep": "^4.5.0",

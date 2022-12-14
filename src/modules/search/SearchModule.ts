@@ -26,12 +26,14 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
-import { DEFAULT_BACKGROUND_COLOR } from "../highlight/TextHighlighter";
+import {
+  DEFAULT_BACKGROUND_COLOR,
+  TextHighlighter,
+} from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { ISelectionInfo } from "../highlight/common/selection";
 import { SHA256 } from "jscrypto";
-import { searchDocDomSeek, reset } from "./searchWithDomSeek";
-import { TextHighlighter } from "../highlight/TextHighlighter";
+import { reset, searchDocDomSeek } from "./searchWithDomSeek";
 import log from "loglevel";
 
 export interface SearchModuleAPI {}
@@ -400,17 +402,16 @@ export class SearchModule implements ReaderModule {
     this.currentChapterSearchResult = [];
     this.currentSearchHighlights = [];
     this.bookSearchResult = [];
+
     reset();
-
-    this.searchAndPaintChapter(term, 0, async () => {});
-
-    var chapter = this.searchChapter(term);
-    var book = this.searchBook(term);
+    await this.searchAndPaintChapter(term, 0, async () => {});
 
     if (current) {
-      return chapter;
+      await this.searchBook(term);
+      return await this.searchChapter(term);
     } else {
-      return book;
+      await this.searchChapter(term);
+      return await this.searchBook(term);
     }
   }
   async goToSearchID(href: string, index: number, current: boolean) {

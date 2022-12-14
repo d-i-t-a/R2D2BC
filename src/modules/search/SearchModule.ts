@@ -718,7 +718,7 @@ export class SearchModule implements ReaderModule {
       if (tocItem) {
         let href = this.publication.getAbsoluteHref(tocItem.Href);
         if (this.delegate.api?.getContent) {
-          this.delegate.api?.getContent(href).then((content) => {
+          await this.delegate.api?.getContent(href).then((content) => {
             let parser = new DOMParser();
             let doc = parser.parseFromString(
               this.delegate.requestConfig?.encoded
@@ -793,7 +793,7 @@ export class SearchModule implements ReaderModule {
     if (tocItem) {
       let href = this.publication.getAbsoluteHref(tocItem.Href);
       if (this.delegate.api?.getContent) {
-        this.delegate.api?.getContent(href).then((content) => {
+        await this.delegate.api?.getContent(href).then((content) => {
           let parser = new DOMParser();
           let doc = parser.parseFromString(
             this.delegate.requestConfig?.encoded

@@ -35,6 +35,10 @@
         {
             "href": "https://alicepdf.dita.digital/lewis-carroll_alices-adventures-in-wonderland_john-tenniel.pdf",
             "title": "Alice’s Adventures in Wonderland"
+        },
+        {
+            "href": "https://alicepdf.dita.digital/lewis-carroll_alices-adventures-in-wonderland_john-tenniel.pdf?start=10",
+            "title": "Page 10"
         }
     ]
 }

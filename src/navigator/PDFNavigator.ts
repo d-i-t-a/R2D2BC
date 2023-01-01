@@ -260,6 +260,15 @@ export class PDFNavigator extends EventEmitter implements Navigator {
 
   goTo(locator: Locator): void {
     console.log(locator);
+    const url = new URL(locator.href);
+    if (url.searchParams.has("start")) {
+      const page = url.searchParams.get("start");
+      if (page) {
+        this.queueRenderPage(parseInt(page));
+      }
+    } else {
+      this.queueRenderPage(1);
+    }
   }
 
   goToPosition(value: number): void {

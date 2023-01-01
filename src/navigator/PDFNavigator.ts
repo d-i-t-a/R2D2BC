@@ -9,6 +9,8 @@ import {
   removeEventListenerOptional,
 } from "../utils/EventHandler";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
+import { NavigatorAPI } from "./IFrameNavigator";
+import { GrabToPan } from "../utils/GrabToPan";
 
 export interface PDFNavigatorConfig {
   mainElement: HTMLElement;
@@ -16,6 +18,7 @@ export interface PDFNavigatorConfig {
   footerMenu?: HTMLElement | null;
   publication: Publication;
   settings: UserSettings;
+  api?: Partial<NavigatorAPI>;
 }
 export enum ScaleType {
   Page = 0,
@@ -30,6 +33,8 @@ export class PDFNavigator extends EventEmitter implements Navigator {
   footerMenu?: HTMLElement | null;
   mainElement: HTMLElement;
 
+  api?: Partial<NavigatorAPI>;
+
   pdfDoc: any = null;
   pageNum = 1;
   scaleType: ScaleType = ScaleType.Page;
@@ -40,11 +45,12 @@ export class PDFNavigator extends EventEmitter implements Navigator {
   ctx: CanvasRenderingContext2D | null;
   resourceIndex = 0;
   resource: any;
+  private handTool: GrabToPan;
 
   public static async create(
     config: PDFNavigatorConfig
   ): Promise<PDFNavigator> {
-    const navigator = new this(config.settings, config.publication);
+    const navigator = new this(config.settings, config.publication, config.api);
 
     await navigator.start(
       config.mainElement,
@@ -53,10 +59,15 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     );
     return new Promise((resolve) => resolve(navigator));
   }
-  protected constructor(settings: UserSettings, publication: Publication) {
+  protected constructor(
+    settings: UserSettings,
+    publication: Publication,
+    api?: Partial<NavigatorAPI>
+  ) {
     super();
     this.settings = settings;
     this.publication = publication;
+    this.api = api;
   }
 
   protected async start(
@@ -79,6 +90,10 @@ export class PDFNavigator extends EventEmitter implements Navigator {
       this.mainElement,
       "main#iframe-wrapper"
     );
+
+    this.handTool = new GrabToPan({
+      element: wrapper,
+    });
 
     this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
     if (this.canvas == null) {
@@ -155,6 +170,8 @@ export class PDFNavigator extends EventEmitter implements Navigator {
           // New page rendering is pending
           self.renderPage(self.pageNumPending, type);
           self.pageNumPending = null;
+          if (self.api?.resourceReady) self.api?.resourceReady();
+          self.emit("resource.ready");
         }
       });
     });
@@ -169,9 +186,13 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     }
   }
 
-  readingOrder(): any {}
+  readingOrder(): any {
+    return this.publication.readingOrder;
+  }
 
-  tableOfContents(): any {}
+  tableOfContents(): any {
+    return this.publication.tableOfContents;
+  }
 
   currentResource(): any {}
 
@@ -269,6 +290,13 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     this.scale = this.scale - 0.2;
     this.renderPage(this.pageNum, this.scaleType);
   }
+  activateHand(): void {
+    this.handTool.activate();
+  }
+  deactivateHand(): void {
+    this.handTool.deactivate();
+  }
+
   stop(): void {
     removeEventListenerOptional(window, "resize", this.onResize);
   }

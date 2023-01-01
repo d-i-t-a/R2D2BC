@@ -825,6 +825,16 @@ export default class D2Reader {
       (this.navigator as PDFNavigator).zoomOut();
     }
   };
+  activateHand = () => {
+    if (this.navigator instanceof PDFNavigator) {
+      (this.navigator as PDFNavigator).activateHand();
+    }
+  };
+  deactivateHand = () => {
+    if (this.navigator instanceof PDFNavigator) {
+      (this.navigator as PDFNavigator).deactivateHand();
+    }
+  };
   copyToClipboard = (text) => {
     this.contentProtectionModule?.copyToClipboard(text);
   };

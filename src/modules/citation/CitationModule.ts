@@ -42,6 +42,10 @@ export interface CitationModuleProperties {
   appLink?: string;
   library?: string;
   styles?: string[];
+  title?: string;
+  author?: string;
+  publisher?: string;
+  published?: string;
 }
 export interface CitationModuleAPI {
   citationCreated: any;
@@ -89,10 +93,13 @@ export default class CitationModule implements ReaderModule {
   }
 
   async stop() {
-    log.log("Timeline module stop");
+    log.log("Citation module stop");
   }
 
   copyToClipboard(textToClipboard) {
+    if (this.delegate?.contentProtectionModule) {
+      this.delegate!.contentProtectionModule.citation = true;
+    }
     let success = true;
     // @ts-ignore
     if (window.clipboardData) {
@@ -172,7 +179,11 @@ export default class CitationModule implements ReaderModule {
           let mlaString = "";
           let apaString = "";
 
-          if (self.publication.Metadata.Author?.length > 0) {
+          if (self.properties.author) {
+            apaString = apaString + self.properties.author;
+            mlaString = mlaString + self.properties.author;
+            chicagoString = chicagoString + self.properties.author;
+          } else if (self.publication.Metadata.Author?.length > 0) {
             // var numAuthors = self.publication.Metadata.Author.length;
             let authorIndex = 0;
 
@@ -203,8 +214,10 @@ export default class CitationModule implements ReaderModule {
           let chicagoString = "";
           let mlaString = "";
           let apaString = "";
-
-          if (
+          if (self.properties.publisher) {
+            mlaString = mlaString + self.properties.publisher + ", ";
+            chicagoString = chicagoString + self.properties.publisher + ", ";
+          } else if (
             self.publication.Metadata.Publisher &&
             self.publication.Metadata.Publisher[0].Name
           ) {
@@ -216,7 +229,11 @@ export default class CitationModule implements ReaderModule {
               ", ";
           }
 
-          if (self.publication.Metadata.PublicationDate) {
+          if (self.properties.published) {
+            apaString = apaString + "(" + self.properties.published + ")";
+            mlaString = mlaString + self.properties.published;
+            chicagoString = chicagoString + self.properties.published;
+          } else if (self.publication.Metadata.PublicationDate) {
             if (self.publication.Metadata.PublicationDate.getFullYear() > 0) {
               apaString =
                 apaString +
@@ -242,7 +259,13 @@ export default class CitationModule implements ReaderModule {
           return ["", "", ""];
         };
         let bookTitleFormatted = function () {
-          if (self.publication.Metadata.Title) {
+          if (self.properties.title) {
+            return [
+              self.properties.title + ". ",
+              self.properties.title + ". ",
+              self.properties.title + ". ",
+            ];
+          } else if (self.publication.Metadata.Title) {
             return [
               self.publication.Metadata.Title + ". ",
               self.publication.Metadata.Title + ". ",
@@ -291,7 +314,11 @@ export default class CitationModule implements ReaderModule {
           let mlaString = "";
           let apaString = "";
 
-          if (
+          if (self.properties.publisher) {
+            mlaString = mlaString + self.properties.publisher + ", ";
+            chicagoString = chicagoString + self.properties.publisher + ", ";
+            apaString = apaString + self.properties.publisher + ", ";
+          } else if (
             self.publication.Metadata.Publisher &&
             self.publication.Metadata.Publisher[0].Name
           ) {

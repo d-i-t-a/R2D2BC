@@ -308,6 +308,15 @@ export default class D2Reader {
         })
       : undefined;
 
+    const citationModule = rights.enableCitations
+      ? await CitationModule.create({
+          publication: publication,
+          delegate: navigator,
+          highlighter: highlighter,
+          ...initialConfig.citations,
+        })
+      : undefined;
+
     // Content Protection Module
     const contentProtectionModule = rights.enableContentProtection
       ? await ContentProtectionModule.create({
@@ -362,15 +371,6 @@ export default class D2Reader {
           publication: publication,
           delegate: navigator,
           headerMenu: headerMenu,
-        })
-      : undefined;
-
-    const citationModule = rights.enableCitations
-      ? await CitationModule.create({
-          publication: publication,
-          delegate: navigator,
-          highlighter: highlighter,
-          ...initialConfig.citations,
         })
       : undefined;
 

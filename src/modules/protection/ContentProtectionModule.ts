@@ -75,13 +75,13 @@ interface ContentProtectionRect {
 export class ContentProtectionModule implements ReaderModule {
   private rects: Array<ContentProtectionRect>;
   private delegate: IFrameNavigator;
-  private properties?: ContentProtectionModuleProperties;
+  properties?: ContentProtectionModuleProperties;
   private hasEventListener: boolean = false;
   private isHacked: boolean = false;
   private securityContainer: HTMLDivElement;
   private mutationObserver: MutationObserver;
   private wrapper: HTMLDivElement;
-
+  citation: boolean;
   public static async setupPreloadProtection(
     config: Partial<ContentProtectionModuleConfig>
   ): Promise<void> {
@@ -1029,6 +1029,9 @@ export class ContentProtectionModule implements ReaderModule {
     preventDefault: () => void;
     stopPropagation: () => void;
   }) {
+    if (this.citation) {
+      return;
+    }
     log.log("copy action initiated");
     let win = this.delegate.iframes[0].contentWindow;
     if (win) {

@@ -27,6 +27,7 @@
     "@types/sass": "^1.43.1",
     "browserslist-useragent": "^3.0.3",
     "cssesc": "^3.0.0",
+    "cuid": "^2.1.8",
     "detect-browser": "^5.2.0",
     "devtools-detector": "^2.0.10",
     "eventemitter3": "^4.0.7",

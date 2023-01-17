@@ -3248,22 +3248,6 @@ export class TextHighlighter {
             if (highlightIcon) {
               highlightIcon.style.display = "none";
             }
-            function noteH() {
-              // notes adding by clicking on gutter icon
-              self.delegate.annotationModule?.api
-                ?.addCommentToAnnotation(anno)
-                .then((result) => {
-                  self.delegate.annotationModule
-                    ?.updateAnnotation(result)
-                    .then(async () => {
-                      log.log("update highlight " + result.id);
-                      toolbox!!.style.display = "none";
-                      self.selectionMenuClosed();
-                    });
-                  toolbox!!.style.display = "none";
-                  self.selectionMenuClosed();
-                });
-            }
 
             let commentIcon = document.getElementById("commentIcon");
             let cloneCommentIcon = document.getElementById("cloneCommentIcon");
@@ -3275,14 +3259,6 @@ export class TextHighlighter {
             }
             if (commentIcon) {
               commentIcon.style.display = "none";
-              let clone = commentIcon.cloneNode(true) as HTMLButtonElement;
-              let parent = commentIcon.parentElement;
-              clone.style.display = "unset";
-              clone.id = "cloneCommentIcon";
-              clone.addEventListener("click", noteH, false);
-              if (parent) {
-                parent.append(clone);
-              }
             }
 
             function deleteH() {

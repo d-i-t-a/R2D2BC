@@ -50,16 +50,16 @@
 
         <button onclick="javascript:d2reader.goToPage(5)">Go to Page #5</button><br><br>
 
-        <button>paginated</button><br>
-        <button>horizontal scroll</button><br>
-        <button>vertical scroll</button><br><br>
+        <button onclick="javascript:d2reader.scroll(false)">paginated</button><br>
+        <button onclick="javascript:d2reader.scroll(true, 'horizontal')">horizontal scroll</button><br>
+        <button onclick="javascript:d2reader.scroll(true, 'vertical')">vertical scroll</button><br><br>
 
         <button onclick="
-                var result = d2reader.tableOfContents;
+                let result = d2reader.tableOfContents;
                 console.log(result)
                 console.log(result.length)
-                var container = document.getElementById('container-toc');
-                var tocString = ''
+                let container = document.getElementById('container-toc');
+                let tocString = ''
                 result.forEach(function (item, index) {
                     if (index == 0) {
                         console.log('first')
@@ -77,8 +77,8 @@
                 });
                 container.innerHTML = tocString
             ">show TOC</button><br>
-        <button>Bookmarks</button><br>
-        <button>Highlights</button><br><br>
+        <button><del>Bookmarks</del></button><br>
+        <button><del>Highlights</del></button><br><br>
 
         <button onclick="javascript:d2reader.zoomIn()">zoom in</button><br>
         <button onclick="javascript:d2reader.zoomOut()">zoom out</button><br>
@@ -87,16 +87,17 @@
         <button onclick="javascript:d2reader.fitToPage()">Fit to Page</button><br>
         <button onclick="javascript:d2reader.fitToWidth()">Fit to Width</button><br><br>
 
-        <button>Read Aloud</button><br>
-        <button>Appearance</button><br>
-        <button>Search</button><br>
+        <button><del>Read Aloud</del></button><br>
+        <button><del>Appearance</del></button><br>
+        <button><del>Search</del></button><br>
 
 
     </div>
 
     <div class="content" id="root">
         <div id="D2Reader-Container" style="border: solid 5px rebeccapurple;margin-left: 200px;margin-right: 50px">
-            <main style="height: calc(100vh - 10px);overflow:auto;display: flex;align-items: center;justify-content: center;" tabindex=-1 id="iframe-wrapper" >
+            <main style="height: calc(100vh - 10px);" tabindex=-1 id="iframe-wrapper" >
+                <div id="pdf-container" style="height: calc(100vh - 10px);overflow:auto;display: flex;align-items: center;"></div>
             </main>
         </div>
     </div>

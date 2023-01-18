@@ -11,6 +11,7 @@ import {
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import { NavigatorAPI } from "./IFrameNavigator";
 import { GrabToPan } from "../utils/GrabToPan";
+import { readerLoading } from "../utils/HTMLTemplates";
 
 export interface PDFNavigatorConfig {
   mainElement: HTMLElement;
@@ -32,6 +33,8 @@ export class PDFNavigator extends EventEmitter implements Navigator {
   headerMenu?: HTMLElement | null;
   footerMenu?: HTMLElement | null;
   mainElement: HTMLElement;
+  pdfContainer: HTMLElement;
+  wrapper: HTMLElement;
 
   api?: Partial<NavigatorAPI>;
 
@@ -41,8 +44,6 @@ export class PDFNavigator extends EventEmitter implements Navigator {
   pageRendering = false;
   pageNumPending: any = null;
   scale = 1.0;
-  canvas: HTMLCanvasElement | null;
-  ctx: CanvasRenderingContext2D | null;
   resourceIndex = 0;
   resource: any;
   private handTool: GrabToPan;
@@ -86,32 +87,41 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     console.log(this.resource.Href1);
 
     GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js`;
-    const wrapper = HTMLUtilities.findRequiredElement(
+    this.wrapper = HTMLUtilities.findRequiredElement(
       this.mainElement,
       "main#iframe-wrapper"
     );
+    this.pdfContainer = HTMLUtilities.findRequiredElement(
+      this.mainElement,
+      "#pdf-container"
+    );
 
     this.handTool = new GrabToPan({
-      element: wrapper,
+      element: this.pdfContainer,
     });
 
-    this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    if (this.canvas == null) {
-      const newCanvas = document.createElement("canvas");
-      newCanvas.id = "canvas";
-      wrapper.appendChild(newCanvas);
-      this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    }
-
-    this.ctx = this.canvas.getContext("2d");
-
     const self = this;
+    // add loading
+    let loadingMessage = document.createElement("div");
+    loadingMessage.id = "loadingpdf";
+    loadingMessage.innerHTML = readerLoading;
+    loadingMessage.style.width = getComputedStyle(this.wrapper).width;
+    loadingMessage.style.height = getComputedStyle(this.wrapper).height;
+    loadingMessage.style.display = "flex";
+    loadingMessage.style.zIndex = "100";
+    loadingMessage.style.position = "absolute";
+    loadingMessage.style.alignItems = "center";
+    loadingMessage.style.justifyContent = "center";
+    loadingMessage.style.background = "white";
+    loadingMessage.className = "loading is-loading";
+
+    this.pdfContainer.appendChild(loadingMessage);
 
     getDocument(
       this.publication.getAbsoluteHref(this.resource.Href)
     ).promise.then(function (pdfDoc_) {
       self.pdfDoc = pdfDoc_;
-      self.renderPage(self.pageNum, self.scaleType);
+      self.loadPDFJS(self.pageNum);
     });
     this.setupEvents();
   }
@@ -123,29 +133,37 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     this.timeout = setTimeout(this.handleResize.bind(this), 200);
   };
   async handleResize(): Promise<void> {
-    this.renderPage(this.pageNum, this.scaleType);
+    this.loadPDFJS(this.pageNum);
   }
   private setupEvents(): void {
     addEventListenerOptional(window, "resize", this.onResize);
   }
 
-  renderPage(num, type) {
+  loadPDFJS(num) {
     const self = this;
-    self.pageRendering = true;
-    const wrapper = HTMLUtilities.findRequiredElement(
-      self.mainElement,
-      "main#iframe-wrapper"
-    );
-    wrapper.style.height = "calc(100vh - 10px)";
+    let currentPage = 1;
+    this.wrapper.style.height = "calc(100vh - 10px)";
+    this.pdfContainer.style.height = "calc(100vh - 10px)";
+    this.pdfContainer.style.flexDirection = "column";
 
-    self.pdfDoc.getPage(num).then(function (page) {
+    let collection = document.getElementsByTagName("canvas");
+    Array.from(collection).forEach(function (element) {
+      element?.parentNode?.removeChild(element);
+    });
+
+    function renderPage(page) {
+      const canvas = document.createElement("canvas");
+      canvas.id = String(currentPage);
+      canvas.style.border = "1px solid gray";
+      canvas.style.margin = "1px";
+
       let viewport = page.getViewport({ scale: self.scale });
 
       if (self.scale === 1.0) {
-        const fitPage = wrapper.clientHeight / viewport.height;
-        const fitWidth = wrapper.clientWidth / viewport.width;
+        const fitPage = self.wrapper.clientHeight / viewport.height;
+        const fitWidth = self.wrapper.clientWidth / viewport.width;
         console.log(fitPage, fitWidth);
-        if (type === ScaleType.Page) {
+        if (self.scaleType === ScaleType.Page) {
           viewport = page.getViewport({
             scale: fitPage < fitWidth ? fitPage : fitWidth,
           });
@@ -153,28 +171,38 @@ export class PDFNavigator extends EventEmitter implements Navigator {
           viewport = page.getViewport({ scale: fitWidth });
         }
       }
-      self.canvas!.height = viewport.height;
-      self.canvas!.width = viewport.width;
 
-      // Render PDF page into canvas context
+      // append the created canvas to the container
+      self.pdfContainer.appendChild(canvas);
+      // Get context of the canvas
+      const context = canvas.getContext("2d");
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
       const renderContext = {
-        canvasContext: self.ctx,
+        canvasContext: context,
         viewport: viewport,
       };
+      let pdfload = document.getElementById("loadingpdf");
+
+      pdfload!.style.display = "flex";
+      pdfload!.style.width = getComputedStyle(self.wrapper).width;
+      pdfload!.style.height = getComputedStyle(self.wrapper).height;
+
       const renderTask = page.render(renderContext);
 
-      // Wait for rendering to finish
       renderTask.promise.then(function () {
-        self.pageRendering = false;
-        if (self.pageNumPending !== null) {
-          // New page rendering is pending
-          self.renderPage(self.pageNumPending, type);
-          self.pageNumPending = null;
-          if (self.api?.resourceReady) self.api?.resourceReady();
-          self.emit("resource.ready");
+        if (currentPage < self.pdfDoc.numPages) {
+          currentPage++;
+          self.pdfDoc.getPage(currentPage).then(renderPage);
+        } else {
+          // Callback function here, which will trigger when all pages are loaded
+          document.getElementById(String(num))?.scrollIntoView();
+          pdfload!.style.display = "none";
         }
       });
-    });
+    }
+    this.pdfDoc.getPage(currentPage).then(renderPage);
   }
 
   queueRenderPage(num) {
@@ -182,7 +210,8 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     if (self.pageRendering) {
       self.pageNumPending = num;
     } else {
-      self.renderPage(num, self.scaleType);
+      this.pageNum = num;
+      document.getElementById(String(num))?.scrollIntoView();
     }
   }
 
@@ -194,13 +223,19 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     return this.publication.tableOfContents;
   }
 
+  //TODO:
   currentResource(): any {}
 
-  totalResources(): any {}
+  totalResources(): any {
+    return this.publication.readingOrder.length;
+  }
 
+  //TODO:
   currentLocator(): any {}
 
-  positions(): any {}
+  positions(): any {
+    return this.publication.positions ? this.publication.positions : [];
+  }
 
   nextPage(): void {
     const self = this;
@@ -236,7 +271,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     ).promise.then(function (pdfDoc_) {
       self.pdfDoc = pdfDoc_;
       self.pageNum = 1;
-      self.renderPage(self.pageNum, self.scaleType);
+      self.loadPDFJS(self.pageNum);
     });
   }
 
@@ -254,7 +289,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     ).promise.then(function (pdfDoc_) {
       self.pdfDoc = pdfDoc_;
       self.pageNum = self.pdfDoc.numPages;
-      self.renderPage(self.pageNum, self.scaleType);
+      self.loadPDFJS(self.pageNum);
     });
   }
 
@@ -273,6 +308,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
 
   goToPosition(value: number): void {
     console.log(value);
+    this.queueRenderPage(value);
   }
 
   async goToPage(page: number) {
@@ -280,24 +316,24 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     this.queueRenderPage(page);
   }
   fitToWidth(): void {
-    console.log("fit to width");
+    console.log("fit to width", this.pageNum);
     this.scale = 1.0;
     this.scaleType = ScaleType.Width;
-    this.renderPage(this.pageNum, this.scaleType);
+    this.loadPDFJS(this.pageNum);
   }
   fitToPage(): void {
-    console.log("fit to page");
+    console.log("fit to page", this.pageNum);
     this.scale = 1.0;
     this.scaleType = ScaleType.Page;
-    this.renderPage(this.pageNum, this.scaleType);
+    this.loadPDFJS(this.pageNum);
   }
   zoomIn(): void {
     this.scale = this.scale + 0.2;
-    this.renderPage(this.pageNum, this.scaleType);
+    this.loadPDFJS(this.pageNum);
   }
   zoomOut(): void {
     this.scale = this.scale - 0.2;
-    this.renderPage(this.pageNum, this.scaleType);
+    this.loadPDFJS(this.pageNum);
   }
   activateHand(): void {
     this.handTool.activate();
@@ -305,7 +341,19 @@ export class PDFNavigator extends EventEmitter implements Navigator {
   deactivateHand(): void {
     this.handTool.deactivate();
   }
-
+  async scroll(scroll: boolean, direction?: string): Promise<void> {
+    if (scroll) {
+      if (direction === "horizontal") {
+        this.pdfContainer.style.flexDirection = "row";
+      } else {
+        this.pdfContainer.style.flexDirection = "column";
+      }
+      this.pdfContainer.style.overflow = "auto";
+    } else {
+      this.pdfContainer.style.flexDirection = "column";
+      this.pdfContainer.style.overflow = "hidden";
+    }
+  }
   stop(): void {
     removeEventListenerOptional(window, "resize", this.onResize);
   }

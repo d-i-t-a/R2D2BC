@@ -637,7 +637,10 @@ export default class D2Reader {
   applyUserSettings = async (userSettings: Partial<UserSettings>) => {
     return await this.settings.applyUserSettings(userSettings);
   };
-  scroll = async (value: boolean) => {
+  scroll = async (value: boolean, direction?: string) => {
+    if (this.navigator instanceof PDFNavigator) {
+      return this.navigator.scroll(value, direction);
+    }
     return await this.settings.scroll(value);
   };
 

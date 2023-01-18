@@ -974,10 +974,14 @@
                 },
                 citations: {
                     characters: 100,
-                    appName: "r2d2bc",
-                    appLink: "localhost",
-                    library: "library",
+                    appName: "r2d2bc", // optional
+                    appLink: "localhost", // optional
+                    library: "library", // optional
                     styles: ["Chicago","MLA", "APA"],
+                    title: "book title", // optional
+                    author: "author here", // optional
+                    publisher: "publisher name", // optional
+                    published: "date published", // optional
                     api : {
                         citationCreated: function(message) {
                             console.log("citationCreated")

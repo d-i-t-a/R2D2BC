@@ -338,8 +338,16 @@ export default class D2Reader {
           })
         : undefined;
 
-      const enableMediaOverlays = rights.enableMediaOverlays;
+      const citationModule = rights.enableCitations
+        ? await CitationModule.create({
+            publication: publication,
+            delegate: navigator,
+            highlighter: highlighter,
+            ...initialConfig.citations,
+          })
+        : undefined;
 
+      const enableMediaOverlays = rights.enableMediaOverlays;
       const mediaOverlaySettings = enableMediaOverlays
         ? await MediaOverlaySettings.create({
             store: settingsStore,
@@ -384,15 +392,6 @@ export default class D2Reader {
             publication: publication,
             delegate: navigator,
             headerMenu: headerMenu,
-          })
-        : undefined;
-
-      const citationModule = rights.enableCitations
-        ? await CitationModule.create({
-            publication: publication,
-            delegate: navigator,
-            highlighter: highlighter,
-            ...initialConfig.citations,
           })
         : undefined;
 

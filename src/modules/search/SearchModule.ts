@@ -26,12 +26,14 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
-import { DEFAULT_BACKGROUND_COLOR } from "../highlight/TextHighlighter";
+import {
+  DEFAULT_BACKGROUND_COLOR,
+  TextHighlighter,
+} from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { ISelectionInfo } from "../highlight/common/selection";
 import { SHA256 } from "jscrypto";
-import { searchDocDomSeek, reset } from "./searchWithDomSeek";
-import { TextHighlighter } from "../highlight/TextHighlighter";
+import { reset, searchDocDomSeek } from "./searchWithDomSeek";
 import log from "loglevel";
 
 export interface SearchModuleAPI {}
@@ -400,17 +402,16 @@ export class SearchModule implements ReaderModule {
     this.currentChapterSearchResult = [];
     this.currentSearchHighlights = [];
     this.bookSearchResult = [];
+
     reset();
-
-    this.searchAndPaintChapter(term, 0, async () => {});
-
-    var chapter = this.searchChapter(term);
-    var book = this.searchBook(term);
+    await this.searchAndPaintChapter(term, 0, async () => {});
 
     if (current) {
-      return chapter;
+      await this.searchBook(term);
+      return await this.searchChapter(term);
     } else {
-      return book;
+      await this.searchChapter(term);
+      return await this.searchBook(term);
     }
   }
   async goToSearchID(href: string, index: number, current: boolean) {
@@ -717,15 +718,13 @@ export class SearchModule implements ReaderModule {
       }
       if (tocItem) {
         let href = this.publication.getAbsoluteHref(tocItem.Href);
-        await fetch(href, this.delegate.requestConfig)
-          .then((r) => r.text())
-          .then(async (data) => {
-            // ({ data, tocItem });
+        if (this.delegate.api?.getContent) {
+          await this.delegate.api?.getContent(href).then((content) => {
             let parser = new DOMParser();
             let doc = parser.parseFromString(
               this.delegate.requestConfig?.encoded
-                ? this.decodeBase64(data)
-                : data,
+                ? this.decodeBase64(content)
+                : content,
               "application/xhtml+xml"
             );
             if (tocItem) {
@@ -739,6 +738,29 @@ export class SearchModule implements ReaderModule {
               );
             }
           });
+        } else {
+          await fetch(href, this.delegate.requestConfig)
+            .then((r) => r.text())
+            .then(async (data) => {
+              let parser = new DOMParser();
+              let doc = parser.parseFromString(
+                this.delegate.requestConfig?.encoded
+                  ? this.decodeBase64(data)
+                  : data,
+                "application/xhtml+xml"
+              );
+              if (tocItem) {
+                searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
+                  (result) => {
+                    result.forEach((searchItem) => {
+                      localSearchResultBook.push(searchItem);
+                      this.bookSearchResult.push(searchItem);
+                    });
+                  }
+                );
+              }
+            });
+        }
       }
       if (index === this.publication.readingOrder.length - 1) {
         return localSearchResultBook;
@@ -768,17 +790,16 @@ export class SearchModule implements ReaderModule {
         this.delegate.currentResource() ?? 0
       ];
     }
+
     if (tocItem) {
       let href = this.publication.getAbsoluteHref(tocItem.Href);
-      await fetch(href, this.delegate.requestConfig)
-        .then((r) => r.text())
-        .then(async (data) => {
-          // ({ data, tocItem });
+      if (this.delegate.api?.getContent) {
+        await this.delegate.api?.getContent(href).then((content) => {
           let parser = new DOMParser();
           let doc = parser.parseFromString(
             this.delegate.requestConfig?.encoded
-              ? this.decodeBase64(data)
-              : data,
+              ? this.decodeBase64(content)
+              : content,
             "application/xhtml+xml"
           );
           if (tocItem) {
@@ -791,6 +812,29 @@ export class SearchModule implements ReaderModule {
             );
           }
         });
+      } else {
+        await fetch(href, this.delegate.requestConfig)
+          .then((r) => r.text())
+          .then(async (data) => {
+            // ({ data, tocItem });
+            let parser = new DOMParser();
+            let doc = parser.parseFromString(
+              this.delegate.requestConfig?.encoded
+                ? this.decodeBase64(data)
+                : data,
+              "application/xhtml+xml"
+            );
+            if (tocItem) {
+              searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
+                (result) => {
+                  result.forEach((searchItem) => {
+                    localSearchResultBook.push(searchItem);
+                  });
+                }
+              );
+            }
+          });
+      }
     }
 
     return localSearchResultBook;

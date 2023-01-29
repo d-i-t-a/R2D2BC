@@ -30,6 +30,7 @@ import Annotator from "../../store/Annotator";
 import log from "loglevel";
 import { xActivity, xActor, xObject, xStatement } from "./xStatement";
 import cuid from 'cuid';
+import { JsonElementType } from "ta-json-x";
 
 export interface AnalyticsModuleProperties {
   hideLayer?: boolean;
@@ -129,27 +130,31 @@ export class AnalyticsModule implements ReaderModule {
       this.handleSlider.bind(this)
     );
 
+    this.createStatement("OpenBook", "https://ekitabu.com/verbs/OpenBook");
+
   }
 
   private async handleSlider(event: MouseEvent) {
-    console.log(this.publication);
-    var s: xStatement = new xStatement();
-    s.timestamp = Math.floor((new Date()).getTime() / 1000)+'';
-    s.actor.name = cuid();
-    s.object.name = this.publication.Metadata.Title.toString();
-    s.object.id = this.publication.Metadata.Identifier;
-    s.verb.id = "https://ekitabu.com/verbs/OpenBook";
-    s.verb.display = "OpenBook";
-    const json = JSON.stringify(s);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  private createStatement(verb: string, verburl: string){
+    var statement: xStatement = new xStatement();
+    statement.timestamp = Math.floor((new Date()).getTime() / 1000)+'';
+    statement.actor.name = cuid();
+    statement.object.name = this.publication.Metadata.Title.toString();
+    statement.object.id = this.publication.Metadata.Identifier;
+    statement.verb.id = verburl;
+    statement.verb.display = verb;
+    const json = JSON.stringify(statement);
     
     const msg = JSON.stringify({
       "apiKey": '76F0D95041D26A24F034BD2AD7780E9153D89DA772C602143E2BE082805C07A6',
-      "json": s,
+      "json": statement,
     })
-    //this.sendToMerlin(s);
-    console.log(s);
-    event.preventDefault();
-    event.stopPropagation();
+    //this.sendToMerlin(statement);
+    console.log("xapi message : " + JSON.stringify(statement));
   }
 
 

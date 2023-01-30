@@ -17,31 +17,33 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { ReaderModule } from "../ReaderModule";
-import { AnnotationMarker } from "../../model/Locator";
+import * as HTMLUtilities from "../../utils/HTMLUtilities";
+
+import { HighlightType, IHighlight } from "../highlight/common/highlight";
+import { IFrameNavigator, ReaderRights } from "../../navigator/IFrameNavigator";
+import {
+  ISelectionInfo,
+  _getCssSelectorOptions,
+} from "../highlight/common/selection";
 import {
   TTSModuleAPI,
   TTSModuleConfig,
   TTSModuleProperties,
   TTSSettings,
 } from "./TTSSettings";
-import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
-import sanitize from "sanitize-html";
-import { IFrameNavigator, ReaderRights } from "../../navigator/IFrameNavigator";
+
+import { AnnotationMarker } from "../../model/Locator";
+import { ReaderModule } from "../ReaderModule";
 import { TextHighlighter } from "../highlight/TextHighlighter";
-import { HighlightType, IHighlight } from "../highlight/common/highlight";
-import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
 import { debounce } from "debounce";
-import {
-  _getCssSelectorOptions,
-  ISelectionInfo,
-} from "../highlight/common/selection";
 import log from "loglevel";
+import sanitize from "sanitize-html";
+import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 
 export class TTSModule2 implements ReaderModule {
   private tts: TTSSettings;
@@ -140,7 +142,12 @@ export class TTSModule2 implements ReaderModule {
             break;
           }
         }
-        range.setStart(node, range.startOffset + 1);
+      
+        try {
+          range.setStart(node, range.startOffset + 1);
+        } catch (e) {
+          console.log('Error: ', e);
+        }
 
         // Find ending point
         do {

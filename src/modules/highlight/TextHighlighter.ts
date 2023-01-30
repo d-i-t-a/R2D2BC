@@ -17,10 +17,10 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { SHA256 } from "jscrypto/es6/SHA256";
-import { debounce } from "debounce";
+import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import * as lodash from "lodash";
 
-import { IEventPayload_R2_EVENT_HIGHLIGHT_CLICK } from "./common/events";
+import { Annotation, AnnotationMarker } from "../../model/Locator";
 import {
   HighlightType,
   IColor,
@@ -31,23 +31,24 @@ import {
   IStyleProperty,
   SelectionMenuItem,
 } from "./common/highlight";
-import { ISelectionInfo } from "./common/selection";
-import { getClientRectsNoOverlap, IRectSimple } from "./common/rect-utils";
+import { IRectSimple, getClientRectsNoOverlap } from "./common/rect-utils";
 import {
   convertRangeInfo,
   getCurrentSelectionInfo,
 } from "./renderer/iframe/selection";
-import { uniqueCssSelector } from "./renderer/common/cssselector2";
-import { Annotation, AnnotationMarker } from "../../model/Locator";
-import { icons, iconTemplateColored } from "../../utils/IconLib";
+import { iconTemplateColored, icons } from "../../utils/IconLib";
+
+import { IEventPayload_R2_EVENT_HIGHLIGHT_CLICK } from "./common/events";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
-import { TTSModule2 } from "../TTS/TTSModule2";
-import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import * as lodash from "lodash";
+import { ISelectionInfo } from "./common/selection";
 import { LayerSettings } from "./LayerSettings";
-import { Switchable } from "../../model/user-settings/UserProperties";
 import { Popup } from "../search/Popup";
+import { SHA256 } from "jscrypto/es6/SHA256";
+import { Switchable } from "../../model/user-settings/UserProperties";
+import { TTSModule2 } from "../TTS/TTSModule2";
+import { debounce } from "debounce";
 import log from "loglevel";
+import { uniqueCssSelector } from "./renderer/common/cssselector2";
 
 export enum HighlightContainer {
   R2_ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER",
@@ -966,18 +967,22 @@ export class TextHighlighter {
 
           // Detect if selection is backwards
           let range = document.createRange();
-          if (trimmed) {
-            range.setStart(
-              selection.anchorNode,
-              selection.anchorOffset + startOffsetTemp
-            );
-            range.setEnd(
-              selection.focusNode,
-              selection.focusOffset - endOffsetTemp
-            );
-          } else {
-            range.setStart(selection.anchorNode, selection.anchorOffset);
-            range.setEnd(selection.focusNode, selection.focusOffset);
+          try {
+            if (trimmed) {
+              range.setStart(
+                selection.anchorNode,
+                selection.anchorOffset + startOffsetTemp
+              );
+              range.setEnd(
+                selection.focusNode,
+                selection.focusOffset - endOffsetTemp
+              );
+            } else {
+              range.setStart(selection.anchorNode, selection.anchorOffset);
+              range.setEnd(selection.focusNode, selection.focusOffset);
+            }
+          } catch (e) {
+            console.log('Error: ', e);
           }
 
           let backwards = range.collapsed;

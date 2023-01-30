@@ -18,35 +18,37 @@
  */
 
 import * as HTMLUtilities from "../utils/HTMLUtilities";
-import Annotator, { AnnotationType } from "../store/Annotator";
-import { IFrameNavigator, ReaderRights } from "../navigator/IFrameNavigator";
-import { Publication } from "../model/Publication";
-import {
-  TextHighlighter,
-  _highlights,
-  CLASS_HIGHLIGHT_AREA,
-  HighlightContainer,
-} from "./highlight/TextHighlighter";
-import { ReaderModule } from "./ReaderModule";
-import { addEventListenerOptional } from "../utils/EventHandler";
-import { HighlightType, IHighlight } from "./highlight/common/highlight";
+import * as lodash from "lodash";
+
 import {
   Annotation,
   AnnotationMarker,
   Bookmark,
   Locator,
 } from "../model/Locator";
-import { icons as IconLib, iconTemplateColored } from "../utils/IconLib";
-import { v4 as uuid } from "uuid";
-import { Link } from "../model/Link";
-import { convertRange } from "./highlight/renderer/iframe/selection";
-import { uniqueCssSelector } from "./highlight/renderer/common/cssselector2";
+import Annotator, { AnnotationType } from "../store/Annotator";
 import {
-  _getCssSelectorOptions,
+  CLASS_HIGHLIGHT_AREA,
+  HighlightContainer,
+  TextHighlighter,
+  _highlights,
+} from "./highlight/TextHighlighter";
+import { HighlightType, IHighlight } from "./highlight/common/highlight";
+import { IFrameNavigator, ReaderRights } from "../navigator/IFrameNavigator";
+import {
   ISelectionInfo,
+  _getCssSelectorOptions,
 } from "./highlight/common/selection";
-import * as lodash from "lodash";
+import { icons as IconLib, iconTemplateColored } from "../utils/IconLib";
+
+import { Link } from "../model/Link";
+import { Publication } from "../model/Publication";
+import { ReaderModule } from "./ReaderModule";
+import { addEventListenerOptional } from "../utils/EventHandler";
+import { convertRange } from "./highlight/renderer/iframe/selection";
 import log from "loglevel";
+import { uniqueCssSelector } from "./highlight/renderer/common/cssselector2";
+import { v4 as uuid } from "uuid";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
 
@@ -1032,10 +1034,12 @@ export class AnnotationModule implements ReaderModule {
         );
       }
 
-      let nodeList = highlightArea.getElementsByClassName(CLASS_HIGHLIGHT_AREA);
-      highlightIcon = nodeList[0];
-
-      const newY = parseInt(highlightIcon.style.top.replace("px", ""));
+      let newY = 0;
+      if (highlightArea) {
+        let nodeList = highlightArea.getElementsByClassName(CLASS_HIGHLIGHT_AREA);
+        highlightIcon = nodeList[0];
+        newY = parseInt(highlightIcon.style.top.replace("px", ""));  
+      }
 
       const updatedAnnotation = {
         ...currentElement,

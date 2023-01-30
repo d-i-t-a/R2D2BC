@@ -17,16 +17,9 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import Navigator from "./Navigator";
-import Annotator from "../store/Annotator";
-import { Publication } from "../model/Publication";
-import EventHandler, {
-  addEventListenerOptional,
-  removeEventListenerOptional,
-} from "../utils/EventHandler";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
-import { readerError, readerLoading } from "../utils/HTMLTemplates";
+
 import {
   Annotation,
   Locations,
@@ -34,64 +27,71 @@ import {
   ReadingPosition,
 } from "../model/Locator";
 import {
-  UserSettings,
-  UserSettingsUIConfig,
-} from "../model/user-settings/UserSettings";
-import {
-  BookmarkModule,
-  BookmarkModuleConfig,
-} from "../modules/BookmarkModule";
-import {
   AnnotationModule,
   AnnotationModuleConfig,
 } from "../modules/AnnotationModule";
 import {
-  SearchModule,
-  SearchModuleConfig,
-} from "../modules/search/SearchModule";
+  BookmarkModule,
+  BookmarkModuleConfig,
+} from "../modules/BookmarkModule";
+import CitationModule, {
+  CitationModuleConfig,
+} from "../modules/citation/CitationModule";
 import {
   ContentProtectionModule,
   ContentProtectionModuleConfig,
 } from "../modules/protection/ContentProtectionModule";
+import { D2Link, Link } from "../model/Link";
+import {
+  DefinitionsModule,
+  DefinitionsModuleConfig,
+} from "../modules/search/DefinitionsModule";
+import EventHandler, {
+  addEventListenerOptional,
+  removeEventListenerOptional,
+} from "../utils/EventHandler";
 import {
   HighlightContainer,
   TextHighlighter,
   TextHighlighterConfig,
 } from "../modules/highlight/TextHighlighter";
-import { TimelineModule } from "../modules/positions/TimelineModule";
-import { debounce } from "debounce";
-import TouchEventHandler from "../utils/TouchEventHandler";
-import KeyboardEventHandler from "../utils/KeyboardEventHandler";
-import BookView from "../views/BookView";
-
+import LineFocusModule, {
+  LineFocusModuleConfig,
+} from "../modules/linefocus/LineFocusModule";
 import {
   MediaOverlayModule,
   MediaOverlayModuleConfig,
 } from "../modules/mediaoverlays/MediaOverlayModule";
-import { D2Link, Link } from "../model/Link";
-import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
-import { ReaderModule } from "../modules/ReaderModule";
-import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
-
-import { HighlightType } from "../modules/highlight/common/highlight";
 import {
   PageBreakModule,
   PageBreakModuleConfig,
 } from "../modules/pagebreak/PageBreakModule";
+import {
+  SearchModule,
+  SearchModuleConfig,
+} from "../modules/search/SearchModule";
+import {
+  UserSettings,
+  UserSettingsUIConfig,
+} from "../model/user-settings/UserSettings";
+import { readerError, readerLoading } from "../utils/HTMLTemplates";
+
+import Annotator from "../store/Annotator";
+import BookView from "../views/BookView";
+import EventEmitter from "eventemitter3";
+import { HighlightType } from "../modules/highlight/common/highlight";
+import { HistoryModule } from "../modules/history/HistoryModule";
+import KeyboardEventHandler from "../utils/KeyboardEventHandler";
+import Navigator from "./Navigator";
+import { Publication } from "../model/Publication";
+import { ReaderModule } from "../modules/ReaderModule";
+import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
 import { Switchable } from "../model/user-settings/UserProperties";
 import { TTSModule2 } from "../modules/TTS/TTSModule2";
-import {
-  DefinitionsModule,
-  DefinitionsModuleConfig,
-} from "../modules/search/DefinitionsModule";
-import EventEmitter from "eventemitter3";
-import LineFocusModule, {
-  LineFocusModuleConfig,
-} from "../modules/linefocus/LineFocusModule";
-import { HistoryModule } from "../modules/history/HistoryModule";
-import CitationModule, {
-  CitationModuleConfig,
-} from "../modules/citation/CitationModule";
+import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
+import { TimelineModule } from "../modules/positions/TimelineModule";
+import TouchEventHandler from "../utils/TouchEventHandler";
+import { debounce } from "debounce";
 import log from "loglevel";
 
 export type GetContent = (href: string) => Promise<string>;
@@ -2621,7 +2621,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
   savePosition = debounce(() => {
     if (this.annotator) {
-      this.saveCurrentReadingPosition();
+      try {
+        this.saveCurrentReadingPosition();
+      } catch (e) {
+        console.log('Error: ', e);
+      }
     }
   }, 200);
 

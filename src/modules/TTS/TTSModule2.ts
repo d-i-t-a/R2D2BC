@@ -140,7 +140,12 @@ export class TTSModule2 implements ReaderModule {
             break;
           }
         }
-        range.setStart(node, range.startOffset + 1);
+        
+        try {
+          range.setStart(node, range.startOffset + 1);
+        } catch (e) {
+          console.log('Error: ', e);
+        }
 
         // Find ending point
         do {

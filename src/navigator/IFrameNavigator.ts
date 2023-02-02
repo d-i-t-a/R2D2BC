@@ -2621,7 +2621,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
   savePosition = debounce(() => {
     if (this.annotator) {
-      this.saveCurrentReadingPosition();
+      try {
+        this.saveCurrentReadingPosition();
+      } catch (e) {
+        console.log('Error: ', e);
+      }
     }
   }, 200);
 

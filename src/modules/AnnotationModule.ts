@@ -1035,8 +1035,13 @@ export class AnnotationModule implements ReaderModule {
       let nodeList = highlightArea.getElementsByClassName(CLASS_HIGHLIGHT_AREA);
       highlightIcon = nodeList[0];
 
-      const newY = parseInt(highlightIcon.style.top.replace("px", ""));
-
+      let newY = 0;
+      if (highlightArea) {
+        let nodeList = highlightArea.getElementsByClassName(CLASS_HIGHLIGHT_AREA);
+        highlightIcon = nodeList[0];
+        newY = parseInt(highlightIcon.style.top.replace("px", ""));  
+      }
+      
       const updatedAnnotation = {
         ...currentElement,
         highlight: {

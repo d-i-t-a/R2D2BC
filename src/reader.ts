@@ -523,6 +523,23 @@ export default class D2Reader {
     return this.annotationModule?.getAnnotations();
   }
 
+  /** History */
+  get history() {
+    return this.historyModule?.history;
+  }
+  /** Current index of history */
+  get historyCurrentIndex() {
+    return this.historyModule?.historyCurrentIndex;
+  }
+  /** History Back */
+  historyBack = async () => {
+    return this.historyModule?.historyBack();
+  };
+  /** History Forward */
+  historyForward = async () => {
+    return this.historyModule?.historyForward();
+  };
+
   /**
    * Search
    */

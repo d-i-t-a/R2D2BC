@@ -199,6 +199,8 @@ export class PDFNavigator extends EventEmitter implements Navigator {
           // Callback function here, which will trigger when all pages are loaded
           document.getElementById(String(num))?.scrollIntoView();
           pdfload!.style.display = "none";
+          if (self.api?.resourceReady) self.api?.resourceReady();
+          self.emit("resource.ready");
         }
       });
     }

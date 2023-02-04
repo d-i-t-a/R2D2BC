@@ -49,8 +49,8 @@ export class HistoryModule implements ReaderModule {
 
   private historyForwardAnchorElement: HTMLAnchorElement;
   private historyBackAnchorElement: HTMLAnchorElement;
-  private historyCurrentIndex: number;
-  private history: Array<Locator> = [];
+  historyCurrentIndex: number;
+  history: Array<Locator> = [];
 
   private constructor(
     annotator: Annotator,
@@ -200,7 +200,13 @@ export class HistoryModule implements ReaderModule {
     );
   }
 
-  private async handleHistoryForwardClick(event: MouseEvent) {
+  async handleHistoryForwardClick(event: MouseEvent) {
+    await this.historyForward();
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  async historyForward() {
     if (this.history.length > 0) {
       if (this.historyCurrentIndex + 1 < this.history.length) {
         this.historyCurrentIndex = this.historyCurrentIndex + 1;
@@ -210,11 +216,15 @@ export class HistoryModule implements ReaderModule {
         );
       }
     }
+  }
+
+  private async handleHistoryBackClick(event: MouseEvent) {
+    await this.historyBack();
     event.preventDefault();
     event.stopPropagation();
   }
 
-  private async handleHistoryBackClick(event: MouseEvent) {
+  async historyBack() {
     if (this.history.length > 0) {
       if (this.historyCurrentIndex > 0) {
         this.historyCurrentIndex = this.historyCurrentIndex - 1;
@@ -224,7 +234,5 @@ export class HistoryModule implements ReaderModule {
         );
       }
     }
-    event.preventDefault();
-    event.stopPropagation();
   }
 }

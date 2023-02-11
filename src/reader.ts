@@ -181,6 +181,7 @@ export default class D2Reader {
         mainElement: mainElement,
         publication: publication,
         settings: settings,
+        api: initialConfig.api,
       });
       return new D2Reader(settings, navigator);
     } else {

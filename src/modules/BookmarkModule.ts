@@ -42,6 +42,7 @@ import {
 import { getClientRectsNoOverlap } from "./highlight/common/rect-utils";
 import { _highlights } from "./highlight/TextHighlighter";
 import log from "loglevel";
+import { Action } from "./consumption/ConsumptionModule";
 
 export interface BookmarkModuleAPI {
   addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
@@ -265,6 +266,10 @@ export class BookmarkModule implements ReaderModule {
           };
         }
         if (!this.annotator.locatorExists(bookmark, AnnotationType.Bookmark)) {
+          this.delegate.consumptionModule?.trackAction(
+            bookmark,
+            Action.BookmarkCreated
+          );
           if (this.api?.addBookmark) {
             const result = await this.api.addBookmark(bookmark);
             if (result) {
@@ -504,6 +509,10 @@ export class BookmarkModule implements ReaderModule {
         }
 
         if (annotation) {
+          this.delegate.consumptionModule?.trackAction(
+            annotation,
+            Action.BookmarkCreated
+          );
           if (this.api?.addBookmark) {
             let result = await this.api.addBookmark(annotation);
             const saved = await this.annotator.saveAnnotation(result);

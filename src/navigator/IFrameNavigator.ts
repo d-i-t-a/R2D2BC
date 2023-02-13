@@ -93,6 +93,11 @@ import CitationModule, {
   CitationModuleConfig,
 } from "../modules/citation/CitationModule";
 import log from "loglevel";
+import {
+  Action,
+  ConsumptionModule,
+  ConsumptionModuleConfig,
+} from "../modules/consumption/ConsumptionModule";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (
@@ -177,6 +182,7 @@ export interface ReaderRights {
   customKeyboardEvents: boolean;
   enableHistory: boolean;
   enableCitations: boolean;
+  enableConsumption: boolean;
 }
 
 export interface ReaderUI {
@@ -200,6 +206,7 @@ export interface ReaderConfig {
   bookmarks?: Partial<BookmarkModuleConfig>;
   lineFocus?: Partial<LineFocusModuleConfig>;
   citations?: Partial<CitationModuleConfig>;
+  consumption?: Partial<ConsumptionModuleConfig>;
   highlighter?: Partial<TextHighlighterConfig>;
   injectables: Array<Injectable>;
   injectablesFixed?: Array<Injectable>;
@@ -232,6 +239,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   lineFocusModule?: LineFocusModule;
   historyModule?: HistoryModule;
   citationModule?: CitationModule;
+  consumptionModule?: ConsumptionModule;
 
   sideNavExpanded: boolean = false;
 
@@ -2644,7 +2652,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       };
 
       this.stopReadAloud();
-      this.navigate(position);
+      this.navigate(position, false);
     } else {
       if (this.previousChapterLink) {
         const position: Locator = {
@@ -2657,7 +2665,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         };
 
         this.stopReadAloud();
-        this.navigate(position);
+        this.navigate(position, false);
       }
     }
     if (event) {
@@ -2686,7 +2694,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       };
 
       this.stopReadAloud();
-      this.navigate(position);
+      this.navigate(position, false);
     } else {
       if (this.nextChapterLink) {
         const position: Locator = {
@@ -2698,7 +2706,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           title: this.nextChapterLink.title,
         };
         this.stopReadAloud();
-        this.navigate(position);
+        this.navigate(position, false);
       }
     }
     if (event) {
@@ -2733,6 +2741,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
 
   async navigate(locator: Locator, history: boolean = true): Promise<void> {
+    if (this.consumptionModule) {
+      if (history) {
+        await this.consumptionModule.endProgress();
+        await this.consumptionModule.startProgress(locator);
+      }
+    }
     if (this.historyModule) {
       this.historyModule.push(locator, history);
     }
@@ -3177,6 +3191,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           } else {
             log.log("save last reading position", position);
             this.annotator.saveLastReadingPosition(position);
+          }
+          if (this.consumptionModule) {
+            this.consumptionModule.continueProgress(position);
           }
         }
       }

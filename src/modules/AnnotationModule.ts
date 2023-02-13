@@ -47,6 +47,7 @@ import {
 } from "./highlight/common/selection";
 import * as lodash from "lodash";
 import log from "loglevel";
+import { Action } from "./consumption/ConsumptionModule";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
 
@@ -453,6 +454,10 @@ export class AnnotationModule implements ReaderModule {
         }
 
         if (annotation) {
+          this.delegate.consumptionModule?.trackAction(
+            annotation,
+            Action.HighlightCreated
+          );
           if (this.api?.addAnnotation) {
             try {
               let result = await this.api.addAnnotation(annotation);

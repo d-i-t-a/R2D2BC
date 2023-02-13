@@ -94,7 +94,6 @@ import CitationModule, {
 } from "../modules/citation/CitationModule";
 import log from "loglevel";
 import {
-  Action,
   ConsumptionModule,
   ConsumptionModuleConfig,
 } from "../modules/consumption/ConsumptionModule";

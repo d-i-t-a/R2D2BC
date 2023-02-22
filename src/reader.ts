@@ -58,6 +58,7 @@ import CitationModule from "./modules/citation/CitationModule";
 import { TaJsonDeserialize } from "./utils/JsonUtil";
 import { PDFNavigator } from "./navigator/PDFNavigator";
 import Navigator from "./navigator/Navigator";
+import { ConsumptionModule } from "./modules/consumption/ConsumptionModule";
 
 /**
  * A class that, once instantiated using the public `.build` method,
@@ -87,7 +88,8 @@ export default class D2Reader {
     private readonly pageBreakModule?: PageBreakModule,
     private readonly lineFocusModule?: LineFocusModule,
     private readonly historyModule?: HistoryModule,
-    private readonly citationModule?: CitationModule
+    private readonly citationModule?: CitationModule,
+    private readonly consumptionModule?: ConsumptionModule
   ) {}
 
   addEventListener() {
@@ -396,6 +398,14 @@ export default class D2Reader {
           })
         : undefined;
 
+      const consumptionModule = rights.enableConsumption
+        ? await ConsumptionModule.create({
+            publication: publication,
+            delegate: navigator,
+            ...initialConfig.consumption,
+          })
+        : undefined;
+
       return new D2Reader(
         settings,
         navigator,
@@ -413,7 +423,8 @@ export default class D2Reader {
         pageBreakModule,
         lineFocusModule,
         historyModule,
-        citationModule
+        citationModule,
+        consumptionModule
       );
     }
   }

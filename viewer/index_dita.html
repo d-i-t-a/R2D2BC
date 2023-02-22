@@ -967,6 +967,20 @@
                     customKeyboardEvents: false,
                     enableHistory: true,
                     enableCitations: true,
+                    enableConsumption: true,
+                },
+                consumption: {
+                    api: {
+                        progressTracked: function(start, end, progress) {
+                            console.log("progressTracked: " + progress + "% between " + start.href + " and " + end.href)
+                            toast("progressTracked: " + progress);
+                        },
+                        actionTracked: function(locator, action) {
+                            console.log("actionTracked: " + locator.href + " action " + action)
+                            toast("actionTracked: " + action);
+                        },
+
+                    }
                 },
                 lineFocus: {
                     lines: 5,

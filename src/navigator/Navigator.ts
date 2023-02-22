@@ -17,6 +17,77 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-interface Navigator {}
+import { Locator } from "../model/Locator";
+import { IFrameAttributes } from "./IFrameNavigator";
+
+interface Navigator {
+  publication: any;
+  rights?: any;
+  hasMediaOverlays?: any;
+
+  addListener?(argument: any, argument2: any): void;
+
+  startReadAloud?(): void;
+
+  stopReadAloud?(): void;
+
+  pauseReadAloud?(): void;
+
+  resumeReadAloud?(): void;
+
+  startReadAlong?(): void;
+
+  stopReadAlong?(): void;
+
+  pauseReadAlong?(): void;
+
+  resumeReadAlong?(): void;
+
+  hideLayer?(layer): any;
+
+  showLayer?(layer): any;
+
+  activateMarker?(id: string, position: string): any;
+
+  deactivateMarker?(): any;
+
+  tableOfContents(): any;
+
+  readingOrder(): any;
+
+  currentResource(): any;
+
+  mostRecentNavigatedTocItem?(): any;
+
+  totalResources(): any;
+
+  currentLocator(): any;
+
+  positions(): any;
+
+  goTo(locator: Locator): void;
+
+  goToPosition(value: number);
+
+  goToPage(page: number);
+
+  nextResource(): void;
+
+  previousResource(): void;
+
+  nextPage(): void;
+
+  previousPage(): void;
+
+  atStart?(): any;
+
+  atEnd?(): any;
+
+  snapToSelector?(selector): void;
+
+  applyAttributes?(value: IFrameAttributes): void;
+
+  stop(): void;
+}
 
 export default Navigator;

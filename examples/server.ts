@@ -33,6 +33,10 @@ async function start() {
         title: "API Example",
         getUrl: (url) => `/viewer/index_api.html?url=${url}`,
       },
+      {
+        title: "Static Placeholder PDF Example",
+        getUrl: (url) => `/viewer/index_pdf.html?url=${url}`,
+      },
     ],
   });
 

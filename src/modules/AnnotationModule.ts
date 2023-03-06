@@ -492,7 +492,9 @@ export class AnnotationModule implements ReaderModule {
   public showHighlights() {
     let highlights: Array<any> = [];
     if (this.annotator) {
-      highlights = this.annotator.getAnnotations() as Array<any>;
+      highlights = this.annotator.getAnnotationsByChapter(
+        this.delegate.currentLocator().href
+      ) as Array<any>;
       if (highlights) {
         highlights = highlights.filter(
           (rangeRepresentation) =>
@@ -517,7 +519,9 @@ export class AnnotationModule implements ReaderModule {
       if (this.api) {
         let highlights: Array<any> = [];
         if (this.annotator) {
-          highlights = this.annotator.getAnnotations() as Array<any>;
+          highlights = this.annotator.getAnnotationsByChapter(
+            this.delegate.currentLocator().href
+          ) as Array<any>;
         }
         if (
           this.highlighter &&
@@ -599,7 +603,9 @@ export class AnnotationModule implements ReaderModule {
       } else {
         let highlights: Array<any> = [];
         if (this.annotator) {
-          highlights = this.annotator.getAnnotations() as Array<any>;
+          highlights = this.annotator.getAnnotationsByChapter(
+            this.delegate.currentLocator().href
+          ) as Array<any>;
         }
         if (
           this.highlighter &&
@@ -693,16 +699,18 @@ export class AnnotationModule implements ReaderModule {
         this.delegate.view?.isScrollMode() &&
         this.properties?.enableComments
       ) {
-        this.commentGutter.style.removeProperty("display");
+        this.commentGutter?.style.removeProperty("display");
       } else {
-        this.commentGutter.style.setProperty("display", "none");
+        this.commentGutter?.style.setProperty("display", "none");
       }
       if (this.commentGutter && this.delegate.view?.isScrollMode()) {
         this.commentGutter.innerHTML = "";
 
         let highlights: Array<any> = [];
         if (this.annotator) {
-          highlights = this.annotator.getAnnotations() as Array<any>;
+          highlights = this.annotator.getAnnotationsByChapter(
+            this.delegate.currentLocator().href
+          ) as Array<any>;
           if (highlights) {
             highlights = highlights.filter(
               (rangeRepresentation) =>

@@ -885,7 +885,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
 
   isScrolling: boolean;
-  private updateBookView(): void {
+  private updateBookView(options?: { skipDrawingAnnotations?: boolean }): void {
     if (this.view?.layout === "fixed") {
       if (this.nextPageAnchorElement)
         this.nextPageAnchorElement.style.display = "none";
@@ -1093,7 +1093,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           await this.pageBreakModule.drawPageBreaks();
         }
 
-        if (this.annotationModule !== undefined) {
+        if (
+          !options?.skipDrawingAnnotations &&
+          this.annotationModule !== undefined
+        ) {
           await this.annotationModule.drawHighlights();
         }
         if (this.bookmarkModule !== undefined) {
@@ -1284,7 +1287,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         bookViewPosition = this.newPosition.locations.progression;
       }
       await this.handleResize();
-      this.updateBookView();
+      this.updateBookView({ skipDrawingAnnotations: true });
 
       await this.settings.applyProperties();
 
@@ -2781,6 +2784,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           return;
         }
       }
+
+      // isCurrentLoaded represents if the navigation goes to a different chapter
+      // Going to a chapter also triggers handleIFrameLoad
       if (isCurrentLoaded) {
         if (locator.href.indexOf("#") !== -1) {
           const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
@@ -2960,15 +2966,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.contentProtectionModule.recalculate(300);
         }
 
-        if (this.annotationModule !== undefined) {
-          await this.annotationModule.drawHighlights();
-          await this.annotationModule.showHighlights();
-        }
         if (this.bookmarkModule !== undefined) {
           await this.bookmarkModule.drawBookmarks();
           await this.bookmarkModule.showBookmarks();
         }
-
         if (this.pageBreakModule !== undefined) {
           await this.highlighter?.destroyHighlights(HighlightType.PageBreak);
           await this.pageBreakModule.drawPageBreaks();

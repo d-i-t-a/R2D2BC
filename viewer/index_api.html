@@ -40,6 +40,7 @@
         <div id="container-toc"></div>
         <div id="container-bookmarks"></div>
         <div id="container-annotations"></div>
+        <div id="container-history"></div>
     </header>
 
     <div style="position:fixed;top:0;left:0;z-index: 1000;bottom: 0; overflow: scroll;">
@@ -154,7 +155,35 @@
                     container.innerHTML = tocString
             ">show bookmarks</button><br>
         </ul>
-
+        <!--History-->
+        <ul> <div>History</div>
+            <button onclick="alert(d2reader.historyCurrentIndex)">current history index</button><br>
+            <button onclick="
+                var result = d2reader.history;
+                console.log(result)
+                console.log(result.length)
+                var container = document.getElementById('container-history');
+                var tocString = ''
+                result.forEach(function (item, index) {
+                    if (index == 0) {
+                        console.log('first')
+                        console.log(index)
+                        tocString += '<ul><li onclick=\'d2reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + Math.round(item.locations.progression * 100) + '%</li>'
+                    } else if (index == result.length - 1) {
+                        console.log('last')
+                        console.log(index)
+                        tocString += '<li onclick=\'d2reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + Math.round(item.locations.progression * 100) + '%</li></ul>'
+                    } else {
+                        console.log('middle')
+                        console.log(index)
+                        tocString += '<li onclick=\'d2reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + Math.round(item.locations.progression * 100) + '%</li>'
+                    }
+                });
+                container.innerHTML = tocString
+            ">show history</button><br>
+            <button onclick="d2reader.historyBack()">history back</button><br>
+            <button onclick="d2reader.historyForward()">history forward</button><br>
+        </ul>
         <!--Annotations-->
         <ul> <div>Annotations</div>
             <button onclick="
@@ -203,26 +232,27 @@
             result => {
                 console.log('search in chapter');
                 console.log(JSON.stringify(result))
-            })">search in chapter</button><br>
+                var container = document.getElementById('searchresult');
+                var tocString = ''
+                result.forEach(function (item, index) {
+                        tocString += '<button onclick=\'d2reader.goToSearchIndex('+JSON.stringify(item.href)+', '+JSON.stringify(index)+', true)\'>go to index '+item.uuid+' in chapter '+index+'</button><br>'
+                });
+                container.innerHTML = tocString
 
+            })">search in chapter</button><br>
             <button onclick="d2reader.search('shelley', false).then(
             result => {
                 console.log('search in book');
                 console.log(JSON.stringify(result))
-            })">search in book</button><br>
+                var container = document.getElementById('searchresult');
+                var tocString = ''
+                result.forEach(function (item, index) {
+                        tocString += '<button onclick=\'d2reader.goToSearchID('+JSON.stringify(item.href)+', '+JSON.stringify(item.uuid)+', false)\'>go to uuid '+item.uuid+' in chapter '+item.href+'</button><br>'
+                });
+                container.innerHTML = tocString
 
-            <button onclick="d2reader.goToSearchIndex('OEBPS/Text/bio.xhtml', 2, false)">go to index 2 in
-                chapter OEBPS/Text/bio.xhtml</button><br>
-            <button onclick="d2reader.goToSearchIndex('OEBPS/Text/bio.xhtml', 3, false)">go to index 3 in
-                chapter OEBPS/Text/bio.xhtml</button><br>
-            <button onclick="d2reader.goToSearchID('OEBPS/Text/bio.xhtml', 10, false)">go to uuid 10 in chapter
-                OEBPS/Text/bio.xhtml</button><br>
-            <button onclick="d2reader.goToSearchID('OEBPS/Text/bio.xhtml', 9, false)">go to uuid 9 in chapter
-                OEBPS/Text/bio.xhtml</button><br>
-            <button onclick="d2reader.goToSearchID('OEBPS/Text/bio.xhtml', 8, false)">go to uuid 8 in chapter
-                OEBPS/Text/bio.xhtml</button><br>
-            <button onclick="d2reader.goToSearchID('OEBPS/Text/bio.xhtml', 7, false)">go to uuid 7 in chapter
-                OEBPS/Text/bio.xhtml</button><br>
+            })">search in book</button><br>
+            <div id="searchresult"/></div>
             <button onclick="d2reader.clearSearch()">clear search</button><br>
         </ul>
 
@@ -476,6 +506,7 @@
                 enableDefinitions: true,
                 enablePageBreaks:true,
                 enableLineFocus:true,
+                enableHistory: true,
                 enableContentProtection: false,
                 autoGeneratePositions: true
             },

@@ -76,6 +76,15 @@ export default class KeyboardEventHandler {
               self.onBackwardSwipe(event);
               break;
           }
+          switch (event.code) {
+            case "Space":
+              if (event.ctrlKey) {
+                self.onBackwardSwipe(event);
+              } else {
+                self.onForwardSwipe(event);
+              }
+              break;
+          }
         },
         false
       );

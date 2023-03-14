@@ -1,0 +1,44 @@
+{
+    "context": "https://readium.org/webpub-manifest/context.jsonld",
+    "metadata": {
+        "@type": "https://schema.org/Book",
+        "title": "Alice’s Adventures in Wonderland",
+        "identifier": "urn:isbn:alice",
+        "conformsTo": "https://readium.org/webpub-manifest/profiles/pdf"
+    },
+    "links": [
+        {
+            "href": "https://alicepdf.dita.digital/lewis-carroll_alices-adventures-in-wonderland_john-tenniel.pdf",
+            "type": "application/pdf",
+            "rel": "alternate"
+        },
+        {
+            "rel": "self",
+            "href": "https://alicepdf.dita.digital/alice.json",
+            "type": "application/webpub+json"
+        }
+    ],
+    "readingOrder": [
+        {
+            "href": "https://alicepdf.dita.digital/lewis-carroll_alices-adventures-in-wonderland_john-tenniel.pdf",
+            "title": "Alice’s Adventures in Wonderland",
+            "type": "application/pdf"
+        }
+    ],
+    "resources": [
+        {
+            "href": "https://alicepdf.dita.digital/lewis-carroll_alices-adventures-in-wonderland_john-tenniel.pdf",
+            "type": "application/pdf"
+        }
+    ],
+    "toc": [
+        {
+            "href": "https://alicepdf.dita.digital/lewis-carroll_alices-adventures-in-wonderland_john-tenniel.pdf",
+            "title": "Alice’s Adventures in Wonderland"
+        },
+        {
+            "href": "https://alicepdf.dita.digital/lewis-carroll_alices-adventures-in-wonderland_john-tenniel.pdf?start=10",
+            "title": "Page 10"
+        }
+    ]
+}

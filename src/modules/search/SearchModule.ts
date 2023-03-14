@@ -721,12 +721,7 @@ export class SearchModule implements ReaderModule {
         if (this.delegate.api?.getContent) {
           await this.delegate.api?.getContent(href).then((content) => {
             let parser = new DOMParser();
-            let doc = parser.parseFromString(
-              this.delegate.requestConfig?.encoded
-                ? this.decodeBase64(content)
-                : content,
-              "application/xhtml+xml"
-            );
+            let doc = parser.parseFromString(content, "application/xhtml+xml");
             if (tocItem) {
               searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
                 (result) => {
@@ -796,12 +791,7 @@ export class SearchModule implements ReaderModule {
       if (this.delegate.api?.getContent) {
         await this.delegate.api?.getContent(href).then((content) => {
           let parser = new DOMParser();
-          let doc = parser.parseFromString(
-            this.delegate.requestConfig?.encoded
-              ? this.decodeBase64(content)
-              : content,
-            "application/xhtml+xml"
-          );
+          let doc = parser.parseFromString(content, "application/xhtml+xml");
           if (tocItem) {
             searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
               (result) => {

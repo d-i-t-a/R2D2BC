@@ -93,6 +93,10 @@ import CitationModule, {
   CitationModuleConfig,
 } from "../modules/citation/CitationModule";
 import log from "loglevel";
+import {
+  ConsumptionModule,
+  ConsumptionModuleConfig,
+} from "../modules/consumption/ConsumptionModule";
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (
@@ -177,6 +181,7 @@ export interface ReaderRights {
   customKeyboardEvents: boolean;
   enableHistory: boolean;
   enableCitations: boolean;
+  enableConsumption: boolean;
 }
 
 export interface ReaderUI {
@@ -200,6 +205,7 @@ export interface ReaderConfig {
   bookmarks?: Partial<BookmarkModuleConfig>;
   lineFocus?: Partial<LineFocusModuleConfig>;
   citations?: Partial<CitationModuleConfig>;
+  consumption?: Partial<ConsumptionModuleConfig>;
   highlighter?: Partial<TextHighlighterConfig>;
   injectables: Array<Injectable>;
   injectablesFixed?: Array<Injectable>;
@@ -232,6 +238,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   lineFocusModule?: LineFocusModule;
   historyModule?: HistoryModule;
   citationModule?: CitationModule;
+  consumptionModule?: ConsumptionModule;
 
   sideNavExpanded: boolean = false;
 
@@ -878,7 +885,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
 
   isScrolling: boolean;
-  private updateBookView(): void {
+  private updateBookView(options?: { skipDrawingAnnotations?: boolean }): void {
     if (this.view?.layout === "fixed") {
       if (this.nextPageAnchorElement)
         this.nextPageAnchorElement.style.display = "none";
@@ -1086,7 +1093,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           await this.pageBreakModule.drawPageBreaks();
         }
 
-        if (this.annotationModule !== undefined) {
+        if (
+          !options?.skipDrawingAnnotations &&
+          this.annotationModule !== undefined
+        ) {
           await this.annotationModule.drawHighlights();
         }
         if (this.bookmarkModule !== undefined) {
@@ -1277,7 +1287,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         bookViewPosition = this.newPosition.locations.progression;
       }
       await this.handleResize();
-      this.updateBookView();
+      this.updateBookView({ skipDrawingAnnotations: true });
 
       await this.settings.applyProperties();
 
@@ -1397,6 +1407,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.rights.enableContentProtection) {
         if (this.contentProtectionModule !== undefined) {
           await this.contentProtectionModule.initialize();
+        }
+      }
+      if (this.rights.enableConsumption) {
+        if (this.consumptionModule !== undefined) {
+          await this.consumptionModule.initialize();
         }
       }
 
@@ -2644,7 +2659,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       };
 
       this.stopReadAloud();
-      this.navigate(position);
+      this.navigate(position, false);
     } else {
       if (this.previousChapterLink) {
         const position: Locator = {
@@ -2657,7 +2672,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         };
 
         this.stopReadAloud();
-        this.navigate(position);
+        this.navigate(position, false);
       }
     }
     if (event) {
@@ -2686,7 +2701,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       };
 
       this.stopReadAloud();
-      this.navigate(position);
+      this.navigate(position, false);
     } else {
       if (this.nextChapterLink) {
         const position: Locator = {
@@ -2698,7 +2713,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           title: this.nextChapterLink.title,
         };
         this.stopReadAloud();
-        this.navigate(position);
+        this.navigate(position, false);
       }
     }
     if (event) {
@@ -2733,6 +2748,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
 
   async navigate(locator: Locator, history: boolean = true): Promise<void> {
+    if (this.consumptionModule) {
+      if (history) {
+        this.consumptionModule.startReadingSession(locator);
+      }
+    }
     if (this.historyModule) {
       this.historyModule.push(locator, history);
     }
@@ -2768,6 +2788,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           return;
         }
       }
+
+      // isCurrentLoaded represents if the navigation goes to a different chapter
+      // Going to a chapter also triggers handleIFrameLoad
       if (isCurrentLoaded) {
         if (locator.href.indexOf("#") !== -1) {
           const elementId = locator.href.slice(locator.href.indexOf("#") + 1);
@@ -2947,15 +2970,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.contentProtectionModule.recalculate(300);
         }
 
-        if (this.annotationModule !== undefined) {
-          await this.annotationModule.drawHighlights();
-          await this.annotationModule.showHighlights();
-        }
         if (this.bookmarkModule !== undefined) {
           await this.bookmarkModule.drawBookmarks();
           await this.bookmarkModule.showBookmarks();
         }
-
         if (this.pageBreakModule !== undefined) {
           await this.highlighter?.destroyHighlights(HighlightType.PageBreak);
           await this.pageBreakModule.drawPageBreaks();
@@ -2976,6 +2994,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.highlighter !== undefined
         ) {
           this.definitionsModule.drawDefinitions();
+        }
+
+        if (
+          this.rights.enableConsumption &&
+          this.consumptionModule !== undefined
+        ) {
+          this.consumptionModule.continueReadingSession(locator);
         }
 
         if (this.view?.layout === "fixed") {
@@ -3177,6 +3202,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           } else {
             log.log("save last reading position", position);
             this.annotator.saveLastReadingPosition(position);
+          }
+          if (this.consumptionModule) {
+            this.consumptionModule.continueReadingSession(position);
           }
         }
       }

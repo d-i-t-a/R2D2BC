@@ -210,3 +210,14 @@ $medium-and-down: "only screen and (max-width : #{$medium-screen})" !default;
     float: right;
   }
 }
+
+.grab-to-pan-grab {
+  cursor: grab !important;
+}
+.grab-to-pan-grab *:not(input):not(textarea):not(button):not(select):not(:link) {
+  cursor: inherit !important;
+}
+.grab-to-pan-grab:active,
+.grab-to-pan-grabbing {
+  cursor: grabbing !important;
+}

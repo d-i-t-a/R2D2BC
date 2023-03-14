@@ -1,0 +1,139 @@
+<!--
+ * Copyright 2018-2020 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Developed on behalf of: CAST (http://www.cast.org)
+ * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>D2 Reader</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Aferdita Muriqi" />
+    <meta name="description" content="A viewer application for PDF files." />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+
+    <!-- R2 Reader CSS -->
+    <link rel="stylesheet" href="reader.css" />
+    <script src="reader.js"></script>
+
+</head>
+
+<body>
+<header id="sideMenu" style="position:fixed;top:0;right:10px;z-index: 2;">
+    <div id="container-toc"></div>
+    <div id="container-bookmarks"></div>
+    <div id="container-annotations"></div>
+</header>
+
+<div style="position:fixed;top:0;left:0;z-index: 1000;bottom: 0; overflow: scroll;">
+
+        <button onclick="javascript:d2reader.previousResource()">previous resource</button><br>
+        <button onclick="javascript:d2reader.nextResource()">next resource</button><br>
+        <button onclick="javascript:d2reader.previousPage()">previous page</button><br>
+        <button onclick="javascript:d2reader.nextPage()">next page</button><br>
+
+        <button onclick="javascript:d2reader.goToPage(5)">Go to Page #5</button><br><br>
+
+        <button onclick="javascript:d2reader.scroll(false)">paginated</button><br>
+        <button onclick="javascript:d2reader.scroll(true, 'horizontal')">horizontal scroll</button><br>
+        <button onclick="javascript:d2reader.scroll(true, 'vertical')">vertical scroll</button><br><br>
+
+        <button onclick="
+                let result = d2reader.tableOfContents;
+                console.log(result)
+                console.log(result.length)
+                let container = document.getElementById('container-toc');
+                let tocString = ''
+                result.forEach(function (item, index) {
+                    if (index == 0) {
+                        console.log('first')
+                        console.log(index)
+                        tocString += '<ul><li onclick=\'d2reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + '</li>'
+                    } else if (index == result.length - 1) {
+                        console.log('last')
+                        console.log(index)
+                        tocString += '<li onclick=\'d2reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + '</li></ul>'
+                    } else {
+                        console.log('middle')
+                        console.log(index)
+                        tocString += '<li onclick=\'d2reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + '</li>'
+                    }
+                });
+                container.innerHTML = tocString
+            ">show TOC</button><br>
+        <button><del>Bookmarks</del></button><br>
+        <button><del>Highlights</del></button><br><br>
+
+        <button onclick="javascript:d2reader.zoomIn()">zoom in</button><br>
+        <button onclick="javascript:d2reader.zoomOut()">zoom out</button><br>
+        <button onclick="javascript:d2reader.activateHand()">activate pan tool</button><br>
+        <button onclick="javascript:d2reader.deactivateHand()">deactivate pan tool</button><br>
+        <button onclick="javascript:d2reader.fitToPage()">Fit to Page</button><br>
+        <button onclick="javascript:d2reader.fitToWidth()">Fit to Width</button><br><br>
+
+        <button><del>Read Aloud</del></button><br>
+        <button><del>Appearance</del></button><br>
+        <button><del>Search</del></button><br>
+
+
+    </div>
+
+    <div class="content" id="root">
+        <div id="D2Reader-Container" style="border: solid 5px rebeccapurple;margin-left: 200px;margin-right: 50px">
+            <main style="height: calc(100vh - 10px);" tabindex=-1 id="iframe-wrapper" >
+                <div id="pdf-container" style="height: calc(100vh - 10px);overflow:auto;display: flex;align-items: center;"></div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+
+        let d2reader = undefined;
+        D2Reader.load({
+            // url: new URL('http://localhost:4444/viewer/pdf/sample.pdf'),
+            url: new URL('https://alicepdf.dita.digital/alice.json'),
+            injectables: [],
+            injectablesFixed: [],
+        }).then(instance => {
+            d2reader = instance
+        });
+
+    </script>
+
+    <noscript>
+        <style>
+            noscript {
+                width: 100%;
+                height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .warning {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+        </style>
+        <p class="warning">To use this viewer, please enable JavaScript.</p>
+    </noscript>
+</body>
+
+</html>

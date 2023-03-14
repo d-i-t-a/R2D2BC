@@ -275,6 +275,25 @@ export default class LocalAnnotator implements Annotator {
     return [];
   }
 
+  public getAnnotationsByChapter(chapter: string): any {
+    const savedAnnotations = this.store.get(LocalAnnotator.ANNOTATIONS);
+    if (savedAnnotations) {
+      let annotations = JSON.parse(savedAnnotations);
+      annotations = annotations.filter(
+        (annotation) => annotation.href === chapter
+      );
+      annotations = annotations.sort((n1: Annotation, n2: Annotation) => {
+        if (n1.locations.progression && n2.locations.progression) {
+          return n1.locations.progression - n2.locations.progression;
+        } else {
+          return undefined;
+        }
+      });
+      return annotations;
+    }
+    return [];
+  }
+
   public getAnnotationPosition(id: any, iframeWin): any {
     const savedAnnotations = this.store.get(LocalAnnotator.ANNOTATIONS);
     if (savedAnnotations) {

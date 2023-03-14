@@ -36,6 +36,7 @@ interface Annotator {
   deleteAnnotation(id: any): any;
   deleteSelectedAnnotation(annotation: any): any;
   getAnnotations(): any;
+  getAnnotationsByChapter(chapter: string): any;
   getAnnotation(annotation: IHighlight): any;
   getAnnotationByID(id: string): any;
   getAnnotationPosition(id: any, iframeWin: any): any;

@@ -40,6 +40,7 @@
         <div id="container-toc"></div>
         <div id="container-bookmarks"></div>
         <div id="container-annotations"></div>
+        <div id="container-history"></div>
     </header>
 
     <div style="position:fixed;top:0;left:0;z-index: 1000;bottom: 0; overflow: scroll;">
@@ -154,7 +155,35 @@
                     container.innerHTML = tocString
             ">show bookmarks</button><br>
         </ul>
-
+        <!--History-->
+        <ul> <div>History</div>
+            <button onclick="alert(d2reader.historyCurrentIndex)">current history index</button><br>
+            <button onclick="
+                var result = d2reader.history;
+                console.log(result)
+                console.log(result.length)
+                var container = document.getElementById('container-history');
+                var tocString = ''
+                result.forEach(function (item, index) {
+                    if (index == 0) {
+                        console.log('first')
+                        console.log(index)
+                        tocString += '<ul><li onclick=\'d2reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + Math.round(item.locations.progression * 100) + '%</li>'
+                    } else if (index == result.length - 1) {
+                        console.log('last')
+                        console.log(index)
+                        tocString += '<li onclick=\'d2reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + Math.round(item.locations.progression * 100) + '%</li></ul>'
+                    } else {
+                        console.log('middle')
+                        console.log(index)
+                        tocString += '<li onclick=\'d2reader.goTo(' + JSON.stringify(item) + ')\'>' + item.title + ' - ' + Math.round(item.locations.progression * 100) + '%</li>'
+                    }
+                });
+                container.innerHTML = tocString
+            ">show history</button><br>
+            <button onclick="d2reader.historyBack()">history back</button><br>
+            <button onclick="d2reader.historyForward()">history forward</button><br>
+        </ul>
         <!--Annotations-->
         <ul> <div>Annotations</div>
             <button onclick="

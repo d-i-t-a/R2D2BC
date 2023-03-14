@@ -192,10 +192,8 @@ export class ConsumptionModule implements ReaderModule {
   currSeconds = 0;
 
   startIdleTimer() {
-    /* Increment the
-        timer seconds */
+    /* Increment the timer seconds */
     this.currSeconds++;
-    // console.log(this.currSeconds);
 
     if (this.currSeconds == this.properties.idleTimeout) {
       this.api?.idleSince(this.currSeconds);
@@ -207,17 +205,8 @@ export class ConsumptionModule implements ReaderModule {
     ) {
       this.endResearchSession();
     }
-    /* Set the timer text
-        to the new value */
-    // document.querySelector(".secs").textContent = this.currSeconds;
-
-    /* Display the timer text */
-    // document.querySelector(".timertext").style.display = "block";
   }
   resetTimer() {
-    /* Hide the timer text */
-    // document.querySelector(".timertext").style.display = "none";
-
     /* Clear the previous interval */
     clearInterval(this.timer);
 

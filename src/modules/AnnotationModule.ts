@@ -492,9 +492,7 @@ export class AnnotationModule implements ReaderModule {
   public showHighlights() {
     let highlights: Array<any> = [];
     if (this.annotator) {
-      highlights = this.annotator.getAnnotationsByChapter(
-        this.delegate.currentLocator().href
-      ) as Array<any>;
+      highlights = this.annotator.getAnnotations() as Array<any>;
       if (highlights) {
         highlights = highlights.filter(
           (rangeRepresentation) =>

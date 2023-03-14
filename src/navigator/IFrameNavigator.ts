@@ -1409,6 +1409,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           await this.contentProtectionModule.initialize();
         }
       }
+      if (this.rights.enableConsumption) {
+        if (this.consumptionModule !== undefined) {
+          await this.consumptionModule.initialize();
+        }
+      }
 
       if (this.eventHandler) {
         for (const iframe of this.iframes) {
@@ -2745,8 +2750,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   async navigate(locator: Locator, history: boolean = true): Promise<void> {
     if (this.consumptionModule) {
       if (history) {
-        await this.consumptionModule.endProgress();
-        await this.consumptionModule.startProgress(locator);
+        this.consumptionModule.startReadingSession(locator);
       }
     }
     if (this.historyModule) {
@@ -2992,6 +2996,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.definitionsModule.drawDefinitions();
         }
 
+        if (
+          this.rights.enableConsumption &&
+          this.consumptionModule !== undefined
+        ) {
+          this.consumptionModule.continueReadingSession(locator);
+        }
+
         if (this.view?.layout === "fixed") {
           if (this.nextChapterBottomAnchorElement)
             this.nextChapterBottomAnchorElement.style.display = "none";
@@ -3193,7 +3204,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             this.annotator.saveLastReadingPosition(position);
           }
           if (this.consumptionModule) {
-            this.consumptionModule.continueProgress(position);
+            this.consumptionModule.continueReadingSession(position);
           }
         }
       }

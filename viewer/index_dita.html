@@ -970,13 +970,30 @@
                     enableConsumption: true,
                 },
                 consumption: {
+                    enableTrackingSession: true,
+                    updateSessionInterval: 20,
+                    idleTimeout: 10,
+                    responseTimeout: 10,
                     api: {
-                        progressTracked: function(start, end, progress) {
-                            console.log("progressTracked: " + progress + "% between " + start.href + " and " + end.href)
-                            toast("progressTracked: " + progress);
+                        idleSince :function( time) {
+                            console.log("idleSince: "  ,  "time" , time)
+                            toast("idle since: " + time + " seconds");
+                        },
+                        startResearchSession: function(sessions, time) {
+                            console.log("startResearchSession: " , sessions ,  "time" , time)
+                            toast("start: " + time);
+                            return 123;
+                        },
+                        updateResearchSession: function(id, sessions, time) {
+                            console.log("updateResearchSession: " , id ,  sessions ,  "time" , time)
+                            toast("update: " + id  + " time: " + time);
+                        },
+                        endResearchSession: function(id, sessions, time) {
+                            console.log("endResearchSession: " , id ,  sessions ,  "time" , time)
+                            toast("end: " + id  + " time: " + time);
                         },
                         actionTracked: function(locator, action) {
-                            console.log("actionTracked: " + locator.href + " action " + action)
+                            console.log("actionTracked: " , locator.href , " action " , action)
                             toast("actionTracked: " + action);
                         },
 

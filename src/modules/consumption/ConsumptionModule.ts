@@ -114,7 +114,6 @@ export class ConsumptionModule implements ReaderModule {
     this.startReadingTimer = new Date();
   }
   continueReadingSession(locator: Locator) {
-    console.log("continueReadingSession", locator);
     if (this.properties.enableTrackingSession) {
       if (this.startResearchTimer === undefined) {
         this.startResearchSession();
@@ -135,7 +134,6 @@ export class ConsumptionModule implements ReaderModule {
     }
   }
   startResearchSession() {
-    console.log("startResearchSession");
     if (this.properties.enableTrackingSession) {
       this.startResearchTimer = new Date();
       this.readingSessions = [];
@@ -155,7 +153,6 @@ export class ConsumptionModule implements ReaderModule {
     }
   }
   updateResearchSession() {
-    console.log("updateResearchSession");
     if (this.properties.enableTrackingSession) {
       let timeElapsed =
         (new Date().getTime() - this.startResearchTimer!.getTime()) / 1000;
@@ -167,7 +164,6 @@ export class ConsumptionModule implements ReaderModule {
     }
   }
   endResearchSession() {
-    console.log("endResearchSession");
     if (this.properties.enableTrackingSession) {
       let timeElapsed =
         (new Date().getTime() - this.startResearchTimer!.getTime()) / 1000;

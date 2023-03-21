@@ -83,9 +83,6 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     this.resourceIndex = 0;
     this.resource = this.publication.readingOrder[this.resourceIndex];
 
-    console.log(this.resource);
-    console.log(this.resource.Href1);
-
     GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js`;
     this.wrapper = HTMLUtilities.findRequiredElement(
       this.mainElement,
@@ -162,7 +159,6 @@ export class PDFNavigator extends EventEmitter implements Navigator {
       if (self.scale === 1.0) {
         const fitPage = self.wrapper.clientHeight / viewport.height;
         const fitWidth = self.wrapper.clientWidth / viewport.width;
-        console.log(fitPage, fitWidth);
         if (self.scaleType === ScaleType.Page) {
           viewport = page.getViewport({
             scale: fitPage < fitWidth ? fitPage : fitWidth,
@@ -261,13 +257,11 @@ export class PDFNavigator extends EventEmitter implements Navigator {
 
   nextResource(): void {
     const self = this;
-    console.log(self.resourceIndex, this.publication.readingOrder.length - 1);
     if (this.resourceIndex >= this.publication.readingOrder.length - 1) {
       return;
     }
     self.resourceIndex++;
     self.resource = this.publication.readingOrder[self.resourceIndex];
-    console.log(this.resource.Href1);
     getDocument(
       this.publication.getAbsoluteHref(this.resource.Href)
     ).promise.then(function (pdfDoc_) {
@@ -279,13 +273,11 @@ export class PDFNavigator extends EventEmitter implements Navigator {
 
   previousResource(): void {
     const self = this;
-    console.log(self.resourceIndex, this.publication.readingOrder.length - 1);
     if (this.resourceIndex === 0) {
       return;
     }
     self.resourceIndex--;
     self.resource = this.publication.readingOrder[self.resourceIndex];
-    console.log(this.resource.Href1);
     getDocument(
       this.publication.getAbsoluteHref(this.resource.Href)
     ).promise.then(function (pdfDoc_) {
@@ -296,7 +288,6 @@ export class PDFNavigator extends EventEmitter implements Navigator {
   }
 
   goTo(locator: Locator): void {
-    console.log(locator);
     const url = new URL(locator.href);
     if (url.searchParams.has("start")) {
       const page = url.searchParams.get("start");
@@ -309,22 +300,18 @@ export class PDFNavigator extends EventEmitter implements Navigator {
   }
 
   goToPosition(value: number): void {
-    console.log(value);
     this.queueRenderPage(value);
   }
 
   async goToPage(page: number) {
-    console.log(page);
     this.queueRenderPage(page);
   }
   fitToWidth(): void {
-    console.log("fit to width", this.pageNum);
     this.scale = 1.0;
     this.scaleType = ScaleType.Width;
     this.loadPDFJS(this.pageNum);
   }
   fitToPage(): void {
-    console.log("fit to page", this.pageNum);
     this.scale = 1.0;
     this.scaleType = ScaleType.Page;
     this.loadPDFJS(this.pageNum);

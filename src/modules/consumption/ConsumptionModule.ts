@@ -80,7 +80,7 @@ export class ConsumptionModule implements ReaderModule {
   }
   async stop() {
     log.log("Consumption module stop");
-    this.updateResearchSession();
+    this.endResearchSession();
   }
   initialize() {
     let win = this.delegate.iframes[0].contentWindow;

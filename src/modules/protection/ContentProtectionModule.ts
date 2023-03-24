@@ -182,8 +182,9 @@ export class ContentProtectionModule implements ReaderModule {
 
   async stop() {
     log.log("Protection module stop");
-    this.mutationObserver.disconnect();
-
+    if (this.properties?.enableObfuscation) {
+      this.mutationObserver.disconnect();
+    }
     if (this.properties?.disableKeys) {
       removeEventListenerOptional(
         this.delegate.mainElement,

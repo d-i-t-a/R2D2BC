@@ -701,7 +701,11 @@ export class AnnotationModule implements ReaderModule {
       } else {
         this.commentGutter?.style.setProperty("display", "none");
       }
-      if (this.commentGutter && this.delegate.view?.isScrollMode()) {
+      if (
+        this.commentGutter &&
+        this.delegate.view?.isScrollMode() &&
+        this.properties?.enableComments
+      ) {
         this.commentGutter.innerHTML = "";
 
         let highlights: Array<any> = [];

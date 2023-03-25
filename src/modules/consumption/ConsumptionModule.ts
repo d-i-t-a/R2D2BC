@@ -220,12 +220,12 @@ export class ConsumptionModule implements ReaderModule {
     /* Increment the timer seconds */
     this.currSeconds++;
 
-    if (this.currSeconds == this.properties.idleTimeout) {
+    if (this.currSeconds === this.properties.idleTimeout) {
       this.api?.idleSince(this.currSeconds);
       this.updateResearchSession();
     }
     if (
-      this.currSeconds ==
+      this.currSeconds ===
       this.properties.idleTimeout! + this.properties.responseTimeout!
     ) {
       this.endResearchSession();

@@ -143,6 +143,8 @@ export interface IFrameNavigatorConfig {
   services?: PublicationServices;
   sample?: SampleRead;
   requestConfig?: RequestConfig;
+  modules: ReaderModule[];
+  highlighter: TextHighlighter;
 }
 export interface PublicationServices {
   positions?: URL;
@@ -331,7 +333,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       config.attributes || { margin: 0 },
       config.services,
       config.sample,
-      config.requestConfig
+      config.requestConfig,
+      config.highlighter,
+      config.modules
     );
 
     await navigator.start(
@@ -354,14 +358,81 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     attributes?: IFrameAttributes,
     services?: PublicationServices,
     sample?: SampleRead,
-    requestConfig?: RequestConfig
+    requestConfig?: RequestConfig,
+    highlighter?: TextHighlighter,
+    modules?: ReaderModule[]
   ) {
     super();
+    this.highlighter = highlighter;
+    if (this.highlighter) {
+      this.highlighter.navigator = this;
+    }
+    for (const index in modules) {
+      let module = modules[index];
+      module.navigator = this;
+      if (modules[index] instanceof AnnotationModule) {
+        this.annotationModule = module;
+      }
+      if (modules[index] instanceof BookmarkModule) {
+        this.bookmarkModule = module;
+      }
+      if (modules[index] instanceof TTSModule2) {
+        this.ttsModule = module;
+      }
+      if (modules[index] instanceof TTSModule2) {
+        this.ttsModule = module;
+      }
+      if (modules[index] instanceof SearchModule) {
+        this.searchModule = module;
+      }
+      if (modules[index] instanceof DefinitionsModule) {
+        this.definitionsModule = module;
+      }
+      if (modules[index] instanceof TimelineModule) {
+        this.timelineModule = module;
+      }
+      if (modules[index] instanceof ContentProtectionModule) {
+        this.contentProtectionModule = module;
+      }
+      if (modules[index] instanceof CitationModule) {
+        this.citationModule = module;
+      }
+      if (modules[index] instanceof MediaOverlayModule) {
+        this.mediaOverlayModule = module;
+      }
+      if (modules[index] instanceof PageBreakModule) {
+        this.pageBreakModule = module;
+      }
+      if (modules[index] instanceof LineFocusModule) {
+        this.lineFocusModule = module;
+      }
+      if (modules[index] instanceof HistoryModule) {
+        this.historyModule = module;
+      }
+      if (modules[index] instanceof ConsumptionModule) {
+        this.consumptionModule = module;
+      }
+      // modules: [
+      //   bookmarkModule,
+      //   annotationModule,
+      //   ttsModule,
+      //   searchModule,
+      //   definitionsModule,
+      //   timelineModule,
+      //   contentProtectionModule,
+      //   citationModule,
+      //   mediaOverlayModule,
+      //   pageBreakModule,
+      //   lineFocusModule,
+      //   historyModule,
+      //   consumptionModule,
+      // ],
+    }
     this.settings = settings;
     this.annotator = annotator;
     this.view = settings.view;
     this.view.attributes = attributes;
-    this.view.delegate = this;
+    this.view.navigator = this;
     this.eventHandler = new EventHandler(this);
     this.touchEventHandler = new TouchEventHandler(this);
     this.keyboardEventHandler = new KeyboardEventHandler(this);
@@ -762,7 +833,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           if (menuSearch)
             menuSearch.parentElement?.style.setProperty("display", "none");
         }
-        if (menuSearch && this.view?.delegate.publication.isFixedLayout) {
+        if (menuSearch && this.view?.navigator.publication.isFixedLayout) {
           menuSearch.parentElement?.style.setProperty("display", "none");
         }
         if (this.hasMediaOverlays) {
@@ -1083,42 +1154,37 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           }
         }
       });
-      setTimeout(async () => {
-        await this.highlighter?.prepareContainers(
-          this.iframes[0].contentWindow as any
-        );
+      if (!options?.skipDrawingAnnotations) {
+        setTimeout(async () => {
+          await this.highlighter?.prepareContainers(
+            this.iframes[0].contentWindow as any
+          );
 
-        if (this.pageBreakModule !== undefined) {
-          await this.highlighter?.destroyHighlights(HighlightType.PageBreak);
-          await this.pageBreakModule.drawPageBreaks();
-        }
+          if (this.highlighter) {
+            if (this.rights.enableAnnotations && this.annotationModule) {
+              await this.annotationModule.drawHighlights();
+            }
 
-        if (
-          !options?.skipDrawingAnnotations &&
-          this.annotationModule !== undefined
-        ) {
-          await this.annotationModule.drawHighlights();
-        }
-        if (this.bookmarkModule !== undefined) {
-          await this.bookmarkModule.drawBookmarks();
-        }
+            if (this.rights.enableBookmarks && this.bookmarkModule) {
+              await this.bookmarkModule.drawBookmarks();
+            }
 
-        if (
-          this.rights.enableSearch &&
-          this.searchModule !== undefined &&
-          this.highlighter !== undefined
-        ) {
-          await this.highlighter.destroyHighlights(HighlightType.Search);
-          this.searchModule.drawSearch();
-        }
-        if (
-          this.rights.enableDefinitions &&
-          this.definitionsModule !== undefined &&
-          this.highlighter !== undefined
-        ) {
-          await this.definitionsModule.drawDefinitions();
-        }
-      }, 200);
+            if (this.rights.enableSearch && this.searchModule) {
+              await this.highlighter.destroyHighlights(HighlightType.Search);
+              this.searchModule.drawSearch();
+            }
+
+            if (this.rights.enablePageBreaks && this.pageBreakModule) {
+              await this.highlighter.destroyHighlights(HighlightType.PageBreak);
+              await this.pageBreakModule.drawPageBreaks();
+            }
+
+            if (this.rights.enableDefinitions && this.definitionsModule) {
+              await this.definitionsModule.drawDefinitions();
+            }
+          }
+        }, 200);
+      }
     }
   }
 
@@ -1266,7 +1332,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           created: new Date(),
           title: startLink?.Title,
         };
-
         await this.navigate(position);
       }
 
@@ -1340,6 +1405,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.nextChapterAnchorElement.className += " disabled";
         }
       }
+
       if (this.historyModule) {
         this.historyModule.setup();
       }
@@ -1404,17 +1470,6 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         });
       }
 
-      if (this.rights.enableContentProtection) {
-        if (this.contentProtectionModule !== undefined) {
-          await this.contentProtectionModule.initialize();
-        }
-      }
-      if (this.rights.enableConsumption) {
-        if (this.consumptionModule !== undefined) {
-          await this.consumptionModule.initialize();
-        }
-      }
-
       if (this.eventHandler) {
         for (const iframe of this.iframes) {
           this.eventHandler.setupEvents(iframe.contentDocument);
@@ -1433,29 +1488,40 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.view?.setIframeHeight?.(this.iframes[0]);
         }
       }
-      if (this.annotationModule !== undefined) {
-        await this.annotationModule.initialize();
-      }
-      if (this.bookmarkModule !== undefined) {
-        await this.bookmarkModule.initialize();
-      }
-      if (this.rights.enableTTS) {
-        for (const iframe of this.iframes) {
-          const body = iframe.contentDocument?.body;
-          if (this.ttsModule !== undefined) {
-            const ttsModule = this.ttsModule as TTSModule2;
-            await ttsModule.initialize(body);
-          }
-        }
+
+      if (this.rights.enableContentProtection && this.contentProtectionModule) {
+        await this.contentProtectionModule.initialize();
       }
 
-      if (this.timelineModule !== undefined) {
+      if (this.rights.enableConsumption && this.consumptionModule) {
+        await this.consumptionModule.initialize();
+      }
+
+      if (this.rights.enableAnnotations && this.annotationModule) {
+        await this.annotationModule.initialize();
+      }
+
+      if (this.rights.enableBookmarks && this.bookmarkModule) {
+        await this.bookmarkModule.initialize();
+      }
+
+      if (this.rights.enableLineFocus && this.lineFocusModule) {
+        await this.lineFocusModule.initialize();
+      }
+
+      if (this.rights.enableTTS && this.ttsModule) {
+        const body = this.iframes[0].contentDocument?.body;
+        const ttsModule = this.ttsModule as TTSModule2;
+        await ttsModule.initialize(body);
+      }
+
+      if (this.rights.enableTimeline && this.timelineModule) {
         await this.timelineModule.initialize();
       }
 
       if (
         this.rights.enableMediaOverlays &&
-        this.mediaOverlayModule !== undefined &&
+        this.mediaOverlayModule &&
         this.hasMediaOverlays
       ) {
         await this.mediaOverlayModule.initialize();
@@ -1490,9 +1556,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
         this.hideLoadingMessage();
         this.showIframeContents();
+
         if (
           this.rights.enableMediaOverlays &&
-          this.mediaOverlayModule !== undefined &&
+          this.mediaOverlayModule &&
           this.hasMediaOverlays
         ) {
           let link = this.currentLink();
@@ -1501,7 +1568,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         await this.updatePositionInfo();
         await this.view?.setSize();
         setTimeout(() => {
-          if (this.mediaOverlayModule !== undefined) {
+          if (this.mediaOverlayModule) {
             this.mediaOverlayModule.settings.resourceReady = true;
           }
         }, 300);
@@ -2748,13 +2815,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
 
   async navigate(locator: Locator, history: boolean = true): Promise<void> {
-    if (this.consumptionModule) {
+    if (this.rights.enableConsumption && this.consumptionModule) {
       if (history) {
         this.consumptionModule.startReadingSession(locator);
       }
     }
     if (this.historyModule) {
-      this.historyModule.push(locator, history);
+      await this.historyModule.push(locator, history);
     }
 
     const exists = this.publication.getTOCItem(locator.href);
@@ -2963,18 +3030,20 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         ) {
           await this.mediaOverlayModule.initializeResource(this.currentLink());
         }
+
         if (
           this.rights.enableContentProtection &&
           this.contentProtectionModule !== undefined
         ) {
-          this.contentProtectionModule.recalculate(300);
+          await this.contentProtectionModule.recalculate(300);
         }
 
-        if (this.bookmarkModule !== undefined) {
+        if (this.bookmarkModule) {
           await this.bookmarkModule.drawBookmarks();
           await this.bookmarkModule.showBookmarks();
         }
-        if (this.pageBreakModule !== undefined) {
+
+        if (this.pageBreakModule) {
           await this.highlighter?.destroyHighlights(HighlightType.PageBreak);
           await this.pageBreakModule.drawPageBreaks();
         }
@@ -2990,16 +3059,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
         if (
           this.rights.enableDefinitions &&
-          this.definitionsModule !== undefined &&
-          this.highlighter !== undefined
+          this.definitionsModule &&
+          this.highlighter
         ) {
-          this.definitionsModule.drawDefinitions();
+          await this.definitionsModule.drawDefinitions();
         }
 
-        if (
-          this.rights.enableConsumption &&
-          this.consumptionModule !== undefined
-        ) {
+        if (this.rights.enableConsumption && this.consumptionModule) {
           this.consumptionModule.continueReadingSession(locator);
         }
 

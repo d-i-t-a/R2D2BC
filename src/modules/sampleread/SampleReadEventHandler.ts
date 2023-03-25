@@ -21,21 +21,21 @@ import { debounce } from "debounce";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 
 export default class SampleReadEventHandler {
-  delegate: IFrameNavigator;
-  constructor(delegate: IFrameNavigator) {
-    this.delegate = delegate;
+  navigator: IFrameNavigator;
+  constructor(navigator: IFrameNavigator) {
+    this.navigator = navigator;
   }
 
   enforceSampleRead = debounce((position) => {
     let progress = Math.round(position.locations.totalProgression * 100);
     let valid = false;
-    if (this.delegate.sample?.limit) {
-      valid = progress <= this.delegate.sample?.limit;
-      if (this.delegate.view?.layout === "fixed") {
+    if (this.navigator.sample?.limit) {
+      valid = progress <= this.navigator.sample?.limit;
+      if (this.navigator.view?.layout === "fixed") {
         if (
           !valid &&
-          this.delegate.sample?.minimum &&
-          position.locations.position <= this.delegate.sample?.minimum
+          this.navigator.sample?.minimum &&
+          position.locations.position <= this.navigator.sample?.minimum
         ) {
           valid = true;
         }
@@ -139,18 +139,19 @@ export default class SampleReadEventHandler {
     window.addEventListener("touchstart", TouchStartHandler, wheelOpt);
 
     if (!valid) {
-      this.delegate.iframes[0].blur();
-      if (this.delegate.errorMessage) {
-        this.delegate.errorMessage.style.display = "block";
-        this.delegate.errorMessage.style.backgroundColor = "rgb(255, 255, 255)";
-        this.delegate.errorMessage.innerHTML =
-          this.delegate.sample?.popup ?? "";
+      this.navigator.iframes[0].blur();
+      if (this.navigator.errorMessage) {
+        this.navigator.errorMessage.style.display = "block";
+        this.navigator.errorMessage.style.backgroundColor =
+          "rgb(255, 255, 255)";
+        this.navigator.errorMessage.innerHTML =
+          this.navigator.sample?.popup ?? "";
       }
     } else {
-      this.delegate.iframes[0].focus();
-      if (this.delegate.errorMessage) {
-        this.delegate.errorMessage.style.display = "none";
-        this.delegate.errorMessage.style.removeProperty("background-color");
+      this.navigator.iframes[0].focus();
+      if (this.navigator.errorMessage) {
+        this.navigator.errorMessage.style.display = "none";
+        this.navigator.errorMessage.style.removeProperty("background-color");
       }
     }
   }, 300);

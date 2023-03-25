@@ -40,13 +40,12 @@ export interface PageBreakModuleProperties {
 }
 
 export interface PageBreakModuleConfig extends PageBreakModuleProperties {
-  delegate: IFrameNavigator;
   headerMenu?: HTMLElement | null;
   publication: Publication;
 }
 
 export class PageBreakModule implements ReaderModule {
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   private readonly headerMenu?: HTMLElement | null;
   private publication: Publication;
   private properties: PageBreakModuleProperties;
@@ -57,7 +56,6 @@ export class PageBreakModule implements ReaderModule {
 
   public static async create(config: PageBreakModuleConfig) {
     const pageBreak = new this(
-      config.delegate,
       config.publication,
       config as PageBreakModuleProperties,
       config.headerMenu
@@ -67,13 +65,11 @@ export class PageBreakModule implements ReaderModule {
   }
 
   private constructor(
-    delegate: IFrameNavigator,
     publication: Publication,
     properties: PageBreakModuleProperties,
     headerMenu?: HTMLElement | null
   ) {
     this.headerMenu = headerMenu;
-    this.delegate = delegate;
     this.publication = publication;
     this.properties = properties;
   }
@@ -83,8 +79,6 @@ export class PageBreakModule implements ReaderModule {
   }
 
   protected async start(): Promise<void> {
-    this.delegate.pageBreakModule = this;
-
     if (this.headerMenu)
       this.goToPageView = HTMLUtilities.findElement(
         this.headerMenu,
@@ -121,8 +115,8 @@ export class PageBreakModule implements ReaderModule {
     }
     setTimeout(() => {
       this.properties.hideLayer
-        ? this.delegate.hideLayer("pagebreak")
-        : this.delegate.showLayer("pagebreak");
+        ? this.navigator.hideLayer("pagebreak")
+        : this.navigator.showLayer("pagebreak");
     }, 10);
   }
   async goToPageNumber(event: any): Promise<any> {
@@ -157,19 +151,21 @@ export class PageBreakModule implements ReaderModule {
           title: firstPage.Title,
         };
 
-        this.delegate.goTo(position);
+        this.navigator.goTo(position);
       }
     }
   }
 
   async handleResize() {
-    await this.delegate.highlighter?.destroyHighlights(HighlightType.PageBreak);
+    await this.navigator.highlighter?.destroyHighlights(
+      HighlightType.PageBreak
+    );
     await this.drawPageBreaks();
   }
 
   async drawPageBreaks() {
     setTimeout(() => {
-      const body = this.delegate.iframes[0].contentDocument?.body;
+      const body = this.navigator.iframes[0].contentDocument?.body;
       let pageBreaks = body?.querySelectorAll('[*|type="pagebreak"]');
       if (pageBreaks?.length === 0) {
         pageBreaks = body?.querySelectorAll("[epub\\:type='pagebreak']");
@@ -178,7 +174,7 @@ export class PageBreakModule implements ReaderModule {
 
       function getCssSelector(element: Element): string {
         try {
-          let doc = self.delegate.iframes[0].contentDocument;
+          let doc = self.navigator.iframes[0].contentDocument;
           if (doc) {
             return uniqueCssSelector(element, doc, _getCssSelectorOptions);
           } else {
@@ -207,13 +203,13 @@ export class PageBreakModule implements ReaderModule {
             img.innerHTML = title;
             hide = true;
           }
-          let doc = this.delegate.iframes[0].contentDocument;
+          let doc = this.navigator.iframes[0].contentDocument;
           if (doc) {
-            const range = this.delegate.highlighter
+            const range = this.navigator.highlighter
               ?.dom(doc.body)
               .getWindow()
               .document.createRange();
-            const selection = this.delegate.highlighter
+            const selection = this.navigator.highlighter
               ?.dom(doc.body)
               .getSelection();
             selection.removeAllRanges();
@@ -266,8 +262,8 @@ export class PageBreakModule implements ReaderModule {
       };
       _highlights.push(highlight);
 
-      let highlightDom = this.delegate.highlighter?.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
+      let highlightDom = this.navigator.highlighter?.createHighlightDom(
+        this.navigator.iframes[0].contentWindow as any,
         highlight
       );
       highlight.position = parseInt(

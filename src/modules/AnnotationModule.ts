@@ -69,7 +69,6 @@ export interface AnnotationModuleConfig extends AnnotationModuleProperties {
   headerMenu?: HTMLElement | null;
   rights: Partial<ReaderRights>;
   publication: Publication;
-  delegate: IFrameNavigator;
   initialAnnotations?: any;
   api?: AnnotationModuleAPI;
   highlighter: TextHighlighter;
@@ -84,7 +83,7 @@ export class AnnotationModule implements ReaderModule {
   private readonly headerMenu?: HTMLElement | null;
   private readonly highlighter?: TextHighlighter;
   private readonly initialAnnotations: any;
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   properties?: AnnotationModuleProperties;
   api?: AnnotationModuleAPI;
   activeAnnotationMarkerId?: string;
@@ -95,7 +94,6 @@ export class AnnotationModule implements ReaderModule {
       config.annotator,
       config.rights || { enableAnnotations: false, enableTTS: false },
       config.publication,
-      config.delegate,
       config.initialAnnotations || null,
       config as AnnotationModuleProperties,
       config.highlighter,
@@ -110,7 +108,6 @@ export class AnnotationModule implements ReaderModule {
     annotator: Annotator,
     rights: Partial<ReaderRights>,
     publication: Publication,
-    delegate: IFrameNavigator,
     initialAnnotations: any,
     properties: AnnotationModuleProperties,
     highlighter: TextHighlighter,
@@ -121,7 +118,6 @@ export class AnnotationModule implements ReaderModule {
     this.rights = rights;
     this.publication = publication;
     this.headerMenu = headerMenu;
-    this.delegate = delegate;
     this.initialAnnotations = initialAnnotations;
     this.highlighter = highlighter;
     this.properties = properties;
@@ -133,8 +129,6 @@ export class AnnotationModule implements ReaderModule {
   }
 
   protected async start(): Promise<void> {
-    this.delegate.annotationModule = this;
-
     if (this.headerMenu)
       this.highlightsView = HTMLUtilities.findElement(
         this.headerMenu,
@@ -150,8 +144,8 @@ export class AnnotationModule implements ReaderModule {
 
     setTimeout(() => {
       this.properties?.hideLayer
-        ? this.delegate.hideLayer("highlights")
-        : this.delegate.showLayer("highlights");
+        ? this.navigator.hideLayer("highlights")
+        : this.navigator.showLayer("highlights");
     }, 10);
   }
   private hide: HTMLLinkElement = HTMLUtilities.findElement(
@@ -164,7 +158,7 @@ export class AnnotationModule implements ReaderModule {
   );
 
   hideAnnotationLayer() {
-    let doc = this.delegate.iframes[0].contentDocument;
+    let doc = this.navigator.iframes[0].contentDocument;
     if (doc) {
       const container = HTMLUtilities.findElement(
         doc,
@@ -180,7 +174,7 @@ export class AnnotationModule implements ReaderModule {
     }
   }
   showAnnotationLayer() {
-    let doc = this.delegate.iframes[0].contentDocument;
+    let doc = this.navigator.iframes[0].contentDocument;
     if (doc) {
       const container = HTMLUtilities.findElement(
         doc,
@@ -211,7 +205,7 @@ export class AnnotationModule implements ReaderModule {
           this.drawHighlights();
           this.showHighlights();
           addEventListenerOptional(
-            this.delegate.iframes[0].contentDocument?.body,
+            this.navigator.iframes[0].contentDocument?.body,
             "click",
             this.click.bind(this)
           );
@@ -237,7 +231,7 @@ export class AnnotationModule implements ReaderModule {
         // menuItem.highlight.color = `#dc491d`;
         menuItem.highlight.style.default = null;
         menuItem.highlight.style.hover = null;
-        let doc = this.delegate.iframes[0].contentDocument;
+        let doc = this.navigator.iframes[0].contentDocument;
         if (doc) {
           const selection = this.highlighter?.dom(doc.body).getSelection();
           let range = selection.getRangeAt(0);
@@ -251,7 +245,7 @@ export class AnnotationModule implements ReaderModule {
 
           function getCssSelector(element: Element): string {
             try {
-              let doc = self.delegate.iframes[0].contentDocument;
+              let doc = self.navigator.iframes[0].contentDocument;
               if (doc) {
                 return uniqueCssSelector(element, doc, _getCssSelectorOptions);
               } else {
@@ -271,8 +265,8 @@ export class AnnotationModule implements ReaderModule {
               rangeInfo: rangeInfo,
             };
 
-            let book = this.delegate.highlighter?.createHighlight(
-              this.delegate.highlighter?.dom(doc.body).getWindow(),
+            let book = this.navigator.highlighter?.createHighlight(
+              this.navigator.highlighter?.dom(doc.body).getWindow(),
               selectionInfo,
               menuItem.highlight.color,
               true,
@@ -297,7 +291,7 @@ export class AnnotationModule implements ReaderModule {
     log.log("still need to scroll to " + id);
     var element = await this.annotator?.getAnnotationElement(
       id,
-      this.delegate.iframes[0].contentWindow as any
+      this.navigator.iframes[0].contentWindow as any
     );
     element.scrollIntoView({
       block: "center",
@@ -376,21 +370,21 @@ export class AnnotationModule implements ReaderModule {
   public async saveAnnotation(highlight: IHighlight): Promise<Annotation> {
     if (this.annotator) {
       var tocItem = this.publication.getTOCItem(
-        this.delegate.currentChapterLink.href
+        this.navigator.currentChapterLink.href
       );
-      if (this.delegate.currentTocUrl) {
-        tocItem = this.publication.getTOCItem(this.delegate.currentTocUrl);
+      if (this.navigator.currentTocUrl) {
+        tocItem = this.publication.getTOCItem(this.navigator.currentTocUrl);
       }
 
       if (tocItem === undefined) {
         tocItem = this.publication.getTOCItemAbsolute(
-          this.delegate.currentChapterLink.href
+          this.navigator.currentChapterLink.href
         );
       }
 
-      const bookmarkPosition = this.delegate.view?.getCurrentPosition();
+      const bookmarkPosition = this.navigator.view?.getCurrentPosition();
 
-      let doc = this.delegate.iframes[0].contentDocument;
+      let doc = this.navigator.iframes[0].contentDocument;
       if (doc) {
         const body = HTMLUtilities.findRequiredIframeElement(
           doc,
@@ -416,7 +410,7 @@ export class AnnotationModule implements ReaderModule {
           ) {
             const positions = this.publication.positionsByHref(
               this.publication.getRelativeHref(
-                this.delegate.currentChapterLink.href
+                this.navigator.currentChapterLink.href
               )
             );
             const positionIndex = Math.ceil(
@@ -429,7 +423,7 @@ export class AnnotationModule implements ReaderModule {
               id: id,
               href: href,
               created: new Date(),
-              title: this.delegate.currentChapterLink.title,
+              title: this.navigator.currentChapterLink.title,
               highlight: highlight,
               text: {
                 highlight: highlight.selectionInfo.cleanText,
@@ -443,8 +437,8 @@ export class AnnotationModule implements ReaderModule {
                 progression: progression,
               },
               created: new Date(),
-              type: this.delegate.currentChapterLink.type,
-              title: this.delegate.currentChapterLink.title,
+              type: this.navigator.currentChapterLink.type,
+              title: this.navigator.currentChapterLink.title,
               highlight: highlight,
               text: {
                 highlight: highlight.selectionInfo.cleanText,
@@ -454,7 +448,7 @@ export class AnnotationModule implements ReaderModule {
         }
 
         if (annotation) {
-          this.delegate.consumptionModule?.trackAction(
+          this.navigator.consumptionModule?.trackAction(
             annotation,
             Action.HighlightCreated
           );
@@ -518,13 +512,13 @@ export class AnnotationModule implements ReaderModule {
         let highlights: Array<any> = [];
         if (this.annotator) {
           highlights = this.annotator.getAnnotationsByChapter(
-            this.delegate.currentLocator().href
+            this.navigator.currentLocator().href
           ) as Array<any>;
         }
         if (
           this.highlighter &&
           highlights &&
-          this.delegate.iframes[0].contentDocument?.readyState === "complete"
+          this.navigator.iframes[0].contentDocument?.readyState === "complete"
         ) {
           await this.highlighter.destroyHighlights(HighlightType.Annotation);
 
@@ -533,18 +527,18 @@ export class AnnotationModule implements ReaderModule {
 
             const annotation: Annotation = rangeRepresentation;
 
-            let currentLocation = this.delegate.currentChapterLink.href;
+            let currentLocation = this.navigator.currentChapterLink.href;
 
             var tocItem = this.publication.getTOCItem(currentLocation);
-            if (this.delegate.currentTocUrl !== undefined) {
+            if (this.navigator.currentTocUrl !== undefined) {
               tocItem = this.publication.getTOCItem(
-                this.delegate.currentTocUrl
+                this.navigator.currentTocUrl
               );
             }
 
             if (tocItem === null) {
               tocItem = this.publication.getTOCItemAbsolute(
-                this.delegate.currentChapterLink.href
+                this.navigator.currentChapterLink.href
               );
             }
             if (tocItem) {
@@ -555,7 +549,7 @@ export class AnnotationModule implements ReaderModule {
 
               if (annotation.href === href) {
                 await this.highlighter.createHighlightDom(
-                  this.delegate.iframes[0].contentWindow as any,
+                  this.navigator.iframes[0].contentWindow as any,
                   rangeRepresentation.highlight
                 );
 
@@ -565,7 +559,7 @@ export class AnnotationModule implements ReaderModule {
                   ) {
                     const position = await this.annotator?.getAnnotationPosition(
                       rangeRepresentation.id,
-                      this.delegate.iframes[0].contentWindow as any
+                      this.navigator.iframes[0].contentWindow as any
                     );
 
                     const commentTemplate =
@@ -602,13 +596,13 @@ export class AnnotationModule implements ReaderModule {
         let highlights: Array<any> = [];
         if (this.annotator) {
           highlights = this.annotator.getAnnotationsByChapter(
-            this.delegate.currentLocator().href
+            this.navigator.currentLocator().href
           ) as Array<any>;
         }
         if (
           this.highlighter &&
           highlights &&
-          this.delegate.iframes[0].contentDocument?.readyState === "complete"
+          this.navigator.iframes[0].contentDocument?.readyState === "complete"
         ) {
           await this.highlighter.destroyHighlights(HighlightType.Annotation);
 
@@ -617,18 +611,18 @@ export class AnnotationModule implements ReaderModule {
 
             const annotation: Annotation = rangeRepresentation;
 
-            let currentLocation = this.delegate.currentChapterLink.href;
+            let currentLocation = this.navigator.currentChapterLink.href;
 
             let tocItem = this.publication.getTOCItem(currentLocation);
-            if (this.delegate.currentTocUrl) {
+            if (this.navigator.currentTocUrl) {
               tocItem = this.publication.getTOCItem(
-                this.delegate.currentTocUrl
+                this.navigator.currentTocUrl
               );
             }
 
             if (tocItem === null) {
               tocItem = this.publication.getTOCItemAbsolute(
-                this.delegate.currentChapterLink.href
+                this.navigator.currentChapterLink.href
               );
             }
 
@@ -640,7 +634,7 @@ export class AnnotationModule implements ReaderModule {
 
               if (annotation.href === href) {
                 await this.highlighter.createHighlightDom(
-                  this.delegate.iframes[0].contentWindow as any,
+                  this.navigator.iframes[0].contentWindow as any,
                   rangeRepresentation.highlight
                 );
 
@@ -650,7 +644,7 @@ export class AnnotationModule implements ReaderModule {
                   ) {
                     const position = await this.annotator?.getAnnotationPosition(
                       rangeRepresentation.id,
-                      this.delegate.iframes[0].contentWindow as any
+                      this.navigator.iframes[0].contentWindow as any
                     );
 
                     const commentTemplate =
@@ -688,13 +682,13 @@ export class AnnotationModule implements ReaderModule {
   }
 
   repositionGutters(): any {
-    let doc = this.delegate.iframes[0].contentDocument;
+    let doc = this.navigator.iframes[0].contentDocument;
     if (doc) {
       this.commentGutter = doc.getElementById(
         HighlightContainer.R2_ID_GUTTER_RIGHT_CONTAINER
       ) as HTMLDivElement;
       if (
-        this.delegate.view?.isScrollMode() &&
+        this.navigator.view?.isScrollMode() &&
         this.properties?.enableComments
       ) {
         this.commentGutter?.style.removeProperty("display");
@@ -703,7 +697,7 @@ export class AnnotationModule implements ReaderModule {
       }
       if (
         this.commentGutter &&
-        this.delegate.view?.isScrollMode() &&
+        this.navigator.view?.isScrollMode() &&
         this.properties?.enableComments
       ) {
         this.commentGutter.innerHTML = "";
@@ -711,7 +705,7 @@ export class AnnotationModule implements ReaderModule {
         let highlights: Array<any> = [];
         if (this.annotator) {
           highlights = this.annotator.getAnnotationsByChapter(
-            this.delegate.currentLocator().href
+            this.navigator.currentLocator().href
           ) as Array<any>;
           if (highlights) {
             highlights = highlights.filter(
@@ -849,8 +843,8 @@ export class AnnotationModule implements ReaderModule {
                   title: linkElement.title,
                 };
 
-                this.delegate.stopReadAloud();
-                this.delegate.navigate(position);
+                this.navigator.stopReadAloud();
+                this.navigator.navigate(position);
               }
             );
 
@@ -950,7 +944,7 @@ export class AnnotationModule implements ReaderModule {
                 );
 
                 bookmarkItem.appendChild(bookmarkLink);
-                if (self.delegate.sideNavExpanded) {
+                if (self.navigator.sideNavExpanded) {
                   let bookmarkDeleteLink: HTMLElement = document.createElement(
                     "button"
                   );
@@ -1000,8 +994,8 @@ export class AnnotationModule implements ReaderModule {
   ): void {
     if (locator) {
       locator.href = this.publication.getAbsoluteHref(locator.href);
-      this.delegate.stopReadAloud();
-      this.delegate.navigate(locator);
+      this.navigator.stopReadAloud();
+      this.navigator.navigate(locator);
     } else {
       log.log("annotation data missing: ", event);
     }
@@ -1035,7 +1029,7 @@ export class AnnotationModule implements ReaderModule {
     return this.annotator?.getAnnotationByID(id);
   }
   syncPosition(highlights: Array<any>) {
-    let doc = this.delegate.iframes[0].contentDocument;
+    let doc = this.navigator.iframes[0].contentDocument;
 
     const positionAnnotations = (newArray: Array<any>, currentElement: any) => {
       let container = doc!.getElementById("R2_ID_HIGHLIGHTS_CONTAINER");
@@ -1067,7 +1061,7 @@ export class AnnotationModule implements ReaderModule {
   }
 
   reposition(highlights: Array<any>) {
-    let doc = this.delegate.iframes[0].contentDocument;
+    let doc = this.navigator.iframes[0].contentDocument;
 
     const positionAnnotations = (
       newArray: Array<any>,

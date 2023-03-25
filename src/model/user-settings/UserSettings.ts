@@ -470,7 +470,7 @@ export class UserSettings implements IUserSettings {
       if (html) {
         const rootElement = document.documentElement;
         const body = HTMLUtilities.findRequiredElement(rootElement, "body");
-        if (this.view?.delegate.publication.isReflowable) {
+        if (this.view?.navigator.publication.isReflowable) {
           // Apply font size
           if (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY)) {
             html.style.setProperty(
@@ -516,7 +516,7 @@ export class UserSettings implements IUserSettings {
               ?.toString() ?? null
           );
         }
-        if (this.view?.delegate.publication.isReflowable) {
+        if (this.view?.navigator.publication.isReflowable) {
           // Apply text alignment
           if (await this.getProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY)) {
             if (
@@ -601,7 +601,7 @@ export class UserSettings implements IUserSettings {
           HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
           HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
         }
-        if (this.view?.delegate.publication.isReflowable) {
+        if (this.view?.navigator.publication.isReflowable) {
           // Apply font family
           if (await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY)) {
             html.style.setProperty(

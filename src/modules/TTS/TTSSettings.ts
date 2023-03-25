@@ -51,7 +51,6 @@ export interface TTSModuleProperties {
 }
 
 export interface TTSModuleConfig extends TTSModuleProperties {
-  delegate: IFrameNavigator;
   rights: Partial<ReaderRights>;
   tts: TTSSettings;
   highlighter: TextHighlighter;

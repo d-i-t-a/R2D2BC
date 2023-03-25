@@ -48,7 +48,6 @@ export interface SearchModuleConfig extends SearchModuleProperties {
   api?: SearchModuleAPI;
   publication: Publication;
   headerMenu?: HTMLElement | null;
-  delegate: IFrameNavigator;
   highlighter: TextHighlighter;
 }
 
@@ -58,7 +57,7 @@ export class SearchModule implements ReaderModule {
   private api?: SearchModuleAPI;
   private publication: Publication;
   private readonly headerMenu?: HTMLElement | null;
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   private searchInput: HTMLInputElement;
   private searchGo: HTMLElement;
   private currentChapterSearchResult: any = [];
@@ -68,7 +67,6 @@ export class SearchModule implements ReaderModule {
 
   public static async create(config: SearchModuleConfig) {
     const search = new this(
-      config.delegate,
       config.publication,
       config as SearchModuleProperties,
       config.highlighter,
@@ -81,14 +79,12 @@ export class SearchModule implements ReaderModule {
   }
 
   private constructor(
-    delegate: IFrameNavigator,
     publication: Publication,
     properties: SearchModuleProperties,
     highlighter: TextHighlighter,
     api?: SearchModuleAPI,
     headerMenu?: HTMLElement | null
   ) {
-    this.delegate = delegate;
     this.headerMenu = headerMenu;
     this.publication = publication;
     this.properties = properties;
@@ -111,8 +107,6 @@ export class SearchModule implements ReaderModule {
   }
 
   protected async start(): Promise<void> {
-    this.delegate.searchModule = this;
-
     if (this.headerMenu) {
       this.searchInput = HTMLUtilities.findElement(
         this.headerMenu,
@@ -140,8 +134,8 @@ export class SearchModule implements ReaderModule {
     }
     setTimeout(() => {
       this.properties.hideLayer
-        ? this.delegate.hideLayer("search")
-        : this.delegate.showLayer("search");
+        ? this.navigator.hideLayer("search")
+        : this.navigator.showLayer("search");
     }, 10);
   }
 
@@ -155,7 +149,7 @@ export class SearchModule implements ReaderModule {
   async handleSearchChapter(index?: number) {
     var self = this;
     var searchVal = this.searchInput.value;
-    let currentLocation = this.delegate.currentChapterLink.href;
+    let currentLocation = this.navigator.currentChapterLink.href;
     const spineItem = this.publication.getSpineItem(currentLocation);
     if (this.headerMenu) {
       var searchResultDiv = HTMLUtilities.findElement(
@@ -167,14 +161,14 @@ export class SearchModule implements ReaderModule {
     self.currentChapterSearchResult = [];
     self.currentSearchHighlights = [];
     var localSearchResultChapter: any = [];
-    if (this.delegate.rights.enableContentProtection) {
-      this.delegate.contentProtectionModule?.deactivate();
+    if (this.navigator.rights.enableContentProtection) {
+      this.navigator.contentProtectionModule?.deactivate();
     }
     await this.searchAndPaintChapter(searchVal, index, async (result) => {
       localSearchResultChapter = result;
       goToResultPage(1);
-      if (this.delegate.rights.enableContentProtection) {
-        this.delegate.contentProtectionModule?.recalculate(200);
+      if (this.navigator.rights.enableContentProtection) {
+        this.navigator.contentProtectionModule?.recalculate(200);
       }
     });
 
@@ -299,24 +293,24 @@ export class SearchModule implements ReaderModule {
     callback: (result: any) => any
   ) {
     const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder[this.delegate.currentResource() ?? 0].Href
+      this.publication.readingOrder[this.navigator.currentResource() ?? 0].Href
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
       tocItem = this.publication.readingOrder[
-        this.delegate.currentResource() ?? 0
+        this.navigator.currentResource() ?? 0
       ];
     }
     let localSearchResultChapter: any = [];
 
     // clear search results // needs more works
     this.highlighter?.destroyHighlights(HighlightType.Search);
-    if (this.delegate.rights.enableSearch) {
+    if (this.navigator.rights.enableSearch) {
       this.drawSearch();
     }
     let i = 0;
     if (tocItem) {
-      let doc = this.delegate.iframes[0].contentDocument;
+      let doc = this.navigator.iframes[0].contentDocument;
       if (doc) {
         if (tocItem) {
           searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
@@ -378,7 +372,7 @@ export class SearchModule implements ReaderModule {
       };
 
       let highlightDom = this.highlighter?.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
+        this.navigator.iframes[0].contentWindow as any,
         highlight
       );
       highlight.position = parseInt(
@@ -417,7 +411,7 @@ export class SearchModule implements ReaderModule {
   async goToSearchID(href: string, index: number, current: boolean) {
     var filteredIndex = index;
     var item;
-    let currentLocation = this.delegate.currentChapterLink.href;
+    let currentLocation = this.navigator.currentChapterLink.href;
     var absolutehref = this.publication.getAbsoluteHref(href);
     let filteredIndexes = this.bookSearchResult.filter(
       (el: any) => el.href === href
@@ -451,7 +445,7 @@ export class SearchModule implements ReaderModule {
         // position.locations.totalProgression = self.delegate.calculateTotalProgresion(position)
         // position.locations.index = filteredIndex
 
-        this.delegate.navigate(position);
+        this.navigator.navigate(position);
         // Navigate to new chapter and search only in new current chapter,
         // this should refresh thesearch result of current chapter and highlight the selected index
         setTimeout(() => {
@@ -468,7 +462,7 @@ export class SearchModule implements ReaderModule {
   async goToSearchIndex(href: string, index: number, current: boolean) {
     var filteredIndex = index;
     var item;
-    let currentLocation = this.delegate.currentChapterLink.href;
+    let currentLocation = this.navigator.currentChapterLink.href;
     var absolutehref = this.publication.getAbsoluteHref(href);
     let filteredIndexes = this.bookSearchResult.filter(
       (el: any) => el.href === href
@@ -497,7 +491,7 @@ export class SearchModule implements ReaderModule {
         // position.locations.totalProgression = self.delegate.calculateTotalProgresion(position)
         // position.locations.index = filteredIndex
 
-        this.delegate.navigate(position);
+        this.navigator.navigate(position);
         // Navigate to new chapter and search only in new current chapter,
         // this should refresh thesearch result of current chapter and highlight the selected index
         setTimeout(() => {
@@ -585,7 +579,7 @@ export class SearchModule implements ReaderModule {
                   (el: any) => el === searchItem
                 );
 
-                let currentLocation = self.delegate.currentChapterLink.href;
+                let currentLocation = self.navigator.currentChapterLink.href;
 
                 if (currentLocation === href) {
                   self.jumpToMark(filteredIndex);
@@ -604,7 +598,7 @@ export class SearchModule implements ReaderModule {
                   // position.locations.totalProgression = self.delegate.calculateTotalProgresion(position)
                   // position.locations.index = filteredIndex
 
-                  self.delegate.navigate(position);
+                  self.navigator.navigate(position);
                   // Navigate to new chapter and search only in new current chapter,
                   // this should refresh thesearch result of current chapter and highlight the selected index
                   setTimeout(() => {
@@ -718,8 +712,8 @@ export class SearchModule implements ReaderModule {
       }
       if (tocItem) {
         let href = this.publication.getAbsoluteHref(tocItem.Href);
-        if (this.delegate.api?.getContent) {
-          await this.delegate.api?.getContent(href).then((content) => {
+        if (this.navigator.api?.getContent) {
+          await this.navigator.api?.getContent(href).then((content) => {
             let parser = new DOMParser();
             let doc = parser.parseFromString(content, "application/xhtml+xml");
             if (tocItem) {
@@ -734,12 +728,12 @@ export class SearchModule implements ReaderModule {
             }
           });
         } else {
-          await fetch(href, this.delegate.requestConfig)
+          await fetch(href, this.navigator.requestConfig)
             .then((r) => r.text())
             .then(async (data) => {
               let parser = new DOMParser();
               let doc = parser.parseFromString(
-                this.delegate.requestConfig?.encoded
+                this.navigator.requestConfig?.encoded
                   ? this.decodeBase64(data)
                   : data,
                 "application/xhtml+xml"
@@ -777,19 +771,19 @@ export class SearchModule implements ReaderModule {
   async searchChapter(term: string): Promise<any> {
     let localSearchResultBook: any = [];
     const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder[this.delegate.currentResource() ?? 0].Href
+      this.publication.readingOrder[this.navigator.currentResource() ?? 0].Href
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
       tocItem = this.publication.readingOrder[
-        this.delegate.currentResource() ?? 0
+        this.navigator.currentResource() ?? 0
       ];
     }
 
     if (tocItem) {
       let href = this.publication.getAbsoluteHref(tocItem.Href);
-      if (this.delegate.api?.getContent) {
-        await this.delegate.api?.getContent(href).then((content) => {
+      if (this.navigator.api?.getContent) {
+        await this.navigator.api?.getContent(href).then((content) => {
           let parser = new DOMParser();
           let doc = parser.parseFromString(content, "application/xhtml+xml");
           if (tocItem) {
@@ -803,13 +797,13 @@ export class SearchModule implements ReaderModule {
           }
         });
       } else {
-        await fetch(href, this.delegate.requestConfig)
+        await fetch(href, this.navigator.requestConfig)
           .then((r) => r.text())
           .then(async (data) => {
             // ({ data, tocItem });
             let parser = new DOMParser();
             let doc = parser.parseFromString(
-              this.delegate.requestConfig?.encoded
+              this.navigator.requestConfig?.encoded
                 ? this.decodeBase64(data)
                 : data,
               "application/xhtml+xml"
@@ -875,10 +869,10 @@ export class SearchModule implements ReaderModule {
           this.currentSearchHighlights
         );
 
-        this.delegate.view?.goToCssSelector(
+        this.navigator.view?.goToCssSelector(
           current.rangeInfo.startContainerElementCssSelector
         );
-        this.delegate.updatePositionInfo();
+        this.navigator.updatePositionInfo();
       }
     }, 200);
   }

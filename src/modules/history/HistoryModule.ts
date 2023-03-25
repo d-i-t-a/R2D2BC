@@ -35,14 +35,13 @@ export interface HistoryModuleProperties {
 
 export interface HistoryModuleConfig extends HistoryModuleProperties {
   annotator: Annotator;
-  delegate: IFrameNavigator;
   headerMenu?: HTMLElement | null;
   publication: Publication;
 }
 
 export class HistoryModule implements ReaderModule {
   readonly annotator: Annotator | null;
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   private readonly headerMenu?: HTMLElement | null;
   private publication: Publication;
   private properties: HistoryModuleProperties;
@@ -54,28 +53,25 @@ export class HistoryModule implements ReaderModule {
 
   private constructor(
     annotator: Annotator,
-    delegate: IFrameNavigator,
     publication: Publication,
     properties: HistoryModuleProperties,
     headerMenu?: HTMLElement | null
   ) {
     this.headerMenu = headerMenu;
-    this.delegate = delegate;
     this.publication = publication;
     this.properties = properties;
     this.annotator = annotator;
   }
 
   public static async create(config: HistoryModuleConfig) {
-    const pageBreak = new this(
+    const history = new this(
       config.annotator,
-      config.delegate,
       config.publication,
       config as HistoryModuleProperties,
       config.headerMenu
     );
-    await pageBreak.start();
-    return pageBreak;
+    await history.start();
+    return history;
   }
 
   async stop() {
@@ -134,8 +130,8 @@ export class HistoryModule implements ReaderModule {
         | undefined;
       if (
         lastReadingPosition &&
-        lastReadingPosition.locations.progression &&
-        lastReadingPosition.locations.progression > 0
+        lastReadingPosition?.locations.progression &&
+        lastReadingPosition?.locations.progression > 0
       ) {
         if (this.historyCurrentIndex < this.history.length - 1) {
           this.history = this.history.slice(0, this.historyCurrentIndex);
@@ -172,8 +168,6 @@ export class HistoryModule implements ReaderModule {
   }
 
   protected async start(): Promise<void> {
-    this.delegate.historyModule = this;
-
     if (this.headerMenu)
       this.historyForwardAnchorElement = HTMLUtilities.findElement(
         this.headerMenu,
@@ -210,7 +204,7 @@ export class HistoryModule implements ReaderModule {
     if (this.history.length > 0) {
       if (this.historyCurrentIndex + 1 < this.history.length) {
         this.historyCurrentIndex = this.historyCurrentIndex + 1;
-        await this.delegate.navigate(
+        await this.navigator.navigate(
           this.history[this.historyCurrentIndex],
           false
         );
@@ -228,7 +222,7 @@ export class HistoryModule implements ReaderModule {
     if (this.history.length > 0) {
       if (this.historyCurrentIndex > 0) {
         this.historyCurrentIndex = this.historyCurrentIndex - 1;
-        await this.delegate.navigate(
+        await this.navigator.navigate(
           this.history[this.historyCurrentIndex],
           false
         );

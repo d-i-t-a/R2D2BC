@@ -26,7 +26,7 @@ import * as HTMLUtilities from "../utils/HTMLUtilities";
 
 export default class FixedBookView implements BookView {
   layout = "fixed";
-  delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   name: string;
   label: string;
   iframe: HTMLIFrameElement;

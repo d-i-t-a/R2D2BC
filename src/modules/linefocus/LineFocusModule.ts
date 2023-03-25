@@ -53,14 +53,13 @@ export interface LineFocusModuleProperties {
 export interface LineFocusModuleConfig extends LineFocusModuleProperties {
   api?: LineFocusModuleAPI;
   publication: Publication;
-  delegate: IFrameNavigator;
   highlighter: TextHighlighter;
 }
 
 export default class LineFocusModule implements ReaderModule {
   properties: LineFocusModuleProperties;
   api?: LineFocusModuleAPI;
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   private highlighter: TextHighlighter;
   private hasEventListener: boolean = false;
 
@@ -76,7 +75,6 @@ export default class LineFocusModule implements ReaderModule {
 
   public static async create(config: LineFocusModuleConfig) {
     const search = new this(
-      config.delegate,
       config as LineFocusModuleProperties,
       config.highlighter,
       config.api
@@ -87,12 +85,10 @@ export default class LineFocusModule implements ReaderModule {
   }
 
   private constructor(
-    delegate: IFrameNavigator,
     properties: LineFocusModuleProperties,
     highlighter: TextHighlighter,
     api?: LineFocusModuleAPI
   ) {
-    this.delegate = delegate;
     this.properties = properties;
     this.api = api;
     this.highlighter = highlighter;
@@ -104,20 +100,18 @@ export default class LineFocusModule implements ReaderModule {
     removeEventListenerOptional(document, "keydown", this.keydown.bind(this));
     removeEventListenerOptional(document, "keyup", this.keyup.bind(this));
     removeEventListenerOptional(
-      this.delegate.iframes[0].contentDocument,
+      this.navigator.iframes[0].contentDocument,
       "keydown",
       this.keydown.bind(this)
     );
     removeEventListenerOptional(
-      this.delegate.iframes[0].contentDocument,
+      this.navigator.iframes[0].contentDocument,
       "keyup",
       this.keyup.bind(this)
     );
   }
 
   protected async start(): Promise<void> {
-    this.delegate.lineFocusModule = this;
-
     const wrapper = HTMLUtilities.findRequiredElement(
       document,
       "#iframe-wrapper"
@@ -140,21 +134,27 @@ export default class LineFocusModule implements ReaderModule {
         this.readerContainer.style.overflow = "hidden";
       }
     }
-    if (!this.hasEventListener) {
-      this.hasEventListener = true;
-      addEventListenerOptional(document, "keydown", this.keydown.bind(this));
-      addEventListenerOptional(document, "keyup", this.keyup.bind(this));
-      addEventListenerOptional(
-        this.delegate.iframes[0].contentDocument,
-        "keydown",
-        this.keydown.bind(this)
-      );
-      addEventListenerOptional(
-        this.delegate.iframes[0].contentDocument,
-        "keyup",
-        this.keyup.bind(this)
-      );
-    }
+  }
+  initialize() {
+    return new Promise(async (resolve) => {
+      await (document as any).fonts.ready;
+      if (!this.hasEventListener) {
+        this.hasEventListener = true;
+        addEventListenerOptional(document, "keydown", this.keydown.bind(this));
+        addEventListenerOptional(document, "keyup", this.keyup.bind(this));
+        addEventListenerOptional(
+          this.navigator.iframes[0].contentDocument,
+          "keydown",
+          this.keydown.bind(this)
+        );
+        addEventListenerOptional(
+          this.navigator.iframes[0].contentDocument,
+          "keyup",
+          this.keyup.bind(this)
+        );
+      }
+      resolve(null);
+    });
   }
 
   private keydown(event: KeyboardEvent | MouseEvent | TouchEvent): void {
@@ -193,7 +193,7 @@ export default class LineFocusModule implements ReaderModule {
 
   async enableLineFocus() {
     this.isActive = true;
-    await this.delegate.settings.scroll(true);
+    await this.navigator.settings.scroll(true);
     this.lineFocus();
   }
 
@@ -215,7 +215,7 @@ export default class LineFocusModule implements ReaderModule {
       this.index = 0;
     }
 
-    const doc = this.delegate.iframes[0].contentDocument;
+    const doc = this.navigator.iframes[0].contentDocument;
     const html = HTMLUtilities.findIframeElement(
       doc,
       "html"
@@ -250,7 +250,7 @@ export default class LineFocusModule implements ReaderModule {
       "#iframe-wrapper"
     ) as HTMLDivElement;
 
-    const doc = this.delegate.iframes[0].contentDocument;
+    const doc = this.navigator.iframes[0].contentDocument;
     const html = HTMLUtilities.findIframeElement(
       doc,
       "html"
@@ -421,10 +421,10 @@ export default class LineFocusModule implements ReaderModule {
           highlightArea.style.outline = "none";
           highlightArea.tabIndex = 0;
 
-          const documant = (this.delegate.iframes[0].contentWindow as any)
+          const documant = (this.navigator.iframes[0].contentWindow as any)
             .document;
 
-          const paginated = this.delegate.view.isPaginated();
+          const paginated = this.navigator.view.isPaginated();
 
           if (paginated) {
             documant.body.style.position = "revert";
@@ -441,7 +441,7 @@ export default class LineFocusModule implements ReaderModule {
 
           let size = 24;
           let left, right;
-          let viewportWidth = this.delegate.iframes[0].contentWindow
+          let viewportWidth = this.navigator.iframes[0].contentWindow
             ?.innerWidth;
           let columnCount = parseInt(
             getComputedStyle(doc.documentElement).getPropertyValue(
@@ -468,7 +468,7 @@ export default class LineFocusModule implements ReaderModule {
               );
             }
 
-            let ratio = this.delegate.settings.fontSize / 100;
+            let ratio = this.navigator.settings.fontSize / 100;
             let addRight = 20 * ratio;
 
             if (ratio <= 1) {

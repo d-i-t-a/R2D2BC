@@ -27,7 +27,7 @@ import {
   JSONable,
 } from "../../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { IFrameNavigator, ReaderRights } from "../../navigator/IFrameNavigator";
+import { ReaderRights } from "../../navigator/IFrameNavigator";
 import { TextHighlighter } from "../highlight/TextHighlighter";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import log from "loglevel";
@@ -51,7 +51,6 @@ export interface TTSModuleProperties {
 }
 
 export interface TTSModuleConfig extends TTSModuleProperties {
-  delegate: IFrameNavigator;
   rights: Partial<ReaderRights>;
   tts: TTSSettings;
   highlighter: TextHighlighter;

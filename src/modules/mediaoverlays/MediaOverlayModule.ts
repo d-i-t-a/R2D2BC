@@ -55,14 +55,13 @@ export interface MediaOverlayModuleProperties {
 }
 export interface MediaOverlayModuleConfig extends MediaOverlayModuleProperties {
   publication: Publication;
-  delegate: IFrameNavigator;
   settings: MediaOverlaySettings;
   api?: MediaOverlayModuleAPI;
 }
 
 export class MediaOverlayModule implements ReaderModule {
   private publication: Publication;
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   private audioElement: HTMLMediaElement;
   settings: MediaOverlaySettings;
   private properties: MediaOverlayModuleProperties;
@@ -89,7 +88,6 @@ export class MediaOverlayModule implements ReaderModule {
 
   public static create(config: MediaOverlayModuleConfig) {
     const mediaOverlay = new this(
-      config.delegate,
       config.publication,
       config.settings,
       config as MediaOverlayModuleProperties
@@ -99,12 +97,10 @@ export class MediaOverlayModule implements ReaderModule {
   }
 
   private constructor(
-    delegate: IFrameNavigator,
     publication: Publication,
     settings: MediaOverlaySettings,
     properties: MediaOverlayModuleProperties
   ) {
-    this.delegate = delegate;
     this.publication = publication;
     this.settings = settings;
     this.properties = properties;
@@ -115,7 +111,6 @@ export class MediaOverlayModule implements ReaderModule {
   }
 
   protected start() {
-    this.delegate.mediaOverlayModule = this;
     log.log("MediaOverlay module start");
   }
 
@@ -149,7 +144,7 @@ export class MediaOverlayModule implements ReaderModule {
 
       let response: Response;
       try {
-        response = await fetch(moUrlFull, this.delegate.requestConfig);
+        response = await fetch(moUrlFull, this.navigator.requestConfig);
       } catch (e) {
         console.error(e, moUrlFull);
         return;
@@ -195,7 +190,7 @@ export class MediaOverlayModule implements ReaderModule {
           if (this.audioElement) {
             await this.audioElement.pause();
           }
-          this.delegate.nextResource();
+          this.navigator.nextResource();
         } else {
           await this.stopReadAloud();
         }
@@ -204,7 +199,7 @@ export class MediaOverlayModule implements ReaderModule {
   }
 
   async startReadAloud() {
-    if (this.delegate.rights.enableMediaOverlays) {
+    if (this.navigator.rights.enableMediaOverlays) {
       this.settings.playing = true;
       if (
         this.audioElement &&
@@ -224,7 +219,7 @@ export class MediaOverlayModule implements ReaderModule {
           await this.playLink();
         } else {
           if (this.settings.autoTurn && this.settings.playing) {
-            this.delegate.nextResource();
+            this.navigator.nextResource();
           } else {
             await this.stopReadAloud();
           }
@@ -235,16 +230,17 @@ export class MediaOverlayModule implements ReaderModule {
     }
   }
   async stopReadAloud() {
-    if (this.delegate.rights.enableMediaOverlays) {
+    if (this.navigator.rights.enableMediaOverlays) {
       this.settings.playing = false;
-      this.audioElement.pause();
+
+      if (this.audioElement) this.audioElement.pause();
 
       if (this.play) this.play.style.removeProperty("display");
       if (this.pause) this.pause.style.display = "none";
     }
   }
   pauseReadAloud() {
-    if (this.delegate.rights.enableMediaOverlays) {
+    if (this.navigator.rights.enableMediaOverlays) {
       this.settings.playing = false;
       this.audioElement.pause();
       if (this.play) this.play.style.removeProperty("display");
@@ -252,7 +248,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
   }
   async resumeReadAloud() {
-    if (this.delegate.rights.enableMediaOverlays) {
+    if (this.navigator.rights.enableMediaOverlays) {
       this.settings.playing = true;
       await this.audioElement.play();
       if (this.play) this.play.style.display = "none";
@@ -386,7 +382,7 @@ export class MediaOverlayModule implements ReaderModule {
           this.audioElement.pause();
           if (this.settings.autoTurn && this.settings.playing) {
             this.audioElement.pause();
-            this.delegate.nextResource();
+            this.navigator.nextResource();
           } else {
             this.stopReadAloud();
           }
@@ -434,7 +430,7 @@ export class MediaOverlayModule implements ReaderModule {
         this.audioElement.pause();
         if (this.settings.autoTurn && this.settings.playing) {
           this.audioElement.pause();
-          this.delegate.nextResource();
+          this.navigator.nextResource();
         } else {
           this.stopReadAloud();
         }
@@ -706,7 +702,7 @@ export class MediaOverlayModule implements ReaderModule {
         } else {
           if (this.settings.autoTurn && this.settings.playing) {
             this.audioElement.pause();
-            this.delegate.nextResource();
+            this.navigator.nextResource();
           } else {
             this.stopReadAloud();
           }
@@ -804,7 +800,7 @@ export class MediaOverlayModule implements ReaderModule {
     if (!classActive) {
       classActive = this.settings.color;
     }
-    const styleAttr = this.delegate.iframes[0].contentDocument?.documentElement.getAttribute(
+    const styleAttr = this.navigator.iframes[0].contentDocument?.documentElement.getAttribute(
       "style"
     );
     const isNight = styleAttr
@@ -829,11 +825,11 @@ export class MediaOverlayModule implements ReaderModule {
       let prevElement;
 
       if (this.currentLinkIndex === 0) {
-        prevElement = this.delegate.iframes[0].contentDocument?.getElementById(
+        prevElement = this.navigator.iframes[0].contentDocument?.getElementById(
           this.pid
         );
       } else {
-        prevElement = this.delegate.iframes[1].contentDocument?.getElementById(
+        prevElement = this.navigator.iframes[1].contentDocument?.getElementById(
           this.pid
         );
       }
@@ -846,9 +842,9 @@ export class MediaOverlayModule implements ReaderModule {
     let current;
     if (id) {
       if (this.currentLinkIndex === 0) {
-        current = this.delegate.iframes[0].contentDocument?.getElementById(id);
+        current = this.navigator.iframes[0].contentDocument?.getElementById(id);
       } else {
-        current = this.delegate.iframes[1].contentDocument?.getElementById(id);
+        current = this.navigator.iframes[1].contentDocument?.getElementById(id);
       }
       if (current) {
         current.classList.add(classActive);

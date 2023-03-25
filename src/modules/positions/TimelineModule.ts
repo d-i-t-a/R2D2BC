@@ -28,23 +28,21 @@ import log from "loglevel";
 
 export interface TimelineModuleConfig {
   publication: Publication;
-  delegate: IFrameNavigator;
 }
 
 export class TimelineModule implements ReaderModule {
   private publication: Publication;
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   private timelineContainer: HTMLDivElement;
   private positionSlider: HTMLInputElement;
 
   public static async create(config: TimelineModuleConfig) {
-    const timeline = new this(config.delegate, config.publication);
+    const timeline = new this(config.publication);
     await timeline.start();
     return timeline;
   }
 
-  private constructor(delegate: IFrameNavigator, publication: Publication) {
-    this.delegate = delegate;
+  private constructor(publication: Publication) {
     this.publication = publication;
   }
 
@@ -53,8 +51,6 @@ export class TimelineModule implements ReaderModule {
   }
 
   protected async start(): Promise<void> {
-    this.delegate.timelineModule = this;
-
     this.timelineContainer = HTMLUtilities.findElement(
       document,
       "#container-view-timeline"
@@ -75,9 +71,9 @@ export class TimelineModule implements ReaderModule {
     return new Promise<void>(async (resolve) => {
       await (document as any).fonts.ready;
 
-      let locator = this.delegate.currentLocator();
+      let locator = this.navigator.currentLocator();
       if (
-        (this.delegate.rights.autoGeneratePositions &&
+        (this.navigator.rights.autoGeneratePositions &&
           this.publication.positions) ||
         this.publication.positions
       ) {
@@ -107,7 +103,7 @@ export class TimelineModule implements ReaderModule {
         var chapterHeight;
         if (
           this.publication.positions &&
-          this.delegate.view?.layout !== "fixed"
+          this.navigator.view?.layout !== "fixed"
         ) {
           if ((link as Link).contentWeight) {
             chapterHeight = (link as Link).contentWeight;
@@ -136,7 +132,7 @@ export class TimelineModule implements ReaderModule {
           var position;
           if (
             this.publication.positions ||
-            (this.delegate.rights.autoGeneratePositions &&
+            (this.navigator.rights.autoGeneratePositions &&
               this.publication.positions)
           ) {
             position = {
@@ -156,10 +152,10 @@ export class TimelineModule implements ReaderModule {
             };
           }
           log.log(position);
-          this.delegate.navigate(position);
+          this.navigator.navigate(position);
         });
 
-        if (tocHrefAbs === this.delegate.currentChapterLink.href) {
+        if (tocHrefAbs === this.navigator.currentChapterLink.href) {
           chapter.className += " active";
         } else {
           chapter.className = chapter.className.replace(" active", "");

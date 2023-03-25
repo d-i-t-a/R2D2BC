@@ -30,7 +30,7 @@ interface BookView {
   iframe: Element;
   sideMargin: number;
   height: number;
-  delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   attributes?: IFrameAttributes;
 
   setMode?(scroll: boolean);

@@ -323,7 +323,10 @@ export default class ReflowableBookView implements BookView {
     } else {
       // TODO: need to double check this, why sometimes we get "rightWidth 0.091064453125"
       const rightWidth = Math.floor(this.getRightColumnsWidth());
-      return rightWidth <= 0;
+      return (
+        rightWidth <= 0 ||
+        Math.ceil(this.getCurrentPage()) === this.getPageCount()
+      );
     }
   }
 
@@ -577,7 +580,7 @@ export default class ReflowableBookView implements BookView {
   get scrollWidth() {
     const scrollWidth = this.scrollingElement?.scrollWidth;
     const width = this.getColumnWidth();
-    const pages = Math.floor(scrollWidth / width);
+    const pages = Math.ceil(scrollWidth / width);
     return pages * width;
   }
 }

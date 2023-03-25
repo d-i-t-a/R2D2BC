@@ -232,7 +232,8 @@ export class MediaOverlayModule implements ReaderModule {
   async stopReadAloud() {
     if (this.navigator.rights.enableMediaOverlays) {
       this.settings.playing = false;
-      this.audioElement.pause();
+
+      if (this.audioElement) this.audioElement.pause();
 
       if (this.play) this.play.style.removeProperty("display");
       if (this.pause) this.pause.style.display = "none";

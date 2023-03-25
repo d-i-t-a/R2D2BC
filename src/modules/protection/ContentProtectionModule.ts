@@ -1488,7 +1488,7 @@ export class ContentProtectionModule implements ReaderModule {
 
     if (letters) {
       words = words.map(function (word: any) {
-        return scramble(word.split("")).join("");
+        return word.includes("-") ? word : scramble(word.split("")).join("");
       });
     }
     return paragraph ? scramble(words).join(" ") : words.join(" ");

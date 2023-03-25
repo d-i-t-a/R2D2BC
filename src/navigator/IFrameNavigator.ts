@@ -369,7 +369,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
     for (const index in modules) {
       let module = modules[index];
-      module.navigator = this;
+      if (module) {
+        module.navigator = this;
+      }
       if (modules[index] instanceof AnnotationModule) {
         this.annotationModule = module;
       }

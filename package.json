@@ -10,7 +10,7 @@
     "node": ">8.0.0"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://npm.pkg.github.com/"
   },
   "scripts": {
     "prepare": "npm run build",

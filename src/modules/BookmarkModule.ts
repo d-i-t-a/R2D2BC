@@ -58,7 +58,6 @@ export interface BookmarkModuleConfig extends BookmarkModuleProperties {
   headerMenu?: HTMLElement | null;
   rights: Partial<ReaderRights>;
   publication: Publication;
-  delegate: IFrameNavigator;
   initialAnnotations?: any;
   properties?: BookmarkModuleProperties;
   api?: BookmarkModuleAPI;
@@ -72,7 +71,7 @@ export class BookmarkModule implements ReaderModule {
   private sideNavSectionBookmarks: HTMLElement;
   private readonly headerMenu?: HTMLElement | null;
   private readonly initialAnnotations: any;
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   // @ts-ignore
   private readonly properties: BookmarkModuleProperties;
   private readonly api?: BookmarkModuleAPI;
@@ -82,7 +81,6 @@ export class BookmarkModule implements ReaderModule {
       config.annotator,
       config.rights || { enableBookmarks: false },
       config.publication,
-      config.delegate,
       config as BookmarkModuleProperties,
       config.initialAnnotations,
       config.api,
@@ -96,7 +94,6 @@ export class BookmarkModule implements ReaderModule {
     annotator: Annotator,
     rights: Partial<ReaderRights>,
     publication: Publication,
-    delegate: IFrameNavigator,
     properties: BookmarkModuleProperties,
     initialAnnotations?: any,
     api?: BookmarkModuleAPI,
@@ -106,7 +103,6 @@ export class BookmarkModule implements ReaderModule {
     this.rights = rights;
     this.publication = publication;
     this.headerMenu = headerMenu;
-    this.delegate = delegate;
     this.initialAnnotations = initialAnnotations;
     this.properties = properties;
     this.api = api;
@@ -117,8 +113,6 @@ export class BookmarkModule implements ReaderModule {
   }
 
   protected async start(): Promise<void> {
-    this.delegate.bookmarkModule = this;
-
     if (this.headerMenu)
       this.bookmarksView = HTMLUtilities.findElement(
         this.headerMenu,
@@ -153,19 +147,17 @@ export class BookmarkModule implements ReaderModule {
       }
     }
 
-    await this.showBookmarks();
-    await this.drawBookmarks();
-    setTimeout(() => {
-      this.properties.hideLayer
-        ? this.delegate.hideLayer("highlights")
-        : this.delegate.showLayer("highlights");
-    }, 10);
   }
 
   async handleResize() {
     setTimeout(async () => {
       await this.drawBookmarks();
       await this.showBookmarks();
+      setTimeout(() => {
+        this.properties.hideLayer
+          ? this.navigator.hideLayer("highlights")
+          : this.navigator.showLayer("highlights");
+      }, 10);
     }, 100);
   }
 
@@ -211,15 +203,15 @@ export class BookmarkModule implements ReaderModule {
   async saveBookmark(): Promise<any> {
     if (this.annotator) {
       var tocItem = this.publication.getTOCItem(
-        this.delegate.currentChapterLink.href
+        this.navigator.currentChapterLink.href
       );
-      if (this.delegate.currentTocUrl) {
-        tocItem = this.publication.getTOCItem(this.delegate.currentTocUrl);
+      if (this.navigator.currentTocUrl) {
+        tocItem = this.publication.getTOCItem(this.navigator.currentTocUrl);
       }
 
       if (tocItem === undefined) {
         tocItem = this.publication.getTOCItemAbsolute(
-          this.delegate.currentChapterLink.href
+          this.navigator.currentChapterLink.href
         );
       }
       if (tocItem) {
@@ -228,7 +220,7 @@ export class BookmarkModule implements ReaderModule {
           href = href.slice(0, href.indexOf("#"));
         }
 
-        const progression = this.delegate.view?.getCurrentPosition();
+        const progression = this.navigator.view?.getCurrentPosition();
         const id: string = uuid();
         let bookmark: Bookmark;
         if (
@@ -237,7 +229,7 @@ export class BookmarkModule implements ReaderModule {
         ) {
           const positions = this.publication.positionsByHref(
             this.publication.getRelativeHref(
-              this.delegate.currentChapterLink.href
+              this.navigator.currentChapterLink.href
             )
           );
 
@@ -251,7 +243,7 @@ export class BookmarkModule implements ReaderModule {
             id: id,
             href: href,
             created: new Date(),
-            title: this.delegate.currentChapterLink.title,
+            title: this.navigator.currentChapterLink.title,
           };
         } else {
           bookmark = {
@@ -261,12 +253,12 @@ export class BookmarkModule implements ReaderModule {
               progression: progression,
             },
             created: new Date(),
-            type: this.delegate.currentChapterLink.type,
-            title: this.delegate.currentChapterLink.title,
+            type: this.navigator.currentChapterLink.type,
+            title: this.navigator.currentChapterLink.title,
           };
         }
         if (!this.annotator.locatorExists(bookmark, AnnotationType.Bookmark)) {
-          this.delegate.consumptionModule?.trackAction(
+          this.navigator.consumptionModule?.trackAction(
             bookmark,
             Action.BookmarkCreated
           );
@@ -298,16 +290,16 @@ export class BookmarkModule implements ReaderModule {
   private async addBookmarkPlus(): Promise<any> {
     let self = this;
 
-    let node = this.delegate.highlighter?.visibleTextRects[0];
-    let doc = this.delegate.iframes[0].contentDocument;
+    let node = this.navigator.highlighter?.visibleTextRects[0];
+    let doc = this.navigator.iframes[0].contentDocument;
     if (doc) {
-      const range = this.delegate.highlighter
+      const range = this.navigator.highlighter
         ?.dom(doc.body)
         .getWindow()
         .document.createRange();
 
-      const selection = this.delegate.highlighter
-        ?.dom(this.delegate.iframes[0].contentDocument?.body)
+      const selection = this.navigator.highlighter
+        ?.dom(this.navigator.iframes[0].contentDocument?.body)
         .getSelection();
       selection.removeAllRanges();
       if (node) {
@@ -319,7 +311,7 @@ export class BookmarkModule implements ReaderModule {
 
       let index = 0;
       for (const rect of clientRects) {
-        if (!this.delegate.highlighter?.isOutsideViewport(rect)) {
+        if (!this.navigator.highlighter?.isOutsideViewport(rect)) {
           const endNode = selection.focusNode;
           const endOffset = selection.focusOffset;
 
@@ -354,11 +346,11 @@ export class BookmarkModule implements ReaderModule {
     }
     function getCssSelector(element: Element): string | undefined {
       const options = {};
-      let doc = self.delegate.iframes[0].contentDocument;
+      let doc = self.navigator.iframes[0].contentDocument;
       if (doc) {
         return uniqueCssSelector(
           element,
-          self.delegate.highlighter?.dom(doc.body).getDocument(),
+          self.navigator.highlighter?.dom(doc.body).getDocument(),
           options
         );
       } else {
@@ -366,7 +358,7 @@ export class BookmarkModule implements ReaderModule {
       }
     }
 
-    let win = this.delegate.iframes[0].contentWindow;
+    let win = this.navigator.iframes[0].contentWindow;
     let menuItem: SelectionMenuItem = {
       id: `bookmarkIcon`,
       marker: AnnotationMarker.Bookmark,
@@ -397,15 +389,15 @@ export class BookmarkModule implements ReaderModule {
     if (win !== null) {
       let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
       if (selectionInfo === undefined) {
-        let doc = self.delegate.iframes[0].contentDocument;
-        selectionInfo = this.delegate.annotationModule?.annotator?.getTemporarySelectionInfo(
+        let doc = self.navigator.iframes[0].contentDocument;
+        selectionInfo = this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
           doc
         );
       }
-      let doc = self.delegate.iframes[0].contentDocument;
+      let doc = self.navigator.iframes[0].contentDocument;
       if (selectionInfo && doc) {
-        let book = this.delegate.highlighter?.createHighlight(
-          this.delegate.highlighter?.dom(doc.body).getWindow(),
+        let book = this.navigator.highlighter?.createHighlight(
+          this.navigator.highlighter?.dom(doc.body).getWindow(),
           selectionInfo,
           menuItem.highlight?.color,
           true,
@@ -414,7 +406,7 @@ export class BookmarkModule implements ReaderModule {
           menuItem.popup,
           menuItem.highlight?.style
         );
-        this.delegate.iframes[0].contentDocument
+        this.navigator.iframes[0].contentDocument
           ?.getSelection()
           ?.removeAllRanges();
         if (book) {
@@ -431,21 +423,21 @@ export class BookmarkModule implements ReaderModule {
   ): Promise<Annotation | undefined> {
     if (this.annotator) {
       var tocItem = this.publication.getTOCItem(
-        this.delegate.currentChapterLink.href
+        this.navigator.currentChapterLink.href
       );
-      if (this.delegate.currentTocUrl) {
-        tocItem = this.publication.getTOCItem(this.delegate.currentTocUrl);
+      if (this.navigator.currentTocUrl) {
+        tocItem = this.publication.getTOCItem(this.navigator.currentTocUrl);
       }
 
       if (tocItem === null) {
         tocItem = this.publication.getTOCItemAbsolute(
-          this.delegate.currentChapterLink.href
+          this.navigator.currentChapterLink.href
         );
       }
 
-      const bookmarkPosition = this.delegate.view?.getCurrentPosition();
+      const bookmarkPosition = this.navigator.view?.getCurrentPosition();
 
-      let doc = this.delegate.iframes[0].contentDocument;
+      let doc = this.navigator.iframes[0].contentDocument;
       if (doc) {
         const body = HTMLUtilities.findRequiredIframeElement(
           doc,
@@ -471,7 +463,7 @@ export class BookmarkModule implements ReaderModule {
           ) {
             const positions = this.publication.positionsByHref(
               this.publication.getRelativeHref(
-                this.delegate.currentChapterLink.href
+                this.navigator.currentChapterLink.href
               )
             );
             const positionIndex = Math.ceil(
@@ -484,7 +476,7 @@ export class BookmarkModule implements ReaderModule {
               id: id,
               href: href,
               created: new Date(),
-              title: this.delegate.currentChapterLink.title,
+              title: this.navigator.currentChapterLink.title,
               highlight: highlight,
               text: {
                 highlight: highlight.selectionInfo.cleanText,
@@ -498,8 +490,8 @@ export class BookmarkModule implements ReaderModule {
                 progression: progression,
               },
               created: new Date(),
-              type: this.delegate.currentChapterLink.type,
-              title: this.delegate.currentChapterLink.title,
+              type: this.navigator.currentChapterLink.type,
+              title: this.navigator.currentChapterLink.title,
               highlight: highlight,
               text: {
                 highlight: highlight.selectionInfo.cleanText,
@@ -509,7 +501,7 @@ export class BookmarkModule implements ReaderModule {
         }
 
         if (annotation) {
-          this.delegate.consumptionModule?.trackAction(
+          this.navigator.consumptionModule?.trackAction(
             annotation,
             Action.BookmarkCreated
           );
@@ -566,18 +558,18 @@ export class BookmarkModule implements ReaderModule {
   }
 
   async drawBookmarks(): Promise<void> {
-    if (this.rights.enableBookmarks && this.delegate.highlighter) {
+    if (this.rights.enableBookmarks && this.navigator.highlighter) {
       if (this.api) {
         let highlights: Array<any> = [];
         if (this.annotator) {
           highlights = (await this.annotator.getAnnotations()) as Array<any>;
         }
         if (
-          this.delegate.highlighter &&
+          this.navigator.highlighter &&
           highlights &&
-          this.delegate.iframes[0].contentDocument?.readyState === "complete"
+          this.navigator.iframes[0].contentDocument?.readyState === "complete"
         ) {
-          await this.delegate.highlighter.destroyHighlights(
+          await this.navigator.highlighter.destroyHighlights(
             HighlightType.Annotation
           );
 
@@ -586,18 +578,18 @@ export class BookmarkModule implements ReaderModule {
 
             const annotation: Annotation = rangeRepresentation;
 
-            let currentLocation = this.delegate.currentChapterLink.href;
+            let currentLocation = this.navigator.currentChapterLink.href;
 
             var tocItem = this.publication.getTOCItem(currentLocation);
-            if (this.delegate.currentTocUrl) {
+            if (this.navigator.currentTocUrl) {
               tocItem = this.publication.getTOCItem(
-                this.delegate.currentTocUrl
+                this.navigator.currentTocUrl
               );
             }
 
             if (tocItem === undefined) {
               tocItem = this.publication.getTOCItemAbsolute(
-                this.delegate.currentChapterLink.href
+                this.navigator.currentChapterLink.href
               );
             }
 
@@ -608,8 +600,8 @@ export class BookmarkModule implements ReaderModule {
               }
 
               if (annotation.href === href) {
-                await this.delegate.highlighter.createHighlightDom(
-                  this.delegate.iframes[0].contentWindow as any,
+                await this.navigator.highlighter.createHighlightDom(
+                  this.navigator.iframes[0].contentWindow as any,
                   rangeRepresentation.highlight
                 );
               }
@@ -622,11 +614,11 @@ export class BookmarkModule implements ReaderModule {
           highlights = (await this.annotator.getAnnotations()) as Array<any>;
         }
         if (
-          this.delegate.highlighter &&
+          this.navigator.highlighter &&
           highlights &&
-          this.delegate.iframes[0].contentDocument?.readyState === "complete"
+          this.navigator.iframes[0].contentDocument?.readyState === "complete"
         ) {
-          await this.delegate.highlighter.destroyHighlights(
+          await this.navigator.highlighter.destroyHighlights(
             HighlightType.Annotation
           );
 
@@ -635,18 +627,18 @@ export class BookmarkModule implements ReaderModule {
 
             const annotation: Annotation = rangeRepresentation;
 
-            let currentLocation = this.delegate.currentChapterLink.href;
+            let currentLocation = this.navigator.currentChapterLink.href;
 
             let tocItem = this.publication.getTOCItem(currentLocation);
-            if (this.delegate.currentTocUrl) {
+            if (this.navigator.currentTocUrl) {
               tocItem = this.publication.getTOCItem(
-                this.delegate.currentTocUrl
+                this.navigator.currentTocUrl
               );
             }
 
             if (tocItem === undefined) {
               tocItem = this.publication.getTOCItemAbsolute(
-                this.delegate.currentChapterLink.href
+                this.navigator.currentChapterLink.href
               );
             }
             if (tocItem) {
@@ -656,8 +648,8 @@ export class BookmarkModule implements ReaderModule {
               }
 
               if (annotation.href === href) {
-                await this.delegate.highlighter.createHighlightDom(
-                  this.delegate.iframes[0].contentWindow as any,
+                await this.navigator.highlighter.createHighlightDom(
+                  this.navigator.iframes[0].contentWindow as any,
                   rangeRepresentation.highlight
                 );
               }
@@ -740,8 +732,8 @@ export class BookmarkModule implements ReaderModule {
                   title: linkElement.title,
                 };
 
-                this.delegate.stopReadAloud();
-                this.delegate.navigate(position);
+                this.navigator.stopReadAloud();
+                this.navigator.navigate(position);
               }
             );
 
@@ -791,7 +783,7 @@ export class BookmarkModule implements ReaderModule {
                 );
 
                 bookmarkItem.appendChild(bookmarkLink);
-                if (self.delegate.sideNavExpanded) {
+                if (self.navigator.sideNavExpanded) {
                   let bookmarkDeleteLink: HTMLElement = document.createElement(
                     "button"
                   );
@@ -841,8 +833,8 @@ export class BookmarkModule implements ReaderModule {
   ): void {
     if (locator) {
       locator.href = this.publication.getAbsoluteHref(locator.href);
-      this.delegate.stopReadAloud();
-      this.delegate.navigate(locator);
+      this.navigator.stopReadAloud();
+      this.navigator.navigate(locator);
     } else {
       log.log("bookmark data missing: ", event);
     }

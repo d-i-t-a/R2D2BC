@@ -49,7 +49,7 @@ export class TTSModule2 implements ReaderModule {
   private clean: any;
   private rights: Partial<ReaderRights>;
   private readonly highlighter: TextHighlighter;
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   private body: any;
   private hasEventListener: boolean = false;
   private readonly headerMenu?: HTMLElement | null;
@@ -80,7 +80,7 @@ export class TTSModule2 implements ReaderModule {
         addEventListenerOptional(this.body, "wheel", this.wheel.bind(this));
         addEventListenerOptional(document, "keydown", this.wheel.bind(this));
         addEventListenerOptional(
-          this.delegate.iframes[0].contentDocument,
+          this.navigator.iframes[0].contentDocument,
           "keydown",
           this.wheel.bind(this)
         );
@@ -119,12 +119,12 @@ export class TTSModule2 implements ReaderModule {
       startX === this.startX &&
       startY === this.startY
     ) {
-      let doc = this.delegate.iframes[0].contentDocument;
+      let doc = this.navigator.iframes[0].contentDocument;
       if (doc) {
         let selection = this.highlighter.dom(doc.body).getSelection();
         if (selection.isCollapsed) {
-          let doc = this.delegate.iframes[0].contentDocument;
-          const selectionInfo = this.delegate.annotationModule?.annotator?.getTemporarySelectionInfo(
+          let doc = this.navigator.iframes[0].contentDocument;
+          const selectionInfo = this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
             doc
           );
           selection.addRange(selectionInfo.range);
@@ -225,7 +225,7 @@ export class TTSModule2 implements ReaderModule {
   cancel(api: boolean = true) {
     if (api) {
       if (this.api?.stopped) this.api?.stopped();
-      this.delegate.emit("readaloud.stopped", "stopped");
+      this.navigator.emit("readaloud.stopped", "stopped");
     }
     this.userScrolled = false;
     this.speaking = false;
@@ -234,7 +234,7 @@ export class TTSModule2 implements ReaderModule {
     }, 0);
 
     if (this._ttsQueueItemHighlightsWord) {
-      this.delegate.highlighter?.destroyHighlights(HighlightType.ReadAloud);
+      this.navigator.highlighter?.destroyHighlights(HighlightType.ReadAloud);
       this._ttsQueueItemHighlightsWord = undefined;
     }
   }
@@ -247,7 +247,7 @@ export class TTSModule2 implements ReaderModule {
     callback: () => void
   ): Promise<any> {
     if (this.api?.started) this.api?.started();
-    this.delegate.emit("readaloud.started", "started");
+    this.navigator.emit("readaloud.started", "started");
 
     const self = this;
     this.userScrolled = false;
@@ -260,12 +260,12 @@ export class TTSModule2 implements ReaderModule {
       ) as HTMLIFrameElement;
       let rootEl = iframe.contentWindow?.document.body;
 
-      let doc = this.delegate.iframes[0].contentDocument;
+      let doc = this.navigator.iframes[0].contentDocument;
       if (doc) {
         let selection = this.highlighter.dom(doc.body).getSelection();
         if (selection.isCollapsed) {
-          let doc = self.delegate.iframes[0].contentDocument;
-          const selectionInfo = self.delegate.annotationModule?.annotator?.getTemporarySelectionInfo(
+          let doc = self.navigator.iframes[0].contentDocument;
+          const selectionInfo = self.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
             doc
           );
           selection.addRange(selectionInfo.range);
@@ -427,7 +427,7 @@ export class TTSModule2 implements ReaderModule {
     log.log("initialVoice", initialVoice);
 
     var publicationVoiceHasHyphen =
-      self.delegate.publication.Metadata.Language[0].indexOf("-") !== -1;
+      self.navigator.publication.Metadata.Language[0].indexOf("-") !== -1;
     log.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
     var publicationVoice;
     if (publicationVoiceHasHyphen === true) {
@@ -437,10 +437,10 @@ export class TTSModule2 implements ReaderModule {
               var lang = v.lang.replace("_", "-");
               return (
                 lang.startsWith(
-                  self.delegate.publication.Metadata.Language[0]
+                  self.navigator.publication.Metadata.Language[0]
                 ) ||
                 lang.endsWith(
-                  self.delegate.publication.Metadata.Language[0].toUpperCase()
+                  self.navigator.publication.Metadata.Language[0].toUpperCase()
                 )
               );
             })[0]
@@ -451,10 +451,10 @@ export class TTSModule2 implements ReaderModule {
           ? this.voices.filter((v: any) => {
               return (
                 v.lang.startsWith(
-                  self.delegate.publication.Metadata.Language[0]
+                  self.navigator.publication.Metadata.Language[0]
                 ) ||
                 v.lang.endsWith(
-                  self.delegate.publication.Metadata.Language[0].toUpperCase()
+                  self.navigator.publication.Metadata.Language[0].toUpperCase()
                 )
               );
             })[0]
@@ -552,14 +552,14 @@ export class TTSModule2 implements ReaderModule {
               log.log("utterance ended");
               self.highlighter.doneSpeaking();
               self.api?.finished();
-              self.delegate.emit("readaloud.finished", "finished");
+              self.navigator.emit("readaloud.finished", "finished");
             }
           }
         } else {
           log.log("utterance ended");
           self.highlighter.doneSpeaking();
           self.api?.finished();
-          self.delegate.emit("readaloud.finished", "finished");
+          self.navigator.emit("readaloud.finished", "finished");
         }
       };
     }
@@ -572,7 +572,7 @@ export class TTSModule2 implements ReaderModule {
     this.scrollPartial = true;
     this.cancel(false);
     if (this.api?.started) this.api?.started();
-    this.delegate.emit("readaloud.started", "started");
+    this.navigator.emit("readaloud.started", "started");
 
     let self = this;
     let iframe = document.querySelector(
@@ -589,7 +589,7 @@ export class TTSModule2 implements ReaderModule {
 
       function findVisibleText() {
         let node = self.highlighter.visibleTextRects[0];
-        let doc = self.delegate.iframes[0].contentDocument;
+        let doc = self.navigator.iframes[0].contentDocument;
         if (doc) {
           const range = self.highlighter
             .dom(doc.body)
@@ -597,7 +597,7 @@ export class TTSModule2 implements ReaderModule {
             .document.createRange();
 
           const selection = self.highlighter
-            .dom(self.delegate.iframes[0].contentDocument?.body)
+            .dom(self.navigator.iframes[0].contentDocument?.body)
             .getSelection();
           selection.removeAllRanges();
           range.selectNodeContents(node.node);
@@ -646,13 +646,13 @@ export class TTSModule2 implements ReaderModule {
   speakPause() {
     if (window.speechSynthesis.speaking) {
       if (this.api?.paused) this.api?.paused();
-      this.delegate.emit("readaloud.paused", "paused");
+      this.navigator.emit("readaloud.paused", "paused");
       this.userScrolled = false;
       window.speechSynthesis.pause();
       this.speaking = false;
 
       if (this._ttsQueueItemHighlightsWord) {
-        this.delegate.highlighter?.destroyHighlights(HighlightType.ReadAloud);
+        this.navigator.highlighter?.destroyHighlights(HighlightType.ReadAloud);
         this._ttsQueueItemHighlightsWord = undefined;
       }
     }
@@ -661,7 +661,7 @@ export class TTSModule2 implements ReaderModule {
   speakResume() {
     if (window.speechSynthesis.speaking) {
       if (this.api?.resumed) this.api?.resumed();
-      this.delegate.emit("readaloud.resumed", "resumed");
+      this.navigator.emit("readaloud.resumed", "resumed");
       this.userScrolled = false;
       window.speechSynthesis.resume();
       this.speaking = true;
@@ -670,7 +670,6 @@ export class TTSModule2 implements ReaderModule {
 
   public static async create(config: TTSModuleConfig) {
     const tts = new this(
-      config.delegate,
       config.tts,
       config.rights,
       config.highlighter,
@@ -683,7 +682,6 @@ export class TTSModule2 implements ReaderModule {
   }
 
   public constructor(
-    delegate: IFrameNavigator,
     tts: TTSSettings,
     rights: Partial<ReaderRights>,
     highlighter: TextHighlighter,
@@ -691,7 +689,6 @@ export class TTSModule2 implements ReaderModule {
     api?: TTSModuleAPI,
     headerMenu?: HTMLElement | null
   ) {
-    this.delegate = delegate;
     this.tts = tts;
     this.headerMenu = headerMenu;
     this.rights = rights;
@@ -701,8 +698,6 @@ export class TTSModule2 implements ReaderModule {
   }
 
   protected async start(): Promise<void> {
-    this.delegate.ttsModule = this;
-
     if (this.headerMenu) {
       var menuTTS = HTMLUtilities.findElement(
         this.headerMenu,
@@ -712,8 +707,8 @@ export class TTSModule2 implements ReaderModule {
     }
     setTimeout(() => {
       this.properties?.hideLayer
-        ? this.delegate.hideLayer("readaloud")
-        : this.delegate.showLayer("readaloud");
+        ? this.navigator.hideLayer("readaloud")
+        : this.navigator.showLayer("readaloud");
     }, 10);
   }
 
@@ -742,7 +737,7 @@ export class TTSModule2 implements ReaderModule {
     removeEventListenerOptional(this.body, "wheel", this.wheel.bind(this));
     removeEventListenerOptional(document, "keydown", this.wheel.bind(this));
     removeEventListenerOptional(
-      this.delegate.iframes[0].contentDocument,
+      this.navigator.iframes[0].contentDocument,
       "keydown",
       this.wheel.bind(this)
     );
@@ -1019,7 +1014,7 @@ export class TTSModule2 implements ReaderModule {
 
     var self = this;
     var publicationVoiceHasHyphen =
-      self.delegate.publication.Metadata.Language[0].indexOf("-") !== -1;
+      self.navigator.publication.Metadata.Language[0].indexOf("-") !== -1;
     log.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
     var publicationVoice;
     if (publicationVoiceHasHyphen === true) {
@@ -1029,10 +1024,10 @@ export class TTSModule2 implements ReaderModule {
               var lang = v.lang.replace("_", "-");
               return (
                 lang.startsWith(
-                  self.delegate.publication.Metadata.Language[0]
+                  self.navigator.publication.Metadata.Language[0]
                 ) ||
                 lang.endsWith(
-                  self.delegate.publication.Metadata.Language[0].toUpperCase()
+                  self.navigator.publication.Metadata.Language[0].toUpperCase()
                 )
               );
             })[0]
@@ -1043,10 +1038,10 @@ export class TTSModule2 implements ReaderModule {
           ? this.voices.filter((v: any) => {
               return (
                 v.lang.startsWith(
-                  self.delegate.publication.Metadata.Language[0]
+                  self.navigator.publication.Metadata.Language[0]
                 ) ||
                 v.lang.endsWith(
-                  self.delegate.publication.Metadata.Language[0].toUpperCase()
+                  self.navigator.publication.Metadata.Language[0].toUpperCase()
                 )
               );
             })[0]
@@ -1199,7 +1194,7 @@ export class TTSModule2 implements ReaderModule {
     log.log(charIndex, charLength, word, start, end);
 
     if (this._ttsQueueItemHighlightsWord) {
-      this.delegate.highlighter?.destroyHighlights(HighlightType.ReadAloud);
+      this.navigator.highlighter?.destroyHighlights(HighlightType.ReadAloud);
       this._ttsQueueItemHighlightsWord = undefined;
     }
 
@@ -1241,7 +1236,7 @@ export class TTSModule2 implements ReaderModule {
       var self = this;
       function getCssSelector(element: Element): string {
         try {
-          let doc = self.delegate.iframes[0].contentDocument;
+          let doc = self.navigator.iframes[0].contentDocument;
           if (doc) {
             return uniqueCssSelector(element, doc, _getCssSelectorOptions);
           } else {
@@ -1258,8 +1253,8 @@ export class TTSModule2 implements ReaderModule {
         return;
       }
 
-      let result = this.delegate.highlighter?.createHighlight(
-        this.delegate.iframes[0].contentWindow as any,
+      let result = this.navigator.highlighter?.createHighlight(
+        this.navigator.iframes[0].contentWindow as any,
         {
           rangeInfo: rangeInfo,
           cleanText: "",
@@ -1289,7 +1284,7 @@ export class TTSModule2 implements ReaderModule {
         const shouldScroll = top > window.innerHeight / 2 - 65;
 
         if (
-          this.delegate.view?.isScrollMode() &&
+          this.navigator.view?.isScrollMode() &&
           this.tts.autoScroll &&
           !this.userScrolled &&
           this.scrollPartial &&
@@ -1299,8 +1294,8 @@ export class TTSModule2 implements ReaderModule {
             block: "center",
             behavior: "smooth",
           });
-        } else if (this.delegate.view?.isPaginated()) {
-          self.delegate.view?.snap(result[1]?.firstChild as HTMLElement);
+        } else if (this.navigator.view?.isPaginated()) {
+          self.navigator.view?.snap(result[1]?.firstChild as HTMLElement);
         }
       }
     }

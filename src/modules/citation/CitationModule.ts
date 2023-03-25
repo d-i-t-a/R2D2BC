@@ -54,27 +54,24 @@ export interface CitationModuleAPI {
 
 export interface CitationModuleConfig extends CitationModuleProperties {
   publication: Publication;
-  delegate: IFrameNavigator;
   highlighter: TextHighlighter;
   api?: CitationModuleAPI;
 }
 
 export default class CitationModule implements ReaderModule {
   private publication: Publication;
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   private properties: CitationModuleProperties;
   private readonly highlighter?: TextHighlighter;
   api?: CitationModuleAPI;
 
   private constructor(
-    delegate: IFrameNavigator,
     publication: Publication,
     highlighter: TextHighlighter,
     properties: CitationModuleProperties,
     api?: CitationModuleAPI
   ) {
     this.highlighter = highlighter;
-    this.delegate = delegate;
     this.properties = properties;
     this.publication = publication;
     this.api = api;
@@ -82,7 +79,6 @@ export default class CitationModule implements ReaderModule {
 
   public static async create(config: CitationModuleConfig) {
     const module = new this(
-      config.delegate,
       config.publication,
       config.highlighter,
       config as CitationModuleProperties,
@@ -97,8 +93,8 @@ export default class CitationModule implements ReaderModule {
   }
 
   copyToClipboard(textToClipboard) {
-    if (this.delegate?.contentProtectionModule) {
-      this.delegate!.contentProtectionModule.citation = true;
+    if (this.navigator?.contentProtectionModule) {
+      this.navigator!.contentProtectionModule.citation = true;
     }
     let success = true;
     // @ts-ignore
@@ -168,7 +164,6 @@ export default class CitationModule implements ReaderModule {
   }
 
   protected async start(): Promise<void> {
-    this.delegate.citationModule = this;
     const self = this;
 
     const citationIconMenu = {

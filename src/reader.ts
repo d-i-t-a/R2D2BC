@@ -226,31 +226,8 @@ export default class D2Reader {
             : "reflowable",
       });
 
-      // Navigator
-      const navigator = await IFrameNavigator.create({
-        mainElement: mainElement,
-        headerMenu: headerMenu,
-        footerMenu: footerMenu,
-        publication: publication,
-        settings,
-        annotator: annotator,
-        initialLastReadingPosition: initialConfig.lastReadingPosition,
-        api: initialConfig.api,
-        rights: rights,
-        tts: initialConfig.tts,
-        sample: initialConfig.sample,
-        requestConfig: initialConfig.requestConfig,
-        injectables:
-          (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-            ? initialConfig.injectablesFixed ?? []
-            : initialConfig.injectables,
-        attributes: initialConfig.attributes,
-        services: initialConfig.services,
-      });
-
       // Highlighter
       const highlighter = await TextHighlighter.create({
-        delegate: navigator,
         layerSettings: layers,
         ...initialConfig.highlighter,
       });
@@ -262,7 +239,6 @@ export default class D2Reader {
             headerMenu: headerMenu,
             rights: rights,
             publication: publication,
-            delegate: navigator,
             initialAnnotations: initialConfig.initialAnnotations,
             ...initialConfig.bookmarks,
           })
@@ -274,7 +250,6 @@ export default class D2Reader {
             annotator: annotator,
             rights: rights,
             publication: publication,
-            delegate: navigator,
             initialAnnotations: initialConfig.initialAnnotations,
             highlighter: highlighter,
             headerMenu: headerMenu,
@@ -296,7 +271,6 @@ export default class D2Reader {
 
       if (ttsEnabled && ttsSettings) {
         ttsModule = await TTSModule2.create({
-          delegate: navigator,
           tts: ttsSettings,
           headerMenu: headerMenu,
           rights: rights,
@@ -309,7 +283,6 @@ export default class D2Reader {
       const searchModule = rights.enableSearch
         ? await SearchModule.create({
             headerMenu: headerMenu,
-            delegate: navigator,
             publication: publication,
             highlighter: highlighter,
             ...initialConfig.search,
@@ -318,7 +291,6 @@ export default class D2Reader {
 
       const definitionsModule = rights.enableDefinitions
         ? await DefinitionsModule.create({
-            delegate: navigator,
             publication: publication,
             highlighter: highlighter,
             ...initialConfig.define,
@@ -329,14 +301,12 @@ export default class D2Reader {
       const timelineModule = rights.enableTimeline
         ? await TimelineModule.create({
             publication: publication,
-            delegate: navigator,
           })
         : undefined;
 
       // Content Protection Module
       const contentProtectionModule = rights.enableContentProtection
         ? await ContentProtectionModule.create({
-            delegate: navigator,
             ...initialConfig.protection,
           })
         : undefined;
@@ -344,7 +314,6 @@ export default class D2Reader {
       const citationModule = rights.enableCitations
         ? await CitationModule.create({
             publication: publication,
-            delegate: navigator,
             highlighter: highlighter,
             ...initialConfig.citations,
           })
@@ -363,7 +332,6 @@ export default class D2Reader {
       const mediaOverlayModule = enableMediaOverlays
         ? await MediaOverlayModule.create({
             publication: publication,
-            delegate: navigator,
             settings: mediaOverlaySettings,
             ...initialConfig.mediaOverlays,
           })
@@ -375,7 +343,6 @@ export default class D2Reader {
           ? await PageBreakModule.create({
               publication: publication,
               headerMenu: headerMenu,
-              delegate: navigator,
               ...initialConfig.pagebreak,
             })
           : undefined;
@@ -383,7 +350,6 @@ export default class D2Reader {
       const lineFocusModule = rights.enableLineFocus
         ? await LineFocusModule.create({
             publication: publication,
-            delegate: navigator,
             highlighter: highlighter,
             ...initialConfig.lineFocus,
           })
@@ -393,7 +359,6 @@ export default class D2Reader {
         ? await HistoryModule.create({
             annotator: annotator,
             publication: publication,
-            delegate: navigator,
             headerMenu: headerMenu,
           })
         : undefined;
@@ -401,10 +366,47 @@ export default class D2Reader {
       const consumptionModule = rights.enableConsumption
         ? await ConsumptionModule.create({
             publication: publication,
-            delegate: navigator,
             ...initialConfig.consumption,
           })
         : undefined;
+
+      // Navigator
+      const navigator = await IFrameNavigator.create({
+        mainElement: mainElement,
+        headerMenu: headerMenu,
+        footerMenu: footerMenu,
+        publication: publication,
+        settings,
+        annotator: annotator,
+        initialLastReadingPosition: initialConfig.lastReadingPosition,
+        api: initialConfig.api,
+        rights: rights,
+        tts: initialConfig.tts,
+        sample: initialConfig.sample,
+        requestConfig: initialConfig.requestConfig,
+        injectables:
+          (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+            ? initialConfig.injectablesFixed ?? []
+            : initialConfig.injectables,
+        attributes: initialConfig.attributes,
+        services: initialConfig.services,
+        highlighter,
+        modules: [
+          bookmarkModule,
+          annotationModule,
+          ttsModule,
+          searchModule,
+          definitionsModule,
+          timelineModule,
+          contentProtectionModule,
+          citationModule,
+          mediaOverlayModule,
+          pageBreakModule,
+          lineFocusModule,
+          historyModule,
+          consumptionModule,
+        ],
+      });
 
       return new D2Reader(
         settings,
@@ -971,6 +973,8 @@ export default class D2Reader {
     this.mediaOverlayModule?.stop();
     this.pageBreakModule?.stop();
     this.lineFocusModule?.stop();
+    this.citationModule?.stop();
+    this.consumptionModule?.stop();
   };
 }
 

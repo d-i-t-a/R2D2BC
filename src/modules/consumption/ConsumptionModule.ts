@@ -27,15 +27,21 @@ export interface ConsumptionModuleProperties {
   idleTimeout?: number;
   responseTimeout?: number;
 }
+export interface ReadingSession {
+  time: any;
+  firstLocator: Locator;
+  lastLocator: Locator;
+  progress: any;
+}
+
 export interface ConsumptionModuleConfig extends ConsumptionModuleProperties {
   publication: Publication;
-  delegate: IFrameNavigator;
   properties?: ConsumptionModuleProperties;
   api?: ConsumptionModuleAPI;
 }
 
 export class ConsumptionModule implements ReaderModule {
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   private publication: Publication;
   private properties: ConsumptionModuleProperties;
   api?: ConsumptionModuleAPI;
@@ -45,7 +51,7 @@ export class ConsumptionModule implements ReaderModule {
 
   startResearchTimer?: Date;
   researchSessionId: any;
-  readingSessions: any[];
+  readingSessions: ReadingSession[];
   readingSessionsInterval;
 
   startReadingTimer: Date;
@@ -53,12 +59,10 @@ export class ConsumptionModule implements ReaderModule {
   lastReadingLocator: Locator;
 
   private constructor(
-    delegate: IFrameNavigator,
     publication: Publication,
     properties: ConsumptionModuleProperties,
     api?: ConsumptionModuleAPI
   ) {
-    this.delegate = delegate;
     this.publication = publication;
     this.properties = properties;
     this.api = api;
@@ -66,7 +70,6 @@ export class ConsumptionModule implements ReaderModule {
 
   public static async create(config: ConsumptionModuleConfig) {
     const consumption = new this(
-      config.delegate,
       config.publication,
       config as ConsumptionModuleProperties,
       config.api
@@ -75,7 +78,6 @@ export class ConsumptionModule implements ReaderModule {
     return consumption;
   }
   protected async start(): Promise<void> {
-    this.delegate.consumptionModule = this;
     this.startResearchSession();
   }
   async stop() {
@@ -83,7 +85,7 @@ export class ConsumptionModule implements ReaderModule {
     this.endResearchSession();
   }
   initialize() {
-    let win = this.delegate.iframes[0].contentWindow;
+    let win = this.navigator.iframes[0].contentWindow;
     if (win) {
       const self = this;
       win.onload = function () {
@@ -110,6 +112,19 @@ export class ConsumptionModule implements ReaderModule {
     this.api?.actionTracked(locator, action);
   }
   startReadingSession(locator: Locator) {
+    if (this.firstReadingLocator && this.lastReadingLocator) {
+      let progress =
+        this.lastReadingLocator.locations.totalProgression! -
+        this.firstReadingLocator.locations.totalProgression!;
+      let timeElapsed =
+        (new Date().getTime() - this.startReadingTimer.getTime()) / 1000;
+      this.readingSessions.push({
+        lastLocator: this.lastReadingLocator,
+        firstLocator: this.firstReadingLocator,
+        time: timeElapsed,
+        progress: Math.round(progress * 100),
+      });
+    }
     this.firstReadingLocator = locator;
     this.startReadingTimer = new Date();
   }
@@ -165,6 +180,20 @@ export class ConsumptionModule implements ReaderModule {
   }
   endResearchSession() {
     if (this.properties.enableTrackingSession) {
+      if (this.firstReadingLocator && this.lastReadingLocator) {
+        let progress =
+          this.lastReadingLocator.locations.totalProgression! -
+          this.firstReadingLocator.locations.totalProgression!;
+        let timeElapsed =
+          (new Date().getTime() - this.startReadingTimer.getTime()) / 1000;
+        this.readingSessions.push({
+          lastLocator: this.lastReadingLocator,
+          firstLocator: this.firstReadingLocator,
+          time: timeElapsed,
+          progress: Math.round(progress * 100),
+        });
+      }
+
       let timeElapsed =
         (new Date().getTime() - this.startResearchTimer!.getTime()) / 1000;
       this.api?.updateResearchSession(
@@ -191,12 +220,12 @@ export class ConsumptionModule implements ReaderModule {
     /* Increment the timer seconds */
     this.currSeconds++;
 
-    if (this.currSeconds == this.properties.idleTimeout) {
+    if (this.currSeconds === this.properties.idleTimeout) {
       this.api?.idleSince(this.currSeconds);
       this.updateResearchSession();
     }
     if (
-      this.currSeconds ==
+      this.currSeconds ===
       this.properties.idleTimeout! + this.properties.responseTimeout!
     ) {
       this.endResearchSession();

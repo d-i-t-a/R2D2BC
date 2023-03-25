@@ -58,7 +58,6 @@ export interface DefinitionsModuleProperties {
 export interface DefinitionsModuleConfig extends DefinitionsModuleProperties {
   api?: DefinitionsModuleAPI;
   publication: Publication;
-  delegate: IFrameNavigator;
   highlighter: TextHighlighter;
 }
 
@@ -67,14 +66,13 @@ export class DefinitionsModule implements ReaderModule {
   // @ts-ignore
   api?: DefinitionsModuleAPI;
   private publication: Publication;
-  private delegate: IFrameNavigator;
+  navigator: IFrameNavigator;
   private currentChapterPopupResult: any = [];
   private currentPopupHighlights: any = [];
   private highlighter: TextHighlighter;
 
   public static async create(config: DefinitionsModuleConfig) {
     const search = new this(
-      config.delegate,
       config.publication,
       config as DefinitionsModuleProperties,
       config.highlighter,
@@ -86,13 +84,11 @@ export class DefinitionsModule implements ReaderModule {
   }
 
   private constructor(
-    delegate: IFrameNavigator,
     publication: Publication,
     properties: DefinitionsModuleProperties,
     highlighter: TextHighlighter,
     api?: DefinitionsModuleAPI
   ) {
-    this.delegate = delegate;
     this.publication = publication;
     this.properties = properties;
     this.api = api;
@@ -104,25 +100,24 @@ export class DefinitionsModule implements ReaderModule {
   }
 
   protected async start(): Promise<void> {
-    this.delegate.definitionsModule = this;
     setTimeout(() => {
       this.properties.hideLayer
-        ? this.delegate.hideLayer("definitions")
-        : this.delegate.showLayer("definitions");
+        ? this.navigator.hideLayer("definitions")
+        : this.navigator.showLayer("definitions");
     }, 10);
   }
 
   async searchAndPaint(item: Definition, callback: (result: any) => any) {
     const linkHref = this.publication.getAbsoluteHref(
       this.publication.readingOrder
-        ? this.publication.readingOrder[this.delegate.currentResource() ?? 0]
+        ? this.publication.readingOrder[this.navigator.currentResource() ?? 0]
             .Href
         : ""
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === undefined && this.publication.readingOrder) {
       tocItem = this.publication.readingOrder[
-        this.delegate.currentResource() ?? 0
+        this.navigator.currentResource() ?? 0
       ];
     }
     let localSearchDefinitions: any = [];
@@ -133,10 +128,10 @@ export class DefinitionsModule implements ReaderModule {
         if (tocItem) {
           await searchDocDomSeek(
             termKey,
-            this.delegate.iframes[0].contentDocument,
+            this.navigator.iframes[0].contentDocument,
             tocItem.Href,
             tocItem.Title,
-            this.delegate.definitionsModule?.properties.fullWordSearch
+            this.navigator.definitionsModule?.properties.fullWordSearch
           ).then((result) => {
             let i: number | undefined = undefined;
             if (item.result === 1) {
@@ -184,11 +179,11 @@ export class DefinitionsModule implements ReaderModule {
     await this.searchAndPaint(item, async (result) => {
       if (this.api?.success) {
         this.api?.success(lodash.omit(item, "callbacks"), result);
-        this.delegate.emit("definition.success", result);
+        this.navigator.emit("definition.success", result);
 
         if (this.api?.visible) {
           result.forEach((highlight) => {
-            let highlightParent = this.delegate.iframes[0].contentDocument?.querySelector(
+            let highlightParent = this.navigator.iframes[0].contentDocument?.querySelector(
               `#${highlight.id}`
             );
             const highlightFragments = highlightParent?.querySelectorAll(
@@ -202,7 +197,7 @@ export class DefinitionsModule implements ReaderModule {
                       lodash.omit(item, "callbacks"),
                       lodash.omit(highlight, "definition")
                     );
-                    this.delegate.emit("definition.visible", item, highlight);
+                    this.navigator.emit("definition.visible", item, highlight);
                   }
                 });
               },
@@ -228,7 +223,7 @@ export class DefinitionsModule implements ReaderModule {
   }
   createDefinitionHighlight(selectionInfo: ISelectionInfo, item: Definition) {
     try {
-      let createColor: any = this.delegate.definitionsModule?.properties.color;
+      let createColor: any = this.navigator.definitionsModule?.properties.color;
       if (TextHighlighter.isHexColor(createColor)) {
         createColor = TextHighlighter.hexToRgbChannels(createColor);
       }
@@ -237,7 +232,7 @@ export class DefinitionsModule implements ReaderModule {
       const sha256Hex = SHA256.hash(uniqueStr);
       const id = "R2_DEFINITION_" + sha256Hex;
       this.highlighter.destroyHighlight(
-        this.delegate.iframes[0].contentDocument,
+        this.navigator.iframes[0].contentDocument,
         id
       );
 
@@ -252,7 +247,7 @@ export class DefinitionsModule implements ReaderModule {
       _highlights.push(highlight);
 
       let highlightDom = this.highlighter.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
+        this.navigator.iframes[0].contentWindow as any,
         highlight
       );
       if (highlightDom) {

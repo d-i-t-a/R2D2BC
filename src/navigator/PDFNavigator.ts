@@ -83,7 +83,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     this.resourceIndex = 0;
     this.resource = this.publication.readingOrder[this.resourceIndex];
 
-    GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js`;
+    GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.worker.js`;
     this.wrapper = HTMLUtilities.findRequiredElement(
       this.mainElement,
       "main#iframe-wrapper"

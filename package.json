@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -35,7 +35,7 @@
     "lodash.clonedeep": "^4.5.0",
     "loglevel": "^1.8.0",
     "mark.js": "^8.11.1",
-    "pdfjs-dist": "2.16.105",
+    "pdfjs-dist": "2.14.305",
     "promise-polyfill": "^8.2.0",
     "r2-shared-js": "^1.0.51",
     "recursive-readdir": "^2.2.2",

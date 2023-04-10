@@ -137,16 +137,16 @@ export class HistoryModule implements ReaderModule {
           this.history = this.history.slice(0, this.historyCurrentIndex);
         }
         lastInHistory = this.history[this.history.length - 1];
+        const linkHref = this.publication.getAbsoluteHref(
+          lastReadingPosition.href
+        );
+        log.log(lastReadingPosition.href);
+        log.log(linkHref);
+        lastReadingPosition.href = linkHref;
         if (
           (lastInHistory && lastInHistory.href !== lastReadingPosition.href) ||
           lastInHistory === undefined
         ) {
-          const linkHref = this.publication.getAbsoluteHref(
-            lastReadingPosition.href
-          );
-          log.log(lastReadingPosition.href);
-          log.log(linkHref);
-          lastReadingPosition.href = linkHref;
 
           this.history.push(lastReadingPosition);
           this.historyCurrentIndex = this.history.length - 1;

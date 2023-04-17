@@ -102,10 +102,12 @@ export class HistoryModule implements ReaderModule {
           " disabled",
           ""
         );
+        this.historyForwardAnchorElement.hidden = false;
       } else {
         if (this.historyForwardAnchorElement) {
           this.historyForwardAnchorElement.removeAttribute("href");
           this.historyForwardAnchorElement.className += " disabled";
+          this.historyForwardAnchorElement.hidden = true;
         }
       }
       if (this.historyBackAnchorElement && this.historyCurrentIndex > 0) {
@@ -113,10 +115,12 @@ export class HistoryModule implements ReaderModule {
           " disabled",
           ""
         );
+        this.historyBackAnchorElement.hidden = false;
       } else {
         if (this.historyBackAnchorElement) {
           this.historyBackAnchorElement.removeAttribute("href");
           this.historyBackAnchorElement.className += " disabled";
+          this.historyBackAnchorElement.hidden = true;
         }
       }
     }
@@ -128,26 +132,20 @@ export class HistoryModule implements ReaderModule {
       let lastReadingPosition = (await this.annotator.getLastReadingPosition()) as
         | ReadingPosition
         | undefined;
-      if (
-        lastReadingPosition &&
-        lastReadingPosition?.locations.progression &&
-        lastReadingPosition?.locations.progression > 0
-      ) {
-        if (this.historyCurrentIndex < this.history.length - 1) {
-          this.history = this.history.slice(0, this.historyCurrentIndex);
-        }
-        lastInHistory = this.history[this.history.length - 1];
+      if (lastReadingPosition) {
         const linkHref = this.publication.getAbsoluteHref(
           lastReadingPosition.href
         );
-        log.log(lastReadingPosition.href);
-        log.log(linkHref);
         lastReadingPosition.href = linkHref;
-        if (
-          (lastInHistory && lastInHistory.href !== lastReadingPosition.href) ||
-          lastInHistory === undefined
-        ) {
 
+        if (this.historyCurrentIndex < this.history.length - 1) {
+          this.history = this.history.slice(0, this.historyCurrentIndex);
+          this.history.push(lastReadingPosition);
+          this.historyCurrentIndex = this.history.length - 1;
+        } else if (
+          lastReadingPosition?.locations.progression &&
+          lastReadingPosition?.locations.progression > 0
+        ) {
           this.history.push(lastReadingPosition);
           this.historyCurrentIndex = this.history.length - 1;
         }

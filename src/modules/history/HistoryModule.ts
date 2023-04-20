@@ -102,12 +102,10 @@ export class HistoryModule implements ReaderModule {
           " disabled",
           ""
         );
-        this.historyForwardAnchorElement.hidden = false;
       } else {
         if (this.historyForwardAnchorElement) {
           this.historyForwardAnchorElement.removeAttribute("href");
           this.historyForwardAnchorElement.className += " disabled";
-          this.historyForwardAnchorElement.hidden = true;
         }
       }
       if (this.historyBackAnchorElement && this.historyCurrentIndex > 0) {
@@ -115,12 +113,10 @@ export class HistoryModule implements ReaderModule {
           " disabled",
           ""
         );
-        this.historyBackAnchorElement.hidden = false;
       } else {
         if (this.historyBackAnchorElement) {
           this.historyBackAnchorElement.removeAttribute("href");
           this.historyBackAnchorElement.className += " disabled";
-          this.historyBackAnchorElement.hidden = true;
         }
       }
     }

@@ -20,6 +20,7 @@
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import sanitize from "sanitize-html";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import { searchDocDomSeek } from "./searchWithDomSeek";
 
 export class Popup {
   navigator: IFrameNavigator;
@@ -44,11 +45,10 @@ export class Popup {
         event.preventDefault();
         event.stopPropagation();
 
-        await fetch(absolute, this.navigator.requestConfig)
-          .then((r) => r.text())
-          .then(async (data) => {
+        if (this.navigator.api?.getContent) {
+          await this.navigator.api?.getContent(href).then((content) => {
             const parser = new DOMParser();
-            const doc = parser.parseFromString(data, "text/html");
+            const doc = parser.parseFromString(content, "text/html");
             const element = doc.querySelector("#" + id);
             if (element) {
               event.preventDefault();
@@ -56,6 +56,20 @@ export class Popup {
               this.showPopup(element, event);
             }
           });
+        } else {
+          await fetch(absolute, this.navigator.requestConfig)
+            .then((r) => r.text())
+            .then(async (data) => {
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(data, "text/html");
+              const element = doc.querySelector("#" + id);
+              if (element) {
+                event.preventDefault();
+                event.stopPropagation();
+                this.showPopup(element, event);
+              }
+            });
+        }
       }
     }
   }
@@ -113,16 +127,25 @@ export class Popup {
         const d2content = document.createElement("div");
         d2content.className = "d2-popover-content";
         d2wrapper.appendChild(d2content);
-
-        await fetch(absolute, this.navigator.requestConfig)
-          .then((r) => r.text())
-          .then(async (data) => {
-            d2content.innerHTML = data;
+        if (this.navigator.api?.getContent) {
+          await this.navigator.api?.getContent(href).then((content) => {
+            d2content.innerHTML = content;
             let doc = this.navigator.iframes[0].contentDocument;
             if (doc) {
               doc.body.appendChild(d2popover);
             }
           });
+        } else {
+          await fetch(absolute, this.navigator.requestConfig)
+            .then((r) => r.text())
+            .then(async (data) => {
+              d2content.innerHTML = data;
+              let doc = this.navigator.iframes[0].contentDocument;
+              if (doc) {
+                doc.body.appendChild(d2popover);
+              }
+            });
+        }
 
         let win = this.navigator.iframes[0].contentWindow;
         if (!win) {

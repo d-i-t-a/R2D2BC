@@ -20,7 +20,6 @@
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import sanitize from "sanitize-html";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { searchDocDomSeek } from "./searchWithDomSeek";
 
 export class Popup {
   navigator: IFrameNavigator;

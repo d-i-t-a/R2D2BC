@@ -128,26 +128,20 @@ export class HistoryModule implements ReaderModule {
       let lastReadingPosition = (await this.annotator.getLastReadingPosition()) as
         | ReadingPosition
         | undefined;
-      if (
-        lastReadingPosition &&
-        lastReadingPosition?.locations.progression &&
-        lastReadingPosition?.locations.progression > 0
-      ) {
+      if (lastReadingPosition) {
+        const linkHref = this.publication.getAbsoluteHref(
+          lastReadingPosition.href
+        );
+        lastReadingPosition.href = linkHref;
+
         if (this.historyCurrentIndex < this.history.length - 1) {
           this.history = this.history.slice(0, this.historyCurrentIndex);
-        }
-        lastInHistory = this.history[this.history.length - 1];
-        if (
-          (lastInHistory && lastInHistory.href !== lastReadingPosition.href) ||
-          lastInHistory === undefined
+          this.history.push(lastReadingPosition);
+          this.historyCurrentIndex = this.history.length - 1;
+        } else if (
+          lastReadingPosition?.locations.progression &&
+          lastReadingPosition?.locations.progression > 0
         ) {
-          const linkHref = this.publication.getAbsoluteHref(
-            lastReadingPosition.href
-          );
-          log.log(lastReadingPosition.href);
-          log.log(linkHref);
-          lastReadingPosition.href = linkHref;
-
           this.history.push(lastReadingPosition);
           this.historyCurrentIndex = this.history.length - 1;
         }

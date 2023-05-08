@@ -210,6 +210,7 @@ export class ConsumptionModule implements ReaderModule {
       this.readingSessions = [];
       this.startResearchTimer = undefined;
       clearInterval(this.readingSessionsInterval);
+      clearInterval(this.timer);
     }
   }
 

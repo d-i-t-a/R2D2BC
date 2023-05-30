@@ -223,7 +223,11 @@ export class ConsumptionModule implements ReaderModule {
 
     if (this.currSeconds === this.properties.idleTimeout) {
       this.api?.idleSince(this.currSeconds);
-      this.updateResearchSession();
+      if (this.startResearchTimer !== undefined) {
+        this.updateResearchSession();
+      } else {
+        this.startResearchSession();
+      }
     }
     if (
       this.currSeconds ===

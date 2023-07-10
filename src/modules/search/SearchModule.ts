@@ -310,7 +310,19 @@ export class SearchModule implements ReaderModule {
     }
     let i = 0;
     if (tocItem) {
-      let doc = this.navigator.iframes[0].contentDocument;
+      let doc;
+      if (
+        this.navigator.contentProtectionModule?.properties?.enableObfuscation &&
+        this.navigator.api?.getContent
+      ) {
+        doc = new DOMParser().parseFromString(
+          await this.navigator.api.getContent(linkHref),
+          "text/html"
+        );
+      } else {
+        doc = this.navigator.iframes[0].contentDocument;
+      }
+
       if (doc) {
         if (tocItem) {
           searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(

@@ -315,10 +315,7 @@ export class SearchModule implements ReaderModule {
         this.navigator.contentProtectionModule?.properties?.enableObfuscation &&
         this.navigator.api?.getContent
       ) {
-        doc = new DOMParser().parseFromString(
-          await this.navigator.api.getContent(linkHref),
-          "text/html"
-        );
+        doc = this.navigator.contentProtectionModule.getUnscrambledDoc();
       } else {
         doc = this.navigator.iframes[0].contentDocument;
       }

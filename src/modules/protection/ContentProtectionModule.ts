@@ -1493,4 +1493,20 @@ export class ContentProtectionModule implements ReaderModule {
     }
     return paragraph ? scramble(words).join(" ") : words.join(" ");
   }
+
+  public getUnscrambledDoc(): Document | null {
+    if (this.navigator.iframes[0].contentDocument) {
+      let unscrambledDoc = this.navigator.iframes[0].contentDocument.cloneNode(
+        true
+      ) as Document;
+      let newRects = this.findRects(unscrambledDoc.body);
+
+      this.rects.forEach((rect, index) => {
+        newRects[index].node.textContent = rect.textContent;
+      });
+      return unscrambledDoc;
+    }
+
+    return null;
+  }
 }

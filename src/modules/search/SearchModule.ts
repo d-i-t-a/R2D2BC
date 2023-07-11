@@ -161,9 +161,6 @@ export class SearchModule implements ReaderModule {
     self.currentChapterSearchResult = [];
     self.currentSearchHighlights = [];
     var localSearchResultChapter: any = [];
-    if (this.navigator.rights.enableContentProtection) {
-      this.navigator.contentProtectionModule?.deactivate();
-    }
     await this.searchAndPaintChapter(searchVal, index, async (result) => {
       localSearchResultChapter = result;
       goToResultPage(1);
@@ -292,6 +289,9 @@ export class SearchModule implements ReaderModule {
     index: number = 0,
     callback: (result: any) => any
   ) {
+    if (this.navigator.rights.enableContentProtection) {
+      this.navigator.contentProtectionModule?.deactivate();
+    }
     const linkHref = this.publication.getAbsoluteHref(
       this.publication.readingOrder[this.navigator.currentResource() ?? 0].Href
     );
@@ -398,7 +398,11 @@ export class SearchModule implements ReaderModule {
     this.bookSearchResult = [];
 
     reset();
-    await this.searchAndPaintChapter(term, 0, async () => {});
+    await this.searchAndPaintChapter(term, 0, async () => {
+      if (this.navigator.rights.enableContentProtection) {
+        this.navigator.contentProtectionModule?.recalculate(200);
+      }
+    });
 
     if (current) {
       await this.searchBook(term);
@@ -452,7 +456,11 @@ export class SearchModule implements ReaderModule {
           this.searchAndPaintChapter(
             item.textMatch,
             filteredIndex,
-            async () => {}
+            async () => {
+              if (this.navigator.rights.enableContentProtection) {
+                this.navigator.contentProtectionModule?.recalculate(200);
+              }
+            }
           );
         }, 300);
       }
@@ -498,7 +506,11 @@ export class SearchModule implements ReaderModule {
           this.searchAndPaintChapter(
             item.textMatch,
             filteredIndex,
-            async () => {}
+            async () => {
+              if (this.navigator.rights.enableContentProtection) {
+                this.navigator.contentProtectionModule?.recalculate(200);
+              }
+            }
           );
         }, 300);
       }

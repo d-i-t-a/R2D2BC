@@ -122,13 +122,13 @@ export class TTSModule2 implements ReaderModule {
       let doc = this.navigator.iframes[0].contentDocument;
       if (doc) {
         let selection = this.highlighter.dom(doc.body).getSelection();
-        if (selection.isCollapsed) {
-          let doc = this.navigator.iframes[0].contentDocument;
-          const selectionInfo = this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
-            doc
-          );
-          selection.addRange(selectionInfo.range);
-        }
+        // if (selection.isCollapsed) {
+        //   let doc = this.navigator.iframes[0].contentDocument;
+        //   const selectionInfo = this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+        //     doc
+        //   );
+        //   selection.addRange(selectionInfo.range);
+        // }
 
         let range = selection.getRangeAt(0);
         let node = selection.anchorNode;
@@ -246,6 +246,12 @@ export class TTSModule2 implements ReaderModule {
     partial: boolean,
     callback: () => void
   ): Promise<any> {
+    if (!partial) {
+      if (this.navigator.rights.enableContentProtection) {
+        this.navigator.contentProtectionModule?.deactivate();
+      }
+    }
+
     if (this.api?.started) this.api?.started();
     this.navigator.emit("readaloud.started", "started");
 
@@ -343,6 +349,11 @@ export class TTSModule2 implements ReaderModule {
 
             utterance = new SpeechSynthesisUtterance(textToBeSpoken);
 
+            utterance.rate = this.tts.rate;
+            utterance.pitch = this.tts.pitch;
+            utterance.volume = this.tts.volume;
+            this.setVoice(this, utterance);
+
             log.log(selectionInfo);
             log.log(
               textToBeSpoken,
@@ -376,21 +387,102 @@ export class TTSModule2 implements ReaderModule {
     utterance.rate = this.tts.rate;
     utterance.pitch = this.tts.pitch;
     utterance.volume = this.tts.volume;
+    this.setVoice(self, utterance);
 
+    this.index = 0;
+
+    function onend() {
+      utterance.onend = function () {
+        if (idxEnd > idx) {
+          idx = idx + 1;
+          if (idx !== idxEnd) {
+            const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
+            if (ttsQueueItem) {
+              const sentence = getTtsQueueItemRefText(ttsQueueItem);
+              utterance = new SpeechSynthesisUtterance(sentence);
+              utterance.rate = self.tts.rate;
+              utterance.pitch = self.tts.pitch;
+              utterance.volume = self.tts.volume;
+              self.setVoice(self, utterance);
+              utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+                self.updateTTSInfo(
+                  ttsQueueItem,
+                  ev.charIndex,
+                  ev.charLength,
+                  0,
+                  utterance.text
+                );
+              };
+              setTimeout(() => {
+                window.speechSynthesis.speak(utterance);
+              }, 0);
+              onend();
+            }
+          } else {
+            const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
+            if (ttsQueueItem) {
+              utterance = new SpeechSynthesisUtterance(restOfTheText);
+              utterance.rate = self.tts.rate;
+              utterance.pitch = self.tts.pitch;
+              utterance.volume = self.tts.volume;
+              self.setVoice(self, utterance);
+              utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+                self.updateTTSInfo(
+                  ttsQueueItem,
+                  ev.charIndex,
+                  ev.charLength,
+                  0,
+                  utterance.text
+                );
+              };
+              setTimeout(() => {
+                window.speechSynthesis.speak(utterance);
+              }, 0);
+              onend();
+            }
+            if (idx > idxEnd) {
+              log.log("utterance ended");
+              self.highlighter.doneSpeaking();
+              self.api?.finished();
+              self.navigator.emit("readaloud.finished", "finished");
+            }
+          }
+        } else {
+          log.log("utterance ended");
+          self.highlighter.doneSpeaking();
+          self.api?.finished();
+          self.navigator.emit("readaloud.finished", "finished");
+        }
+      };
+    }
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+      if (!partial) {
+        if (this.navigator.rights.enableContentProtection) {
+          this.navigator.contentProtectionModule?.recalculate(200);
+        }
+      }
+    }, 0);
+
+    onend();
+    callback();
+  }
+
+  private setVoice(self: this, utterance) {
     log.log("this.tts.voice.lang", this.tts.voice.lang);
 
-    var initialVoiceHasHyphen = true;
+    let initialVoiceHasHyphen = true;
     if (this.tts.voice && this.tts.voice.lang) {
       initialVoiceHasHyphen = this.tts.voice.lang.indexOf("-") !== -1;
-      if (initialVoiceHasHyphen === false) {
+      if (!initialVoiceHasHyphen) {
         this.tts.voice.lang = this.tts.voice.lang.replace("_", "-");
         initialVoiceHasHyphen = true;
       }
     }
     log.log("initialVoiceHasHyphen", initialVoiceHasHyphen);
     log.log("voices", this.voices);
-    var initialVoice;
-    if (initialVoiceHasHyphen === true) {
+    let initialVoice;
+    if (initialVoiceHasHyphen) {
       initialVoice =
         this.tts.voice && this.tts.voice.lang && this.tts.voice.name
           ? this.voices.filter((v: any) => {
@@ -426,11 +518,11 @@ export class TTSModule2 implements ReaderModule {
     }
     log.log("initialVoice", initialVoice);
 
-    var publicationVoiceHasHyphen =
+    const publicationVoiceHasHyphen =
       self.navigator.publication.Metadata.Language[0].indexOf("-") !== -1;
     log.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
-    var publicationVoice;
-    if (publicationVoiceHasHyphen === true) {
+    let publicationVoice;
+    if (publicationVoiceHasHyphen) {
       publicationVoice =
         this.tts.voice && this.tts.voice.usePublication
           ? this.voices.filter((v: any) => {
@@ -462,24 +554,24 @@ export class TTSModule2 implements ReaderModule {
     }
     log.log("publicationVoice", publicationVoice);
 
-    var defaultVoiceHasHyphen = navigator.language.indexOf("-") !== -1;
+    const defaultVoiceHasHyphen = navigator.language.indexOf("-") !== -1;
     log.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen);
-    var defaultVoice;
-    if (defaultVoiceHasHyphen === true) {
+    let defaultVoice;
+    if (defaultVoiceHasHyphen) {
       defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
-        var lang = voice.lang.replace("_", "-");
-        return lang === navigator.language && voice.localService === true;
+        const lang = voice.lang.replace("_", "-");
+        return lang === navigator.language && voice.localService;
       })[0];
     } else {
       defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
-        var lang = voice.lang;
-        return lang === navigator.language && voice.localService === true;
+        const lang = voice.lang;
+        return lang === navigator.language && voice.localService;
       })[0];
     }
     if (defaultVoice === undefined) {
       defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
-        var lang = voice.lang;
-        return lang.includes(navigator.language) && voice.localService === true;
+        const lang = voice.lang;
+        return lang.includes(navigator.language) && voice.localService;
       })[0];
     }
     log.log("defaultVoice", defaultVoice);
@@ -500,75 +592,13 @@ export class TTSModule2 implements ReaderModule {
       log.log("utterance.lang", utterance.lang);
     }
     log.log("navigator.language", navigator.language);
-
-    setTimeout(() => {
-      window.speechSynthesis.speak(utterance);
-    }, 0);
-
-    this.index = 0;
-
-    function onend() {
-      utterance.onend = function () {
-        if (idxEnd > idx) {
-          idx = idx + 1;
-          if (idx !== idxEnd) {
-            const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
-            if (ttsQueueItem) {
-              const sentence = getTtsQueueItemRefText(ttsQueueItem);
-              utterance = new SpeechSynthesisUtterance(sentence);
-              utterance.onboundary = (ev: SpeechSynthesisEvent) => {
-                self.updateTTSInfo(
-                  ttsQueueItem,
-                  ev.charIndex,
-                  ev.charLength,
-                  0,
-                  utterance.text
-                );
-              };
-              setTimeout(() => {
-                window.speechSynthesis.speak(utterance);
-              }, 0);
-              onend();
-            }
-          } else {
-            const ttsQueueItem = getTtsQueueItemRef(ttsQueue, idx);
-            if (ttsQueueItem) {
-              utterance = new SpeechSynthesisUtterance(restOfTheText);
-              utterance.onboundary = (ev: SpeechSynthesisEvent) => {
-                self.updateTTSInfo(
-                  ttsQueueItem,
-                  ev.charIndex,
-                  ev.charLength,
-                  0,
-                  utterance.text
-                );
-              };
-              setTimeout(() => {
-                window.speechSynthesis.speak(utterance);
-              }, 0);
-              onend();
-            }
-            if (idx > idxEnd) {
-              log.log("utterance ended");
-              self.highlighter.doneSpeaking();
-              self.api?.finished();
-              self.navigator.emit("readaloud.finished", "finished");
-            }
-          }
-        } else {
-          log.log("utterance ended");
-          self.highlighter.doneSpeaking();
-          self.api?.finished();
-          self.navigator.emit("readaloud.finished", "finished");
-        }
-      };
-    }
-
-    onend();
-    callback();
   }
 
   speakPlay() {
+    if (this.navigator.rights.enableContentProtection) {
+      this.navigator.contentProtectionModule?.deactivate();
+    }
+
     this.scrollPartial = true;
     this.cancel(false);
     if (this.api?.started) this.api?.started();
@@ -640,6 +670,9 @@ export class TTSModule2 implements ReaderModule {
       setTimeout(() => {
         this.startTTSSession(ttsQueue, ttsQueueIndex);
       }, 200);
+    }
+    if (this.navigator.rights.enableContentProtection) {
+      this.navigator.contentProtectionModule?.recalculate(200);
     }
   }
 
@@ -962,131 +995,8 @@ export class TTSModule2 implements ReaderModule {
     utterance.rate = this.tts.rate;
     utterance.pitch = this.tts.pitch;
     utterance.volume = this.tts.volume;
-
-    log.log("this.tts.voice.lang", this.tts.voice.lang);
-
-    var initialVoiceHasHyphen = true;
-    if (this.tts.voice && this.tts.voice.lang) {
-      initialVoiceHasHyphen = this.tts.voice.lang.indexOf("-") !== -1;
-      if (initialVoiceHasHyphen === false) {
-        this.tts.voice.lang = this.tts.voice.lang.replace("_", "-");
-        initialVoiceHasHyphen = true;
-      }
-    }
-    log.log("initialVoiceHasHyphen", initialVoiceHasHyphen);
-    log.log("voices", this.voices);
-    var initialVoice;
-    if (initialVoiceHasHyphen === true) {
-      initialVoice =
-        this.tts.voice && this.tts.voice.lang && this.tts.voice.name
-          ? this.voices.filter((v: any) => {
-              var lang = v.lang.replace("_", "-");
-              return (
-                lang === this.tts.voice.lang && v.name === this.tts.voice.name
-              );
-            })[0]
-          : undefined;
-      if (initialVoice === undefined) {
-        initialVoice =
-          this.tts.voice && this.tts.voice.lang
-            ? this.voices.filter(
-                (v: any) => v.lang.replace("_", "-") === this.tts.voice.lang
-              )[0]
-            : undefined;
-      }
-    } else {
-      initialVoice =
-        this.tts.voice && this.tts.voice.lang && this.tts.voice.name
-          ? this.voices.filter((v: any) => {
-              return (
-                v.lang === this.tts.voice.lang && v.name === this.tts.voice.name
-              );
-            })[0]
-          : undefined;
-      if (initialVoice === undefined) {
-        initialVoice =
-          this.tts.voice && this.tts.voice.lang
-            ? this.voices.filter((v: any) => v.lang === this.tts.voice.lang)[0]
-            : undefined;
-      }
-    }
-    log.log("initialVoice", initialVoice);
-
-    var self = this;
-    var publicationVoiceHasHyphen =
-      self.navigator.publication.Metadata.Language[0].indexOf("-") !== -1;
-    log.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
-    var publicationVoice;
-    if (publicationVoiceHasHyphen === true) {
-      publicationVoice =
-        this.tts.voice && this.tts.voice.usePublication
-          ? this.voices.filter((v: any) => {
-              var lang = v.lang.replace("_", "-");
-              return (
-                lang.startsWith(
-                  self.navigator.publication.Metadata.Language[0]
-                ) ||
-                lang.endsWith(
-                  self.navigator.publication.Metadata.Language[0].toUpperCase()
-                )
-              );
-            })[0]
-          : undefined;
-    } else {
-      publicationVoice =
-        this.tts.voice && this.tts.voice.usePublication
-          ? this.voices.filter((v: any) => {
-              return (
-                v.lang.startsWith(
-                  self.navigator.publication.Metadata.Language[0]
-                ) ||
-                v.lang.endsWith(
-                  self.navigator.publication.Metadata.Language[0].toUpperCase()
-                )
-              );
-            })[0]
-          : undefined;
-    }
-    log.log("publicationVoice", publicationVoice);
-
-    var defaultVoiceHasHyphen = navigator.language.indexOf("-") !== -1;
-    log.log("defaultVoiceHasHyphen", defaultVoiceHasHyphen);
-    var defaultVoice;
-    if (defaultVoiceHasHyphen === true) {
-      defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
-        var lang = voice.lang.replace("_", "-");
-        return lang === navigator.language && voice.localService === true;
-      })[0];
-    } else {
-      defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
-        var lang = voice.lang;
-        return lang === navigator.language && voice.localService === true;
-      })[0];
-    }
-    if (defaultVoice === undefined) {
-      defaultVoice = this.voices.filter((voice: SpeechSynthesisVoice) => {
-        var lang = voice.lang;
-        return lang.includes(navigator.language) && voice.localService === true;
-      })[0];
-    }
-    log.log("defaultVoice", defaultVoice);
-
-    if (initialVoice) {
-      log.log("initialVoice");
-      utterance.voice = initialVoice;
-    } else if (publicationVoice) {
-      log.log("publicationVoice");
-      utterance.voice = publicationVoice;
-    } else if (defaultVoice) {
-      log.log("defaultVoice");
-      utterance.voice = defaultVoice;
-    }
-    if (utterance.voice !== undefined && utterance.voice !== null) {
-      utterance.lang = utterance.voice.lang;
-      log.log("utterance.voice.lang", utterance.voice.lang);
-      log.log("utterance.lang", utterance.lang);
-    }
-    log.log("navigator.language", navigator.language);
+    const self = this;
+    this.setVoice(self, utterance);
 
     utterance.onboundary = (ev: SpeechSynthesisEvent) => {
       log.log(ev.name);
@@ -1233,7 +1143,8 @@ export class TTSModule2 implements ReaderModule {
       range.setStart(rangeStartNode, rangeStartOffset);
       range.setEnd(rangeEndNode, rangeEndOffset);
 
-      var self = this;
+      const self = this;
+
       function getCssSelector(element: Element): string {
         try {
           let doc = self.navigator.iframes[0].contentDocument;

@@ -112,6 +112,12 @@ let NODE_TYPE = {
   TEXT_NODE: 3,
 };
 
+export enum MenuPosition {
+  INLINE = "inline",
+  TOP = "top",
+  BOTTOM = "bottom",
+}
+
 export const _blacklistIdClassForCssSelectors = [
   HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER,
   HighlightContainer.R2_ID_PAGEBREAK_CONTAINER,
@@ -131,6 +137,7 @@ let lastMouseDownY = -1;
 
 export interface TextHighlighterProperties {
   selectionMenuItems?: Array<SelectionMenuItem>;
+  menuPosition?: MenuPosition;
 }
 
 export interface TextHighlighterConfig extends TextHighlighterProperties {
@@ -168,6 +175,9 @@ export class TextHighlighter {
   ) {
     this.layerSettings = layerSettings;
     this.properties = properties;
+    if (this.properties.menuPosition == undefined) {
+      this.properties.menuPosition = MenuPosition.INLINE;
+    }
     this.api = api;
     this.hasEventListener = hasEventListener;
     this.options = this.defaults(options, {
@@ -1107,14 +1117,28 @@ export class TextHighlighter {
     let toolbox = document.getElementById("highlight-toolbox");
 
     if (toolbox) {
-      const paginated = this.navigator.view?.isPaginated();
-      if (paginated) {
-        toolbox.style.top =
-          rect.top + (this.navigator.attributes?.navHeight ?? 0) + "px";
+      if (this.properties?.menuPosition === MenuPosition.TOP) {
+        toolbox.style.left = "0px";
+        toolbox.style.transform = "revert";
+        toolbox.style.width = "100%";
+        toolbox.style.textAlign = "center";
+      } else if (this.properties?.menuPosition === MenuPosition.BOTTOM) {
+        toolbox.style.bottom = "0px";
+        toolbox.style.left = "0px";
+        toolbox.style.transform = "revert";
+        toolbox.style.width = "100%";
+        toolbox.style.textAlign = "center";
+        toolbox.style.position = "absolute";
       } else {
-        toolbox.style.top = rect.top + "px";
+        const paginated = this.navigator.view?.isPaginated();
+        if (paginated) {
+          toolbox.style.top =
+            rect.top + (this.navigator.attributes?.navHeight ?? 0) + "px";
+        } else {
+          toolbox.style.top = rect.top + "px";
+        }
+        toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
       }
-      toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
     }
   }
 

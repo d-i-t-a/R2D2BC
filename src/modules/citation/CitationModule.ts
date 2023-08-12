@@ -210,24 +210,21 @@ export default class CitationModule implements ReaderModule {
           let mlaString = "";
           let apaString = "";
           if (self.properties.publisher) {
-            mlaString = mlaString + self.properties.publisher + ", ";
-            chicagoString = chicagoString + self.properties.publisher + ", ";
+            mlaString = mlaString + self.properties.publisher;
+            chicagoString = chicagoString + self.properties.publisher;
           } else if (
             self.publication.Metadata.Publisher &&
             self.publication.Metadata.Publisher[0].Name
           ) {
-            mlaString =
-              mlaString + self.publication.Metadata.Publisher[0].Name + ", ";
+            mlaString = mlaString + self.publication.Metadata.Publisher[0].Name;
             chicagoString =
-              chicagoString +
-              self.publication.Metadata.Publisher[0].Name +
-              ", ";
+              chicagoString + self.publication.Metadata.Publisher[0].Name;
           }
 
           if (self.properties.published) {
             apaString = apaString + "(" + self.properties.published + ")";
-            mlaString = mlaString + self.properties.published;
-            chicagoString = chicagoString + self.properties.published;
+            mlaString = mlaString + ", " + self.properties.published;
+            chicagoString = chicagoString + ", " + self.properties.published;
           } else if (self.publication.Metadata.PublicationDate) {
             if (self.publication.Metadata.PublicationDate.getFullYear() > 0) {
               apaString =
@@ -237,9 +234,11 @@ export default class CitationModule implements ReaderModule {
                 ")";
               mlaString =
                 mlaString +
+                ", " +
                 self.publication.Metadata.PublicationDate.getFullYear();
               chicagoString =
                 chicagoString +
+                ", " +
                 self.publication.Metadata.PublicationDate.getFullYear();
             }
           }
@@ -256,15 +255,15 @@ export default class CitationModule implements ReaderModule {
         let bookTitleFormatted = function () {
           if (self.properties.title) {
             return [
-              self.properties.title + ". ",
-              self.properties.title + ". ",
-              self.properties.title + ". ",
+              "<em>" + self.properties.title + "</em>. ",
+              "<em>" + self.properties.title + "</em>. ",
+              "<em>" + self.properties.title + "</em>. ",
             ];
           } else if (self.publication.Metadata.Title) {
             return [
-              self.publication.Metadata.Title + ". ",
-              self.publication.Metadata.Title + ". ",
-              self.publication.Metadata.Title + ". ",
+              "<em>" + self.publication.Metadata.Title + "</em>. ",
+              "<em>" + self.publication.Metadata.Title + "</em>. ",
+              "<em>" + self.publication.Metadata.Title + "</em>. ",
             ];
           } else {
             return ["", "", ""];
@@ -312,7 +311,7 @@ export default class CitationModule implements ReaderModule {
           if (self.properties.publisher) {
             mlaString = mlaString + self.properties.publisher + ", ";
             chicagoString = chicagoString + self.properties.publisher + ", ";
-            apaString = apaString + self.properties.publisher + ", ";
+            apaString = apaString + self.properties.publisher;
           } else if (
             self.publication.Metadata.Publisher &&
             self.publication.Metadata.Publisher[0].Name
@@ -323,8 +322,7 @@ export default class CitationModule implements ReaderModule {
               chicagoString +
               self.publication.Metadata.Publisher[0].Name +
               ", ";
-            apaString =
-              apaString + self.publication.Metadata.Publisher[0].Name + ", ";
+            apaString = apaString + self.publication.Metadata.Publisher[0].Name;
           }
 
           if (
@@ -438,44 +436,47 @@ export default class CitationModule implements ReaderModule {
           selectedText(selection, self.properties.characters) +
           "“" +
           "<br><br>" +
-          "<em>" +
-          chicago +
-          "</em>";
+          chicago;
 
         const citationApa =
           "“" +
           selectedText(selection, self.properties.characters) +
           "“" +
           "<br><br>" +
-          "<em>" +
-          apa +
-          "</em>";
+          apa;
 
         const citationMla =
           "“" +
           selectedText(selection, self.properties.characters) +
           "“" +
           "<br><br>" +
-          "<em>" +
-          mla +
-          "</em>";
+          mla;
 
         let citation = "";
 
         if (
           self.properties.styles?.includes(CitationStyle[CitationStyle.Chicago])
         ) {
-          citation = citation + "Chicago: <br>" + citationChicago + "<br><br>";
+          if (self.properties.styles.length > 1) {
+            citation = citation + "Chicago: <br>";
+          }
+          citation = citation + citationChicago + "<br><br>";
         }
         if (
           self.properties.styles?.includes(CitationStyle[CitationStyle.APA])
         ) {
-          citation = citation + "APA: <br>" + citationApa + "<br><br>";
+          if (self.properties.styles.length > 1) {
+            citation = citation + "APA: <br>";
+          }
+          citation = citation + citationApa + "<br><br>";
         }
         if (
           self.properties.styles?.includes(CitationStyle[CitationStyle.MLA])
         ) {
-          citation = citation + "MLA: <br>" + citationMla + "<br><br>";
+          if (self.properties.styles.length > 1) {
+            citation = citation + "MLA: <br>";
+          }
+          citation = citation + citationMla + "<br><br>";
         }
 
         self.copyToClipboard(citation);

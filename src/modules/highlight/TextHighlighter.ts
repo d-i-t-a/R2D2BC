@@ -2791,8 +2791,11 @@ export class TextHighlighter {
     let drawStrikeThrough = false;
     let drawBackground = false;
 
-    const doNotMergeHorizontallyAlignedRects =
+    let doNotMergeHorizontallyAlignedRects =
       drawUnderline || drawStrikeThrough || drawBackground;
+    log.debug(doNotMergeHorizontallyAlignedRects);
+    // TODO: override doNotMergeHorizontallyAlignedRects to always be true, will need to come back to this if any changes need to be done, or the above removed
+    doNotMergeHorizontallyAlignedRects = true;
 
     const clientRects = getClientRectsNoOverlap(
       range,

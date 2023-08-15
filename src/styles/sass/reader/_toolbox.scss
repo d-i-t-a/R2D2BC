@@ -27,9 +27,10 @@
   background: gainsboro;
   display: none;
   width: fit-content;
+   --content: '';
   &:before {
       $size: 0.4rem;
-      content: '';
+      content: var(--content);
       position: absolute;
       width: $size;
       height: $size;

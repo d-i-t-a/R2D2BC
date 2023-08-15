@@ -1122,6 +1122,8 @@ export class TextHighlighter {
         toolbox.style.transform = "revert";
         toolbox.style.width = "100%";
         toolbox.style.textAlign = "center";
+        toolbox.style.position = "absolute";
+        toolbox.style.setProperty("--content", "revert");
       } else if (this.properties?.menuPosition === MenuPosition.BOTTOM) {
         toolbox.style.bottom = "0px";
         toolbox.style.left = "0px";
@@ -1129,6 +1131,7 @@ export class TextHighlighter {
         toolbox.style.width = "100%";
         toolbox.style.textAlign = "center";
         toolbox.style.position = "absolute";
+        toolbox.style.setProperty("--content", "revert");
       } else {
         const paginated = this.navigator.view?.isPaginated();
         if (paginated) {

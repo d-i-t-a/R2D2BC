@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "2.3.12",
+  "version": "2.3.13",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",

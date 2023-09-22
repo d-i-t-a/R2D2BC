@@ -114,7 +114,7 @@ async function copyJsInjectables() {
  *  Optionally watch for changes!
  */
 async function buildAll() {
-  await rimraf("dist/");
+  await rimraf("dist/", {});
   await fs.mkdir("dist");
   console.log("🧹 Cleaned output folder -", chalk.blue("dist/"));
 

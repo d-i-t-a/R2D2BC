@@ -92,7 +92,7 @@
     "ecstatic": "^4.1.4",
     "esbuild": "^0.12.11",
     "eslint": "^7.23.0",
-    "eslint-config-prettier": "^8.1.0",
+    "eslint-config-prettier": "^9.0.0",
     "eslint-config-react-app": "^6.0.0",
     "eslint-plugin-flowtype": "^5.6.0",
     "eslint-plugin-import": "^2.22.1",

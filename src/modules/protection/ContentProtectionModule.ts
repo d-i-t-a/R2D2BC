@@ -49,6 +49,7 @@ export interface ContentProtectionModuleProperties {
   hideTargetUrl: boolean;
   disableDrag: boolean;
   supportedBrowsers: string[];
+  excludeNodes: string[];
 }
 
 export interface ContentProtectionModuleConfig
@@ -1373,8 +1374,11 @@ export class ContentProtectionModule implements ReaderModule {
     return textNodes.map((node) => {
       const { top, height, left, width } = this.measureTextNode(node);
       const scrambled =
-        node.parentElement?.nodeName === "option" ||
-        node.parentElement?.nodeName === "script"
+        node.parentElement &&
+        this.properties?.excludeNodes &&
+        this.properties?.excludeNodes.indexOf(
+          node.parentElement.nodeName.toLowerCase()
+        ) > -1
           ? node.textContent
           : this.obfuscateText(node.textContent ?? "");
       let rect: ContentProtectionRect = {

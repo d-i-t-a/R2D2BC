@@ -69,7 +69,7 @@
     "@types/mark.js": "^8.11.5",
     "@types/mocha": "^10.0.1",
     "@types/pako": "^2.0.0",
-    "@types/parse5": "^6.0.0",
+    "@types/parse5": "^7.0.0",
     "@types/promise-polyfill": "^6.0.3",
     "@types/react": "^17.0.11",
     "@types/react-dom": "^17.0.7",

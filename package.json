@@ -122,7 +122,7 @@
     "sinon": "^16.0.0",
     "ta-json-x": "^2.5.3",
     "tar": ">=6.1.9",
-    "ts-loader": "^8.0.18",
+    "ts-loader": "^9.4.4",
     "ts-node": "^10.4.0",
     "typedoc": "^0.22.15",
     "typedoc-plugin-rename-defaults": "^0.6.6",

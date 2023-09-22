@@ -80,9 +80,9 @@ export class Publication extends R2Publication {
         if (positions?.length > 0) {
           const locator = positions[0];
           let progress = Math.round(
-            locator.locations.totalProgression
+            (locator.locations.totalProgression
               ? locator.locations.totalProgression
-              : 0 * 100
+              : 0) * 100
           );
           if (this.sample?.limit) {
             let valid = progress <= this.sample?.limit;

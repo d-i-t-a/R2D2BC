@@ -557,10 +557,11 @@ export class AnnotationModule implements ReaderModule {
                   if (
                     annotation.highlight?.marker === AnnotationMarker.Underline
                   ) {
-                    const position = await this.annotator?.getAnnotationPosition(
-                      rangeRepresentation.id,
-                      this.navigator.iframes[0].contentWindow as any
-                    );
+                    const position =
+                      await this.annotator?.getAnnotationPosition(
+                        rangeRepresentation.id,
+                        this.navigator.iframes[0].contentWindow as any
+                      );
 
                     const commentTemplate =
                       `<div class="comment" style="top: ` +
@@ -642,10 +643,11 @@ export class AnnotationModule implements ReaderModule {
                   if (
                     annotation.highlight?.marker === AnnotationMarker.Underline
                   ) {
-                    const position = await this.annotator?.getAnnotationPosition(
-                      rangeRepresentation.id,
-                      this.navigator.iframes[0].contentWindow as any
-                    );
+                    const position =
+                      await this.annotator?.getAnnotationPosition(
+                        rangeRepresentation.id,
+                        this.navigator.iframes[0].contentWindow as any
+                      );
 
                     const commentTemplate =
                       `<div class="comment" style="top: ` +
@@ -730,9 +732,8 @@ export class AnnotationModule implements ReaderModule {
                 );
               }
 
-              let nodeList = highlightArea.getElementsByClassName(
-                CLASS_HIGHLIGHT_AREA
-              );
+              let nodeList =
+                highlightArea.getElementsByClassName(CLASS_HIGHLIGHT_AREA);
               highlightIcon = nodeList[0];
 
               const size = parseInt(
@@ -858,9 +859,8 @@ export class AnnotationModule implements ReaderModule {
               if (link.Href && locator.href.endsWith(href)) {
                 let bookmarkItem: HTMLLIElement = document.createElement("li");
                 bookmarkItem.className = "annotation-item";
-                let bookmarkLink: HTMLAnchorElement = document.createElement(
-                  "a"
-                );
+                let bookmarkLink: HTMLAnchorElement =
+                  document.createElement("a");
                 bookmarkLink.setAttribute("href", locator.href);
 
                 if (type === AnnotationType.Annotation) {
@@ -900,9 +900,8 @@ export class AnnotationModule implements ReaderModule {
                     ) {
                       let color = (locator as Annotation).highlight?.color;
                       if (color) {
-                        marker.style.backgroundColor = TextHighlighter.hexToRgbA(
-                          color
-                        );
+                        marker.style.backgroundColor =
+                          TextHighlighter.hexToRgbA(color);
                       }
                     } else {
                       let color = (locator as Annotation).highlight?.color;
@@ -914,9 +913,8 @@ export class AnnotationModule implements ReaderModule {
                   title.appendChild(marker);
                   bookmarkLink.appendChild(title);
 
-                  let subtitle: HTMLSpanElement = document.createElement(
-                    "span"
-                  );
+                  let subtitle: HTMLSpanElement =
+                    document.createElement("span");
                   let formattedProgression =
                     Math.round((locator.locations.progression ?? 0) * 100) +
                     "% " +
@@ -945,9 +943,8 @@ export class AnnotationModule implements ReaderModule {
 
                 bookmarkItem.appendChild(bookmarkLink);
                 if (self.navigator.sideNavExpanded) {
-                  let bookmarkDeleteLink: HTMLElement = document.createElement(
-                    "button"
-                  );
+                  let bookmarkDeleteLink: HTMLElement =
+                    document.createElement("button");
                   bookmarkDeleteLink.className = "delete";
                   bookmarkDeleteLink.innerHTML = IconLib.delete;
 

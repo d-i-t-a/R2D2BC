@@ -175,7 +175,7 @@ export class TextHighlighter {
   ) {
     this.layerSettings = layerSettings;
     this.properties = properties;
-    if (this.properties.menuPosition == undefined) {
+    if (this.properties.menuPosition === undefined) {
       this.properties.menuPosition = MenuPosition.INLINE;
     }
     this.api = api;
@@ -362,9 +362,8 @@ export class TextHighlighter {
   }): Array<any> {
     let order: any[] = [],
       chunks: any = {},
-      grouped:
-        | any
-        | { chunks: any; timestamp: any; toString: () => any }[] = [];
+      grouped: any | { chunks: any; timestamp: any; toString: () => any }[] =
+        [];
 
     highlights.forEach(function (hl) {
       let timestamp = hl.getAttribute(TIMESTAMP_ATTR);
@@ -842,21 +841,25 @@ export class TextHighlighter {
             if (
               (highlightIcon?.getElementsByTagName?.("span").length ?? 0) > 0
             ) {
-              (highlightIcon?.getElementsByTagName(
-                "span"
-              )[0] as HTMLSpanElement).style.background = self.getColor();
+              (
+                highlightIcon?.getElementsByTagName(
+                  "span"
+                )[0] as HTMLSpanElement
+              ).style.background = self.getColor();
             }
             if (
               (underlineIcon?.getElementsByTagName?.("span").length ?? 0) > 0
             ) {
-              (underlineIcon?.getElementsByTagName(
-                "span"
-              )[0] as HTMLSpanElement).style.borderBottomColor = self.getColor();
+              (
+                underlineIcon?.getElementsByTagName(
+                  "span"
+                )[0] as HTMLSpanElement
+              ).style.borderBottomColor = self.getColor();
             }
             if ((noteIcon?.getElementsByTagName?.("span").length ?? 0) > 0) {
-              (noteIcon?.getElementsByTagName(
-                "span"
-              )[0] as HTMLSpanElement).style.borderBottomColor = self.getColor();
+              (
+                noteIcon?.getElementsByTagName("span")[0] as HTMLSpanElement
+              ).style.borderBottomColor = self.getColor();
             }
 
             self.toolboxMode("add");
@@ -1172,9 +1175,11 @@ export class TextHighlighter {
             highlightIcon.style.display = "unset";
             if (colorIcon) {
               if (highlightIcon.getElementsByTagName("span").length > 0) {
-                (highlightIcon.getElementsByTagName(
-                  "span"
-                )[0] as HTMLSpanElement).style.background = this.getColor();
+                (
+                  highlightIcon.getElementsByTagName(
+                    "span"
+                  )[0] as HTMLSpanElement
+                ).style.background = this.getColor();
               }
             }
           }
@@ -1182,9 +1187,11 @@ export class TextHighlighter {
             underlineIcon.style.display = "unset";
             if (colorIcon) {
               if (underlineIcon.getElementsByTagName("span").length > 0) {
-                (underlineIcon.getElementsByTagName(
-                  "span"
-                )[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+                (
+                  underlineIcon.getElementsByTagName(
+                    "span"
+                  )[0] as HTMLSpanElement
+                ).style.borderBottomColor = this.getColor();
               }
             }
           }
@@ -1192,9 +1199,9 @@ export class TextHighlighter {
             noteIcon.style.display = "unset";
             if (colorIcon) {
               if (noteIcon.getElementsByTagName("span").length > 0) {
-                (noteIcon.getElementsByTagName(
-                  "span"
-                )[0] as HTMLSpanElement).style.borderBottomColor = this.getColor();
+                (
+                  noteIcon.getElementsByTagName("span")[0] as HTMLSpanElement
+                ).style.borderBottomColor = this.getColor();
               }
             }
           }
@@ -1307,9 +1314,10 @@ export class TextHighlighter {
                 );
                 if (selectionInfo === undefined) {
                   let doc = self.navigator.iframes[0].contentDocument;
-                  selectionInfo = self.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
-                    doc
-                  );
+                  selectionInfo =
+                    self.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+                      doc
+                    );
                 }
 
                 if (selectionInfo !== undefined) {
@@ -1419,9 +1427,10 @@ export class TextHighlighter {
 
       if (selectionInfo === undefined) {
         let doc = self.navigator.iframes[0].contentDocument;
-        selectionInfo = this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
-          doc
-        );
+        selectionInfo =
+          this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+            doc
+          );
       }
 
       if (selectionInfo) {
@@ -1496,9 +1505,10 @@ export class TextHighlighter {
         let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
         if (selectionInfo === undefined) {
           let doc = self.navigator.iframes[0].contentDocument;
-          selectionInfo = self.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
-            doc
-          );
+          selectionInfo =
+            self.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+              doc
+            );
         }
 
         if (selectionInfo !== undefined) {
@@ -2001,9 +2011,8 @@ export class TextHighlighter {
           }
         }
         if (highlightParent) {
-          let nodeList = highlightParent.getElementsByClassName(
-            CLASS_HIGHLIGHT_ICON
-          );
+          let nodeList =
+            highlightParent.getElementsByClassName(CLASS_HIGHLIGHT_ICON);
           if (nodeList.length > 0) {
             const tooltip = nodeList
               .item(0)
@@ -2122,9 +2131,8 @@ export class TextHighlighter {
         let highlightParent = doc
           .getElementById(HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER)
           .querySelector(`#${highlight.id}`);
-        let nodeList = highlightParent.getElementsByClassName(
-          CLASS_HIGHLIGHT_ICON
-        );
+        let nodeList =
+          highlightParent.getElementsByClassName(CLASS_HIGHLIGHT_ICON);
         if (nodeList.length > 0) {
           const tooltip = nodeList
             .item(0)
@@ -2183,9 +2191,8 @@ export class TextHighlighter {
             let highlightParent = doc
               .getElementById(HighlightContainer.R2_ID_SEARCH_CONTAINER)
               .querySelector(`#${highlight.id}`);
-            let nodeList = highlightParent.getElementsByClassName(
-              CLASS_HIGHLIGHT_ICON
-            );
+            let nodeList =
+              highlightParent.getElementsByClassName(CLASS_HIGHLIGHT_ICON);
             if (nodeList.length > 0) {
               const tooltip = nodeList
                 .item(0)
@@ -2223,9 +2230,8 @@ export class TextHighlighter {
           let highlightParent = doc
             .getElementById(HighlightContainer.R2_ID_SEARCH_CONTAINER)
             .querySelector(`#${highlight.id}`);
-          let nodeList = highlightParent.getElementsByClassName(
-            CLASS_HIGHLIGHT_ICON
-          );
+          let nodeList =
+            highlightParent.getElementsByClassName(CLASS_HIGHLIGHT_ICON);
           if (nodeList.length > 0) {
             const tooltip = nodeList
               .item(0)
@@ -2315,7 +2321,7 @@ export class TextHighlighter {
         `.${CLASS_HIGHLIGHT_AREA}`
       );
       for (const highlightFragment of highlightFragments) {
-        const withRect = (highlightFragment as unknown) as IWithRect;
+        const withRect = highlightFragment as unknown as IWithRect;
         const left = withRect.rect.left + xOffset; // (paginated ? withRect.xOffset : xOffset);
         const top = withRect.rect.top + yOffset; // (paginated ? withRect.yOffset : yOffset);
         if (
@@ -2483,9 +2489,8 @@ export class TextHighlighter {
                   });
               }
               let commentIcon = document.getElementById("commentIcon");
-              let cloneCommentIcon = document.getElementById(
-                "cloneCommentIcon"
-              );
+              let cloneCommentIcon =
+                document.getElementById("cloneCommentIcon");
               if (cloneCommentIcon) {
                 let parent = cloneCommentIcon.parentElement;
                 if (parent) {
@@ -2559,9 +2564,10 @@ export class TextHighlighter {
             const popup = new Popup(this.navigator);
             popup.showPopup(foundElement.dataset.definition, ev);
           }
-          let result = this.navigator.definitionsModule?.properties?.definitions?.filter(
-            (el: any) => el.order === Number(foundElement?.dataset.order)
-          )[0];
+          let result =
+            this.navigator.definitionsModule?.properties?.definitions?.filter(
+              (el: any) => el.order === Number(foundElement?.dataset.order)
+            )[0];
           log.log(result);
           if (this.navigator.definitionsModule?.api?.click) {
             this.navigator.definitionsModule.api?.click(
@@ -2761,9 +2767,11 @@ export class TextHighlighter {
 
       let highlightDom = this.createHighlightDom(win, highlight);
       highlight.position = parseInt(
-        ((highlightDom?.hasChildNodes()
-          ? highlightDom.childNodes[0]
-          : highlightDom) as HTMLDivElement).style.top.replace("px", "")
+        (
+          (highlightDom?.hasChildNodes()
+            ? highlightDom.childNodes[0]
+            : highlightDom) as HTMLDivElement
+        ).style.top.replace("px", "")
       );
 
       return [highlight, highlightDom];

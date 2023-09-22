@@ -192,10 +192,11 @@ export default class LocalAnnotator implements Annotator {
       rangeRepresentation.highlight.color = rangeColor;
       rangeRepresentation.highlight.pointerInteraction = true;
 
-      rangeRepresentation.highlight.selectionInfo.cleanText = rangeRepresentation.highlight.selectionInfo.rawText
-        .trim()
-        .replace(/\n/g, " ")
-        .replace(/\s\s+/g, " ");
+      rangeRepresentation.highlight.selectionInfo.cleanText =
+        rangeRepresentation.highlight.selectionInfo.rawText
+          .trim()
+          .replace(/\n/g, " ")
+          .replace(/\s\s+/g, " ");
 
       annotationsToStore.push(rangeRepresentation);
     });

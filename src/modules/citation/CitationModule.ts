@@ -183,7 +183,10 @@ export default class CitationModule implements ReaderModule {
             let authorIndex = 0;
 
             if (authorIndex === 0) {
-              if (self.publication.Metadata.Author[0].Name) {
+              if (
+                self.publication.Metadata.Author[0].Name &&
+                self.publication.Metadata.Author[0].Name instanceof String
+              ) {
                 if (self.publication.Metadata.Author[0].Name.length > 0) {
                   apaString =
                     apaString + self.publication.Metadata.Author[0].Name;

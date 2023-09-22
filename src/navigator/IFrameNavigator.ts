@@ -969,20 +969,16 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.previousChapterTopAnchorElement)
         this.previousChapterTopAnchorElement.style.display = "none";
       if (this.keyboardEventHandler) {
-        this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousChapterClick.bind(
-          this
-        );
-        this.keyboardEventHandler.onForwardSwipe = this.handleNextChapterClick.bind(
-          this
-        );
+        this.keyboardEventHandler.onBackwardSwipe =
+          this.handlePreviousChapterClick.bind(this);
+        this.keyboardEventHandler.onForwardSwipe =
+          this.handleNextChapterClick.bind(this);
       }
       if (this.touchEventHandler) {
-        this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(
-          this
-        );
-        this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(
-          this
-        );
+        this.touchEventHandler.onBackwardSwipe =
+          this.handlePreviousPageClick.bind(this);
+        this.touchEventHandler.onForwardSwipe =
+          this.handleNextPageClick.bind(this);
       }
     } else {
       this.settings.isPaginated().then((paginated) => {
@@ -1005,28 +1001,22 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           if (this.remainingPositions)
             this.remainingPositions.style.display = "inline";
           if (this.eventHandler) {
-            this.eventHandler.onInternalLink = this.handleInternalLink.bind(
-              this
-            );
-            this.eventHandler.onClickThrough = this.handleClickThrough.bind(
-              this
-            );
+            this.eventHandler.onInternalLink =
+              this.handleInternalLink.bind(this);
+            this.eventHandler.onClickThrough =
+              this.handleClickThrough.bind(this);
           }
           if (this.touchEventHandler) {
-            this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(
-              this
-            );
-            this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(
-              this
-            );
+            this.touchEventHandler.onBackwardSwipe =
+              this.handlePreviousPageClick.bind(this);
+            this.touchEventHandler.onForwardSwipe =
+              this.handleNextPageClick.bind(this);
           }
           if (this.keyboardEventHandler) {
-            this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(
-              this
-            );
-            this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(
-              this
-            );
+            this.keyboardEventHandler.onBackwardSwipe =
+              this.handlePreviousPageClick.bind(this);
+            this.keyboardEventHandler.onForwardSwipe =
+              this.handleNextPageClick.bind(this);
           }
         } else {
           if (this.infoBottom) this.infoBottom.style.display = "none";
@@ -1131,28 +1121,22 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           if (this.remainingPositions)
             this.remainingPositions.style.display = "none";
           if (this.eventHandler) {
-            this.eventHandler.onInternalLink = this.handleInternalLink.bind(
-              this
-            );
-            this.eventHandler.onClickThrough = this.handleClickThrough.bind(
-              this
-            );
+            this.eventHandler.onInternalLink =
+              this.handleInternalLink.bind(this);
+            this.eventHandler.onClickThrough =
+              this.handleClickThrough.bind(this);
           }
           if (this.touchEventHandler) {
-            this.touchEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(
-              this
-            );
-            this.touchEventHandler.onForwardSwipe = this.handleNextPageClick.bind(
-              this
-            );
+            this.touchEventHandler.onBackwardSwipe =
+              this.handlePreviousPageClick.bind(this);
+            this.touchEventHandler.onForwardSwipe =
+              this.handleNextPageClick.bind(this);
           }
           if (this.keyboardEventHandler) {
-            this.keyboardEventHandler.onBackwardSwipe = this.handlePreviousPageClick.bind(
-              this
-            );
-            this.keyboardEventHandler.onForwardSwipe = this.handleNextPageClick.bind(
-              this
-            );
+            this.keyboardEventHandler.onBackwardSwipe =
+              this.handlePreviousPageClick.bind(this);
+            this.keyboardEventHandler.onForwardSwipe =
+              this.handleNextPageClick.bind(this);
           }
         }
       });
@@ -1306,9 +1290,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
       let lastReadingPosition: ReadingPosition | undefined = undefined;
       if (this.annotator) {
-        lastReadingPosition = (await this.annotator.getLastReadingPosition()) as
-          | ReadingPosition
-          | undefined;
+        lastReadingPosition =
+          (await this.annotator.getLastReadingPosition()) as
+            | ReadingPosition
+            | undefined;
       }
 
       const startLink = this.publication.getStartLink();
@@ -1371,13 +1356,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       }
       if (this.previousChapterAnchorElement) {
         if (this.previousChapterLink && this.previousChapterLink.href) {
-          this.previousChapterAnchorElement.href = this.publication.getAbsoluteHref(
-            this.previousChapterLink.href
-          );
-          this.previousChapterAnchorElement.className = this.previousChapterAnchorElement.className.replace(
-            " disabled",
-            ""
-          );
+          this.previousChapterAnchorElement.href =
+            this.publication.getAbsoluteHref(this.previousChapterLink.href);
+          this.previousChapterAnchorElement.className =
+            this.previousChapterAnchorElement.className.replace(
+              " disabled",
+              ""
+            );
         } else {
           this.previousChapterAnchorElement.removeAttribute("href");
           this.previousChapterAnchorElement.className += " disabled";
@@ -1398,10 +1383,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.nextChapterAnchorElement.href = this.publication.getAbsoluteHref(
             this.nextChapterLink.href
           );
-          this.nextChapterAnchorElement.className = this.nextChapterAnchorElement.className.replace(
-            " disabled",
-            ""
-          );
+          this.nextChapterAnchorElement.className =
+            this.nextChapterAnchorElement.className.replace(" disabled", "");
         } else {
           this.nextChapterAnchorElement.removeAttribute("href");
           this.nextChapterAnchorElement.className += " disabled";
@@ -1531,8 +1514,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
       setTimeout(async () => {
         if (this.newElementId) {
-          const element = (this.iframes[0]
-            .contentDocument as any).getElementById(this.newElementId);
+          const element = (
+            this.iframes[0].contentDocument as any
+          ).getElementById(this.newElementId);
           this.view?.goToElement?.(element);
           this.newElementId = undefined;
         } else if (
@@ -2909,13 +2893,13 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
         if (this.previousChapterAnchorElement) {
           if (this.previousChapterLink) {
-            this.previousChapterAnchorElement.href = this.publication.getAbsoluteHref(
-              this.previousChapterLink.href
-            );
-            this.previousChapterAnchorElement.className = this.previousChapterAnchorElement.className.replace(
-              " disabled",
-              ""
-            );
+            this.previousChapterAnchorElement.href =
+              this.publication.getAbsoluteHref(this.previousChapterLink.href);
+            this.previousChapterAnchorElement.className =
+              this.previousChapterAnchorElement.className.replace(
+                " disabled",
+                ""
+              );
           } else {
             this.previousChapterAnchorElement.removeAttribute("href");
             this.previousChapterAnchorElement.className += " disabled";
@@ -2934,13 +2918,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
         if (this.nextChapterAnchorElement) {
           if (this.nextChapterLink) {
-            this.nextChapterAnchorElement.href = this.publication.getAbsoluteHref(
-              this.nextChapterLink.href
-            );
-            this.nextChapterAnchorElement.className = this.nextChapterAnchorElement.className.replace(
-              " disabled",
-              ""
-            );
+            this.nextChapterAnchorElement.href =
+              this.publication.getAbsoluteHref(this.nextChapterLink.href);
+            this.nextChapterAnchorElement.className =
+              this.nextChapterAnchorElement.className.replace(" disabled", "");
           } else {
             this.nextChapterAnchorElement.removeAttribute("href");
             this.nextChapterAnchorElement.className += " disabled";
@@ -2955,7 +2936,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
         if (this.publication.Metadata.Title) {
           if (this.bookTitle)
-            this.bookTitle.innerHTML = this.publication.Metadata.Title.toString();
+            this.bookTitle.innerHTML =
+              this.publication.Metadata.Title.toString();
         }
 
         const spineItem = this.publication.getSpineItem(currentLocation);

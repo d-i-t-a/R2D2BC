@@ -74,9 +74,8 @@ export class Popup {
   }
 
   async hidePopover() {
-    let footnote = this.navigator.iframes[0].contentDocument?.getElementById(
-      "d2-popover"
-    );
+    let footnote =
+      this.navigator.iframes[0].contentDocument?.getElementById("d2-popover");
     if (footnote) {
       footnote.parentElement?.removeChild(footnote);
     }
@@ -100,9 +99,10 @@ export class Popup {
         event.preventDefault();
         event.stopPropagation();
 
-        let popover = this.navigator.iframes[0].contentDocument?.getElementById(
-          "d2-popover"
-        );
+        let popover =
+          this.navigator.iframes[0].contentDocument?.getElementById(
+            "d2-popover"
+          );
         if (popover) {
           popover.parentElement?.removeChild(popover);
         }
@@ -168,9 +168,10 @@ export class Popup {
         event.preventDefault();
         event.stopPropagation();
 
-        let popover = this.navigator.iframes[0].contentDocument?.getElementById(
-          "d2-popover"
-        );
+        let popover =
+          this.navigator.iframes[0].contentDocument?.getElementById(
+            "d2-popover"
+          );
         if (popover) {
           popover.parentElement?.removeChild(popover);
         }
@@ -221,9 +222,8 @@ export class Popup {
   }
 
   showPopup(element: any, event: MouseEvent | TouchEvent) {
-    let footnote = this.navigator.iframes[0].contentDocument?.getElementById(
-      "d2-popup"
-    );
+    let footnote =
+      this.navigator.iframes[0].contentDocument?.getElementById("d2-popup");
     if (footnote) {
       footnote.parentElement?.removeChild(footnote);
     }

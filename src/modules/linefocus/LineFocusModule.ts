@@ -441,8 +441,8 @@ export default class LineFocusModule implements ReaderModule {
 
           let size = 24;
           let left, right;
-          let viewportWidth = this.navigator.iframes[0].contentWindow
-            ?.innerWidth;
+          let viewportWidth =
+            this.navigator.iframes[0].contentWindow?.innerWidth;
           let columnCount = parseInt(
             getComputedStyle(doc.documentElement).getPropertyValue(
               "column-count"

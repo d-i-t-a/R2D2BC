@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2018-2020 DITA (AM Consulting LLC)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

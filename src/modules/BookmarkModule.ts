@@ -146,7 +146,6 @@ export class BookmarkModule implements ReaderModule {
         this.annotator?.initBookmarks(bookmarks);
       }
     }
-
   }
 
   async handleResize() {
@@ -390,9 +389,10 @@ export class BookmarkModule implements ReaderModule {
       let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
       if (selectionInfo === undefined) {
         let doc = self.navigator.iframes[0].contentDocument;
-        selectionInfo = this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
-          doc
-        );
+        selectionInfo =
+          this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+            doc
+          );
       }
       let doc = self.navigator.iframes[0].contentDocument;
       if (selectionInfo && doc) {
@@ -747,9 +747,8 @@ export class BookmarkModule implements ReaderModule {
               if (link.Href && locator.href.endsWith(href)) {
                 let bookmarkItem: HTMLLIElement = document.createElement("li");
                 bookmarkItem.className = "annotation-item";
-                let bookmarkLink: HTMLAnchorElement = document.createElement(
-                  "a"
-                );
+                let bookmarkLink: HTMLAnchorElement =
+                  document.createElement("a");
                 bookmarkLink.setAttribute("href", locator.href);
 
                 if (type === AnnotationType.Bookmark) {
@@ -784,9 +783,8 @@ export class BookmarkModule implements ReaderModule {
 
                 bookmarkItem.appendChild(bookmarkLink);
                 if (self.navigator.sideNavExpanded) {
-                  let bookmarkDeleteLink: HTMLElement = document.createElement(
-                    "button"
-                  );
+                  let bookmarkDeleteLink: HTMLElement =
+                    document.createElement("button");
                   bookmarkDeleteLink.className = "delete";
                   bookmarkDeleteLink.innerHTML = IconLib.delete;
 

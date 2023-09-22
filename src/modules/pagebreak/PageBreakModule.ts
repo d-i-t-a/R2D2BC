@@ -267,9 +267,11 @@ export class PageBreakModule implements ReaderModule {
         highlight
       );
       highlight.position = parseInt(
-        ((highlightDom?.hasChildNodes()
-          ? highlightDom.childNodes[0]
-          : highlightDom) as HTMLDivElement).style.top.replace("px", "")
+        (
+          (highlightDom?.hasChildNodes()
+            ? highlightDom.childNodes[0]
+            : highlightDom) as HTMLDivElement
+        ).style.top.replace("px", "")
       );
       return highlight;
     } catch (e) {

@@ -297,9 +297,8 @@ export class SearchModule implements ReaderModule {
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
-      tocItem = this.publication.readingOrder[
-        this.navigator.currentResource() ?? 0
-      ];
+      tocItem =
+        this.publication.readingOrder[this.navigator.currentResource() ?? 0];
     }
     let localSearchResultChapter: any = [];
 
@@ -376,9 +375,11 @@ export class SearchModule implements ReaderModule {
         highlight
       );
       highlight.position = parseInt(
-        ((highlightDom?.hasChildNodes()
-          ? highlightDom.childNodes[0]
-          : highlightDom) as HTMLDivElement).style.top.replace("px", "")
+        (
+          (highlightDom?.hasChildNodes()
+            ? highlightDom.childNodes[0]
+            : highlightDom) as HTMLDivElement
+        ).style.top.replace("px", "")
       );
       return highlight;
     } catch (e) {
@@ -787,9 +788,8 @@ export class SearchModule implements ReaderModule {
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
-      tocItem = this.publication.readingOrder[
-        this.navigator.currentResource() ?? 0
-      ];
+      tocItem =
+        this.publication.readingOrder[this.navigator.currentResource() ?? 0];
     }
 
     if (tocItem) {

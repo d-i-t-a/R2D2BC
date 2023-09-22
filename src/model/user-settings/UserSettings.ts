@@ -1156,20 +1156,21 @@ export class UserSettings implements IUserSettings {
 
   async increase(incremental: UserSettingsIncrementable): Promise<void> {
     if (incremental === "fontSize") {
-      (this.userProperties?.getByRef(
-        ReadiumCSS.FONT_SIZE_REF
-      ) as Incremental).increment();
-      this.fontSize = this.userProperties?.getByRef(
-        ReadiumCSS.FONT_SIZE_REF
-      )?.value;
+      (
+        this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental
+      ).increment();
+      this.fontSize = this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF)
+        ?.value;
       let prop = this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF);
       if (prop) {
         await this.storeProperty(prop);
       }
     } else if (incremental === "letterSpacing") {
-      (this.userProperties?.getByRef(
-        ReadiumCSS.LETTER_SPACING_REF
-      ) as Incremental).increment();
+      (
+        this.userProperties?.getByRef(
+          ReadiumCSS.LETTER_SPACING_REF
+        ) as Incremental
+      ).increment();
       this.letterSpacing = this.userProperties?.getByRef(
         ReadiumCSS.LETTER_SPACING_REF
       )?.value;
@@ -1178,9 +1179,11 @@ export class UserSettings implements IUserSettings {
         await this.storeProperty(prop);
       }
     } else if (incremental === "wordSpacing") {
-      (this.userProperties?.getByRef(
-        ReadiumCSS.WORD_SPACING_REF
-      ) as Incremental).increment();
+      (
+        this.userProperties?.getByRef(
+          ReadiumCSS.WORD_SPACING_REF
+        ) as Incremental
+      ).increment();
       this.wordSpacing = this.userProperties?.getByRef(
         ReadiumCSS.WORD_SPACING_REF
       )?.value;
@@ -1189,9 +1192,9 @@ export class UserSettings implements IUserSettings {
         await this.storeProperty(prop);
       }
     } else if (incremental === "lineHeight") {
-      (this.userProperties?.getByRef(
-        ReadiumCSS.LINE_HEIGHT_REF
-      ) as Incremental).increment();
+      (
+        this.userProperties?.getByRef(ReadiumCSS.LINE_HEIGHT_REF) as Incremental
+      ).increment();
       this.lineHeight = this.userProperties?.getByRef(
         ReadiumCSS.LINE_HEIGHT_REF
       )?.value;
@@ -1206,20 +1209,21 @@ export class UserSettings implements IUserSettings {
 
   async decrease(incremental): Promise<void> {
     if (incremental === "fontSize") {
-      (this.userProperties?.getByRef(
-        ReadiumCSS.FONT_SIZE_REF
-      ) as Incremental).decrement();
-      this.fontSize = this.userProperties?.getByRef(
-        ReadiumCSS.FONT_SIZE_REF
-      )?.value;
+      (
+        this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental
+      ).decrement();
+      this.fontSize = this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF)
+        ?.value;
       let prop = this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF);
       if (prop) {
         await this.storeProperty(prop);
       }
     } else if (incremental === "letterSpacing") {
-      (this.userProperties?.getByRef(
-        ReadiumCSS.LETTER_SPACING_REF
-      ) as Incremental).decrement();
+      (
+        this.userProperties?.getByRef(
+          ReadiumCSS.LETTER_SPACING_REF
+        ) as Incremental
+      ).decrement();
       this.letterSpacing = this.userProperties?.getByRef(
         ReadiumCSS.LETTER_SPACING_REF
       )?.value;
@@ -1228,9 +1232,11 @@ export class UserSettings implements IUserSettings {
         await this.storeProperty(prop);
       }
     } else if (incremental === "wordSpacing") {
-      (this.userProperties?.getByRef(
-        ReadiumCSS.WORD_SPACING_REF
-      ) as Incremental).decrement();
+      (
+        this.userProperties?.getByRef(
+          ReadiumCSS.WORD_SPACING_REF
+        ) as Incremental
+      ).decrement();
       this.wordSpacing = this.userProperties?.getByRef(
         ReadiumCSS.WORD_SPACING_REF
       )?.value;
@@ -1239,9 +1245,9 @@ export class UserSettings implements IUserSettings {
         await this.storeProperty(prop);
       }
     } else if (incremental === "lineHeight") {
-      (this.userProperties?.getByRef(
-        ReadiumCSS.LINE_HEIGHT_REF
-      ) as Incremental).decrement();
+      (
+        this.userProperties?.getByRef(ReadiumCSS.LINE_HEIGHT_REF) as Incremental
+      ).decrement();
       this.wordSpacing = this.userProperties?.getByRef(
         ReadiumCSS.LINE_HEIGHT_REF
       )?.value;

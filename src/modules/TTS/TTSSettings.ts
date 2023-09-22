@@ -482,9 +482,9 @@ export class TTSSettings implements ITTSUserSettings {
 
   increase(incremental: TTSIncrementable) {
     if (incremental === "rate") {
-      (this.userProperties.getByRef(
-        TTSREFS.RATE_REF
-      ) as Incremental).increment();
+      (
+        this.userProperties.getByRef(TTSREFS.RATE_REF) as Incremental
+      ).increment();
       let prop = this.userProperties.getByRef(TTSREFS.RATE_REF);
       if (prop) {
         this.storeProperty(prop);
@@ -492,9 +492,9 @@ export class TTSSettings implements ITTSUserSettings {
       this.settingsChangeCallback();
       this.restartCallback();
     } else if (incremental === "pitch") {
-      (this.userProperties.getByRef(
-        TTSREFS.PITCH_REF
-      ) as Incremental).increment();
+      (
+        this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental
+      ).increment();
       let prop = this.userProperties.getByRef(TTSREFS.PITCH_REF);
       if (prop) {
         this.storeProperty(prop);
@@ -502,9 +502,9 @@ export class TTSSettings implements ITTSUserSettings {
       this.settingsChangeCallback();
       this.restartCallback();
     } else if (incremental === "volume") {
-      (this.userProperties.getByRef(
-        TTSREFS.VOLUME_REF
-      ) as Incremental).increment();
+      (
+        this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental
+      ).increment();
       let prop = this.userProperties.getByRef(TTSREFS.VOLUME_REF);
       if (prop) {
         this.storeProperty(prop);
@@ -516,9 +516,9 @@ export class TTSSettings implements ITTSUserSettings {
 
   decrease(incremental: string) {
     if (incremental === "rate") {
-      (this.userProperties.getByRef(
-        TTSREFS.RATE_REF
-      ) as Incremental).decrement();
+      (
+        this.userProperties.getByRef(TTSREFS.RATE_REF) as Incremental
+      ).decrement();
       let prop = this.userProperties.getByRef(TTSREFS.RATE_REF);
       if (prop) {
         this.storeProperty(prop);
@@ -526,9 +526,9 @@ export class TTSSettings implements ITTSUserSettings {
       this.settingsChangeCallback();
       this.restartCallback();
     } else if (incremental === "pitch") {
-      (this.userProperties.getByRef(
-        TTSREFS.PITCH_REF
-      ) as Incremental).decrement();
+      (
+        this.userProperties.getByRef(TTSREFS.PITCH_REF) as Incremental
+      ).decrement();
       let prop = this.userProperties.getByRef(TTSREFS.PITCH_REF);
       if (prop) {
         this.storeProperty(prop);
@@ -536,9 +536,9 @@ export class TTSSettings implements ITTSUserSettings {
       this.settingsChangeCallback();
       this.restartCallback();
     } else if (incremental === "volume") {
-      (this.userProperties.getByRef(
-        TTSREFS.VOLUME_REF
-      ) as Incremental).decrement();
+      (
+        this.userProperties.getByRef(TTSREFS.VOLUME_REF) as Incremental
+      ).decrement();
       let prop = this.userProperties.getByRef(TTSREFS.VOLUME_REF);
       if (prop) {
         this.storeProperty(prop);

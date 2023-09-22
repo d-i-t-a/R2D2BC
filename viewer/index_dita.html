@@ -1310,6 +1310,7 @@
                 disableContextMenu: true,
                 hideTargetUrl: true,
                 disableDrag: false,
+                excludeNodes:["script", "option"],
                 supportedBrowsers: [ // this will only be used if enforceSupportedBrowsers is true, and has nothing to do with the r2d2bc modules supported browsers
                     "Chrome", "ChromeAndroid", "Edge", "Firefox", "iOS", "Safari",
                 ],
@@ -1405,7 +1406,7 @@
 
         }).catch(error => {
             console.error(error);
-            document.getElementById("reader-error").innerText = error.message;
+            document.getElementById("reader-error").innerHTML = "<span>"+error.message +"</span>";
         });
 
         function setColumns(columnCount) {

@@ -1375,10 +1375,12 @@ export class ContentProtectionModule implements ReaderModule {
       const { top, height, left, width } = this.measureTextNode(node);
       const scrambled =
         node.parentElement &&
-        this.properties?.excludeNodes &&
-        this.properties?.excludeNodes.indexOf(
-          node.parentElement.nodeName.toLowerCase()
-        ) > -1
+        ((this.properties?.excludeNodes &&
+          this.properties?.excludeNodes.indexOf(
+            node.parentElement.nodeName.toLowerCase()
+          ) > -1) ||
+          node.parentElement?.nodeName.toLowerCase() === "option" ||
+          node.parentElement?.nodeName.toLowerCase() === "script")
           ? node.textContent
           : this.obfuscateText(node.textContent ?? "");
       let rect: ContentProtectionRect = {

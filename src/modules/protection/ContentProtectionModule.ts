@@ -31,6 +31,7 @@ import log from "loglevel";
 import { getCurrentSelectionInfo } from "../highlight/renderer/iframe/selection";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { _blacklistIdClassForCssSelectors } from "../highlight/TextHighlighter";
+import { getUserAgentRegex } from "browserslist-useragent-regexp";
 
 export interface ContentProtectionModuleProperties {
   enforceSupportedBrowsers: boolean;
@@ -138,7 +139,7 @@ export class ContentProtectionModule implements ReaderModule {
       browsers.push("last 1 " + browser + " version");
     });
 
-    const supportedBrowsers = getUserAgentRegExp({
+    const supportedBrowsers = getUserAgentRegex({
       browsers: browsers,
       allowHigherVersions: true,
     });

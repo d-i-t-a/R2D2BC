@@ -18,13 +18,12 @@
  */
 
 .error {
-  position: relative;
+  position: sticky;
   z-index: 20;
   background-color: transparentize($ui-white, 0.125);
   color: $error-red;
   height: 100%;
   top: 0;
-  padding-top: 40vh;
   text-align: center;
   width: 100%;
   -webkit-user-select: none;
@@ -42,9 +41,12 @@
   }
 
   span {
-    display: block;
+    display: flex;
     margin-bottom: 0.75rem;
     font-size: 1.2rem;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
   }
 
   button {

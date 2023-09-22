@@ -116,7 +116,7 @@
     "react-app-polyfill": "^3.0.0",
     "react-dom": "^18.2.0",
     "regenerator-runtime": "^0.14.0",
-    "rimraf": "^4.4.1",
+    "rimraf": "^3.0.2",
     "sinon": "^16.0.0",
     "ta-json-x": "^2.5.3",
     "tar": ">=6.1.9",

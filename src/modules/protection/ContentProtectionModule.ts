@@ -26,7 +26,6 @@ import {
 } from "../../utils/EventHandler";
 import { debounce } from "debounce";
 import { delay } from "../../utils";
-import { getUserAgentRegExp } from "browserslist-useragent-regexp";
 import { addListener, launch } from "devtools-detector";
 import log from "loglevel";
 import { getCurrentSelectionInfo } from "../highlight/renderer/iframe/selection";
@@ -1046,9 +1045,10 @@ export class ContentProtectionModule implements ReaderModule {
       let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
       if (selectionInfo === undefined) {
         let doc = this.navigator.iframes[0].contentDocument;
-        selectionInfo = this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
-          doc
-        );
+        selectionInfo =
+          this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+            doc
+          );
       }
 
       event.clipboardData.setData(
@@ -1094,9 +1094,10 @@ export class ContentProtectionModule implements ReaderModule {
         let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
         if (selectionInfo === undefined) {
           let doc = this.navigator.iframes[0].contentDocument;
-          selectionInfo = this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
-            doc
-          );
+          selectionInfo =
+            this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+              doc
+            );
         }
         this.copyToClipboard(
           selectionInfo?.cleanText?.substring(

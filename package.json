@@ -79,7 +79,7 @@
     "ansi-regex": ">=5.0.1",
     "babel-eslint": "^10.1.0",
     "braces": ">=3.0.2",
-    "browserslist-useragent-regexp": "^3.0.0",
+    "browserslist-useragent-regexp": "^4.1.0",
     "buffer": "^6.0.3",
     "chai": "^4.3.4",
     "chalk": "^4.1.2",

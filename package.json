@@ -30,7 +30,7 @@
     "cssesc": "^3.0.0",
     "detect-browser": "^5.2.0",
     "devtools-detector": "^2.0.14",
-    "eventemitter3": "^4.0.7",
+    "eventemitter3": "^5.0.1",
     "jscrypto": "^1.0.3",
     "lodash.clonedeep": "^4.5.0",
     "loglevel": "^1.8.0",

@@ -975,18 +975,22 @@ export class TextHighlighter {
 
           // Detect if selection is backwards
           let range = document.createRange();
-          if (trimmed) {
-            range.setStart(
-              selection.anchorNode,
-              selection.anchorOffset + startOffsetTemp
-            );
-            range.setEnd(
-              selection.focusNode,
-              selection.focusOffset - endOffsetTemp
-            );
-          } else {
-            range.setStart(selection.anchorNode, selection.anchorOffset);
-            range.setEnd(selection.focusNode, selection.focusOffset);
+          try {
+            if (trimmed) {
+              range.setStart(
+                selection.anchorNode,
+                selection.anchorOffset + startOffsetTemp
+              );
+              range.setEnd(
+                selection.focusNode,
+                selection.focusOffset - endOffsetTemp
+              );
+            } else {
+              range.setStart(selection.anchorNode, selection.anchorOffset);
+              range.setEnd(selection.focusNode, selection.focusOffset);
+            }
+          } catch (e) {
+            console.log('Error: ', e);
           }
 
           let backwards = range.collapsed;

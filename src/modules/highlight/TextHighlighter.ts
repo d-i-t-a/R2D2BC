@@ -665,11 +665,9 @@ export class TextHighlighter {
 
     el.addEventListener("mousedown", this.mousedown.bind(this));
     el.addEventListener("mouseup", this.mouseup.bind(this));
-    el.addEventListener("mousemove", this.mousemove.bind(this));
 
     el.addEventListener("touchstart", this.mousedown.bind(this));
     el.addEventListener("touchend", this.mouseup.bind(this));
-    el.addEventListener("touchmove", this.mousemove.bind(this));
 
     this.hasEventListener = true;
   }
@@ -2271,11 +2269,11 @@ export class TextHighlighter {
 
   async processMouseEvent(ev: MouseEvent) {
     const doc = this.navigator.iframes[0].contentWindow?.document;
-    // relative to fixed window top-left corner
-    // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
-    const x = ev.clientX;
-    const y = ev.clientY;
-    if (!doc) {
+
+    if (
+      !doc ||
+      !(ev.type === "mouseup" || ev.type === "click" || ev.type === "touchup")
+    ) {
       return;
     }
     if (
@@ -2288,58 +2286,10 @@ export class TextHighlighter {
       return;
     }
 
-    const paginated = this.navigator.view?.isPaginated();
-    const bodyRect = doc.body.getBoundingClientRect();
-    const scrollElement = this.getScrollingElement(doc);
-
-    const xOffset = paginated ? -scrollElement.scrollLeft : bodyRect.left;
-    const yOffset = paginated ? -scrollElement.scrollTop : bodyRect.top;
-
-    let foundHighlight: IHighlight | undefined;
-    let foundElement: IHTMLDivElementWithRect | undefined;
-
-    for (let i = _highlights.length - 1; i >= 0; i--) {
-      const highlight = _highlights[i];
-
-      let highlightParent = doc.getElementById(`${highlight.id}`);
-      if (!highlightParent) {
-        // ??!!
-        let container = doc.getElementById(
-          HighlightContainer.R2_ID_HIGHLIGHTS_CONTAINER
-        );
-        if (container) {
-          highlightParent = container.querySelector(`#${highlight.id}`); // .${CLASS_HIGHLIGHT_CONTAINER}
-        }
-      }
-      if (!highlightParent) {
-        // what?
-        continue;
-      }
-
-      let hit = false;
-      const highlightFragments = highlightParent.querySelectorAll(
-        `.${CLASS_HIGHLIGHT_AREA}`
-      );
-      for (const highlightFragment of highlightFragments) {
-        const withRect = highlightFragment as unknown as IWithRect;
-        const left = withRect.rect.left + xOffset; // (paginated ? withRect.xOffset : xOffset);
-        const top = withRect.rect.top + yOffset; // (paginated ? withRect.yOffset : yOffset);
-        if (
-          x >= left &&
-          x < left + withRect.rect.width &&
-          y >= top &&
-          y < top + withRect.rect.height
-        ) {
-          hit = true;
-          break;
-        }
-      }
-      if (hit) {
-        foundHighlight = highlight;
-        foundElement = highlightParent as IHTMLDivElementWithRect;
-        break;
-      }
-    }
+    const foundElement = ev.target as HTMLElement;
+    const foundHighlight = _highlights.find(
+      (el) => el.id === (ev.target as HTMLElement).parentElement?.id
+    );
 
     if (!foundHighlight || !foundElement) {
       for (let id in HighlightContainer) {
@@ -2365,56 +2315,6 @@ export class TextHighlighter {
 
     if (foundElement.getAttribute("data-click")) {
       if (
-        (ev.type === "mousemove" || ev.type === "touchmove") &&
-        foundElement.parentElement?.style.display !== "none"
-      ) {
-        const foundElementHighlightAreas = Array.from(
-          foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
-        );
-
-        for (let id in HighlightContainer) {
-          let container = doc.getElementById(id);
-          if (container) {
-            const allHighlightAreas = container.querySelectorAll(
-              `.${CLASS_HIGHLIGHT_AREA}`
-            );
-            for (const highlightArea of allHighlightAreas) {
-              if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
-                this.resetHighlightAreaStyle(highlightArea as HTMLElement, id);
-              }
-            }
-          }
-        }
-
-        this.setHighlightAreaStyle(
-          doc,
-          foundElementHighlightAreas as HTMLElement[],
-          foundHighlight
-        );
-
-        const foundElementHighlightBounding = foundElement.querySelector(
-          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-        );
-
-        for (let id in HighlightContainer) {
-          let container = doc.getElementById(id);
-          if (container) {
-            const allHighlightBoundings = container.querySelectorAll(
-              `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
-            );
-            for (const highlightBounding of allHighlightBoundings) {
-              if (
-                !foundElementHighlightBounding ||
-                highlightBounding !== foundElementHighlightBounding
-              ) {
-                this.resetHighlightBoundingStyle(
-                  highlightBounding as HTMLElement
-                );
-              }
-            }
-          }
-        }
-      } else if (
         (ev.type === "mouseup" ||
           ev.type === "click" ||
           ev.type === "touchup") &&
@@ -2800,6 +2700,61 @@ export class TextHighlighter {
     highlightParent.style.setProperty("pointer-events", "none");
     if (highlight.pointerInteraction) {
       highlightParent.setAttribute("data-click", "1");
+      highlightParent.addEventListener("mouseover", (ev) => {
+        if (
+          (ev.target as HTMLElement).classList.contains(
+            "R2_CLASS_HIGHLIGHT_AREA"
+          )
+        ) {
+          const foundElement = ev.currentTarget as HTMLElement;
+          const foundHighlight = _highlights.find(
+            (el) => el.id === (ev.currentTarget as HTMLElement).id
+          );
+          if (
+            ev.type === "mouseover" &&
+            foundElement.parentElement?.style.display !== "none" &&
+            foundHighlight
+          ) {
+            const foundElementHighlightAreas = Array.from(
+              foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
+            );
+            this.setHighlightAreaStyle(
+              doc,
+              foundElementHighlightAreas as HTMLElement[],
+              foundHighlight
+            );
+          }
+        }
+      });
+      highlightParent.addEventListener("mouseleave", (ev) => {
+        const foundElement = ev.currentTarget as HTMLElement;
+        const foundElementHighlightAreas = Array.from(
+          foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`)
+        );
+
+        for (const highlightArea of foundElementHighlightAreas) {
+          this.resetHighlightAreaStyle(
+            highlightArea as HTMLElement,
+            foundElement.id
+          );
+        }
+
+        const foundElementHighlightBounding = foundElement.querySelector(
+          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
+        );
+
+        const allHighlightBoundings = foundElement.querySelectorAll(
+          `.${CLASS_HIGHLIGHT_BOUNDING_AREA}`
+        );
+        for (const highlightBounding of allHighlightBoundings) {
+          if (
+            !foundElementHighlightBounding ||
+            highlightBounding !== foundElementHighlightBounding
+          ) {
+            this.resetHighlightBoundingStyle(highlightBounding as HTMLElement);
+          }
+        }
+      });
     }
 
     const paginated = this.navigator.view?.isPaginated();
@@ -2948,7 +2903,18 @@ export class TextHighlighter {
         }
       }
 
-      highlightArea.style.setProperty("pointer-events", "none");
+      if (
+        highlight.type === HighlightType.Search ||
+        highlight.type === HighlightType.ReadAloud ||
+        highlight.type === HighlightType.LineFocus ||
+        highlight.type === HighlightType.PageBreak
+      ) {
+        highlightArea.style.setProperty("pointer-events", "none");
+      } else {
+        highlightArea.style.setProperty("pointer-events", "all");
+        highlightArea.style.setProperty("cursor", "hand");
+      }
+
       highlightArea.style.position = "absolute";
       highlightArea.scale = scale;
       highlightArea.rect = {
@@ -2988,7 +2954,19 @@ export class TextHighlighter {
           "style",
           `background-color: rgba(${color.red}, ${color.green}, ${color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY}) !important;`
         );
-        highlightAreaLine.style.setProperty("pointer-events", "none");
+
+        if (
+          highlight.type === HighlightType.Search ||
+          highlight.type === HighlightType.ReadAloud ||
+          highlight.type === HighlightType.LineFocus ||
+          highlight.type === HighlightType.PageBreak
+        ) {
+          highlightAreaLine.style.setProperty("pointer-events", "none");
+        } else {
+          highlightAreaLine.style.setProperty("pointer-events", "all");
+          highlightAreaLine.style.setProperty("cursor", "hand");
+        }
+
         highlightAreaLine.style.position = "absolute";
         highlightAreaLine.scale = scale;
         highlightAreaLine.rect = {
@@ -3240,7 +3218,18 @@ export class TextHighlighter {
       }
     }
 
-    highlightAreaIcon.style.setProperty("pointer-events", "all");
+    if (
+      highlight.type === HighlightType.Search ||
+      highlight.type === HighlightType.ReadAloud ||
+      highlight.type === HighlightType.LineFocus ||
+      highlight.type === HighlightType.PageBreak
+    ) {
+      highlightAreaIcon.style.setProperty("pointer-events", "none");
+    } else {
+      highlightAreaIcon.style.setProperty("pointer-events", "all");
+      highlightAreaIcon.style.setProperty("cursor", "hand");
+    }
+
     let self = this;
     if (
       highlight.type !== HighlightType.PageBreak &&

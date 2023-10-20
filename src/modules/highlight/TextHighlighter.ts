@@ -2903,7 +2903,18 @@ export class TextHighlighter {
         }
       }
 
-      highlightArea.style.setProperty("pointer-events", "all");
+      if (
+        highlight.type === HighlightType.Search ||
+        highlight.type === HighlightType.ReadAloud ||
+        highlight.type === HighlightType.LineFocus ||
+        highlight.type === HighlightType.PageBreak
+      ) {
+        highlightArea.style.setProperty("pointer-events", "none");
+      } else {
+        highlightArea.style.setProperty("pointer-events", "all");
+        highlightArea.style.setProperty("cursor", "hand");
+      }
+
       highlightArea.style.position = "absolute";
       highlightArea.scale = scale;
       highlightArea.rect = {
@@ -2943,7 +2954,19 @@ export class TextHighlighter {
           "style",
           `background-color: rgba(${color.red}, ${color.green}, ${color.blue}, ${DEFAULT_BACKGROUND_COLOR_OPACITY}) !important;`
         );
-        highlightAreaLine.style.setProperty("pointer-events", "all");
+
+        if (
+          highlight.type === HighlightType.Search ||
+          highlight.type === HighlightType.ReadAloud ||
+          highlight.type === HighlightType.LineFocus ||
+          highlight.type === HighlightType.PageBreak
+        ) {
+          highlightAreaLine.style.setProperty("pointer-events", "none");
+        } else {
+          highlightAreaLine.style.setProperty("pointer-events", "all");
+          highlightAreaLine.style.setProperty("cursor", "hand");
+        }
+
         highlightAreaLine.style.position = "absolute";
         highlightAreaLine.scale = scale;
         highlightAreaLine.rect = {
@@ -3195,7 +3218,18 @@ export class TextHighlighter {
       }
     }
 
-    highlightAreaIcon.style.setProperty("pointer-events", "all");
+    if (
+      highlight.type === HighlightType.Search ||
+      highlight.type === HighlightType.ReadAloud ||
+      highlight.type === HighlightType.LineFocus ||
+      highlight.type === HighlightType.PageBreak
+    ) {
+      highlightAreaIcon.style.setProperty("pointer-events", "none");
+    } else {
+      highlightAreaIcon.style.setProperty("pointer-events", "all");
+      highlightAreaIcon.style.setProperty("cursor", "hand");
+    }
+
     let self = this;
     if (
       highlight.type !== HighlightType.PageBreak &&

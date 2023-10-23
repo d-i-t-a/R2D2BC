@@ -7,7 +7,7 @@
   "main": "dist/esm/index.js",
   "typings": "dist/types/index.d.ts",
   "engines": {
-    "node": ">=14"
+    "node": ">=16"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
@@ -124,7 +124,7 @@
     "ta-json-x": "^2.5.3",
     "tar": ">=6.1.9",
     "ts-loader": "^9.4.4",
-    "ts-node": "^10.4.0",
+    "ts-node": "^10.9.1",
     "typedoc": "^0.25.1",
     "typedoc-plugin-rename-defaults": "^0.6.6",
     "typescript": "5.1.6",

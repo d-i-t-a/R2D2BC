@@ -5,12 +5,11 @@ import { promises as fs } from "fs";
 import { watch } from "chokidar";
 import { debounce } from "debounce";
 import copy0 from "copy";
-import rimraf0 from "rimraf";
 import child_process0 from "child_process";
 import sass0 from "sass";
+import { rimraf } from "rimraf";
 
 const copy = util.promisify(copy0);
-const rimraf = util.promisify(rimraf0);
 const exec = util.promisify(child_process0.exec);
 const sass = util.promisify(sass0.render);
 

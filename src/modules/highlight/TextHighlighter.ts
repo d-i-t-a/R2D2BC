@@ -138,6 +138,7 @@ let lastMouseDownY = -1;
 export interface TextHighlighterProperties {
   selectionMenuItems?: Array<SelectionMenuItem>;
   menuPosition?: MenuPosition;
+  preventScrollOnSelection?: boolean;
 }
 
 export interface TextHighlighterConfig extends TextHighlighterProperties {
@@ -674,6 +675,13 @@ export class TextHighlighter {
   async mousedown(ev: MouseEvent) {
     lastMouseDownX = ev.clientX;
     lastMouseDownY = ev.clientY;
+    if (this.properties?.preventScrollOnSelection) {
+      const wrapper = HTMLUtilities.findRequiredElement(
+        document,
+        "#iframe-wrapper"
+      );
+      wrapper.style.overflow = "hidden";
+    }
   }
 
   async mouseup(ev: MouseEvent) {
@@ -924,6 +932,13 @@ export class TextHighlighter {
     let toolbox = document.getElementById("highlight-toolbox");
     if (toolbox) toolbox.style.display = "none";
     this.selectionMenuClosed();
+    if (this.properties?.preventScrollOnSelection) {
+      const wrapper = HTMLUtilities.findRequiredElement(
+        document,
+        "#iframe-wrapper"
+      );
+      wrapper.style.overflow = "auto";
+    }
   }
 
   // Use short timeout to let the selection updated to 'finish', otherwise some

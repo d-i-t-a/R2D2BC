@@ -212,6 +212,7 @@ export interface ReaderConfig {
   injectables: Array<Injectable>;
   injectablesFixed?: Array<Injectable>;
   useLocalStorage?: boolean;
+  storageType?: string;
   attributes?: IFrameAttributes;
   services?: PublicationServices;
   sample?: SampleRead;

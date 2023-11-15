@@ -45,6 +45,8 @@ import {
 } from "./navigator/IFrameNavigator";
 import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
+import Store from "./store/Store";
+import MemoryStore from "./store/MemoryStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
 import { convertAndCamel } from "./model/Link";
 import { LayerSettings } from "./modules/highlight/LayerSettings";
@@ -147,19 +149,35 @@ export default class D2Reader {
       );
     }
 
-    const store = new LocalStorageStore({
-      prefix: publication.manifestUrl,
-      useLocalStorage: initialConfig.useLocalStorage ?? false,
-    });
+    let store: Store;
+    if(initialConfig.storageType === 'memory') {
+      store = new MemoryStore();
+    } else {
+      store = new LocalStorageStore({
+        prefix: publication.manifestUrl,
+        useLocalStorage: initialConfig.useLocalStorage ?? false,
+      });
+    }
 
-    const settingsStore = new LocalStorageStore({
-      prefix: "r2d2bc-reader",
-      useLocalStorage: initialConfig.useLocalStorage ?? false,
-    });
-    const layerStore = new LocalStorageStore({
-      prefix: "r2d2bc-layers",
-      useLocalStorage: initialConfig.useLocalStorage ?? false,
-    });
+    let settingsStore: Store;
+    if(initialConfig.storageType === 'memory') {
+      settingsStore = new MemoryStore();
+    } else {
+      settingsStore = new LocalStorageStore({
+        prefix: "r2d2bc-reader",
+        useLocalStorage: initialConfig.useLocalStorage ?? false,
+      });
+    }
+
+    let layerStore: Store;
+    if(initialConfig.storageType === 'memory') {
+      layerStore = new MemoryStore();
+    } else {
+      layerStore = new LocalStorageStore({
+        prefix: "r2d2bc-layers",
+        useLocalStorage: initialConfig.useLocalStorage ?? false,
+      });
+    }
 
     const annotator = new LocalAnnotator({ store: store });
 

@@ -1362,6 +1362,7 @@
             injectablesFixed: [],
             userSettings: userSettings,
             useLocalStorage: true, // true = uses local storage, false = uses session storage (default)
+            storageType: "local", // 'memory' = uses a memory storage, anything else = uses local/session storage (default)
         }).then(instance => {
             console.log("D2reader instance ready", instance);
             d2reader = instance;

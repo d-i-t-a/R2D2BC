@@ -220,6 +220,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
   tableOfContents(): any {
     return this.publication.tableOfContents;
   }
+  landmarks(): any {};
 
   //TODO:
   currentResource(): any {}

@@ -573,6 +573,10 @@ export default class D2Reader {
   get tableOfContents() {
     return convertAndCamel(this.navigator.tableOfContents()) ?? [];
   }
+  /** Landmarks */
+  get landmarks() {
+    return convertAndCamel(this.navigator.landmarks()) ?? [];
+  }
   /** Reading Order or Spine */
   get readingOrder() {
     return convertAndCamel(this.navigator.readingOrder()) ?? [];

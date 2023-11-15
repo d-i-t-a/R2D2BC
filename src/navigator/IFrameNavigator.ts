@@ -2257,6 +2257,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   tableOfContents(): any {
     return this.publication.tableOfContents;
   }
+  landmarks(): any {
+    return this.publication.landmarks;
+  }
   readingOrder(): any {
     return this.publication.readingOrder;
   }

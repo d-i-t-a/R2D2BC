@@ -188,9 +188,7 @@ export class UserSettings implements IUserSettings {
         log.log(settings.verticalScroll);
       }
       if (initialUserSettings.appearance) {
-        settings.appearance = UserSettings.appearanceValues.findIndex(
-          (el: any) => el === initialUserSettings.appearance
-        );
+        settings.appearance = UserSettings.parseAppearanceSetting(initialUserSettings.appearance)
         let prop = settings.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF);
         if (prop) {
           prop.value = settings.appearance;
@@ -989,28 +987,7 @@ export class UserSettings implements IUserSettings {
 
   async applyUserSettings(userSettings: Partial<UserSettings>): Promise<void> {
     if (userSettings.appearance) {
-      let a: string;
-      if (
-        userSettings.appearance === "day" ||
-        userSettings.appearance === "readium-default-on"
-      ) {
-        a = UserSettings.appearanceValues[0];
-      } else if (
-        userSettings.appearance === "sepia" ||
-        userSettings.appearance === "readium-sepia-on"
-      ) {
-        a = UserSettings.appearanceValues[1];
-      } else if (
-        userSettings.appearance === "night" ||
-        userSettings.appearance === "readium-night-on"
-      ) {
-        a = UserSettings.appearanceValues[2];
-      } else {
-        a = userSettings.appearance;
-      }
-      this.appearance = UserSettings.appearanceValues.findIndex(
-        (el: any) => el === a
-      );
+      this.appearance = UserSettings.parseAppearanceSetting(userSettings.appearance)
       let prop = this.userProperties?.getByRef(ReadiumCSS.APPEARANCE_REF);
       if (prop) {
         prop.value = this.appearance;
@@ -1136,6 +1113,33 @@ export class UserSettings implements IUserSettings {
       default:
         return false;
     }
+  }
+
+  private static parseAppearanceSetting(
+    inputSetting: InitialUserSettings["appearance"]
+  ): number {
+    let a: string;
+    if (
+      inputSetting === "day" ||
+      inputSetting === "readium-default-on"
+    ) {
+      a = UserSettings.appearanceValues[0];
+    } else if (
+      inputSetting === "sepia" ||
+      inputSetting === "readium-sepia-on"
+    ) {
+      a = UserSettings.appearanceValues[1];
+    } else if (
+      inputSetting === "night" ||
+      inputSetting === "readium-night-on"
+    ) {
+      a = UserSettings.appearanceValues[2];
+    } else {
+      a = inputSetting;
+    }
+    return UserSettings.appearanceValues.findIndex(
+      (el: any) => el === a
+    );
   }
 
   async scroll(scroll: boolean): Promise<void> {

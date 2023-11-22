@@ -135,10 +135,7 @@ export class HistoryModule implements ReaderModule {
           this.history = this.history.slice(0, this.historyCurrentIndex);
           this.history.push(lastReadingPosition);
           this.historyCurrentIndex = this.history.length - 1;
-        } else if (
-          lastReadingPosition?.locations.progression &&
-          lastReadingPosition?.locations.progression > 0
-        ) {
+        } else {
           this.history.push(lastReadingPosition);
           this.historyCurrentIndex = this.history.length - 1;
         }

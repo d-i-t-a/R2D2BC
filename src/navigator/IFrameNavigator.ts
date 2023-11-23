@@ -641,15 +641,14 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
       this.tryAgainButton = HTMLUtilities.findElement(
         mainElement,
-        "button[class=try-again]"
+        "#r2d2bc-try-again"
       );
       this.goBackButton = HTMLUtilities.findElement(
         mainElement,
-        "button[class=go-back]"
-      );
       this.infoTop = HTMLUtilities.findElement(
         mainElement,
         "div[class='info top']"
+        "#r2d2bc-go-back"
       );
       this.infoBottom = HTMLUtilities.findElement(
         mainElement,

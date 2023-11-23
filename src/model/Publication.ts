@@ -60,7 +60,7 @@ export class Publication extends R2Publication {
     if (this.sample?.isSampleRead && this.positions?.length > 0) {
       return this.limitedTOC();
     }
-    return this.TOC;
+    return this.TOC || [];
   }
 
   private limitedTOC() {
@@ -74,7 +74,7 @@ export class Publication extends R2Publication {
       }
     }
 
-    let toc = this.TOC.map((item) => {
+    let toc = this.TOC?.map((item) => {
       if (item.Href) {
         const positions = this.positionsByHref(this.getRelativeHref(item.Href));
         if (positions?.length > 0) {
@@ -98,7 +98,7 @@ export class Publication extends R2Publication {
       }
       return item;
     });
-    return toc;
+    return toc || [];
   }
 
   get landmarks() {

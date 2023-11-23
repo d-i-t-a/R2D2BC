@@ -65,7 +65,7 @@ const App = () => {
             }}
           >
             <div id="reader-loading" className="loading"></div>
-            <div id="reader-error" className="error"></div>
+            <div id="reader-error"></div>
           </main>
         </div>
       </div>

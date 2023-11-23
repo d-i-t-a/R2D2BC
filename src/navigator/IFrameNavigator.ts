@@ -645,15 +645,14 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       );
       this.goBackButton = HTMLUtilities.findElement(
         mainElement,
-      this.infoTop = HTMLUtilities.findElement(
-        mainElement,
-        "div[class='info top']"
         "#r2d2bc-go-back"
       );
-      this.infoBottom = HTMLUtilities.findElement(
-        mainElement,
-        "div[class='info bottom']"
-      );
+      this.infoTop =
+        HTMLUtilities.findElement(mainElement, "#reader-info-top") ||
+        HTMLUtilities.findElement(mainElement, "div[class='info top']");
+      this.infoBottom =
+        HTMLUtilities.findElement(mainElement, "#reader-info-bottom") ||
+        HTMLUtilities.findElement(mainElement, "div[class='info bottom']");
 
       if (this.headerMenu)
         this.bookTitle = HTMLUtilities.findElement(

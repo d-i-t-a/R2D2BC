@@ -73,8 +73,12 @@
     bottom: 0px;
     position: fixed;
     width: 100%;
+    @extend .r2d2bc-info, .r2d2bc-bottom;
   }
-  .info {
+  #reader-info-top {
+    @extend .r2d2bc-info, .r2d2bc-top;
+  }
+  .r2d2bc-info {
     color: $ui-dark-gray;
     margin: 0;
     padding: 0 1.5rem;
@@ -89,13 +93,13 @@
     user-select: none;
     cursor: default;
 
-    &.top {
+    &.r2d2bc-top {
       line-height: 3;
       padding-top: env(safe-area-inset-top);
       min-height: 3.6rem;
     }
 
-    &.bottom {
+    &.r2d2bc-bottom {
       line-height: 2;
       padding-bottom: env(safe-area-inset-bottom);
     }
@@ -126,7 +130,7 @@
 
 
 
-    .info {
+    .r2d2bc-info {
       color: $ui-dark-gray;
     }
 
@@ -138,7 +142,7 @@
 
 
 
-    .info {
+    .r2d2bc-info {
       color: $ui-light-gray;
     }
 

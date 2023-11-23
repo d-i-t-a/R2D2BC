@@ -179,14 +179,14 @@
                 </div>
                 <div id="reader-info-bottom" class="info bottom">
                     <div style="display: flex;justify-content: center;">
-                        <span class="chapter-position"></span>&nbsp;
-                        <span class="chapter-title"></span>
+                        <span id="chapter-position"></span>&nbsp;
+                        <span id="chapter-title"></span>
                     </div>
                     <div class="scrubber">
                         <input class="range-slider__range" style="width:100%" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="d2reader.goToPosition( this.value )" />
                     </div>
                     <div>
-                        <span class="remaining-positions"></span>
+                        <span id="remaining-positions"></span>
                     </div>
                 </div>
             </main>

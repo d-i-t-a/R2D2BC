@@ -662,20 +662,26 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         );
 
       if (this.infoBottom)
-        this.chapterTitle = HTMLUtilities.findElement(
-          this.infoBottom,
-          "span[class=chapter-title]"
-        );
+        this.chapterTitle =
+          HTMLUtilities.findElement(this.infoBottom, "#chapter-title") ||
+          HTMLUtilities.findElement(
+            this.infoBottom,
+            "span[class=chapter-title]"
+          );
       if (this.infoBottom)
-        this.chapterPosition = HTMLUtilities.findElement(
-          this.infoBottom,
-          "span[class=chapter-position]"
-        );
+        this.chapterPosition =
+          HTMLUtilities.findElement(this.infoBottom, "#chapter-position") ||
+          HTMLUtilities.findElement(
+            this.infoBottom,
+            "span[class=chapter-position]"
+          );
       if (this.infoBottom)
-        this.remainingPositions = HTMLUtilities.findElement(
-          this.infoBottom,
-          "span[class=remaining-positions]"
-        );
+        this.remainingPositions =
+          HTMLUtilities.findElement(this.infoBottom, "#remaining-positions") ||
+          HTMLUtilities.findElement(
+            this.infoBottom,
+            "span[class=remaining-positions]"
+          );
 
       if (this.headerMenu)
         this.espandMenuIcon = HTMLUtilities.findElement(

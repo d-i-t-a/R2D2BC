@@ -97,6 +97,7 @@ import {
   ConsumptionModule,
   ConsumptionModuleConfig,
 } from "../modules/consumption/ConsumptionModule";
+import KeyDownEvent = JQuery.KeyDownEvent;
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (
@@ -117,6 +118,7 @@ export interface NavigatorAPI {
   resourceAtEnd: any;
   resourceFitsScreen: any;
   updateCurrentLocation: any;
+  keydownFallthrough: any;
   direction: any;
   onError?: (e: Error) => void;
 }
@@ -1004,6 +1006,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.handlePreviousChapterClick.bind(this);
         this.keyboardEventHandler.onForwardSwipe =
           this.handleNextChapterClick.bind(this);
+        this.keyboardEventHandler.onKeydown =
+          this.handleKeydownFallthrough.bind(this);
       }
       if (this.touchEventHandler) {
         this.touchEventHandler.onBackwardSwipe =
@@ -1048,6 +1052,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               this.handlePreviousPageClick.bind(this);
             this.keyboardEventHandler.onForwardSwipe =
               this.handleNextPageClick.bind(this);
+            this.keyboardEventHandler.onKeydown =
+              this.handleKeydownFallthrough.bind(this);
           }
         } else {
           if (this.infoBottom) this.infoBottom.style.display = "none";
@@ -1168,6 +1174,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               this.handlePreviousPageClick.bind(this);
             this.keyboardEventHandler.onForwardSwipe =
               this.handleNextPageClick.bind(this);
+            this.keyboardEventHandler.onKeydown =
+              this.handleKeydownFallthrough.bind(this);
           }
         }
       });
@@ -2813,6 +2821,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       event.preventDefault();
       event.stopPropagation();
     }
+  }
+
+  private handleKeydownFallthrough(event: KeyDownEvent | undefined): void {
+    if (this.api?.keydownFallthrough) this.api?.keydownFallthrough(event);
+    this.emit("keydown", event);
   }
 
   private hideView(): void {

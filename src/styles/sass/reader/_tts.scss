@@ -31,14 +31,14 @@ $brand: rgb(16, 16, 16);;
 
 
 
-input[type=checkbox] label {
+.r2d2bc-tts-checkbox label {
   display: flex;
   flex-direction: row;
   align-items: center;
 }
 
 
-input[type=checkbox] {
+.r2d2bc-tts-checkbox {
   position: relative !important;
   appearance: none;
 //   margin: $margin-small;

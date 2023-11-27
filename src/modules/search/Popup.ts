@@ -151,16 +151,21 @@ export class Popup {
           return;
         }
         let self = this;
-        win.onclick = function (ev) {
-          if (event.target !== ev.target) {
-            if (d2popover.parentElement) {
-              self.hidePopover();
-              if (win) {
-                win.onclick = null;
+        win.addEventListener(
+          "click",
+          function (ev) {
+            if (event.target !== ev.target) {
+              if (d2popover.parentElement) {
+                self.hidePopover();
+                ev.stopImmediatePropagation();
               }
             }
+          },
+          {
+            once: true,
+            capture: true,
           }
-        };
+        );
       }
     } else if (src) {
       let absolute = getAbsoluteHref(src);
@@ -207,16 +212,21 @@ export class Popup {
           return;
         }
         let self = this;
-        win.onclick = function (ev) {
-          if (event.target !== ev.target) {
-            if (d2popover.parentElement) {
-              self.hidePopover();
-              if (win) {
-                win.onclick = null;
+        win.addEventListener(
+          "click",
+          function (ev) {
+            if (event.target !== ev.target) {
+              if (d2popover.parentElement) {
+                self.hidePopover();
+                ev.stopImmediatePropagation();
               }
             }
+          },
+          {
+            once: true,
+            capture: true,
           }
-        };
+        );
       }
     }
   }

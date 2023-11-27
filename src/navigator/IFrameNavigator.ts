@@ -119,6 +119,7 @@ export interface NavigatorAPI {
   resourceFitsScreen: any;
   updateCurrentLocation: any;
   keydownFallthrough: any;
+  clickThrough: any;
   direction: any;
   onError?: (e: Error) => void;
 }
@@ -2491,7 +2492,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
 
-  private handleClickThrough(_event: MouseEvent | TouchEvent) {}
+  private handleClickThrough(event: MouseEvent | TouchEvent) {
+    if (this.api?.clickThrough) this.api?.clickThrough(event);
+    this.emit("click", event);
+  }
 
   private handleInternalLink(event: MouseEvent | TouchEvent) {
     const element = event.target;

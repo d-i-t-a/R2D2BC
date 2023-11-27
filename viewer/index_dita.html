@@ -1405,6 +1405,9 @@
                 keydownFallthrough: function(event) {
                     console.log("api.keydownFallthrough:" + event.key);
                 },
+                clickThrough: function(event) {
+                    console.log("api.clickThrough");
+                },
                 onError: function(error) {
                     console.log(error);
                 },
@@ -1454,6 +1457,9 @@
             });
             instance.addEventListener("keydown", (event) => {
                 console.log("keydown: " + event.key);
+            });
+            instance.addEventListener("click", (event) => {
+                console.log("click through: " + event.detail);
             });
 
         }).catch(error => {

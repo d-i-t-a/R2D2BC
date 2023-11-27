@@ -35,59 +35,77 @@ export default class KeyboardEventHandler {
     }
   };
 
+  public removeEvents = (element: HTMLElement | Document | null): void => {
+    if (element) {
+      const self = this;
+      element.removeEventListener("focusin", this.onFocusIn(self), true);
+      element.removeEventListener("keydown", this.onKeyDown(self), false);
+    }
+  };
+
   public focusin = (element: HTMLElement | Document): void => {
     const self = this;
-    element.addEventListener(
-      "focusin",
-      function (event: KeyboardEvent) {
-        self.navigator.view?.snap(event.target as HTMLElement);
-      },
-      true
-    );
+    element.addEventListener("focusin", this.onFocusIn(self), true);
   };
 
   public keydown = (element: HTMLElement | Document): void => {
     const self = this;
     if (!this.navigator.rights.customKeyboardEvents) {
-      element.addEventListener(
-        "keydown",
-        function (event: KeyboardEvent) {
-          // Ignore input elements
-          const eventTarget = event.target as HTMLElement;
-          if (/input|select|option|textarea/i.test(eventTarget.tagName)) {
-            return;
-          }
-
-          // Ignore when active text selection
-          const ownerDocument = (eventTarget.ownerDocument ||
-            eventTarget) as HTMLDocument;
-          const ownerWindow = ownerDocument.defaultView as Window;
-          const selection = ownerWindow.getSelection() as Selection;
-          if (!selection.isCollapsed) {
-            return;
-          }
-
-          const key = event.key;
-          switch (key) {
-            case "ArrowRight":
-              self.onForwardSwipe(event);
-              break;
-            case "ArrowLeft":
-              self.onBackwardSwipe(event);
-              break;
-          }
-          switch (event.code) {
-            case "Space":
-              if (event.ctrlKey) {
-                self.onBackwardSwipe(event);
-              } else {
-                self.onForwardSwipe(event);
-              }
-              break;
-          }
-        },
-        false
-      );
+      element.addEventListener("keydown", this.onKeyDown(self), false);
     }
   };
+
+  // store the generated event handlers, so they can be returned
+  // when removing the event listeners
+  private handlers = {};
+
+  private onFocusIn(self: this) {
+    return (
+      this.handlers["onFocusIn"] ||
+      (this.handlers["onFocusIn"] = function (event: KeyboardEvent) {
+        self.navigator.view?.snap(event.target as HTMLElement);
+      })
+    );
+  }
+
+  private onKeyDown(self: this) {
+    return (
+      this.handlers["onKeyDown"] ||
+      (this.handlers["onKeyDown"] = function(event: KeyboardEvent) {
+        // Ignore input elements
+        const eventTarget = event.target as HTMLElement;
+        if (/input|select|option|textarea/i.test(eventTarget.tagName)) {
+          return;
+        }
+
+        // Ignore when active text selection
+        const ownerDocument = (eventTarget.ownerDocument ||
+          eventTarget) as HTMLDocument;
+        const ownerWindow = ownerDocument.defaultView as Window;
+        const selection = ownerWindow.getSelection() as Selection;
+        if (!selection.isCollapsed) {
+          return;
+        }
+
+        const key = event.key;
+        switch (key) {
+          case "ArrowRight":
+            self.onForwardSwipe(event);
+            break;
+          case "ArrowLeft":
+            self.onBackwardSwipe(event);
+            break;
+        }
+        switch (event.code) {
+          case "Space":
+            if (event.ctrlKey) {
+              self.onBackwardSwipe(event);
+            } else {
+              self.onForwardSwipe(event);
+            }
+            break;
+        }
+      })
+    );
+  }
 }

@@ -523,6 +523,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.iframes.forEach((iframe) => {
       removeEventListenerOptional(iframe, "resize", this.onResize);
     });
+
+    if (this.didInitKeyboardEventHandler)
+      this.keyboardEventHandler.removeEvents(document);
   }
   spreads: HTMLDivElement;
   firstSpread: HTMLDivElement;

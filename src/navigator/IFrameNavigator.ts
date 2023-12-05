@@ -117,6 +117,8 @@ export interface NavigatorAPI {
   resourceAtEnd: any;
   resourceFitsScreen: any;
   updateCurrentLocation: any;
+  positionInfo: any;
+  chapterInfo: any;
   direction: any;
   onError?: (e: Error) => void;
 }
@@ -1465,9 +1467,14 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         if (this.chapterTitle)
           this.chapterTitle.innerHTML =
             "(" + this.currentChapterLink.title + ")";
+        if (this.api?.chapterInfo)
+          this.api?.chapterInfo(this.currentChapterLink.title);
+        this.emit("chapterinfo", this.currentChapterLink.title);
       } else {
         if (this.chapterTitle)
           this.chapterTitle.innerHTML = "(Current Chapter)";
+        if (this.api?.chapterInfo) this.api?.chapterInfo(undefined);
+        this.emit("chapterinfo", undefined);
       }
 
       await this.injectInjectablesIntoIframeHead(iframe);
@@ -2716,6 +2723,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             this.chapterPosition.innerHTML =
               "Page " + currentPage + " of " + pageCount;
           }
+          if (this.api?.positionInfo) {
+            this.api?.positionInfo(locator);
+          }
+          this.emit("positioninfo", locator);
         }
       } else {
         if (this.chapterPosition) this.chapterPosition.innerHTML = "";
@@ -3008,9 +3019,14 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           if (this.chapterTitle)
             this.chapterTitle.innerHTML =
               "(" + this.currentChapterLink.title + ")";
+          if (this.api?.chapterInfo)
+            this.api?.chapterInfo(this.currentChapterLink.title);
+          this.emit("chapterinfo", this.currentChapterLink.title);
         } else {
           if (this.chapterTitle)
             this.chapterTitle.innerHTML = "(Current Chapter)";
+          if (this.api?.chapterInfo) this.api?.chapterInfo(undefined);
+          this.emit("chapterinfo", undefined);
         }
         await this.updatePositionInfo();
       } else {

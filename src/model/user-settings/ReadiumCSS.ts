@@ -26,6 +26,7 @@ export class ReadiumCSS {
   // static readonly PUBLISHER_DEFAULT_REF = "advancedSettings";
   static readonly TEXT_ALIGNMENT_REF = "textAlign";
   static readonly COLUMN_COUNT_REF = "colCount";
+  static readonly DIRECTION_REF = "direction";
   static readonly WORD_SPACING_REF = "wordSpacing";
   static readonly LETTER_SPACING_REF = "letterSpacing";
   static readonly PAGE_MARGINS_REF = "pageMargins";
@@ -41,6 +42,7 @@ export class ReadiumCSS {
   static readonly TEXT_ALIGNMENT_KEY =
     "--USER__" + ReadiumCSS.TEXT_ALIGNMENT_REF;
   static readonly COLUMN_COUNT_KEY = "--USER__" + ReadiumCSS.COLUMN_COUNT_REF;
+  static readonly DIRECTION_KEY = "--USER__" + ReadiumCSS.DIRECTION_REF;
   static readonly WORD_SPACING_KEY = "--USER__" + ReadiumCSS.WORD_SPACING_REF;
   static readonly LETTER_SPACING_KEY =
     "--USER__" + ReadiumCSS.LETTER_SPACING_REF;

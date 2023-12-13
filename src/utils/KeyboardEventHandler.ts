@@ -21,8 +21,9 @@ import { IFrameNavigator } from "../navigator/IFrameNavigator";
 
 export default class KeyboardEventHandler {
   navigator: IFrameNavigator;
-  constructor(navigator: IFrameNavigator) {
+rtl: boolean;  constructor(navigator: IFrameNavigator) {
     this.navigator = navigator;
+    this.rtl = false;
   }
 
   public onBackwardSwipe: (event: UIEvent) => void = () => {};
@@ -90,22 +91,26 @@ export default class KeyboardEventHandler {
         const key = event.key;
         switch (key) {
           case "ArrowRight":
-            self.onForwardSwipe(event);
-            break;
-          case "ArrowLeft":
-            self.onBackwardSwipe(event);
-            break;
-        }
-        switch (event.code) {
-          case "Space":
-            if (event.ctrlKey) {
-              self.onBackwardSwipe(event);
-            } else {
-              self.onForwardSwipe(event);
-            }
-            break;
-        }
-      })
+            self.rtl
+                ? self.onBackwardSwipe(event)
+                : self.onForwardSwipe(event);
+              break;
+            case "ArrowLeft":
+              self.rtl
+                ? self.onForwardSwipe(event)
+                : self.onBackwardSwipe(event);
+              break;
+          }
+          switch (event.code) {
+            case "Space":
+              if (event.ctrlKey) {
+                self.onBackwardSwipe(event);
+              } else {
+                self.onForwardSwipe(event);
+              }
+              break;
+          }
+        })
     );
   }
 }

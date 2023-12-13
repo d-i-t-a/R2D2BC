@@ -2008,24 +2008,24 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               }
             } else {
               this.iframes[0].src = "about:blank";
-            }
-            if (this.iframes.length === 2) {
-              this.currentSpreadLinks.right = {
-                href: this.currentChapterLink.href,
-              };
+              if (this.iframes.length === 2) {
+                this.currentSpreadLinks.right = {
+                  href: this.currentChapterLink.href,
+                };
 
-              if (isSameOrigin) {
-                this.iframes[1].src = this.currentChapterLink.href;
-              } else {
-                fetch(this.currentChapterLink.href, this.requestConfig)
-                  .then((r) => r.text())
-                  .then(async (content) => {
-                    writeIframe2Doc.call(
-                      this,
-                      content,
-                      this.currentChapterLink.href
-                    );
-                  });
+                if (isSameOrigin) {
+                  this.iframes[1].src = this.currentChapterLink.href;
+                } else {
+                  fetch(this.currentChapterLink.href, this.requestConfig)
+                    .then((r) => r.text())
+                    .then(async (content) => {
+                      writeIframe2Doc.call(
+                        this,
+                        content,
+                        this.currentChapterLink.href
+                      );
+                    });
+                }
               }
             }
           }

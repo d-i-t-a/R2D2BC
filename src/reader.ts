@@ -590,6 +590,10 @@ export default class D2Reader {
     return this.annotationModule?.getAnnotations();
   }
 
+  get publicationLayout() {
+    return this.navigator.publication.layout;
+  }
+
   /** History */
   get history() {
     return this.historyModule?.history;

@@ -897,7 +897,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       addEventListenerOptional(
         iframe,
         "load",
-        this.handleIFrameLoad.bind(this)
+        this.handleIFrameLoad.bind(this, iframe)
       );
     }
 
@@ -1330,7 +1330,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
 
-  private async handleIFrameLoad(): Promise<void> {
+  private async handleIFrameLoad(iframe: HTMLIFrameElement): Promise<void> {
     if (this.errorMessage) this.errorMessage.style.display = "none";
     this.showLoadingMessageAfterDelay();
     try {
@@ -1439,28 +1439,26 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.chapterTitle.innerHTML = "(Current Chapter)";
       }
 
-      await this.injectInjectablesIntoIframeHead();
+      await this.injectInjectablesIntoIframeHead(iframe);
 
       if (this.highlighter !== undefined) {
-        await this.highlighter.initialize();
+        await this.highlighter.initialize(iframe);
       }
-      const body = this.iframes[0].contentDocument?.body;
+      const body = iframe.contentDocument?.body;
 
       // resize on toggle details
       let details = body?.querySelector("details");
       if (details) {
         let self = this;
         details.addEventListener("toggle", async (_event) => {
-          await self.view?.setIframeHeight?.(this.iframes[0]);
+          await self.view?.setIframeHeight?.(iframe);
         });
       }
 
       if (this.eventHandler) {
-        for (const iframe of this.iframes) {
-          this.eventHandler.setupEvents(iframe.contentDocument);
-          this.touchEventHandler.setupEvents(iframe.contentDocument);
-          this.keyboardEventHandler.setupEvents(iframe.contentDocument);
-        }
+        this.eventHandler.setupEvents(iframe.contentDocument);
+        this.touchEventHandler.setupEvents(iframe.contentDocument);
+        this.keyboardEventHandler.setupEvents(iframe.contentDocument);
         this.touchEventHandler.setupEvents(this.errorMessage);
         if (!this.didInitKeyboardEventHandler) {
           this.keyboardEventHandler.keydown(document);
@@ -1469,21 +1467,21 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       }
       if (this.view?.layout !== "fixed") {
         if (this.view?.isScrollMode()) {
-          this.iframes[0].height = "0";
-          this.view?.setIframeHeight?.(this.iframes[0]);
+          iframe.height = "0";
+          this.view?.setIframeHeight?.(iframe);
         }
       }
 
       if (this.rights.enableContentProtection && this.contentProtectionModule) {
-        await this.contentProtectionModule.initialize();
+        await this.contentProtectionModule.initialize(iframe);
       }
 
       if (this.rights.enableConsumption && this.consumptionModule) {
-        await this.consumptionModule.initialize();
+        await this.consumptionModule.initialize(iframe);
       }
 
       if (this.rights.enableAnnotations && this.annotationModule) {
-        await this.annotationModule.initialize();
+        await this.annotationModule.initialize(iframe);
       }
 
       if (this.rights.enableBookmarks && this.bookmarkModule) {
@@ -1491,11 +1489,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       }
 
       if (this.rights.enableLineFocus && this.lineFocusModule) {
-        await this.lineFocusModule.initialize();
+        await this.lineFocusModule.initialize(iframe);
       }
 
       if (this.rights.enableTTS && this.ttsModule) {
-        const body = this.iframes[0].contentDocument?.body;
+        const body = iframe.contentDocument?.body;
         const ttsModule = this.ttsModule as TTSModule2;
         await ttsModule.initialize(body);
       }
@@ -1514,9 +1512,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
       setTimeout(async () => {
         if (this.newElementId) {
-          const element = (
-            this.iframes[0].contentDocument as any
-          ).getElementById(this.newElementId);
+          const element = (iframe.contentDocument as any).getElementById(
+            this.newElementId
+          );
           this.view?.goToElement?.(element);
           this.newElementId = undefined;
         } else if (
@@ -1541,7 +1539,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
 
         this.hideLoadingMessage();
-        this.showIframeContents();
+        this.showIframeContents(iframe);
 
         if (
           this.rights.enableMediaOverlays &&
@@ -1568,7 +1566,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
 
-  private async injectInjectablesIntoIframeHead(): Promise<void> {
+  private async injectInjectablesIntoIframeHead(
+    iframe: HTMLIFrameElement
+  ): Promise<void> {
     // Inject Readium CSS into Iframe Head
     const injectablesToLoad: Promise<boolean>[] = [];
 
@@ -1592,60 +1592,58 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       injectablesToLoad.push(loadPromise);
     };
 
-    for (const iframe of this.iframes) {
-      const head = iframe.contentDocument?.head;
-      if (head) {
-        const bases = iframe.contentDocument.getElementsByTagName("base");
-        if (bases.length === 0) {
-          head.insertBefore(
-            IFrameNavigator.createBase(this.currentChapterLink.href),
-            head.firstChild
-          );
-        }
+    const head = iframe.contentDocument?.head;
+    if (head) {
+      const bases = iframe.contentDocument.getElementsByTagName("base");
+      if (bases.length === 0) {
+        head.insertBefore(
+          IFrameNavigator.createBase(this.currentChapterLink.href),
+          head.firstChild
+        );
+      }
 
-        this.injectables?.forEach((injectable) => {
-          if (injectable.type === "style") {
-            if (injectable.fontFamily) {
-              // UserSettings.fontFamilyValues.push(injectable.fontFamily)
-              // this.settings.setupEvents()
-              // this.settings.addFont(injectable.fontFamily);
-              this.settings.initAddedFont();
-              if (!injectable.systemFont && injectable.url) {
-                const link = IFrameNavigator.createCssLink(injectable.url);
-                head.appendChild(link);
-                addLoadingInjectable(link);
-              }
-            } else if (injectable.r2before && injectable.url) {
-              const link = IFrameNavigator.createCssLink(injectable.url);
-              head.insertBefore(link, head.firstChild);
-              addLoadingInjectable(link);
-            } else if (injectable.r2default && injectable.url) {
-              const link = IFrameNavigator.createCssLink(injectable.url);
-              head.insertBefore(link, head.childNodes[1]);
-              addLoadingInjectable(link);
-            } else if (injectable.r2after && injectable.url) {
-              if (injectable.appearance) {
-                // this.settings.addAppearance(injectable.appearance);
-                this.settings.initAddedAppearance();
-              }
-              const link = IFrameNavigator.createCssLink(injectable.url);
-              head.appendChild(link);
-              addLoadingInjectable(link);
-            } else if (injectable.url) {
+      this.injectables?.forEach((injectable) => {
+        if (injectable.type === "style") {
+          if (injectable.fontFamily) {
+            // UserSettings.fontFamilyValues.push(injectable.fontFamily)
+            // this.settings.setupEvents()
+            // this.settings.addFont(injectable.fontFamily);
+            this.settings.initAddedFont();
+            if (!injectable.systemFont && injectable.url) {
               const link = IFrameNavigator.createCssLink(injectable.url);
               head.appendChild(link);
               addLoadingInjectable(link);
             }
-          } else if (injectable.type === "script" && injectable.url) {
-            const script = IFrameNavigator.createJavascriptLink(
-              injectable.url,
-              injectable.async ?? false
-            );
-            head.appendChild(script);
-            addLoadingInjectable(script);
+          } else if (injectable.r2before && injectable.url) {
+            const link = IFrameNavigator.createCssLink(injectable.url);
+            head.insertBefore(link, head.firstChild);
+            addLoadingInjectable(link);
+          } else if (injectable.r2default && injectable.url) {
+            const link = IFrameNavigator.createCssLink(injectable.url);
+            head.insertBefore(link, head.childNodes[1]);
+            addLoadingInjectable(link);
+          } else if (injectable.r2after && injectable.url) {
+            if (injectable.appearance) {
+              // this.settings.addAppearance(injectable.appearance);
+              this.settings.initAddedAppearance();
+            }
+            const link = IFrameNavigator.createCssLink(injectable.url);
+            head.appendChild(link);
+            addLoadingInjectable(link);
+          } else if (injectable.url) {
+            const link = IFrameNavigator.createCssLink(injectable.url);
+            head.appendChild(link);
+            addLoadingInjectable(link);
           }
-        });
-      }
+        } else if (injectable.type === "script" && injectable.url) {
+          const script = IFrameNavigator.createJavascriptLink(
+            injectable.url,
+            injectable.async ?? false
+          );
+          head.appendChild(script);
+          addLoadingInjectable(script);
+        }
+      });
     }
 
     if (injectablesToLoad.length === 0) {
@@ -3124,16 +3122,14 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }, 200);
 
-  private showIframeContents() {
+  private showIframeContents(iframe: HTMLIFrameElement) {
     this.isBeingStyled = false;
     // We set a timeOut so that settings can be applied when opacity is still 0
     setTimeout(() => {
       if (!this.isBeingStyled) {
-        this.iframes.forEach((iframe) => {
-          iframe.style.opacity = "1";
-          iframe.style.border = "none";
-          iframe.style.overflow = "hidden";
-        });
+        iframe.style.opacity = "1";
+        iframe.style.border = "none";
+        iframe.style.overflow = "hidden";
       }
     }, 150);
   }

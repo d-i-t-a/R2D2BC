@@ -1441,7 +1441,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
       await this.injectInjectablesIntoIframeHead(iframe);
 
-      if (this.highlighter !== undefined) {
+      if (this.view?.layout !== "fixed" && this.highlighter !== undefined) {
         await this.highlighter.initialize(iframe);
       }
       const body = iframe.contentDocument?.body;

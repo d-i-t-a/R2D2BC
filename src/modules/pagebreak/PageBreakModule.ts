@@ -170,6 +170,9 @@ export class PageBreakModule implements ReaderModule {
       if (pageBreaks?.length === 0) {
         pageBreaks = body?.querySelectorAll("[epub\\:type='pagebreak']");
       }
+      if (pageBreaks?.length === 0) {
+        pageBreaks = body?.querySelectorAll("[role='doc-pagebreak']");
+      }
       let self = this;
 
       function getCssSelector(element: Element): string {

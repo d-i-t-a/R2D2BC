@@ -18,7 +18,7 @@
  */
 
 import { SHA256 } from "jscrypto/es6/SHA256";
-import { debounce } from "debounce";
+import debounce from "debounce";
 
 import { IEventPayload_R2_EVENT_HIGHLIGHT_CLICK } from "./common/events";
 import {
@@ -1978,9 +1978,7 @@ export class TextHighlighter {
             );
             highlightArea.style.setProperty(
               "border-bottom",
-              `2px solid rgba(${color.red}, ${color.green}, ${
-                color.blue
-              }, ${1})`,
+              `2px solid rgba(${color.red}, ${color.green}, ${color.blue}, ${1})`,
               "important"
             );
           } else if (TextHighlighter.isHexColor(highlight.color)) {
@@ -1992,9 +1990,7 @@ export class TextHighlighter {
             );
             highlightArea.style.setProperty(
               "border-bottom",
-              `2px solid rgba(${color.red}, ${color.green}, ${
-                color.blue
-              }, ${1})`,
+              `2px solid rgba(${color.red}, ${color.green}, ${color.blue}, ${1})`,
               "important"
             );
           } else {
@@ -2872,9 +2868,7 @@ export class TextHighlighter {
 
           highlightArea.setAttribute(
             "style",
-            `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${
-              color.red
-            }, ${color.green}, ${color.blue}, ${0}) !important; ${extra}`
+            `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${color.red}, ${color.green}, ${color.blue}, ${0}) !important; ${extra}`
           );
           highlightArea.style.setProperty(
             "border-bottom",
@@ -2885,9 +2879,7 @@ export class TextHighlighter {
           let color = TextHighlighter.hexToRgbChannels(highlight.color);
           highlightArea.setAttribute(
             "style",
-            `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${
-              color.red
-            }, ${color.green}, ${color.blue}, ${0}) !important; ${extra}`
+            `mix-blend-mode: multiply; border-radius: ${roundedCorner}px !important; background-color: rgba(${color.red}, ${color.green}, ${color.blue}, ${0}) !important; ${extra}`
           );
           highlightArea.style.setProperty(
             "border-bottom",

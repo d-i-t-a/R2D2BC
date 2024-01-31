@@ -42,7 +42,7 @@
     "recursive-readdir": "^2.2.2",
     "sanitize-html": "^2.3.3",
     "sass": "^1.54.4",
-    "sentence-splitter": "^4.2.1",
+    "sentence-splitter": "^5.0.0",
     "util": "^0.12.4",
     "whatwg-fetch": "^3.6.2"
   },

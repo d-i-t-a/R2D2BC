@@ -655,7 +655,12 @@ export class TextHighlighter {
       window.addEventListener("resize", this.toolboxPlacement.bind(this));
     }
     doc.addEventListener("selectionchange", this.toolboxPlacement.bind(this));
-    doc.addEventListener("selectionchange", this.toolboxShowDelayed.bind(this));
+    if (!this.isIOS()) {
+      doc.addEventListener(
+        "selectionchange",
+        this.toolboxShowDelayed.bind(this)
+      );
+    }
 
     el.addEventListener("mousedown", this.toolboxHide.bind(this));
     el.addEventListener("touchstart", this.toolboxHide.bind(this));

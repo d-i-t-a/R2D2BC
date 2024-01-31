@@ -573,6 +573,14 @@ export default class D2Reader {
   get tableOfContents() {
     return convertAndCamel(this.navigator.tableOfContents()) ?? [];
   }
+  /** Landmarks */
+  get landmarks() {
+    return convertAndCamel(this.navigator.landmarks()) ?? [];
+  }
+  /** Page List */
+  get pageList() {
+    return convertAndCamel(this.navigator.pageList()) ?? [];
+  }
   /** Reading Order or Spine */
   get readingOrder() {
     return convertAndCamel(this.navigator.readingOrder()) ?? [];
@@ -584,6 +592,10 @@ export default class D2Reader {
   /** Current Annotations */
   get annotations() {
     return this.annotationModule?.getAnnotations();
+  }
+
+  get publicationLayout() {
+    return this.navigator.publication.layout;
   }
 
   /** History */

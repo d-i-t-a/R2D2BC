@@ -523,6 +523,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.iframes.forEach((iframe) => {
       removeEventListenerOptional(iframe, "resize", this.onResize);
     });
+
+    if (this.didInitKeyboardEventHandler)
+      this.keyboardEventHandler.removeEvents(document);
   }
   spreads: HTMLDivElement;
   firstSpread: HTMLDivElement;
@@ -2257,6 +2260,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   tableOfContents(): any {
     return this.publication.tableOfContents;
   }
+  landmarks(): any {
+    return this.publication.landmarks;
+  }
+  pageList(): any {
+    return this.publication.pageList;
+  }
   readingOrder(): any {
     return this.publication.readingOrder;
   }
@@ -2567,8 +2576,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               return obj;
             }, {});
             if (parseInt(obj["height"]) !== 0 || parseInt(obj["width"]) !== 0) {
-              height = obj["height"] + "px";
-              width = obj["width"] + "px";
+              height = obj["height"].endsWith("px")
+                ? obj["height"]
+                : obj["height"] + "px";
+              width = obj["width"].endsWith("px")
+                ? obj["width"]
+                : obj["width"] + "px";
             }
           }
         }
@@ -2633,7 +2646,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (oldPosition) {
         this.view?.goToProgression(oldPosition);
       }
-      await this.updatePositionInfo(false);
+      this.updatePositionInfo(false);
+
+      if (this.contentProtectionModule !== undefined) {
+        await this.contentProtectionModule.handleResize();
+      }
 
       if (this.annotationModule !== undefined) {
         await this.annotationModule.handleResize();
@@ -2650,14 +2667,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.pageBreakModule !== undefined) {
         await this.pageBreakModule.handleResize();
       }
-      if (this.contentProtectionModule !== undefined) {
-        this.contentProtectionModule.handleResize();
-      }
       if (this.lineFocusModule !== undefined) {
         this.lineFocusModule.handleResize();
       }
       if (this.historyModule !== undefined) {
-        this.historyModule.handleResize();
+        await this.historyModule.handleResize();
       }
     }, 150);
   }

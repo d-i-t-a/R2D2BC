@@ -937,7 +937,7 @@ export class ContentProtectionModule implements ReaderModule {
       this.toggleRect(rect, this.securityContainer, this.isHacked)
     );
   }
-  handleResize() {
+  async handleResize() {
     if (this.properties?.enableObfuscation) {
       const onDoResize = debounce(() => {
         this.calcRects(this.rects);
@@ -946,7 +946,7 @@ export class ContentProtectionModule implements ReaderModule {
             this.toggleRect(rect, this.securityContainer, this.isHacked)
           );
         }
-      }, 10);
+      }, 50);
       if (this.rects) {
         this.observe();
         onDoResize();
@@ -1126,8 +1126,8 @@ export class ContentProtectionModule implements ReaderModule {
     }
     return true;
   }
-  copyToClipboard(textToClipboard) {
-    textToClipboard = textToClipboard.substring(
+  copyToClipboard(textToClipboard: string | undefined) {
+    textToClipboard = textToClipboard?.substring(
       0,
       this.properties?.charactersToCopy ?? 0
     );

@@ -52,6 +52,8 @@ interface Navigator {
   deactivateMarker?(): any;
 
   tableOfContents(): any;
+  landmarks(): any;
+  pageList(): any;
 
   readingOrder(): any;
 

@@ -53,6 +53,7 @@ interface Navigator {
 
   tableOfContents(): any;
   landmarks(): any;
+  pageList(): any;
 
   readingOrder(): any;
 

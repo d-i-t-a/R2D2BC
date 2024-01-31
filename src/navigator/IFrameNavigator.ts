@@ -2260,6 +2260,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   landmarks(): any {
     return this.publication.landmarks;
   }
+  pageList(): any {
+    return this.publication.pageList;
+  }
   readingOrder(): any {
     return this.publication.readingOrder;
   }

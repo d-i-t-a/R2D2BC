@@ -2646,7 +2646,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (oldPosition) {
         this.view?.goToProgression(oldPosition);
       }
-      await this.updatePositionInfo(false);
+      this.updatePositionInfo(false);
+
+      if (this.contentProtectionModule !== undefined) {
+        await this.contentProtectionModule.handleResize();
+      }
 
       if (this.annotationModule !== undefined) {
         await this.annotationModule.handleResize();
@@ -2663,14 +2667,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (this.pageBreakModule !== undefined) {
         await this.pageBreakModule.handleResize();
       }
-      if (this.contentProtectionModule !== undefined) {
-        this.contentProtectionModule.handleResize();
-      }
       if (this.lineFocusModule !== undefined) {
         this.lineFocusModule.handleResize();
       }
       if (this.historyModule !== undefined) {
-        this.historyModule.handleResize();
+        await this.historyModule.handleResize();
       }
     }, 150);
   }

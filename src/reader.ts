@@ -150,15 +150,18 @@ export default class D2Reader {
     const store = new LocalStorageStore({
       prefix: publication.manifestUrl,
       useLocalStorage: initialConfig.useLocalStorage ?? false,
+      useStorageType: initialConfig.useStorageType,
     });
 
     const settingsStore = new LocalStorageStore({
       prefix: "r2d2bc-reader",
       useLocalStorage: initialConfig.useLocalStorage ?? false,
+      useStorageType: initialConfig.useStorageType,
     });
     const layerStore = new LocalStorageStore({
       prefix: "r2d2bc-layers",
       useLocalStorage: initialConfig.useLocalStorage ?? false,
+      useStorageType: initialConfig.useStorageType,
     });
 
     const annotator = new LocalAnnotator({ store: store });

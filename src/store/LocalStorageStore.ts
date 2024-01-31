@@ -52,8 +52,8 @@ export default class LocalStorageStore implements Store {
         window.localStorage.setItem(testKey, "test");
         window.localStorage.removeItem(testKey);
         this.fallbackStore = null;
-      } else if (this.useStorageType === "session") {
-        window.sessionStorage.setItem(testKey, "test" || !this.useLocalStorage);
+      } else if (this.useStorageType === "session" || !this.useLocalStorage) {
+        window.sessionStorage.setItem(testKey, "test");
         window.sessionStorage.removeItem(testKey);
         this.fallbackStore = null;
       }

@@ -84,7 +84,7 @@
     "braces": ">=3.0.2",
     "browserslist-useragent-regexp": "^4.1.0",
     "buffer": "^6.0.3",
-    "chai": "^4.3.4",
+    "chai": "^5.0.3",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.2",
     "copy": "^0.3.2",

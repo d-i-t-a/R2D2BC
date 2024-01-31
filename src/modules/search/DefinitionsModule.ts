@@ -28,7 +28,7 @@ import {
 import * as lodash from "lodash";
 import { searchDocDomSeek } from "./searchWithDomSeek";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
-import { debounce } from "debounce";
+import debounce from "debounce";
 import { ISelectionInfo } from "../highlight/common/selection";
 import { SHA256 } from "jscrypto/es6/SHA256";
 import { AnnotationMarker } from "../../model/Locator";

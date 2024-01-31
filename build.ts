@@ -3,7 +3,7 @@ import * as util from "util";
 import chalk from "chalk";
 import { promises as fs } from "fs";
 import { watch } from "chokidar";
-import { debounce } from "debounce";
+import debounce from "debounce";
 import copy0 from "copy";
 import child_process0 from "child_process";
 import sass0 from "sass";

@@ -36,7 +36,7 @@ import { TextHighlighter } from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
-import { debounce } from "debounce";
+import debounce from "debounce";
 import {
   _getCssSelectorOptions,
   ISelectionInfo,

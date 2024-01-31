@@ -59,7 +59,7 @@ import {
   TextHighlighterConfig,
 } from "../modules/highlight/TextHighlighter";
 import { TimelineModule } from "../modules/positions/TimelineModule";
-import { debounce } from "debounce";
+import debounce from "debounce";
 import TouchEventHandler from "../utils/TouchEventHandler";
 import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 import BookView from "../views/BookView";
@@ -1670,8 +1670,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         e instanceof Error
           ? e
           : typeof e === "string"
-          ? new Error(e)
-          : new Error("An unknown error occurred in the IFrameNavigator.");
+            ? new Error(e)
+            : new Error("An unknown error occurred in the IFrameNavigator.");
       this.api.onError(trueError);
     } else {
       // otherwise just display the standard error UI

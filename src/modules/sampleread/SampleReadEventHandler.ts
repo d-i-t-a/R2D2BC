@@ -17,7 +17,7 @@
  * Licensed to: Bibliotheca LLC under one or more contributor license agreements.
  */
 
-import { debounce } from "debounce";
+import debounce from "debounce";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 
 export default class SampleReadEventHandler {

@@ -26,7 +26,7 @@ import {
   IFrameAttributes,
   IFrameNavigator,
 } from "../navigator/IFrameNavigator";
-import { debounce } from "debounce";
+import debounce from "debounce";
 
 export default class ReflowableBookView implements BookView {
   layout = "reflowable";

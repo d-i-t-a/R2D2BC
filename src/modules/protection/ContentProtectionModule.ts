@@ -24,7 +24,7 @@ import {
   addEventListenerOptional,
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
-import { debounce } from "debounce";
+import debounce from "debounce";
 import { delay } from "../../utils";
 import { addListener, launch } from "devtools-detector";
 import log from "loglevel";

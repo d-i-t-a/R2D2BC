@@ -2576,8 +2576,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               return obj;
             }, {});
             if (parseInt(obj["height"]) !== 0 || parseInt(obj["width"]) !== 0) {
-              height = obj["height"] + "px";
-              width = obj["width"] + "px";
+              height = obj["height"].endsWith("px")
+                ? obj["height"]
+                : obj["height"] + "px";
+              width = obj["width"].endsWith("px")
+                ? obj["width"]
+                : obj["width"] + "px";
             }
           }
         }

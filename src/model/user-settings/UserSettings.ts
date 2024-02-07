@@ -188,7 +188,9 @@ export class UserSettings implements IUserSettings {
         log.log(settings.verticalScroll);
       }
       if (initialUserSettings.appearance) {
-        settings.appearance = UserSettings.parseAppearanceSetting(initialUserSettings.appearance)
+        settings.appearance = UserSettings.parseAppearanceSetting(
+          initialUserSettings.appearance
+        );
         let prop = settings.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF);
         if (prop) {
           prop.value = settings.appearance;
@@ -953,8 +955,9 @@ export class UserSettings implements IUserSettings {
   }
 
   async resetUserSettings(): Promise<void> {
-    await this.store.remove(this.USERSETTINGS);
+    this.store.remove(this.USERSETTINGS);
     await this.reset();
+    this.viewChangeCallback();
     this.settingsChangeCallback();
   }
 
@@ -987,7 +990,9 @@ export class UserSettings implements IUserSettings {
 
   async applyUserSettings(userSettings: Partial<UserSettings>): Promise<void> {
     if (userSettings.appearance) {
-      this.appearance = UserSettings.parseAppearanceSetting(userSettings.appearance)
+      this.appearance = UserSettings.parseAppearanceSetting(
+        userSettings.appearance
+      );
       let prop = this.userProperties?.getByRef(ReadiumCSS.APPEARANCE_REF);
       if (prop) {
         prop.value = this.appearance;
@@ -1119,10 +1124,7 @@ export class UserSettings implements IUserSettings {
     inputSetting: InitialUserSettings["appearance"]
   ): number {
     let a: string;
-    if (
-      inputSetting === "day" ||
-      inputSetting === "readium-default-on"
-    ) {
+    if (inputSetting === "day" || inputSetting === "readium-default-on") {
       a = UserSettings.appearanceValues[0];
     } else if (
       inputSetting === "sepia" ||
@@ -1137,9 +1139,7 @@ export class UserSettings implements IUserSettings {
     } else {
       a = inputSetting;
     }
-    return UserSettings.appearanceValues.findIndex(
-      (el: any) => el === a
-    );
+    return UserSettings.appearanceValues.findIndex((el: any) => el === a);
   }
 
   async scroll(scroll: boolean): Promise<void> {
@@ -1163,8 +1163,9 @@ export class UserSettings implements IUserSettings {
       (
         this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental
       ).increment();
-      this.fontSize = this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF)
-        ?.value;
+      this.fontSize = this.userProperties?.getByRef(
+        ReadiumCSS.FONT_SIZE_REF
+      )?.value;
       let prop = this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF);
       if (prop) {
         await this.storeProperty(prop);
@@ -1216,8 +1217,9 @@ export class UserSettings implements IUserSettings {
       (
         this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF) as Incremental
       ).decrement();
-      this.fontSize = this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF)
-        ?.value;
+      this.fontSize = this.userProperties?.getByRef(
+        ReadiumCSS.FONT_SIZE_REF
+      )?.value;
       let prop = this.userProperties?.getByRef(ReadiumCSS.FONT_SIZE_REF);
       if (prop) {
         await this.storeProperty(prop);

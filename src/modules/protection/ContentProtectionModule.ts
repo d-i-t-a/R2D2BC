@@ -1435,8 +1435,27 @@ export class ContentProtectionModule implements ReaderModule {
     const windowRight = windowLeft + this.wrapper.clientWidth;
     const right = rect.left + rect.width;
     const bottom = rect.top + rect.height;
-    const windowTop = this.wrapper.scrollTop;
-    const windowBottom = windowTop + this.wrapper.clientHeight;
+    const windowTop =
+      this.wrapper.scrollTop -
+      (rect.node.parentElement
+        ? parseInt(
+            getComputedStyle(rect.node.parentElement).lineHeight.replace(
+              "px",
+              ""
+            )
+          )
+        : 10);
+    const windowBottom =
+      windowTop +
+      this.wrapper.clientHeight +
+      (rect.node.parentElement
+        ? parseInt(
+            getComputedStyle(rect.node.parentElement).lineHeight.replace(
+              "px",
+              ""
+            )
+          )
+        : 10);
 
     const isAbove = bottom < windowTop;
     const isBelow = rect.top > windowBottom;

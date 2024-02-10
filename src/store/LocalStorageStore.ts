@@ -26,6 +26,7 @@ export interface LocalStorageStoreConfig {
         value for each key. */
   prefix: string;
   useLocalStorage: boolean;
+  useStorageType: string | undefined;
 }
 
 /** Class that stores key/value pairs in localStorage if possible
@@ -34,23 +35,28 @@ export default class LocalStorageStore implements Store {
   private readonly fallbackStore: MemoryStore | null;
   private readonly prefix: string;
   private readonly useLocalStorage: boolean;
+  private readonly useStorageType: string | undefined;
 
   public constructor(config: LocalStorageStoreConfig) {
     this.prefix = config.prefix;
     this.useLocalStorage = config.useLocalStorage;
+    this.useStorageType = config.useStorageType;
     try {
       // In some browsers (eg iOS Safari in private mode),
       // localStorage exists but throws an exception when
       // you try to write to it.
       const testKey = config.prefix + "-" + String(Math.random());
-      if (this.useLocalStorage) {
+      if (this.useStorageType === "memory") {
+        this.fallbackStore = new MemoryStore();
+      } else if (this.useStorageType === "local" || this.useLocalStorage) {
         window.localStorage.setItem(testKey, "test");
         window.localStorage.removeItem(testKey);
-      } else {
+        this.fallbackStore = null;
+      } else if (this.useStorageType === "session" || !this.useLocalStorage) {
         window.sessionStorage.setItem(testKey, "test");
         window.sessionStorage.removeItem(testKey);
+        this.fallbackStore = null;
       }
-      this.fallbackStore = null;
     } catch (e) {
       this.fallbackStore = new MemoryStore();
     }
@@ -63,7 +69,7 @@ export default class LocalStorageStore implements Store {
   public get(key: string): any | null {
     let value: string | null;
     if (!this.fallbackStore) {
-      if (this.useLocalStorage) {
+      if (this.useStorageType === "local" || this.useLocalStorage) {
         value = window.localStorage.getItem(this.getLocalStorageKey(key));
       } else {
         value = window.sessionStorage.getItem(this.getLocalStorageKey(key));
@@ -76,7 +82,7 @@ export default class LocalStorageStore implements Store {
 
   public set(key: string, value: any) {
     if (!this.fallbackStore) {
-      if (this.useLocalStorage) {
+      if (this.useStorageType === "local" || this.useLocalStorage) {
         window.localStorage.setItem(this.getLocalStorageKey(key), value);
       } else {
         window.sessionStorage.setItem(this.getLocalStorageKey(key), value);
@@ -88,7 +94,7 @@ export default class LocalStorageStore implements Store {
 
   public remove(key: string) {
     if (!this.fallbackStore) {
-      if (this.useLocalStorage) {
+      if (this.useStorageType === "local" || this.useLocalStorage) {
         window.localStorage.removeItem(this.getLocalStorageKey(key));
       } else {
         window.sessionStorage.removeItem(this.getLocalStorageKey(key));

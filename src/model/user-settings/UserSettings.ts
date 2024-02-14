@@ -377,7 +377,7 @@ export class UserSettings implements IUserSettings {
       ReadiumCSS.COLUMN_COUNT_KEY
     );
     this.direction = await this.getPropertyAndFallback<Enumerable>(
-      "columnCount",
+      "direction",
       ReadiumCSS.DIRECTION_KEY
     );
 

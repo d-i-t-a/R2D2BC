@@ -333,6 +333,44 @@
                         </button>
                         </center>
                     </div>
+                    <div id="direction" style="padding: 5px;">
+                        <label style="display: block;
+        text-align: center;
+        line-height: 12pt;">Direction</label>
+                        <center>
+                            <button style="width: 30%;
+            background-color: white;
+    height: 50px;
+        border-radius: 25px 0px 0px 25px;
+        border-color: #00000020;
+        border-width: 1px;
+        border-style: solid;
+        color: black;
+        font-size: 9pt;text-transform: uppercase"
+                                    onclick="d2reader.applyUserSettings({direction:'auto'});setDirection('auto')">Auto
+                            </button><button style="width: 30%;
+            background-color: white;
+    height: 50px;
+        /*border-radius: 25px;*/
+        border-color: #00000020;
+        border-width: 1px;
+        border-style: solid;
+        color: black;
+        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({direction:'ltr'});setDirection('ltr')">
+                            LTR
+                        </button><button style="width: 30%;
+            background-color: white;
+    height: 50px;
+        border-radius: 0px 25px 25px 0px;
+        border-color: #00000020;
+        border-width: 1px;
+        border-style: solid;
+        color: black;
+        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyUserSettings({direction:'rtl'});setDirection('rtl')">
+                            RTL
+                        </button>
+                        </center>
+                    </div>
                     <div class="range-slider" style="padding: 5px;">
                         <label  style="display: block;
         text-align: center;
@@ -1367,6 +1405,9 @@
                 onError: function(error) {
                     console.log(error);
                 },
+                direction: function(dir) {
+                    document.getElementById("positionSlider").dir = dir
+                }
             },
             injectables: injectables,
             injectablesFixed: [],
@@ -1431,6 +1472,23 @@
             }
         }
 
+        function setDirection(direction) {
+            let buttons = document.getElementById('direction').getElementsByTagName('button');
+            if (direction === 'auto') {
+                buttons[0].style.backgroundColor = '#d7dcdf'
+                buttons[1].style.backgroundColor = 'white'
+                buttons[2].style.backgroundColor = 'white'
+            } else if (direction === 'ltr') {
+                buttons[1].style.backgroundColor = '#d7dcdf'
+                buttons[0].style.backgroundColor = 'white'
+                buttons[2].style.backgroundColor = 'white'
+            } else if (direction === 'rtl') {
+                buttons[2].style.backgroundColor = '#d7dcdf'
+                buttons[0].style.backgroundColor = 'white'
+                buttons[1].style.backgroundColor = 'white'
+            }
+        }
+
         function setScroll(scroll) {
             let buttons = document.getElementById('scrollMode').getElementsByTagName('button');
             if (scroll === 'true') {
@@ -1466,6 +1524,9 @@
 
             let columnCount = result['columnCount']
             setColumns(columnCount)
+
+            let direction = result['direction']
+            setDirection(direction)
 
             let scrollMode = result['verticalScroll']
             setScroll(String(scrollMode).toLowerCase())

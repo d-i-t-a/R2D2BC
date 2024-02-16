@@ -73,6 +73,7 @@ export interface IUserSettings {
   // publisherDefaults: boolean;
   textAlignment: number;
   columnCount: number;
+  direction: number;
   wordSpacing: number;
   letterSpacing: number;
   pageMargins: number;
@@ -100,6 +101,7 @@ export interface InitialUserSettings {
   // publisherDefaults?: boolean | "readium-advanced-on" | "readium-advanced-off";
   textAlignment: number;
   columnCount: number;
+  direction: string;
   wordSpacing: number;
   letterSpacing: number;
   pageMargins: number;
@@ -130,6 +132,7 @@ export class UserSettings implements IUserSettings {
   private static fontFamilyValues = ["Original", "serif", "sans-serif"];
   private static readonly textAlignmentValues = ["auto", "justify", "start"];
   private static readonly columnCountValues = ["auto", "1", "2"];
+  private static readonly directionValues = ["auto", "ltr", "rtl"];
 
   fontSize = 100.0;
   fontOverride = false;
@@ -141,6 +144,7 @@ export class UserSettings implements IUserSettings {
   // publisherDefaults = true;
   textAlignment = 0;
   columnCount = 0;
+  direction = 0;
   wordSpacing = 0.0;
   letterSpacing = 0.0;
   pageMargins = 2.0;
@@ -247,6 +251,17 @@ export class UserSettings implements IUserSettings {
           await settings.saveProperty(prop);
         }
         log.log(settings.columnCount);
+      }
+      if (initialUserSettings.direction) {
+        settings.direction = UserSettings.directionValues.findIndex(
+          (el: any) => el === initialUserSettings.direction
+        );
+        let prop = settings.userProperties.getByRef(ReadiumCSS.DIRECTION_REF);
+        if (prop) {
+          prop.value = settings.direction;
+          await settings.saveProperty(prop);
+        }
+        log.log(settings.direction);
       }
       if (initialUserSettings.wordSpacing) {
         settings.wordSpacing = initialUserSettings.wordSpacing;
@@ -363,6 +378,10 @@ export class UserSettings implements IUserSettings {
       "columnCount",
       ReadiumCSS.COLUMN_COUNT_KEY
     );
+    this.direction = await this.getPropertyAndFallback<Enumerable>(
+      "direction",
+      ReadiumCSS.DIRECTION_KEY
+    );
 
     this.fontSize = await this.getPropertyAndFallback<Incremental>(
       "fontSize",
@@ -399,6 +418,7 @@ export class UserSettings implements IUserSettings {
     // this.publisherDefaults = true;
     this.textAlignment = 0;
     this.columnCount = 0;
+    this.direction = 0;
     this.wordSpacing = 0.0;
     this.letterSpacing = 0.0;
     this.pageMargins = 2.0;
@@ -426,6 +446,8 @@ export class UserSettings implements IUserSettings {
         html.style.removeProperty(ReadiumCSS.LETTER_SPACING_KEY);
         // Apply column count
         html.style.removeProperty(ReadiumCSS.COLUMN_COUNT_KEY);
+        // Apply direction
+        html.style.removeProperty(ReadiumCSS.DIRECTION_KEY);
         // Apply text alignment
         html.style.removeProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY);
         // Apply line height
@@ -601,6 +623,18 @@ export class UserSettings implements IUserSettings {
           HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
           HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
         }
+
+        if (this.view?.navigator.publication.isFixedLayout) {
+          if (await this.getProperty(ReadiumCSS.DIRECTION_KEY)) {
+            let value =
+              this.userProperties
+                .getByRef(ReadiumCSS.DIRECTION_REF)
+                ?.toString() ?? null;
+            html.style.setProperty(ReadiumCSS.DIRECTION_KEY, value);
+            this.view.navigator.setDirection(value);
+          }
+        }
+
         if (this.view?.navigator.publication.isReflowable) {
           // Apply font family
           if (await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY)) {
@@ -786,6 +820,10 @@ export class UserSettings implements IUserSettings {
           await this.userProperties?.getByRef(ReadiumCSS.COLUMN_COUNT_REF)
             ?.value
         ],
+      direction:
+        UserSettings.directionValues[
+          await this.userProperties?.getByRef(ReadiumCSS.DIRECTION_REF)?.value
+        ],
       wordSpacing: this.userProperties?.getByRef(ReadiumCSS.WORD_SPACING_REF)
         ?.value,
       letterSpacing: this.userProperties?.getByRef(
@@ -828,6 +866,13 @@ export class UserSettings implements IUserSettings {
       UserSettings.columnCountValues,
       ReadiumCSS.COLUMN_COUNT_REF,
       ReadiumCSS.COLUMN_COUNT_KEY
+    );
+    // Direction
+    userProperties.addEnumerable(
+      this.direction,
+      UserSettings.directionValues,
+      ReadiumCSS.DIRECTION_REF,
+      ReadiumCSS.DIRECTION_KEY
     );
     // Appearance
     userProperties.addEnumerable(
@@ -979,6 +1024,10 @@ export class UserSettings implements IUserSettings {
         UserSettings.columnCountValues[
           this.userProperties?.getByRef(ReadiumCSS.COLUMN_COUNT_REF)?.value
         ], // "auto", "1", "2"
+      direction:
+        UserSettings.directionValues[
+          this.userProperties?.getByRef(ReadiumCSS.DIRECTION_REF)?.value
+        ], // "auto", "ltr", "rtl"
       verticalScroll: this.verticalScroll,
       fontSize: this.fontSize,
       wordSpacing: this.wordSpacing,
@@ -1048,6 +1097,17 @@ export class UserSettings implements IUserSettings {
         await this.storeProperty(prop);
       }
       this.settingsColumnsChangeCallback();
+    }
+
+    if (userSettings.direction) {
+      this.direction = UserSettings.directionValues.findIndex(
+        (el: any) => el === userSettings.direction
+      );
+      let prop = this.userProperties?.getByRef(ReadiumCSS.DIRECTION_REF);
+      if (prop) {
+        prop.value = this.direction;
+        await this.storeProperty(prop);
+      }
     }
 
     if (userSettings.textAlignment) {

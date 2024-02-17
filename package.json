@@ -78,7 +78,7 @@
     "@types/sanitize-html": "^2.9.0",
     "@types/uuid": "^9.0.4",
     "@typescript-eslint/eslint-plugin": "^6.9.0",
-    "@typescript-eslint/parser": "^6.9.0",
+    "@typescript-eslint/parser": "^7.0.1",
     "ansi-regex": ">=5.0.1",
     "babel-eslint": "^10.1.0",
     "braces": ">=3.0.2",

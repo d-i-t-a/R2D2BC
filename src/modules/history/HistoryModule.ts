@@ -119,7 +119,6 @@ export class HistoryModule implements ReaderModule {
   }
 
   async push(locator: Locator, history: boolean) {
-    let lastInHistory;
     if (history && this.annotator) {
       let lastReadingPosition =
         (await this.annotator.getLastReadingPosition()) as
@@ -141,13 +140,24 @@ export class HistoryModule implements ReaderModule {
         ) {
           this.history.push(lastReadingPosition);
           this.historyCurrentIndex = this.history.length - 1;
+        } else {
+          const lastInHistory = this.history[this.history.length - 1];
+          if (
+            (lastInHistory &&
+              lastInHistory.href !== locator.href &&
+              lastInHistory.locations !== locator.locations) ||
+            lastInHistory === undefined
+          ) {
+            this.history.push(lastReadingPosition);
+            this.historyCurrentIndex = this.history.length - 1;
+          }
         }
       }
 
       if (this.historyCurrentIndex < this.history.length - 1) {
         this.history = this.history.slice(0, this.historyCurrentIndex);
       }
-      lastInHistory = this.history[this.history.length - 1];
+      const lastInHistory = this.history[this.history.length - 1];
       if (
         (lastInHistory && lastInHistory.href !== locator.href) ||
         lastInHistory === undefined

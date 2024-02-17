@@ -431,8 +431,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       (
         this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF) as Incremental
       ).increment();
-      this.volume = this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
-        ?.value;
+      this.volume = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.VOLUME_REF
+      )?.value;
       let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF);
       if (prop) {
         this.storeProperty(prop);
@@ -442,8 +443,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       (
         this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF) as Incremental
       ).increment();
-      this.rate = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)
-        ?.value;
+      this.rate = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.RATE_REF
+      )?.value;
       let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF);
       if (prop) {
         this.storeProperty(prop);
@@ -457,8 +459,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       (
         this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF) as Incremental
       ).decrement();
-      this.volume = this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF)
-        ?.value;
+      this.volume = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.VOLUME_REF
+      )?.value;
       let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.VOLUME_REF);
       if (prop) {
         this.storeProperty(prop);
@@ -468,8 +471,9 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
       (
         this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF) as Incremental
       ).decrement();
-      this.rate = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF)
-        ?.value;
+      this.rate = this.userProperties.getByRef(
+        MEDIAOVERLAYREFS.RATE_REF
+      )?.value;
       let prop = this.userProperties.getByRef(MEDIAOVERLAYREFS.RATE_REF);
       if (prop) {
         this.storeProperty(prop);

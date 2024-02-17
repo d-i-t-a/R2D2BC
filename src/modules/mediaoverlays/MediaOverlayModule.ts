@@ -818,8 +818,8 @@ export class MediaOverlayModule implements ReaderModule {
         isNight || isSepia
           ? R2_MO_CLASS_ACTIVE
           : classActive
-          ? classActive
-          : R2_MO_CLASS_ACTIVE;
+            ? classActive
+            : R2_MO_CLASS_ACTIVE;
     }
 
     if (this.pid) {

@@ -433,8 +433,10 @@ export class UserSettings implements IUserSettings {
         "html"
       ) as HTMLHtmlElement;
       if (html) {
-        const rootElement = document.documentElement;
-        const body = HTMLUtilities.findRequiredElement(rootElement, "body");
+        const rootElement =
+          HTMLUtilities.findElement(document, "#root") ||
+          document.documentElement;
+        const body = HTMLUtilities.findElement(html, "body");
 
         // // Apply publishers default
         // html.style.removeProperty(ReadiumCSS.PUBLISHER_DEFAULT_KEY);
@@ -457,8 +459,9 @@ export class UserSettings implements IUserSettings {
 
         // Apply appearance
         html.style.removeProperty(ReadiumCSS.APPEARANCE_KEY);
-        HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
-        HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
+        if (rootElement)
+          HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
+        if (body) HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
 
         // Apply font family
         html.style.removeProperty(ReadiumCSS.FONT_FAMILY_KEY);
@@ -490,8 +493,10 @@ export class UserSettings implements IUserSettings {
       ) as HTMLHtmlElement;
 
       if (html) {
-        const rootElement = document.documentElement;
-        const body = HTMLUtilities.findRequiredElement(rootElement, "body");
+        const rootElement =
+          HTMLUtilities.findElement(document, "#root") ||
+          document.documentElement;
+        const body = HTMLUtilities.findElement(html, "body");
         if (this.view?.navigator.publication.isReflowable) {
           // Apply font size
           if (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY)) {
@@ -600,18 +605,21 @@ export class UserSettings implements IUserSettings {
           if (
             this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)?.value === 0
           ) {
-            HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
-            HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
+            if (rootElement)
+              HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
+            if (body) HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
           } else if (
             this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)?.value === 1
           ) {
-            HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "sepia");
-            HTMLUtilities.setAttr(body, "data-viewer-theme", "sepia");
+            if (rootElement)
+              HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "sepia");
+            if (body) HTMLUtilities.setAttr(body, "data-viewer-theme", "sepia");
           } else if (
             this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)?.value === 2
           ) {
-            HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "night");
-            HTMLUtilities.setAttr(body, "data-viewer-theme", "night");
+            if (rootElement)
+              HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "night");
+            if (body) HTMLUtilities.setAttr(body, "data-viewer-theme", "night");
           }
         } else {
           html.style.setProperty(
@@ -620,8 +628,9 @@ export class UserSettings implements IUserSettings {
               .getByRef(ReadiumCSS.APPEARANCE_REF)
               ?.toString() ?? null
           );
-          HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
-          HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
+          if (rootElement)
+            HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
+          if (body) HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
         }
 
         if (this.view?.navigator.publication.isFixedLayout) {

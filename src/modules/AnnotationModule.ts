@@ -197,7 +197,7 @@ export class AnnotationModule implements ReaderModule {
     }, 200);
   }
 
-  initialize() {
+  initialize(iframe: HTMLIFrameElement) {
     return new Promise(async (resolve) => {
       await (document as any).fonts.ready;
       if (this.rights.enableAnnotations) {
@@ -205,7 +205,7 @@ export class AnnotationModule implements ReaderModule {
           this.drawHighlights();
           this.showHighlights();
           addEventListenerOptional(
-            this.navigator.iframes[0].contentDocument?.body,
+            iframe.contentDocument?.body,
             "click",
             this.click.bind(this)
           );

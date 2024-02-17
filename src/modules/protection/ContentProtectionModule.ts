@@ -897,36 +897,34 @@ export class ContentProtectionModule implements ReaderModule {
     }
   }
 
-  public async initialize() {
+  public async initialize(iframe: HTMLIFrameElement) {
     if (this.properties?.enableObfuscation) {
       return new Promise<void>(async (resolve) => {
         await (document as any).fonts.ready;
-        for (const iframe of this.navigator.iframes) {
-          if (iframe.contentDocument) {
-            const body = HTMLUtilities.findRequiredIframeElement(
-              iframe.contentDocument,
-              "body"
-            ) as HTMLBodyElement;
-            this.observe();
+        if (iframe.contentDocument) {
+          const body = HTMLUtilities.findRequiredIframeElement(
+            iframe.contentDocument,
+            "body"
+          ) as HTMLBodyElement;
+          this.observe();
 
-            setTimeout(() => {
-              this.rects = this.findRects(body);
-              this.rects.forEach((rect) =>
-                this.toggleRect(rect, this.securityContainer, this.isHacked)
+          setTimeout(() => {
+            this.rects = this.findRects(body);
+            this.rects.forEach((rect) =>
+              this.toggleRect(rect, this.securityContainer, this.isHacked)
+            );
+
+            this.setupEvents();
+            if (!this.hasEventListener) {
+              this.hasEventListener = true;
+              addEventListenerOptional(
+                this.wrapper,
+                "scroll",
+                this.handleScroll.bind(this)
               );
-
-              this.setupEvents();
-              if (!this.hasEventListener) {
-                this.hasEventListener = true;
-                addEventListenerOptional(
-                  this.wrapper,
-                  "scroll",
-                  this.handleScroll.bind(this)
-                );
-              }
-              resolve();
-            }, 10);
-          }
+            }
+            resolve();
+          }, 10);
         }
       });
     }

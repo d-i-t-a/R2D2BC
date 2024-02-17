@@ -148,9 +148,9 @@ export function convertRange(
   const startContainerElement = startIsElement
     ? (range.startContainer as Element)
     : range.startContainer.parentNode &&
-      range.startContainer.parentNode.nodeType === Node.ELEMENT_NODE
-    ? (range.startContainer.parentNode as Element)
-    : undefined;
+        range.startContainer.parentNode.nodeType === Node.ELEMENT_NODE
+      ? (range.startContainer.parentNode as Element)
+      : undefined;
   if (!startContainerElement) {
     return undefined;
   }
@@ -170,9 +170,9 @@ export function convertRange(
   const endContainerElement = endIsElement
     ? (range.endContainer as Element)
     : range.endContainer.parentNode &&
-      range.endContainer.parentNode.nodeType === Node.ELEMENT_NODE
-    ? (range.endContainer.parentNode as Element)
-    : undefined;
+        range.endContainer.parentNode.nodeType === Node.ELEMENT_NODE
+      ? (range.endContainer.parentNode as Element)
+      : undefined;
   if (!endContainerElement) {
     return undefined;
   }

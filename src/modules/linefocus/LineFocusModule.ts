@@ -135,7 +135,8 @@ export default class LineFocusModule implements ReaderModule {
       }
     }
   }
-  initialize() {
+
+  initialize(iframe: HTMLIFrameElement) {
     return new Promise(async (resolve) => {
       await (document as any).fonts.ready;
       if (!this.hasEventListener) {
@@ -143,12 +144,12 @@ export default class LineFocusModule implements ReaderModule {
         addEventListenerOptional(document, "keydown", this.keydown.bind(this));
         addEventListenerOptional(document, "keyup", this.keyup.bind(this));
         addEventListenerOptional(
-          this.navigator.iframes[0].contentDocument,
+          iframe.contentDocument,
           "keydown",
           this.keydown.bind(this)
         );
         addEventListenerOptional(
-          this.navigator.iframes[0].contentDocument,
+          iframe.contentDocument,
           "keyup",
           this.keyup.bind(this)
         );

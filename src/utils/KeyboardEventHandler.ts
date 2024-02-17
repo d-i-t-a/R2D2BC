@@ -21,8 +21,10 @@ import { IFrameNavigator } from "../navigator/IFrameNavigator";
 
 export default class KeyboardEventHandler {
   navigator: IFrameNavigator;
+  rtl: boolean;
   constructor(navigator: IFrameNavigator) {
     this.navigator = navigator;
+    this.rtl = false;
   }
 
   public onBackwardSwipe: (event: UIEvent) => void = () => {};
@@ -71,7 +73,7 @@ export default class KeyboardEventHandler {
   private onKeyDown(self: this) {
     return (
       this.handlers["onKeyDown"] ||
-      (this.handlers["onKeyDown"] = function(event: KeyboardEvent) {
+      (this.handlers["onKeyDown"] = function (event: KeyboardEvent) {
         // Ignore input elements
         const eventTarget = event.target as HTMLElement;
         if (/input|select|option|textarea/i.test(eventTarget.tagName)) {
@@ -90,10 +92,10 @@ export default class KeyboardEventHandler {
         const key = event.key;
         switch (key) {
           case "ArrowRight":
-            self.onForwardSwipe(event);
+            self.rtl ? self.onBackwardSwipe(event) : self.onForwardSwipe(event);
             break;
           case "ArrowLeft":
-            self.onBackwardSwipe(event);
+            self.rtl ? self.onForwardSwipe(event) : self.onBackwardSwipe(event);
             break;
         }
         switch (event.code) {

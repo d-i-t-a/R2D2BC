@@ -191,16 +191,12 @@ export class TextHighlighter {
       onAfterHighlight: function () {},
     });
   }
-  async initialize() {
-    let doc = this.navigator.iframes[0].contentDocument;
+  async initialize(iframe: HTMLIFrameElement) {
+    let doc = iframe.contentDocument;
     if (doc) {
       this.dom(doc.body).addClass(this.options.contextClass);
     }
-    this.bindEvents(
-      this.navigator.iframes[0].contentDocument?.body,
-      this,
-      this.hasEventListener
-    );
+    this.bindEvents(iframe.contentDocument?.body, this, this.hasEventListener);
 
     this.initializeToolbox();
 
@@ -218,7 +214,7 @@ export class TextHighlighter {
       }
     }
     setTimeout(async () => {
-      let doc = this.navigator.iframes[0].contentDocument;
+      let doc = iframe.contentDocument;
       if (doc) {
         await doc.body?.addEventListener("click", unselect);
       }

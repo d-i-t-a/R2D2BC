@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "2.4.4",
+  "version": "2.4.5",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -77,8 +77,8 @@
     "@types/rimraf": "^4.0.5",
     "@types/sanitize-html": "^2.9.0",
     "@types/uuid": "^9.0.4",
-    "@typescript-eslint/eslint-plugin": "^6.9.0",
-    "@typescript-eslint/parser": "^6.9.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
     "ansi-regex": ">=5.0.1",
     "babel-eslint": "^10.1.0",
     "braces": ">=3.0.2",
@@ -141,5 +141,8 @@
     "semi": true,
     "singleQuote": false,
     "trailingComma": "es5"
+  },
+  "@parcel/resolver-default": {
+    "packageExports": true
   }
 }

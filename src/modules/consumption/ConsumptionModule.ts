@@ -84,8 +84,9 @@ export class ConsumptionModule implements ReaderModule {
     log.log("Consumption module stop");
     this.endResearchSession();
   }
-  initialize() {
-    let win = this.navigator.iframes[0].contentWindow;
+
+  initialize(iframe: HTMLIFrameElement) {
+    let win = iframe.contentWindow;
     if (win) {
       const self = this;
       win.onload = function () {

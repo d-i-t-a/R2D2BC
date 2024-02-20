@@ -29,6 +29,7 @@ export default class KeyboardEventHandler {
 
   public onBackwardSwipe: (event: UIEvent) => void = () => {};
   public onForwardSwipe: (event: UIEvent) => void = () => {};
+  public onKeydown: (event: UIEvent) => void = () => {};
 
   public setupEvents = (element: HTMLElement | Document | null): void => {
     if (element) {
@@ -93,20 +94,22 @@ export default class KeyboardEventHandler {
         switch (key) {
           case "ArrowRight":
             self.rtl ? self.onBackwardSwipe(event) : self.onForwardSwipe(event);
-            break;
+            return;
           case "ArrowLeft":
             self.rtl ? self.onForwardSwipe(event) : self.onBackwardSwipe(event);
-            break;
+            return;
         }
         switch (event.code) {
           case "Space":
             if (event.ctrlKey) {
               self.onBackwardSwipe(event);
+              return;
             } else {
               self.onForwardSwipe(event);
+              return;
             }
-            break;
         }
+        self.onKeydown(event);
       })
     );
   }

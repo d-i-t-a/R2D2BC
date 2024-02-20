@@ -97,6 +97,7 @@ import {
   ConsumptionModule,
   ConsumptionModuleConfig,
 } from "../modules/consumption/ConsumptionModule";
+import KeyDownEvent = JQuery.KeyDownEvent;
 
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (
@@ -117,6 +118,8 @@ export interface NavigatorAPI {
   resourceAtEnd: any;
   resourceFitsScreen: any;
   updateCurrentLocation: any;
+  keydownFallthrough: any;
+  clickThrough: any;
   direction: any;
   onError?: (e: Error) => void;
 }
@@ -999,11 +1002,16 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         this.nextChapterBottomAnchorElement.style.display = "none";
       if (this.previousChapterTopAnchorElement)
         this.previousChapterTopAnchorElement.style.display = "none";
+      if (this.eventHandler) {
+        this.eventHandler.onClickThrough = this.handleClickThrough.bind(this);
+      }
       if (this.keyboardEventHandler) {
         this.keyboardEventHandler.onBackwardSwipe =
           this.handlePreviousChapterClick.bind(this);
         this.keyboardEventHandler.onForwardSwipe =
           this.handleNextChapterClick.bind(this);
+        this.keyboardEventHandler.onKeydown =
+          this.handleKeydownFallthrough.bind(this);
       }
       if (this.touchEventHandler) {
         this.touchEventHandler.onBackwardSwipe =
@@ -1048,6 +1056,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               this.handlePreviousPageClick.bind(this);
             this.keyboardEventHandler.onForwardSwipe =
               this.handleNextPageClick.bind(this);
+            this.keyboardEventHandler.onKeydown =
+              this.handleKeydownFallthrough.bind(this);
           }
         } else {
           if (this.infoBottom) this.infoBottom.style.display = "none";
@@ -1168,6 +1178,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               this.handlePreviousPageClick.bind(this);
             this.keyboardEventHandler.onForwardSwipe =
               this.handleNextPageClick.bind(this);
+            this.keyboardEventHandler.onKeydown =
+              this.handleKeydownFallthrough.bind(this);
           }
         }
       });
@@ -1696,8 +1708,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         e instanceof Error
           ? e
           : typeof e === "string"
-            ? new Error(e)
-            : new Error("An unknown error occurred in the IFrameNavigator.");
+          ? new Error(e)
+          : new Error("An unknown error occurred in the IFrameNavigator.");
       this.api.onError(trueError);
     } else {
       // otherwise just display the standard error UI
@@ -2483,7 +2495,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
 
-  private handleClickThrough(_event: MouseEvent | TouchEvent) {}
+  private handleClickThrough(event: MouseEvent | TouchEvent) {
+    if (this.api?.clickThrough) this.api?.clickThrough(event);
+    this.emit("click", event);
+  }
 
   private handleInternalLink(event: MouseEvent | TouchEvent) {
     const element = event.target;
@@ -2813,6 +2828,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       event.preventDefault();
       event.stopPropagation();
     }
+  }
+
+  private handleKeydownFallthrough(event: KeyDownEvent | undefined): void {
+    if (this.api?.keydownFallthrough) this.api?.keydownFallthrough(event);
+    this.emit("keydown", event);
   }
 
   private hideView(): void {

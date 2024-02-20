@@ -68,7 +68,7 @@ export default class EventHandler {
       // Most click handling is done in the touchend and mouseup event handlers,
       // but if there's a click on an external link we need to cancel the click
       // event to prevent it from opening in the iframe.
-      element.addEventListener("click", this.handleLinks.bind(this));
+      element.addEventListener("click", this.handleLinks.bind(this), true);
     } else {
       throw "cannot setup events for null";
     }

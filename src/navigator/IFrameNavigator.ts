@@ -1708,8 +1708,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         e instanceof Error
           ? e
           : typeof e === "string"
-            ? new Error(e)
-            : new Error("An unknown error occurred in the IFrameNavigator.");
+          ? new Error(e)
+          : new Error("An unknown error occurred in the IFrameNavigator.");
       this.api.onError(trueError);
     } else {
       // otherwise just display the standard error UI

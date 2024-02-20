@@ -98,17 +98,17 @@ export default class KeyboardEventHandler {
           case "ArrowLeft":
             self.rtl ? self.onForwardSwipe(event) : self.onBackwardSwipe(event);
             return;
-          }
-          switch (event.code) {
-            case "Space":
-              if (event.ctrlKey) {
-                self.onBackwardSwipe(event);
-                return;
-              } else {
-                self.onForwardSwipe(event);
-                return;
-              }
-          }
+        }
+        switch (event.code) {
+          case "Space":
+            if (event.ctrlKey) {
+              self.onBackwardSwipe(event);
+              return;
+            } else {
+              self.onForwardSwipe(event);
+              return;
+            }
+        }
         self.onKeydown(event);
       })
     );

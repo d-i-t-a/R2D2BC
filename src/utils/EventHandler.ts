@@ -176,7 +176,9 @@ export default class EventHandler {
         }
       }
     } else {
-      this.onClickThrough(event);
+      if (!this.navigator.highlighter?.isSelectionMenuOpen) {
+        this.onClickThrough(event);
+      }
     }
   };
 }

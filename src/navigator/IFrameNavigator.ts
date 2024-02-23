@@ -130,6 +130,8 @@ export interface IFrameAttributes {
   iframePaddingTop?: number;
   bottomInfoHeight?: number;
   sideNavPosition?: "left" | "right";
+  fixedLayoutMargin?: number;
+  fixedLayoutShadow?: boolean;
 }
 export interface IFrameNavigatorConfig {
   mainElement: HTMLElement;
@@ -627,16 +629,20 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             this.iframes.push(iframe2);
 
             secondSpread.appendChild(this.iframes[1]);
-            this.firstSpread.style.clipPath =
-              "polygon(0% -20%, 100% -20%, 100% 120%, -20% 120%)";
-            this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
-            secondSpread.style.clipPath =
-              "polygon(0% -20%, 100% -20%, 120% 100%, 0% 120%)";
-            secondSpread.style.boxShadow = "0 0 8px 2px #ccc";
+            if (this.attributes?.fixedLayoutShadow) {
+              this.firstSpread.style.clipPath =
+                "polygon(0% -20%, 100% -20%, 100% 120%, -20% 120%)";
+              this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
+              secondSpread.style.clipPath =
+                "polygon(0% -20%, 100% -20%, 120% 100%, 0% 120%)";
+              secondSpread.style.boxShadow = "0 0 8px 2px #ccc";
+            }
           } else {
-            this.firstSpread.style.clipPath =
-              "polygon(0% -20%, 100% -20%, 120% 100%, -20% 120%)";
-            this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
+            if (this.attributes?.fixedLayoutShadow) {
+              this.firstSpread.style.clipPath =
+                "polygon(0% -20%, 100% -20%, 120% 100%, -20% 120%)";
+              this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
+            }
           }
         } else {
           this.iframes[0].style.paddingTop =
@@ -2150,12 +2156,15 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             : (this.iframes[0].parentElement?.parentElement as HTMLElement);
         if (iframeParent && width) {
           var widthRatio =
-            (parseInt(getComputedStyle(iframeParent).width) - 100) /
+            (parseInt(getComputedStyle(iframeParent).width) -
+              (this.attributes?.fixedLayoutMargin || 0)) /
             (this.iframes.length === 2
-              ? parseInt(width?.replace("px", "")) * 2 + 200
+              ? parseInt(width?.replace("px", "")) * 2 +
+                2 * (this.attributes?.fixedLayoutMargin || 0)
               : parseInt(width?.replace("px", "")));
           var heightRatio =
-            (parseInt(getComputedStyle(iframeParent).height) - 100) /
+            (parseInt(getComputedStyle(iframeParent).height) -
+              (this.attributes?.fixedLayoutMargin || 0)) /
             parseInt(height?.replace("px", ""));
           var scale = Math.min(widthRatio, heightRatio);
           iframeParent.style.transform = "scale(" + scale + ")";
@@ -2549,12 +2558,14 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         this.spreads.appendChild(secondSpread);
         secondSpread.appendChild(this.iframes[1]);
 
-        this.firstSpread.style.clipPath =
-          "polygon(0% -20%, 100% -20%, 100% 120%, -20% 120%)";
-        this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
-        secondSpread.style.clipPath =
-          "polygon(0% -20%, 100% -20%, 120% 100%, 0% 120%)";
-        secondSpread.style.boxShadow = "0 0 8px 2px #ccc";
+        if (this.attributes?.fixedLayoutShadow) {
+          this.firstSpread.style.clipPath =
+            "polygon(0% -20%, 100% -20%, 100% 120%, -20% 120%)";
+          this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
+          secondSpread.style.clipPath =
+            "polygon(0% -20%, 100% -20%, 120% 100%, 0% 120%)";
+          secondSpread.style.boxShadow = "0 0 8px 2px #ccc";
+        }
       } else {
         if (this.iframes.length === 2) {
           this.iframes.pop();
@@ -2562,9 +2573,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             this.spreads.removeChild(this.spreads.lastChild);
           }
         }
-        this.firstSpread.style.clipPath =
-          "polygon(0% -20%, 100% -20%, 120% 100%, -20% 120%)";
-        this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
+        if (this.attributes?.fixedLayoutShadow) {
+          this.firstSpread.style.clipPath =
+            "polygon(0% -20%, 100% -20%, 120% 100%, -20% 120%)";
+          this.firstSpread.style.boxShadow = "0 0 8px 2px #ccc";
+        }
       }
       this.precessContentForIframe();
     }
@@ -2628,12 +2641,15 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
 
         var widthRatio =
-          (parseInt(getComputedStyle(iframeParent).width) - 100) /
+          (parseInt(getComputedStyle(iframeParent).width) -
+            (this.attributes?.fixedLayoutMargin || 0)) /
           (this.iframes.length === 2
-            ? parseInt(width?.replace("px", "")) * 2 + 200
+            ? parseInt(width?.replace("px", "")) * 2 +
+              2 * (this.attributes?.fixedLayoutMargin || 0)
             : parseInt(width?.replace("px", "")));
         var heightRatio =
-          (parseInt(getComputedStyle(iframeParent).height) - 100) /
+          (parseInt(getComputedStyle(iframeParent).height) -
+            (this.attributes?.fixedLayoutMargin || 0)) /
           parseInt(height?.replace("px", ""));
         var scale = Math.min(widthRatio, heightRatio);
         iframeParent.style.transform = "scale(" + scale + ")";

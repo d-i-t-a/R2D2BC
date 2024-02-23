@@ -64,8 +64,8 @@ const App = () => {
               height: "calc(100vh - 10px)",
             }}
           >
-            <div id="reader-loading" className="loading"></div>
-            <div id="reader-error" className="error"></div>
+            <div id="reader-loading"></div>
+            <div id="reader-error"></div>
           </main>
         </div>
       </div>

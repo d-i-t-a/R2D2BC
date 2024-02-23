@@ -110,7 +110,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     loadingMessage.style.alignItems = "center";
     loadingMessage.style.justifyContent = "center";
     loadingMessage.style.background = "white";
-    loadingMessage.className = "loading is-loading";
+    loadingMessage.className = "r2d2bc-loading is-loading";
 
     this.pdfContainer.appendChild(loadingMessage);
 

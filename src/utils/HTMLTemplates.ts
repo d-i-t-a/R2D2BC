@@ -25,6 +25,6 @@ export const readerError = `
     ${IconLib.icons.error}
     </span>
     <span>There was an error loading this page.</span>
-    <button class="go-back">Go back</button>
-    <button class="try-again">Try again</button>
+    <button id="r2d2bc-go-back">Go back</button>
+    <button id="r2d2bc-try-again">Try again</button>
 `;

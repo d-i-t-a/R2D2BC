@@ -675,20 +675,18 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
       this.tryAgainButton = HTMLUtilities.findElement(
         mainElement,
-        "button[class=try-again]"
+        "#r2d2bc-try-again"
       );
       this.goBackButton = HTMLUtilities.findElement(
         mainElement,
-        "button[class=go-back]"
+        "#r2d2bc-go-back"
       );
-      this.infoTop = HTMLUtilities.findElement(
-        mainElement,
-        "div[class='info top']"
-      );
-      this.infoBottom = HTMLUtilities.findElement(
-        mainElement,
-        "div[class='info bottom']"
-      );
+      this.infoTop =
+        HTMLUtilities.findElement(mainElement, "#reader-info-top") ||
+        HTMLUtilities.findElement(mainElement, "div[class='info top']");
+      this.infoBottom =
+        HTMLUtilities.findElement(mainElement, "#reader-info-bottom") ||
+        HTMLUtilities.findElement(mainElement, "div[class='info bottom']");
 
       if (this.headerMenu)
         this.bookTitle = HTMLUtilities.findElement(
@@ -697,20 +695,26 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         );
 
       if (this.infoBottom)
-        this.chapterTitle = HTMLUtilities.findElement(
-          this.infoBottom,
-          "span[class=chapter-title]"
-        );
+        this.chapterTitle =
+          HTMLUtilities.findElement(this.infoBottom, "#chapter-title") ||
+          HTMLUtilities.findElement(
+            this.infoBottom,
+            "span[class=chapter-title]"
+          );
       if (this.infoBottom)
-        this.chapterPosition = HTMLUtilities.findElement(
-          this.infoBottom,
-          "span[class=chapter-position]"
-        );
+        this.chapterPosition =
+          HTMLUtilities.findElement(this.infoBottom, "#chapter-position") ||
+          HTMLUtilities.findElement(
+            this.infoBottom,
+            "span[class=chapter-position]"
+          );
       if (this.infoBottom)
-        this.remainingPositions = HTMLUtilities.findElement(
-          this.infoBottom,
-          "span[class=remaining-positions]"
-        );
+        this.remainingPositions =
+          HTMLUtilities.findElement(this.infoBottom, "#remaining-positions") ||
+          HTMLUtilities.findElement(
+            this.infoBottom,
+            "span[class=remaining-positions]"
+          );
 
       if (this.headerMenu)
         this.espandMenuIcon = HTMLUtilities.findElement(

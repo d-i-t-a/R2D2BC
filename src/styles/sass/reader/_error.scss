@@ -17,7 +17,8 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-.error {
+#reader-error,
+.r2d2bc-error {
   position: sticky;
   z-index: 20;
   background-color: transparentize($ui-white, 0.125);
@@ -65,7 +66,8 @@
 
 
 [data-viewer-theme="sepia"] {
-  .error {
+  #reader-error,
+  .r2d2bc-error {
     background-color: transparentize($sepia-bg, 0.125);
 
     button {
@@ -77,7 +79,8 @@
 }
 
 [data-viewer-theme="night"] {
-  .error {
+  #reader-error,
+  .r2d2bc-error {
     background-color: transparentize($night-bg, 0.125);
 
     button {

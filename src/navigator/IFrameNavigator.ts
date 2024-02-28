@@ -1708,8 +1708,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         e instanceof Error
           ? e
           : typeof e === "string"
-          ? new Error(e)
-          : new Error("An unknown error occurred in the IFrameNavigator.");
+            ? new Error(e)
+            : new Error("An unknown error occurred in the IFrameNavigator.");
       this.api.onError(trueError);
     } else {
       // otherwise just display the standard error UI
@@ -2118,8 +2118,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           height = getComputedStyle(doc.body).height;
           width = getComputedStyle(doc.body).width;
           if (
-            parseInt(height?.replace("px", "")) === 0 ||
-            parseInt(width?.replace("px", "")) === 0
+            parseInt(height.toString().replace("px", "")) === 0 ||
+            parseInt(width.toString().replace("px", "")) === 0
           ) {
             const head = HTMLUtilities.findIframeElement(
               doc,
@@ -2152,11 +2152,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           var widthRatio =
             (parseInt(getComputedStyle(iframeParent).width) - 100) /
             (this.iframes.length === 2
-              ? parseInt(width?.replace("px", "")) * 2 + 200
-              : parseInt(width?.replace("px", "")));
+              ? parseInt(width.toString().replace("px", "")) * 2 + 200
+              : parseInt(width.toString().replace("px", "")));
           var heightRatio =
             (parseInt(getComputedStyle(iframeParent).height) - 100) /
-            parseInt(height?.replace("px", ""));
+            parseInt(height.toString().replace("px", ""));
           var scale = Math.min(widthRatio, heightRatio);
           iframeParent.style.transform = "scale(" + scale + ")";
           for (const iframe of this.iframes) {
@@ -2617,10 +2617,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               return obj;
             }, {});
             if (parseInt(obj["height"]) !== 0 || parseInt(obj["width"]) !== 0) {
-              height = obj["height"].endsWith("px")
+              height = obj["height"].toString().endsWith("px")
                 ? obj["height"]
                 : obj["height"] + "px";
-              width = obj["width"].endsWith("px")
+              width = obj["width"].toString().endsWith("px")
                 ? obj["width"]
                 : obj["width"] + "px";
             }
@@ -2630,11 +2630,21 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         var widthRatio =
           (parseInt(getComputedStyle(iframeParent).width) - 100) /
           (this.iframes.length === 2
-            ? parseInt(width?.replace("px", "")) * 2 + 200
-            : parseInt(width?.replace("px", "")));
+            ? parseInt(
+                width.toString().endsWith("px")
+                  ? width?.replace("px", "")
+                  : width
+              ) *
+                2 +
+              200
+            : parseInt(
+                width.toString().endsWith("px")
+                  ? width?.replace("px", "")
+                  : width
+              ));
         var heightRatio =
           (parseInt(getComputedStyle(iframeParent).height) - 100) /
-          parseInt(height?.replace("px", ""));
+          parseInt(height.toString().replace("px", ""));
         var scale = Math.min(widthRatio, heightRatio);
         iframeParent.style.transform = "scale(" + scale + ")";
 

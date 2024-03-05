@@ -127,58 +127,79 @@ export default class EventHandler {
     return isEpubInternal;
   };
 
+  clicks = 0;
+  clickTimer: any = 0;
+  dblClickTimeSpan = 300;
+
   private handleLinks = async (
     event: MouseEvent | TouchEvent
   ): Promise<void> => {
     log.log("R2 Click Handler");
+    this.clicks++;
+    if (this.clicks === 1) {
+      this.clickTimer = setTimeout(async () => {
+        this.clicks = 0;
 
-    const link = this.checkForLink(event);
-    if (link) {
-      // Open external links in new tabs.
-      const isSameOrigin =
-        window.location.protocol === link.protocol &&
-        window.location.port === link.port &&
-        window.location.hostname === link.hostname;
+        const link = this.checkForLink(event);
+        if (link) {
+          // Open external links in new tabs.
+          const isSameOrigin =
+            window.location.protocol === link.protocol &&
+            window.location.port === link.port &&
+            window.location.hostname === link.hostname;
 
-      // If epub is hosted, rather than streamed, links to a resource inside the same epub should not be opened externally.
-      const isEpubInternal = this.isReadingOrderInternal(link);
+          // If epub is hosted, rather than streamed, links to a resource inside the same epub should not be opened externally.
+          const isEpubInternal = this.isReadingOrderInternal(link);
 
-      const isResourceInternal = this.isResourceInternal(link);
-      if (!isResourceInternal) {
-        await this.popup.hidePopover();
-      }
+          const isResourceInternal = this.isResourceInternal(link);
+          if (!isResourceInternal) {
+            await this.popup.hidePopover();
+          }
 
-      const isInternal = link.href.indexOf("#");
-      if (!isEpubInternal && !isResourceInternal) {
-        window.open(link.href, link.target ?? "_blank");
-        event.preventDefault();
-        event.stopPropagation();
-      } else {
-        (event.target as HTMLAnchorElement).href = link.href;
-        if ((isSameOrigin || isEpubInternal) && isInternal !== -1) {
-          const link = event.target as HTMLLIElement;
-          if (link) {
-            const attribute = link.getAttribute("epub:type") === "noteref";
-            if (attribute) {
-              await this.popup.handleFootnote(link, event);
-            } else if (isResourceInternal && !isEpubInternal) {
-              await this.popup.showPopover(link, event);
-            } else {
+          const isInternal = link.href.indexOf("#");
+          if (!isEpubInternal && !isResourceInternal) {
+            window.open(link.href, link.target ?? "_blank");
+            event.preventDefault();
+            event.stopPropagation();
+          } else {
+            (event.target as HTMLAnchorElement).href = link.href;
+            if ((isSameOrigin || isEpubInternal) && isInternal !== -1) {
+              const link = event.target as HTMLLIElement;
+              if (link) {
+                const attribute = link.getAttribute("epub:type") === "noteref";
+                if (attribute) {
+                  await this.popup.handleFootnote(link, event);
+                } else if (isResourceInternal && !isEpubInternal) {
+                  await this.popup.showPopover(link, event);
+                } else {
+                  this.onInternalLink(event);
+                }
+              } else {
+                this.onInternalLink(event);
+              }
+            } else if ((isSameOrigin || isEpubInternal) && isInternal === -1) {
+              // TODO needs some more refactoring when handling other types of links or elements
+              // link.click();
               this.onInternalLink(event);
             }
-          } else {
-            this.onInternalLink(event);
           }
-        } else if ((isSameOrigin || isEpubInternal) && isInternal === -1) {
-          // TODO needs some more refactoring when handling other types of links or elements
-          // link.click();
-          this.onInternalLink(event);
+        } else {
+          setTimeout(() => {
+            console.log("event.detail", event.detail);
+            if (
+              !this.navigator.highlighter?.isSelectionMenuOpen &&
+              event.detail === 1
+            ) {
+              this.onClickThrough(event);
+            }
+          }, 100);
         }
-      }
-    } else {
-      if (!this.navigator.highlighter?.isSelectionMenuOpen) {
-        this.onClickThrough(event);
-      }
+      }, this.dblClickTimeSpan);
+    }
+    if (this.clicks === 2) {
+      // it is the second click in double-click event
+      clearTimeout(this.clickTimer);
+      this.clicks = 0;
     }
   };
 }

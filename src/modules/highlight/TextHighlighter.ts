@@ -903,24 +903,28 @@ export class TextHighlighter {
 
     switch (mode) {
       case "colors":
+        this.selectionMenuOpened();
         if (toolboxColorsOptions) toolboxColorsOptions.style.display = "unset";
         if (toolboxAddOptions) toolboxAddOptions.style.display = "none";
         if (toolboxEditOptions) toolboxEditOptions.style.display = "none";
         if (toolboxMarkOptions) toolboxMarkOptions.style.display = "none";
         break;
       case "edit":
+        this.selectionMenuOpened();
         if (toolboxColorsOptions) toolboxColorsOptions.style.display = "none";
         if (toolboxAddOptions) toolboxAddOptions.style.display = "none";
         if (toolboxEditOptions) toolboxEditOptions.style.display = "unset";
         if (toolboxMarkOptions) toolboxMarkOptions.style.display = "none";
         break;
       case "action":
+        this.selectionMenuOpened();
         if (toolboxColorsOptions) toolboxColorsOptions.style.display = "none";
         if (toolboxAddOptions) toolboxAddOptions.style.display = "none";
         if (toolboxEditOptions) toolboxEditOptions.style.display = "none";
         if (toolboxMarkOptions) toolboxMarkOptions.style.display = "unset";
         break;
       default:
+        this.selectionMenuOpened();
         if (toolboxColorsOptions) toolboxColorsOptions.style.display = "none";
         if (toolboxAddOptions) toolboxAddOptions.style.display = "unset";
         if (toolboxEditOptions) toolboxEditOptions.style.display = "none";

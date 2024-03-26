@@ -522,6 +522,16 @@ export default class D2Reader {
   addAnnotation = async (highlight: Annotation) => {
     return (await this.annotationModule?.addAnnotation(highlight)) ?? false;
   };
+  /** 
+   * Update annotation
+   * 
+   * This should be used only when the add/delete of the annotation note
+   * is not directly handled in the `addAnnotation`/`addCommentToAnnotation`
+   * callback defined in the configuration of the D2Reader.load() method
+   *  */
+  updateAnnotation = async (highlight: Annotation) => {
+    return (await this.annotationModule?.updateAnnotation(highlight)) ?? false;
+  };
 
   /** Hide Annotation Layer */
   hideAnnotationLayer = () => {

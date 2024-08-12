@@ -125,7 +125,7 @@
     "tar": ">=6.1.9",
     "ts-loader": "^9.4.4",
     "ts-node": "^10.9.1",
-    "typedoc": "^0.25.1",
+    "typedoc": "^0.26.5",
     "typedoc-plugin-rename-defaults": "^0.7.0",
     "typescript": "5.3.3",
     "urijs": "^1.19.11"

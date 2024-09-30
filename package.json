@@ -61,7 +61,7 @@
   "devDependencies": {
     "@parcel/transformer-sass": "^2.7.0",
     "@parcel/transformer-typescript-tsc": "^2.7.0",
-    "@types/chai": "^4.2.15",
+    "@types/chai": "^5.0.0",
     "@types/copy": "^0.3.1",
     "@types/cssesc": "^3.0.0",
     "@types/debounce": "^3.0.0",

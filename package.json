@@ -86,7 +86,7 @@
     "buffer": "^6.0.3",
     "chai": "^5.0.3",
     "chalk": "^4.1.2",
-    "chokidar": "^4.0.1",
+    "chokidar": "^5.0.0",
     "copy": "^0.3.2",
     "debounce": "^2.0.0",
     "dita-streamer-js": "^1.1.3",

@@ -66,7 +66,7 @@
     "@types/cssesc": "^3.0.0",
     "@types/debounce": "^3.0.0",
     "@types/express": "^5.0.6",
-    "@types/jquery": "^3.5.5",
+    "@types/jquery": "^4.0.0",
     "@types/mark.js": "^8.11.5",
     "@types/mocha": "^10.0.1",
     "@types/pako": "^2.0.0",

@@ -52,7 +52,7 @@
     "sanitize-html": "^2.3.3",
     "ta-json-x": "^2.5.3",
     "util": "^0.12.4",
-    "uuid": "^11.0.0"
+    "uuid": "^13.0.0"
   },
   "browserslist": {
     "production": [

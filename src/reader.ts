@@ -18,6 +18,7 @@
  */
 import { Annotation, Bookmark, Locator } from "./model/Locator";
 import { Publication } from "./model/Publication";
+import { Manifest } from "@readium/shared";
 import { UserSettingsIncrementable } from "./model/user-settings/UserProperties";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import { AnnotationModule } from "./modules/AnnotationModule";
@@ -154,11 +155,14 @@ export default class D2Reader {
     let webPubManifestUrl = initialConfig.url;
     let publication;
     if (initialConfig.publication) {
-      publication = TaJsonDeserialize<Publication>(
-        initialConfig.publication,
-        Publication
-      );
-      publication.manifestUrl = new URL(webPubManifestUrl);
+      // Integrator passed a pre-parsed publication/manifest JSON object
+      const pubJson = initialConfig.publication;
+      const manifest = Manifest.deserialize(pubJson);
+      if (!manifest) {
+        throw new Error("Failed to parse publication manifest from config");
+      }
+      manifest.setSelfLink(webPubManifestUrl.href);
+      publication = new Publication(manifest, new URL(webPubManifestUrl));
     } else {
       publication = await Publication.fromUrl(
         webPubManifestUrl,

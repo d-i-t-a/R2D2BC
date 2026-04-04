@@ -22,7 +22,6 @@ import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
 import { Link } from "../../model/Link";
 import { MediaOverlayNode } from "../../model/v3/MediaOverlayNode";
-import { TaJsonDeserialize } from "../../utils/JsonUtil";
 import {
   MediaOverlaySettings,
   R2_MO_CLASS_ACTIVE,
@@ -165,10 +164,7 @@ export class MediaOverlayModule implements ReaderModule {
         return;
       }
 
-      link.mediaOverlayNode = TaJsonDeserialize<MediaOverlayNode>(
-        moJson,
-        MediaOverlayNode
-      );
+      link.mediaOverlayNode = MediaOverlayNode.deserialize(moJson)!;
       link.mediaOverlayNode.initialized = true;
 
       const href = link.hrefDecoded || link.href;
@@ -261,10 +257,7 @@ export class MediaOverlayModule implements ReaderModule {
             if (response.ok) {
               const moJson = await response.json();
               if (moJson) {
-                link.mediaOverlayNode = TaJsonDeserialize<MediaOverlayNode>(
-                  moJson,
-                  MediaOverlayNode
-                );
+                link.mediaOverlayNode = MediaOverlayNode.deserialize(moJson)!;
                 link.mediaOverlayNode.initialized = true;
               }
             }

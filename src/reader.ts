@@ -47,7 +47,7 @@ import {
 import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
-import { convertAndCamel } from "./model/Link";
+import { toPlainObject } from "./model/Link";
 import { LayerSettings } from "./modules/highlight/LayerSettings";
 import { PageBreakModule } from "./modules/pagebreak/PageBreakModule";
 import { TTSModule2 } from "./modules/TTS/TTSModule2";
@@ -56,7 +56,6 @@ import { DefinitionsModule } from "./modules/search/DefinitionsModule";
 import LineFocusModule from "./modules/linefocus/LineFocusModule";
 import { HistoryModule } from "./modules/history/HistoryModule";
 import CitationModule from "./modules/citation/CitationModule";
-import { TaJsonDeserialize } from "./utils/JsonUtil";
 import type { PDFNavigator } from "./navigator/PDFNavigator";
 import Navigator from "./navigator/Navigator";
 import { ConsumptionModule } from "./modules/consumption/ConsumptionModule";
@@ -155,35 +154,14 @@ export default class D2Reader {
     let webPubManifestUrl = initialConfig.url;
     let publication;
     if (initialConfig.publication) {
-      // Integrator passed a publication object or manifest JSON
       const pubInput = initialConfig.publication;
       if (pubInput instanceof Publication) {
-        // Already a v3 Publication instance
         publication = pubInput;
       } else {
-        // Raw manifest JSON — normalize to what Manifest.deserialize() requires
-        const json: any = {
-          metadata: pubInput.metadata ?? pubInput.Metadata ?? { title: "" },
-          links: pubInput.links ?? pubInput.Links ?? [],
-          readingOrder: pubInput.readingOrder ?? pubInput.spine ?? pubInput.Spine ?? [],
-          resources: pubInput.resources ?? pubInput.Resources,
-          toc: pubInput.toc ?? pubInput.TOC,
-        };
-        // Ensure metadata.title exists (required by @readium/shared)
-        if (!json.metadata.title && !json.metadata.Title) {
-          json.metadata.title = "";
-        }
-        if (json.metadata.Title && !json.metadata.title) {
-          json.metadata.title = json.metadata.Title;
-        }
-        const manifest = Manifest.deserialize(json);
-        if (!manifest) {
-          throw new Error("Failed to parse publication manifest from config");
-        }
-        manifest.setSelfLink(webPubManifestUrl.href);
-        publication = new Publication(manifest, new URL(webPubManifestUrl));
+        publication = Publication.fromJSON(pubInput, webPubManifestUrl);
       }
-    } else {
+    }
+    if (!publication) {
       publication = await Publication.fromUrl(
         webPubManifestUrl,
         initialConfig.requestConfig
@@ -637,19 +615,19 @@ export default class D2Reader {
 
   /** Table of Contents */
   get tableOfContents() {
-    return convertAndCamel(this.navigator.tableOfContents()) ?? [];
+    return toPlainObject(this.navigator.tableOfContents()) ?? [];
   }
   /** Landmarks */
   get landmarks() {
-    return convertAndCamel(this.navigator.landmarks()) ?? [];
+    return toPlainObject(this.navigator.landmarks()) ?? [];
   }
   /** Page List */
   get pageList() {
-    return convertAndCamel(this.navigator.pageList()) ?? [];
+    return toPlainObject(this.navigator.pageList()) ?? [];
   }
   /** Reading Order or Spine */
   get readingOrder() {
-    return convertAndCamel(this.navigator.readingOrder()) ?? [];
+    return toPlainObject(this.navigator.readingOrder()) ?? [];
   }
   /** Current Bookmarks */
   get bookmarks() {

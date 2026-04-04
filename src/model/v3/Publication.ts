@@ -31,7 +31,7 @@ import {
  */
 function toLink(link: ReadiumLink): Link {
   if (link instanceof Link) return link;
-  return Object.assign(new Link({ href: link.href }), {
+  return new Link({
     href: link.href,
     templated: link.templated,
     type: link.type,
@@ -46,7 +46,7 @@ function toLink(link: ReadiumLink): Link {
     languages: link.languages,
     alternates: link.alternates,
     children: link.children,
-  }) as Link;
+  });
 }
 
 function toLinks(links: ReadiumLink[] | undefined): Link[] {
@@ -74,6 +74,28 @@ export class Publication {
   constructor(manifest: Manifest, manifestUrl: URL) {
     this.manifest = manifest;
     this.manifestUrl = manifestUrl;
+  }
+
+  /**
+   * Create a Publication from a raw JSON object.
+   * Handles both RWPM (camelCase) and legacy (PascalCase) key formats.
+   * Returns null if the JSON cannot be parsed.
+   */
+  static fromJSON(json: any, url: URL): Publication | null {
+    const normalized: any = {
+      metadata: json.metadata ?? json.Metadata ?? { title: "" },
+      links: json.links ?? json.Links ?? [],
+      readingOrder: json.readingOrder ?? json.spine ?? json.Spine ?? [],
+      resources: json.resources ?? json.Resources,
+      toc: json.toc ?? json.TOC,
+    };
+    if (!normalized.metadata.title) {
+      normalized.metadata.title = normalized.metadata.Title ?? "";
+    }
+    const manifest = Manifest.deserialize(normalized);
+    if (!manifest) return null;
+    manifest.setSelfLink(url.href);
+    return new Publication(manifest, url);
   }
 
   static async fromUrl(

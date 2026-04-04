@@ -17,60 +17,29 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-/**
- * @deprecated Import from "./v3/Link" instead. This file re-exports for backwards compatibility.
- */
 export { Link, D2Link, Links } from "./v3/Link";
 
 /**
- * @deprecated No longer needed — @readium/shared uses camelCase natively.
- * Kept for backwards compatibility with code that calls convertAndCamel().
+ * Converts @readium/shared objects to plain JSON-safe objects.
+ * Unwraps Links wrappers (.items), converts Sets to Arrays,
+ * and recursively processes nested objects.
  */
-export function convertAndCamel(o: any): any {
+export function toPlainObject(o: any): any {
   if (o == null) return o;
-  // Unwrap @readium/shared Links objects to plain arrays
-  if (o.items && Array.isArray(o.items)) {
-    return convertAndCamel(o.items);
+  if (o instanceof Set) return Array.from(o);
+  if (o.items && Array.isArray(o.items)) return o.items.map(toPlainObject);
+  if (Array.isArray(o)) return o.map(toPlainObject);
+  if (typeof o !== "object") return o;
+
+  const result: any = {};
+  for (const key in o) {
+    if (!o.hasOwnProperty(key)) continue;
+    result[key] = toPlainObject(o[key]);
   }
-  let newO: any, origKey: string, newKey: string, value: any;
-  if (o instanceof Array) {
-    return o.map(function (value: any) {
-      if (typeof value === "object") {
-        value = convertAndCamel(value);
-      }
-      return value;
-    });
-  } else {
-    newO = {};
-    for (origKey in o) {
-      if (o.hasOwnProperty(origKey)) {
-        newKey = (
-          origKey.charAt(0).toLowerCase() + origKey.slice(1) || origKey
-        ).toString();
-        value = o[origKey];
-        // Unwrap Links objects to plain arrays
-        if (value && value.items && Array.isArray(value.items)) {
-          value = convertAndCamel(value.items);
-        // Convert Set to Array (e.g., rels)
-        } else if (value instanceof Set) {
-          value = Array.from(value);
-        } else if (
-          value instanceof Array ||
-          (value !== null &&
-            value !== undefined &&
-            value.constructor === Object)
-        ) {
-          value = convertAndCamel(value);
-        }
-        if (newKey === "href1") {
-          newO["href"] = value;
-        } else if (newKey === "typeLink") {
-          newO["type"] = value;
-        } else {
-          newO[newKey] = value;
-        }
-      }
-    }
-  }
-  return newO;
+  return result;
 }
+
+/**
+ * @deprecated Use toPlainObject() instead.
+ */
+export const convertAndCamel = toPlainObject;

@@ -161,15 +161,21 @@ export default class D2Reader {
         // Already a v3 Publication instance
         publication = pubInput;
       } else {
-        // Raw JSON — try deserializing as manifest
-        // Support both camelCase (RWPM) and PascalCase (old r2-shared-js) formats
-        const json = pubInput.metadata ? pubInput : {
-          metadata: pubInput.Metadata ?? pubInput.metadata,
-          readingOrder: pubInput.Spine ?? pubInput.readingOrder ?? pubInput.spine,
-          resources: pubInput.Resources ?? pubInput.resources,
-          toc: pubInput.TOC ?? pubInput.toc,
-          links: pubInput.Links ?? pubInput.links ?? [],
+        // Raw manifest JSON — normalize to what Manifest.deserialize() requires
+        const json: any = {
+          metadata: pubInput.metadata ?? pubInput.Metadata ?? { title: "" },
+          links: pubInput.links ?? pubInput.Links ?? [],
+          readingOrder: pubInput.readingOrder ?? pubInput.spine ?? pubInput.Spine ?? [],
+          resources: pubInput.resources ?? pubInput.Resources,
+          toc: pubInput.toc ?? pubInput.TOC,
         };
+        // Ensure metadata.title exists (required by @readium/shared)
+        if (!json.metadata.title && !json.metadata.Title) {
+          json.metadata.title = "";
+        }
+        if (json.metadata.Title && !json.metadata.title) {
+          json.metadata.title = json.metadata.Title;
+        }
         const manifest = Manifest.deserialize(json);
         if (!manifest) {
           throw new Error("Failed to parse publication manifest from config");

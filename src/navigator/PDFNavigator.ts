@@ -84,6 +84,7 @@ export enum ScaleType {
 }
 
 export class PDFNavigator extends EventEmitter implements Navigator {
+  readonly isPDF = true;
   settings: UserSettings;
   publication: Publication;
 

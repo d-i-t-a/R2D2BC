@@ -27,6 +27,11 @@ export { Link, D2Link, Links } from "./v3/Link";
  * Kept for backwards compatibility with code that calls convertAndCamel().
  */
 export function convertAndCamel(o: any): any {
+  if (o == null) return o;
+  // Unwrap @readium/shared Links objects to plain arrays
+  if (o.items && Array.isArray(o.items)) {
+    return convertAndCamel(o.items);
+  }
   let newO: any, origKey: string, newKey: string, value: any;
   if (o instanceof Array) {
     return o.map(function (value: any) {
@@ -43,7 +48,10 @@ export function convertAndCamel(o: any): any {
           origKey.charAt(0).toLowerCase() + origKey.slice(1) || origKey
         ).toString();
         value = o[origKey];
-        if (
+        // Unwrap Links objects
+        if (value && value.items && Array.isArray(value.items)) {
+          value = convertAndCamel(value.items);
+        } else if (
           value instanceof Array ||
           (value !== null &&
             value !== undefined &&

@@ -155,14 +155,28 @@ export default class D2Reader {
     let webPubManifestUrl = initialConfig.url;
     let publication;
     if (initialConfig.publication) {
-      // Integrator passed a pre-parsed publication/manifest JSON object
-      const pubJson = initialConfig.publication;
-      const manifest = Manifest.deserialize(pubJson);
-      if (!manifest) {
-        throw new Error("Failed to parse publication manifest from config");
+      // Integrator passed a publication object or manifest JSON
+      const pubInput = initialConfig.publication;
+      if (pubInput instanceof Publication) {
+        // Already a v3 Publication instance
+        publication = pubInput;
+      } else {
+        // Raw JSON — try deserializing as manifest
+        // Support both camelCase (RWPM) and PascalCase (old r2-shared-js) formats
+        const json = pubInput.metadata ? pubInput : {
+          metadata: pubInput.Metadata ?? pubInput.metadata,
+          readingOrder: pubInput.Spine ?? pubInput.readingOrder ?? pubInput.spine,
+          resources: pubInput.Resources ?? pubInput.resources,
+          toc: pubInput.TOC ?? pubInput.toc,
+          links: pubInput.Links ?? pubInput.links ?? [],
+        };
+        const manifest = Manifest.deserialize(json);
+        if (!manifest) {
+          throw new Error("Failed to parse publication manifest from config");
+        }
+        manifest.setSelfLink(webPubManifestUrl.href);
+        publication = new Publication(manifest, new URL(webPubManifestUrl));
       }
-      manifest.setSelfLink(webPubManifestUrl.href);
-      publication = new Publication(manifest, new URL(webPubManifestUrl));
     } else {
       publication = await Publication.fromUrl(
         webPubManifestUrl,

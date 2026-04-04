@@ -48,9 +48,12 @@ export function convertAndCamel(o: any): any {
           origKey.charAt(0).toLowerCase() + origKey.slice(1) || origKey
         ).toString();
         value = o[origKey];
-        // Unwrap Links objects
+        // Unwrap Links objects to plain arrays
         if (value && value.items && Array.isArray(value.items)) {
           value = convertAndCamel(value.items);
+        // Convert Set to Array (e.g., rels)
+        } else if (value instanceof Set) {
+          value = Array.from(value);
         } else if (
           value instanceof Array ||
           (value !== null &&

@@ -400,7 +400,7 @@ export class AnnotationModule implements ReaderModule {
         let annotation: Annotation | undefined;
 
         if (tocItem) {
-          let href = tocItem.Href;
+          let href = tocItem.href;
           if (href.indexOf("#") > 0) {
             href = href.slice(0, href.indexOf("#"));
           }
@@ -543,7 +543,7 @@ export class AnnotationModule implements ReaderModule {
               );
             }
             if (tocItem) {
-              let href = tocItem.Href;
+              let href = tocItem.href;
               if (href.indexOf("#") > 0) {
                 href = href.slice(0, href.indexOf("#"));
               }
@@ -629,7 +629,7 @@ export class AnnotationModule implements ReaderModule {
             }
 
             if (tocItem) {
-              let href = tocItem.Href;
+              let href = tocItem.href;
               if (href.indexOf("#") > 0) {
                 href = href.slice(0, href.indexOf("#"));
               }
@@ -817,14 +817,14 @@ export class AnnotationModule implements ReaderModule {
             const spanElement: HTMLSpanElement = document.createElement("span");
             linkElement.tabIndex = -1;
             linkElement.className = "chapter-link";
-            if (link.Href) {
-              const linkHref = this.publication.getAbsoluteHref(link.Href);
+            if (link.href) {
+              const linkHref = this.publication.getAbsoluteHref(link.href);
               const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
               linkElement.href = linkHref;
-              linkElement.innerHTML = tocItemAbs?.Title || "";
+              linkElement.innerHTML = tocItemAbs?.title || "";
               chapterHeader.appendChild(linkElement);
             } else {
-              spanElement.innerHTML = link.Title || "";
+              spanElement.innerHTML = link.title || "";
               spanElement.className = "chapter-title";
               chapterHeader.appendChild(spanElement);
             }
@@ -841,7 +841,7 @@ export class AnnotationModule implements ReaderModule {
                   locations: {
                     progression: 0,
                   },
-                  type: link.TypeLink,
+                  type: link.type,
                   title: linkElement.title,
                 };
 
@@ -853,11 +853,11 @@ export class AnnotationModule implements ReaderModule {
             const bookmarkList: HTMLUListElement = document.createElement("ol");
             annotations.forEach(function (locator: any) {
               const href =
-                link.Href.indexOf("#") !== -1
-                  ? link.Href.slice(0, link.Href.indexOf("#"))
-                  : link.Href;
+                link.href.indexOf("#") !== -1
+                  ? link.href.slice(0, link.href.indexOf("#"))
+                  : link.href;
 
-              if (link.Href && locator.href.endsWith(href)) {
+              if (link.href && locator.href.endsWith(href)) {
                 let bookmarkItem: HTMLLIElement = document.createElement("li");
                 bookmarkItem.className = "annotation-item";
                 let bookmarkLink: HTMLAnchorElement =
@@ -975,8 +975,11 @@ export class AnnotationModule implements ReaderModule {
             if (chapterList.children.length > 0) {
               parentElement.appendChild(chapterList);
             }
-            if (link.Children && link.Children.length > 0) {
-              createAnnotationTree(parentElement, link.Children);
+            if (link.children?.items && link.children.items.length > 0) {
+              createAnnotationTree(
+                parentElement,
+                link.children.items as Link[]
+              );
             }
           }
         };

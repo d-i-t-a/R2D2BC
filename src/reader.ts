@@ -175,8 +175,8 @@ export default class D2Reader {
     rights = updateConfig(rights, publication);
 
     if (
-      publication.Metadata.ConformsTo &&
-      publication.Metadata.ConformsTo.includes(
+      publication.metadata?.conformsTo &&
+      publication.metadata?.conformsTo.includes(
         "https://readium.org/webpub-manifest/profiles/pdf"
       )
     ) {
@@ -227,11 +227,11 @@ export default class D2Reader {
         headerMenu: headerMenu,
         api: initialConfig.api,
         injectables:
-          (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          publication.isFixedLayout
             ? initialConfig.injectablesFixed
             : initialConfig.injectables,
         layout:
-          (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          publication.isFixedLayout
             ? "fixed"
             : "reflowable",
       });
@@ -395,7 +395,7 @@ export default class D2Reader {
         sample: initialConfig.sample,
         requestConfig: initialConfig.requestConfig,
         injectables:
-          (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          publication.isFixedLayout
             ? (initialConfig.injectablesFixed ?? [])
             : initialConfig.injectables,
         attributes: initialConfig.attributes,
@@ -689,7 +689,7 @@ export default class D2Reader {
     return this.navigator.totalResources();
   }
   get publicationLanguage() {
-    return this.navigator.publication.Metadata.Language;
+    return this.navigator.publication.metadata?.languages;
   }
 
   /**
@@ -732,7 +732,7 @@ export default class D2Reader {
     return incremental === "mo_rate" || incremental === "mo_volume";
   }
 
-  /**
+  w; /**
    * Used to increase anything that can be increased,
    * such as pitch, rate, volume, fontSize
    */

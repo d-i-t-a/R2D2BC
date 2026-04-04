@@ -340,7 +340,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
 
     this.showLoading();
     await this.loadDocument(
-      this.publication.getAbsoluteHref(this.resource.Href),
+      this.publication.getAbsoluteHref(this.resource.href),
       1
     );
 
@@ -468,7 +468,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
       totalPages > 1 ? (this.pageNum - 1) / (totalPages - 1) : 0;
     return {
       href: this.resource
-        ? this.publication.getAbsoluteHref(this.resource.Href)
+        ? this.publication.getAbsoluteHref(this.resource.href)
         : "",
       title: `Page ${this.pageNum}`,
       locations: {
@@ -516,7 +516,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     if (this.resourceIndex >= this.publication.readingOrder.length - 1) return;
     this.resourceIndex++;
     this.resource = this.publication.readingOrder[this.resourceIndex];
-    this.loadDocument(this.publication.getAbsoluteHref(this.resource.Href), 1);
+    this.loadDocument(this.publication.getAbsoluteHref(this.resource.href), 1);
   }
 
   previousResource(): void {
@@ -524,7 +524,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     this.resourceIndex--;
     this.resource = this.publication.readingOrder[this.resourceIndex];
     this.loadDocument(
-      this.publication.getAbsoluteHref(this.resource.Href),
+      this.publication.getAbsoluteHref(this.resource.href),
       this.pdfDoc?.numPages ?? 1
     );
   }
@@ -545,10 +545,10 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     if (href) {
       const baseHref = href.split("#")[0].split("?")[0];
       const targetIdx = this.publication.readingOrder.findIndex((item) => {
-        if (!item.Href) return false;
-        const abs = this.publication.getAbsoluteHref(item.Href);
+        if (!item.href) return false;
+        const abs = this.publication.getAbsoluteHref(item.href);
         return (
-          item.Href === baseHref ||
+          item.href === baseHref ||
           abs === baseHref ||
           abs === this.toAbsoluteHref(baseHref)
         );
@@ -557,7 +557,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
         this.resourceIndex = targetIdx;
         this.resource = this.publication.readingOrder[this.resourceIndex];
         this.loadDocument(
-          this.publication.getAbsoluteHref(this.resource.Href),
+          this.publication.getAbsoluteHref(this.resource.href),
           page
         );
         return;
@@ -872,7 +872,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     return {
       id: crypto.randomUUID(),
       href: this.resource
-        ? this.publication.getAbsoluteHref(this.resource.Href)
+        ? this.publication.getAbsoluteHref(this.resource.href)
         : "",
       locations: { position: this.pageNum },
       type: "application/pdf",
@@ -899,7 +899,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
   getBookmarks(): Bookmark[] {
     if (!this.annotator || !this.resource) return [];
     return this.annotator.getBookmarks(
-      this.publication.getAbsoluteHref(this.resource.Href)
+      this.publication.getAbsoluteHref(this.resource.href)
     );
   }
 
@@ -980,7 +980,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
   private saveLastReadingPosition(): void {
     if (!this.annotator || !this.resource) return;
     const position: ReadingPosition = {
-      href: this.publication.getAbsoluteHref(this.resource.Href),
+      href: this.publication.getAbsoluteHref(this.resource.href),
       locations: { position: this.pageNum },
       type: "application/pdf",
       created: new Date(),
@@ -1009,7 +1009,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     // Find the matching resource by comparing absolute hrefs.
     const idx = this.publication.readingOrder.findIndex(
       (item) =>
-        item.Href && this.publication.getAbsoluteHref(item.Href) === saved.href
+        item.href && this.publication.getAbsoluteHref(item.href) === saved.href
     );
 
     if (idx >= 0 && idx !== this.resourceIndex) {
@@ -1017,7 +1017,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
       this.resourceIndex = idx;
       this.resource = this.publication.readingOrder[this.resourceIndex];
       await this.loadDocument(
-        this.publication.getAbsoluteHref(this.resource.Href),
+        this.publication.getAbsoluteHref(this.resource.href),
         page
       );
     } else {

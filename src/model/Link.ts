@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 DITA (AM Consulting LLC)
+ * Copyright 2018-2026 DITA (AM Consulting LLC)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,19 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { Link as R2Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
-import { JsonObject } from "ta-json-x";
+/**
+ * @deprecated Import from "./v3/Link" instead. This file re-exports for backwards compatibility.
+ */
+export { Link, D2Link, Links } from "./v3/Link";
 
-export class D2Link {
-  href: string;
-  type?: string;
-  title?: string;
-}
-
-@JsonObject()
-export class Link extends R2Link {
-  contentLength?: number;
-  contentWeight?: number;
-}
-
-export function convertAndCamel(o) {
-  let newO, origKey, newKey, value;
+/**
+ * @deprecated No longer needed — @readium/shared uses camelCase natively.
+ * Kept for backwards compatibility with code that calls convertAndCamel().
+ */
+export function convertAndCamel(o: any): any {
+  let newO: any, origKey: string, newKey: string, value: any;
   if (o instanceof Array) {
-    return o.map(function (value) {
+    return o.map(function (value: any) {
       if (typeof value === "object") {
         value = convertAndCamel(value);
       }

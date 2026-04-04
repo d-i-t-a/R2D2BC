@@ -519,36 +519,29 @@ export class TTSModule2 implements ReaderModule {
     }
     log.log("initialVoice", initialVoice);
 
-    const publicationVoiceHasHyphen =
-      self.navigator.publication.Metadata.Language[0].indexOf("-") !== -1;
+    const pubLang = self.navigator.publication.metadata?.languages?.[0];
+    const publicationVoiceHasHyphen = pubLang
+      ? pubLang.indexOf("-") !== -1
+      : false;
     log.log("publicationVoiceHasHyphen", publicationVoiceHasHyphen);
     let publicationVoice;
     if (publicationVoiceHasHyphen) {
       publicationVoice =
-        this.tts.voice && this.tts.voice.usePublication
+        this.tts.voice && this.tts.voice.usePublication && pubLang
           ? this.voices.filter((v: any) => {
               var lang = v.lang.replace("_", "-");
               return (
-                lang.startsWith(
-                  self.navigator.publication.Metadata.Language[0]
-                ) ||
-                lang.endsWith(
-                  self.navigator.publication.Metadata.Language[0].toUpperCase()
-                )
+                lang.startsWith(pubLang) || lang.endsWith(pubLang.toUpperCase())
               );
             })[0]
           : undefined;
     } else {
       publicationVoice =
-        this.tts.voice && this.tts.voice.usePublication
+        this.tts.voice && this.tts.voice.usePublication && pubLang
           ? this.voices.filter((v: any) => {
               return (
-                v.lang.startsWith(
-                  self.navigator.publication.Metadata.Language[0]
-                ) ||
-                v.lang.endsWith(
-                  self.navigator.publication.Metadata.Language[0].toUpperCase()
-                )
+                v.lang.startsWith(pubLang) ||
+                v.lang.endsWith(pubLang.toUpperCase())
               );
             })[0]
           : undefined;

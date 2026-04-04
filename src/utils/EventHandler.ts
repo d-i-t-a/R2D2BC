@@ -17,7 +17,7 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
+import { Link } from "../model/Link";
 import { IFrameNavigator } from "../navigator/IFrameNavigator";
 import { Popup } from "../modules/search/Popup";
 import log from "loglevel";
@@ -108,10 +108,10 @@ export default class EventHandler {
   private linkInPublication = (readingOrder: Link[], clickedHref: string) =>
     readingOrder.some((link: Link) => {
       return (
-        !link.Rel?.includes("external") &&
+        !(link.rels ? Array.from(link.rels) : []).includes("external") &&
         this.navigator.publication
           .getRelativeHref(clickedHref)
-          .includes(link.Href)
+          .includes(link.href)
       );
     });
 

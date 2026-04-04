@@ -21,7 +21,7 @@ import { Publication } from "../../model/Publication";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
 import { Link } from "../../model/Link";
-import { MediaOverlayNode } from "r2-shared-js/dist/es6-es2015/src/models/media-overlay";
+import { MediaOverlayNode } from "../../model/v3/MediaOverlayNode";
 import { TaJsonDeserialize } from "../../utils/JsonUtil";
 import {
   MediaOverlaySettings,
@@ -136,9 +136,9 @@ export class MediaOverlayModule implements ReaderModule {
 
   private async playLink() {
     let link = this.currentLinks[this.currentLinkIndex];
-    if (link?.Properties?.MediaOverlay) {
+    if (link?.mediaOverlay) {
       this.ensureOnTimeUpdate(false, false);
-      const moUrl = link.Properties?.MediaOverlay;
+      const moUrl = link.mediaOverlay;
 
       const moUrlObjFull = new URL(moUrl, this.publication.manifestUrl);
       const moUrlFull = moUrlObjFull.toString();
@@ -165,18 +165,18 @@ export class MediaOverlayModule implements ReaderModule {
         return;
       }
 
-      link.MediaOverlays = TaJsonDeserialize<MediaOverlayNode>(
+      link.mediaOverlayNode = TaJsonDeserialize<MediaOverlayNode>(
         moJson,
         MediaOverlayNode
       );
-      link.MediaOverlays.initialized = true;
+      link.mediaOverlayNode.initialized = true;
 
-      const href = link.HrefDecoded || link.Href;
+      const href = link.hrefDecoded || link.href;
       const hrefUrlObj = new URL("https://dita.digital/" + href);
 
       await this.playMediaOverlays(
         hrefUrlObj.pathname.substr(1),
-        link.MediaOverlays,
+        link.mediaOverlayNode,
         undefined
       );
     } else {
@@ -248,10 +248,10 @@ export class MediaOverlayModule implements ReaderModule {
 
     // If clicking on a different page, load its MO first
     if (clickedLinkIndex !== this.currentLinkIndex || !this.mediaOverlayRoot) {
-      if (!link.MediaOverlays?.initialized) {
+      if (!link.mediaOverlayNode?.initialized) {
         // MO not loaded for this page yet — load it
-        if (link.Properties?.MediaOverlay) {
-          const moUrl = link.Properties.MediaOverlay;
+        if (link.mediaOverlay) {
+          const moUrl = link.mediaOverlay;
           const moUrlObjFull = new URL(moUrl, this.publication.manifestUrl);
           try {
             const response = await fetch(
@@ -261,11 +261,11 @@ export class MediaOverlayModule implements ReaderModule {
             if (response.ok) {
               const moJson = await response.json();
               if (moJson) {
-                link.MediaOverlays = TaJsonDeserialize<MediaOverlayNode>(
+                link.mediaOverlayNode = TaJsonDeserialize<MediaOverlayNode>(
                   moJson,
                   MediaOverlayNode
                 );
-                link.MediaOverlays.initialized = true;
+                link.mediaOverlayNode.initialized = true;
               }
             }
           } catch (e) {
@@ -279,17 +279,17 @@ export class MediaOverlayModule implements ReaderModule {
         }
       }
       this.currentLinkIndex = clickedLinkIndex;
-      this.mediaOverlayRoot = link.MediaOverlays!;
+      this.mediaOverlayRoot = link.mediaOverlayNode!;
     }
 
-    const href = link.HrefDecoded || link.Href;
+    const href = link.hrefDecoded || link.href;
     const hrefUrlObj = new URL("https://dita.digital/" + href);
     const textHref = hrefUrlObj.pathname.substr(1);
 
     // Find the matching text/audio pair
     const moTextAudioPair = this.findDepthFirstTextAudioPair(
       textHref,
-      this.mediaOverlayRoot,
+      this.mediaOverlayRoot!,
       fragmentIDChain
     );
 
@@ -305,7 +305,7 @@ export class MediaOverlayModule implements ReaderModule {
       this.settings.playing = true;
       if (
         this.audioElement &&
-        this.currentLinks[this.currentLinkIndex]?.Properties?.MediaOverlay
+        this.currentLinks[this.currentLinkIndex]?.mediaOverlay
       ) {
         const timeToSeekTo = this.currentAudioBegin
           ? this.currentAudioBegin
@@ -453,8 +453,8 @@ export class MediaOverlayModule implements ReaderModule {
           log.log("ontimeupdate - mediaOverlaysNext()");
           this.mediaOverlaysNext();
         }
-        const match_i = this.mediaOverlayTextAudioPair.Text.lastIndexOf("#");
-        const match_id = this.mediaOverlayTextAudioPair.Text.substr(
+        const match_i = this.mediaOverlayTextAudioPair.Text!.lastIndexOf("#");
+        const match_id = this.mediaOverlayTextAudioPair.Text!.substr(
           match_i + 1
         );
 
@@ -901,10 +901,11 @@ export class MediaOverlayModule implements ReaderModule {
 
   mediaOverlayHighlight(id: string | undefined) {
     log.log("moHighlight:  ## " + id);
-    let classActive = this.publication.Metadata?.MediaOverlay?.ActiveClass;
-    if (!classActive) {
-      classActive = this.settings.color;
-    }
+    // Get active class from metadata: try @readium/shared method, then otherMetadata, then settings fallback
+    let classActive =
+      (this.publication.metadata as any)?.getMediaOverlay?.()?.activeClass
+      ?? this.publication.metadata?.otherMetadata?.["media-overlay"]?.["active-class"]
+      ?? this.settings.color;
     const styleAttr =
       this.navigator.iframes[0].contentDocument?.documentElement.getAttribute(
         "style"
@@ -916,15 +917,17 @@ export class MediaOverlayModule implements ReaderModule {
       ? styleAttr.indexOf("readium-sepia-on") > 0
       : false;
 
-    if (
-      (this.publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"
-    ) {
+    if (!this.publication.isFixedLayout) {
       classActive =
         isNight || isSepia
           ? R2_MO_CLASS_ACTIVE
           : classActive
             ? classActive
             : R2_MO_CLASS_ACTIVE;
+    }
+    // Ensure we always have a class to apply
+    if (!classActive) {
+      classActive = R2_MO_CLASS_ACTIVE;
     }
 
     if (this.pid) {
@@ -951,7 +954,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
     if (
       current &&
-      (this.publication.Metadata.Rendition?.Layout ?? "unknown") !== "fixed"
+      !this.publication.isFixedLayout
     ) {
       current.scrollIntoView({
         block: "center",

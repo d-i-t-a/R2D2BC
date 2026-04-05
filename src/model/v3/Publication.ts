@@ -166,8 +166,12 @@ export class Publication {
   get isFixedLayout(): boolean {
     // @readium/shared uses metadata.layout for RWPM "layout" key
     if (this.metadata?.layout === "fixed") return true;
-    // EPUB streamers output "rendition:layout" which @readium/shared puts in otherMetadata
-    const renditionLayout = this.metadata?.otherMetadata?.["rendition:layout"];
+    // EPUB streamers output layout in different formats:
+    // "rendition:layout": "pre-paginated" (colon key)
+    // "rendition": { "layout": "fixed" } (nested object)
+    const renditionLayout =
+      this.metadata?.otherMetadata?.["rendition:layout"]
+      ?? this.metadata?.otherMetadata?.rendition?.layout;
     return renditionLayout === "pre-paginated" || renditionLayout === "fixed";
   }
 

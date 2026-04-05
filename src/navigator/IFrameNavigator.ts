@@ -17,10 +17,14 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import Navigator from "./Navigator";
+import {
+  VisualNavigator,
+  NavigatorFeature,
+  NavigatorFeatureName,
+} from "./VisualNavigator";
 import { ReaderEvent } from "../utils/Events";
 import Annotator from "../store/Annotator";
-import { Publication } from "../model/Publication";
+import { Publication } from "../model/v3";
 import EventHandler, {
   addEventListenerOptional,
   removeEventListenerOptional,
@@ -28,12 +32,7 @@ import EventHandler, {
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import { readerError, readerLoading } from "../utils/HTMLTemplates";
-import {
-  Annotation,
-  Locations,
-  Locator,
-  ReadingPosition,
-} from "../model/Locator";
+import { Annotation, Locations, Locator, ReadingPosition } from "../model/v3";
 import {
   UserSettings,
   UserSettingsUIConfig,
@@ -69,7 +68,7 @@ import {
   MediaOverlayModule,
   MediaOverlayModuleConfig,
 } from "../modules/mediaoverlays/MediaOverlayModule";
-import { D2Link, Link } from "../model/Link";
+import { D2Link, Link } from "../model/v3";
 import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
 import { ReaderModule } from "../modules/ReaderModule";
 import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
@@ -85,7 +84,6 @@ import {
   DefinitionsModule,
   DefinitionsModuleConfig,
 } from "../modules/search/DefinitionsModule";
-import EventEmitter from "eventemitter3";
 import LineFocusModule, {
   LineFocusModuleConfig,
 } from "../modules/linefocus/LineFocusModule";
@@ -250,7 +248,7 @@ export interface ReaderConfig {
 }
 
 /** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
-export class IFrameNavigator extends EventEmitter implements Navigator {
+export class IFrameNavigator extends VisualNavigator {
   iframes: Array<HTMLIFrameElement> = [];
 
   currentTocUrl: string | undefined;
@@ -272,6 +270,46 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   historyModule?: HistoryModule;
   citationModule?: CitationModule;
   consumptionModule?: ConsumptionModule;
+
+  supports(feature: NavigatorFeatureName): boolean {
+    switch (feature) {
+      case NavigatorFeature.TTS:
+        return !!this.rights.enableTTS && !!this.ttsModule;
+      case NavigatorFeature.MediaOverlays:
+        return (
+          !!this.rights.enableMediaOverlays &&
+          !!this.mediaOverlayModule &&
+          this.hasMediaOverlays
+        );
+      case NavigatorFeature.Search:
+        return !!this.rights.enableSearch && !!this.searchModule;
+      case NavigatorFeature.Annotations:
+        return !!this.rights.enableAnnotations && !!this.annotationModule;
+      case NavigatorFeature.Bookmarks:
+        return !!this.rights.enableBookmarks && !!this.bookmarkModule;
+      case NavigatorFeature.Zoom:
+        return this.publication.isFixedLayout;
+      case NavigatorFeature.LineFocus:
+        return !!this.rights.enableLineFocus && !!this.lineFocusModule;
+      case NavigatorFeature.Definitions:
+        return !!this.rights.enableDefinitions && !!this.definitionsModule;
+      case NavigatorFeature.Citations:
+        return !!this.rights.enableCitations && !!this.citationModule;
+      case NavigatorFeature.ContentProtection:
+        return (
+          !!this.rights.enableContentProtection &&
+          !!this.contentProtectionModule
+        );
+      case NavigatorFeature.Consumption:
+        return !!this.rights.enableConsumption && !!this.consumptionModule;
+      case NavigatorFeature.History:
+        return !!this.rights.enableHistory && !!this.historyModule;
+      case NavigatorFeature.Timeline:
+        return !!this.rights.enableTimeline && !!this.timelineModule;
+      default:
+        return false;
+    }
+  }
 
   sideNavExpanded: boolean = false;
 

@@ -42,6 +42,11 @@ export {
 export { ReaderEvent } from "./utils/Events";
 export type { ReaderEventName, ReaderEventMap } from "./utils/Events";
 
+// ─── Navigator ──────────────────────────────────────────────────────────────
+
+export { NavigatorFeature } from "./navigator/VisualNavigator";
+export type { NavigatorFeatureName } from "./navigator/VisualNavigator";
+
 // ─── Navigator / Config ─────────────────────────────────────────────────────
 
 export type {

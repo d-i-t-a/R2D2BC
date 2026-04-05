@@ -22,6 +22,7 @@ import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
 import { TextHighlighter } from "../highlight/TextHighlighter";
 import log from "loglevel";
+import { ReaderEvent } from "../../utils/Events";
 
 export enum CitationStyle {
   Chicago = 0,
@@ -123,8 +124,13 @@ export default class CitationModule implements ReaderModule {
       tmp.innerHTML = textToClipboard;
       const plainText = tmp.textContent ?? tmp.innerText ?? textToClipboard;
       navigator.clipboard.writeText(plainText).then(
-        () =>
-          this.api?.citationCreated("The text was copied to the clipboard!"),
+        () => {
+          this.api?.citationCreated("The text was copied to the clipboard!");
+          this.navigator.emit(
+            ReaderEvent.CitationCreated,
+            "The text was copied to the clipboard!"
+          );
+        },
         () => this.legacyCopyToClipboard(textToClipboard)
       );
     } else {
@@ -152,8 +158,16 @@ export default class CitationModule implements ReaderModule {
     document.body.removeChild(forExecElement);
     if (success) {
       this.api?.citationCreated("The text was copied to the clipboard!");
+      this.navigator.emit(
+        ReaderEvent.CitationCreated,
+        "The text was copied to the clipboard!"
+      );
     } else {
       this.api?.citationFailed("Your browser doesn't allow clipboard access!");
+      this.navigator.emit(
+        ReaderEvent.CitationFailed,
+        "Your browser doesn't allow clipboard access!"
+      );
     }
   }
 

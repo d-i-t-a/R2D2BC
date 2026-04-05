@@ -32,6 +32,7 @@ import {
   SelectionMenuItem,
 } from "./common/highlight";
 import { ISelectionInfo } from "./common/selection";
+import { ReaderEvent } from "../../utils/Events";
 import { getClientRectsNoOverlap, IRectSimple } from "./common/rect-utils";
 import {
   convertRangeInfo,
@@ -1119,20 +1120,26 @@ export class TextHighlighter {
     if (!this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = true;
       if (this.api?.selectionMenuOpen) this.api?.selectionMenuOpen();
-      this.navigator.emit("toolbox.opened", "opened");
+      const doc = this.navigator.iframes[0].contentDocument;
+      const sel = doc ? this.dom(doc.body)?.getSelection() : null;
+      const text = sel && !sel.isCollapsed ? sel.toString() : undefined;
+      this.navigator.emit(ReaderEvent.ToolboxOpened, "opened", { text });
+      if (text && sel) {
+        if (this.api?.selection) this.api.selection(text, sel);
+        this.navigator.emit(ReaderEvent.TextSelected, { text, selection: sel });
+      }
     }
   }, 100);
   selectionMenuClosed = debounce(() => {
     if (this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = false;
       if (this.api?.selectionMenuClose) this.api?.selectionMenuClose();
-      this.navigator.emit("toolbox.closed", "closed");
+      this.navigator.emit(ReaderEvent.ToolboxClosed, "closed");
     }
   }, 100);
 
-  selection = debounce((text, selection) => {
-    if (this.api?.selection) this.api?.selection(text, selection);
-  }, 100);
+  /** @deprecated Selection callback now fires from selectionMenuOpened */
+  selection = debounce((_text: string, _selection: any) => {}, 100);
 
   toolboxPlacement() {
     let range = this.dom(
@@ -1388,6 +1395,10 @@ export class TextHighlighter {
                                   self.navigator.annotationModule?.api
                                     ?.addCommentToAnnotation(anno)
                                     .then((result) => {
+                                      self.navigator.emit(
+                                        ReaderEvent.AnnotationCommentAdded,
+                                        result
+                                      );
                                       self.navigator.annotationModule
                                         ?.updateAnnotation(result)
                                         .then(async () => {
@@ -2364,6 +2375,7 @@ export class TextHighlighter {
           this.navigator.annotationModule?.api
             ?.selectedAnnotation(anno)
             .then(async () => {});
+          this.navigator.emit(ReaderEvent.AnnotationSelected, anno);
         }
 
         if (anno?.id) {
@@ -2396,6 +2408,10 @@ export class TextHighlighter {
                 self.navigator.annotationModule?.api
                   ?.addCommentToAnnotation(anno)
                   .then((result) => {
+                    self.navigator.emit(
+                      ReaderEvent.AnnotationCommentAdded,
+                      result
+                    );
                     self.navigator.annotationModule
                       ?.updateAnnotation(result)
                       .then(async () => {
@@ -2499,7 +2515,11 @@ export class TextHighlighter {
               lodash.omit(result, "callbacks"),
               lodash.omit(foundHighlight, "definition")
             );
-            this.navigator.emit("definition.click", result, foundHighlight);
+            this.navigator.emit(
+              ReaderEvent.DefinitionClick,
+              result,
+              foundHighlight
+            );
           }
         }
       }
@@ -3265,6 +3285,7 @@ export class TextHighlighter {
           self.navigator.annotationModule?.api
             ?.selectedAnnotation(anno)
             .then(async () => {});
+          self.navigator.emit(ReaderEvent.AnnotationSelected, anno);
         } else if (self.navigator.rights.enableBookmarks) {
           anno = (await self.navigator.bookmarkModule?.getAnnotationByID(
             highlight.id

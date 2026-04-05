@@ -18,7 +18,6 @@
  */
 import { Annotation, Bookmark, Locator } from "./model/Locator";
 import { Publication } from "./model/Publication";
-import { Manifest } from "@readium/shared";
 import { UserSettingsIncrementable } from "./model/user-settings/UserProperties";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import { AnnotationModule } from "./modules/AnnotationModule";
@@ -64,7 +63,9 @@ import { ConsumptionModule } from "./modules/consumption/ConsumptionModule";
  * Dynamically import PDFNavigator to avoid loading pdfjs-dist in SSR/Node.
  * pdfjs-dist references browser-only APIs (DOMMatrix, canvas) at import time.
  */
-let _PDFNavigatorClass: (typeof import("./navigator/PDFNavigator"))["PDFNavigator"] | undefined;
+let _PDFNavigatorClass:
+  | (typeof import("./navigator/PDFNavigator"))["PDFNavigator"]
+  | undefined;
 async function loadPDFNavigator() {
   if (!_PDFNavigatorClass) {
     const mod = await import("./navigator/PDFNavigator");
@@ -245,14 +246,10 @@ export default class D2Reader {
         initialUserSettings: initialConfig.userSettings,
         headerMenu: headerMenu,
         api: initialConfig.api,
-        injectables:
-          publication.isFixedLayout
-            ? initialConfig.injectablesFixed
-            : initialConfig.injectables,
-        layout:
-          publication.isFixedLayout
-            ? "fixed"
-            : "reflowable",
+        injectables: publication.isFixedLayout
+          ? initialConfig.injectablesFixed
+          : initialConfig.injectables,
+        layout: publication.isFixedLayout ? "fixed" : "reflowable",
       });
 
       // Highlighter
@@ -413,10 +410,9 @@ export default class D2Reader {
         tts: initialConfig.tts,
         sample: initialConfig.sample,
         requestConfig: initialConfig.requestConfig,
-        injectables:
-          publication.isFixedLayout
-            ? (initialConfig.injectablesFixed ?? [])
-            : initialConfig.injectables,
+        injectables: publication.isFixedLayout
+          ? (initialConfig.injectablesFixed ?? [])
+          : initialConfig.injectables,
         attributes: initialConfig.attributes,
         services: initialConfig.services,
         highlighter,

@@ -18,6 +18,7 @@
  */
 
 import { ReaderModule } from "../ReaderModule";
+import { ReaderEvent } from "../../utils/Events";
 import { AnnotationMarker } from "../../model/Locator";
 import {
   TTSModuleAPI,
@@ -223,9 +224,11 @@ export class TTSModule2 implements ReaderModule {
   }
 
   cancel(api: boolean = true) {
-    if (api) {
+    if (api && this.speaking) {
       if (this.api?.stopped) this.api?.stopped();
-      this.navigator.emit("readaloud.stopped", "stopped");
+      this.navigator.emit(ReaderEvent.ReadAloudStopped, "stopped", {
+        locator: this.navigator.currentLocator(),
+      });
     }
     this.userScrolled = false;
     this.speaking = false;
@@ -253,7 +256,9 @@ export class TTSModule2 implements ReaderModule {
     }
 
     if (this.api?.started) this.api?.started();
-    this.navigator.emit("readaloud.started", "started");
+    this.navigator.emit(ReaderEvent.ReadAloudStarted, "started", {
+      locator: this.navigator.currentLocator(),
+    });
 
     const self = this;
     this.userScrolled = false;
@@ -445,14 +450,18 @@ export class TTSModule2 implements ReaderModule {
               log.log("utterance ended");
               self.highlighter.doneSpeaking();
               self.api?.finished();
-              self.navigator.emit("readaloud.finished", "finished");
+              self.navigator.emit(ReaderEvent.ReadAloudFinished, "finished", {
+                locator: this.navigator.currentLocator(),
+              });
             }
           }
         } else {
           log.log("utterance ended");
           self.highlighter.doneSpeaking();
           self.api?.finished();
-          self.navigator.emit("readaloud.finished", "finished");
+          self.navigator.emit(ReaderEvent.ReadAloudFinished, "finished", {
+            locator: this.navigator.currentLocator(),
+          });
         }
       };
     }
@@ -596,7 +605,9 @@ export class TTSModule2 implements ReaderModule {
     this.scrollPartial = true;
     this.cancel(false);
     if (this.api?.started) this.api?.started();
-    this.navigator.emit("readaloud.started", "started");
+    this.navigator.emit(ReaderEvent.ReadAloudStarted, "started", {
+      locator: this.navigator.currentLocator(),
+    });
 
     let self = this;
     let iframe = document.querySelector(
@@ -673,7 +684,9 @@ export class TTSModule2 implements ReaderModule {
   speakPause() {
     if (window.speechSynthesis.speaking) {
       if (this.api?.paused) this.api?.paused();
-      this.navigator.emit("readaloud.paused", "paused");
+      this.navigator.emit(ReaderEvent.ReadAloudPaused, "paused", {
+        locator: this.navigator.currentLocator(),
+      });
       this.userScrolled = false;
       window.speechSynthesis.pause();
       this.speaking = false;
@@ -688,7 +701,9 @@ export class TTSModule2 implements ReaderModule {
   speakResume() {
     if (window.speechSynthesis.speaking) {
       if (this.api?.resumed) this.api?.resumed();
-      this.navigator.emit("readaloud.resumed", "resumed");
+      this.navigator.emit(ReaderEvent.ReadAloudResumed, "resumed", {
+        locator: this.navigator.currentLocator(),
+      });
       this.userScrolled = false;
       window.speechSynthesis.resume();
       this.speaking = true;

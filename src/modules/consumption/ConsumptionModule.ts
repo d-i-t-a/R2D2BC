@@ -1,6 +1,7 @@
 import { ReaderModule } from "../ReaderModule";
 import { Publication } from "../../model/Publication";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { ReaderEvent } from "../../utils/Events";
 import log from "loglevel";
 import { Locator } from "../../model/Locator";
 
@@ -111,6 +112,7 @@ export class ConsumptionModule implements ReaderModule {
   }
   trackAction(locator: Locator, action: Action) {
     this.api?.actionTracked(locator, action);
+    this.navigator.emit(ReaderEvent.ActionTracked, { locator, action });
   }
   startReadingSession(locator: Locator) {
     if (this.firstReadingLocator && this.lastReadingLocator) {
@@ -224,6 +226,7 @@ export class ConsumptionModule implements ReaderModule {
 
     if (this.currSeconds === this.properties.idleTimeout) {
       this.api?.idleSince(this.currSeconds);
+      this.navigator.emit(ReaderEvent.IdleSince, this.currSeconds);
       if (this.startResearchTimer !== undefined) {
         this.updateResearchSession();
       } else {

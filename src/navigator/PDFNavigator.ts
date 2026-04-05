@@ -20,6 +20,7 @@
 import debounce from "debounce";
 import EventEmitter from "eventemitter3";
 import Navigator from "./Navigator";
+import { ReaderEvent } from "../utils/Events";
 import { UserSettings } from "../model/user-settings/UserSettings";
 import { Publication } from "../model/Publication";
 import { Bookmark, Locator, ReadingPosition } from "../model/Locator";
@@ -255,10 +256,14 @@ export class PDFNavigator extends EventEmitter implements Navigator {
         // Emit boundary events so integrators get the same signals as EPUB.
         if (this.atStart()) {
           this.api?.resourceAtStart?.();
-          this.emit("resource.start");
+          this.emit(ReaderEvent.ResourceStart, {
+            href: this.publication.readingOrder[0]?.href,
+          });
         } else if (this.atEnd()) {
           this.api?.resourceAtEnd?.();
-          this.emit("resource.end");
+          this.emit(ReaderEvent.ResourceEnd, {
+            href: this.publication.readingOrder[0]?.href,
+          });
         }
       }
     );
@@ -270,7 +275,9 @@ export class PDFNavigator extends EventEmitter implements Navigator {
         this._numPages = pagesCount;
         this.hideLoading();
         this.api?.resourceReady?.();
-        this.emit("resource.ready");
+        this.emit(ReaderEvent.ResourceReady, {
+          href: this.publication.readingOrder[0]?.href,
+        });
         // Restore saved position once — on the very first document load only.
         if (!this._positionRestored) {
           this._positionRestored = true;
@@ -410,7 +417,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
       const error = err instanceof Error ? err : new Error(String(err));
       console.error("PDFNavigator: failed to load document", url, error);
       this.api?.onError?.(error);
-      this.emit("resource.error", error);
+      this.emit(ReaderEvent.ResourceError, error);
     }
   }
 
@@ -993,6 +1000,7 @@ export class PDFNavigator extends EventEmitter implements Navigator {
     } else {
       this.annotator.saveLastReadingPosition(position);
     }
+    this.emit(ReaderEvent.LocationChanged, position);
   }
 
   private async restoreLastReadingPosition(): Promise<void> {

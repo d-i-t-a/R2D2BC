@@ -48,6 +48,7 @@ import {
 import * as lodash from "lodash";
 import log from "loglevel";
 import { Action } from "./consumption/ConsumptionModule";
+import { ReaderEvent } from "../utils/Events";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
 
@@ -331,9 +332,11 @@ export class AnnotationModule implements ReaderModule {
 
   public async deleteAnnotation(highlight: Annotation): Promise<any> {
     await this.deleteLocalHighlight(highlight.id);
+    this.navigator.emit(ReaderEvent.AnnotationDeleted, highlight);
   }
   public async addAnnotation(highlight: Annotation): Promise<any> {
     await this.annotator?.saveAnnotation(highlight);
+    this.navigator.emit(ReaderEvent.AnnotationCreated, highlight);
     await this.showHighlights();
     await this.drawHighlights();
   }
@@ -342,9 +345,11 @@ export class AnnotationModule implements ReaderModule {
     if (this.api?.deleteAnnotation) {
       this.api?.deleteAnnotation(highlight).then(async () => {
         this.deleteLocalHighlight(highlight.id);
+        this.navigator.emit(ReaderEvent.AnnotationDeleted, highlight);
       });
     } else {
       this.deleteLocalHighlight(highlight.id);
+      this.navigator.emit(ReaderEvent.AnnotationDeleted, highlight);
     }
   }
 
@@ -352,9 +357,11 @@ export class AnnotationModule implements ReaderModule {
     if (this.api?.deleteAnnotation) {
       this.api.deleteAnnotation(highlight).then(async () => {
         this.deleteLocalHighlight(highlight.id);
+        this.navigator.emit(ReaderEvent.AnnotationDeleted, highlight);
       });
     } else {
       this.deleteLocalHighlight(highlight.id);
+      this.navigator.emit(ReaderEvent.AnnotationDeleted, highlight);
     }
   }
 
@@ -362,9 +369,11 @@ export class AnnotationModule implements ReaderModule {
     if (this.api?.updateAnnotation) {
       this.api.updateAnnotation(highlight).then(async () => {
         this.updateLocalHighlight(highlight);
+        this.navigator.emit(ReaderEvent.AnnotationUpdated, highlight);
       });
     } else {
       this.updateLocalHighlight(highlight);
+      this.navigator.emit(ReaderEvent.AnnotationUpdated, highlight);
     }
   }
 
@@ -457,6 +466,7 @@ export class AnnotationModule implements ReaderModule {
             try {
               let result = await this.api.addAnnotation(annotation);
               const saved = await this.annotator.saveAnnotation(result);
+              this.navigator.emit(ReaderEvent.AnnotationCreated, saved);
               await this.showHighlights();
               await this.drawHighlights();
               return new Promise<Annotation>((resolve) => resolve(saved));
@@ -466,6 +476,7 @@ export class AnnotationModule implements ReaderModule {
             }
           } else {
             const saved = await this.annotator.saveAnnotation(annotation);
+            this.navigator.emit(ReaderEvent.AnnotationCreated, saved);
             await this.showHighlights();
             await this.drawHighlights();
             return new Promise<Annotation>((resolve) => resolve(saved));

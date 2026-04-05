@@ -18,6 +18,7 @@
  */
 
 import Navigator from "./Navigator";
+import { ReaderEvent } from "../utils/Events";
 import Annotator from "../store/Annotator";
 import { Publication } from "../model/Publication";
 import EventHandler, {
@@ -539,7 +540,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (dir === "ltr") this.spreads.style.flexDirection = "row";
       this.keyboardEventHandler.rtl = dir === "rtl";
       if (this.api?.direction) this.api?.direction(dir);
-      this.emit("direction", dir);
+      this.emit(ReaderEvent.Direction, dir);
     }
   }
 
@@ -1479,12 +1480,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             "(" + this.currentChapterLink.title + ")";
         if (this.api?.chapterInfo)
           this.api.chapterInfo(this.currentChapterLink.title);
-        this.emit("chapterinfo", this.currentChapterLink.title);
+        this.emit(ReaderEvent.ChapterInfo, this.currentChapterLink.title);
       } else {
         if (this.chapterTitle)
           this.chapterTitle.innerHTML = "(Current Chapter)";
         if (this.api?.chapterInfo) this.api.chapterInfo(undefined);
-        this.emit("chapterinfo", undefined);
+        this.emit(ReaderEvent.ChapterInfo, undefined);
       }
 
       await this.injectInjectablesIntoIframeHead(iframe);
@@ -1716,6 +1717,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             ? new Error(e)
             : new Error("An unknown error occurred in the IFrameNavigator.");
       this.api.onError(trueError);
+      this.emit(ReaderEvent.Error, trueError);
     } else {
       // otherwise just display the standard error UI
       if (this.errorMessage) this.errorMessage.style.display = "block";
@@ -2247,7 +2249,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       this.mediaOverlayModule !== undefined &&
       this.hasMediaOverlays
     ) {
+      const wasPlaying = this.mediaOverlayModule.settings.playing;
       this.mediaOverlayModule?.stopReadAloud();
+      if (wasPlaying) {
+        this.emit(ReaderEvent.ReadAlongStopped, "stopped");
+      }
     }
   }
 
@@ -2519,7 +2525,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
   private handleClickThrough(event: MouseEvent | TouchEvent) {
     if (this.api?.clickThrough) this.api?.clickThrough(event);
-    this.emit("click", event);
+    this.emit(ReaderEvent.Click, event);
   }
 
   private handleInternalLink(event: MouseEvent | TouchEvent) {
@@ -2776,7 +2782,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           if (this.api?.positionInfo) {
             this.api.positionInfo(locator);
           }
-          this.emit("positioninfo", locator);
+          this.emit(ReaderEvent.PositionInfo, locator);
         }
       } else {
         if (this.chapterPosition) this.chapterPosition.innerHTML = "";
@@ -2878,7 +2884,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
   private handleKeydownFallthrough(event: KeyboardEvent | undefined): void {
     if (this.api?.keydownFallthrough) this.api?.keydownFallthrough(event);
-    this.emit("keydown", event);
+    this.emit(ReaderEvent.KeyDown, event);
   }
 
   private hideView(): void {
@@ -3076,12 +3082,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               "(" + this.currentChapterLink.title + ")";
           if (this.api?.chapterInfo)
             this.api.chapterInfo(this.currentChapterLink.title);
-          this.emit("chapterinfo", this.currentChapterLink.title);
+          this.emit(ReaderEvent.ChapterInfo, this.currentChapterLink.title);
         } else {
           if (this.chapterTitle)
             this.chapterTitle.innerHTML = "(Current Chapter)";
           if (this.api?.chapterInfo) this.api.chapterInfo(undefined);
-          this.emit("chapterinfo", undefined);
+          this.emit(ReaderEvent.ChapterInfo, undefined);
         }
         await this.updatePositionInfo();
       } else {
@@ -3170,7 +3176,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           if (this.previousChapterTopAnchorElement)
             this.previousChapterTopAnchorElement.style.display = "none";
           if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
-          this.emit("resource.fits");
+          this.emit(ReaderEvent.ResourceFits, {
+            href: this.currentChapterLink.href,
+          });
         } else {
           this.settings.isPaginated().then((paginated) => {
             if (!paginated) {
@@ -3222,13 +3230,19 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   checkResourcePosition = debounce(() => {
     if (this.view?.atStart() && this.view?.atEnd()) {
       if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
-      this.emit("resource.fits");
+      this.emit(ReaderEvent.ResourceFits, {
+        href: this.currentChapterLink.href,
+      });
     } else if (this.view?.atEnd()) {
       if (this.api?.resourceAtEnd) this.api?.resourceAtEnd();
-      this.emit("resource.end");
+      this.emit(ReaderEvent.ResourceEnd, {
+        href: this.currentChapterLink.href,
+      });
     } else if (this.view?.atStart()) {
       if (this.api?.resourceAtStart) this.api?.resourceAtStart();
-      this.emit("resource.start");
+      this.emit(ReaderEvent.ResourceStart, {
+        href: this.currentChapterLink.href,
+      });
     }
   }, 200);
 
@@ -3275,17 +3289,25 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         this.view?.padOddColumns?.();
         if (this.view?.atStart() && this.view?.atEnd()) {
           if (this.api?.resourceFitsScreen) this.api?.resourceFitsScreen();
-          this.emit("resource.fits");
+          this.emit(ReaderEvent.ResourceFits, {
+            href: this.currentChapterLink.href,
+          });
         } else if (this.view?.atEnd()) {
           if (this.api?.resourceAtEnd) this.api?.resourceAtEnd();
-          this.emit("resource.end");
+          this.emit(ReaderEvent.ResourceEnd, {
+            href: this.currentChapterLink.href,
+          });
         } else if (this.view?.atStart()) {
           if (this.api?.resourceAtStart) this.api?.resourceAtStart();
-          this.emit("resource.start");
+          this.emit(ReaderEvent.ResourceStart, {
+            href: this.currentChapterLink.href,
+          });
         }
       }
       if (this.api?.resourceReady) this.api?.resourceReady();
-      this.emit("resource.ready");
+      this.emit(ReaderEvent.ResourceReady, {
+        href: this.currentChapterLink.href,
+      });
     }, 150);
   }
 
@@ -3363,6 +3385,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             log.log("save last reading position", position);
             this.annotator.saveLastReadingPosition(position);
           }
+          this.emit(ReaderEvent.LocationChanged, position);
           if (this.consumptionModule) {
             this.consumptionModule.continueReadingSession(position);
           }

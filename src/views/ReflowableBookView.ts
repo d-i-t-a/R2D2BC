@@ -74,6 +74,9 @@ export default class ReflowableBookView implements BookView {
         if (html) {
           html.style.setProperty("--USER__scroll", "readium-scroll-on");
         }
+        // Remove column spacer — it creates whitespace in scroll mode
+        const spacer = doc.getElementById("r2d2bc-column-spacer");
+        if (spacer) spacer.remove();
       }
       this.setSize();
       this.setIframeHeight(this.iframe);

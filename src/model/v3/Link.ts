@@ -51,8 +51,10 @@ export class Link extends ReadiumLink {
    * The manifest JSON uses hyphenated key "media-overlay".
    */
   get mediaOverlay(): string | undefined {
-    return this.properties?.otherProperties?.["media-overlay"]
-      ?? this.properties?.otherProperties?.["mediaOverlay"];
+    return (
+      this.properties?.otherProperties?.["media-overlay"] ??
+      this.properties?.otherProperties?.["mediaOverlay"]
+    );
   }
 
   /**

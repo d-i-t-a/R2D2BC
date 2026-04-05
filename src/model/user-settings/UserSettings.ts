@@ -607,7 +607,7 @@ export class UserSettings implements IUserSettings {
           HTMLUtilities.findElement(document, "#root") ||
           document.documentElement;
         const body = HTMLUtilities.findElement(html, "body");
-        if (this.view?.navigator.publication.isReflowable) {
+        if (this.view?.host?.isReflowable()) {
           // Apply font size
           if (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY)) {
             html.style.setProperty(
@@ -653,7 +653,7 @@ export class UserSettings implements IUserSettings {
               ?.toString() ?? null
           );
         }
-        if (this.view?.navigator.publication.isReflowable) {
+        if (this.view?.host?.isReflowable()) {
           // Apply text alignment
           if (await this.getProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY)) {
             if (
@@ -797,18 +797,18 @@ export class UserSettings implements IUserSettings {
           if (body) HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
         }
 
-        if (this.view?.navigator.publication.isFixedLayout) {
+        if (this.view?.host?.isFixedLayout()) {
           if (await this.getProperty(ReadiumCSS.DIRECTION_KEY)) {
             let value =
               this.userProperties
                 .getByRef(ReadiumCSS.DIRECTION_REF)
                 ?.toString() ?? null;
             html.style.setProperty(ReadiumCSS.DIRECTION_KEY, value);
-            this.view.navigator.setDirection(value);
+            this.view.host?.setDirection(value);
           }
         }
 
-        if (this.view?.navigator.publication.isReflowable) {
+        if (this.view?.host?.isReflowable()) {
           // Apply font family
           if (await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY)) {
             html.style.setProperty(

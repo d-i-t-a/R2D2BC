@@ -472,7 +472,15 @@ export class IFrameNavigator extends VisualNavigator {
     this.annotator = annotator;
     this.view = settings.view;
     this.view.attributes = attributes;
-    this.view.navigator = this;
+    this.view.host = {
+      checkResourcePosition: () => this.checkResourcePosition(),
+      recalculateContentProtection: (delay?: number) =>
+        this.contentProtectionModule?.recalculate(delay),
+      isContentProtectionEnabled: () => !!this.rights.enableContentProtection,
+      isFixedLayout: () => this.publication.isFixedLayout,
+      isReflowable: () => this.publication.isReflowable,
+      setDirection: (direction?: string | null) => this.setDirection(direction),
+    };
     this.eventHandler = new EventHandler(this);
     this.touchEventHandler = new TouchEventHandler(this);
     this.keyboardEventHandler = new KeyboardEventHandler(this);
@@ -907,7 +915,7 @@ export class IFrameNavigator extends VisualNavigator {
           if (menuSearch)
             menuSearch.parentElement?.style.setProperty("display", "none");
         }
-        if (menuSearch && this.view?.navigator.publication.isFixedLayout) {
+        if (menuSearch && this.publication.isFixedLayout) {
           menuSearch.parentElement?.style.setProperty("display", "none");
         }
         if (this.hasMediaOverlays) {

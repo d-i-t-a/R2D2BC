@@ -67,13 +67,13 @@ export abstract class VisualNavigator
   abstract currentResource(): number | undefined;
   abstract totalResources(): number;
 
-  abstract goTo(locator: Locator): void;
-  abstract goToPosition(value: number): void;
-  abstract goToPage(page: number): void;
-  abstract nextPage(): void;
-  abstract previousPage(): void;
-  abstract nextResource(): void;
-  abstract previousResource(): void;
+  abstract goTo(locator: Locator): void | Promise<void>;
+  abstract goToPosition(value: number): void | Promise<void>;
+  abstract goToPage(page: number): void | Promise<void>;
+  abstract nextPage(): void | Promise<void>;
+  abstract previousPage(): void | Promise<void>;
+  abstract nextResource(): void | Promise<void>;
+  abstract previousResource(): void | Promise<void>;
 
   abstract atStart(): boolean;
   abstract atEnd(): boolean;

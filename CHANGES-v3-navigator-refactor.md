@@ -39,6 +39,12 @@ Branch: `feature/v3-navigator-refactor` (based on `feature/v3-event-system`)
 - Applied for both FXL (spread flex order) and reflowable (keyboard RTL flag + direction event)
 - CSS `writing-mode` support deferred to workstream 3.6
 
+### FXL spread positioning
+- Checks `properties.page` (left/right/center) from manifest before falling back to index parity
+- Respects `rendition:spread: "none"` — forces single-page display for books that declare it
+- Center pages (`page-spread-center`) skip loading the second iframe
+- FXL-specific preferences (spread mode, fit mode, zoom persistence) deferred to workstream 3.5
+
 ## Bug Fixes
 
 ### MO click-to-jump after FXL page turn

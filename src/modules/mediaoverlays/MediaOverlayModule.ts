@@ -220,7 +220,7 @@ export class MediaOverlayModule implements ReaderModule {
     }
   }
 
-  private bindClickHandler() {
+  bindClickHandler() {
     this.unbindClickHandler();
     const handler = this.handleContentClick.bind(this);
     this.clickHandler = handler;

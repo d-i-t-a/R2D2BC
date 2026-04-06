@@ -1816,6 +1816,9 @@ export class EpubNavigator extends VisualNavigator {
         setTimeout(() => {
           if (this.mediaOverlayModule) {
             this.mediaOverlayModule.settings.resourceReady = true;
+            if (this.mediaOverlayModule.settings.playing) {
+              this.mediaOverlayModule.bindClickHandler();
+            }
           }
         }, 300);
       }, 200);

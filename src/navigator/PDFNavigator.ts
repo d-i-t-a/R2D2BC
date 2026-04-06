@@ -51,7 +51,7 @@ import {
   removeEventListenerOptional,
 } from "../utils/EventHandler";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
-import { NavigatorAPI } from "./IFrameNavigator";
+import { NavigatorAPI } from "./EpubNavigator";
 import { GrabToPan } from "../utils/GrabToPan";
 import { readerLoading } from "../utils/HTMLTemplates";
 

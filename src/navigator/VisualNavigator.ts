@@ -21,7 +21,7 @@ import Navigator from "./Navigator";
 import { Locator } from "../model/v3";
 import { Publication } from "../model/v3";
 import { Link } from "../model/v3";
-import { IFrameAttributes } from "./IFrameNavigator";
+import { IFrameAttributes } from "./EpubNavigator";
 
 /**
  * Typed feature names for navigator capability queries.

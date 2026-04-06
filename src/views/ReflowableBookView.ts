@@ -22,7 +22,7 @@ import * as HTMLUtilities from "../utils/HTMLUtilities";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import Store from "../store/Store";
 import BookView, { BookViewHost } from "./BookView";
-import { IFrameAttributes } from "../navigator/IFrameNavigator";
+import { IFrameAttributes } from "../navigator/EpubNavigator";
 import debounce from "debounce";
 
 export default class ReflowableBookView implements BookView {

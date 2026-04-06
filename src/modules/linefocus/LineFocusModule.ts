@@ -18,7 +18,7 @@
  */
 
 import { Publication } from "../../model/Publication";
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import { ReaderModule } from "../ReaderModule";
 import {
   TextHighlighter,
@@ -59,7 +59,7 @@ export interface LineFocusModuleConfig extends LineFocusModuleProperties {
 export default class LineFocusModule implements ReaderModule {
   properties: LineFocusModuleProperties;
   api?: LineFocusModuleAPI;
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   private highlighter: TextHighlighter;
   private hasEventListener: boolean = false;
 

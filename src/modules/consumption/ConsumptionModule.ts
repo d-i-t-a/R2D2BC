@@ -1,6 +1,6 @@
 import { ReaderModule } from "../ReaderModule";
 import { Publication } from "../../model/Publication";
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import { ReaderEvent } from "../../utils/Events";
 import log from "loglevel";
 import { Locator } from "../../model/Locator";
@@ -42,7 +42,7 @@ export interface ConsumptionModuleConfig extends ConsumptionModuleProperties {
 }
 
 export class ConsumptionModule implements ReaderModule {
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   private publication: Publication;
   private properties: ConsumptionModuleProperties;
   api?: ConsumptionModuleAPI;

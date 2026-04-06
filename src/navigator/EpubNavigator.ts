@@ -137,7 +137,7 @@ export interface IFrameAttributes {
   /** Whether to show a drop shadow on fixed-layout spreads. Defaults to true. */
   fixedLayoutShadow?: boolean;
 }
-export interface IFrameNavigatorConfig {
+export interface EpubNavigatorConfig {
   mainElement: HTMLElement;
   headerMenu?: HTMLElement | null;
   footerMenu?: HTMLElement | null;
@@ -248,8 +248,8 @@ export interface ReaderConfig {
   workerSrc?: string;
 }
 
-/** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
-export class IFrameNavigator extends VisualNavigator {
+/** EPUB navigator — renders spine items in iframes with navigation controls. */
+export class EpubNavigator extends VisualNavigator {
   iframes: Array<HTMLIFrameElement> = [];
 
   currentTocUrl: string | undefined;
@@ -315,7 +315,12 @@ export class IFrameNavigator extends VisualNavigator {
   // ── FXL zoom ────────────────────────────────────────────────
 
   private fxlZoomKeyHandler = (event: KeyboardEvent): void => {
-    if (/input|select|option|textarea/i.test((event.target as HTMLElement).tagName)) return;
+    if (
+      /input|select|option|textarea/i.test(
+        (event.target as HTMLElement).tagName
+      )
+    )
+      return;
     const key = event.key;
     if (key === "=" || key === "+") {
       this.zoomIn();
@@ -372,8 +377,10 @@ export class IFrameNavigator extends VisualNavigator {
       requestAnimationFrame(() => {
         if (!this.fxlScrollContainer) return;
         const isZoomed =
-          this.fxlScrollContainer.scrollWidth > this.fxlScrollContainer.clientWidth ||
-          this.fxlScrollContainer.scrollHeight > this.fxlScrollContainer.clientHeight;
+          this.fxlScrollContainer.scrollWidth >
+            this.fxlScrollContainer.clientWidth ||
+          this.fxlScrollContainer.scrollHeight >
+            this.fxlScrollContainer.clientHeight;
         if (isZoomed) {
           this.activateHand();
         } else {
@@ -512,8 +519,8 @@ export class IFrameNavigator extends VisualNavigator {
   private didInitKeyboardEventHandler: boolean = false;
 
   public static async create(
-    config: IFrameNavigatorConfig
-  ): Promise<IFrameNavigator> {
+    config: EpubNavigatorConfig
+  ): Promise<EpubNavigator> {
     const navigator = new this(
       config.settings,
       config.annotator || undefined,
@@ -680,7 +687,7 @@ export class IFrameNavigator extends VisualNavigator {
     removeEventListenerOptional(
       this.goBackButton,
       "click",
-      IFrameNavigator.goBack.bind(this)
+      EpubNavigator.goBack.bind(this)
     );
 
     removeEventListenerOptional(
@@ -1176,7 +1183,7 @@ export class IFrameNavigator extends VisualNavigator {
     addEventListenerOptional(
       this.goBackButton,
       "click",
-      IFrameNavigator.goBack.bind(this)
+      EpubNavigator.goBack.bind(this)
     );
 
     addEventListenerOptional(
@@ -1852,7 +1859,7 @@ export class IFrameNavigator extends VisualNavigator {
       const bases = iframe.contentDocument.getElementsByTagName("base");
       if (bases.length === 0) {
         head.insertBefore(
-          IFrameNavigator.createBase(this.currentChapterLink.href),
+          EpubNavigator.createBase(this.currentChapterLink.href),
           head.firstChild
         );
       }
@@ -1865,16 +1872,16 @@ export class IFrameNavigator extends VisualNavigator {
             // this.settings.addFont(injectable.fontFamily);
             this.settings.initAddedFont();
             if (!injectable.systemFont && injectable.url) {
-              const link = IFrameNavigator.createCssLink(injectable.url);
+              const link = EpubNavigator.createCssLink(injectable.url);
               head.appendChild(link);
               addLoadingInjectable(link);
             }
           } else if (injectable.r2before && injectable.url) {
-            const link = IFrameNavigator.createCssLink(injectable.url);
+            const link = EpubNavigator.createCssLink(injectable.url);
             head.insertBefore(link, head.firstChild);
             addLoadingInjectable(link);
           } else if (injectable.r2default && injectable.url) {
-            const link = IFrameNavigator.createCssLink(injectable.url);
+            const link = EpubNavigator.createCssLink(injectable.url);
             head.insertBefore(link, head.childNodes[1]);
             addLoadingInjectable(link);
           } else if (injectable.r2after && injectable.url) {
@@ -1882,16 +1889,16 @@ export class IFrameNavigator extends VisualNavigator {
               // this.settings.addAppearance(injectable.appearance);
               this.settings.initAddedAppearance();
             }
-            const link = IFrameNavigator.createCssLink(injectable.url);
+            const link = EpubNavigator.createCssLink(injectable.url);
             head.appendChild(link);
             addLoadingInjectable(link);
           } else if (injectable.url) {
-            const link = IFrameNavigator.createCssLink(injectable.url);
+            const link = EpubNavigator.createCssLink(injectable.url);
             head.appendChild(link);
             addLoadingInjectable(link);
           }
         } else if (injectable.type === "script" && injectable.url) {
-          const script = IFrameNavigator.createJavascriptLink(
+          const script = EpubNavigator.createJavascriptLink(
             injectable.url,
             injectable.async ?? false
           );
@@ -1921,7 +1928,7 @@ export class IFrameNavigator extends VisualNavigator {
           ? e
           : typeof e === "string"
             ? new Error(e)
-            : new Error("An unknown error occurred in the IFrameNavigator.");
+            : new Error("An unknown error occurred in the EpubNavigator.");
       this.api.onError(trueError);
       this.emit(ReaderEvent.Error, trueError);
     } else {
@@ -1952,7 +1959,7 @@ export class IFrameNavigator extends VisualNavigator {
         const bases = doc.getElementsByTagName("base");
         if (bases.length === 0) {
           doc.head.insertBefore(
-            IFrameNavigator.createBase(href),
+            EpubNavigator.createBase(href),
             doc.head.firstChild
           );
         }
@@ -1973,7 +1980,7 @@ export class IFrameNavigator extends VisualNavigator {
         const bases = doc.getElementsByTagName("base");
         if (bases.length === 0) {
           doc.head.insertBefore(
-            IFrameNavigator.createBase(href),
+            EpubNavigator.createBase(href),
             doc.head.firstChild
           );
         }
@@ -3738,3 +3745,9 @@ export class IFrameNavigator extends VisualNavigator {
     }
   }
 }
+
+// Backwards-compat aliases
+/** @deprecated Use EpubNavigator */
+export const IFrameNavigator = EpubNavigator;
+/** @deprecated Use EpubNavigatorConfig */
+export type IFrameNavigatorConfig = EpubNavigatorConfig;

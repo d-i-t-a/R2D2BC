@@ -46,6 +46,7 @@ export type { ReaderEventName, ReaderEventMap } from "./utils/Events";
 
 export { NavigatorFeature } from "./navigator/VisualNavigator";
 export type { NavigatorFeatureName } from "./navigator/VisualNavigator";
+export { EpubNavigator, IFrameNavigator } from "./navigator/EpubNavigator";
 
 // ─── Navigator / Config ─────────────────────────────────────────────────────
 
@@ -59,7 +60,9 @@ export type {
   SampleRead,
   PublicationServices,
   InitialAnnotations,
-} from "./navigator/IFrameNavigator";
+  EpubNavigatorConfig,
+  IFrameNavigatorConfig,
+} from "./navigator/EpubNavigator";
 
 // ─── User Settings ───────────────────────────────────────────────────────────
 

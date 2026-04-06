@@ -17,7 +17,7 @@
  * Licensed to: Allvit under one or more contributor license agreements.
  */
 
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import { ReaderModule } from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import {
@@ -41,7 +41,7 @@ export interface HistoryModuleConfig extends HistoryModuleProperties {
 
 export class HistoryModule implements ReaderModule {
   readonly annotator: Annotator | null;
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   private readonly headerMenu?: HTMLElement | null;
   private publication: Publication;
   private properties: HistoryModuleProperties;

@@ -18,7 +18,7 @@
  */
 
 import { Publication } from "../../model/Publication";
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import { ReaderModule } from "../ReaderModule";
 import { TextHighlighter } from "../highlight/TextHighlighter";
 import log from "loglevel";
@@ -80,7 +80,7 @@ const EMPTY: CitationTuple = ["", "", ""];
 
 export default class CitationModule implements ReaderModule {
   private publication: Publication;
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   private properties: CitationModuleProperties;
   private readonly highlighter?: TextHighlighter;
   api?: CitationModuleAPI;

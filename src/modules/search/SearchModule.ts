@@ -19,7 +19,7 @@
 
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { Publication } from "../../model/Publication";
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import { ReaderModule } from "../ReaderModule";
 import {
   addEventListenerOptional,
@@ -60,7 +60,7 @@ export class SearchModule implements ReaderModule {
   private api?: SearchModuleAPI;
   private publication: Publication;
   private readonly headerMenu?: HTMLElement | null;
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   private searchInput: HTMLInputElement;
   private searchGo: HTMLElement;
   private currentChapterSearchResult: any = [];

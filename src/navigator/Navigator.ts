@@ -18,7 +18,7 @@
  */
 
 import { Locator } from "../model/Locator";
-import { IFrameAttributes } from "./IFrameNavigator";
+import { IFrameAttributes } from "./EpubNavigator";
 import { Publication } from "../model/Publication";
 import { Link } from "../model/Link";
 

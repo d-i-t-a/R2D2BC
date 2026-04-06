@@ -17,14 +17,14 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import sanitize from "sanitize-html";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 
 export class Popup {
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
 
-  constructor(navigator: IFrameNavigator) {
+  constructor(navigator: EpubNavigator) {
     this.navigator = navigator;
   }
 

@@ -17,7 +17,7 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import { ReaderModule } from "../ReaderModule";
 import {
   TextHighlighter,
@@ -66,7 +66,7 @@ export class DefinitionsModule implements ReaderModule {
   properties: DefinitionsModuleProperties;
   api?: DefinitionsModuleAPI;
   private publication: Publication;
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   private currentChapterPopupResult: any = [];
   private currentPopupHighlights: any = [];
   private highlighter: TextHighlighter;

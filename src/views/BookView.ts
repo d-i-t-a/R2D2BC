@@ -17,11 +17,11 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IFrameAttributes } from "../navigator/IFrameNavigator";
+import { IFrameAttributes } from "../navigator/EpubNavigator";
 
 /**
  * Callbacks that the view needs from the navigator.
- * Replaces the old direct IFrameNavigator back-reference.
+ * Replaces the old direct EpubNavigator back-reference.
  */
 export interface BookViewHost {
   checkResourcePosition(): void;

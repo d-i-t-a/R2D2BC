@@ -38,11 +38,11 @@ import {
   TTSSettings,
 } from "./modules/TTS/TTSSettings";
 import {
-  IFrameNavigator,
+  EpubNavigator,
   IFrameAttributes,
   ReaderConfig,
   ReaderRights,
-} from "./navigator/IFrameNavigator";
+} from "./navigator/EpubNavigator";
 import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
@@ -392,7 +392,7 @@ export default class D2Reader {
         : undefined;
 
       // Navigator
-      const navigator = await IFrameNavigator.create({
+      const navigator = await EpubNavigator.create({
         mainElement: mainElement,
         headerMenu: headerMenu,
         footerMenu: footerMenu,

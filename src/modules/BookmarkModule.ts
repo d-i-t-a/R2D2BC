@@ -19,7 +19,7 @@
 
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import Annotator, { AnnotationType } from "../store/Annotator";
-import { IFrameNavigator, ReaderRights } from "../navigator/IFrameNavigator";
+import { EpubNavigator, ReaderRights } from "../navigator/EpubNavigator";
 import { Publication } from "../model/Publication";
 import { ReaderModule } from "./ReaderModule";
 import { addEventListenerOptional } from "../utils/EventHandler";
@@ -59,7 +59,7 @@ export interface BookmarkModuleConfig extends BookmarkModuleProperties {
   headerMenu?: HTMLElement | null;
   rights: Partial<ReaderRights>;
   publication: Publication;
-  initialAnnotations?: import("../navigator/IFrameNavigator").InitialAnnotations;
+  initialAnnotations?: import("../navigator/EpubNavigator").InitialAnnotations;
   properties?: BookmarkModuleProperties;
   api?: BookmarkModuleAPI;
 }
@@ -71,8 +71,8 @@ export class BookmarkModule implements ReaderModule {
   private bookmarksView: HTMLDivElement;
   private sideNavSectionBookmarks: HTMLElement;
   private readonly headerMenu?: HTMLElement | null;
-  private readonly initialAnnotations?: import("../navigator/IFrameNavigator").InitialAnnotations;
-  navigator: IFrameNavigator;
+  private readonly initialAnnotations?: import("../navigator/EpubNavigator").InitialAnnotations;
+  navigator: EpubNavigator;
   private readonly properties: BookmarkModuleProperties;
   private readonly api?: BookmarkModuleAPI;
 

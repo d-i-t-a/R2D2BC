@@ -23,7 +23,7 @@ import {
   GetContentBytesLength,
   RequestConfig,
   SampleRead,
-} from "../../navigator/IFrameNavigator";
+} from "../../navigator/EpubNavigator";
 
 /**
  * Convert a @readium/shared Link into an R2D2BC Link.

@@ -18,7 +18,7 @@
  */
 
 import { Publication } from "../../model/Publication";
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import { ReaderModule } from "../ReaderModule";
 import { Link } from "../../model/Link";
 import { ReaderEvent } from "../../utils/Events";
@@ -61,7 +61,7 @@ export interface MediaOverlayModuleConfig extends MediaOverlayModuleProperties {
 
 export class MediaOverlayModule implements ReaderModule {
   private publication: Publication;
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   private audioElement: HTMLMediaElement;
   settings: MediaOverlaySettings;
   private properties: MediaOverlayModuleProperties;

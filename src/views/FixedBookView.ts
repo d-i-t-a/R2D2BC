@@ -17,7 +17,7 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { IFrameAttributes } from "../navigator/IFrameNavigator";
+import { IFrameAttributes } from "../navigator/EpubNavigator";
 import BookView, { BookViewHost } from "./BookView";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 

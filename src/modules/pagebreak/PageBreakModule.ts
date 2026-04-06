@@ -17,7 +17,7 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import { ReaderModule } from "../ReaderModule";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
@@ -45,7 +45,7 @@ export interface PageBreakModuleConfig extends PageBreakModuleProperties {
 }
 
 export class PageBreakModule implements ReaderModule {
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   private readonly headerMenu?: HTMLElement | null;
   private publication: Publication;
   private properties: PageBreakModuleProperties;

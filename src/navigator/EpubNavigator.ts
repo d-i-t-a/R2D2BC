@@ -763,6 +763,15 @@ export class EpubNavigator extends VisualNavigator {
       if (window.matchMedia("screen and (max-width: 600px)").matches) {
         this.settings.columnCount = 1;
       }
+      // Respect rendition:spread "none" — force single page display
+      if (this.publication.isFixedLayout) {
+        const spread =
+          this.publication.metadata?.otherMetadata?.["rendition:spread"] ??
+          this.publication.metadata?.otherMetadata?.rendition?.spread;
+        if (spread === "none") {
+          this.settings.columnCount = 1;
+        }
+      }
       if (this.iframes.length === 0) {
         wrapper.style.overflow = "auto";
         let iframe = document.createElement("iframe");
@@ -1974,7 +1983,20 @@ export class EpubNavigator extends VisualNavigator {
   private precessContentForIframe() {
     const self = this;
     var index = this.publication.getSpineIndex(this.currentChapterLink.href);
-    var even: boolean = (index ?? 0) % 2 === 1;
+    // Determine spread position: use link's page property if set, else fall back to index parity
+    const spineLink =
+      index !== undefined ? this.publication.readingOrder?.[index] : undefined;
+    const pageSpread = spineLink?.properties?.page;
+    var even: boolean;
+    if (pageSpread === "left") {
+      even = true;
+    } else if (pageSpread === "right") {
+      even = false;
+    } else if (pageSpread === "center") {
+      even = true;
+    } else {
+      even = (index ?? 0) % 2 === 1;
+    }
     this.showLoadingMessageAfterDelay();
 
     this.currentSpreadLinks = {};
@@ -2061,7 +2083,10 @@ export class EpubNavigator extends VisualNavigator {
                 }
               });
             if (this.iframes.length === 2) {
-              if ((index ?? 0) < this.publication.readingOrder.length - 1) {
+              if (
+                pageSpread !== "center" &&
+                (index ?? 0) < this.publication.readingOrder.length - 1
+              ) {
                 const next = this.publication.getNextSpineItem(
                   this.currentChapterLink.href
                 );
@@ -2216,7 +2241,10 @@ export class EpubNavigator extends VisualNavigator {
               };
 
               if (this.iframes.length === 2) {
-                if ((index ?? 0) < this.publication.readingOrder.length - 1) {
+                if (
+                  pageSpread !== "center" &&
+                  (index ?? 0) < this.publication.readingOrder.length - 1
+                ) {
                   const next = this.publication.getNextSpineItem(
                     this.currentChapterLink.href
                   );
@@ -2246,7 +2274,10 @@ export class EpubNavigator extends VisualNavigator {
                 href: this.currentChapterLink.href,
               };
               if (this.iframes.length === 2) {
-                if ((index ?? 0) < this.publication.readingOrder.length - 1) {
+                if (
+                  pageSpread !== "center" &&
+                  (index ?? 0) < this.publication.readingOrder.length - 1
+                ) {
                   const next = this.publication.getNextSpineItem(
                     this.currentChapterLink.href
                   );

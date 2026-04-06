@@ -713,12 +713,22 @@ export class EpubNavigator extends VisualNavigator {
 
   setDirection(direction?: string | null) {
     let dir = "";
-    if (direction === "rtl" || direction === "ltr") dir = direction;
-    if (direction === "auto")
-      dir = this.publication.metadata?.readingProgression as string;
-    if (dir) {
-      if (dir === "rtl") this.spreads.style.flexDirection = "row-reverse";
-      if (dir === "ltr") this.spreads.style.flexDirection = "row";
+    if (direction === "rtl" || direction === "ltr") {
+      dir = direction;
+    } else if (direction === "auto") {
+      // Resolve from manifest: readingProgression or rendition:spread-direction
+      dir =
+        (this.publication.metadata?.readingProgression as string) ||
+        (this.publication.metadata?.otherMetadata?.[
+          "rendition:spread-direction"
+        ] as string) ||
+        "ltr";
+    }
+    if (dir === "rtl" || dir === "ltr") {
+      if (this.publication.isFixedLayout) {
+        this.spreads.style.flexDirection =
+          dir === "rtl" ? "row-reverse" : "row";
+      }
       this.keyboardEventHandler.rtl = dir === "rtl";
       if (this.api?.direction) this.api?.direction(dir);
       this.emit(ReaderEvent.Direction, dir);
@@ -861,6 +871,20 @@ export class EpubNavigator extends VisualNavigator {
         if (this.iframes.length === 2) {
           this.iframes.pop();
         }
+        // Apply reading direction for reflowable (keyboard RTL + event)
+        let dir = "";
+        switch (this.settings.direction) {
+          case 0:
+            dir = "auto";
+            break;
+          case 1:
+            dir = "ltr";
+            break;
+          case 2:
+            dir = "rtl";
+            break;
+        }
+        this.setDirection(dir);
       }
 
       this.loadingMessage = HTMLUtilities.findElement(

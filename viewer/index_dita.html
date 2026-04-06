@@ -569,6 +569,11 @@
 
                                     <li style="display:none"><a class="mui--visible-inline-block  js-show-sidedrawer8"  data-target="container-view-search"  id="menu-button-search"><i class="material-icons">search</i></a></li>
 
+                                    <li style="display:none" id="fxl-zoom-in"><a onclick="d2reader?.zoomIn()"><i class="material-icons">zoom_in</i></a></li>
+                                    <li style="display:none" id="fxl-zoom-out"><a onclick="d2reader?.zoomOut()"><i class="material-icons">zoom_out</i></a></li>
+                                    <li style="display:none" id="fxl-fit-page"><a onclick="d2reader?.fitToPage()"><i class="material-icons">fit_screen</i></a></li>
+                                    <li style="display:none" id="fxl-pan"><a onclick="var on = this.classList.toggle('active'); this.style.color = on ? '#039be5' : ''; on ? d2reader?.activateHand() : d2reader?.deactivateHand()"><i class="material-icons">open_with</i></a></li>
+
                                 </ul>
                             </td>
                         </tr>
@@ -1353,6 +1358,14 @@
         }).then(instance => {
             console.log("D2reader instance ready", instance);
             d2reader = instance;
+
+            // Show FXL zoom buttons if fixed layout
+            if (instance.publicationLayout === "fixed") {
+                document.getElementById("fxl-zoom-in")?.style.removeProperty("display");
+                document.getElementById("fxl-zoom-out")?.style.removeProperty("display");
+                document.getElementById("fxl-fit-page")?.style.removeProperty("display");
+                document.getElementById("fxl-pan")?.style.removeProperty("display");
+            }
 
             // ── Resource lifecycle ──────────────────────────────────
             instance.addEventListener("resource.ready", () => {

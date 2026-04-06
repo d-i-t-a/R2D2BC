@@ -92,6 +92,7 @@ import CitationModule, {
   CitationModuleConfig,
 } from "../modules/citation/CitationModule";
 import log from "loglevel";
+import { GrabToPan } from "../utils/GrabToPan";
 import {
   ConsumptionModule,
   ConsumptionModuleConfig,
@@ -308,6 +309,129 @@ export class IFrameNavigator extends VisualNavigator {
         return !!this.rights.enableTimeline && !!this.timelineModule;
       default:
         return false;
+    }
+  }
+
+  // ── FXL zoom ────────────────────────────────────────────────
+
+  private fxlZoomKeyHandler = (event: KeyboardEvent): void => {
+    if (/input|select|option|textarea/i.test((event.target as HTMLElement).tagName)) return;
+    const key = event.key;
+    if (key === "=" || key === "+") {
+      this.zoomIn();
+    } else if (key === "-") {
+      this.zoomOut();
+    } else if (key === "0") {
+      this.fitToPage();
+    } else {
+      return;
+    }
+    event.preventDefault();
+  };
+
+  private getFxlCurrentScale(): number {
+    const match = this.spreads?.style.transform?.match(/scale\(([^)]+)\)/);
+    return match ? parseFloat(match[1]) : 1;
+  }
+
+  fitToPage(): void {
+    if (!this.publication.isFixedLayout) return;
+    this.handleResize();
+  }
+
+  zoomIn(): void {
+    if (!this.publication.isFixedLayout) return;
+    this.setFxlScale(this.getFxlCurrentScale() * 1.15);
+  }
+
+  zoomOut(): void {
+    if (!this.publication.isFixedLayout) return;
+    this.setFxlScale(this.getFxlCurrentScale() / 1.15);
+  }
+
+  private setFxlScale(newScale: number): void {
+    if (!this.spreads || !this.fxlZoomContainer) return;
+    this.spreads.style.transform = "scale(" + newScale + ")";
+    this.updateFxlZoomContainer(newScale);
+  }
+
+  private updateFxlZoomContainer(scale: number): void {
+    if (
+      !this.fxlZoomContainer ||
+      !this.fxlContentWidth ||
+      !this.fxlContentHeight
+    )
+      return;
+    this.fxlZoomContainer.style.width = this.fxlContentWidth * scale + "px";
+    this.fxlZoomContainer.style.height = this.fxlContentHeight * scale + "px";
+    this.spreads.style.width = this.fxlContentWidth + "px";
+    this.spreads.style.height = this.fxlContentHeight + "px";
+
+    // Auto-activate pan when zoomed beyond fit, deactivate when back to fit
+    if (this.fxlHandTool) {
+      requestAnimationFrame(() => {
+        if (!this.fxlScrollContainer) return;
+        const isZoomed =
+          this.fxlScrollContainer.scrollWidth > this.fxlScrollContainer.clientWidth ||
+          this.fxlScrollContainer.scrollHeight > this.fxlScrollContainer.clientHeight;
+        if (isZoomed) {
+          this.activateHand();
+        } else {
+          this.deactivateHand();
+        }
+      });
+    }
+  }
+
+  // ── FXL pan (grab-to-scroll) ──────────────────────────────
+
+  private fxlPanOverlay: HTMLDivElement;
+  private fxlHandTool: GrabToPan;
+
+  private setupFxlPan(): void {
+    const el = this.fxlScrollContainer;
+    if (!el) return;
+
+    // Transparent overlay captures mouse events over iframes.
+    // Lives inside the zoom container so it scales with the content.
+    this.fxlPanOverlay = document.createElement("div");
+    this.fxlPanOverlay.style.position = "absolute";
+    this.fxlPanOverlay.style.top = "0";
+    this.fxlPanOverlay.style.left = "0";
+    this.fxlPanOverlay.style.width = "100%";
+    this.fxlPanOverlay.style.height = "100%";
+    this.fxlPanOverlay.style.pointerEvents = "none";
+    this.fxlPanOverlay.style.zIndex = "1";
+    this.fxlZoomContainer.style.position = "relative";
+    this.fxlZoomContainer.appendChild(this.fxlPanOverlay);
+
+    // GrabToPan scrolls the scroll container, mousedown captured by overlay
+    this.fxlHandTool = new GrabToPan({ element: el });
+  }
+
+  activateHand(): void {
+    if (!this.publication.isFixedLayout) return;
+    if (this.fxlPanOverlay) {
+      this.fxlPanOverlay.style.pointerEvents = "auto";
+    }
+    this.fxlHandTool?.activate();
+    const panBtn = document.querySelector("#fxl-pan a") as HTMLElement;
+    if (panBtn) {
+      panBtn.classList.add("active");
+      panBtn.style.color = "#039be5";
+    }
+  }
+
+  deactivateHand(): void {
+    if (!this.publication.isFixedLayout) return;
+    if (this.fxlPanOverlay) {
+      this.fxlPanOverlay.style.pointerEvents = "none";
+    }
+    this.fxlHandTool?.deactivate();
+    const panBtn = document.querySelector("#fxl-pan a") as HTMLElement;
+    if (panBtn) {
+      panBtn.classList.remove("active");
+      panBtn.style.color = "";
     }
   }
 
@@ -575,6 +699,10 @@ export class IFrameNavigator extends VisualNavigator {
   }
   spreads: HTMLDivElement;
   firstSpread: HTMLDivElement;
+  private fxlScrollContainer: HTMLDivElement;
+  private fxlZoomContainer: HTMLDivElement;
+  private fxlContentWidth: number = 0;
+  private fxlContentHeight: number = 0;
 
   setDirection(direction?: string | null) {
     let dir = "";
@@ -629,11 +757,41 @@ export class IFrameNavigator extends VisualNavigator {
           this.spreads = document.createElement("div");
           this.firstSpread = document.createElement("div");
           this.spreads.style.display = "flex";
-          this.spreads.style.alignItems = "center";
-          this.spreads.style.justifyContent = "center";
+          this.spreads.style.transformOrigin = "0 0";
           this.spreads.appendChild(this.firstSpread);
           this.firstSpread.appendChild(this.iframes[0]);
-          wrapper.appendChild(this.spreads);
+
+          // Scroll container fills wrapper, handles overflow scrolling
+          this.fxlScrollContainer = document.createElement("div");
+          this.fxlScrollContainer.style.position = "absolute";
+          this.fxlScrollContainer.style.top = "0";
+          this.fxlScrollContainer.style.right = "0";
+          const timelineEl = document.getElementById("container-view-timeline");
+          this.fxlScrollContainer.style.left =
+            timelineEl && this.rights.enableTimeline ? "70px" : "0";
+          const infoBottom = document.getElementById("reader-info-bottom");
+          this.fxlScrollContainer.style.bottom = infoBottom
+            ? (this.attributes?.bottomInfoHeight ?? 40) + "px"
+            : "0";
+          this.fxlScrollContainer.style.overflow = "auto";
+          this.fxlScrollContainer.style.display = "flex";
+
+          // Sizer has visual dimensions, centered via margin: auto
+          this.fxlZoomContainer = document.createElement("div");
+          this.fxlZoomContainer.style.margin = "auto";
+          this.fxlZoomContainer.style.flexShrink = "0";
+          this.fxlZoomContainer.style.overflow = "hidden";
+          if (this.attributes?.fixedLayoutShadow !== false) {
+            this.fxlZoomContainer.style.padding = "12px";
+            this.fxlZoomContainer.style.boxSizing = "content-box";
+          }
+          this.fxlZoomContainer.appendChild(this.spreads);
+
+          this.fxlScrollContainer.appendChild(this.fxlZoomContainer);
+          wrapper.style.position = "relative";
+          wrapper.appendChild(this.fxlScrollContainer);
+          document.addEventListener("keydown", this.fxlZoomKeyHandler);
+          this.setupFxlPan();
           let dir = "";
           switch (this.settings.direction) {
             case 0:
@@ -691,11 +849,7 @@ export class IFrameNavigator extends VisualNavigator {
       }
 
       if (this.publication.isFixedLayout) {
-        const minHeight = wrapper.clientHeight;
-        // wrapper.style.height = minHeight + 40 + "px";
-        var iframeParent = this.iframes[0].parentElement
-          ?.parentElement as HTMLElement;
-        iframeParent.style.height = minHeight + 40 + "px";
+        // Zoom container dimensions are set during scale calculation
       } else {
         if (this.iframes.length === 2) {
           this.iframes.pop();
@@ -1560,6 +1714,12 @@ export class IFrameNavigator extends VisualNavigator {
           this.didInitKeyboardEventHandler = true;
         }
       }
+      if (this.publication.isFixedLayout && iframe.contentDocument) {
+        iframe.contentDocument.addEventListener(
+          "keydown",
+          this.fxlZoomKeyHandler
+        );
+      }
       if (this.view?.layout !== "fixed") {
         if (this.view?.isScrollMode()) {
           iframe.height = "0";
@@ -2210,22 +2370,20 @@ export class IFrameNavigator extends VisualNavigator {
           }
         }
 
-        var iframeParent =
-          index === 0 && this.iframes.length === 2
-            ? this.iframes[1].parentElement?.parentElement
-            : (this.iframes[0].parentElement?.parentElement as HTMLElement);
-        if (iframeParent && width) {
+        if (width) {
+          if (!this.fxlScrollContainer) return;
           const fxlMargin = this.attributes?.fixedLayoutMargin ?? 100;
+          const contentW = parseInt(width.toString().replace("px", ""));
+          const contentH = parseInt(height.toString().replace("px", ""));
           var widthRatio =
-            (parseInt(getComputedStyle(iframeParent).width) - fxlMargin) /
+            (this.fxlScrollContainer.clientWidth - fxlMargin) /
             (this.iframes.length === 2
-              ? parseInt(width.toString().replace("px", "")) * 2 + fxlMargin * 2
-              : parseInt(width.toString().replace("px", "")));
+              ? contentW * 2 + fxlMargin * 2
+              : contentW);
           var heightRatio =
-            (parseInt(getComputedStyle(iframeParent).height) - fxlMargin) /
-            parseInt(height.toString().replace("px", ""));
+            (this.fxlScrollContainer.clientHeight - fxlMargin) / contentH;
           var scale = Math.min(widthRatio, heightRatio);
-          iframeParent.style.transform = "scale(" + scale + ")";
+          this.spreads.style.transform = "scale(" + scale + ")";
           for (const iframe of this.iframes) {
             iframe.style.height = height;
             iframe.style.width = width;
@@ -2233,6 +2391,10 @@ export class IFrameNavigator extends VisualNavigator {
               iframe.parentElement.style.height = height;
             }
           }
+          this.fxlContentWidth =
+            this.iframes.length === 2 ? contentW * 2 : contentW;
+          this.fxlContentHeight = contentH;
+          this.updateFxlZoomContainer(scale);
         }
       }, 400);
     }
@@ -2655,16 +2817,7 @@ export class IFrameNavigator extends VisualNavigator {
 
     if (this.publication.isFixedLayout) {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
-      const minHeight =
-        BrowserUtilities.getHeight() - 40 - (this.attributes?.margin ?? 0);
-
-      var iframeParent =
-        index === 0 && this.iframes.length === 2
-          ? this.iframes[1].parentElement?.parentElement
-          : (this.iframes[0].parentElement?.parentElement as HTMLElement);
-      if (iframeParent) {
-        iframeParent.style.height = minHeight + 40 + "px";
-
+      if (this.fxlScrollContainer) {
         let height, width;
         let doc;
         if (index === 0 && this.iframes?.length === 2) {
@@ -2711,26 +2864,17 @@ export class IFrameNavigator extends VisualNavigator {
         }
 
         const fxlMargin = this.attributes?.fixedLayoutMargin ?? 100;
+        const contentW = parseInt(
+          width.toString().endsWith("px") ? width?.replace("px", "") : width
+        );
+        const contentH = parseInt(height.toString().replace("px", ""));
         var widthRatio =
-          (parseInt(getComputedStyle(iframeParent).width) - fxlMargin) /
-          (this.iframes.length === 2
-            ? parseInt(
-                width.toString().endsWith("px")
-                  ? width?.replace("px", "")
-                  : width
-              ) *
-                2 +
-              fxlMargin * 2
-            : parseInt(
-                width.toString().endsWith("px")
-                  ? width?.replace("px", "")
-                  : width
-              ));
+          (this.fxlScrollContainer.clientWidth - fxlMargin) /
+          (this.iframes.length === 2 ? contentW * 2 + fxlMargin * 2 : contentW);
         var heightRatio =
-          (parseInt(getComputedStyle(iframeParent).height) - fxlMargin) /
-          parseInt(height.toString().replace("px", ""));
+          (this.fxlScrollContainer.clientHeight - fxlMargin) / contentH;
         var scale = Math.min(widthRatio, heightRatio);
-        iframeParent.style.transform = "scale(" + scale + ")";
+        this.spreads.style.transform = "scale(" + scale + ")";
 
         for (const iframe of this.iframes) {
           iframe.style.height = height;
@@ -2739,6 +2883,11 @@ export class IFrameNavigator extends VisualNavigator {
             iframe.parentElement.style.height = height;
           }
         }
+
+        this.fxlContentWidth =
+          this.iframes.length === 2 ? contentW * 2 : contentW;
+        this.fxlContentHeight = contentH;
+        this.updateFxlZoomContainer(scale);
       }
     }
 

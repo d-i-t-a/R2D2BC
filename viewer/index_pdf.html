@@ -435,12 +435,67 @@
         if (params['url']) defined_url = params['url'];
     }
 
+    // Example: custom PDF module — page time tracker
+    // Tracks how long the user spends on each page
+    class PageTimeTracker {
+        name = "page-time-tracker";
+        hostType = "pdf";
+        host;
+        pageTimes = {};
+        currentPage = 1;
+        pageStartTime = Date.now();
+
+        attach(host) { this.host = host; }
+        setup() {
+            this.currentPage = this.host?.currentLocator?.()?.locations?.position ?? 1;
+            this.pageStartTime = Date.now();
+            console.log("[PageTimeTracker] tracking started on page", this.currentPage);
+        }
+        onResourceReady() {
+            const newPage = this.host?.currentLocator?.()?.locations?.position ?? 1;
+            if (newPage === this.currentPage) return; // same page, skip
+
+            // Record time for previous page
+            const elapsed = Date.now() - this.pageStartTime;
+            this.pageTimes[this.currentPage] = (this.pageTimes[this.currentPage] || 0) + elapsed;
+            console.log("[PageTimeTracker] page", this.currentPage, ":", elapsed, "ms (total:", this.pageTimes[this.currentPage], "ms)");
+
+            // Start tracking new page
+            this.currentPage = newPage;
+            this.pageStartTime = Date.now();
+        }
+        stop() {
+            // Record final page
+            const elapsed = Date.now() - this.pageStartTime;
+            this.pageTimes[this.currentPage] = (this.pageTimes[this.currentPage] || 0) + elapsed;
+            console.log("[PageTimeTracker] final times:", this.pageTimes);
+        }
+    }
+    const pageTimeTracker = new PageTimeTracker();
+
     D2Reader.load({
         url: new URL(defined_url),
         injectables: [],
         injectablesFixed: [],
         workerSrc: '/viewer/pdf.worker.min.mjs',
+        modules: [pageTimeTracker],
         useLocalStorage: true,
+        rights: {
+            enableContentProtection: true,
+        },
+        webProtection: {
+            onEvent: (e) => console.log('[Protection]', e.type, e.detail),
+            copyProtection: {
+                contentElement: document.getElementById('D2Reader-Container'),
+                mode: 'block',
+            },
+            printProtection: {
+                contentElement: document.getElementById('D2Reader-Container'),
+            },
+            contextMenuProtection: {
+                contentElement: document.getElementById('D2Reader-Container'),
+            },
+        },
     }).then(instance => {
         d2reader = instance;
         updatePageInfo();

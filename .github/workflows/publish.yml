@@ -1,0 +1,82 @@
+name: Publish
+
+# Publishes to both npmjs.com and GitHub Packages on tag push.
+# Tags matching `v*` trigger this workflow.
+#
+# Requirements:
+#   - Repo secret: NPM_TOKEN (npmjs.com automation token with publish access)
+#   - GITHUB_TOKEN is provided automatically by Actions; permissions block below
+#     grants it `packages: write` so it can publish to GitHub Packages.
+#
+# Usage:
+#   npm version 3.0.0-alpha.12     # or 2.5.3, etc — bumps package.json + creates tag
+#   git push && git push --tags    # workflow runs, publishes to both registries
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # required for publishing to GitHub Packages
+      id-token: write   # required for npm provenance attestation
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect dist-tag from version
+        id: distTag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == *-alpha.* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+          elif [[ "$VERSION" == *-beta.* ]]; then
+            echo "tag=beta" >> "$GITHUB_OUTPUT"
+          elif [[ "$VERSION" == *-rc.* ]]; then
+            echo "tag=rc" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Publishing version $VERSION with --tag $(grep tag= "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)"
+
+      - name: Verify tag matches package.json version
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [[ "$PKG_VERSION" != "${{ steps.distTag.outputs.version }}" ]]; then
+            echo "::error::Tag version (${{ steps.distTag.outputs.version }}) does not match package.json version ($PKG_VERSION)"
+            exit 1
+          fi
+
+      - name: Setup Node (npmjs.com)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish to npmjs.com
+        run: npm publish --tag ${{ steps.distTag.outputs.tag }} --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Setup Node (GitHub Packages)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com
+
+      - name: Publish to GitHub Packages
+        run: npm publish --tag ${{ steps.distTag.outputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

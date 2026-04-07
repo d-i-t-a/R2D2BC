@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "3.0.0-alpha.10",
+  "version": "3.0.0-alpha.11",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -38,6 +38,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@d-i-t-a/web-content-protection": "^1.0.1",
     "@readium/shared": "^2.1.5",
     "browserslist-useragent-regexp": "^4.1.0",
     "cssesc": "^3.0.0",

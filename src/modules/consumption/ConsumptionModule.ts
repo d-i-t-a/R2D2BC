@@ -1,9 +1,10 @@
-import { ReaderModule } from "../ReaderModule";
-import { Publication } from "../../model/Publication";
-import { EpubNavigator } from "../../navigator/EpubNavigator";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import { Publication } from "../../model/v3";
+import { EpubModuleHost } from "../ModuleHost";
 import { ReaderEvent } from "../../utils/Events";
 import log from "loglevel";
-import { Locator } from "../../model/Locator";
+import { Locator } from "../../model/v3";
 
 /*
 Beta Module !!!
@@ -41,8 +42,14 @@ export interface ConsumptionModuleConfig extends ConsumptionModuleProperties {
   api?: ConsumptionModuleAPI;
 }
 
-export class ConsumptionModule implements ReaderModule {
-  navigator: EpubNavigator;
+export class ConsumptionModule implements ReaderModule<EpubModuleHost> {
+  readonly name = NavigatorFeature.Consumption;
+  readonly hostType = HostType.Epub;
+  readonly rightsKey = RightsKey.Consumption;
+  private host!: EpubModuleHost;
+  attach(host: EpubModuleHost): void {
+    this.host = host;
+  }
   private publication: Publication;
   private properties: ConsumptionModuleProperties;
   api?: ConsumptionModuleAPI;
@@ -112,7 +119,7 @@ export class ConsumptionModule implements ReaderModule {
   }
   trackAction(locator: Locator, action: Action) {
     this.api?.actionTracked(locator, action);
-    this.navigator.emit(ReaderEvent.ActionTracked, { locator, action });
+    this.host.emit(ReaderEvent.ActionTracked, { locator, action });
   }
   startReadingSession(locator: Locator) {
     if (this.firstReadingLocator && this.lastReadingLocator) {
@@ -226,7 +233,7 @@ export class ConsumptionModule implements ReaderModule {
 
     if (this.currSeconds === this.properties.idleTimeout) {
       this.api?.idleSince(this.currSeconds);
-      this.navigator.emit(ReaderEvent.IdleSince, this.currSeconds);
+      this.host.emit(ReaderEvent.IdleSince, this.currSeconds);
       if (this.startResearchTimer !== undefined) {
         this.updateResearchSession();
       } else {

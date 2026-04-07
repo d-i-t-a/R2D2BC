@@ -17,9 +17,10 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { Publication } from "../../model/Publication";
-import { EpubNavigator } from "../../navigator/EpubNavigator";
-import { ReaderModule } from "../ReaderModule";
+import { Publication } from "../../model/v3";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import { EpubModuleHost } from "../ModuleHost";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
 import {
   TextHighlighter,
   CLASS_HIGHLIGHT_AREA,
@@ -56,10 +57,16 @@ export interface LineFocusModuleConfig extends LineFocusModuleProperties {
   highlighter: TextHighlighter;
 }
 
-export default class LineFocusModule implements ReaderModule {
+export default class LineFocusModule implements ReaderModule<EpubModuleHost> {
+  readonly name = NavigatorFeature.LineFocus;
+  readonly hostType = HostType.Epub;
+  readonly rightsKey = RightsKey.LineFocus;
   properties: LineFocusModuleProperties;
   api?: LineFocusModuleAPI;
-  navigator: EpubNavigator;
+  private host!: EpubModuleHost;
+  attach(host: EpubModuleHost): void {
+    this.host = host;
+  }
   private highlighter: TextHighlighter;
   private hasEventListener: boolean = false;
 
@@ -100,12 +107,12 @@ export default class LineFocusModule implements ReaderModule {
     removeEventListenerOptional(document, "keydown", this.keydown.bind(this));
     removeEventListenerOptional(document, "keyup", this.keyup.bind(this));
     removeEventListenerOptional(
-      this.navigator.iframes[0].contentDocument,
+      this.host.iframes[0].contentDocument,
       "keydown",
       this.keydown.bind(this)
     );
     removeEventListenerOptional(
-      this.navigator.iframes[0].contentDocument,
+      this.host.iframes[0].contentDocument,
       "keyup",
       this.keyup.bind(this)
     );
@@ -194,7 +201,7 @@ export default class LineFocusModule implements ReaderModule {
 
   async enableLineFocus() {
     this.isActive = true;
-    await this.navigator.settings.scroll(true);
+    await this.host.settings.scroll(true);
     this.lineFocus();
   }
 
@@ -216,7 +223,7 @@ export default class LineFocusModule implements ReaderModule {
       this.index = 0;
     }
 
-    const doc = this.navigator.iframes[0].contentDocument;
+    const doc = this.host.iframes[0].contentDocument;
     const html = HTMLUtilities.findIframeElement(
       doc,
       "html"
@@ -251,7 +258,7 @@ export default class LineFocusModule implements ReaderModule {
       "#iframe-wrapper"
     ) as HTMLDivElement;
 
-    const doc = this.navigator.iframes[0].contentDocument;
+    const doc = this.host.iframes[0].contentDocument;
     const html = HTMLUtilities.findIframeElement(
       doc,
       "html"
@@ -422,10 +429,9 @@ export default class LineFocusModule implements ReaderModule {
           highlightArea.style.outline = "none";
           highlightArea.tabIndex = 0;
 
-          const documant = (this.navigator.iframes[0].contentWindow as any)
-            .document;
+          const documant = (this.host.iframes[0].contentWindow as any).document;
 
-          const paginated = this.navigator.view.isPaginated();
+          const paginated = this.host.view.isPaginated();
 
           if (paginated) {
             documant.body.style.position = "revert";
@@ -442,8 +448,7 @@ export default class LineFocusModule implements ReaderModule {
 
           let size = 24;
           let left, right;
-          let viewportWidth =
-            this.navigator.iframes[0].contentWindow?.innerWidth;
+          let viewportWidth = this.host.iframes[0].contentWindow?.innerWidth;
           let columnCount = parseInt(
             getComputedStyle(doc.documentElement).getPropertyValue(
               "column-count"
@@ -469,7 +474,7 @@ export default class LineFocusModule implements ReaderModule {
               );
             }
 
-            let ratio = this.navigator.settings.fontSize / 100;
+            let ratio = this.host.settings.fontSize / 100;
             let addRight = 20 * ratio;
 
             if (ratio <= 1) {

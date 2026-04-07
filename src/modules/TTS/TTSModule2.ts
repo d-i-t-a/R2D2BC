@@ -17,9 +17,10 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { ReaderModule } from "../ReaderModule";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
 import { ReaderEvent } from "../../utils/Events";
-import { AnnotationMarker } from "../../model/Locator";
+import { AnnotationMarker } from "../../model/v3";
 import {
   TTSModuleAPI,
   TTSModuleConfig,
@@ -32,7 +33,7 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import sanitize from "sanitize-html";
-import { EpubNavigator, ReaderRights } from "../../navigator/EpubNavigator";
+import { EpubModuleHost } from "../ModuleHost";
 import { TextHighlighter } from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
@@ -44,13 +45,18 @@ import {
 } from "../highlight/common/selection";
 import log from "loglevel";
 
-export class TTSModule2 implements ReaderModule {
+export class TTSModule2 implements ReaderModule<EpubModuleHost> {
+  readonly name = NavigatorFeature.TTS;
+  readonly hostType = HostType.Epub;
+  readonly rightsKey = RightsKey.TTS;
   private tts: TTSSettings;
   private voices: SpeechSynthesisVoice[] = [];
   private clean: any;
-  private rights: Partial<ReaderRights>;
   private readonly highlighter: TextHighlighter;
-  navigator: EpubNavigator;
+  private host!: EpubModuleHost;
+  attach(host: EpubModuleHost): void {
+    this.host = host;
+  }
   private body: any;
   private hasEventListener: boolean = false;
   private readonly headerMenu?: HTMLElement | null;
@@ -81,7 +87,7 @@ export class TTSModule2 implements ReaderModule {
         addEventListenerOptional(this.body, "wheel", this.wheel.bind(this));
         addEventListenerOptional(document, "keydown", this.wheel.bind(this));
         addEventListenerOptional(
-          this.navigator.iframes[0].contentDocument,
+          this.host.iframes[0].contentDocument,
           "keydown",
           this.wheel.bind(this)
         );
@@ -120,12 +126,12 @@ export class TTSModule2 implements ReaderModule {
       startX === this.startX &&
       startY === this.startY
     ) {
-      let doc = this.navigator.iframes[0].contentDocument;
+      let doc = this.host.iframes[0].contentDocument;
       if (doc) {
         let selection = this.highlighter.dom(doc.body).getSelection();
         // if (selection.isCollapsed) {
-        //   let doc = this.navigator.iframes[0].contentDocument;
-        //   const selectionInfo = this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+        //   let doc = this.host.iframes[0].contentDocument;
+        //   const selectionInfo = this.host.getModule(NavigatorFeature.Annotations)?.annotator?.getTemporarySelectionInfo(
         //     doc
         //   );
         //   selection.addRange(selectionInfo.range);
@@ -226,8 +232,8 @@ export class TTSModule2 implements ReaderModule {
   cancel(api: boolean = true) {
     if (api && this.speaking) {
       if (this.api?.stopped) this.api?.stopped();
-      this.navigator.emit(ReaderEvent.ReadAloudStopped, "stopped", {
-        locator: this.navigator.currentLocator(),
+      this.host.emit(ReaderEvent.ReadAloudStopped, "stopped", {
+        locator: this.host.currentLocator(),
       });
     }
     this.userScrolled = false;
@@ -237,7 +243,7 @@ export class TTSModule2 implements ReaderModule {
     }, 0);
 
     if (this._ttsQueueItemHighlightsWord) {
-      this.navigator.highlighter?.destroyHighlights(HighlightType.ReadAloud);
+      this.host.highlighter?.destroyHighlights(HighlightType.ReadAloud);
       this._ttsQueueItemHighlightsWord = undefined;
     }
   }
@@ -250,14 +256,14 @@ export class TTSModule2 implements ReaderModule {
     callback: () => void
   ): Promise<any> {
     if (!partial) {
-      if (this.navigator.rights.enableContentProtection) {
-        this.navigator.contentProtectionModule?.deactivate();
+      if (this.host.rights.enableContentProtection) {
+        this.host.getModule(NavigatorFeature.ContentProtection)?.deactivate();
       }
     }
 
     if (this.api?.started) this.api?.started();
-    this.navigator.emit(ReaderEvent.ReadAloudStarted, "started", {
-      locator: this.navigator.currentLocator(),
+    this.host.emit(ReaderEvent.ReadAloudStarted, "started", {
+      locator: this.host.currentLocator(),
     });
 
     const self = this;
@@ -271,15 +277,14 @@ export class TTSModule2 implements ReaderModule {
       ) as HTMLIFrameElement;
       let rootEl = iframe.contentWindow?.document.body;
 
-      let doc = this.navigator.iframes[0].contentDocument;
+      let doc = this.host.iframes[0].contentDocument;
       if (doc) {
         let selection = this.highlighter.dom(doc.body).getSelection();
         if (selection.isCollapsed) {
-          let doc = self.navigator.iframes[0].contentDocument;
-          const selectionInfo =
-            self.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
-              doc
-            );
+          let doc = self.host.iframes[0].contentDocument;
+          const selectionInfo = self.host
+            .getModule(NavigatorFeature.Annotations)
+            ?.annotator?.getTemporarySelectionInfo(doc);
           if (selectionInfo?.range) selection.addRange(selectionInfo.range);
         }
 
@@ -450,8 +455,8 @@ export class TTSModule2 implements ReaderModule {
               log.log("utterance ended");
               self.highlighter.doneSpeaking();
               self.api?.finished();
-              self.navigator.emit(ReaderEvent.ReadAloudFinished, "finished", {
-                locator: this.navigator.currentLocator(),
+              self.host.emit(ReaderEvent.ReadAloudFinished, "finished", {
+                locator: self.host.currentLocator(),
               });
             }
           }
@@ -459,8 +464,8 @@ export class TTSModule2 implements ReaderModule {
           log.log("utterance ended");
           self.highlighter.doneSpeaking();
           self.api?.finished();
-          self.navigator.emit(ReaderEvent.ReadAloudFinished, "finished", {
-            locator: this.navigator.currentLocator(),
+          self.host.emit(ReaderEvent.ReadAloudFinished, "finished", {
+            locator: self.host.currentLocator(),
           });
         }
       };
@@ -468,8 +473,10 @@ export class TTSModule2 implements ReaderModule {
     setTimeout(() => {
       window.speechSynthesis.speak(utterance);
       if (!partial) {
-        if (this.navigator.rights.enableContentProtection) {
-          this.navigator.contentProtectionModule?.recalculate(200);
+        if (this.host.rights.enableContentProtection) {
+          this.host
+            .getModule(NavigatorFeature.ContentProtection)
+            ?.recalculate(200);
         }
       }
     }, 0);
@@ -528,7 +535,7 @@ export class TTSModule2 implements ReaderModule {
     }
     log.log("initialVoice", initialVoice);
 
-    const pubLang = self.navigator.publication.metadata?.languages?.[0];
+    const pubLang = self.host.publication.metadata?.languages?.[0];
     const publicationVoiceHasHyphen = pubLang
       ? pubLang.indexOf("-") !== -1
       : false;
@@ -598,15 +605,15 @@ export class TTSModule2 implements ReaderModule {
   }
 
   speakPlay() {
-    if (this.navigator.rights.enableContentProtection) {
-      this.navigator.contentProtectionModule?.deactivate();
+    if (this.host.rights.enableContentProtection) {
+      this.host.getModule(NavigatorFeature.ContentProtection)?.deactivate();
     }
 
     this.scrollPartial = true;
     this.cancel(false);
     if (this.api?.started) this.api?.started();
-    this.navigator.emit(ReaderEvent.ReadAloudStarted, "started", {
-      locator: this.navigator.currentLocator(),
+    this.host.emit(ReaderEvent.ReadAloudStarted, "started", {
+      locator: this.host.currentLocator(),
     });
 
     let self = this;
@@ -624,7 +631,7 @@ export class TTSModule2 implements ReaderModule {
 
       function findVisibleText() {
         let node = self.highlighter.visibleTextRects[0];
-        let doc = self.navigator.iframes[0].contentDocument;
+        let doc = self.host.iframes[0].contentDocument;
         if (doc) {
           const range = self.highlighter
             .dom(doc.body)
@@ -632,7 +639,7 @@ export class TTSModule2 implements ReaderModule {
             .document.createRange();
 
           const selection = self.highlighter
-            .dom(self.navigator.iframes[0].contentDocument?.body)
+            .dom(self.host.iframes[0].contentDocument?.body)
             .getSelection();
           selection.removeAllRanges();
           range.selectNodeContents(node.node);
@@ -676,23 +683,23 @@ export class TTSModule2 implements ReaderModule {
         this.startTTSSession(ttsQueue, ttsQueueIndex);
       }, 200);
     }
-    if (this.navigator.rights.enableContentProtection) {
-      this.navigator.contentProtectionModule?.recalculate(200);
+    if (this.host.rights.enableContentProtection) {
+      this.host.getModule(NavigatorFeature.ContentProtection)?.recalculate(200);
     }
   }
 
   speakPause() {
     if (window.speechSynthesis.speaking) {
       if (this.api?.paused) this.api?.paused();
-      this.navigator.emit(ReaderEvent.ReadAloudPaused, "paused", {
-        locator: this.navigator.currentLocator(),
+      this.host.emit(ReaderEvent.ReadAloudPaused, "paused", {
+        locator: this.host.currentLocator(),
       });
       this.userScrolled = false;
       window.speechSynthesis.pause();
       this.speaking = false;
 
       if (this._ttsQueueItemHighlightsWord) {
-        this.navigator.highlighter?.destroyHighlights(HighlightType.ReadAloud);
+        this.host.highlighter?.destroyHighlights(HighlightType.ReadAloud);
         this._ttsQueueItemHighlightsWord = undefined;
       }
     }
@@ -701,8 +708,8 @@ export class TTSModule2 implements ReaderModule {
   speakResume() {
     if (window.speechSynthesis.speaking) {
       if (this.api?.resumed) this.api?.resumed();
-      this.navigator.emit(ReaderEvent.ReadAloudResumed, "resumed", {
-        locator: this.navigator.currentLocator(),
+      this.host.emit(ReaderEvent.ReadAloudResumed, "resumed", {
+        locator: this.host.currentLocator(),
       });
       this.userScrolled = false;
       window.speechSynthesis.resume();
@@ -713,7 +720,6 @@ export class TTSModule2 implements ReaderModule {
   public static async create(config: TTSModuleConfig) {
     const tts = new this(
       config.tts,
-      config.rights,
       config.highlighter,
       config as TTSModuleProperties,
       config.api,
@@ -725,7 +731,6 @@ export class TTSModule2 implements ReaderModule {
 
   public constructor(
     tts: TTSSettings,
-    rights: Partial<ReaderRights>,
     highlighter: TextHighlighter,
     properties: TTSModuleProperties,
     api?: TTSModuleAPI,
@@ -733,7 +738,6 @@ export class TTSModule2 implements ReaderModule {
   ) {
     this.tts = tts;
     this.headerMenu = headerMenu;
-    this.rights = rights;
     this.highlighter = highlighter;
     this.properties = properties;
     this.api = api;
@@ -749,8 +753,8 @@ export class TTSModule2 implements ReaderModule {
     }
     setTimeout(() => {
       this.properties?.hideLayer
-        ? this.navigator.hideLayer("readaloud")
-        : this.navigator.showLayer("readaloud");
+        ? this.host.hideLayer("readaloud")
+        : this.host.showLayer("readaloud");
     }, 10);
   }
 
@@ -779,7 +783,7 @@ export class TTSModule2 implements ReaderModule {
     removeEventListenerOptional(this.body, "wheel", this.wheel.bind(this));
     removeEventListenerOptional(document, "keydown", this.wheel.bind(this));
     removeEventListenerOptional(
-      this.navigator.iframes[0].contentDocument,
+      this.host.iframes[0].contentDocument,
       "keydown",
       this.wheel.bind(this)
     );
@@ -1113,7 +1117,7 @@ export class TTSModule2 implements ReaderModule {
     log.log(charIndex, charLength, word, start, end);
 
     if (this._ttsQueueItemHighlightsWord) {
-      this.navigator.highlighter?.destroyHighlights(HighlightType.ReadAloud);
+      this.host.highlighter?.destroyHighlights(HighlightType.ReadAloud);
       this._ttsQueueItemHighlightsWord = undefined;
     }
 
@@ -1156,7 +1160,7 @@ export class TTSModule2 implements ReaderModule {
 
       function getCssSelector(element: Element): string {
         try {
-          let doc = self.navigator.iframes[0].contentDocument;
+          let doc = self.host.iframes[0].contentDocument;
           if (doc) {
             return uniqueCssSelector(element, doc, _getCssSelectorOptions);
           } else {
@@ -1173,8 +1177,8 @@ export class TTSModule2 implements ReaderModule {
         return;
       }
 
-      let result = this.navigator.highlighter?.createHighlight(
-        this.navigator.iframes[0].contentWindow as any,
+      let result = this.host.highlighter?.createHighlight(
+        this.host.iframes[0].contentWindow as any,
         {
           rangeInfo: rangeInfo,
           cleanText: "",
@@ -1205,7 +1209,7 @@ export class TTSModule2 implements ReaderModule {
         const shouldScroll = top > window.innerHeight / 2 - 65;
 
         if (
-          this.navigator.view?.isScrollMode() &&
+          this.host.view?.isScrollMode() &&
           this.tts.autoScroll &&
           !this.userScrolled &&
           this.scrollPartial &&
@@ -1215,8 +1219,8 @@ export class TTSModule2 implements ReaderModule {
             block: "center",
             behavior: "smooth",
           });
-        } else if (this.navigator.view?.isPaginated()) {
-          self.navigator.view?.snap(result[1]?.firstChild as HTMLElement);
+        } else if (this.host.view?.isPaginated()) {
+          self.host.view?.snap(result[1]?.firstChild as HTMLElement);
         }
       }
     }

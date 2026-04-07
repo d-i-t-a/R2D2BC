@@ -17,9 +17,10 @@
  * Licensed to: Bluefire Productions, LLC, Bibliotheca LLC, Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { ReaderModule } from "../ReaderModule";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { EpubNavigator } from "../../navigator/EpubNavigator";
+import { EpubModuleHost } from "../ModuleHost";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
@@ -71,9 +72,15 @@ interface ContentProtectionRect {
   isObfuscated: boolean;
 }
 
-export class ContentProtectionModule implements ReaderModule {
+export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
+  readonly name = NavigatorFeature.ContentProtection;
+  readonly hostType = HostType.Epub;
+  readonly rightsKey = RightsKey.ContentProtection;
   private rects: Array<ContentProtectionRect>;
-  navigator: EpubNavigator;
+  private host!: EpubModuleHost;
+  attach(host: EpubModuleHost): void {
+    this.host = host;
+  }
   properties?: ContentProtectionModuleProperties;
   private hasEventListener: boolean = false;
   private isHacked: boolean = false;
@@ -177,16 +184,16 @@ export class ContentProtectionModule implements ReaderModule {
     }
     if (this.properties?.disableKeys) {
       removeEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "keydown",
         this.disableSave
       );
       removeEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "keydown",
         this.disableSave
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         removeEventListenerOptional(
           iframe.contentDocument,
           "keydown",
@@ -204,16 +211,16 @@ export class ContentProtectionModule implements ReaderModule {
 
     if (this.properties?.disableCopy) {
       removeEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "copy",
         this.preventCopy
       );
       removeEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "copy",
         this.preventCopy
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         removeEventListenerOptional(
           iframe.contentDocument,
           "copy",
@@ -229,16 +236,16 @@ export class ContentProtectionModule implements ReaderModule {
       removeEventListenerOptional(window, "copy", this.preventCopy);
       removeEventListenerOptional(document, "copy", this.preventCopy);
       removeEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "cut",
         this.preventCopy
       );
       removeEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "cut",
         this.preventCopy
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         removeEventListenerOptional(
           iframe.contentDocument,
           "cut",
@@ -253,16 +260,16 @@ export class ContentProtectionModule implements ReaderModule {
       removeEventListenerOptional(window, "cut", this.preventCopy);
       removeEventListenerOptional(document, "cut", this.preventCopy);
       removeEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "keydown",
         this.preventCopyKey
       );
       removeEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "keydown",
         this.preventCopyKey
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         removeEventListenerOptional(
           iframe.contentDocument,
           "keydown",
@@ -278,16 +285,16 @@ export class ContentProtectionModule implements ReaderModule {
       removeEventListenerOptional(document, "keydown", this.preventCopyKey);
     } else if (this.properties?.canCopy) {
       removeEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "copy",
         this.restrictCopy
       );
       removeEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "copy",
         this.restrictCopy
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         removeEventListenerOptional(
           iframe.contentDocument,
           "copy",
@@ -303,16 +310,16 @@ export class ContentProtectionModule implements ReaderModule {
       removeEventListenerOptional(window, "copy", this.restrictCopy);
       removeEventListenerOptional(document, "copy", this.restrictCopy);
       removeEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "cut",
         this.restrictCopy
       );
       removeEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "cut",
         this.restrictCopy
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         removeEventListenerOptional(
           iframe.contentDocument,
           "cut",
@@ -327,16 +334,16 @@ export class ContentProtectionModule implements ReaderModule {
       removeEventListenerOptional(window, "cut", this.restrictCopy);
       removeEventListenerOptional(document, "cut", this.restrictCopy);
       removeEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "keydown",
         this.restrictCopyKey
       );
       removeEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "keydown",
         this.restrictCopyKey
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         removeEventListenerOptional(
           iframe.contentDocument,
           "keydown",
@@ -353,16 +360,16 @@ export class ContentProtectionModule implements ReaderModule {
     }
     if (this.properties?.disablePrint) {
       removeEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "beforeprint",
         this.beforePrint.bind(this)
       );
       removeEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "beforeprint",
         this.beforePrint.bind(this)
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         removeEventListenerOptional(
           iframe.contentDocument,
           "beforeprint",
@@ -377,16 +384,16 @@ export class ContentProtectionModule implements ReaderModule {
       removeEventListenerOptional(window, "beforeprint", this.beforePrint);
       removeEventListenerOptional(document, "beforeprint", this.beforePrint);
       removeEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "afterprint",
         this.afterPrint.bind(this)
       );
       removeEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "afterprint",
         this.afterPrint.bind(this)
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         removeEventListenerOptional(
           iframe.contentDocument,
           "afterprint",
@@ -411,16 +418,16 @@ export class ContentProtectionModule implements ReaderModule {
     }
     if (this.properties?.disableContextMenu) {
       removeEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "contextmenu",
         this.disableContext
       );
       removeEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "contextmenu",
         this.disableContext
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         removeEventListenerOptional(
           iframe.contentDocument,
           "contextmenu",
@@ -478,7 +485,7 @@ export class ContentProtectionModule implements ReaderModule {
   public async activate() {
     if (this.properties?.enableObfuscation) {
       this.observe();
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         if (iframe.contentDocument) {
           const body = HTMLUtilities.findRequiredIframeElement(
             iframe.contentDocument,
@@ -495,16 +502,16 @@ export class ContentProtectionModule implements ReaderModule {
   private setupEvents(): void {
     if (this.properties?.disableKeys) {
       addEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "keydown",
         this.disableSave
       );
       addEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "keydown",
         this.disableSave
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         addEventListenerOptional(iframe, "keydown", this.disableSave);
         addEventListenerOptional(
           iframe.ownerDocument,
@@ -531,17 +538,9 @@ export class ContentProtectionModule implements ReaderModule {
       addEventListenerOptional(document, "keydown", this.disableSave);
     }
     if (this.properties?.disableCopy) {
-      addEventListenerOptional(
-        this.navigator.mainElement,
-        "copy",
-        this.preventCopy
-      );
-      addEventListenerOptional(
-        this.navigator.headerMenu,
-        "copy",
-        this.preventCopy
-      );
-      for (const iframe of this.navigator.iframes) {
+      addEventListenerOptional(this.host.mainElement, "copy", this.preventCopy);
+      addEventListenerOptional(this.host.headerMenu, "copy", this.preventCopy);
+      for (const iframe of this.host.iframes) {
         addEventListenerOptional(iframe, "copy", this.preventCopy);
         addEventListenerOptional(
           iframe.ownerDocument,
@@ -567,17 +566,9 @@ export class ContentProtectionModule implements ReaderModule {
       addEventListenerOptional(window, "copy", this.preventCopy);
       addEventListenerOptional(document, "copy", this.preventCopy);
 
-      addEventListenerOptional(
-        this.navigator.mainElement,
-        "cut",
-        this.preventCopy
-      );
-      addEventListenerOptional(
-        this.navigator.headerMenu,
-        "cut",
-        this.preventCopy
-      );
-      for (const iframe of this.navigator.iframes) {
+      addEventListenerOptional(this.host.mainElement, "cut", this.preventCopy);
+      addEventListenerOptional(this.host.headerMenu, "cut", this.preventCopy);
+      for (const iframe of this.host.iframes) {
         addEventListenerOptional(iframe, "cut", this.preventCopy);
         addEventListenerOptional(iframe.ownerDocument, "cut", this.preventCopy);
         addEventListenerOptional(
@@ -596,16 +587,16 @@ export class ContentProtectionModule implements ReaderModule {
       addEventListenerOptional(window, "cut", this.preventCopy);
       addEventListenerOptional(document, "cut", this.preventCopy);
       addEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "keydown",
         this.preventCopyKey
       );
       addEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "keydown",
         this.preventCopyKey
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         addEventListenerOptional(iframe, "keydown", this.preventCopyKey);
         addEventListenerOptional(
           iframe.ownerDocument,
@@ -632,16 +623,16 @@ export class ContentProtectionModule implements ReaderModule {
       addEventListenerOptional(document, "keydown", this.preventCopyKey);
     } else if (this.properties?.canCopy) {
       addEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "copy",
         this.restrictCopy.bind(this)
       );
       addEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "copy",
         this.restrictCopy.bind(this)
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         addEventListenerOptional(iframe, "copy", this.restrictCopy);
         addEventListenerOptional(
           iframe.ownerDocument,
@@ -668,16 +659,16 @@ export class ContentProtectionModule implements ReaderModule {
       addEventListenerOptional(document, "copy", this.restrictCopy.bind(this));
 
       addEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "cut",
         this.restrictCopy.bind(this)
       );
       addEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "cut",
         this.restrictCopy.bind(this)
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         addEventListenerOptional(iframe, "cut", this.restrictCopy.bind(this));
         addEventListenerOptional(
           iframe.ownerDocument,
@@ -704,16 +695,16 @@ export class ContentProtectionModule implements ReaderModule {
       addEventListenerOptional(window, "cut", this.restrictCopy.bind(this));
       addEventListenerOptional(document, "cut", this.restrictCopy.bind(this));
       addEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "keydown",
         this.restrictCopyKey.bind(this)
       );
       addEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "keydown",
         this.restrictCopyKey.bind(this)
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         addEventListenerOptional(
           iframe,
           "keydown",
@@ -753,16 +744,16 @@ export class ContentProtectionModule implements ReaderModule {
     }
     if (this.properties?.disablePrint) {
       addEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "beforeprint",
         this.beforePrint
       );
       addEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "beforeprint",
         this.beforePrint
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         addEventListenerOptional(
           iframe,
           "beforeprint",
@@ -801,16 +792,16 @@ export class ContentProtectionModule implements ReaderModule {
       );
 
       addEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "afterprint",
         this.afterPrint
       );
       addEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "afterprint",
         this.afterPrint
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         addEventListenerOptional(
           iframe,
           "afterprint",
@@ -850,16 +841,16 @@ export class ContentProtectionModule implements ReaderModule {
     }
     if (this.properties?.disableContextMenu) {
       addEventListenerOptional(
-        this.navigator.mainElement,
+        this.host.mainElement,
         "contextmenu",
         this.disableContext
       );
       addEventListenerOptional(
-        this.navigator.headerMenu,
+        this.host.headerMenu,
         "contextmenu",
         this.disableContext
       );
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         addEventListenerOptional(iframe, "contextmenu", this.disableContext);
         addEventListenerOptional(
           iframe.ownerDocument,
@@ -1022,7 +1013,7 @@ export class ContentProtectionModule implements ReaderModule {
       return;
     }
     log.log("copy action initiated");
-    let win = this.navigator.iframes[0].contentWindow;
+    let win = this.host.iframes[0].contentWindow;
     if (win) {
       let self = this;
       function getCssSelector(element: Element): string | undefined {
@@ -1034,7 +1025,7 @@ export class ContentProtectionModule implements ReaderModule {
             return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
           },
         };
-        let doc = self.navigator.iframes[0].contentDocument;
+        let doc = self.host.iframes[0].contentDocument;
         if (doc) {
           return uniqueCssSelector(element, doc, options);
         } else {
@@ -1043,11 +1034,11 @@ export class ContentProtectionModule implements ReaderModule {
       }
       let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
       if (selectionInfo === undefined) {
-        let doc = this.navigator.iframes[0].contentDocument;
+        let doc = this.host.iframes[0].contentDocument;
         selectionInfo =
-          this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
-            doc
-          ) ?? undefined;
+          this.host
+            .getModule(NavigatorFeature.Annotations)
+            ?.annotator?.getTemporarySelectionInfo(doc) ?? undefined;
       }
 
       event.clipboardData.setData(
@@ -1071,7 +1062,7 @@ export class ContentProtectionModule implements ReaderModule {
         ? event.metaKey
         : event.ctrlKey && (event.key === "c" || event.keyCode === 67)
     ) {
-      let win = this.navigator.iframes[0].contentWindow;
+      let win = this.host.iframes[0].contentWindow;
       if (win) {
         let self = this;
         function getCssSelector(element: Element): string | undefined {
@@ -1083,7 +1074,7 @@ export class ContentProtectionModule implements ReaderModule {
               return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
             },
           };
-          let doc = self.navigator.iframes[0].contentDocument;
+          let doc = self.host.iframes[0].contentDocument;
           if (doc) {
             return uniqueCssSelector(element, doc, options);
           } else {
@@ -1092,11 +1083,11 @@ export class ContentProtectionModule implements ReaderModule {
         }
         let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
         if (selectionInfo === undefined) {
-          let doc = this.navigator.iframes[0].contentDocument;
+          let doc = this.host.iframes[0].contentDocument;
           selectionInfo =
-            this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
-              doc
-            ) ?? undefined;
+            this.host
+              .getModule(NavigatorFeature.Annotations)
+              ?.annotator?.getTemporarySelectionInfo(doc) ?? undefined;
         }
         this.copyToClipboard(
           selectionInfo?.cleanText?.substring(
@@ -1167,9 +1158,9 @@ export class ContentProtectionModule implements ReaderModule {
   }) {
     log.log("before print");
 
-    if (this.navigator && this.navigator.headerMenu) {
-      this.navigator.headerMenu.style.display = "none";
-      this.navigator.mainElement.style.display = "none";
+    if (this.host && this.host.headerMenu) {
+      this.host.headerMenu.style.display = "none";
+      this.host.mainElement.style.display = "none";
     }
 
     event.stopPropagation();
@@ -1182,9 +1173,9 @@ export class ContentProtectionModule implements ReaderModule {
   }) {
     log.log("after print");
 
-    if (this.navigator && this.navigator.headerMenu) {
-      this.navigator.headerMenu.style.removeProperty("display");
-      this.navigator.mainElement.style.removeProperty("display");
+    if (this.host && this.host.headerMenu) {
+      this.host.headerMenu.style.removeProperty("display");
+      this.host.mainElement.style.removeProperty("display");
     }
 
     event.stopPropagation();
@@ -1200,7 +1191,7 @@ export class ContentProtectionModule implements ReaderModule {
       aElement.setAttribute("href", href);
       aElement.click();
     }
-    for (const iframe of this.navigator.iframes) {
+    for (const iframe of this.host.iframes) {
       const aElements = iframe.contentDocument?.querySelectorAll("a");
 
       aElements?.forEach((aElement) => {
@@ -1235,7 +1226,7 @@ export class ContentProtectionModule implements ReaderModule {
     const onDragstart = (evt) => {
       evt.preventDefault();
     };
-    for (const iframe of this.navigator.iframes) {
+    for (const iframe of this.host.iframes) {
       const bodyStyle =
         iframe.contentDocument?.body.getAttribute("style") || "";
 

@@ -27,7 +27,6 @@ import {
   JSONable,
 } from "../../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { ReaderRights } from "../../navigator/EpubNavigator";
 import { TextHighlighter } from "../highlight/TextHighlighter";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import log from "loglevel";
@@ -51,7 +50,6 @@ export interface TTSModuleProperties {
 }
 
 export interface TTSModuleConfig extends TTSModuleProperties {
-  rights: Partial<ReaderRights>;
   tts: TTSSettings;
   highlighter: TextHighlighter;
   headerMenu?: HTMLElement | null;

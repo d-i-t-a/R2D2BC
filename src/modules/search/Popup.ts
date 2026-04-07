@@ -17,15 +17,15 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { EpubNavigator } from "../../navigator/EpubNavigator";
+import { EpubModuleHost } from "../ModuleHost";
 import sanitize from "sanitize-html";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 
 export class Popup {
-  navigator: EpubNavigator;
+  private readonly host: EpubModuleHost;
 
-  constructor(navigator: EpubNavigator) {
-    this.navigator = navigator;
+  constructor(host: EpubModuleHost) {
+    this.host = host;
   }
 
   async handleFootnote(link: HTMLLIElement, event: MouseEvent | TouchEvent) {
@@ -44,8 +44,8 @@ export class Popup {
         event.preventDefault();
         event.stopPropagation();
 
-        if (this.navigator.api?.getContent) {
-          await this.navigator.api?.getContent(href).then((content) => {
+        if (this.host.api?.getContent) {
+          await this.host.api?.getContent(href).then((content) => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(content, "text/html");
             const element = doc.querySelector("#" + id);
@@ -56,7 +56,7 @@ export class Popup {
             }
           });
         } else {
-          await fetch(absolute, this.navigator.requestConfig)
+          await fetch(absolute, this.host.requestConfig)
             .then((r) => r.text())
             .then(async (data) => {
               const parser = new DOMParser();
@@ -75,7 +75,7 @@ export class Popup {
 
   async hidePopover() {
     let footnote =
-      this.navigator.iframes[0].contentDocument?.getElementById("d2-popover");
+      this.host.iframes[0].contentDocument?.getElementById("d2-popover");
     if (footnote) {
       footnote.parentElement?.removeChild(footnote);
     }
@@ -100,9 +100,7 @@ export class Popup {
         event.stopPropagation();
 
         let popover =
-          this.navigator.iframes[0].contentDocument?.getElementById(
-            "d2-popover"
-          );
+          this.host.iframes[0].contentDocument?.getElementById("d2-popover");
         if (popover) {
           popover.parentElement?.removeChild(popover);
         }
@@ -126,27 +124,27 @@ export class Popup {
         const d2content = document.createElement("div");
         d2content.className = "d2-popover-content";
         d2wrapper.appendChild(d2content);
-        if (this.navigator.api?.getContent) {
-          await this.navigator.api?.getContent(href).then((content) => {
+        if (this.host.api?.getContent) {
+          await this.host.api?.getContent(href).then((content) => {
             d2content.innerHTML = sanitize(content);
-            let doc = this.navigator.iframes[0].contentDocument;
+            let doc = this.host.iframes[0].contentDocument;
             if (doc) {
               doc.body.appendChild(d2popover);
             }
           });
         } else {
-          await fetch(absolute, this.navigator.requestConfig)
+          await fetch(absolute, this.host.requestConfig)
             .then((r) => r.text())
             .then(async (data) => {
               d2content.innerHTML = sanitize(data);
-              let doc = this.navigator.iframes[0].contentDocument;
+              let doc = this.host.iframes[0].contentDocument;
               if (doc) {
                 doc.body.appendChild(d2popover);
               }
             });
         }
 
-        let win = this.navigator.iframes[0].contentWindow;
+        let win = this.host.iframes[0].contentWindow;
         if (!win) {
           return;
         }
@@ -174,9 +172,7 @@ export class Popup {
         event.stopPropagation();
 
         let popover =
-          this.navigator.iframes[0].contentDocument?.getElementById(
-            "d2-popover"
-          );
+          this.host.iframes[0].contentDocument?.getElementById("d2-popover");
         if (popover) {
           popover.parentElement?.removeChild(popover);
         }
@@ -202,12 +198,12 @@ export class Popup {
         d2wrapper.appendChild(d2content);
 
         d2content.src = src;
-        let doc = this.navigator.iframes[0].contentDocument;
+        let doc = this.host.iframes[0].contentDocument;
         if (doc) {
           doc.body.appendChild(d2popover);
         }
 
-        let win = this.navigator.iframes[0].contentWindow;
+        let win = this.host.iframes[0].contentWindow;
         if (!win) {
           return;
         }
@@ -233,7 +229,7 @@ export class Popup {
 
   showPopup(element: any, event: MouseEvent | TouchEvent) {
     let footnote =
-      this.navigator.iframes[0].contentDocument?.getElementById("d2-popup");
+      this.host.iframes[0].contentDocument?.getElementById("d2-popup");
     if (footnote) {
       footnote.parentElement?.removeChild(footnote);
     }
@@ -262,8 +258,8 @@ export class Popup {
       });
     }
 
-    const paginated = this.navigator.view?.isPaginated();
-    let doc = this.navigator.iframes[0].contentDocument;
+    const paginated = this.host.view?.isPaginated();
+    let doc = this.host.iframes[0].contentDocument;
     if (!doc) {
       return;
     }
@@ -281,7 +277,7 @@ export class Popup {
 
     doc.body.appendChild(d2popup);
 
-    let win = this.navigator.iframes[0].contentWindow;
+    let win = this.host.iframes[0].contentWindow;
     if (!win) {
       return;
     }

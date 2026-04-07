@@ -17,8 +17,9 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { EpubNavigator } from "../../navigator/EpubNavigator";
-import { ReaderModule } from "../ReaderModule";
+import { EpubModuleHost } from "../ModuleHost";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
 import {
   TextHighlighter,
   CLASS_HIGHLIGHT_AREA,
@@ -32,8 +33,8 @@ import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import debounce from "debounce";
 import { ISelectionInfo } from "../highlight/common/selection";
 import { SHA256 } from "jscrypto/es6/SHA256";
-import { AnnotationMarker } from "../../model/Locator";
-import { Publication } from "../../model/Publication";
+import { AnnotationMarker } from "../../model/v3";
+import { Publication } from "../../model/v3";
 import log from "loglevel";
 
 export interface DefinitionsModuleAPI {
@@ -62,11 +63,17 @@ export interface DefinitionsModuleConfig extends DefinitionsModuleProperties {
   highlighter: TextHighlighter;
 }
 
-export class DefinitionsModule implements ReaderModule {
+export class DefinitionsModule implements ReaderModule<EpubModuleHost> {
+  readonly name = NavigatorFeature.Definitions;
+  readonly hostType = HostType.Epub;
+  readonly rightsKey = RightsKey.Definitions;
   properties: DefinitionsModuleProperties;
   api?: DefinitionsModuleAPI;
   private publication: Publication;
-  navigator: EpubNavigator;
+  private host!: EpubModuleHost;
+  attach(host: EpubModuleHost): void {
+    this.host = host;
+  }
   private currentChapterPopupResult: any = [];
   private currentPopupHighlights: any = [];
   private highlighter: TextHighlighter;
@@ -102,22 +109,20 @@ export class DefinitionsModule implements ReaderModule {
   protected async start(): Promise<void> {
     setTimeout(() => {
       this.properties.hideLayer
-        ? this.navigator.hideLayer("definitions")
-        : this.navigator.showLayer("definitions");
+        ? this.host.hideLayer("definitions")
+        : this.host.showLayer("definitions");
     }, 10);
   }
 
   async searchAndPaint(item: Definition, callback: (result: any) => any) {
     const linkHref = this.publication.getAbsoluteHref(
       this.publication.readingOrder
-        ? this.publication.readingOrder[this.navigator.currentResource() ?? 0]
-            .href
+        ? this.publication.readingOrder[this.host.currentResource() ?? 0].href
         : ""
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === undefined && this.publication.readingOrder) {
-      tocItem =
-        this.publication.readingOrder[this.navigator.currentResource() ?? 0];
+      tocItem = this.publication.readingOrder[this.host.currentResource() ?? 0];
     }
     let localSearchDefinitions: any = [];
 
@@ -127,10 +132,11 @@ export class DefinitionsModule implements ReaderModule {
         if (tocItem) {
           await searchDocDomSeek(
             termKey,
-            this.navigator.iframes[0].contentDocument,
+            this.host.iframes[0].contentDocument,
             tocItem.href,
             tocItem.title,
-            this.navigator.definitionsModule?.properties.fullWordSearch
+            this.host.getModule(NavigatorFeature.Definitions)?.properties
+              .fullWordSearch
           ).then((result) => {
             let i: number | undefined = undefined;
             if (item.result === 1) {
@@ -179,13 +185,13 @@ export class DefinitionsModule implements ReaderModule {
       if (this.api?.success) {
         this.api?.success(lodash.omit(item, "callbacks"), result);
         if (result && result.length > 0) {
-          this.navigator.emit(ReaderEvent.DefinitionSuccess, result);
+          this.host.emit(ReaderEvent.DefinitionSuccess, result);
         }
 
         if (this.api?.visible) {
           result.forEach((highlight) => {
             let highlightParent =
-              this.navigator.iframes[0].contentDocument?.querySelector(
+              this.host.iframes[0].contentDocument?.querySelector(
                 `#${highlight.id}`
               );
             const highlightFragments = highlightParent?.querySelectorAll(
@@ -199,7 +205,7 @@ export class DefinitionsModule implements ReaderModule {
                       lodash.omit(item, "callbacks"),
                       lodash.omit(highlight, "definition")
                     );
-                    this.navigator.emit(
+                    this.host.emit(
                       ReaderEvent.DefinitionVisible,
                       item,
                       highlight
@@ -229,7 +235,8 @@ export class DefinitionsModule implements ReaderModule {
   }
   createDefinitionHighlight(selectionInfo: ISelectionInfo, item: Definition) {
     try {
-      let createColor: any = this.navigator.definitionsModule?.properties.color;
+      let createColor: any = this.host.getModule(NavigatorFeature.Definitions)
+        ?.properties.color;
       if (TextHighlighter.isHexColor(createColor)) {
         createColor = TextHighlighter.hexToRgbChannels(createColor);
       }
@@ -238,7 +245,7 @@ export class DefinitionsModule implements ReaderModule {
       const sha256Hex = SHA256.hash(uniqueStr);
       const id = "R2_DEFINITION_" + sha256Hex;
       this.highlighter.destroyHighlight(
-        this.navigator.iframes[0].contentDocument,
+        this.host.iframes[0].contentDocument,
         id
       );
 
@@ -253,7 +260,7 @@ export class DefinitionsModule implements ReaderModule {
       _highlights.push(highlight);
 
       let highlightDom = this.highlighter.createHighlightDom(
-        this.navigator.iframes[0].contentWindow as any,
+        this.host.iframes[0].contentWindow as any,
         highlight
       );
       if (highlightDom) {

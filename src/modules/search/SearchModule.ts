@@ -18,14 +18,15 @@
  */
 
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { Publication } from "../../model/Publication";
-import { EpubNavigator } from "../../navigator/EpubNavigator";
-import { ReaderModule } from "../ReaderModule";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import { Publication } from "../../model/v3";
+import { EpubModuleHost } from "../ModuleHost";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
-import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
+import { AnnotationMarker, Locations, Locator } from "../../model/v3";
 import {
   DEFAULT_BACKGROUND_COLOR,
   TextHighlighter,
@@ -55,12 +56,18 @@ export interface SearchModuleConfig extends SearchModuleProperties {
   highlighter: TextHighlighter;
 }
 
-export class SearchModule implements ReaderModule {
+export class SearchModule implements ReaderModule<EpubModuleHost> {
+  readonly name = NavigatorFeature.Search;
+  readonly hostType = HostType.Epub;
+  readonly rightsKey = RightsKey.Search;
   private properties: SearchModuleProperties;
   private api?: SearchModuleAPI;
   private publication: Publication;
   private readonly headerMenu?: HTMLElement | null;
-  navigator: EpubNavigator;
+  private host!: EpubModuleHost;
+  attach(host: EpubModuleHost): void {
+    this.host = host;
+  }
   private searchInput: HTMLInputElement;
   private searchGo: HTMLElement;
   private currentChapterSearchResult: any = [];
@@ -141,8 +148,8 @@ export class SearchModule implements ReaderModule {
     }
     setTimeout(() => {
       this.properties.hideLayer
-        ? this.navigator.hideLayer("search")
-        : this.navigator.showLayer("search");
+        ? this.host.hideLayer("search")
+        : this.host.showLayer("search");
     }, 10);
   }
 
@@ -156,7 +163,7 @@ export class SearchModule implements ReaderModule {
   async handleSearchChapter(index?: number) {
     var self = this;
     var searchVal = this.searchInput.value;
-    let currentLocation = this.navigator.currentChapterLink.href;
+    let currentLocation = this.host.currentChapterLink.href;
     const spineItem = this.publication.getSpineItem(currentLocation);
     if (this.headerMenu) {
       var searchResultDiv = HTMLUtilities.findElement(
@@ -171,8 +178,10 @@ export class SearchModule implements ReaderModule {
     await this.searchAndPaintChapter(searchVal, index, async (result) => {
       localSearchResultChapter = result;
       goToResultPage(1);
-      if (this.navigator.rights.enableContentProtection) {
-        this.navigator.contentProtectionModule?.recalculate(200);
+      if (this.host.rights.enableContentProtection) {
+        this.host
+          .getModule(NavigatorFeature.ContentProtection)
+          ?.recalculate(200);
       }
     });
 
@@ -296,27 +305,26 @@ export class SearchModule implements ReaderModule {
     index: number = 0,
     callback: (result: any) => any
   ) {
-    if (this.navigator.rights.enableContentProtection) {
-      this.navigator.contentProtectionModule?.deactivate();
+    if (this.host.rights.enableContentProtection) {
+      this.host.getModule(NavigatorFeature.ContentProtection)?.deactivate();
     }
     const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder[this.navigator.currentResource() ?? 0].href
+      this.publication.readingOrder[this.host.currentResource() ?? 0].href
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
-      tocItem =
-        this.publication.readingOrder[this.navigator.currentResource() ?? 0];
+      tocItem = this.publication.readingOrder[this.host.currentResource() ?? 0];
     }
     let localSearchResultChapter: any = [];
 
     // Clear previous search highlights before redrawing
     this.highlighter?.destroyHighlights(HighlightType.Search);
-    if (this.navigator.rights.enableSearch) {
+    if (this.host.rights.enableSearch) {
       this.drawSearch();
     }
     let i = 0;
     if (tocItem) {
-      let doc = this.navigator.iframes[0].contentDocument;
+      let doc = this.host.iframes[0].contentDocument;
       if (doc) {
         if (tocItem) {
           searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
@@ -378,7 +386,7 @@ export class SearchModule implements ReaderModule {
       };
 
       let highlightDom = this.highlighter?.createHighlightDom(
-        this.navigator.iframes[0].contentWindow as any,
+        this.host.iframes[0].contentWindow as any,
         highlight
       );
       highlight.position = parseInt(
@@ -407,8 +415,10 @@ export class SearchModule implements ReaderModule {
 
     reset();
     await this.searchAndPaintChapter(term, 0, async () => {
-      if (this.navigator.rights.enableContentProtection) {
-        this.navigator.contentProtectionModule?.recalculate(200);
+      if (this.host.rights.enableContentProtection) {
+        this.host
+          .getModule(NavigatorFeature.ContentProtection)
+          ?.recalculate(200);
       }
     });
 
@@ -423,7 +433,7 @@ export class SearchModule implements ReaderModule {
   async goToSearchID(href: string, index: number, current: boolean) {
     var filteredIndex = index;
     var item;
-    let currentLocation = this.navigator.currentChapterLink.href;
+    let currentLocation = this.host.currentChapterLink.href;
     var absolutehref = this.publication.getAbsoluteHref(href);
     let filteredIndexes = this.bookSearchResult.filter(
       (el: any) => el.href === href
@@ -460,7 +470,7 @@ export class SearchModule implements ReaderModule {
           position.locations.position = hrefPositions[0].locations.position;
         }
 
-        this.navigator.navigate(position);
+        this.host.navigate(position);
         // Navigate to new chapter and search only in new current chapter,
         // this should refresh thesearch result of current chapter and highlight the selected index
         setTimeout(() => {
@@ -468,8 +478,10 @@ export class SearchModule implements ReaderModule {
             item.textMatch,
             filteredIndex,
             async () => {
-              if (this.navigator.rights.enableContentProtection) {
-                this.navigator.contentProtectionModule?.recalculate(200);
+              if (this.host.rights.enableContentProtection) {
+                this.host
+                  .getModule(NavigatorFeature.ContentProtection)
+                  ?.recalculate(200);
               }
             }
           );
@@ -481,7 +493,7 @@ export class SearchModule implements ReaderModule {
   async goToSearchIndex(href: string, index: number, current: boolean) {
     var filteredIndex = index;
     var item;
-    let currentLocation = this.navigator.currentChapterLink.href;
+    let currentLocation = this.host.currentChapterLink.href;
     var absolutehref = this.publication.getAbsoluteHref(href);
     let filteredIndexes = this.bookSearchResult.filter(
       (el: any) => el.href === href
@@ -513,7 +525,7 @@ export class SearchModule implements ReaderModule {
           position.locations.position = hrefPositions[0].locations.position;
         }
 
-        this.navigator.navigate(position);
+        this.host.navigate(position);
         // Navigate to new chapter and search only in new current chapter,
         // this should refresh thesearch result of current chapter and highlight the selected index
         setTimeout(() => {
@@ -521,8 +533,10 @@ export class SearchModule implements ReaderModule {
             item.textMatch,
             filteredIndex,
             async () => {
-              if (this.navigator.rights.enableContentProtection) {
-                this.navigator.contentProtectionModule?.recalculate(200);
+              if (this.host.rights.enableContentProtection) {
+                this.host
+                  .getModule(NavigatorFeature.ContentProtection)
+                  ?.recalculate(200);
               }
             }
           );
@@ -605,7 +619,7 @@ export class SearchModule implements ReaderModule {
                   (el: any) => el === searchItem
                 );
 
-                let currentLocation = self.navigator.currentChapterLink.href;
+                let currentLocation = self.host.currentChapterLink.href;
 
                 if (currentLocation === href) {
                   self.jumpToMark(filteredIndex);
@@ -630,7 +644,7 @@ export class SearchModule implements ReaderModule {
                       hrefPositions[0].locations.position;
                   }
 
-                  self.navigator.navigate(position);
+                  self.host.navigate(position);
                   // Navigate to new chapter and search only in new current chapter,
                   // this should refresh thesearch result of current chapter and highlight the selected index
                   setTimeout(() => {
@@ -744,8 +758,8 @@ export class SearchModule implements ReaderModule {
       }
       if (tocItem) {
         let href = this.publication.getAbsoluteHref(tocItem.href);
-        if (this.navigator.api?.getContent) {
-          await this.navigator.api?.getContent(href).then((content) => {
+        if (this.host.api?.getContent) {
+          await this.host.api?.getContent(href).then((content) => {
             let parser = new DOMParser();
             let doc = parser.parseFromString(content, "application/xhtml+xml");
             if (tocItem) {
@@ -760,12 +774,12 @@ export class SearchModule implements ReaderModule {
             }
           });
         } else {
-          await fetch(href, this.navigator.requestConfig)
+          await fetch(href, this.host.requestConfig)
             .then((r) => r.text())
             .then(async (data) => {
               let parser = new DOMParser();
               let doc = parser.parseFromString(
-                this.navigator.requestConfig?.encoded
+                this.host.requestConfig?.encoded
                   ? this.decodeBase64(data)
                   : data,
                 "application/xhtml+xml"
@@ -803,18 +817,17 @@ export class SearchModule implements ReaderModule {
   async searchChapter(term: string): Promise<any> {
     let localSearchResultBook: any = [];
     const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder[this.navigator.currentResource() ?? 0].href
+      this.publication.readingOrder[this.host.currentResource() ?? 0].href
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
-      tocItem =
-        this.publication.readingOrder[this.navigator.currentResource() ?? 0];
+      tocItem = this.publication.readingOrder[this.host.currentResource() ?? 0];
     }
 
     if (tocItem) {
       let href = this.publication.getAbsoluteHref(tocItem.href);
-      if (this.navigator.api?.getContent) {
-        await this.navigator.api?.getContent(href).then((content) => {
+      if (this.host.api?.getContent) {
+        await this.host.api?.getContent(href).then((content) => {
           let parser = new DOMParser();
           let doc = parser.parseFromString(content, "application/xhtml+xml");
           if (tocItem) {
@@ -828,15 +841,13 @@ export class SearchModule implements ReaderModule {
           }
         });
       } else {
-        await fetch(href, this.navigator.requestConfig)
+        await fetch(href, this.host.requestConfig)
           .then((r) => r.text())
           .then(async (data) => {
             // ({ data, tocItem });
             let parser = new DOMParser();
             let doc = parser.parseFromString(
-              this.navigator.requestConfig?.encoded
-                ? this.decodeBase64(data)
-                : data,
+              this.host.requestConfig?.encoded ? this.decodeBase64(data) : data,
               "application/xhtml+xml"
             );
             if (tocItem) {
@@ -900,10 +911,10 @@ export class SearchModule implements ReaderModule {
           this.currentSearchHighlights
         );
 
-        this.navigator.view?.goToCssSelector(
+        this.host.view?.goToCssSelector(
           current.rangeInfo.startContainerElementCssSelector
         );
-        this.navigator.updatePositionInfo();
+        this.host.updatePositionInfo();
       }
     }, 200);
   }

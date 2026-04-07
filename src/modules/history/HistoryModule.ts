@@ -17,15 +17,16 @@
  * Licensed to: Allvit under one or more contributor license agreements.
  */
 
-import { EpubNavigator } from "../../navigator/EpubNavigator";
-import { ReaderModule } from "../ReaderModule";
+import { EpubModuleHost } from "../ModuleHost";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
-import { Locator, ReadingPosition } from "../../model/Locator";
-import { Publication } from "../../model/Publication";
+import { Locator, ReadingPosition } from "../../model/v3";
+import { Publication } from "../../model/v3";
 import Annotator from "../../store/Annotator";
 import log from "loglevel";
 
@@ -39,9 +40,15 @@ export interface HistoryModuleConfig extends HistoryModuleProperties {
   publication: Publication;
 }
 
-export class HistoryModule implements ReaderModule {
+export class HistoryModule implements ReaderModule<EpubModuleHost> {
+  readonly name = NavigatorFeature.History;
+  readonly hostType = HostType.Epub;
+  readonly rightsKey = RightsKey.History;
   readonly annotator: Annotator | null;
-  navigator: EpubNavigator;
+  private host!: EpubModuleHost;
+  attach(host: EpubModuleHost): void {
+    this.host = host;
+  }
   private readonly headerMenu?: HTMLElement | null;
   private publication: Publication;
   private properties: HistoryModuleProperties;
@@ -205,10 +212,7 @@ export class HistoryModule implements ReaderModule {
     if (this.history.length > 0) {
       if (this.historyCurrentIndex + 1 < this.history.length) {
         this.historyCurrentIndex = this.historyCurrentIndex + 1;
-        await this.navigator.navigate(
-          this.history[this.historyCurrentIndex],
-          false
-        );
+        await this.host.navigate(this.history[this.historyCurrentIndex], false);
       }
     }
   }
@@ -223,10 +227,7 @@ export class HistoryModule implements ReaderModule {
     if (this.history.length > 0) {
       if (this.historyCurrentIndex > 0) {
         this.historyCurrentIndex = this.historyCurrentIndex - 1;
-        await this.navigator.navigate(
-          this.history[this.historyCurrentIndex],
-          false
-        );
+        await this.host.navigate(this.history[this.historyCurrentIndex], false);
       }
     }
   }

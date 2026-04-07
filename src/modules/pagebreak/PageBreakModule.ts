@@ -17,8 +17,9 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { EpubNavigator } from "../../navigator/EpubNavigator";
-import { ReaderModule } from "../ReaderModule";
+import { EpubModuleHost } from "../ModuleHost";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import { convertRange } from "../highlight/renderer/iframe/selection";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
@@ -28,11 +29,11 @@ import {
 } from "../highlight/common/selection";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional } from "../../utils/EventHandler";
-import { Link } from "../../model/Link";
-import { AnnotationMarker, Locations, Locator } from "../../model/Locator";
+import { Link } from "../../model/v3";
+import { AnnotationMarker, Locations, Locator } from "../../model/v3";
 import { SHA256 } from "jscrypto/es6/SHA256";
 import { _highlights } from "../highlight/TextHighlighter";
-import { Publication } from "../../model/Publication";
+import { Publication } from "../../model/v3";
 import log from "loglevel";
 
 export interface PageBreakModuleProperties {
@@ -44,8 +45,14 @@ export interface PageBreakModuleConfig extends PageBreakModuleProperties {
   publication: Publication;
 }
 
-export class PageBreakModule implements ReaderModule {
-  navigator: EpubNavigator;
+export class PageBreakModule implements ReaderModule<EpubModuleHost> {
+  readonly name = NavigatorFeature.PageBreaks;
+  readonly hostType = HostType.Epub;
+  readonly rightsKey = RightsKey.PageBreaks;
+  private host!: EpubModuleHost;
+  attach(host: EpubModuleHost): void {
+    this.host = host;
+  }
   private readonly headerMenu?: HTMLElement | null;
   private publication: Publication;
   private properties: PageBreakModuleProperties;
@@ -115,8 +122,8 @@ export class PageBreakModule implements ReaderModule {
     }
     setTimeout(() => {
       this.properties.hideLayer
-        ? this.navigator.hideLayer("pagebreak")
-        : this.navigator.showLayer("pagebreak");
+        ? this.host.hideLayer("pagebreak")
+        : this.host.showLayer("pagebreak");
     }, 10);
   }
   async goToPageNumber(event: any): Promise<any> {
@@ -151,21 +158,19 @@ export class PageBreakModule implements ReaderModule {
           title: firstPage.title,
         };
 
-        this.navigator.goTo(position);
+        this.host.goTo(position);
       }
     }
   }
 
   async handleResize() {
-    await this.navigator.highlighter?.destroyHighlights(
-      HighlightType.PageBreak
-    );
+    await this.host.highlighter?.destroyHighlights(HighlightType.PageBreak);
     await this.drawPageBreaks();
   }
 
   async drawPageBreaks() {
     setTimeout(() => {
-      const body = this.navigator.iframes[0].contentDocument?.body;
+      const body = this.host.iframes[0].contentDocument?.body;
       let pageBreaks = body?.querySelectorAll('[*|type="pagebreak"]');
       if (pageBreaks?.length === 0) {
         pageBreaks = body?.querySelectorAll("[epub\\:type='pagebreak']");
@@ -177,7 +182,7 @@ export class PageBreakModule implements ReaderModule {
 
       function getCssSelector(element: Element): string {
         try {
-          let doc = self.navigator.iframes[0].contentDocument;
+          let doc = self.host.iframes[0].contentDocument;
           if (doc) {
             return uniqueCssSelector(element, doc, _getCssSelectorOptions);
           } else {
@@ -206,13 +211,13 @@ export class PageBreakModule implements ReaderModule {
             img.innerHTML = title;
             hide = true;
           }
-          let doc = this.navigator.iframes[0].contentDocument;
+          let doc = this.host.iframes[0].contentDocument;
           if (doc) {
-            const range = this.navigator.highlighter
+            const range = this.host.highlighter
               ?.dom(doc.body)
               .getWindow()
               .document.createRange();
-            const selection = this.navigator.highlighter
+            const selection = this.host.highlighter
               ?.dom(doc.body)
               .getSelection();
             selection.removeAllRanges();
@@ -265,8 +270,8 @@ export class PageBreakModule implements ReaderModule {
       };
       _highlights.push(highlight);
 
-      let highlightDom = this.navigator.highlighter?.createHighlightDom(
-        this.navigator.iframes[0].contentWindow as any,
+      let highlightDom = this.host.highlighter?.createHighlightDom(
+        this.host.iframes[0].contentWindow as any,
         highlight
       );
       highlight.position = parseInt(

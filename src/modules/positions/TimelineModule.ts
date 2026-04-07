@@ -17,22 +17,29 @@
  * Licensed to: Bibliotheca LLC, Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { Publication } from "../../model/Publication";
-import { EpubNavigator } from "../../navigator/EpubNavigator";
-import { ReaderModule } from "../ReaderModule";
+import { Publication } from "../../model/v3";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import { EpubModuleHost } from "../ModuleHost";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional } from "../../utils/EventHandler";
-import { Locator } from "../../model/Locator";
-import { Link } from "../../model/Link";
+import { Locator } from "../../model/v3";
+import { Link } from "../../model/v3";
 import log from "loglevel";
 
 export interface TimelineModuleConfig {
   publication: Publication;
 }
 
-export class TimelineModule implements ReaderModule {
+export class TimelineModule implements ReaderModule<EpubModuleHost> {
+  readonly name = NavigatorFeature.Timeline;
+  readonly hostType = HostType.Epub;
+  readonly rightsKey = RightsKey.Timeline;
   private publication: Publication;
-  navigator: EpubNavigator;
+  private host!: EpubModuleHost;
+  attach(host: EpubModuleHost): void {
+    this.host = host;
+  }
   private timelineContainer: HTMLDivElement;
   private positionSlider: HTMLInputElement;
 
@@ -71,9 +78,9 @@ export class TimelineModule implements ReaderModule {
     return new Promise<void>(async (resolve) => {
       await (document as any).fonts.ready;
 
-      let locator = this.navigator.currentLocator();
+      let locator = this.host.currentLocator();
       if (
-        (this.navigator.rights.autoGeneratePositions &&
+        (this.host.rights.autoGeneratePositions &&
           this.publication.positions) ||
         this.publication.positions
       ) {
@@ -101,10 +108,7 @@ export class TimelineModule implements ReaderModule {
         const tocHrefAbs = this.publication.getAbsoluteHref(tocHref ?? "");
 
         var chapterHeight;
-        if (
-          this.publication.positions &&
-          this.navigator.view?.layout !== "fixed"
-        ) {
+        if (this.publication.positions && this.host.view?.layout !== "fixed") {
           if ((link as Link).contentWeight) {
             chapterHeight = (link as Link).contentWeight;
           } else {
@@ -132,7 +136,7 @@ export class TimelineModule implements ReaderModule {
           var position;
           if (
             this.publication.positions ||
-            (this.navigator.rights.autoGeneratePositions &&
+            (this.host.rights.autoGeneratePositions &&
               this.publication.positions)
           ) {
             position = {
@@ -152,10 +156,10 @@ export class TimelineModule implements ReaderModule {
             };
           }
           log.log(position);
-          this.navigator.navigate(position);
+          this.host.navigate(position);
         });
 
-        if (tocHrefAbs === this.navigator.currentChapterLink.href) {
+        if (tocHrefAbs === this.host.currentChapterLink.href) {
           chapter.className += " active";
         } else {
           chapter.className = chapter.className.replace(" active", "");

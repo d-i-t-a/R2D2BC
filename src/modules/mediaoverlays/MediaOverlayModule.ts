@@ -17,12 +17,13 @@
  * Licensed to: Bibliotheca LLC under one or more contributor license agreements.
  */
 
-import { Publication } from "../../model/Publication";
-import { EpubNavigator } from "../../navigator/EpubNavigator";
-import { ReaderModule } from "../ReaderModule";
-import { Link } from "../../model/Link";
+import { Publication } from "../../model/v3";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import { EpubModuleHost } from "../ModuleHost";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
+import { Link } from "../../model/v3";
 import { ReaderEvent } from "../../utils/Events";
-import { MediaOverlayNode } from "../../model/v3/MediaOverlayNode";
+import { MediaOverlayNode } from "../../model/v3";
 import {
   MediaOverlaySettings,
   R2_MO_CLASS_ACTIVE,
@@ -59,9 +60,15 @@ export interface MediaOverlayModuleConfig extends MediaOverlayModuleProperties {
   api?: MediaOverlayModuleAPI;
 }
 
-export class MediaOverlayModule implements ReaderModule {
+export class MediaOverlayModule implements ReaderModule<EpubModuleHost> {
+  readonly name = NavigatorFeature.MediaOverlays;
+  readonly hostType = HostType.Epub;
+  readonly rightsKey = RightsKey.MediaOverlays;
   private publication: Publication;
-  navigator: EpubNavigator;
+  private host!: EpubModuleHost;
+  attach(host: EpubModuleHost): void {
+    this.host = host;
+  }
   private audioElement: HTMLMediaElement;
   settings: MediaOverlaySettings;
   private properties: MediaOverlayModuleProperties;
@@ -147,7 +154,7 @@ export class MediaOverlayModule implements ReaderModule {
 
       let response: Response;
       try {
-        response = await fetch(moUrlFull, this.navigator.requestConfig);
+        response = await fetch(moUrlFull, this.host.requestConfig);
       } catch (e) {
         console.error(e, moUrlFull);
         return;
@@ -197,12 +204,12 @@ export class MediaOverlayModule implements ReaderModule {
             if (this.audioElement) {
               await this.audioElement.pause();
             }
-            this.navigator.nextResource();
+            this.host.nextResource();
           } else {
             // End of book — no more resources
             await this.stopReadAloud();
             if (this.api?.finished) this.api.finished();
-            this.navigator.emit(ReaderEvent.ReadAlongFinished, "finished", {
+            this.host.emit(ReaderEvent.ReadAlongFinished, "finished", {
               href: this.currentLinks[this.currentLinkIndex]?.href,
             });
           }
@@ -210,7 +217,7 @@ export class MediaOverlayModule implements ReaderModule {
           // autoTurn off, no audio on this page
           await this.stopReadAloud();
           if (this.api?.stopped) this.api.stopped();
-          this.navigator.emit(ReaderEvent.ReadAlongStopped, "stopped", {
+          this.host.emit(ReaderEvent.ReadAlongStopped, "stopped", {
             href: this.currentLinks[this.currentLinkIndex]?.href,
           });
         } else {
@@ -224,7 +231,7 @@ export class MediaOverlayModule implements ReaderModule {
     this.unbindClickHandler();
     const handler = this.handleContentClick.bind(this);
     this.clickHandler = handler;
-    for (const iframe of this.navigator.iframes) {
+    for (const iframe of this.host.iframes) {
       iframe.contentDocument?.body?.addEventListener("click", handler);
     }
   }
@@ -232,7 +239,7 @@ export class MediaOverlayModule implements ReaderModule {
   private unbindClickHandler() {
     const handler = this.clickHandler;
     if (handler) {
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         iframe.contentDocument?.body?.removeEventListener("click", handler);
       }
       this.clickHandler = undefined;
@@ -256,8 +263,8 @@ export class MediaOverlayModule implements ReaderModule {
     // Determine which iframe was clicked to get the correct link index
     const clickedDoc = (event.target as HTMLElement)?.ownerDocument;
     let clickedLinkIndex = this.currentLinkIndex;
-    for (let i = 0; i < this.navigator.iframes.length; i++) {
-      if (this.navigator.iframes[i].contentDocument === clickedDoc) {
+    for (let i = 0; i < this.host.iframes.length; i++) {
+      if (this.host.iframes[i].contentDocument === clickedDoc) {
         clickedLinkIndex = i;
         break;
       }
@@ -277,7 +284,7 @@ export class MediaOverlayModule implements ReaderModule {
           try {
             const response = await fetch(
               moUrlObjFull.toString(),
-              this.navigator.requestConfig
+              this.host.requestConfig
             );
             if (response.ok) {
               const moJson = await response.json();
@@ -319,7 +326,7 @@ export class MediaOverlayModule implements ReaderModule {
   }
 
   async startReadAloud() {
-    if (this.navigator.rights.enableMediaOverlays) {
+    if (this.host.rights.enableMediaOverlays) {
       this.settings.playing = true;
       if (
         this.audioElement &&
@@ -339,7 +346,7 @@ export class MediaOverlayModule implements ReaderModule {
           await this.playLink();
         } else {
           if (this.settings.autoTurn && this.settings.playing) {
-            this.navigator.nextResource();
+            this.host.nextResource();
           } else {
             await this.stopReadAloud();
           }
@@ -349,13 +356,13 @@ export class MediaOverlayModule implements ReaderModule {
       if (this.pause) this.pause.style.removeProperty("display");
       this.bindClickHandler();
       if (this.api?.started) this.api.started();
-      this.navigator.emit(ReaderEvent.ReadAlongStarted, "started", {
+      this.host.emit(ReaderEvent.ReadAlongStarted, "started", {
         href: this.currentLinks[this.currentLinkIndex]?.href,
       });
     }
   }
   async stopReadAloud() {
-    if (this.navigator.rights.enableMediaOverlays) {
+    if (this.host.rights.enableMediaOverlays) {
       this.settings.playing = false;
       this.unbindClickHandler();
 
@@ -366,25 +373,25 @@ export class MediaOverlayModule implements ReaderModule {
     }
   }
   pauseReadAloud() {
-    if (this.navigator.rights.enableMediaOverlays) {
+    if (this.host.rights.enableMediaOverlays) {
       this.settings.playing = false;
       this.audioElement.pause();
       if (this.play) this.play.style.removeProperty("display");
       if (this.pause) this.pause.style.display = "none";
       if (this.api?.paused) this.api.paused();
-      this.navigator.emit(ReaderEvent.ReadAlongPaused, "paused", {
+      this.host.emit(ReaderEvent.ReadAlongPaused, "paused", {
         href: this.currentLinks[this.currentLinkIndex]?.href,
       });
     }
   }
   async resumeReadAloud() {
-    if (this.navigator.rights.enableMediaOverlays) {
+    if (this.host.rights.enableMediaOverlays) {
       this.settings.playing = true;
       await this.audioElement.play();
       if (this.play) this.play.style.display = "none";
       if (this.pause) this.pause.style.removeProperty("display");
       if (this.api?.resumed) this.api.resumed();
-      this.navigator.emit(ReaderEvent.ReadAlongResumed, "resumed", {
+      this.host.emit(ReaderEvent.ReadAlongResumed, "resumed", {
         href: this.currentLinks[this.currentLinkIndex]?.href,
       });
     }
@@ -522,12 +529,12 @@ export class MediaOverlayModule implements ReaderModule {
                 )
               : undefined;
             if (nextLink) {
-              this.navigator.nextResource();
+              this.host.nextResource();
             } else {
               // End of book
               this.stopReadAloud();
               if (this.api?.finished) this.api.finished();
-              this.navigator.emit(ReaderEvent.ReadAlongFinished, "finished", {
+              this.host.emit(ReaderEvent.ReadAlongFinished, "finished", {
                 href: this.currentLinks[this.currentLinkIndex]?.href,
               });
             }
@@ -535,7 +542,7 @@ export class MediaOverlayModule implements ReaderModule {
             // autoTurn off, chapter ended
             this.stopReadAloud();
             if (this.api?.stopped) this.api.stopped();
-            this.navigator.emit(ReaderEvent.ReadAlongStopped, "stopped", {
+            this.host.emit(ReaderEvent.ReadAlongStopped, "stopped", {
               href: this.currentLinks[this.currentLinkIndex]?.href,
             });
           } else {
@@ -585,7 +592,7 @@ export class MediaOverlayModule implements ReaderModule {
         this.audioElement.pause();
         if (this.settings.autoTurn && this.settings.playing) {
           this.audioElement.pause();
-          this.navigator.nextResource();
+          this.host.nextResource();
         } else {
           this.stopReadAloud();
         }
@@ -858,7 +865,7 @@ export class MediaOverlayModule implements ReaderModule {
         } else {
           if (this.settings.autoTurn && this.settings.playing) {
             this.audioElement.pause();
-            this.navigator.nextResource();
+            this.host.nextResource();
           } else {
             this.stopReadAloud();
           }
@@ -960,7 +967,7 @@ export class MediaOverlayModule implements ReaderModule {
       ] ??
       this.settings.color;
     const styleAttr =
-      this.navigator.iframes[0].contentDocument?.documentElement.getAttribute(
+      this.host.iframes[0].contentDocument?.documentElement.getAttribute(
         "style"
       );
     const isNight = styleAttr
@@ -985,7 +992,7 @@ export class MediaOverlayModule implements ReaderModule {
 
     if (this.pid) {
       // Search all iframes for the previous highlight to ensure cleanup across spreads
-      for (const iframe of this.navigator.iframes) {
+      for (const iframe of this.host.iframes) {
         const prevElement = iframe.contentDocument?.getElementById(this.pid);
         if (prevElement) {
           prevElement.classList.remove(classActive);
@@ -996,9 +1003,9 @@ export class MediaOverlayModule implements ReaderModule {
     let current;
     if (id) {
       if (this.currentLinkIndex === 0) {
-        current = this.navigator.iframes[0].contentDocument?.getElementById(id);
+        current = this.host.iframes[0].contentDocument?.getElementById(id);
       } else {
-        current = this.navigator.iframes[1].contentDocument?.getElementById(id);
+        current = this.host.iframes[1].contentDocument?.getElementById(id);
       }
       if (current) {
         current.classList.add(classActive);

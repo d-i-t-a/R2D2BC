@@ -17,9 +17,10 @@
  * Licensed to: Allvit under one or more contributor license agreements.
  */
 
-import { Publication } from "../../model/Publication";
-import { EpubNavigator } from "../../navigator/EpubNavigator";
-import { ReaderModule } from "../ReaderModule";
+import { Publication } from "../../model/v3";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import { EpubModuleHost } from "../ModuleHost";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
 import { TextHighlighter } from "../highlight/TextHighlighter";
 import log from "loglevel";
 import { ReaderEvent } from "../../utils/Events";
@@ -78,9 +79,15 @@ function contributorName(contributor: any): string {
 type CitationTuple = [string, string, string];
 const EMPTY: CitationTuple = ["", "", ""];
 
-export default class CitationModule implements ReaderModule {
+export default class CitationModule implements ReaderModule<EpubModuleHost> {
+  readonly name = NavigatorFeature.Citations;
+  readonly hostType = HostType.Epub;
+  readonly rightsKey = RightsKey.Citations;
   private publication: Publication;
-  navigator: EpubNavigator;
+  private host!: EpubModuleHost;
+  attach(host: EpubModuleHost): void {
+    this.host = host;
+  }
   private properties: CitationModuleProperties;
   private readonly highlighter?: TextHighlighter;
   api?: CitationModuleAPI;
@@ -113,8 +120,9 @@ export default class CitationModule implements ReaderModule {
   }
 
   copyToClipboard(textToClipboard: string) {
-    if (this.navigator?.contentProtectionModule) {
-      this.navigator!.contentProtectionModule.citation = true;
+    const cp = this.host?.getModule(NavigatorFeature.ContentProtection);
+    if (cp) {
+      cp.citation = true;
     }
 
     // Prefer the modern async Clipboard API
@@ -126,7 +134,7 @@ export default class CitationModule implements ReaderModule {
       navigator.clipboard.writeText(plainText).then(
         () => {
           this.api?.citationCreated("The text was copied to the clipboard!");
-          this.navigator.emit(
+          this.host.emit(
             ReaderEvent.CitationCreated,
             "The text was copied to the clipboard!"
           );
@@ -149,7 +157,7 @@ export default class CitationModule implements ReaderModule {
     forExecElement.contentEditable = "true";
     document.body.appendChild(forExecElement);
     this.selectContent(forExecElement);
-    let success = false;
+    let success: boolean;
     try {
       success = document.execCommand("copy");
     } catch (_e) {
@@ -158,13 +166,13 @@ export default class CitationModule implements ReaderModule {
     document.body.removeChild(forExecElement);
     if (success) {
       this.api?.citationCreated("The text was copied to the clipboard!");
-      this.navigator.emit(
+      this.host.emit(
         ReaderEvent.CitationCreated,
         "The text was copied to the clipboard!"
       );
     } else {
       this.api?.citationFailed("Your browser doesn't allow clipboard access!");
-      this.navigator.emit(
+      this.host.emit(
         ReaderEvent.CitationFailed,
         "Your browser doesn't allow clipboard access!"
       );

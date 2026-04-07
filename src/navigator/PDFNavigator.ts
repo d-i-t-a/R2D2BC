@@ -24,6 +24,7 @@ import {
   NavigatorFeatureName,
 } from "./VisualNavigator";
 import { ReaderEvent } from "../utils/Events";
+import { PDFModuleHost } from "../modules/ModuleHost";
 import { UserSettings } from "../model/user-settings/UserSettings";
 import { Publication } from "../model/v3";
 import { Bookmark, Locator, ReadingPosition } from "../model/v3";
@@ -51,7 +52,7 @@ import {
   removeEventListenerOptional,
 } from "../utils/EventHandler";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
-import { NavigatorAPI } from "./EpubNavigator";
+import { NavigatorAPI, ReaderRights } from "./EpubNavigator";
 import { GrabToPan } from "../utils/GrabToPan";
 import { readerLoading } from "../utils/HTMLTemplates";
 
@@ -80,6 +81,7 @@ export interface PDFNavigatorConfig {
    * across sessions.  Pass the publication store from D2Reader.load().
    */
   store?: Store;
+  rights?: Partial<ReaderRights>;
 }
 
 export enum ScaleType {
@@ -87,10 +89,11 @@ export enum ScaleType {
   Width = 1,
 }
 
-export class PDFNavigator extends VisualNavigator {
+export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   readonly isPDF = true;
   settings: UserSettings;
   publication: Publication;
+  rights: Partial<ReaderRights> = {};
 
   supports(feature: NavigatorFeatureName): boolean {
     switch (feature) {
@@ -103,7 +106,7 @@ export class PDFNavigator extends VisualNavigator {
       case NavigatorFeature.Bookmarks:
         return true;
       default:
-        return false;
+        return this.registry.has(feature);
     }
   }
 
@@ -151,7 +154,8 @@ export class PDFNavigator extends VisualNavigator {
       config.workerSrc,
       config.annotator,
       config.initialLastReadingPosition,
-      config.store
+      config.store,
+      config.rights
     );
     await nav.start(config.mainElement, config.headerMenu, config.footerMenu);
     return nav;
@@ -164,12 +168,14 @@ export class PDFNavigator extends VisualNavigator {
     workerSrc?: string,
     annotator?: Annotator,
     initialLastReadingPosition?: ReadingPosition,
-    viewStore?: Store
+    viewStore?: Store,
+    rights?: Partial<ReaderRights>
   ) {
     super();
     this.settings = settings;
     this.publication = publication;
     this.api = api;
+    this.rights = rights ?? {};
     this.workerSrc =
       workerSrc ??
       `https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`;
@@ -271,6 +277,7 @@ export class PDFNavigator extends VisualNavigator {
       ({ pageNumber }: { pageNumber: number }) => {
         this.pageNum = pageNumber;
         this.saveLastReadingPosition();
+        this.registry.notifyResourceReady();
         // Emit boundary events so integrators get the same signals as EPUB.
         if (this.atStart()) {
           this.api?.resourceAtStart?.();
@@ -296,6 +303,7 @@ export class PDFNavigator extends VisualNavigator {
         this.emit(ReaderEvent.ResourceReady, {
           href: this.publication.readingOrder[0]?.href,
         });
+        this.registry.notifyResourceReady();
         // Restore saved position once — on the very first document load only.
         if (!this._positionRestored) {
           this._positionRestored = true;
@@ -1056,6 +1064,7 @@ export class PDFNavigator extends VisualNavigator {
   // ── Cleanup ────────────────────────────────────────────────────────────────
 
   stop(): void {
+    this.registry.stopAll();
     removeEventListenerOptional(window, "resize", this.onResize);
     this.pdfViewer?.setDocument(null as any);
     this.pdfDoc?.destroy();

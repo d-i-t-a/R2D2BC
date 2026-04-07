@@ -23,6 +23,7 @@ import { UserSettings } from "./model/user-settings/UserSettings";
 import { AnnotationModule } from "./modules/AnnotationModule";
 import { BookmarkModule } from "./modules/BookmarkModule";
 import { TextHighlighter } from "./modules/highlight/TextHighlighter";
+import { HostType } from "./modules/ReaderModule";
 import { MediaOverlayModule } from "./modules/mediaoverlays/MediaOverlayModule";
 import {
   MediaOverlaySettings,
@@ -50,7 +51,6 @@ import { toPlainObject } from "./model/Link";
 import { LayerSettings } from "./modules/highlight/LayerSettings";
 import { PageBreakModule } from "./modules/pagebreak/PageBreakModule";
 import { TTSModule2 } from "./modules/TTS/TTSModule2";
-import { ReaderModule } from "./modules/ReaderModule";
 import { DefinitionsModule } from "./modules/search/DefinitionsModule";
 import LineFocusModule from "./modules/linefocus/LineFocusModule";
 import { HistoryModule } from "./modules/history/HistoryModule";
@@ -58,6 +58,7 @@ import CitationModule from "./modules/citation/CitationModule";
 import type { PDFNavigator } from "./navigator/PDFNavigator";
 import { VisualNavigator, NavigatorFeature } from "./navigator/VisualNavigator";
 import { ConsumptionModule } from "./modules/consumption/ConsumptionModule";
+import log from "loglevel";
 
 /**
  * Dynamically import PDFNavigator to avoid loading pdfjs-dist in SSR/Node.
@@ -92,21 +93,8 @@ export default class D2Reader {
     private readonly settings: UserSettings,
     private readonly navigator: VisualNavigator,
     private readonly highlighter?: TextHighlighter,
-    private readonly bookmarkModule?: BookmarkModule,
-    private readonly annotationModule?: AnnotationModule,
     private readonly ttsSettings?: TTSSettings,
-    private readonly ttsModule?: ReaderModule,
-    private readonly searchModule?: SearchModule,
-    private readonly definitionsModule?: DefinitionsModule,
-    private readonly contentProtectionModule?: ContentProtectionModule,
-    private readonly timelineModule?: TimelineModule,
-    private readonly mediaOverlaySettings?: MediaOverlaySettings,
-    private readonly mediaOverlayModule?: MediaOverlayModule,
-    private readonly pageBreakModule?: PageBreakModule,
-    private readonly lineFocusModule?: LineFocusModule,
-    private readonly historyModule?: HistoryModule,
-    private readonly citationModule?: CitationModule,
-    private readonly consumptionModule?: ConsumptionModule
+    private readonly mediaOverlaySettings?: MediaOverlaySettings
   ) {}
 
   addEventListener(event: string, handler: (...args: any[]) => void) {
@@ -205,11 +193,33 @@ export default class D2Reader {
         publication: publication,
         settings: settings,
         api: initialConfig.api,
+        rights: rights,
         workerSrc: initialConfig.workerSrc,
         annotator: annotator,
         initialLastReadingPosition: initialConfig.lastReadingPosition,
         store: store,
       });
+
+      // Register custom modules for PDF
+      for (const mod of initialConfig.modules ?? []) {
+        if (mod.hostType !== HostType.PDF) {
+          log.warn(
+            `Module "${mod.name}" requires host type "${mod.hostType}" but navigator is PDF — skipping`
+          );
+          continue;
+        }
+        navigator.registry.register(mod, navigator);
+      }
+      await navigator.registry.setupAll();
+
+      // Content protection for PDF via @d-i-t-a/web-content-protection
+      if (rights.enableContentProtection && initialConfig.webProtection) {
+        const { ContentProtection } =
+          await import("@d-i-t-a/web-content-protection");
+        const protection = new ContentProtection(initialConfig.webProtection);
+        await protection.activate();
+      }
+
       return new D2Reader(settings, navigator);
     } else {
       /**
@@ -258,7 +268,6 @@ export default class D2Reader {
         ? await BookmarkModule.create({
             annotator: annotator,
             headerMenu: headerMenu,
-            rights: rights,
             publication: publication,
             initialAnnotations: initialConfig.initialAnnotations,
             ...initialConfig.bookmarks,
@@ -269,7 +278,6 @@ export default class D2Reader {
       const annotationModule = rights.enableAnnotations
         ? await AnnotationModule.create({
             annotator: annotator,
-            rights: rights,
             publication: publication,
             initialAnnotations: initialConfig.initialAnnotations,
             highlighter: highlighter,
@@ -288,13 +296,12 @@ export default class D2Reader {
           })
         : undefined;
 
-      let ttsModule: ReaderModule | undefined = undefined;
+      let ttsModule: TTSModule2 | undefined = undefined;
 
       if (ttsEnabled && ttsSettings) {
         ttsModule = await TTSModule2.create({
           tts: ttsSettings,
           headerMenu: headerMenu,
-          rights: rights,
           highlighter: highlighter,
           ...initialConfig.tts,
         });
@@ -425,6 +432,7 @@ export default class D2Reader {
           lineFocusModule,
           historyModule,
           consumptionModule,
+          ...(initialConfig.modules ?? []),
         ],
       });
 
@@ -432,21 +440,8 @@ export default class D2Reader {
         settings,
         navigator,
         highlighter,
-        bookmarkModule,
-        annotationModule,
         ttsSettings,
-        ttsModule,
-        searchModule,
-        definitionsModule,
-        contentProtectionModule,
-        timelineModule,
-        mediaOverlaySettings,
-        mediaOverlayModule,
-        pageBreakModule,
-        lineFocusModule,
-        historyModule,
-        citationModule,
-        consumptionModule
+        mediaOverlaySettings
       );
     }
   }
@@ -502,23 +497,32 @@ export default class D2Reader {
 
   /** Save bookmark by progression */
   saveBookmark = async () => {
-    return (await this.bookmarkModule?.saveBookmark()) ?? false;
+    return (await this.navigator.modules.bookmarks?.saveBookmark()) ?? false;
   };
   /** Save bookmark by annotation */
   saveBookmarkPlus = async () => {
-    return this.bookmarkModule?.saveBookmarkPlus();
+    return this.navigator.modules.bookmarks?.saveBookmarkPlus();
   };
   /** Delete bookmark */
   deleteBookmark = async (bookmark: Bookmark) => {
-    return (await this.bookmarkModule?.deleteBookmark(bookmark)) ?? false;
+    return (
+      (await this.navigator.modules.bookmarks?.deleteBookmark(bookmark)) ??
+      false
+    );
   };
   /** Delete annotation */
   deleteAnnotation = async (highlight: Annotation) => {
-    return (await this.annotationModule?.deleteAnnotation(highlight)) ?? false;
+    return (
+      (await this.navigator.modules.annotations?.deleteAnnotation(highlight)) ??
+      false
+    );
   };
   /** Add annotation */
   addAnnotation = async (highlight: Annotation) => {
-    return (await this.annotationModule?.addAnnotation(highlight)) ?? false;
+    return (
+      (await this.navigator.modules.annotations?.addAnnotation(highlight)) ??
+      false
+    );
   };
   /**
    * Update annotation
@@ -528,7 +532,10 @@ export default class D2Reader {
    * callback defined in the configuration of the D2Reader.load() method
    *  */
   updateAnnotation = async (highlight: Annotation) => {
-    return (await this.annotationModule?.updateAnnotation(highlight)) ?? false;
+    return (
+      (await this.navigator.modules.annotations?.updateAnnotation(highlight)) ??
+      false
+    );
   };
 
   /** Change highlighter color to a specific HEX string */
@@ -538,11 +545,11 @@ export default class D2Reader {
 
   /** Hide Annotation Layer */
   hideAnnotationLayer = () => {
-    return this.annotationModule?.hideAnnotationLayer();
+    return this.navigator.modules.annotations?.hideAnnotationLayer();
   };
   /** Show Annotation Layer */
   showAnnotationLayer = () => {
-    return this.annotationModule?.showAnnotationLayer();
+    return this.navigator.modules.annotations?.showAnnotationLayer();
   };
 
   /** Hide  Layer */
@@ -570,11 +577,11 @@ export default class D2Reader {
 
   /** Clear current definitions */
   clearDefinitions = async () => {
-    await this.definitionsModule?.clearDefinitions();
+    await this.navigator.modules.definitions?.clearDefinitions();
   };
   /** Add newt definition */
   addDefinition = async (definition) => {
-    await this.definitionsModule?.addDefinition(definition);
+    await this.navigator.modules.definitions?.addDefinition(definition);
   };
 
   /** Table of Contents */
@@ -595,11 +602,11 @@ export default class D2Reader {
   }
   /** Current Bookmarks */
   get bookmarks() {
-    return this.bookmarkModule?.getBookmarks() ?? [];
+    return this.navigator.modules.bookmarks?.getBookmarks() ?? [];
   }
   /** Current Annotations */
   get annotations() {
-    return this.annotationModule?.getAnnotations();
+    return this.navigator.modules.annotations?.getAnnotations();
   }
 
   get publicationLayout() {
@@ -608,19 +615,19 @@ export default class D2Reader {
 
   /** History */
   get history() {
-    return this.historyModule?.history;
+    return this.navigator.modules.history?.history;
   }
   /** Current index of history */
   get historyCurrentIndex() {
-    return this.historyModule?.historyCurrentIndex;
+    return this.navigator.modules.history?.historyCurrentIndex;
   }
   /** History Back */
   historyBack = async () => {
-    return this.historyModule?.historyBack();
+    return this.navigator.modules.history?.historyBack();
   };
   /** History Forward */
   historyForward = async () => {
-    return this.historyModule?.historyForward();
+    return this.navigator.modules.history?.historyForward();
   };
 
   /**
@@ -630,21 +637,25 @@ export default class D2Reader {
    * current = true, will search only current resource <br>
    * current = false, will search entire publication */
   search = async (term: string, current: boolean) => {
-    return (await this.searchModule?.search(term, current)) ?? [];
+    return (await this.navigator.modules.search?.search(term, current)) ?? [];
   };
   goToSearchIndex = async (href: string, index: number, current: boolean) => {
     if (this.navigator.supports(NavigatorFeature.Search)) {
-      await this.searchModule?.goToSearchIndex(href, index, current);
+      await this.navigator.modules.search?.goToSearchIndex(
+        href,
+        index,
+        current
+      );
     }
   };
   goToSearchID = async (href: string, index: number, current: boolean) => {
     if (this.navigator.supports(NavigatorFeature.Search)) {
-      await this.searchModule?.goToSearchID(href, index, current);
+      await this.navigator.modules.search?.goToSearchID(href, index, current);
     }
   };
   clearSearch = async () => {
     if (this.navigator.supports(NavigatorFeature.Search)) {
-      await this.searchModule?.clearSearch();
+      await this.navigator.modules.search?.clearSearch();
     }
   };
 
@@ -839,7 +850,7 @@ export default class D2Reader {
     this.navigator.deactivateHand();
   };
   copyToClipboard = (text) => {
-    this.contentProtectionModule?.copyToClipboard(text);
+    this.navigator.modules.contentProtection?.copyToClipboard(text);
   };
   nextResource = () => {
     this.navigator.nextResource();
@@ -872,46 +883,49 @@ export default class D2Reader {
 
   async applyLineFocusSettings(userSettings) {
     if (userSettings.lines) {
-      if (this.lineFocusModule) {
-        const lines = this.lineFocusModule.properties.lines ?? 1;
-        this.lineFocusModule.index =
-          (this.lineFocusModule.index * lines) / parseInt(userSettings.lines);
-        this.lineFocusModule.index = Math.abs(
-          parseInt(this.lineFocusModule.index.toFixed())
+      if (this.navigator.modules.lineFocus) {
+        const lines = this.navigator.modules.lineFocus.properties.lines ?? 1;
+        this.navigator.modules.lineFocus.index =
+          (this.navigator.modules.lineFocus.index * lines) /
+          parseInt(userSettings.lines);
+        this.navigator.modules.lineFocus.index = Math.abs(
+          parseInt(this.navigator.modules.lineFocus.index.toFixed())
         );
-        this.lineFocusModule.properties.lines = parseInt(userSettings.lines);
-        if (this.lineFocusModule.isActive) {
-          await this.lineFocusModule.enableLineFocus();
+        this.navigator.modules.lineFocus.properties.lines = parseInt(
+          userSettings.lines
+        );
+        if (this.navigator.modules.lineFocus.isActive) {
+          await this.navigator.modules.lineFocus.enableLineFocus();
         }
       }
     }
     if (userSettings.debug !== undefined) {
-      if (this.lineFocusModule) {
-        this.lineFocusModule.isDebug = userSettings.debug;
-        if (this.lineFocusModule.isActive) {
-          await this.lineFocusModule.enableLineFocus();
+      if (this.navigator.modules.lineFocus) {
+        this.navigator.modules.lineFocus.isDebug = userSettings.debug;
+        if (this.navigator.modules.lineFocus.isActive) {
+          await this.navigator.modules.lineFocus.enableLineFocus();
         }
       }
     }
   }
   lineUp() {
-    this.lineFocusModule?.lineUp();
+    this.navigator.modules.lineFocus?.lineUp();
   }
   lineDown() {
-    this.lineFocusModule?.lineDown();
+    this.navigator.modules.lineFocus?.lineDown();
   }
   async enableLineFocus() {
-    await this.lineFocusModule?.enableLineFocus();
+    await this.navigator.modules.lineFocus?.enableLineFocus();
   }
   async lineFocus(active: boolean) {
     if (active) {
-      await this.lineFocusModule?.enableLineFocus();
+      await this.navigator.modules.lineFocus?.enableLineFocus();
     } else {
-      this.lineFocusModule?.disableLineFocus();
+      this.navigator.modules.lineFocus?.disableLineFocus();
     }
   }
   disableLineFocus() {
-    this.lineFocusModule?.disableLineFocus();
+    this.navigator.modules.lineFocus?.disableLineFocus();
   }
 
   /**
@@ -921,22 +935,10 @@ export default class D2Reader {
    */
   stop = () => {
     document.body.onscroll = () => {};
-    this.navigator.stop();
+    this.navigator.stop(); // calls registry.stopAll() for all modules
     this.settings.stop();
     this.ttsSettings?.stop();
-    (this.ttsModule as TTSModule2)?.stop();
-    this.bookmarkModule?.stop();
-    this.annotationModule?.stop();
-    this.searchModule?.stop();
-    this.definitionsModule?.stop();
-    this.contentProtectionModule?.stop();
-    this.timelineModule?.stop();
     this.mediaOverlaySettings?.stop();
-    this.mediaOverlayModule?.stop();
-    this.pageBreakModule?.stop();
-    this.lineFocusModule?.stop();
-    this.citationModule?.stop();
-    this.consumptionModule?.stop();
   };
 }
 

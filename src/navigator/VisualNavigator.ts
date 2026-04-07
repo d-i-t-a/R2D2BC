@@ -22,6 +22,14 @@ import { Locator } from "../model/v3";
 import { Publication } from "../model/v3";
 import { Link } from "../model/v3";
 import { IFrameAttributes } from "./EpubNavigator";
+import { ReaderModule } from "../modules/ReaderModule";
+import { ModuleRegistry } from "../modules/ModuleRegistry";
+import { ModuleAccessors } from "../modules/ModuleAccessors";
+import type {
+  NavigatorFeatureKey,
+  NavigatorFeatureMap,
+} from "../modules/NavigatorFeatureMap";
+import type { ReaderRights } from "./EpubNavigator";
 
 /**
  * Typed feature names for navigator capability queries.
@@ -40,6 +48,7 @@ export const NavigatorFeature = {
   Consumption: "consumption",
   History: "history",
   Timeline: "timeline",
+  PageBreaks: "pageBreaks",
 } as const;
 
 export type NavigatorFeatureName =
@@ -59,6 +68,11 @@ export abstract class VisualNavigator
   implements Navigator
 {
   abstract publication: Publication;
+  abstract rights: Partial<ReaderRights>;
+
+  // ── Module registry (shared by all navigators) ────────────────
+  readonly registry = new ModuleRegistry(() => this.rights);
+  readonly modules = new ModuleAccessors(this.registry);
 
   // ── Required implementations ──────────────────────────────────
 
@@ -89,10 +103,19 @@ export abstract class VisualNavigator
 
   /**
    * Check if this navigator supports a given feature.
-   * Replaces instanceof checks in D2Reader.
+   * Replaces instanceof checks in D2Reader. Each concrete navigator
+   * must implement this — there is no sensible default.
    */
-  supports(_feature: NavigatorFeatureName): boolean {
-    return false;
+  abstract supports(feature: NavigatorFeatureName): boolean;
+
+  /** Typed lookup for a built-in module by NavigatorFeature key. */
+  getModule<K extends NavigatorFeatureKey>(
+    name: K
+  ): NavigatorFeatureMap[K] | undefined;
+  /** Untyped lookup for custom modules not in NavigatorFeatureMap. */
+  getModule<T extends ReaderModule = ReaderModule>(name: string): T | undefined;
+  getModule(name: string): ReaderModule | undefined {
+    return this.registry.get(name);
   }
 
   // ── Default no-ops for optional features ──────────────────────

@@ -48,12 +48,37 @@ export interface Locations {
   progression?: number;
   /** An index in the publication (>= 1) */
   position?: number;
+  /**
+   * 1-based page number for paginated formats (PDF, fixed-layout EPUB).
+   * Distinct from `position` (which is a document-wide index from the
+   * publication's positionList per Readium spec).
+   */
+  page?: number;
   /** Progression in the publication expressed as a percentage (0–1) */
   totalProgression?: number;
   /** R2D2BC extension: remaining positions in current resource */
   remainingPositions?: number;
   /** R2D2BC extension: remaining positions in publication */
   totalRemainingPositions?: number;
+}
+
+/**
+ * Extract the page number from a Locations object.
+ *
+ * Accepts either the new `page` field (Readium-compliant) or the legacy
+ * `position` field, which earlier R2D2BC PDF builds used to store page
+ * numbers incorrectly. When only `position` is present, it's treated as
+ * a page number for backwards compatibility. New writes should ALWAYS
+ * use `page`.
+ *
+ * @returns the 1-based page number, or undefined if neither field is set
+ */
+export function getPageFromLocations(
+  loc: Locations | undefined
+): number | undefined {
+  if (typeof loc?.page === "number") return loc.page;
+  if (typeof loc?.position === "number") return loc.position;
+  return undefined;
 }
 
 export interface ReadingPosition extends Locator {

@@ -126,7 +126,7 @@ class PageTimeTracker implements ReaderModule<PDFModuleHost> {
     this.host = host;
   }
   setup() {
-    this.currentPage = this.host.currentResource() ?? 1;
+    this.currentPage = this.host.currentLocator()?.locations?.page ?? 1;
     this.pageStartTime = Date.now();
   }
 
@@ -137,7 +137,7 @@ class PageTimeTracker implements ReaderModule<PDFModuleHost> {
     this.pageTimes.set(this.currentPage, prev + elapsed);
 
     // Start tracking new page
-    this.currentPage = this.host.currentResource() ?? 1;
+    this.currentPage = this.host.currentLocator()?.locations?.page ?? 1;
     this.pageStartTime = Date.now();
 
     this.host.emit("page-time.updated", {

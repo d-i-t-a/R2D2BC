@@ -43,7 +43,7 @@ Branch: `feature/v3-navigator-refactor` (based on `feature/v3-event-system`)
 - Checks `properties.page` (left/right/center) from manifest before falling back to index parity
 - Respects `rendition:spread: "none"` — forces single-page display for books that declare it
 - Center pages (`page-spread-center`) skip loading the second iframe
-- FXL-specific preferences (spread mode, fit mode, zoom persistence) deferred to workstream 3.5
+- FXL-specific preferences (spread mode, fit mode, zoom persistence) deferred to workstream 3.12 (Preferences API)
 
 ## Bug Fixes
 

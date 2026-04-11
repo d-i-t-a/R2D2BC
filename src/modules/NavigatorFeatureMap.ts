@@ -8,19 +8,22 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import type { AnnotationModule } from "./AnnotationModule";
-import type { BookmarkModule } from "./BookmarkModule";
 import type CitationModule from "./citation/CitationModule";
 import type { ConsumptionModule } from "./consumption/ConsumptionModule";
-import type { HistoryModule } from "./history/HistoryModule";
 import type LineFocusModule from "./linefocus/LineFocusModule";
 import type { MediaOverlayModule } from "./mediaoverlays/MediaOverlayModule";
 import type { PageBreakModule } from "./pagebreak/PageBreakModule";
 import type { TimelineModule } from "./positions/TimelineModule";
 import type { ContentProtectionModule } from "./protection/ContentProtectionModule";
 import type { DefinitionsModule } from "./search/DefinitionsModule";
-import type { SearchModule } from "./search/SearchModule";
 import type { TTSModule2 } from "./TTS/TTSModule2";
+import type { PdfViewSettingsModule } from "./pdf/PdfViewSettingsModule";
+import type {
+  IBookmarkModule,
+  ISearchModule,
+  IAnnotationModule,
+  IHistoryModule,
+} from "./interfaces";
 import { NavigatorFeature } from "../navigator/VisualNavigator";
 
 /**
@@ -36,19 +39,25 @@ import { NavigatorFeature } from "../navigator/VisualNavigator";
  * ```
  */
 export interface NavigatorFeatureMap {
-  [NavigatorFeature.Bookmarks]: BookmarkModule;
-  [NavigatorFeature.Annotations]: AnnotationModule;
+  // Shared contracts — EPUB and PDF both implement these:
+  [NavigatorFeature.Bookmarks]: IBookmarkModule;
+  [NavigatorFeature.Annotations]: IAnnotationModule;
+  [NavigatorFeature.Search]: ISearchModule;
+  [NavigatorFeature.History]: IHistoryModule;
+
+  // EPUB-only (no PDF counterpart yet — concrete classes):
   [NavigatorFeature.TTS]: TTSModule2;
-  [NavigatorFeature.Search]: SearchModule;
   [NavigatorFeature.Definitions]: DefinitionsModule;
   [NavigatorFeature.ContentProtection]: ContentProtectionModule;
   [NavigatorFeature.Timeline]: TimelineModule;
   [NavigatorFeature.PageBreaks]: PageBreakModule;
   [NavigatorFeature.MediaOverlays]: MediaOverlayModule;
   [NavigatorFeature.LineFocus]: LineFocusModule;
-  [NavigatorFeature.History]: HistoryModule;
   [NavigatorFeature.Citations]: CitationModule;
   [NavigatorFeature.Consumption]: ConsumptionModule;
+
+  // PDF-only:
+  [NavigatorFeature.ViewSettings]: PdfViewSettingsModule;
 }
 
 export type NavigatorFeatureKey = keyof NavigatorFeatureMap;

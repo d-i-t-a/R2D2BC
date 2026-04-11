@@ -8,19 +8,22 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import type { AnnotationModule } from "./AnnotationModule";
-import type { BookmarkModule } from "./BookmarkModule";
 import type CitationModule from "./citation/CitationModule";
 import type { ConsumptionModule } from "./consumption/ConsumptionModule";
-import type { HistoryModule } from "./history/HistoryModule";
 import type LineFocusModule from "./linefocus/LineFocusModule";
 import type { MediaOverlayModule } from "./mediaoverlays/MediaOverlayModule";
 import type { PageBreakModule } from "./pagebreak/PageBreakModule";
 import type { TimelineModule } from "./positions/TimelineModule";
 import type { ContentProtectionModule } from "./protection/ContentProtectionModule";
 import type { DefinitionsModule } from "./search/DefinitionsModule";
-import type { SearchModule } from "./search/SearchModule";
 import type { TTSModule2 } from "./TTS/TTSModule2";
+import type { PdfViewSettingsModule } from "./pdf/PdfViewSettingsModule";
+import type {
+  IBookmarkModule,
+  ISearchModule,
+  IAnnotationModule,
+  IHistoryModule,
+} from "./interfaces";
 import { ModuleRegistry } from "./ModuleRegistry";
 import { NavigatorFeature } from "../navigator/VisualNavigator";
 
@@ -31,21 +34,38 @@ import { NavigatorFeature } from "../navigator/VisualNavigator";
  * (internal use) and D2Reader (public API) delegate to this class.
  * Adding a new built-in module = add a getter here and an entry in
  * NavigatorFeatureMap. No other lookup sites to update.
+ *
+ * Generic over the four shared-contract keys (Bookmarks, Annotations,
+ * Search, History). Each navigator subclass specifies the CONCRETE
+ * module class it hosts for those keys, so internal navigator code
+ * sees the full API (including EPUB-specific methods). D2Reader uses
+ * the default interface types for cross-navigator polymorphism.
  */
-export class ModuleAccessors {
+export class ModuleAccessors<
+  B extends IBookmarkModule = IBookmarkModule,
+  A extends IAnnotationModule = IAnnotationModule,
+  S extends ISearchModule = ISearchModule,
+  H extends IHistoryModule = IHistoryModule,
+> {
   constructor(private readonly registry: ModuleRegistry) {}
 
-  get bookmarks(): BookmarkModule | undefined {
-    return this.registry.get(NavigatorFeature.Bookmarks);
+  // ── Shared contracts (EPUB + PDF) ───────────────────────────
+  get bookmarks(): B | undefined {
+    return this.registry.get(NavigatorFeature.Bookmarks) as B | undefined;
   }
-  get annotations(): AnnotationModule | undefined {
-    return this.registry.get(NavigatorFeature.Annotations);
+  get annotations(): A | undefined {
+    return this.registry.get(NavigatorFeature.Annotations) as A | undefined;
   }
+  get search(): S | undefined {
+    return this.registry.get(NavigatorFeature.Search) as S | undefined;
+  }
+  get history(): H | undefined {
+    return this.registry.get(NavigatorFeature.History) as H | undefined;
+  }
+
+  // ── EPUB-only concrete modules ──────────────────────────────
   get tts(): TTSModule2 | undefined {
     return this.registry.get(NavigatorFeature.TTS);
-  }
-  get search(): SearchModule | undefined {
-    return this.registry.get(NavigatorFeature.Search);
   }
   get definitions(): DefinitionsModule | undefined {
     return this.registry.get(NavigatorFeature.Definitions);
@@ -65,13 +85,15 @@ export class ModuleAccessors {
   get lineFocus(): LineFocusModule | undefined {
     return this.registry.get(NavigatorFeature.LineFocus);
   }
-  get history(): HistoryModule | undefined {
-    return this.registry.get(NavigatorFeature.History);
-  }
   get citations(): CitationModule | undefined {
     return this.registry.get(NavigatorFeature.Citations);
   }
   get consumption(): ConsumptionModule | undefined {
     return this.registry.get(NavigatorFeature.Consumption);
+  }
+
+  // ── PDF-only concrete modules ───────────────────────────────
+  get viewSettings(): PdfViewSettingsModule | undefined {
+    return this.registry.get(NavigatorFeature.ViewSettings);
   }
 }

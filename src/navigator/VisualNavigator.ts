@@ -49,6 +49,7 @@ export const NavigatorFeature = {
   History: "history",
   Timeline: "timeline",
   PageBreaks: "pageBreaks",
+  ViewSettings: "viewSettings",
 } as const;
 
 export type NavigatorFeatureName =

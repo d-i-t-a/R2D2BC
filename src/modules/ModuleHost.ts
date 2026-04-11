@@ -81,8 +81,34 @@ export interface ModuleHost {
 
 /**
  * Extended host interface for PDF-specific modules.
+ *
+ * Exposes pdfjs primitives that modules need to interact with the viewer,
+ * page state, and persistence layer. Modules never touch the pdfjs internals
+ * directly — they go through this host interface.
  */
-export interface PDFModuleHost extends ModuleHost {}
+export interface PDFModuleHost extends ModuleHost {
+  // ── pdfjs primitives (read-only) ────────────────────────────
+  readonly pdfDoc: import("pdfjs-dist").PDFDocumentProxy | null;
+  readonly pdfViewer: import("pdfjs-dist/web/pdf_viewer.mjs").PDFViewer;
+  readonly findController: import("pdfjs-dist/web/pdf_viewer.mjs").PDFFindController;
+  readonly eventBus: import("pdfjs-dist/web/pdf_viewer.mjs").EventBus;
+  readonly linkService: import("pdfjs-dist/web/pdf_viewer.mjs").PDFLinkService;
+
+  // ── Page state ──────────────────────────────────────────────
+  readonly currentPage: number;
+  readonly totalPages: number;
+  readonly fingerprint: string | undefined;
+
+  // ── Navigation ──────────────────────────────────────────────
+  goToPage(page: number): void;
+
+  // ── Persistence ─────────────────────────────────────────────
+  readonly viewStore?: import("../store/Store").default;
+  readonly annotator?: import("../store/Annotator").default;
+
+  // ── Resource info ───────────────────────────────────────────
+  readonly currentResourceLink: import("../model/v3").Link | undefined;
+}
 
 /**
  * Extended host interface for EPUB-specific modules.

@@ -20,6 +20,7 @@
 import { EpubModuleHost } from "../ModuleHost";
 import { NavigatorFeature } from "../../navigator/VisualNavigator";
 import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
+import { IHistoryModule } from "../interfaces";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import {
   addEventListenerOptional,
@@ -40,7 +41,9 @@ export interface HistoryModuleConfig extends HistoryModuleProperties {
   publication: Publication;
 }
 
-export class HistoryModule implements ReaderModule<EpubModuleHost> {
+export class HistoryModule
+  implements ReaderModule<EpubModuleHost>, IHistoryModule<EpubModuleHost>
+{
   readonly name = NavigatorFeature.History;
   readonly hostType = HostType.Epub;
   readonly rightsKey = RightsKey.History;
@@ -230,5 +233,21 @@ export class HistoryModule implements ReaderModule<EpubModuleHost> {
         await this.host.navigate(this.history[this.historyCurrentIndex], false);
       }
     }
+  }
+
+  // ── IHistoryModule contract ────────────────────────────────
+  /** Alias for historyBack() to satisfy IHistoryModule. */
+  back(): Promise<void> {
+    return this.historyBack();
+  }
+  /** Alias for historyForward() to satisfy IHistoryModule. */
+  forward(): Promise<void> {
+    return this.historyForward();
+  }
+  canGoBack(): boolean {
+    return this.historyCurrentIndex > 0;
+  }
+  canGoForward(): boolean {
+    return this.historyCurrentIndex < this.history.length - 1;
   }
 }

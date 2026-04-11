@@ -1036,9 +1036,11 @@ export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
       if (selectionInfo === undefined) {
         let doc = this.host.iframes[0].contentDocument;
         selectionInfo =
-          this.host
-            .getModule(NavigatorFeature.Annotations)
-            ?.annotator?.getTemporarySelectionInfo(doc) ?? undefined;
+          (
+            this.host.getModule(NavigatorFeature.Annotations) as
+              | import("../AnnotationModule").AnnotationModule
+              | undefined
+          )?.annotator?.getTemporarySelectionInfo(doc) ?? undefined;
       }
 
       event.clipboardData.setData(
@@ -1085,9 +1087,11 @@ export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
         if (selectionInfo === undefined) {
           let doc = this.host.iframes[0].contentDocument;
           selectionInfo =
-            this.host
-              .getModule(NavigatorFeature.Annotations)
-              ?.annotator?.getTemporarySelectionInfo(doc) ?? undefined;
+            (
+              this.host.getModule(NavigatorFeature.Annotations) as
+                | import("../AnnotationModule").AnnotationModule
+                | undefined
+            )?.annotator?.getTemporarySelectionInfo(doc) ?? undefined;
         }
         this.copyToClipboard(
           selectionInfo?.cleanText?.substring(

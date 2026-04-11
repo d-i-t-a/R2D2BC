@@ -282,9 +282,11 @@ export class TTSModule2 implements ReaderModule<EpubModuleHost> {
         let selection = this.highlighter.dom(doc.body).getSelection();
         if (selection.isCollapsed) {
           let doc = self.host.iframes[0].contentDocument;
-          const selectionInfo = self.host
-            .getModule(NavigatorFeature.Annotations)
-            ?.annotator?.getTemporarySelectionInfo(doc);
+          const annotations = self.host.getModule(
+            NavigatorFeature.Annotations
+          ) as import("../AnnotationModule").AnnotationModule | undefined;
+          const selectionInfo =
+            annotations?.annotator?.getTemporarySelectionInfo(doc);
           if (selectionInfo?.range) selection.addRange(selectionInfo.range);
         }
 

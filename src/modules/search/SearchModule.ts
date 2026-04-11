@@ -22,6 +22,7 @@ import { NavigatorFeature } from "../../navigator/VisualNavigator";
 import { Publication } from "../../model/v3";
 import { EpubModuleHost } from "../ModuleHost";
 import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
+import { ISearchModule } from "../interfaces";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
@@ -56,7 +57,9 @@ export interface SearchModuleConfig extends SearchModuleProperties {
   highlighter: TextHighlighter;
 }
 
-export class SearchModule implements ReaderModule<EpubModuleHost> {
+export class SearchModule
+  implements ReaderModule<EpubModuleHost>, ISearchModule<EpubModuleHost>
+{
   readonly name = NavigatorFeature.Search;
   readonly hostType = HostType.Epub;
   readonly rightsKey = RightsKey.Search;
@@ -406,6 +409,12 @@ export class SearchModule implements ReaderModule<EpubModuleHost> {
     this.currentChapterSearchResult = [];
     this.currentSearchHighlights = [];
     this.highlighter?.destroyHighlights(HighlightType.Search);
+  }
+
+  // ── ISearchModule contract ──────────────────────────────────
+  /** Alias for clearSearch() to satisfy ISearchModule. */
+  clear(): void {
+    this.clearSearch();
   }
 
   async search(term: string, current: boolean): Promise<any> {

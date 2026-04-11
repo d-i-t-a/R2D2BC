@@ -30,6 +30,7 @@ import {
   HighlightContainer,
 } from "./highlight/TextHighlighter";
 import { ReaderModule, HostType, RightsKey } from "./ReaderModule";
+import { IAnnotationModule } from "./interfaces";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { HighlightType, IHighlight } from "./highlight/common/highlight";
 import { Annotation, AnnotationMarker, Bookmark, Locator } from "../model/v3";
@@ -71,7 +72,9 @@ export interface AnnotationModuleConfig extends AnnotationModuleProperties {
   highlighter: TextHighlighter;
 }
 
-export class AnnotationModule implements ReaderModule<EpubModuleHost> {
+export class AnnotationModule
+  implements ReaderModule<EpubModuleHost>, IAnnotationModule<EpubModuleHost>
+{
   readonly name = NavigatorFeature.Annotations;
   readonly hostType = HostType.Epub;
   readonly rightsKey = RightsKey.Annotations;
@@ -1111,6 +1114,20 @@ export class AnnotationModule implements ReaderModule<EpubModuleHost> {
         return a.highlight.position - b.highlight.position;
       })
       .reduce(positionAnnotations, []);
+  }
+
+  // ── IAnnotationModule contract ─────────────────────────────
+  getAll(): unknown[] {
+    return this.getAnnotations() as unknown[];
+  }
+  clear(): void {
+    // Delegate to the existing annotator-based clear pattern.
+    if (!this.annotator) return;
+    const highlights = this.annotator.getAnnotations() as Annotation[];
+    if (!highlights) return;
+    for (const h of highlights) {
+      this.deleteAnnotation(h);
+    }
   }
 }
 

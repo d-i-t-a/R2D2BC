@@ -23,6 +23,7 @@ import Annotator, { AnnotationType } from "../store/Annotator";
 import { InitialAnnotations } from "../navigator/EpubNavigator";
 import { EpubModuleHost } from "./ModuleHost";
 import { ReaderModule, HostType, RightsKey } from "./ReaderModule";
+import { IBookmarkModule } from "./interfaces";
 import { addEventListenerOptional } from "../utils/EventHandler";
 import { icons as IconLib } from "../utils/IconLib";
 import {
@@ -65,7 +66,9 @@ export interface BookmarkModuleConfig extends BookmarkModuleProperties {
   api?: BookmarkModuleAPI;
 }
 
-export class BookmarkModule implements ReaderModule<EpubModuleHost> {
+export class BookmarkModule
+  implements ReaderModule<EpubModuleHost>, IBookmarkModule<EpubModuleHost>
+{
   readonly name = NavigatorFeature.Bookmarks;
   readonly hostType = HostType.Epub;
   readonly rightsKey = RightsKey.Bookmarks;
@@ -394,10 +397,11 @@ export class BookmarkModule implements ReaderModule<EpubModuleHost> {
       let selectionInfo = getCurrentSelectionInfo(win, getCssSelector);
       if (selectionInfo === undefined) {
         let doc = self.host.iframes[0].contentDocument;
+        const annotations = this.host.getModule(
+          NavigatorFeature.Annotations
+        ) as import("./AnnotationModule").AnnotationModule | undefined;
         selectionInfo =
-          this.host
-            .getModule(NavigatorFeature.Annotations)
-            ?.annotator?.getTemporarySelectionInfo(doc) ?? undefined;
+          annotations?.annotator?.getTemporarySelectionInfo(doc) ?? undefined;
       }
       let doc = self.host.iframes[0].contentDocument;
       if (selectionInfo && doc) {
@@ -866,5 +870,36 @@ export class BookmarkModule implements ReaderModule<EpubModuleHost> {
   }
   public async getAnnotationByID(id: string): Promise<any> {
     return this.annotator?.getAnnotationByID(id);
+  }
+
+  // ── IBookmarkModule contract ────────────────────────────────
+  // Thin shims over the existing EPUB-specific methods so
+  // integrator code can target the shared interface.
+
+  save(): Promise<Bookmark | null> {
+    return this.saveBookmark().then((r) => r ?? null);
+  }
+  delete(bookmark: Bookmark): Promise<void> {
+    return this.deleteBookmark(bookmark).then(() => undefined);
+  }
+  list(): Bookmark[] {
+    return this.getBookmarks() as Bookmark[];
+  }
+  isCurrentBookmarked(): boolean {
+    // EPUB check requires a candidate bookmark built from current position;
+    // we reuse locatorExists via a lightweight synthetic locator at the
+    // current progression. Returns false if annotator is missing.
+    if (!this.annotator) return false;
+    const progression = this.host.view?.getCurrentPosition();
+    if (progression === undefined) return false;
+    // locatorExists returns the matching Bookmark or undefined/null —
+    // coerce to boolean for the interface contract.
+    return !!this.annotator.locatorExists(
+      {
+        href: this.host.currentChapterLink.href,
+        locations: { progression },
+      } as Bookmark,
+      AnnotationType.Bookmark
+    );
   }
 }

@@ -37,9 +37,20 @@ import {
   UserSettings,
   UserSettingsUIConfig,
 } from "../model/user-settings/UserSettings";
-import { BookmarkModuleConfig } from "../modules/BookmarkModule";
-import { AnnotationModuleConfig } from "../modules/AnnotationModule";
-import { SearchModuleConfig } from "../modules/search/SearchModule";
+import {
+  BookmarkModule,
+  BookmarkModuleConfig,
+} from "../modules/BookmarkModule";
+import {
+  AnnotationModule,
+  AnnotationModuleConfig,
+} from "../modules/AnnotationModule";
+import {
+  SearchModule,
+  SearchModuleConfig,
+} from "../modules/search/SearchModule";
+import { ModuleAccessors } from "../modules/ModuleAccessors";
+import { HistoryModule } from "../modules/history/HistoryModule";
 import { ContentProtectionModuleConfig } from "../modules/protection/ContentProtectionModule";
 import {
   HighlightContainer,
@@ -225,6 +236,16 @@ export interface ReaderConfig {
 /** EPUB navigator — renders spine items in iframes with navigation controls. */
 export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   iframes: Array<HTMLIFrameElement> = [];
+
+  // Override the base `modules` accessor with concrete EPUB module types
+  // so internal navigator code sees the full API (not just the shared
+  // interface contract).
+  readonly modules = new ModuleAccessors<
+    BookmarkModule,
+    AnnotationModule,
+    SearchModule,
+    HistoryModule
+  >(this.registry);
 
   currentTocUrl: string | undefined;
   headerMenu?: HTMLElement | null;
@@ -3605,13 +3626,18 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   }
 
   activateMarker(id, position) {
-    if (this.modules.annotations !== undefined) {
+    // activeAnnotationMarker* are EPUB-specific fields on the concrete
+    // AnnotationModule — not part of IAnnotationModule. Cast to access.
+    const annotations = this.modules.annotations as
+      | AnnotationModule
+      | undefined;
+    if (annotations !== undefined) {
       if (
-        this.modules.annotations.activeAnnotationMarkerId === undefined ||
-        this.modules.annotations.activeAnnotationMarkerId !== id
+        annotations.activeAnnotationMarkerId === undefined ||
+        annotations.activeAnnotationMarkerId !== id
       ) {
-        this.modules.annotations.activeAnnotationMarkerId = id;
-        this.modules.annotations.activeAnnotationMarkerPosition = position;
+        annotations.activeAnnotationMarkerId = id;
+        annotations.activeAnnotationMarkerPosition = position;
         if (this.highlighter) {
           this.highlighter.activeAnnotationMarkerId = id;
         }
@@ -3622,9 +3648,12 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   }
 
   deactivateMarker() {
-    if (this.modules.annotations !== undefined) {
-      this.modules.annotations.activeAnnotationMarkerId = undefined;
-      this.modules.annotations.activeAnnotationMarkerPosition = undefined;
+    const annotations = this.modules.annotations as
+      | AnnotationModule
+      | undefined;
+    if (annotations !== undefined) {
+      annotations.activeAnnotationMarkerId = undefined;
+      annotations.activeAnnotationMarkerPosition = undefined;
       if (this.highlighter) {
         this.highlighter.activeAnnotationMarkerId = undefined;
       }

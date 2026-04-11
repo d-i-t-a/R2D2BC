@@ -388,6 +388,12 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     // PdfAnnotationModule. Registered via reader.ts and hooked up through
     // the module lifecycle (setup / onResourceReady / stop).
 
+    // Run module setup BEFORE loading the document — modules subscribe to
+    // eventBus events (annotationeditorlayerrendered, updatefindmatchescount,
+    // pagesinit for view settings restore, etc.) during setup(). If the
+    // document loads first, those initial events are missed.
+    await this.registry.setupAll();
+
     this.showLoading();
     await this.loadDocument(
       this.publication.getAbsoluteHref(this._resource.href),

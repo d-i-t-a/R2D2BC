@@ -23,7 +23,6 @@ import { UserSettings } from "./model/user-settings/UserSettings";
 import { AnnotationModule } from "./modules/AnnotationModule";
 import { BookmarkModule } from "./modules/BookmarkModule";
 import { TextHighlighter } from "./modules/highlight/TextHighlighter";
-import { HostType } from "./modules/ReaderModule";
 import { MediaOverlayModule } from "./modules/mediaoverlays/MediaOverlayModule";
 import {
   MediaOverlaySettings,
@@ -58,7 +57,6 @@ import CitationModule from "./modules/citation/CitationModule";
 import type { PDFNavigator } from "./navigator/PDFNavigator";
 import { VisualNavigator, NavigatorFeature } from "./navigator/VisualNavigator";
 import { ConsumptionModule } from "./modules/consumption/ConsumptionModule";
-import log from "loglevel";
 
 /**
  * Dynamically import PDFNavigator to avoid loading pdfjs-dist in SSR/Node.
@@ -96,6 +94,23 @@ export default class D2Reader {
     private readonly ttsSettings?: TTSSettings,
     private readonly mediaOverlaySettings?: MediaOverlaySettings
   ) {}
+
+  // ── Concrete EPUB module accessors ──────────────────────────
+  // Reader methods below that are EPUB-specific (using methods not on
+  // the shared I* interfaces) go through these typed getters which cast
+  // from the interface to the concrete EPUB class. When the navigator
+  // is PDF, these return the PDF concrete class instead — but callers
+  // of the EPUB-specific methods should only be invoked in EPUB contexts
+  // (either the navigator is EPUB, or the method no-ops via optional chaining).
+  private get epubBookmarkModule(): BookmarkModule | undefined {
+    return this.navigator.modules.bookmarks as BookmarkModule | undefined;
+  }
+  private get epubAnnotationModule(): AnnotationModule | undefined {
+    return this.navigator.modules.annotations as AnnotationModule | undefined;
+  }
+  private get epubSearchModule(): SearchModule | undefined {
+    return this.navigator.modules.search as SearchModule | undefined;
+  }
 
   addEventListener(event: string, handler: (...args: any[]) => void) {
     this.navigator.addListener(event, handler);
@@ -188,6 +203,28 @@ export default class D2Reader {
         layout: "",
       });
       const PDFNav = await loadPDFNavigator();
+
+      // Built-in PDF modules. The navigator registers them during
+      // construction (host-type validated). Custom user modules from
+      // initialConfig.modules are concatenated after.
+      const { PdfBookmarkModule } =
+        await import("./modules/pdf/PdfBookmarkModule");
+      const { PdfSearchModule } = await import("./modules/pdf/PdfSearchModule");
+      const { PdfAnnotationModule } =
+        await import("./modules/pdf/PdfAnnotationModule");
+      const { PdfHistoryModule } =
+        await import("./modules/pdf/PdfHistoryModule");
+      const { PdfViewSettingsModule } =
+        await import("./modules/pdf/PdfViewSettingsModule");
+
+      const pdfBuiltIns = [
+        new PdfBookmarkModule(),
+        new PdfSearchModule(),
+        new PdfAnnotationModule(),
+        new PdfHistoryModule(),
+        new PdfViewSettingsModule(),
+      ];
+
       const navigator = await PDFNav.create({
         mainElement: mainElement,
         publication: publication,
@@ -198,19 +235,12 @@ export default class D2Reader {
         annotator: annotator,
         initialLastReadingPosition: initialConfig.lastReadingPosition,
         store: store,
+        modules: [...pdfBuiltIns, ...(initialConfig.modules ?? [])],
       });
 
-      // Register custom modules for PDF
-      for (const mod of initialConfig.modules ?? []) {
-        if (mod.hostType !== HostType.PDF) {
-          log.warn(
-            `Module "${mod.name}" requires host type "${mod.hostType}" but navigator is PDF — skipping`
-          );
-          continue;
-        }
-        navigator.registry.register(mod, navigator);
-      }
-      await navigator.registry.setupAll();
+      // setupAll() is called inside PDFNavigator.start() — before the
+      // document loads, so modules' event subscriptions are in place for
+      // the initial pagesloaded / annotationeditorlayerrendered events.
 
       // Content protection for PDF via @d-i-t-a/web-content-protection
       if (rights.enableContentProtection && initialConfig.webProtection) {
@@ -495,34 +525,27 @@ export default class D2Reader {
    * Bookmarks and annotations
    */
 
-  /** Save bookmark by progression */
+  /** Save bookmark for the current position. Works for both EPUB and PDF. */
   saveBookmark = async () => {
-    return (await this.navigator.modules.bookmarks?.saveBookmark()) ?? false;
+    return (await this.navigator.modules.bookmarks?.save()) ?? false;
   };
-  /** Save bookmark by annotation */
+  /** Save bookmark by annotation (EPUB-only) */
   saveBookmarkPlus = async () => {
-    return this.navigator.modules.bookmarks?.saveBookmarkPlus();
+    return this.epubBookmarkModule?.saveBookmarkPlus();
   };
-  /** Delete bookmark */
+  /** Delete bookmark. Works for both EPUB and PDF. */
   deleteBookmark = async (bookmark: Bookmark) => {
-    return (
-      (await this.navigator.modules.bookmarks?.deleteBookmark(bookmark)) ??
-      false
-    );
+    return (await this.navigator.modules.bookmarks?.delete(bookmark)) ?? false;
   };
   /** Delete annotation */
   deleteAnnotation = async (highlight: Annotation) => {
     return (
-      (await this.navigator.modules.annotations?.deleteAnnotation(highlight)) ??
-      false
+      (await this.epubAnnotationModule?.deleteAnnotation(highlight)) ?? false
     );
   };
   /** Add annotation */
   addAnnotation = async (highlight: Annotation) => {
-    return (
-      (await this.navigator.modules.annotations?.addAnnotation(highlight)) ??
-      false
-    );
+    return (await this.epubAnnotationModule?.addAnnotation(highlight)) ?? false;
   };
   /**
    * Update annotation
@@ -533,8 +556,7 @@ export default class D2Reader {
    *  */
   updateAnnotation = async (highlight: Annotation) => {
     return (
-      (await this.navigator.modules.annotations?.updateAnnotation(highlight)) ??
-      false
+      (await this.epubAnnotationModule?.updateAnnotation(highlight)) ?? false
     );
   };
 
@@ -545,11 +567,11 @@ export default class D2Reader {
 
   /** Hide Annotation Layer */
   hideAnnotationLayer = () => {
-    return this.navigator.modules.annotations?.hideAnnotationLayer();
+    return this.epubAnnotationModule?.hideAnnotationLayer();
   };
   /** Show Annotation Layer */
   showAnnotationLayer = () => {
-    return this.navigator.modules.annotations?.showAnnotationLayer();
+    return this.epubAnnotationModule?.showAnnotationLayer();
   };
 
   /** Hide  Layer */
@@ -600,35 +622,35 @@ export default class D2Reader {
   get readingOrder() {
     return toPlainObject(this.navigator.readingOrder()) ?? [];
   }
-  /** Current Bookmarks */
+  /** Current Bookmarks. Works for both EPUB and PDF. */
   get bookmarks() {
-    return this.navigator.modules.bookmarks?.getBookmarks() ?? [];
+    return this.navigator.modules.bookmarks?.list() ?? [];
   }
-  /** Current Annotations */
+  /** Current Annotations. Works for both EPUB and PDF. */
   get annotations() {
-    return this.navigator.modules.annotations?.getAnnotations();
+    return this.navigator.modules.annotations?.getAll() ?? [];
   }
 
   get publicationLayout() {
     return this.navigator.publication.layout;
   }
 
-  /** History */
-  get history() {
-    return this.navigator.modules.history?.history;
-  }
-  /** Current index of history */
-  get historyCurrentIndex() {
-    return this.navigator.modules.history?.historyCurrentIndex;
-  }
-  /** History Back */
+  /** History Back. Works for both EPUB and PDF. */
   historyBack = async () => {
-    return this.navigator.modules.history?.historyBack();
+    return this.navigator.modules.history?.back();
   };
-  /** History Forward */
+  /** History Forward. Works for both EPUB and PDF. */
   historyForward = async () => {
-    return this.navigator.modules.history?.historyForward();
+    return this.navigator.modules.history?.forward();
   };
+  /** Can go back in history. Works for both EPUB and PDF. */
+  get canGoBack() {
+    return this.navigator.modules.history?.canGoBack() ?? false;
+  }
+  /** Can go forward in history. Works for both EPUB and PDF. */
+  get canGoForward() {
+    return this.navigator.modules.history?.canGoForward() ?? false;
+  }
 
   /**
    * Search
@@ -637,25 +659,21 @@ export default class D2Reader {
    * current = true, will search only current resource <br>
    * current = false, will search entire publication */
   search = async (term: string, current: boolean) => {
-    return (await this.navigator.modules.search?.search(term, current)) ?? [];
+    return (await this.epubSearchModule?.search(term, current)) ?? [];
   };
   goToSearchIndex = async (href: string, index: number, current: boolean) => {
     if (this.navigator.supports(NavigatorFeature.Search)) {
-      await this.navigator.modules.search?.goToSearchIndex(
-        href,
-        index,
-        current
-      );
+      await this.epubSearchModule?.goToSearchIndex(href, index, current);
     }
   };
   goToSearchID = async (href: string, index: number, current: boolean) => {
     if (this.navigator.supports(NavigatorFeature.Search)) {
-      await this.navigator.modules.search?.goToSearchID(href, index, current);
+      await this.epubSearchModule?.goToSearchID(href, index, current);
     }
   };
   clearSearch = async () => {
     if (this.navigator.supports(NavigatorFeature.Search)) {
-      await this.navigator.modules.search?.clearSearch();
+      await this.epubSearchModule?.clearSearch();
     }
   };
 

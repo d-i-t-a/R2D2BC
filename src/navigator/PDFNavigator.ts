@@ -344,6 +344,10 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
       ({ pageNumber }: { pageNumber: number }) => {
         this.pageNum = pageNumber;
         this.saveLastReadingPosition();
+        this.emit(ReaderEvent.PageChanged, {
+          page: pageNumber,
+          totalPages: this._pdfDoc?.numPages ?? this._numPages,
+        });
         // Emit boundary events so integrators get the same signals as EPUB.
         if (this.atStart()) {
           this.api?.resourceAtStart?.();

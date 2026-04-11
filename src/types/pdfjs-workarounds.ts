@@ -26,11 +26,7 @@
  */
 
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import type {
-  PDFFindController,
-  PDFLinkService,
-  PDFViewer,
-} from "pdfjs-dist/web/pdf_viewer.mjs";
+import type { PDFLinkService, PDFViewer } from "pdfjs-dist/web/pdf_viewer.mjs";
 
 // AnnotationStorage isn't exported from pdfjs-dist's main entry, so we derive
 // the type from the PDFDocumentProxy getter where it's reachable.
@@ -120,35 +116,4 @@ export function releasePdfLinkServiceDocument(
   linkService: PDFLinkService
 ): void {
   (linkService as unknown as SetDocumentNullable).setDocument(null);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PDFFindController.state
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// pdfjs-dist omits the `state` property from PDFFindController's declarations,
-// but it's a stable public runtime field that exposes the current search query
-// and options. Needed so "findNext"/"findPrevious" can re-dispatch with the
-// same query.
-
-interface FindControllerState {
-  query?: string;
-  caseSensitive?: boolean;
-  entireWord?: boolean;
-  highlightAll?: boolean;
-  findPrevious?: boolean;
-}
-
-interface PDFFindControllerWithState {
-  state: FindControllerState | null;
-}
-
-/**
- * Read the current search state from a PDFFindController.
- * Returns null if no search has been performed yet.
- */
-export function getFindControllerState(
-  controller: PDFFindController
-): FindControllerState | null {
-  return (controller as unknown as PDFFindControllerWithState).state ?? null;
 }

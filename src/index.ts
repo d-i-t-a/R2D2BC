@@ -67,6 +67,14 @@ export type {
 } from "./modules/NavigatorFeatureMap";
 export { ModuleRegistry } from "./modules/ModuleRegistry";
 export { ModuleAccessors } from "./modules/ModuleAccessors";
+export type {
+  IBookmarkModule,
+  ISearchModule,
+  IAnnotationModule,
+  IHistoryModule,
+  SearchOptions,
+} from "./modules/interfaces";
+export { getPageFromLocations } from "./model/v3";
 
 // ─── Navigator / Config ─────────────────────────────────────────────────────
 

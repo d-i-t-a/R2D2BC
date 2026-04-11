@@ -12,6 +12,7 @@ import { HostType, RightsKey } from "../ReaderModule";
 import { ISearchModule, SearchOptions } from "../interfaces";
 import { PDFModuleHost } from "../ModuleHost";
 import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import { ReaderEvent } from "../../utils/Events";
 
 /**
  * PDF search module.
@@ -53,6 +54,10 @@ export class PdfSearchModule implements ISearchModule<PDFModuleHost> {
     if (evt?.matchesCount) {
       this._currentMatch = evt.matchesCount.current ?? 0;
       this._matchCount = evt.matchesCount.total ?? 0;
+      this.host.emit(ReaderEvent.PdfMatchesUpdated, {
+        current: this._currentMatch,
+        total: this._matchCount,
+      });
     }
   };
 

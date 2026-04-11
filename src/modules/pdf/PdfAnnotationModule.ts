@@ -133,15 +133,14 @@ export class PdfAnnotationModule implements IAnnotationModule<PDFModuleHost> {
   getAll(): unknown[] {
     const result: Record<string, unknown>[] = [];
 
-    const { map } = getSerializable(
-      this.host.pdfDoc?.annotationStorage ??
-        (undefined as unknown as import("pdfjs-dist").PDFDocumentProxy["annotationStorage"])
-    );
-    if (map) {
-      for (const value of map.values()) {
-        result.push(
-          PdfAnnotationModule.toJsonSafe(value) as Record<string, unknown>
-        );
+    if (this.host.pdfDoc) {
+      const { map } = getSerializable(this.host.pdfDoc.annotationStorage);
+      if (map) {
+        for (const value of map.values()) {
+          result.push(
+            PdfAnnotationModule.toJsonSafe(value) as Record<string, unknown>
+          );
+        }
       }
     }
 

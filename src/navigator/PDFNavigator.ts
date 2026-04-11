@@ -104,11 +104,6 @@ export interface PDFNavigatorConfig {
   >;
 }
 
-export enum ScaleType {
-  Page = 0,
-  Width = 1,
-}
-
 export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   readonly isPDF = true;
   settings: UserSettings;

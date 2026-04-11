@@ -17,17 +17,17 @@
  * Licensed to: Bibliotheca LLC under one or more contributor license agreements.
  */
 
-import Store from "../../store/Store";
+import Store from "../../../store/Store";
 import {
   UserProperty,
   UserProperties,
   Stringable,
   Switchable,
   Incremental,
-} from "../../model/user-settings/UserProperties";
-import * as HTMLUtilities from "../../utils/HTMLUtilities";
+} from "../../../model/user-settings/UserProperties";
+import * as HTMLUtilities from "../../../utils/HTMLUtilities";
 
-import { addEventListenerOptional } from "../../utils/EventHandler";
+import { addEventListenerOptional } from "../../../utils/EventHandler";
 import {
   MediaOverlayModuleAPI,
   MediaOverlayModuleProperties,

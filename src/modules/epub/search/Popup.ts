@@ -17,9 +17,9 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { EpubModuleHost } from "../ModuleHost";
+import { EpubModuleHost } from "../../ModuleHost";
 import sanitize from "sanitize-html";
-import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import * as HTMLUtilities from "../../../utils/HTMLUtilities";
 
 export class Popup {
   private readonly host: EpubModuleHost;

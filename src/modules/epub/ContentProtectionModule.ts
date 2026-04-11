@@ -1038,7 +1038,7 @@ export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
         selectionInfo =
           (
             this.host.getModule(NavigatorFeature.Annotations) as
-              | import("../AnnotationModule").AnnotationModule
+              | import("./AnnotationModule").AnnotationModule
               | undefined
           )?.annotator?.getTemporarySelectionInfo(doc) ?? undefined;
       }
@@ -1089,7 +1089,7 @@ export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
           selectionInfo =
             (
               this.host.getModule(NavigatorFeature.Annotations) as
-                | import("../AnnotationModule").AnnotationModule
+                | import("./AnnotationModule").AnnotationModule
                 | undefined
             )?.annotator?.getTemporarySelectionInfo(doc) ?? undefined;
         }

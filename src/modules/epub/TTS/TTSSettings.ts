@@ -17,7 +17,7 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import Store from "../../store/Store";
+import Store from "../../../store/Store";
 import {
   UserProperty,
   UserProperties,
@@ -25,10 +25,10 @@ import {
   Switchable,
   Incremental,
   JSONable,
-} from "../../model/user-settings/UserProperties";
-import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { TextHighlighter } from "../highlight/TextHighlighter";
-import { addEventListenerOptional } from "../../utils/EventHandler";
+} from "../../../model/user-settings/UserProperties";
+import * as HTMLUtilities from "../../../utils/HTMLUtilities";
+import { TextHighlighter } from "../../highlight/TextHighlighter";
+import { addEventListenerOptional } from "../../../utils/EventHandler";
 import log from "loglevel";
 
 export interface TTSModuleAPI {

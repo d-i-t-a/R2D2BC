@@ -19,7 +19,7 @@
 
 import { ISelectionInfo } from "./selection";
 import { AnnotationMarker } from "../../../model/Locator";
-import { Definition } from "../../search/DefinitionsModule";
+import { Definition } from "../../epub/search/DefinitionsModule";
 
 export interface IColor {
   red: number;

@@ -46,7 +46,7 @@ import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import * as lodash from "lodash";
 import { LayerSettings } from "./LayerSettings";
 import { Switchable } from "../../model/user-settings/UserProperties";
-import { Popup } from "../search/Popup";
+import { Popup } from "../epub/search/Popup";
 import log from "loglevel";
 
 export enum HighlightContainer {

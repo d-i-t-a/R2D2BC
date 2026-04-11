@@ -17,15 +17,15 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import * as HTMLUtilities from "../utils/HTMLUtilities";
-import { NavigatorFeature } from "../navigator/VisualNavigator";
-import Annotator, { AnnotationType } from "../store/Annotator";
-import { InitialAnnotations } from "../navigator/EpubNavigator";
-import { EpubModuleHost } from "./ModuleHost";
-import { ReaderModule, HostType, RightsKey } from "./ReaderModule";
-import { IBookmarkModule } from "./interfaces";
-import { addEventListenerOptional } from "../utils/EventHandler";
-import { icons as IconLib } from "../utils/IconLib";
+import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import Annotator, { AnnotationType } from "../../store/Annotator";
+import { InitialAnnotations } from "../../navigator/EpubNavigator";
+import { EpubModuleHost } from "../ModuleHost";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
+import { IBookmarkModule } from "../interfaces";
+import { addEventListenerOptional } from "../../utils/EventHandler";
+import { icons as IconLib } from "../../utils/IconLib";
 import {
   Annotation,
   AnnotationMarker,
@@ -33,20 +33,20 @@ import {
   Locator,
   Link,
   Publication,
-} from "../model/v3";
+} from "../../model/v3";
 import { v4 as uuid } from "uuid";
-import { getCurrentSelectionInfo } from "./highlight/renderer/iframe/selection";
-import { uniqueCssSelector } from "./highlight/renderer/common/cssselector2";
+import { getCurrentSelectionInfo } from "../highlight/renderer/iframe/selection";
+import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import {
   HighlightType,
   IHighlight,
   SelectionMenuItem,
-} from "./highlight/common/highlight";
-import { getClientRectsNoOverlap } from "./highlight/common/rect-utils";
-import { _highlights } from "./highlight/TextHighlighter";
+} from "../highlight/common/highlight";
+import { getClientRectsNoOverlap } from "../highlight/common/rect-utils";
+import { _highlights } from "../highlight/TextHighlighter";
 import log from "loglevel";
-import { Action } from "./consumption/ConsumptionModule";
-import { ReaderEvent } from "../utils/Events";
+import { Action } from "./ConsumptionModule";
+import { ReaderEvent } from "../../utils/Events";
 
 export interface BookmarkModuleAPI {
   addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;

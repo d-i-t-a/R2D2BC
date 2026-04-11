@@ -17,12 +17,12 @@
  * Licensed to: Bibliotheca LLC, Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { convertRange } from "../highlight/renderer/iframe/selection";
-import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
+import { convertRange } from "../../highlight/renderer/iframe/selection";
+import { uniqueCssSelector } from "../../highlight/renderer/common/cssselector2";
 import {
   _getCssSelectorOptions,
   IRangeInfo,
-} from "../highlight/common/selection";
+} from "../../highlight/common/selection";
 
 export interface ISearchResult {
   rangeInfo: IRangeInfo;

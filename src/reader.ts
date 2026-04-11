@@ -20,23 +20,23 @@ import { Annotation, Bookmark, Locator } from "./model/Locator";
 import { Publication } from "./model/Publication";
 import { UserSettingsIncrementable } from "./model/user-settings/UserProperties";
 import { UserSettings } from "./model/user-settings/UserSettings";
-import { AnnotationModule } from "./modules/AnnotationModule";
-import { BookmarkModule } from "./modules/BookmarkModule";
+import { AnnotationModule } from "./modules/epub/AnnotationModule";
+import { BookmarkModule } from "./modules/epub/BookmarkModule";
 import { TextHighlighter } from "./modules/highlight/TextHighlighter";
-import { MediaOverlayModule } from "./modules/mediaoverlays/MediaOverlayModule";
+import { MediaOverlayModule } from "./modules/epub/mediaoverlays/MediaOverlayModule";
 import {
   MediaOverlaySettings,
   IMediaOverlayUserSettings,
   MediaOverlayIncrementable,
-} from "./modules/mediaoverlays/MediaOverlaySettings";
-import { TimelineModule } from "./modules/positions/TimelineModule";
-import { ContentProtectionModule } from "./modules/protection/ContentProtectionModule";
-import { SearchModule } from "./modules/search/SearchModule";
+} from "./modules/epub/mediaoverlays/MediaOverlaySettings";
+import { TimelineModule } from "./modules/epub/TimelineModule";
+import { ContentProtectionModule } from "./modules/epub/ContentProtectionModule";
+import { SearchModule } from "./modules/epub/search/SearchModule";
 import {
   ITTSUserSettings,
   TTSIncrementable,
   TTSSettings,
-} from "./modules/TTS/TTSSettings";
+} from "./modules/epub/TTS/TTSSettings";
 import {
   EpubNavigator,
   IFrameAttributes,
@@ -48,15 +48,15 @@ import LocalStorageStore from "./store/LocalStorageStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
 import { toPlainObject } from "./model/Link";
 import { LayerSettings } from "./modules/highlight/LayerSettings";
-import { PageBreakModule } from "./modules/pagebreak/PageBreakModule";
-import { TTSModule2 } from "./modules/TTS/TTSModule2";
-import { DefinitionsModule } from "./modules/search/DefinitionsModule";
-import LineFocusModule from "./modules/linefocus/LineFocusModule";
-import { HistoryModule } from "./modules/history/HistoryModule";
-import CitationModule from "./modules/citation/CitationModule";
+import { PageBreakModule } from "./modules/epub/PageBreakModule";
+import { TTSModule2 } from "./modules/epub/TTS/TTSModule2";
+import { DefinitionsModule } from "./modules/epub/search/DefinitionsModule";
+import LineFocusModule from "./modules/epub/LineFocusModule";
+import { HistoryModule } from "./modules/epub/HistoryModule";
+import CitationModule from "./modules/epub/CitationModule";
 import type { PDFNavigator } from "./navigator/PDFNavigator";
 import { VisualNavigator, NavigatorFeature } from "./navigator/VisualNavigator";
-import { ConsumptionModule } from "./modules/consumption/ConsumptionModule";
+import { ConsumptionModule } from "./modules/epub/ConsumptionModule";
 
 /**
  * Dynamically import PDFNavigator to avoid loading pdfjs-dist in SSR/Node.

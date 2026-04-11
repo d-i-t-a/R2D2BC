@@ -17,36 +17,41 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import * as HTMLUtilities from "../utils/HTMLUtilities";
-import { NavigatorFeature } from "../navigator/VisualNavigator";
-import Annotator, { AnnotationType } from "../store/Annotator";
-import { InitialAnnotations } from "../navigator/EpubNavigator";
-import { EpubModuleHost } from "./ModuleHost";
-import { Publication } from "../model/v3";
+import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import { NavigatorFeature } from "../../navigator/VisualNavigator";
+import Annotator, { AnnotationType } from "../../store/Annotator";
+import { InitialAnnotations } from "../../navigator/EpubNavigator";
+import { EpubModuleHost } from "../ModuleHost";
+import { Publication } from "../../model/v3";
 import {
   TextHighlighter,
   _highlights,
   CLASS_HIGHLIGHT_AREA,
   HighlightContainer,
-} from "./highlight/TextHighlighter";
-import { ReaderModule, HostType, RightsKey } from "./ReaderModule";
-import { IAnnotationModule } from "./interfaces";
-import { addEventListenerOptional } from "../utils/EventHandler";
-import { HighlightType, IHighlight } from "./highlight/common/highlight";
-import { Annotation, AnnotationMarker, Bookmark, Locator } from "../model/v3";
-import { icons as IconLib, iconTemplateColored } from "../utils/IconLib";
+} from "../highlight/TextHighlighter";
+import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
+import { IAnnotationModule } from "../interfaces";
+import { addEventListenerOptional } from "../../utils/EventHandler";
+import { HighlightType, IHighlight } from "../highlight/common/highlight";
+import {
+  Annotation,
+  AnnotationMarker,
+  Bookmark,
+  Locator,
+} from "../../model/v3";
+import { icons as IconLib, iconTemplateColored } from "../../utils/IconLib";
 import { v4 as uuid } from "uuid";
-import { Link } from "../model/v3";
-import { convertRange } from "./highlight/renderer/iframe/selection";
-import { uniqueCssSelector } from "./highlight/renderer/common/cssselector2";
+import { Link } from "../../model/v3";
+import { convertRange } from "../highlight/renderer/iframe/selection";
+import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
 import {
   _getCssSelectorOptions,
   ISelectionInfo,
-} from "./highlight/common/selection";
+} from "../highlight/common/selection";
 import * as lodash from "lodash";
 import log from "loglevel";
-import { Action } from "./consumption/ConsumptionModule";
-import { ReaderEvent } from "../utils/Events";
+import { Action } from "./ConsumptionModule";
+import { ReaderEvent } from "../../utils/Events";
 
 export type Highlight = (highlight: Annotation) => Promise<Annotation>;
 

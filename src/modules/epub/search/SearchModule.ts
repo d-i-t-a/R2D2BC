@@ -17,23 +17,23 @@
  * Licensed to: Bibliotheca LLC, Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { NavigatorFeature } from "../../navigator/VisualNavigator";
-import { Publication } from "../../model/v3";
-import { EpubModuleHost } from "../ModuleHost";
-import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
-import { ISearchModule } from "../interfaces";
+import * as HTMLUtilities from "../../../utils/HTMLUtilities";
+import { NavigatorFeature } from "../../../navigator/VisualNavigator";
+import { Publication } from "../../../model/v3";
+import { EpubModuleHost } from "../../ModuleHost";
+import { ReaderModule, HostType, RightsKey } from "../../ReaderModule";
+import { ISearchModule } from "../../interfaces";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
-} from "../../utils/EventHandler";
-import { AnnotationMarker, Locations, Locator } from "../../model/v3";
+} from "../../../utils/EventHandler";
+import { AnnotationMarker, Locations, Locator } from "../../../model/v3";
 import {
   DEFAULT_BACKGROUND_COLOR,
   TextHighlighter,
-} from "../highlight/TextHighlighter";
-import { HighlightType, IHighlight } from "../highlight/common/highlight";
-import { ISelectionInfo } from "../highlight/common/selection";
+} from "../../highlight/TextHighlighter";
+import { HighlightType, IHighlight } from "../../highlight/common/highlight";
+import { ISelectionInfo } from "../../highlight/common/selection";
 import { SHA256 } from "jscrypto";
 import { reset, searchDocDomSeek } from "./searchWithDomSeek";
 import log from "loglevel";

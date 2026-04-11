@@ -40,18 +40,18 @@ import {
 import {
   BookmarkModule,
   BookmarkModuleConfig,
-} from "../modules/BookmarkModule";
+} from "../modules/epub/BookmarkModule";
 import {
   AnnotationModule,
   AnnotationModuleConfig,
-} from "../modules/AnnotationModule";
+} from "../modules/epub/AnnotationModule";
 import {
   SearchModule,
   SearchModuleConfig,
-} from "../modules/search/SearchModule";
+} from "../modules/epub/search/SearchModule";
 import { ModuleAccessors } from "../modules/ModuleAccessors";
-import { HistoryModule } from "../modules/history/HistoryModule";
-import { ContentProtectionModuleConfig } from "../modules/protection/ContentProtectionModule";
+import { HistoryModule } from "../modules/epub/HistoryModule";
+import { ContentProtectionModuleConfig } from "../modules/epub/ContentProtectionModule";
 import {
   HighlightContainer,
   TextHighlighter,
@@ -62,22 +62,22 @@ import TouchEventHandler from "../utils/TouchEventHandler";
 import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 import BookView from "../views/BookView";
 
-import { MediaOverlayModuleConfig } from "../modules/mediaoverlays/MediaOverlayModule";
+import { MediaOverlayModuleConfig } from "../modules/epub/mediaoverlays/MediaOverlayModule";
 import { D2Link, Link } from "../model/v3";
-import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
+import SampleReadEventHandler from "../modules/epub/SampleReadEventHandler";
 import { ReaderModule, HostType } from "../modules/ReaderModule";
 import { EpubModuleHost } from "../modules/ModuleHost";
-import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
+import { TTSModuleConfig } from "../modules/epub/TTS/TTSSettings";
 
 import { HighlightType } from "../modules/highlight/common/highlight";
-import { PageBreakModuleConfig } from "../modules/pagebreak/PageBreakModule";
+import { PageBreakModuleConfig } from "../modules/epub/PageBreakModule";
 import { Switchable } from "../model/user-settings/UserProperties";
-import { DefinitionsModuleConfig } from "../modules/search/DefinitionsModule";
-import { LineFocusModuleConfig } from "../modules/linefocus/LineFocusModule";
-import { CitationModuleConfig } from "../modules/citation/CitationModule";
+import { DefinitionsModuleConfig } from "../modules/epub/search/DefinitionsModule";
+import { LineFocusModuleConfig } from "../modules/epub/LineFocusModule";
+import { CitationModuleConfig } from "../modules/epub/CitationModule";
 import log from "loglevel";
 import { GrabToPan } from "../utils/GrabToPan";
-import { ConsumptionModuleConfig } from "../modules/consumption/ConsumptionModule";
+import { ConsumptionModuleConfig } from "../modules/epub/ConsumptionModule";
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (
   href: string,

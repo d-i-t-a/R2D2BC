@@ -17,24 +17,24 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { EpubModuleHost } from "../ModuleHost";
-import { NavigatorFeature } from "../../navigator/VisualNavigator";
-import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
+import { EpubModuleHost } from "../../ModuleHost";
+import { NavigatorFeature } from "../../../navigator/VisualNavigator";
+import { ReaderModule, HostType, RightsKey } from "../../ReaderModule";
 import {
   TextHighlighter,
   CLASS_HIGHLIGHT_AREA,
   DEFAULT_BACKGROUND_COLOR,
   _highlights,
-} from "../highlight/TextHighlighter";
+} from "../../highlight/TextHighlighter";
 import * as lodash from "lodash";
 import { searchDocDomSeek } from "./searchWithDomSeek";
-import { ReaderEvent } from "../../utils/Events";
-import { HighlightType, IHighlight } from "../highlight/common/highlight";
+import { ReaderEvent } from "../../../utils/Events";
+import { HighlightType, IHighlight } from "../../highlight/common/highlight";
 import debounce from "debounce";
-import { ISelectionInfo } from "../highlight/common/selection";
+import { ISelectionInfo } from "../../highlight/common/selection";
 import { SHA256 } from "jscrypto/es6/SHA256";
-import { AnnotationMarker } from "../../model/v3";
-import { Publication } from "../../model/v3";
+import { AnnotationMarker } from "../../../model/v3";
+import { Publication } from "../../../model/v3";
 import log from "loglevel";
 
 export interface DefinitionsModuleAPI {

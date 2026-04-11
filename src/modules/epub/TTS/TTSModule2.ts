@@ -17,32 +17,32 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
-import { NavigatorFeature } from "../../navigator/VisualNavigator";
-import { ReaderEvent } from "../../utils/Events";
-import { AnnotationMarker } from "../../model/v3";
+import { ReaderModule, HostType, RightsKey } from "../../ReaderModule";
+import { NavigatorFeature } from "../../../navigator/VisualNavigator";
+import { ReaderEvent } from "../../../utils/Events";
+import { AnnotationMarker } from "../../../model/v3";
 import {
   TTSModuleAPI,
   TTSModuleConfig,
   TTSModuleProperties,
   TTSSettings,
 } from "./TTSSettings";
-import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import * as HTMLUtilities from "../../../utils/HTMLUtilities";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
-} from "../../utils/EventHandler";
+} from "../../../utils/EventHandler";
 import sanitize from "sanitize-html";
-import { EpubModuleHost } from "../ModuleHost";
-import { TextHighlighter } from "../highlight/TextHighlighter";
-import { HighlightType, IHighlight } from "../highlight/common/highlight";
-import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
-import { convertRange } from "../highlight/renderer/iframe/selection";
+import { EpubModuleHost } from "../../ModuleHost";
+import { TextHighlighter } from "../../highlight/TextHighlighter";
+import { HighlightType, IHighlight } from "../../highlight/common/highlight";
+import { uniqueCssSelector } from "../../highlight/renderer/common/cssselector2";
+import { convertRange } from "../../highlight/renderer/iframe/selection";
 import debounce from "debounce";
 import {
   _getCssSelectorOptions,
   ISelectionInfo,
-} from "../highlight/common/selection";
+} from "../../highlight/common/selection";
 import log from "loglevel";
 
 export class TTSModule2 implements ReaderModule<EpubModuleHost> {

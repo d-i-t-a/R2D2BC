@@ -17,18 +17,18 @@
  * Licensed to: Bibliotheca LLC under one or more contributor license agreements.
  */
 
-import { Publication } from "../../model/v3";
-import { NavigatorFeature } from "../../navigator/VisualNavigator";
-import { EpubModuleHost } from "../ModuleHost";
-import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
-import { Link } from "../../model/v3";
-import { ReaderEvent } from "../../utils/Events";
-import { MediaOverlayNode } from "../../model/v3";
+import { Publication } from "../../../model/v3";
+import { NavigatorFeature } from "../../../navigator/VisualNavigator";
+import { EpubModuleHost } from "../../ModuleHost";
+import { ReaderModule, HostType, RightsKey } from "../../ReaderModule";
+import { Link } from "../../../model/v3";
+import { ReaderEvent } from "../../../utils/Events";
+import { MediaOverlayNode } from "../../../model/v3";
 import {
   MediaOverlaySettings,
   R2_MO_CLASS_ACTIVE,
 } from "./MediaOverlaySettings";
-import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import * as HTMLUtilities from "../../../utils/HTMLUtilities";
 import log from "loglevel";
 
 // Media Overlays

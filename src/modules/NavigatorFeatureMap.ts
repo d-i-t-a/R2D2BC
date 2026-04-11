@@ -8,15 +8,15 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import type CitationModule from "./citation/CitationModule";
-import type { ConsumptionModule } from "./consumption/ConsumptionModule";
-import type LineFocusModule from "./linefocus/LineFocusModule";
-import type { MediaOverlayModule } from "./mediaoverlays/MediaOverlayModule";
-import type { PageBreakModule } from "./pagebreak/PageBreakModule";
-import type { TimelineModule } from "./positions/TimelineModule";
-import type { ContentProtectionModule } from "./protection/ContentProtectionModule";
-import type { DefinitionsModule } from "./search/DefinitionsModule";
-import type { TTSModule2 } from "./TTS/TTSModule2";
+import type CitationModule from "./epub/CitationModule";
+import type { ConsumptionModule } from "./epub/ConsumptionModule";
+import type LineFocusModule from "./epub/LineFocusModule";
+import type { MediaOverlayModule } from "./epub/mediaoverlays/MediaOverlayModule";
+import type { PageBreakModule } from "./epub/PageBreakModule";
+import type { TimelineModule } from "./epub/TimelineModule";
+import type { ContentProtectionModule } from "./epub/ContentProtectionModule";
+import type { DefinitionsModule } from "./epub/search/DefinitionsModule";
+import type { TTSModule2 } from "./epub/TTS/TTSModule2";
 import type { PdfViewSettingsModule } from "./pdf/PdfViewSettingsModule";
 import type {
   IBookmarkModule,

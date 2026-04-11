@@ -104,16 +104,75 @@ Migration checklist for custom modules:
 3. Migrate `this.navigator.X` references to `this.host.X` (the host interface exposes the same EPUB-specific properties)
 4. Pass the module via `D2Reader.load({ modules: [...] })` instead of any prior manual registration
 
-## Still pending under 3.3 (Part 2 — PDF)
+## Part 2 — PDF Navigator Rework (3.0.0-alpha.13)
 
-`PDFNavigator` (~1100 lines) still violates the same separation 3.3 just enforced for EPUB. The PDF rework is the unfinished half of this workstream and will ship in a later alpha:
+PDFNavigator slimmed from 1073 to 762 lines. All `as any` / `as unknown` casts removed (0 remaining). Five PDF modules extracted, four shared interface contracts added.
 
-- Flesh out `PDFModuleHost` with real primitives (`pdfDoc`, `pdfViewer`, `currentPage`, `totalPages`, `goToPage`, `findController`, page-change event hook)
-- Extract `PDFSearchModule` (wraps pdfjs `findController`)
-- Extract `PDFAnnotationModule` (the ~150 lines of inline storage / serialization / rebuild logic)
-- Extract `PDFBookmarkModule` (page-based, not href-based)
-- Fix locator semantics: `locations.position` = document-wide, `locations.progression` = page progress, add `page` field
-- Route `pagesloaded` / `pagechanging` through the typed event bus
-- Decide PDF history strategy (share `HistoryModule` with single-resource support, or `PDFHistoryModule`)
-- Kill `as any` casts where pdfjs types actually exist
-- Update `NavigatorFeatureMap` with PDF-specific keys
+### Shared interface contracts
+
+Four interfaces define the lowest-common-denominator API that both EPUB and PDF modules implement. Integrator code using these interfaces works regardless of navigator type.
+
+- `IBookmarkModule` — `save()`, `delete(bookmark)`, `list()`, `isCurrentBookmarked()`
+- `ISearchModule` — `search(query, ...args)`, `clear()`
+- `IAnnotationModule` — `getAll()`, `clear()`
+- `IHistoryModule` — `back()`, `forward()`, `push(locator)`, `canGoBack()`, `canGoForward()`
+
+EPUB modules (`BookmarkModule`, `SearchModule`, `AnnotationModule`, `HistoryModule`) implement the interfaces with backwards-compatible aliases for existing method names (`saveBookmark` -> `save`, `clearSearch` -> `clear`, `historyBack` -> `back`, etc.).
+
+`NavigatorFeatureMap` values for these four keys changed from concrete EPUB classes to the shared interfaces. `ModuleAccessors` is now generic so EpubNavigator gets concrete EPUB types internally while D2Reader sees the interface types.
+
+### PDF modules extracted
+
+| Module | Replaces | Lines moved |
+|---|---|---|
+| `PdfBookmarkModule` | `PDFNavigator.saveBookmark/deleteBookmark/getBookmarks/isCurrentPageBookmarked` | ~45 |
+| `PdfSearchModule` | `PDFNavigator.find/findNext/findPrevious` + pdfjs `PDFFindController` state tracking | ~37 |
+| `PdfAnnotationModule` | Annotation persistence (~230 LOC): save/restore lifecycle, pending queue, debounced save, `onSetModified` wiring, `toJsonSafe` TypedArray conversion | ~230 |
+| `PdfHistoryModule` | New — stack-based page history with `back()`/`forward()` (distinct from pdfjs `PDFHistory` browser integration) | ~85 |
+| `PdfViewSettingsModule` | Zoom, scroll mode, spread mode, rotation + persistence via viewStore | ~150 |
+
+All registered under the same `NavigatorFeatureMap` keys as their EPUB counterparts (except `PdfViewSettingsModule` which has a new `viewSettings` key).
+
+### PDFModuleHost fleshed out
+
+`PDFModuleHost` expanded from empty marker to a real interface exposing: `pdfDoc`, `pdfViewer`, `findController`, `eventBus`, `linkService`, `currentPage`, `totalPages`, `fingerprint`, `goToPage()`, `viewStore`, `annotator`, `currentResourceLink`. PDFNavigator implements all fields via getters.
+
+### Locator semantics fix
+
+- New `Locations.page` field — 1-based page number for paginated formats (PDF, fixed-layout EPUB)
+- `PDFNavigator.currentLocator()` now returns `locations.page` instead of incorrectly using `locations.position` as a page number
+- `getPageFromLocations()` migration helper — reads `page` if present, falls back to `position` for backwards compatibility with pre-rework bookmarks and reading positions
+- Bookmarks and reading positions now write `locations.page` on save; reads accept either field
+
+### Bug fixes
+
+- **`notifyResourceReady` on every page change** — removed the `registry.notifyResourceReady()` call from the `pagechanging` event handler. Resources don't change on page turn; resource-ready fires only from `pagesloaded`. This was the bug behind `PageTimeTracker` firing on every page in the Part 1 example.
+- **Annotation lifecycle race across document switches** — fixed naturally by moving the pending queue into `PdfAnnotationModule` with an explicit `onResourceReady` lifecycle hook that resets state for the new fingerprint.
+
+### Cast cleanups
+
+- `src/types/pdfjs-workarounds.ts` — typed helper functions centralizing 7 pdfjs typing gaps (`onSetModified`, `setDocument(null)`, `findController.state`). All call sites use the helpers; zero `as any` on pdfjs APIs elsewhere.
+- Remaining 4 casts in PDFNavigator (locator fake, TypedArray conversion, bitmap check, annotation value) addressed via the locator fix, type guards, and module extraction.
+- PDFNavigator final state: **0 `as any` casts, 0 `any` types** in the entire file.
+
+### Hardcoded values and untyped returns
+
+- `readingOrder()`, `tableOfContents()`, `landmarks()`, `pageList()` return types fixed from `any` to `Link[]`
+- `positions()` return type fixed from `any` to `Locator[]`
+
+### Navigator zoom delegation
+
+PDFNavigator zoom methods (`fitToWidth`, `fitToPage`, `zoomIn`, `zoomOut`) and `scroll()` now delegate to `PdfViewSettingsModule` instead of duplicating the logic. The module handles persistence; the navigator methods stay as thin pass-throughs because `D2Reader` calls them via `this.navigator.fitToPage()`.
+
+### New `NavigatorFeature` and `RightsKey` entries
+
+- `NavigatorFeature.ViewSettings: "viewSettings"` — PDF-only for now
+
+### Registration flow
+
+`reader.ts` constructs the 5 built-in PDF modules and passes them through `PDFNavigator.create({ modules: [...builtIns, ...userModules] })`. PDFNavigator's constructor validates `hostType` and registers via the same `registry.register(module, this)` path as EpubNavigator.
+
+### Examples updated
+
+- `viewer/index_pdf.html` `PageTimeTracker` — uses `currentLocator().locations.page` instead of `locations.position`
+- `examples/custom-module.ts` PDF example — same fix

@@ -109,6 +109,29 @@ async function start() {
     res.json(manifest);
   });
 
+  // ── EPUB fetch (pass-through for CORS-restricted URLs) ─────────────
+
+  server.expressUse("/api/fetch-epub", async (req: any, res: any) => {
+    const url = req.query.url;
+    if (!url) {
+      res.status(400).send("Missing ?url= parameter");
+      return;
+    }
+    try {
+      const response = await fetch(url, { redirect: "follow" });
+      if (!response.ok) {
+        res.status(response.status).send(response.statusText);
+        return;
+      }
+      res.set("Content-Type", "application/epub+zip");
+      res.set("Access-Control-Allow-Origin", "*");
+      const buffer = await response.arrayBuffer();
+      res.send(Buffer.from(buffer));
+    } catch (error: any) {
+      res.status(500).send(error.message || "Fetch failed");
+    }
+  });
+
   // ── Publications API ────────────────────────────────────────────────
 
   server.expressUse("/api/publications", (req: any, res: any) => {

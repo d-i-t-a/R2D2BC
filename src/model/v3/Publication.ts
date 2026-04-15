@@ -100,10 +100,11 @@ export class Publication {
 
   static async fromUrl(
     url: URL,
-    requestConfig?: RequestConfig
+    requestConfig: RequestConfig | undefined,
+    fetcher: import("../../fetcher/Fetcher").Fetcher
   ): Promise<Publication> {
-    const response = await fetch(url.href, requestConfig);
-    const manifestJSON = await response.json();
+    const resource = await fetcher.getByHref(url.href);
+    const manifestJSON = JSON.parse(resource.text);
     const manifest = Manifest.deserialize(manifestJSON);
     if (!manifest) {
       throw new Error(`Failed to parse manifest from ${url.href}`);
@@ -333,8 +334,8 @@ export class Publication {
   }
 
   async autoGeneratePositions(
-    requestConfig?: RequestConfig,
-    getContentBytesLength: GetContentBytesLength = fetchContentBytesLength
+    requestConfig: RequestConfig | undefined,
+    getContentBytesLength: GetContentBytesLength
   ) {
     let startPosition = 0;
     let totalContentLength = 0;
@@ -413,21 +414,27 @@ export class Publication {
     this.positions = positions;
   }
 
-  async fetchPositionsFromService(href: string, requestConfig?: RequestConfig) {
-    const result = await fetch(href, requestConfig);
-    const content = await result.json();
+  async fetchPositionsFromService(
+    href: string,
+    fetcher: import("../../fetcher/Fetcher").Fetcher
+  ) {
+    const resource = await fetcher.getByHref(href);
+    const content = JSON.parse(resource.text);
     this.positions = content.positions;
   }
 
-  async fetchWeightsFromService(href: string, requestConfig?: RequestConfig) {
+  async fetchWeightsFromService(
+    href: string,
+    fetcher: import("../../fetcher/Fetcher").Fetcher
+  ) {
     if (this.isFixedLayout) {
       console.warn(
         "Not fetching weights from service for fixed layout publication."
       );
       return;
     }
-    const result = await fetch(href, requestConfig);
-    const weights = await result.json();
+    const resource = await fetcher.getByHref(href);
+    const weights = JSON.parse(resource.text);
     if (this.readingOrder !== undefined) {
       this.readingOrder.forEach((link) => {
         link.contentWeight = weights[link.href];
@@ -478,12 +485,3 @@ export class Publication {
     return toc || [];
   }
 }
-
-const fetchContentBytesLength = async (
-  href: string,
-  requestConfig?: RequestConfig
-): Promise<number> => {
-  const r = await fetch(href, requestConfig);
-  const b = await r.blob();
-  return b.size;
-};

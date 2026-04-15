@@ -1,4 +1,4 @@
-# CHANGES — Workstream 3.4: Fetcher / Resource Abstraction
+# CHANGES — v3 Workstream 3.4: Fetcher / Resource / Container Abstraction
 
 ## Summary
 

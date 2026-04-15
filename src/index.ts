@@ -80,6 +80,11 @@ export { getPageFromLocations } from "./model/v3";
 
 export type { Fetcher, Resource } from "./fetcher/Fetcher";
 export type { Container } from "./fetcher/Container";
+export type {
+  RequestConfig,
+  GetContent,
+  GetContentBytesLength,
+} from "./fetcher/types";
 export { ZipContainer } from "./fetcher/ZipContainer";
 export { ReadError } from "./fetcher/ReadError";
 export type { ReadErrorType } from "./fetcher/ReadError";
@@ -108,7 +113,6 @@ export type {
   NavigatorAPI,
   IFrameAttributes,
   Injectable,
-  RequestConfig,
   SampleRead,
   PublicationServices,
   InitialAnnotations,

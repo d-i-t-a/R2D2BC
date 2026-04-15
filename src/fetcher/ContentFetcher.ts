@@ -9,7 +9,7 @@
  */
 
 import type { Link } from "../model/v3";
-import type { GetContent } from "../navigator/EpubNavigator";
+import type { GetContent } from "./types";
 import type { Fetcher, Resource } from "./Fetcher";
 import { guessMediaType } from "./mediaType";
 

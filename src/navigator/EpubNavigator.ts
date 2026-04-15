@@ -81,15 +81,13 @@ import { CitationModuleConfig } from "../modules/epub/CitationModule";
 import log from "loglevel";
 import { GrabToPan } from "../utils/GrabToPan";
 import { ConsumptionModuleConfig } from "../modules/epub/ConsumptionModule";
-export type GetContent = (href: string) => Promise<string>;
-export type GetContentBytesLength = (
-  href: string,
-  requestConfig?: RequestConfig
-) => Promise<number>;
-
-export interface RequestConfig extends RequestInit {
-  encoded?: boolean;
-}
+import type {
+  GetContent,
+  GetContentBytesLength,
+  RequestConfig,
+} from "../fetcher/types";
+// Re-exported for backwards compatibility.
+export type { GetContent, GetContentBytesLength, RequestConfig };
 
 export interface NavigatorAPI {
   updateSettings?: (settings: Record<string, unknown>) => Promise<void>;

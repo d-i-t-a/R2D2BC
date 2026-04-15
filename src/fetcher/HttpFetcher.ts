@@ -9,7 +9,7 @@
  */
 
 import type { Link } from "../model/v3";
-import type { RequestConfig } from "../navigator/EpubNavigator";
+import type { RequestConfig } from "./types";
 import type { Fetcher, Resource } from "./Fetcher";
 import { ReadError } from "./ReadError";
 

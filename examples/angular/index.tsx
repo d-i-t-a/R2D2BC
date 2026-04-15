@@ -333,15 +333,22 @@ function TocEntry({
   return (
     <>
       <li>
-        <a
+        <button
+          type="button"
           style={{
             ...styles.tocItemLink,
             paddingLeft: 16 + depth * 16,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            font: "inherit",
+            textAlign: "left" as const,
+            width: "100%",
           }}
           onClick={() => onGo(item)}
         >
           {item.title}
-        </a>
+        </button>
       </li>
       {item.children?.map((child, i) => (
         <TocEntry key={i} item={child} depth={depth + 1} onGo={onGo} />
@@ -422,7 +429,8 @@ function App() {
       api: {
         updateCurrentLocation: async () => {},
         updateSettings: async (settings) => {
-          if (settings?.appearance) setAppearanceState(settings.appearance);
+          const appearance = settings?.appearance;
+          if (typeof appearance === "string") setAppearanceState(appearance);
         },
       },
     }).then((r) => {

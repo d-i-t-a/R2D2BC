@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["EpubReader.tsx", "../parcel.d.ts", "../../src"],
+  "exclude": [],
+  "compilerOptions": {
+    "outDir": "../../dist",
+    "declaration": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "jsx": "react"
+  }
+}

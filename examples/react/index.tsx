@@ -818,7 +818,8 @@ function App() {
       api: {
         updateCurrentLocation: async () => {},
         updateSettings: async (settings: any) => {
-          if (settings?.appearance) setAppearance(settings.appearance);
+          const appearance = settings?.appearance;
+          if (typeof appearance === "string") setAppearance(appearance);
         },
       },
     }).then((r) => {
@@ -835,7 +836,7 @@ function App() {
       // Initial update
       setTimeout(() => updatePageInfo(r), 500);
     });
-  }, []);
+  }, [updatePageInfo]);
 
   // Keyboard navigation
   useEffect(() => {

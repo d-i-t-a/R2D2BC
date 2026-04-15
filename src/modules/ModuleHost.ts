@@ -47,6 +47,9 @@ export interface ModuleHost {
   readonly rights: Partial<ReaderRights>;
   readonly api?: Partial<NavigatorAPI>;
 
+  // ── Content loading ─────────────────────────────────────────
+  readonly fetcher: import("../fetcher/Fetcher").Fetcher;
+
   // ── DOM access (shared by both navigators) ──────────────────
   readonly mainElement: HTMLElement;
   readonly headerMenu?: HTMLElement | null;

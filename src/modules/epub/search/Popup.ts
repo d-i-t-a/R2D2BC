@@ -44,30 +44,14 @@ export class Popup {
         event.preventDefault();
         event.stopPropagation();
 
-        if (this.host.api?.getContent) {
-          await this.host.api?.getContent(href).then((content) => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(content, "text/html");
-            const element = doc.querySelector("#" + id);
-            if (element) {
-              event.preventDefault();
-              event.stopPropagation();
-              this.showPopup(element, event);
-            }
-          });
-        } else {
-          await fetch(absolute, this.host.requestConfig)
-            .then((r) => r.text())
-            .then(async (data) => {
-              const parser = new DOMParser();
-              const doc = parser.parseFromString(data, "text/html");
-              const element = doc.querySelector("#" + id);
-              if (element) {
-                event.preventDefault();
-                event.stopPropagation();
-                this.showPopup(element, event);
-              }
-            });
+        const resource = await this.host.fetcher.getByHref(absolute);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(resource.text, "text/html");
+        const element = doc.querySelector("#" + id);
+        if (element) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.showPopup(element, event);
         }
       }
     }
@@ -124,24 +108,11 @@ export class Popup {
         const d2content = document.createElement("div");
         d2content.className = "d2-popover-content";
         d2wrapper.appendChild(d2content);
-        if (this.host.api?.getContent) {
-          await this.host.api?.getContent(href).then((content) => {
-            d2content.innerHTML = sanitize(content);
-            let doc = this.host.iframes[0].contentDocument;
-            if (doc) {
-              doc.body.appendChild(d2popover);
-            }
-          });
-        } else {
-          await fetch(absolute, this.host.requestConfig)
-            .then((r) => r.text())
-            .then(async (data) => {
-              d2content.innerHTML = sanitize(data);
-              let doc = this.host.iframes[0].contentDocument;
-              if (doc) {
-                doc.body.appendChild(d2popover);
-              }
-            });
+        const resource = await this.host.fetcher.getByHref(absolute);
+        d2content.innerHTML = sanitize(resource.text);
+        const doc = this.host.iframes[0].contentDocument;
+        if (doc) {
+          doc.body.appendChild(d2popover);
         }
 
         let win = this.host.iframes[0].contentWindow;

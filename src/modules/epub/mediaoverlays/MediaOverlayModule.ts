@@ -152,22 +152,12 @@ export class MediaOverlayModule implements ReaderModule<EpubModuleHost> {
       const moUrlObjFull = new URL(moUrl, this.publication.manifestUrl);
       const moUrlFull = moUrlObjFull.toString();
 
-      let response: Response;
-      try {
-        response = await fetch(moUrlFull, this.host.requestConfig);
-      } catch (e) {
-        console.error(e, moUrlFull);
-        return;
-      }
-      if (!response.ok) {
-        log.log("BAD RESPONSE?!");
-      }
-
       let moJson: any | undefined;
       try {
-        moJson = await response.json();
+        const resource = await this.host.fetcher.getByHref(moUrlFull);
+        moJson = JSON.parse(resource.text);
       } catch (e) {
-        console.error(e);
+        console.error(e, moUrlFull);
       }
       if (!moJson) {
         log.log("## moJson" + moJson);
@@ -282,16 +272,13 @@ export class MediaOverlayModule implements ReaderModule<EpubModuleHost> {
           const moUrl = link.mediaOverlay;
           const moUrlObjFull = new URL(moUrl, this.publication.manifestUrl);
           try {
-            const response = await fetch(
-              moUrlObjFull.toString(),
-              this.host.requestConfig
+            const resource = await this.host.fetcher.getByHref(
+              moUrlObjFull.toString()
             );
-            if (response.ok) {
-              const moJson = await response.json();
-              if (moJson) {
-                link.mediaOverlayNode = MediaOverlayNode.deserialize(moJson)!;
-                link.mediaOverlayNode.initialized = true;
-              }
+            const moJson = JSON.parse(resource.text);
+            if (moJson) {
+              link.mediaOverlayNode = MediaOverlayNode.deserialize(moJson)!;
+              link.mediaOverlayNode.initialized = true;
             }
           } catch (e) {
             log.log(

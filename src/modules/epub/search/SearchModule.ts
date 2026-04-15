@@ -767,60 +767,29 @@ export class SearchModule
       }
       if (tocItem) {
         let href = this.publication.getAbsoluteHref(tocItem.href);
-        if (this.host.api?.getContent) {
-          await this.host.api?.getContent(href).then((content) => {
-            let parser = new DOMParser();
-            let doc = parser.parseFromString(content, "application/xhtml+xml");
-            if (tocItem) {
-              searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
-                (result) => {
-                  result.forEach((searchItem) => {
-                    localSearchResultBook.push(searchItem);
-                    this.bookSearchResult.push(searchItem);
-                  });
-                }
-              );
-            }
+        const resource = await this.host.fetcher.getByHref(href);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(
+          resource.text,
+          "application/xhtml+xml"
+        );
+        if (tocItem) {
+          const result = await searchDocDomSeek(
+            term,
+            doc,
+            tocItem.href,
+            tocItem.title
+          );
+          result.forEach((searchItem) => {
+            localSearchResultBook.push(searchItem);
+            this.bookSearchResult.push(searchItem);
           });
-        } else {
-          await fetch(href, this.host.requestConfig)
-            .then((r) => r.text())
-            .then(async (data) => {
-              let parser = new DOMParser();
-              let doc = parser.parseFromString(
-                this.host.requestConfig?.encoded
-                  ? this.decodeBase64(data)
-                  : data,
-                "application/xhtml+xml"
-              );
-              if (tocItem) {
-                searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
-                  (result) => {
-                    result.forEach((searchItem) => {
-                      localSearchResultBook.push(searchItem);
-                      this.bookSearchResult.push(searchItem);
-                    });
-                  }
-                );
-              }
-            });
         }
       }
       if (index === this.publication.readingOrder.length - 1) {
         return localSearchResultBook;
       }
     }
-  }
-
-  decodeBase64(base64: any) {
-    const text = atob(base64);
-    const length = text.length;
-    const bytes = new Uint8Array(length);
-    for (let i = 0; i < length; i++) {
-      bytes[i] = text.charCodeAt(i);
-    }
-    const decoder = new TextDecoder();
-    return decoder.decode(bytes);
   }
 
   async searchChapter(term: string): Promise<any> {
@@ -835,40 +804,22 @@ export class SearchModule
 
     if (tocItem) {
       let href = this.publication.getAbsoluteHref(tocItem.href);
-      if (this.host.api?.getContent) {
-        await this.host.api?.getContent(href).then((content) => {
-          let parser = new DOMParser();
-          let doc = parser.parseFromString(content, "application/xhtml+xml");
-          if (tocItem) {
-            searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
-              (result) => {
-                result.forEach((searchItem) => {
-                  localSearchResultBook.push(searchItem);
-                });
-              }
-            );
-          }
+      const resource = await this.host.fetcher.getByHref(href);
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(
+        resource.text,
+        "application/xhtml+xml"
+      );
+      if (tocItem) {
+        const result = await searchDocDomSeek(
+          term,
+          doc,
+          tocItem.href,
+          tocItem.title
+        );
+        result.forEach((searchItem) => {
+          localSearchResultBook.push(searchItem);
         });
-      } else {
-        await fetch(href, this.host.requestConfig)
-          .then((r) => r.text())
-          .then(async (data) => {
-            // ({ data, tocItem });
-            let parser = new DOMParser();
-            let doc = parser.parseFromString(
-              this.host.requestConfig?.encoded ? this.decodeBase64(data) : data,
-              "application/xhtml+xml"
-            );
-            if (tocItem) {
-              searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
-                (result) => {
-                  result.forEach((searchItem) => {
-                    localSearchResultBook.push(searchItem);
-                  });
-                }
-              );
-            }
-          });
       }
     }
 

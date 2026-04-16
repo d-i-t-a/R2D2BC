@@ -18,7 +18,7 @@ import type { Link } from "../model/v3";
  * (HTML, XML, JSON) or `bytes` for binary content (images, audio, PDF).
  *
  * The `partial` and `range` fields are reserved for future range/partial
- * fetching (workstream 3.9 — page-level streaming). Fetchers that support
+ * fetching (DRM workstream — page-level streaming). Fetchers that support
  * partial content set these; consumers that don't need partial content
  * ignore them.
  */

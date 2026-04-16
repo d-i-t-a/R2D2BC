@@ -37,13 +37,13 @@ Branch: `feature/v3-navigator-refactor` (based on `feature/v3-event-system`)
 - `setDirection("auto")` now resolves from `readingProgression` and `rendition:spread-direction` metadata
 - Falls back to `ltr` when auto and no metadata specified
 - Applied for both FXL (spread flex order) and reflowable (keyboard RTL flag + direction event)
-- CSS `writing-mode` support deferred to workstream 3.6
+- CSS `writing-mode` support deferred to ReadiumCSS v2 workstream
 
 ### FXL spread positioning
 - Checks `properties.page` (left/right/center) from manifest before falling back to index parity
 - Respects `rendition:spread: "none"` — forces single-page display for books that declare it
 - Center pages (`page-spread-center`) skip loading the second iframe
-- FXL-specific preferences (spread mode, fit mode, zoom persistence) deferred to workstream 3.12 (Preferences API)
+- FXL-specific preferences (spread mode, fit mode, zoom persistence) deferred to Preferences API workstream
 
 ## Bug Fixes
 
@@ -69,9 +69,9 @@ Branch: `feature/v3-navigator-refactor` (based on `feature/v3-event-system`)
 
 ## Deferred
 
-- **FXL search & annotations (#870)** — deferred to workstream 3.7 (TextHighlighter refactor)
-- **Predictive spine prefetching** — moved to workstream 3.4 (Fetcher/Resource)
-- **CSS writing-mode / vertical text (#1013)** — deferred to workstream 3.6 (ReadiumCSS v2)
+- **FXL search & annotations (#870)** — deferred to TextHighlighter Refactor workstream
+- **Predictive spine prefetching** — moved to Fetcher/Resource workstream
+- **CSS writing-mode / vertical text (#1013)** — deferred to ReadiumCSS v2 workstream
 
 ## Migration Guide
 

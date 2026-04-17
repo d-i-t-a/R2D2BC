@@ -79,9 +79,12 @@ export type UserSettingsIncrementable =
   | "letterSpacing"
   | "lineHeight"
   | "wordSpacing"
+  | "pageMargins"
   | "paraSpacing"
   | "paraIndent"
-  | "typeScale";
+  | "typeScale"
+  | "fontWeight"
+  | "fontWidth";
 
 export class Incremental extends UserProperty {
   value: number;

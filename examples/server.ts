@@ -34,8 +34,16 @@ async function start() {
       hosted: true,
       viewers: [
         {
-          title: "DITA Reader",
+          title: "DITA Reader (ReadiumCSS v1)",
           url: `/viewer/index_dita.html?url=https://alice.dita.digital/manifest.json`,
+        },
+        {
+          title: "DITA Reader (ReadiumCSS v2 local)",
+          url: `/viewer/index_dita_v2.html?url=https://alice.dita.digital/manifest.json`,
+        },
+        {
+          title: "DITA Reader (ReadiumCSS v2 CDN)",
+          url: `/viewer/index_dita_v2_cdn.html?url=https://alice.dita.digital/manifest.json`,
         },
       ],
     },
@@ -165,8 +173,16 @@ async function start() {
         type: "epub",
         viewers: [
           {
-            title: "DITA Reader",
+            title: "DITA Reader (ReadiumCSS v1)",
             url: `/viewer/index_dita.html?url=${manifestUrl}`,
+          },
+          {
+            title: "DITA Reader (ReadiumCSS v2 local)",
+            url: `/viewer/index_dita_v2.html?url=${manifestUrl}`,
+          },
+          {
+            title: "DITA Reader (ReadiumCSS v2 CDN)",
+            url: `/viewer/index_dita_v2_cdn.html?url=${manifestUrl}`,
           },
           {
             title: "Minimal",

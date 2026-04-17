@@ -97,7 +97,7 @@
     <div class="content" id="root">
         <header id="headerMenu">
             <div id="sidedrawer" class="mui--no-user-select sidenav">
-                <div id="sidedrawer-brand" class="mui--appbar-line-height logo-container">
+                <div id="sidedrawer-brand" class="mui--appbar-line-height dita-logo-container">
                     <span class="mui--text-title">DITA Reader</span>
                     <i class="material-icons right editAnnotations" id="expand-menu">unfold_more</i>
                 </div>
@@ -107,24 +107,24 @@
                         Go To Page: <input type="text" style="width:100px;" id="goToPageNumberInput" /><button id="goToPageNumberButton">Go</button>
                     </li>
                     <li class="bold" id="sidenav-section-toc">
-                        <strong class="collapsible-header">Table of Contents</strong>
+                        <strong class="dita-collapsible-header">Table of Contents</strong>
                         <div id="container-view-toc" class="contents-view"></div>
                     </li>
                     <li class="bold" id="sidenav-section-bookmarks">
-                        <strong class="collapsible-header">Bookmarks</strong>
+                        <strong class="dita-collapsible-header">Bookmarks</strong>
                         <div id="container-view-bookmarks" class="bookmarks-view"></div>
                     </li>
                     <li class="bold" id="sidenav-section-highlights">
-                        <strong class="collapsible-header">Annotations</strong>
+                        <strong class="dita-collapsible-header">Annotations</strong>
                         <div id="container-view-highlights" class="highlights-view"></div>
                     </li>
                     <li class="bold" id="sidenav-section-landmarks">
-                        <strong class="collapsible-header">Landmarks</strong>
+                        <strong class="dita-collapsible-header">Landmarks</strong>
                         <div id="container-view-landmarks" class="landmarks-view"></div>
                     </li>
 
                     <li class="bold" id="sidenav-section-pagelist">
-                        <strong class="collapsible-header">Annotations</strong>
+                        <strong class="dita-collapsible-header">Annotations</strong>
                         <div id="container-view-pagelist" class="pagelist-view"></div>
                     </li>
                 </ul>
@@ -607,7 +607,7 @@
                 </div>
                 <div class="mui-divider"></div>
                 <div id="container-view-search" class="dropdown-content dropdown-tabbed notifications" style="width: 410px;padding: 10px;">
-                    <div class="search-wrapper" tabindex="-1">
+                    <div class="dita-search-wrapper" tabindex="-1">
                         <i class="material-icons left" style="margin-right: -25px;position: relative;">search</i><input id="searchInput" placeholder="Search" style="padding-left: 25px; width: 100%;height: 40px;" type="text" />
                     </div>
                         <ul class="mui-tabs__bar" style="display: flex;justify-content: space-evenly;">
@@ -616,13 +616,13 @@
                         </ul>
                         <div class="mui-tabs__pane mui--is-active" id="pane-default-1">
 
-                            <div class="collection" id="searchResultChapter">
+                            <div class="dita-collection" id="searchResultChapter">
                                 <a href="#!" class="collection-item">No Search Result</a>
                             </div>
 
                         </div>
                         <div class="mui-tabs__pane" id="pane-default-2">
-                            <div class="collection" id="searchResultBook">
+                            <div class="dita-collection" id="searchResultBook">
                                 <a href="#!" class="collection-item">No Search Result</a>
                             </div>
                         </div>
@@ -682,12 +682,12 @@
                 <div id="lineFocusBottomBlinder" class="d2-line-focus-bottom"></div>
             </div>
             <main style="height: calc(100vh - 65px);" tabindex=-1 id="iframe-wrapper">
-                <div id="reader-loading" class="loading"></div>
-                <div id="reader-error" class="error"></div>
-                <div id="reader-info-top" class="info top">
+                <div id="reader-loading" class="dita-loading"></div>
+                <div id="reader-error" class="dita-error"></div>
+                <div id="reader-info-top" class="dita-info top">
                     <span class="book-title"></span>
                 </div>
-                <div id="reader-info-bottom" class="info bottom">
+                <div id="reader-info-bottom" class="dita-info bottom">
                     <div style="display: flex;justify-content: center;">
                         <span class="chapter-position"></span>&nbsp;
                         <span class="chapter-title"></span>
@@ -702,7 +702,7 @@
                             <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons" style="color:gray">close</i></button>
                         </div>
                         <div id="highlight-toolbox-mode-add">
-                            <button style="display: unset;" id="colorIcon" class="color-option"><span></span></button>
+                            <button style="display: unset;" id="colorIcon" class="dita-color-option"><span></span></button>
                             <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon">
                             <title id="text-icon">Text</title>
@@ -754,7 +754,7 @@
                 </div>
             </main>
             <div id="container-view-security" class="security"></div>
-            <div id="container-view-timeline" class="timeline" style="top: 5rem;bottom: 2.5rem;"></div>
+            <div id="container-view-timeline" class="dita-timeline" style="top: 5rem;bottom: 2.5rem;"></div>
             <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
                style="top: 65px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
                 <i class="material-icons black-text" style="left: calc(50% - 12px);

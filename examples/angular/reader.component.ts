@@ -267,11 +267,11 @@ interface TocItem {
     <!-- Reader Container (required DOM structure) -->
     <div id="D2Reader-Container">
       <main id="iframe-wrapper" tabindex="-1">
-        <div id="reader-loading" class="loading" *ngIf="!reader">
+        <div id="reader-loading" class="dita-loading" *ngIf="!reader">
           <div class="spinner"></div>
           <p>Loading reader...</p>
         </div>
-        <div id="reader-error" class="error"></div>
+        <div id="reader-error" class="dita-error"></div>
       </main>
     </div>
   `,
@@ -589,7 +589,7 @@ interface TocItem {
       }
 
       /* Loading State */
-      .loading {
+      .dita-loading {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -614,12 +614,12 @@ interface TocItem {
         }
       }
 
-      .loading p {
+      .dita-loading p {
         font-size: 14px;
         margin: 0;
       }
 
-      .error {
+      .dita-error {
         color: #dc2626;
         text-align: center;
         padding: 20px;

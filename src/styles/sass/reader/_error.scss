@@ -17,7 +17,7 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-.error {
+.dita-error {
   position: sticky;
   z-index: 20;
   background-color: transparentize($ui-white, 0.125);
@@ -64,7 +64,7 @@
 }
 
 [data-viewer-theme="sepia"] {
-  .error {
+  .dita-error {
     background-color: transparentize($sepia-bg, 0.125);
 
     button {
@@ -76,7 +76,7 @@
 }
 
 [data-viewer-theme="night"] {
-  .error {
+  .dita-error {
     background-color: transparentize($night-bg, 0.125);
 
     button {

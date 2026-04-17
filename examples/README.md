@@ -153,12 +153,12 @@ D2Reader.load({
 
 ```html
 <main id="iframe-wrapper">
-    <div id="reader-loading" class="loading"></div>
-    <div id="reader-error" class="error"></div>
-    <div id="reader-info-top" class="info top">
+    <div id="reader-loading" class="dita-loading"></div>
+    <div id="reader-error" class="dita-error"></div>
+    <div id="reader-info-top" class="dita-info top">
         <span class="book-title"></span>
     </div>
-    <div id="reader-info-bottom" class="info bottom">
+    <div id="reader-info-bottom" class="dita-info bottom">
         <span class="chapter-position"></span>
         <span class="chapter-title"></span>
         <input type="range" id="positionSlider" />

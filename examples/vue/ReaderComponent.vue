@@ -542,8 +542,8 @@ onUnmounted(() => {
       tabindex="-1"
       :style="{ height: reader ? 'calc(100vh - 42px)' : '100vh' }"
     >
-      <div id="reader-loading" class="loading" />
-      <div id="reader-error" class="error" />
+      <div id="reader-loading" class="dita-loading" />
+      <div id="reader-error" class="dita-error" />
     </main>
   </div>
 </template>

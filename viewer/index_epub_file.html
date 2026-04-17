@@ -50,7 +50,7 @@
         <button class="pill" id="btn-bookmark" onclick="toggleBookmark()" title="Bookmark this page">&#9734; Bookmark</button>
         <div class="sep"></div>
         <button class="pill" onclick="openFilePicker()">Open EPUB...</button>
-        <span class="info" id="page-info">Drop an .epub file or click Open EPUB</span>
+        <span class="dita-info" id="page-info">Drop an .epub file or click Open EPUB</span>
     </div>
 
     <!-- Drop zone (shown before a file is loaded) -->
@@ -74,15 +74,15 @@
     <!-- Reader container (shown after a file is loaded) -->
     <div id="D2Reader-Container" style="display: none;">
         <main tabindex="-1" id="iframe-wrapper">
-          <div id="reader-loading" class="loading"></div>
-          <div id="reader-error" class="error"></div>
+          <div id="reader-loading" class="dita-loading"></div>
+          <div id="reader-error" class="dita-error"></div>
           <div style="height: 0px">
             <div id="highlight-toolbox" class="highlight-toolbox">
                 <div id="highlight-toolbox-mode-colors">
                     <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons" style="color:gray">close</i></button>
                 </div>
                 <div id="highlight-toolbox-mode-add">
-                    <button style="display: unset;" id="colorIcon" class="color-option"><span></span></button>
+                    <button style="display: unset;" id="colorIcon" class="dita-color-option"><span></span></button>
                     <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow; display: inline-block; width: 24px; height: 24px;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M5 4v3h5.5v12h3V7H19V4z"></path></svg></span></button>
                     <button style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block; width: 24px; height: 24px; border-bottom: yellow solid 4px;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M5 4v3h5.5v12h3V7H19V4z"></path></svg></span></button>
                 </div>

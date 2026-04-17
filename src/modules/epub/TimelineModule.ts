@@ -160,9 +160,9 @@ export class TimelineModule implements ReaderModule<EpubModuleHost> {
         });
 
         if (tocHrefAbs === this.host.currentChapterLink.href) {
-          chapter.className += " active";
+          chapter.className += " dita-active";
         } else {
-          chapter.className = chapter.className.replace(" active", "");
+          chapter.className = chapter.className.replace(" dita-active", "");
         }
 
         // append bookmarks indicator

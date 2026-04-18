@@ -22,8 +22,11 @@ import { ReadError } from "./ReadError";
  *
  * Handles:
  * - Custom headers, credentials, and other RequestInit options via `requestConfig`
- * - Base64-encoded content from server-side streamers (`requestConfig.encoded`)
  * - Media type detection from Content-Type header
+ *
+ * Base64-encoded content is handled by `Base64DecodingFetcher`, not here.
+ * HttpFetcher returns the response body as plain text. Decoding is
+ * composed in when `requestConfig.encoded` is true.
  */
 export class HttpFetcher implements Fetcher {
   /** Track in-flight requests by href so each can be cancelled independently. */
@@ -70,14 +73,7 @@ export class HttpFetcher implements Fetcher {
       );
     }
 
-    let text = await response.text();
-
-    // Server-side streamers (e.g. Readium go-toolkit) may return content
-    // as base64-encoded strings. The `encoded` flag on RequestConfig
-    // signals this — decode before returning.
-    if (this.requestConfig?.encoded) {
-      text = HttpFetcher.decodeBase64(text);
-    }
+    const text = await response.text();
 
     const contentType =
       response.headers.get("content-type") ?? mediaTypeHint ?? "";
@@ -113,18 +109,5 @@ export class HttpFetcher implements Fetcher {
 
   destroy(): void {
     this.cancel();
-  }
-
-  /**
-   * Decode a base64-encoded string to UTF-8 text.
-   * Handles multi-byte characters correctly (atob alone doesn't).
-   */
-  private static decodeBase64(base64: string): string {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return new TextDecoder().decode(bytes);
   }
 }

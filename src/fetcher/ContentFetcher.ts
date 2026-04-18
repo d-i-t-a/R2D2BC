@@ -11,35 +11,47 @@
 import type { Link } from "../model/v3";
 import type { GetContent } from "./types";
 import type { Fetcher, Resource } from "./Fetcher";
+import type { Publication } from "../model/v3";
 import { guessMediaType } from "./mediaType";
 
 /**
- * Fetcher that delegates to the integrator's `api.getContent` callback.
+ * Fetcher that delegates publication-resource requests to the integrator's
+ * `api.getContent` callback.
  *
- * Sits between CacheFetcher and HttpFetcher in the chain:
+ * For hrefs that belong to the publication (readingOrder + resources in
+ * the manifest), `getContent(href)` is called first. If the integrator
+ * returns content, that content is used. If it returns `undefined`, the
+ * request falls through to the inner Fetcher.
  *
- *   CacheFetcher → ContentFetcher → HttpFetcher
+ * Requests for hrefs NOT in the manifest — positions service, external
+ * links, browser-chrome URLs — pass straight through to the inner Fetcher
+ * without touching getContent.
  *
- * For each request, `getContent(href)` is called first. If the integrator
- * returns content (a string), that content is used directly. If it returns
- * `undefined`, the request falls through to the inner Fetcher (HttpFetcher).
- *
- * Integrators use `api.getContent` to:
- * - Serve protected/licensed content (DRM, LCP — decryption happens
- *   server-side, the callback returns the cleartext)
- * - Fetch content from a custom source (non-HTTP, local cache, etc.)
- * - Transform content before the reader sees it
- *
- * In a future workstream this layer will also handle LCP license
- * validation and server-side decryption workflows.
+ * Integrators use `api.getContent` to serve protected/licensed content,
+ * fetch from a custom source, or transform content before it reaches the
+ * reader.
  */
 export class ContentFetcher implements Fetcher {
+  private readonly publicationResourceHrefs: Set<string>;
+
   constructor(
     private readonly inner: Fetcher,
-    private readonly getContent: GetContent
-  ) {}
+    private readonly getContent: GetContent,
+    publication: Publication
+  ) {
+    const all: Link[] = [
+      ...(publication.readingOrder ?? []),
+      ...(publication.resources ?? []),
+    ];
+    this.publicationResourceHrefs = new Set(
+      all.map((link) => publication.getAbsoluteHref(link.href))
+    );
+  }
 
   async get(link: Link): Promise<Resource> {
+    if (!this.isPublicationResource(link.href)) {
+      return this.inner.get(link);
+    }
     const content = await this.getContent(link.href);
     if (content !== undefined) {
       return {
@@ -53,6 +65,9 @@ export class ContentFetcher implements Fetcher {
   }
 
   async getByHref(href: string): Promise<Resource> {
+    if (!this.isPublicationResource(href)) {
+      return this.inner.getByHref(href);
+    }
     const content = await this.getContent(href);
     if (content !== undefined) {
       return {
@@ -71,5 +86,9 @@ export class ContentFetcher implements Fetcher {
 
   destroy(): void {
     this.inner.destroy?.();
+  }
+
+  private isPublicationResource(href: string): boolean {
+    return this.publicationResourceHrefs.has(href);
   }
 }

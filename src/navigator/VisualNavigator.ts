@@ -29,7 +29,7 @@ import type {
   NavigatorFeatureKey,
   NavigatorFeatureMap,
 } from "../modules/NavigatorFeatureMap";
-import type { ReaderRights } from "./EpubNavigator";
+import type { ReaderRights } from "./types";
 
 /**
  * Typed feature names for navigator capability queries.

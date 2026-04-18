@@ -30,7 +30,8 @@ import {
 import { ReadiumCSS } from "./ReadiumCSS";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional } from "../../utils/EventHandler";
-import { Injectable, NavigatorAPI } from "../../navigator/EpubNavigator";
+import { Injectable } from "../../navigator/EpubNavigator";
+import type { NavigatorAPI } from "../../navigator/types";
 import ReflowableBookView from "../../views/ReflowableBookView";
 import FixedBookView from "../../views/FixedBookView";
 import BookView from "../../views/BookView";

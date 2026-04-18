@@ -41,14 +41,15 @@ Separates data storage from content fetching. A Container holds entries and prov
 Composable pipeline. Each layer wraps the next:
 
 ```
-CacheFetcher → ContentFetcher → TransformingFetcher → HttpFetcher / ZipFetcher
+CacheFetcher → Base64DecodingFetcher? → ContentFetcher → TransformingFetcher → HttpFetcher / ZipFetcher
 ```
 
 | File | Purpose |
 |------|---------|
 | `src/fetcher/Fetcher.ts` | `Fetcher` and `Resource` interfaces |
-| `src/fetcher/HttpFetcher.ts` | HTTP `fetch()` with AbortController, base64 decode, typed errors |
-| `src/fetcher/ContentFetcher.ts` | Wraps integrator's `api.getContent` callback |
+| `src/fetcher/HttpFetcher.ts` | HTTP `fetch()` with AbortController, typed errors. Returns raw response text. |
+| `src/fetcher/Base64DecodingFetcher.ts` | Optional layer that base64-decodes text for HTML/XHTML/XML responses when `requestConfig.encoded` is set. Bypassed for non-document content types (JSON positions service, SMIL, etc.) and for already-decoded content (first non-whitespace char `<`). |
+| `src/fetcher/ContentFetcher.ts` | Wraps integrator's `api.getContent` callback. Only delegates for hrefs that belong to the publication (readingOrder + resources); all other requests (positions service, external links, browser-chrome URLs) pass straight through. |
 | `src/fetcher/CacheFetcher.ts` | In-memory cache with request coalescing + predictive prefetch |
 | `src/fetcher/TransformingFetcher.ts` | Applies composable `ResourceTransform` functions to resources |
 | `src/fetcher/ZipFetcher.ts` | Reads from a Container, resolves paths, builds Resources |
@@ -202,13 +203,15 @@ Accepts `File`, `Blob`, `ArrayBuffer`, `URL`, or `string`. No server or streamer
 ## Fetcher Chain
 
 ```
-CacheFetcher → ContentFetcher → TransformingFetcher → HttpFetcher → Network
-                                                     → ZipFetcher  → ZipContainer
+CacheFetcher → Base64DecodingFetcher? → ContentFetcher → TransformingFetcher → HttpFetcher → Network
+                                                                             → ZipFetcher  → ZipContainer
 ```
 
 Each layer is optional. The navigator picks the right chain based on source:
-- **Webpub (server):** `CacheFetcher → ContentFetcher? → HttpFetcher`
+- **Webpub (server):** `CacheFetcher → Base64DecodingFetcher? → ContentFetcher? → HttpFetcher`
 - **EPUB file:** `CacheFetcher → TransformingFetcher? → ZipFetcher → ZipContainer`
+
+`Base64DecodingFetcher` is inserted only when `requestConfig.encoded` is true, and sits *above* `ContentFetcher` so it decodes both integrator-supplied content and server-returned content uniformly.
 
 ## Migration Guide
 

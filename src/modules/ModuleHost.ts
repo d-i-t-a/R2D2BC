@@ -28,11 +28,10 @@ import type {
 } from "./NavigatorFeatureMap";
 import {
   IFrameAttributes,
-  NavigatorAPI,
-  ReaderRights,
   RequestConfig,
   SampleRead,
 } from "../navigator/EpubNavigator";
+import type { NavigatorAPI, ReaderRights } from "../navigator/types";
 import { UserSettings } from "../model/user-settings/UserSettings";
 import { TextHighlighter } from "./highlight/TextHighlighter";
 

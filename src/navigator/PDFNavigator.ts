@@ -63,7 +63,7 @@ import {
   releasePdfViewerDocument,
   releasePdfLinkServiceDocument,
 } from "../types/pdfjs-workarounds";
-import { NavigatorAPI, ReaderRights } from "./EpubNavigator";
+import type { NavigatorAPI, ReaderRights } from "./types";
 import { GrabToPan } from "../utils/GrabToPan";
 import { readerLoading } from "../utils/HTMLTemplates";
 
@@ -456,8 +456,8 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     }
 
     try {
-      // If the Fetcher is a ZipFetcher (e.g., PDF inside an EPUB/ZIP bundle),
-      // extract the raw bytes and pass them to pdfjs instead of a URL.
+      // If the Fetcher is a ZipFetcher (e.g., a multi-file PDF bundled in a
+      // ZIP), extract the raw bytes and pass them to pdfjs instead of a URL.
       let task;
       if ("getBytes" in this._fetcher) {
         const zipFetcher = this

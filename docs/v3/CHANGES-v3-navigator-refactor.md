@@ -30,7 +30,7 @@ Branch: `feature/v3-navigator-refactor` (based on `feature/v3-event-system`)
 - Keyboard shortcuts: `+` / `-` / `0` keys for FXL books (attached to document + iframe docs)
 - Pan overlay captures mouse events over iframes without blocking clicks at fit-to-page
 - Dynamic scroll container bounds: adapts to timeline (left) and info-bottom (bottom) if present
-- Drop shadow preserved with `box-sizing: content-box` for MUI/border-box compatibility
+- Drop shadow preserved with `box-sizing: content-box` for compatibility with integrator layouts that use border-box
 - Viewer: zoom/pan buttons shown for FXL books with active state sync
 
 ### Spine page-progression-direction
@@ -96,3 +96,22 @@ d2reader.fitToPage();
 d2reader.activateHand();   // enable pan
 d2reader.deactivateHand(); // disable pan
 ```
+
+### Always import from the package root
+
+Some integrators were reaching into our `dist/` structure with deep-path imports such as:
+
+```typescript
+// ❌ Never import from internal dist paths
+import { IFrameNavigator } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
+```
+
+Deep-path imports break on every refactor (files get renamed, moved, or the build output changes). Always import from the package root — we maintain the public surface there:
+
+```typescript
+// ✅ Correct
+import { EpubNavigator, IFrameNavigator, VisualNavigator, Navigator } from "@d-i-t-a/reader";
+import type { EpubNavigatorConfig, IFrameNavigatorConfig, Injectable } from "@d-i-t-a/reader";
+```
+
+If a type you need isn't re-exported from the root, file an issue — we'll add it.

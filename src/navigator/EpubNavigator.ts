@@ -69,6 +69,7 @@ import { ReaderModule, HostType } from "../modules/ReaderModule";
 import { EpubModuleHost } from "../modules/ModuleHost";
 import { TTSModuleConfig } from "../modules/epub/TTS/TTSSettings";
 import { HttpFetcher } from "../fetcher/HttpFetcher";
+import { Base64DecodingFetcher } from "../fetcher/Base64DecodingFetcher";
 import { ContentFetcher } from "../fetcher/ContentFetcher";
 import { CacheFetcher } from "../fetcher/CacheFetcher";
 
@@ -86,27 +87,10 @@ import type {
   GetContentBytesLength,
   RequestConfig,
 } from "../fetcher/types";
+import type { NavigatorAPI, ReaderRights } from "./types";
 // Re-exported for backwards compatibility.
 export type { GetContent, GetContentBytesLength, RequestConfig };
-
-export interface NavigatorAPI {
-  updateSettings?: (settings: Record<string, unknown>) => Promise<void>;
-  getContent: GetContent;
-  getContentBytesLength: GetContentBytesLength;
-  resourceReady?: () => void;
-  resourceAtStart?: () => void;
-  resourceAtEnd?: () => void;
-  resourceFitsScreen?: () => void;
-  updateCurrentLocation?: (
-    locator: import("../model/Locator").ReadingPosition
-  ) => Promise<void>;
-  positionInfo?: (locator: import("../model/Locator").Locator) => void;
-  chapterInfo?: (title: string | undefined) => void;
-  keydownFallthrough?: (event: KeyboardEvent | undefined) => void;
-  clickThrough?: (event: MouseEvent | TouchEvent) => void;
-  direction?: (dir: string) => void;
-  onError?: (e: Error) => void;
-}
+export type { NavigatorAPI, ReaderRights } from "./types";
 
 export interface IFrameAttributes {
   margin: number;
@@ -198,8 +182,14 @@ export interface SampleRead {
  *   `{ type: "script", url: ".../analytics.js", async: true }`
  */
 export interface Injectable {
-  /** `"style"` for CSS, `"script"` for JS. */
-  type: "style" | "script";
+  /**
+   * `"style"` for CSS, `"script"` for JS.
+   *
+   * Literal union with a `string` fallback so autocomplete shows the two
+   * valid values while integrator array literals typed as `string` still
+   * assign without `as const`.
+   */
+  type: "style" | "script" | (string & {});
   /** URL to the CSS or JS file. Required unless `systemFont` is true. */
   url?: string;
   /** ReadiumCSS: inject before all other styles (first in head). */
@@ -216,24 +206,6 @@ export interface Injectable {
   appearance?: string;
   /** Load script asynchronously (only applies to `type: "script"`). */
   async?: boolean;
-}
-
-export interface ReaderRights {
-  enableBookmarks: boolean;
-  enableAnnotations: boolean;
-  enableTTS: boolean;
-  enableSearch: boolean;
-  enableDefinitions: boolean;
-  enableContentProtection: boolean;
-  enableTimeline: boolean;
-  autoGeneratePositions: boolean;
-  enableMediaOverlays: boolean;
-  enablePageBreaks: boolean;
-  enableLineFocus: boolean;
-  customKeyboardEvents: boolean;
-  enableHistory: boolean;
-  enableCitations: boolean;
-  enableConsumption: boolean;
 }
 
 export interface ReaderUI {
@@ -618,8 +590,9 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       }
       this.registry.register(module, this);
     }
-    // Use pre-built Fetcher if provided (e.g., ZipFetcher for .epub files),
-    // otherwise build the default chain: HttpFetcher → ContentFetcher → CacheFetcher.
+    // Default chain (innermost first): HttpFetcher → ContentFetcher (if
+    // getContent) → Base64DecodingFetcher (if encoded) → CacheFetcher.
+    // Pre-built fetcher short-circuits (e.g. ZipFetcher for .epub files).
     if (fetcher) {
       this._fetcher = new CacheFetcher(fetcher);
     } else {
@@ -627,7 +600,10 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         requestConfig
       );
       if (api?.getContent) {
-        inner = new ContentFetcher(inner, api.getContent);
+        inner = new ContentFetcher(inner, api.getContent, publication);
+      }
+      if (requestConfig?.encoded) {
+        inner = new Base64DecodingFetcher(inner);
       }
       this._fetcher = new CacheFetcher(inner);
     }
@@ -2043,8 +2019,9 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     this.currentSpreadLinks = {};
 
     // ── Content loading via Fetcher ──────────────────────────────────────────
-    // Replaces the scattered api.getContent / fetch / encoded / same-origin
-    // patterns with a single call through the Fetcher pipeline.
+    // All chapter content flows through the Fetcher chain — any decoding,
+    // transform, or caching happens there. This callback just returns the
+    // final text.
     const fetchContent = async (href: string): Promise<string> => {
       const resource = await self._fetcher.getByHref(href);
       return resource.text;
@@ -2667,7 +2644,13 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         } else {
           doc = this.iframes[0].contentDocument;
         }
-        if (doc && doc.body) {
+        // Iframe may not have loaded yet — bail out of the FXL resize logic
+        // that reads viewport metadata from the iframe head. A later load
+        // event will trigger handleResize again.
+        if (!doc) {
+          return;
+        }
+        if (doc.body) {
           height = getComputedStyle(doc.body).height;
           width = getComputedStyle(doc.body).width;
         }

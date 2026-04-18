@@ -916,8 +916,8 @@ function App() {
           style={{ height: reader ? `calc(100vh - ${TOOLBAR_H}px)` : "100vh" }}
         >
           {!reader && <LoadingScreen />}
-          <div id="reader-loading" className="loading" />
-          <div id="reader-error" className="error" />
+          <div id="reader-loading" className="dita-loading" />
+          <div id="reader-error" className="dita-error" />
         </main>
       </div>
     </div>

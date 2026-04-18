@@ -558,8 +558,8 @@ export default function EpubReader() {
               Loading reader…
             </div>
           )}
-          <div id="reader-loading" className="loading" />
-          <div id="reader-error" className="error" />
+          <div id="reader-loading" className="dita-loading" />
+          <div id="reader-error" className="dita-error" />
         </main>
       </div>
     </div>

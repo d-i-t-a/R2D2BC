@@ -209,13 +209,15 @@ export const APPEARANCE_COLOR_PRESETS = {
 /**
  * Appearance → image filter behaviour (matches v1 ReadiumCSS auto-behaviour).
  *
- * v1 implicitly applies image effects in sepia / night via CSS rules; v2
- * does not. To keep v1 ↔ v2 visual parity we drive the filter flags from
- * the appearance preset.
+ * v1 implicitly applies `mix-blend-mode: multiply` to all images in Sepia
+ * so they blend with the warm background. v2 does not — we drive the
+ * `blendImages` flag from the preset to match.
  *
- * - day: no filters
- * - sepia: blend images with the sepia background (mix-blend-mode: multiply)
- * - night: invert images so they read properly against a dark background
+ * v1 does NOT invert images in Night by default — only gaiji and titlepage
+ * images get auto-inverted (handled by v1 CSS rules directly, not via our
+ * flags). Regular images in Night keep their original colours in v1.
+ * Integrators who want night-mode image inversion (old convention with
+ * `readium-darken-on` / `readium-invert-on`) must set it explicitly.
  *
  * Integrators can override per-setting after appearance is applied.
  */
@@ -232,7 +234,7 @@ export const APPEARANCE_IMAGE_FILTERS = {
   },
   "readium-night-on": {
     blendImages: false,
-    invertImages: true,
+    invertImages: false,
     darkenImages: false,
   },
 } as const;

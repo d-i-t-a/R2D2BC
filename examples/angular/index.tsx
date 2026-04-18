@@ -801,8 +801,8 @@ function App() {
               <p style={{ fontSize: 14, margin: 0 }}>Loading reader...</p>
             </div>
           )}
-          <div id="reader-loading" className="loading" />
-          <div id="reader-error" className="error" />
+          <div id="reader-loading" className="dita-loading" />
+          <div id="reader-error" className="dita-error" />
         </main>
       </div>
     </div>

@@ -169,10 +169,13 @@
         // Language-based tags
         const language = manifest.metadata?.language;
         const lang = Array.isArray(language) ? language[0] : language;
-        if (lang === 'ja' || lang === 'zh') {
+        const langCode = (lang ?? '').toLowerCase().split('-')[0];
+        const langTag = { ja: 'Japanese', zh: 'Chinese', ko: 'Korean' }[langCode];
+        if (langTag) {
           if (!pub.tags.includes('CJK')) pub.tags.push('CJK');
+          if (!pub.tags.includes(langTag)) pub.tags.push(langTag);
         }
-        if (lang === 'ar' || lang === 'he' || lang === 'fa') {
+        if (langCode === 'ar' || langCode === 'he' || langCode === 'fa') {
           if (!pub.tags.includes('RTL')) pub.tags.push('RTL');
         }
 

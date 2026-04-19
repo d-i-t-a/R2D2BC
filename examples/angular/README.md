@@ -18,17 +18,18 @@ npm install @d-i-t-a/reader
 2. Copy ReadiumCSS files into your project's assets directory:
 
 ```
-src/assets/readium-css/
+src/assets/readium-css-v2/
   ReadiumCSS-before.css
   ReadiumCSS-after.css
   ReadiumCSS-default.css
+  ReadiumCSS-dita-patch.css
 ```
 
-You can find these CSS files in the `viewer/readium-css/` directory of the R2D2BC repository, or download them from the [Readium CSS releases](https://github.com/readium/readium-css/releases).
+You can find these CSS files in the `viewer/readium-css-v2/` directory of the R2D2BC repository, or download them from the [Readium CSS releases](https://github.com/readium/readium-css-v2/releases).
 
 3. Copy `reader.component.ts` into your Angular project (e.g., `src/app/reader/reader.component.ts`).
 
-4. Update the injectable paths in `reader.component.ts` if your asset directory differs from `/assets/readium-css/`.
+4. Update the injectable paths in `reader.component.ts` if your asset directory differs from `/assets/readium-css-v2/`.
 
 5. Update the manifest URL to point to your EPUB publication's `manifest.json`.
 

@@ -101,10 +101,32 @@
         let d2reader, isScroll = false;
 
         let origin = window.location.origin;
+
+        // Detect CJK (Chinese, Japanese, Korean) publications from metadata.languages
+        // so we can load the CJK-horizontal stylesheet variant instead of the base.
+        const CJK_LANG_RE = /^(ja|zh|ko)(\b|-)/i;
+        const isCJK = (pub) => {
+            const langs = pub?.metadata?.languages;
+            return Array.isArray(langs) && langs.some((l) => CJK_LANG_RE.test(l ?? ""));
+        };
+
         let injectables = [
-            { type: 'style', url: origin + '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: origin + '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: origin + '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            // Base ReadiumCSS v2 — load for non-CJK publications
+            { type: 'style', url: origin + '/viewer/readium-css-v2/ReadiumCSS-before.css', r2before: true,
+              when: (ctx) => !isCJK(ctx.publication) },
+            { type: 'style', url: origin + '/viewer/readium-css-v2/ReadiumCSS-default.css', r2default: true,
+              when: (ctx) => !isCJK(ctx.publication) },
+            { type: 'style', url: origin + '/viewer/readium-css-v2/ReadiumCSS-after.css', r2after: true,
+              when: (ctx) => !isCJK(ctx.publication) },
+            // CJK-horizontal ReadiumCSS — load only for CJK publications
+            { type: 'style', url: origin + '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-before.css', r2before: true,
+              when: (ctx) => isCJK(ctx.publication) },
+            { type: 'style', url: origin + '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-default.css', r2default: true,
+              when: (ctx) => isCJK(ctx.publication) },
+            { type: 'style', url: origin + '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-after.css', r2after: true,
+              when: (ctx) => isCJK(ctx.publication) },
+            // Dita patch layer — must come AFTER Readium files so its rules take precedence.
+            { type: 'style', url: origin + '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css' },
             { type: 'style', url: origin + '/viewer/injectables/style/style.css' },
         ];
 

@@ -11,16 +11,62 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import D2Reader from "../../src";
-import readiumBefore from "url:../react/readium-css/ReadiumCSS-before.css";
-import readiumAfter from "url:../react/readium-css/ReadiumCSS-after.css";
-import readiumDefault from "url:../react/readium-css/ReadiumCSS-default.css";
+import readiumBefore from "url:../../viewer/readium-css-v2/ReadiumCSS-before.css";
+import readiumAfter from "url:../../viewer/readium-css-v2/ReadiumCSS-after.css";
+import readiumDefault from "url:../../viewer/readium-css-v2/ReadiumCSS-default.css";
+import readiumDitaPatch from "url:../../viewer/readium-css-v2/ReadiumCSS-dita-patch.css";
+import cjkBefore from "url:../../viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-before.css";
+import cjkAfter from "url:../../viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-after.css";
+import cjkDefault from "url:../../viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-default.css";
+
+const CJK_LANG_RE = /^(ja|zh|ko)(\b|-)/i;
+const isCJK = (pub: any) => {
+  const langs = pub?.metadata?.languages;
+  return (
+    Array.isArray(langs) && langs.some((l: string) => CJK_LANG_RE.test(l ?? ""))
+  );
+};
 
 // ── ReadiumCSS injectables (same as reader.component.ts) ─────────────
 
 const injectables = [
-  { type: "style", url: readiumBefore, r2before: true },
-  { type: "style", url: readiumDefault, r2default: true },
-  { type: "style", url: readiumAfter, r2after: true },
+  {
+    type: "style",
+    url: readiumBefore,
+    r2before: true,
+    when: (ctx: any) => !isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: readiumDefault,
+    r2default: true,
+    when: (ctx: any) => !isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: readiumAfter,
+    r2after: true,
+    when: (ctx: any) => !isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: cjkBefore,
+    r2before: true,
+    when: (ctx: any) => isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: cjkDefault,
+    r2default: true,
+    when: (ctx: any) => isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: cjkAfter,
+    r2after: true,
+    when: (ctx: any) => isCJK(ctx.publication),
+  },
+  { type: "style", url: readiumDitaPatch },
 ];
 
 // ── Shared constants & inline styles ─────────────────────────────────

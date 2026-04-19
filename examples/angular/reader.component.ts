@@ -656,23 +656,57 @@ export class ReaderComponent implements OnInit, OnDestroy {
     try {
       const url = new URL("https://alice.dita.digital/manifest.json");
 
+      const CJK_LANG_RE = /^(ja|zh|ko)(\b|-)/i;
+      const isCJK = (pub: any) => {
+        const langs = pub?.metadata?.languages;
+        return (
+          Array.isArray(langs) &&
+          langs.some((l: string) => CJK_LANG_RE.test(l ?? ""))
+        );
+      };
+
       this.reader = await D2Reader.load({
         url,
         injectables: [
           {
             type: "style",
-            url: "/assets/readium-css/ReadiumCSS-before.css",
+            url: "/assets/readium-css-v2/ReadiumCSS-before.css",
             r2before: true,
+            when: (ctx: any) => !isCJK(ctx.publication),
           },
           {
             type: "style",
-            url: "/assets/readium-css/ReadiumCSS-default.css",
+            url: "/assets/readium-css-v2/ReadiumCSS-default.css",
             r2default: true,
+            when: (ctx: any) => !isCJK(ctx.publication),
           },
           {
             type: "style",
-            url: "/assets/readium-css/ReadiumCSS-after.css",
+            url: "/assets/readium-css-v2/ReadiumCSS-after.css",
             r2after: true,
+            when: (ctx: any) => !isCJK(ctx.publication),
+          },
+          {
+            type: "style",
+            url: "/assets/readium-css-v2/cjk-horizontal/ReadiumCSS-before.css",
+            r2before: true,
+            when: (ctx: any) => isCJK(ctx.publication),
+          },
+          {
+            type: "style",
+            url: "/assets/readium-css-v2/cjk-horizontal/ReadiumCSS-default.css",
+            r2default: true,
+            when: (ctx: any) => isCJK(ctx.publication),
+          },
+          {
+            type: "style",
+            url: "/assets/readium-css-v2/cjk-horizontal/ReadiumCSS-after.css",
+            r2after: true,
+            when: (ctx: any) => isCJK(ctx.publication),
+          },
+          {
+            type: "style",
+            url: "/assets/readium-css-v2/ReadiumCSS-dita-patch.css",
           },
         ],
         injectablesFixed: [],

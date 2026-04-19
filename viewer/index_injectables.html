@@ -1,0 +1,419 @@
+<!--
+ * Copyright 2018-2026 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>D2 Reader — Injectables Test</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <link rel="stylesheet" href="reader.css" />
+    <script src="reader.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f7f7f8; }
+
+        /* ── Top bar: navigation only, kept slim ────────────────────────── */
+        .topbar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 14px; background: #fff;
+            border-bottom: 1px solid #e4e4e7;
+            box-shadow: 0 1px 2px rgba(0,0,0,.04);
+        }
+        .topbar .badge {
+            font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+            background: #b32; color: #fff; padding: 3px 8px; border-radius: 10px;
+        }
+        .topbar .title { font-size: 13px; color: #333; font-weight: 600; margin-right: auto; }
+        .topbar .info {
+            font-size: 11px; color: #888; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; max-width: 40%;
+        }
+        .nav-group { display: flex; gap: 4px; }
+        .btn {
+            height: 28px; padding: 0 12px; font-size: 11px; font-weight: 500;
+            border: 1px solid #d4d4d8; border-radius: 6px; background: #fff; color: #444;
+            cursor: pointer; transition: background .1s, border-color .1s;
+        }
+        .btn:hover { background: #f3f4f6; }
+        .btn.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+        .btn.primary:hover { background: #1d4ed8; }
+        .btn.on { background: #eff6ff; border-color: #2563eb; color: #1d4ed8; }
+
+        /* ── Side panel (collapsible) for variant toggles ────────────────── */
+        .panel {
+            position: fixed; top: 46px; right: 0; bottom: 0;
+            width: 320px; background: #fff; border-left: 1px solid #e4e4e7;
+            overflow-y: auto; z-index: 900; padding: 14px;
+        }
+        .panel-title {
+            font-size: 11px; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; color: #71717a; margin-bottom: 10px;
+        }
+        .variant {
+            border: 1px solid #e4e4e7; border-radius: 8px; padding: 10px 12px;
+            margin-bottom: 10px; background: #fff; cursor: pointer;
+            transition: border-color .1s, background .1s;
+        }
+        .variant:hover { background: #fafafa; }
+        .variant.on { border-color: #2563eb; background: #eff6ff; }
+        .variant-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .variant-num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 4px;
+            background: #f4f4f5; color: #52525b;
+            font-size: 10px; font-weight: 700;
+        }
+        .variant.on .variant-num { background: #2563eb; color: #fff; }
+        .variant-title { font-size: 12px; font-weight: 600; color: #18181b; }
+        .variant-desc { font-size: 11px; color: #52525b; line-height: 1.4; }
+        .variant code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 10px; background: #f4f4f5; padding: 1px 4px; border-radius: 3px;
+        }
+        .apply-row {
+            position: sticky; bottom: -14px; background: #fff;
+            padding: 10px 0 0; border-top: 1px solid #e4e4e7; margin-top: 6px;
+        }
+
+        /* ── Reader area ─────────────────────────────────────────────────── */
+        #D2Reader-Container {
+            margin-top: 46px;
+            margin-right: 320px;
+        }
+        #iframe-wrapper { height: calc(100vh - 46px); }
+
+        /* ── Event log ───────────────────────────────────────────────────── */
+        .log {
+            position: fixed; left: 12px; bottom: 12px; width: 380px; max-height: 200px;
+            overflow-y: auto; background: rgba(15,23,42,.92); color: #a7f3d0;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px;
+            padding: 10px 12px; z-index: 1100; border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.15);
+        }
+        .log-title {
+            color: #cbd5e1; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <span class="badge">Injectables</span>
+        <span class="title">Reader Demo</span>
+
+        <div class="nav-group">
+            <button class="btn" onclick="d2reader.previousResource()">◀◀</button>
+            <button class="btn" onclick="d2reader.previousPage()">◀</button>
+            <button class="btn" onclick="d2reader.nextPage()">▶</button>
+            <button class="btn" onclick="d2reader.nextResource()">▶▶</button>
+        </div>
+
+        <button class="btn" id="btn-layout">Paginated</button>
+
+        <span class="info" id="page-info"></span>
+    </div>
+
+    <aside class="panel" id="panel">
+        <div class="panel-title">Injectable variants</div>
+
+        <div class="variant" data-variant="inline-style">
+            <div class="variant-head">
+                <span class="variant-num">1</span>
+                <span class="variant-title">Inline CSS</span>
+            </div>
+            <div class="variant-desc">
+                <code>style-inline</code> with a CSS string — no file hosted.
+                Adds a red border to every chapter body.
+            </div>
+        </div>
+
+        <div class="variant" data-variant="inline-script">
+            <div class="variant-head">
+                <span class="variant-num">2</span>
+                <span class="variant-title">Inline JS → postMessage</span>
+            </div>
+            <div class="variant-desc">
+                <code>script-inline</code> runs in the iframe and posts an event
+                to the parent window. Pattern Clusive uses to notify the host app.
+                See the log panel.
+            </div>
+        </div>
+
+        <div class="variant" data-variant="blob-style">
+            <div class="variant-head">
+                <span class="variant-num">3</span>
+                <span class="variant-title">Blob CSS (dynamic theme)</span>
+            </div>
+            <div class="variant-desc">
+                <code>style</code> with <code>blob</code> — CSS built at runtime
+                from a variable. No hosted file. Use for user-color-picker themes.
+            </div>
+        </div>
+
+        <div class="variant" data-variant="when-chapter">
+            <div class="variant-head">
+                <span class="variant-num">4</span>
+                <span class="variant-title">when — 3rd chapter only</span>
+            </div>
+            <div class="variant-desc">
+                Injects only when <code>publication.readingOrder[2]</code>'s href
+                matches. MathJax-on-math-chapter pattern.
+            </div>
+        </div>
+
+        <div class="variant" data-variant="attributes">
+            <div class="variant-head">
+                <span class="variant-num">5</span>
+                <span class="variant-title">attributes passthrough</span>
+            </div>
+            <div class="variant-desc">
+                Sets <code>data-*</code> + <code>crossorigin</code> on the injected
+                element. Also carries CSP <code>nonce</code> / SRI <code>integrity</code>.
+                Inspect the iframe head in DevTools.
+            </div>
+        </div>
+
+        <div class="variant" data-variant="when-doc-math">
+            <div class="variant-head">
+                <span class="variant-num">6</span>
+                <span class="variant-title">when — detect math in doc</span>
+            </div>
+            <div class="variant-desc">
+                <code>when</code> receives parsed <code>doc</code>. Outlines
+                <code>&lt;math&gt;</code> elements in green only on chapters
+                that contain MathML. Same pattern as conditional MathJax
+                loading (only when needed).
+            </div>
+        </div>
+
+        <div class="variant" data-variant="when-doc-lang">
+            <div class="variant-head">
+                <span class="variant-num">7</span>
+                <span class="variant-title">when — chapter language</span>
+            </div>
+            <div class="variant-desc">
+                Reads <code>doc.documentElement.lang</code>. Adds a small banner
+                on chapters tagged with a language (en, ja, etc.). Real use: inject
+                per-language fonts or RTL rules.
+            </div>
+        </div>
+
+        <div class="apply-row">
+            <button class="btn primary" id="btn-reload" style="width: 100%">Apply &amp; reload</button>
+        </div>
+    </aside>
+
+    <div id="D2Reader-Container">
+        <main tabindex="-1" id="iframe-wrapper">
+            <div id="reader-loading" class="loading"></div>
+            <div id="reader-error" class="error"></div>
+        </main>
+    </div>
+
+    <div class="log" id="log">
+        <div class="log-title">Event log</div>
+        <div id="log-body" style="color: #94a3b8">Pick variants on the right, then <b>Apply &amp; reload</b>. Navigate chapters to watch events.</div>
+    </div>
+
+    <script>
+        const urlParams = Object.fromEntries(new URL(location.href).searchParams);
+        let d2reader;
+
+        const DEFAULT_VARIANTS = [
+            "inline-style",
+            "inline-script",
+            "blob-style",
+            "when-chapter",
+            "attributes",
+            "when-doc-math",
+            "when-doc-lang",
+        ];
+        const activeVariants = new Set(
+            urlParams.variants === undefined
+                ? DEFAULT_VARIANTS
+                : urlParams.variants.split(",").filter(Boolean)
+        );
+        let isScroll;
+
+        // Variables the demo feeds to its injectables (e.g. a color picker).
+        const dynamicThemeColor = "#fff4e6";
+
+        // Variant toggles
+        document.querySelectorAll('.variant').forEach(el => {
+            const name = el.dataset.variant;
+            if (activeVariants.has(name)) el.classList.add('on');
+            el.addEventListener('click', () => {
+                if (activeVariants.has(name)) activeVariants.delete(name);
+                else activeVariants.add(name);
+                el.classList.toggle('on');
+            });
+        });
+
+        document.getElementById('btn-reload').addEventListener('click', () => {
+            const u = new URL(location.href);
+            u.searchParams.set('variants', [...activeVariants].join(','));
+            location.href = u.toString();
+        });
+
+        function logLine(msg) {
+            const el = document.getElementById('log-body');
+            const time = new Date().toLocaleTimeString();
+            el.innerHTML = '<div>[' + time + '] ' + msg + '</div>' + el.innerHTML;
+        }
+
+        // ---- Build the injectables array from active variants ----
+        const readiumCss = [
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            { type: 'style', url: '/viewer/injectables/style/style.css' },
+        ];
+        const injectables = [...readiumCss];
+
+        // 1. style-inline — project CSS override without hosting a file.
+        if (activeVariants.has('inline-style')) {
+            injectables.push({
+                type: 'style-inline',
+                source: 'body { border: 3px solid red !important; padding: 1em !important; }',
+            });
+        }
+
+        // 2. script-inline — parent-window communication (Clusive pattern).
+        if (activeVariants.has('inline-script')) {
+            injectables.push({
+                type: 'script-inline',
+                source:
+                    "document.addEventListener('DOMContentLoaded', function() {" +
+                    "  window.parent.postMessage({ source: 'injectable-demo', event: 'chapter-opened', href: location.href }, '*');" +
+                    "});",
+            });
+        }
+
+        // 3. blob — dynamic CSS from a runtime value. Real use: user themes.
+        if (activeVariants.has('blob-style')) {
+            const css = 'body { background: ' + dynamicThemeColor + ' !important; }';
+            injectables.push({
+                type: 'style',
+                blob: new Blob([css], { type: 'text/css' }),
+            });
+        }
+
+        // 4. when — inject only on the 3rd spine item. Works on any book.
+        if (activeVariants.has('when-chapter')) {
+            injectables.push({
+                when: function (ctx) {
+                    const target = ctx.publication.readingOrder[2];
+                    return target ? ctx.resourceHref.endsWith(target.href) : false;
+                },
+                type: 'style-inline',
+                source: 'body { background: pink !important; }',
+            });
+        }
+
+        // 5. attributes — nonce, integrity, crossorigin, data-* passthrough.
+        if (activeVariants.has('attributes')) {
+            injectables.push({
+                type: 'style',
+                url: '/viewer/injectables/style/style.css',
+                attributes: {
+                    'data-injected-by': 'injectables-demo',
+                    'data-purpose': 'attributes-demo',
+                    crossorigin: 'anonymous',
+                },
+            });
+        }
+
+        // 6. when with doc access — outline <math> elements in green, only
+        // on chapters that have them. Proves `when` receives the parsed doc
+        // and can check content. Same pattern used for conditional MathJax
+        // loading (inject the script only on chapters with math).
+        if (activeVariants.has('when-doc-math')) {
+            injectables.push({
+                when: function (ctx) {
+                    return !!ctx.doc.querySelector(
+                        "math, [type='math/tex'], [type='math/mml'], mjx-container"
+                    );
+                },
+                type: 'style-inline',
+                source: 'math, mjx-container { outline: 2px dashed #16a34a; outline-offset: 4px; }',
+            });
+        }
+
+        // 7. when with doc access — inject a per-language banner.
+        if (activeVariants.has('when-doc-lang')) {
+            injectables.push({
+                when: function (ctx) {
+                    return !!ctx.doc.documentElement.getAttribute("lang");
+                },
+                type: 'script-inline',
+                source:
+                    "document.addEventListener('DOMContentLoaded', function() {" +
+                    "  window.parent.postMessage({ source: 'injectable-demo', event: 'lang-detected', href: location.href, lang: document.documentElement.lang }, '*');" +
+                    "});",
+            });
+        }
+
+        window.addEventListener('message', function (e) {
+            const d = e.data;
+            if (!d || d.source !== 'injectable-demo') return;
+            const label = (d.event || '').toUpperCase();
+            const href = (d.href || '').split('/').pop();
+            let extra = d.lang ? ' lang=' + d.lang : '';
+            logLine('<span style="color:#fde68a">' + label + '</span> ' + href + extra);
+        });
+
+        D2Reader.load({
+            url: new URL(urlParams['url']),
+            injectables: injectables,
+            injectablesFixed: [],
+            api: {
+                updateCurrentLocation: async function (loc) {
+                    const title = loc.title || '';
+                    const pos = loc.locations || {};
+                    const page = pos.position != null ? pos.position : '';
+                    const total = pos.totalRemainingPositions != null ? (pos.position + pos.totalRemainingPositions) : '';
+                    const text = title + (page !== '' && total !== '' ? ' — ' + page + ' of ' + total : '');
+                    document.getElementById('page-info').textContent = text;
+                    return loc;
+                },
+                resourceAtStart: function () {
+                    logLine('<span style="color:#60a5fa">resourceAtStart</span>');
+                },
+                resourceAtEnd: function () {
+                    logLine('<span style="color:#fb923c">resourceAtEnd</span>');
+                }
+            }
+        }).then(function (instance) {
+            d2reader = instance;
+            isScroll = !!d2reader.currentSettings?.verticalScroll;
+            const btn = document.getElementById('btn-layout');
+            btn.textContent = isScroll ? 'Scroll' : 'Paginated';
+            btn.classList.toggle('on', isScroll);
+        });
+
+        document.getElementById('btn-layout').addEventListener('click', async function () {
+            if (!d2reader) return;
+            isScroll = !isScroll;
+            await d2reader.applyUserSettings({ verticalScroll: isScroll });
+            const btn = document.getElementById('btn-layout');
+            btn.textContent = isScroll ? 'Scroll' : 'Paginated';
+            btn.classList.toggle('on', isScroll);
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (!d2reader) return;
+            if (e.key === 'ArrowLeft') d2reader.previousPage();
+            else if (e.key === 'ArrowRight') d2reader.nextPage();
+        });
+    </script>
+</body>
+</html>

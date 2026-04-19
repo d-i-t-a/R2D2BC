@@ -18,12 +18,29 @@ Modules implement reader features: bookmarks, annotations, search, TTS, media ov
 
 ### Injectables — iframe CSS/JS injection
 
-Injectables are self-contained CSS and JS files injected into every chapter iframe via `<link>` and `<script>` elements. They bypass the Fetcher — the browser loads them directly from their URLs. Use injectables for ReadiumCSS, custom fonts, custom styles, and self-contained scripts (MathJax, KaTeX, analytics) that operate on the iframe DOM independently without needing the reader's API.
+Injectables are integrator-supplied CSS/JS added to each chapter iframe's `<head>`. Inserted into the parsed chapter HTML *before* `document.write()` runs, so the browser loads them in parallel with the body — no flash of unstyled content, no second round-trip after the iframe loads.
+
+`Injectable` is a discriminated union keyed on `type`:
+
+| `type` | Purpose |
+|--------|---------|
+| `"style"` | External CSS via `url` or `blob`. Supports `r2before` / `r2default` / `r2after` cascade + `fontFamily` / `appearance` / `systemFont` registration. |
+| `"script"` | External JS via `url` or `blob`. Optional `async` / `module`. |
+| `"style-inline"` | Inline CSS via `source` string — no HTTP round-trip. Same r2* cascade as `style`. |
+| `"script-inline"` | Inline JS via `source` string — no HTTP round-trip. Optional `async` / `module`. |
+
+All variants share optional `when({ publication, resourceHref, doc }) => boolean` predicate (per-resource, per-publication, or content-gated via the parsed XHTML `doc`) and `attributes` passthrough for CSP `nonce`, SRI `integrity`, `crossorigin`, `media`, `data-*`, etc.
+
+DOM behaviour (click listeners, popup UI, glossary, analytics) is handled by injecting an external `type: "script"` whose source attaches its own handlers inside the iframe — the existing v2.5 pattern (see `injectables/click/click.ts`, `injectables/mui/script.js`) continues to work unchanged.
+
+`src/navigator/InjectableManager.ts` owns the pipeline:
+- `injectStaticIntoDoc(doc, iframe, injectables, href)` — synchronous, mutates the parsed HTML before write.
+- `cleanupForIframe(iframe)` — revokes any blob object URLs allocated during injection; called on chapter change and reader stop.
 
 **When to use which:**
 - Need to load/process EPUB content → **Fetcher**
 - Need the reader's API (publication, navigation, events) → **Module**
-- Self-contained CSS/JS that just needs to be present in the iframe → **Injectable**
+- Static CSS/JS to run in every chapter iframe → **Injectable**
 
 ## Architecture
 

@@ -70,6 +70,7 @@ import { EpubModuleHost } from "../modules/ModuleHost";
 import { TTSModuleConfig } from "../modules/epub/TTS/TTSSettings";
 import { HttpFetcher } from "../fetcher/HttpFetcher";
 import { Base64DecodingFetcher } from "../fetcher/Base64DecodingFetcher";
+import { InjectableManager } from "./InjectableManager";
 import { ContentFetcher } from "../fetcher/ContentFetcher";
 import { CacheFetcher } from "../fetcher/CacheFetcher";
 
@@ -87,10 +88,19 @@ import type {
   GetContentBytesLength,
   RequestConfig,
 } from "../fetcher/types";
-import type { NavigatorAPI, ReaderRights } from "./types";
+import type { NavigatorAPI, ReaderRights, Injectable } from "./types";
 // Re-exported for backwards compatibility.
 export type { GetContent, GetContentBytesLength, RequestConfig };
-export type { NavigatorAPI, ReaderRights } from "./types";
+export type {
+  NavigatorAPI,
+  ReaderRights,
+  Injectable,
+  InjectableContext,
+  StyleInjectable,
+  ScriptInjectable,
+  InlineStyleInjectable,
+  InlineScriptInjectable,
+} from "./types";
 
 export interface IFrameAttributes {
   margin: number;
@@ -145,69 +155,6 @@ export interface SampleRead {
   popup?: string;
   minimum?: number;
 }
-/**
- * Self-contained CSS or JS injected into every chapter iframe.
- *
- * Injectables are the integrator's additions — NOT content from the EPUB.
- * They're loaded via `<link>` / `<script>` elements in the iframe head,
- * independently of the Fetcher pipeline and the module system.
- *
- * Use injectables for:
- * - **ReadiumCSS** — reading system stylesheets (r2before, r2default, r2after)
- * - **Custom fonts** — `@font-face` stylesheets or system font declarations
- * - **Custom styles** — integrator branding, popup/popover CSS, icon fonts
- * - **Scripts** — self-contained libraries (MathJax, KaTeX, analytics)
- *
- * Use modules instead when you need the reader's API (fetcher, publication,
- * navigation state, events, settings).
- *
- * Categories:
- *
- * ReadiumCSS (order matters):
- *   `{ type: "style", url: "...ReadiumCSS-before.css", r2before: true }`
- *   `{ type: "style", url: "...ReadiumCSS-default.css", r2default: true }`
- *   `{ type: "style", url: "...ReadiumCSS-after.css", r2after: true }`
- *
- * Custom font (file):
- *   `{ type: "style", url: ".../opendyslexic.css", fontFamily: "opendyslexic" }`
- *
- * Custom font (system):
- *   `{ type: "style", fontFamily: "Courier", systemFont: true }`
- *
- * Custom style:
- *   `{ type: "style", url: ".../style.css" }`
- *
- * Script:
- *   `{ type: "script", url: "https://cdn.../MathJax.js" }`
- *   `{ type: "script", url: ".../analytics.js", async: true }`
- */
-export interface Injectable {
-  /**
-   * `"style"` for CSS, `"script"` for JS.
-   *
-   * Literal union with a `string` fallback so autocomplete shows the two
-   * valid values while integrator array literals typed as `string` still
-   * assign without `as const`.
-   */
-  type: "style" | "script" | (string & {});
-  /** URL to the CSS or JS file. Required unless `systemFont` is true. */
-  url?: string;
-  /** ReadiumCSS: inject before all other styles (first in head). */
-  r2before?: boolean;
-  /** ReadiumCSS: inject as the default stylesheet (second in head). */
-  r2default?: boolean;
-  /** ReadiumCSS: inject after all other styles (last in head). */
-  r2after?: boolean;
-  /** Font family name — registers this font in the reader's font selector. */
-  fontFamily?: string;
-  /** System font — no URL needed, the font is available on the user's OS. */
-  systemFont?: boolean;
-  /** Appearance name — registers a custom appearance with the r2after stylesheet. */
-  appearance?: string;
-  /** Load script asynchronously (only applies to `type: "script"`). */
-  async?: boolean;
-}
-
 export interface ReaderUI {
   settings: UserSettingsUIConfig;
 }
@@ -524,6 +471,8 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   sample?: SampleRead;
   requestConfig?: RequestConfig;
   private didInitKeyboardEventHandler: boolean = false;
+  /** Owns the lifecycle of `Injectable` items across iframe loads. */
+  private injectableManager!: InjectableManager;
 
   public static async create(
     config: EpubNavigatorConfig
@@ -650,6 +599,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     this.sample = sample;
     this.requestConfig = requestConfig;
     this.sampleReadEventHandler = new SampleReadEventHandler(this);
+    this.injectableManager = new InjectableManager(publication, settings);
   }
 
   stop() {
@@ -706,7 +656,10 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     );
 
     removeEventListenerOptional(window, "resize", this.onResize);
+    // Revoke any blob-content object URLs allocated for each iframe before
+    // removal so they don't leak when the reader is stopped.
     this.iframes.forEach((iframe) => {
+      this.injectableManager.cleanupForIframe(iframe);
       removeEventListenerOptional(iframe, "resize", this.onResize);
       iframe.remove();
     });
@@ -1742,7 +1695,9 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         this.emit(ReaderEvent.ChapterInfo, undefined);
       }
 
-      await this.injectInjectablesIntoIframeHead(iframe);
+      // Static injectables (style / script / inline) were written into the
+      // document inside prepareDoc — they're loaded by the browser during
+      // iframe parse. Nothing to do on load beyond what the browser did.
 
       if (this.view?.layout !== "fixed" && this.highlighter !== undefined) {
         await this.highlighter.initialize(iframe);
@@ -1890,93 +1845,6 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     }
   }
 
-  private async injectInjectablesIntoIframeHead(
-    iframe: HTMLIFrameElement
-  ): Promise<void> {
-    // Inject Readium CSS into Iframe Head
-    const injectablesToLoad: Promise<boolean>[] = [];
-
-    const addLoadingInjectable = (
-      injectable: HTMLLinkElement | HTMLScriptElement
-    ) => {
-      const loadPromise = new Promise<boolean>((resolve, reject) => {
-        injectable.onload = () => {
-          resolve(true);
-        };
-        injectable.onerror = (e) => {
-          const message =
-            typeof e === "string"
-              ? e
-              : `Injectable failed to load at: ${
-                  "href" in injectable ? injectable.href : injectable.src
-                }`;
-          reject(new Error(message));
-        };
-      });
-      injectablesToLoad.push(loadPromise);
-    };
-
-    const head = iframe.contentDocument?.head;
-    if (head) {
-      const bases = iframe.contentDocument.getElementsByTagName("base");
-      if (bases.length === 0) {
-        head.insertBefore(
-          EpubNavigator.createBase(this.currentChapterLink.href),
-          head.firstChild
-        );
-      }
-
-      this.injectables?.forEach((injectable) => {
-        if (injectable.type === "style") {
-          if (injectable.fontFamily) {
-            // UserSettings.fontFamilyValues.push(injectable.fontFamily)
-            // this.settings.setupEvents()
-            // this.settings.addFont(injectable.fontFamily);
-            this.settings.initAddedFont();
-            if (!injectable.systemFont && injectable.url) {
-              const link = EpubNavigator.createCssLink(injectable.url);
-              head.appendChild(link);
-              addLoadingInjectable(link);
-            }
-          } else if (injectable.r2before && injectable.url) {
-            const link = EpubNavigator.createCssLink(injectable.url);
-            head.insertBefore(link, head.firstChild);
-            addLoadingInjectable(link);
-          } else if (injectable.r2default && injectable.url) {
-            const link = EpubNavigator.createCssLink(injectable.url);
-            head.insertBefore(link, head.childNodes[1]);
-            addLoadingInjectable(link);
-          } else if (injectable.r2after && injectable.url) {
-            if (injectable.appearance) {
-              // this.settings.addAppearance(injectable.appearance);
-              this.settings.initAddedAppearance();
-            }
-            const link = EpubNavigator.createCssLink(injectable.url);
-            head.appendChild(link);
-            addLoadingInjectable(link);
-          } else if (injectable.url) {
-            const link = EpubNavigator.createCssLink(injectable.url);
-            head.appendChild(link);
-            addLoadingInjectable(link);
-          }
-        } else if (injectable.type === "script" && injectable.url) {
-          const script = EpubNavigator.createJavascriptLink(
-            injectable.url,
-            injectable.async ?? false
-          );
-          head.appendChild(script);
-          addLoadingInjectable(script);
-        }
-      });
-    }
-
-    if (injectablesToLoad.length === 0) {
-      return;
-    }
-
-    await Promise.all(injectablesToLoad);
-  }
-
   /**
    * Displays standard error UI.
    */
@@ -2036,7 +1904,11 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       return resource.text;
     };
 
-    function prepareDoc(content: string, href: string): string {
+    function prepareDoc(
+      content: string,
+      href: string,
+      iframe: HTMLIFrameElement
+    ): string {
       const parser = new DOMParser();
       const doc = parser.parseFromString(content, "application/xhtml+xml");
       if (doc.head) {
@@ -2048,6 +1920,17 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
           );
         }
       }
+      // Inject static injectables (style / script / style-inline /
+      // script-inline) into the parsed doc's head/body before the iframe
+      // writes it. The browser then loads them in parallel with the body
+      // — no flash of unstyled content, and the iframe's own `load` event
+      // covers readiness without a second round-trip.
+      self.injectableManager.injectStaticIntoDoc(
+        doc,
+        iframe,
+        self.injectables,
+        href
+      );
       // For ZIP-based EPUBs, rewrite resource URLs (images, CSS, fonts)
       // to blob URLs so document.write() can load them.
       if (self._blobUrlManager) {
@@ -2060,7 +1943,8 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     }
 
     function writeIframeDoc(content: string, href: string) {
-      const newHTML = prepareDoc(content, href);
+      self.injectableManager.cleanupForIframe(self.iframes[0]);
+      const newHTML = prepareDoc(content, href, self.iframes[0]);
       const iframeDoc = self.iframes[0].contentDocument;
       if (iframeDoc) {
         iframeDoc.open();
@@ -2070,7 +1954,8 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     }
 
     function writeIframe2Doc(content: string, href: string) {
-      const newHTML = prepareDoc(content, href);
+      self.injectableManager.cleanupForIframe(self.iframes[1]);
+      const newHTML = prepareDoc(content, href, self.iframes[1]);
       const iframeDoc = self.iframes[1].contentDocument;
       if (iframeDoc) {
         iframeDoc.open();
@@ -2120,6 +2005,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
                 loadIntoIframe(href, 1);
               }
             } else {
+              this.injectableManager.cleanupForIframe(this.iframes[1]);
               this.iframes[1].src = "about:blank";
               this.currentSpreadLinks.right = undefined;
             }
@@ -2136,6 +2022,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
               loadIntoIframe(href, 0);
             }
           } else {
+            this.injectableManager.cleanupForIframe(this.iframes[0]);
             this.iframes[0].src = "about:blank";
             this.currentSpreadLinks.left = undefined;
           }
@@ -3459,37 +3346,15 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     }
   }
 
+  /**
+   * Create a `<base>` element for the iframe's document. Used by `prepareDoc`
+   * to anchor relative URLs in chapter content to the resource's href.
+   */
   private static createBase(href: string): HTMLBaseElement {
     const base = document.createElement("base");
     base.target = "_self";
     base.href = href;
     return base;
-  }
-
-  private static createCssLink(href: string): HTMLLinkElement {
-    const cssLink = document.createElement("link");
-    cssLink.rel = "stylesheet";
-    cssLink.type = "text/css";
-    cssLink.href = href;
-    return cssLink;
-  }
-  private static createJavascriptLink(
-    href: string,
-    isAsync: boolean
-  ): HTMLScriptElement {
-    const jsLink = document.createElement("script");
-    jsLink.type = "text/javascript";
-    jsLink.src = href;
-
-    // Enforce synchronous behaviour of injected scripts
-    // unless specifically marked async, as though they
-    // were inserted using <script> tags
-    //
-    // See comment on differing default behaviour of
-    // dynamically inserted script loading at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script#Attributes
-    jsLink.async = isAsync;
-
-    return jsLink;
   }
 
   activateMarker(id, position) {

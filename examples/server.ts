@@ -180,6 +180,10 @@ async function start() {
             title: "Sample Read",
             url: `/viewer/index_sampleread.html?url=${manifestUrl}`,
           },
+          {
+            title: "Injectables",
+            url: `/viewer/index_injectables.html?url=${manifestUrl}`,
+          },
         ],
       });
     });

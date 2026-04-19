@@ -410,8 +410,8 @@ div{
 img, svg, video{
   object-fit:contain;
 
-  /*width:auto;*/
-  /*height:auto;*/
+  width:auto;
+  height:auto;
   max-width:var(--RS__maxMediaWidth);
   max-height:var(--RS__maxMediaHeight) !important;
   box-sizing:var(--RS__boxSizingMedia);

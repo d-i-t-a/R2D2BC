@@ -127,6 +127,7 @@ A Minimal Implementation example:
                 { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
                 { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
                 { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+                { type: 'style', url: '/viewer/readium-css/ReadiumCSS-dita-patch.css' },
             ]
     
             let d2reader = undefined;

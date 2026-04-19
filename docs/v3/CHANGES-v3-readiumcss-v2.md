@@ -1,6 +1,6 @@
 # CHANGES — v3 Workstream 3.5: ReadiumCSS v2.0 + CSS Overhaul
 
-Published as: *pending (will ship as `3.0.0-alpha.16`)*
+Published as: *pending (will ship as `3.0.0-alpha.17`)*
 Branch: `feature/v3-readiumcss-v2` (based on `feature/v3-fetcher`)
 Closes: [#641](https://github.com/d-i-t-a/R2D2BC/issues/641)
 
@@ -12,8 +12,8 @@ R2D2BC itself never bundles ReadiumCSS — the files in `viewer/readium-css-v2/`
 
 Three demo viewers now ship:
 - `viewer/index_dita.html` — ReadiumCSS v1.1.0 baseline (reader shell updated for `dita-` class prefix)
-- `viewer/index_dita_v2.html` — ReadiumCSS v2.0.0 served locally + our patch layer
-- `viewer/index_dita_v2_cdn.html` — ReadiumCSS v2.0.0 from unpkg CDN + our patch layer
+- `viewer/index_dita_v2.html` — ReadiumCSS v2.0.1 served locally + our patch layer
+- `viewer/index_dita_v2_cdn.html` — ReadiumCSS v2.0.1 from unpkg CDN + our patch layer
 
 ---
 
@@ -154,6 +154,32 @@ Distinctive classes (`.bookmarks-view`, `.range-slider`, `.grab-to-pan-*`, `.hig
 2. **Line-height compensation formula** — replaces stock `line-height: var(--USER__lineHeight)` with a calc that accounts for font metrics and `--RS__lineHeightCompensation` for CJK/Indic scripts.
 
 Works with ReadiumCSS v1.1.x and v2.0.x.
+
+### v1 bundle restructure — pristine upstream + separate patch layer
+
+`viewer/readium-css/` (the v1 bundle) previously carried two inline modifications baked into the upstream files — image no-stretch in `before.css` and the line-height compensation in `after.css`. That pattern required re-applying the patches on every upstream upgrade and was fragile.
+
+The v1 bundle now matches v2's architecture:
+- `ReadiumCSS-before.css`, `-default.css`, `-after.css` — pristine at upstream v.1.1.1 (commit `0728ade3893ba9c07ae6cd64798e5ded7b37d777`)
+- `ReadiumCSS-dita-patch.css` — thin override carrying the customizations (image no-stretch, line-height compensation, and v1-only scroll/single-column vertical page gutter rules that v2 upstream dropped natively)
+
+Integrators copying v1 files into their project must now **also copy and inject `ReadiumCSS-dita-patch.css`** — see the migration note under *Migration guide for integrators* below.
+
+### Provenance READMEs
+
+Both bundles now carry a `README.md` manifest — file-by-file upstream URL, upstream version, commit SHA, and copy date. Adds a consistent upgrade procedure so the next Readium release can be pulled in cleanly and drift can be spotted at a glance.
+
+### CJK-horizontal stylesheet bundling + conditional loading
+
+`viewer/readium-css-v2/cjk-horizontal/` — pristine CJK-horizontal variant stylesheets at upstream v2.0.1 (Chinese, Japanese, Korean horizontal-writing typography defaults: no word-spacing, CJK font stacks, different line-break rules). Not available via unpkg — fetched from the `readium/css` GitHub repo.
+
+Loading uses the `Injectable.when` predicate shipped in alpha.16 (workstream 3.4). No navigator code changes. When the publication's `metadata.languages` contains a CJK language (`ja`, `zh`, or `ko`, optionally region-tagged), the CJK-horizontal variant loads instead of the base. Worked examples live in `viewer/index_dita_v2.html`, `viewer/index_epub_file.html`, and the framework examples (`examples/react`, `examples/nextjs`, `examples/remix`, `examples/angular`, `examples/vue`).
+
+CJK-vertical and RTL are separate workstreams (not in this release).
+
+### Examples consolidation — single ReadiumCSS source of truth
+
+`examples/react/readium-css/` (previously a duplicate of `viewer/readium-css/` with its own inline patches) removed. All framework examples now import from `viewer/readium-css-v2/` via Parcel `url:` imports, eliminating two parallel bundles that had drifted apart.
 
 ---
 
@@ -315,7 +341,7 @@ Classes NOT renamed (no action needed):
 
 ### 2. ReadiumCSS upgrade (optional but recommended)
 
-If you want to move to ReadiumCSS v2.0.0, change your injectables URLs from v1 to v2. The reader will adapt automatically — no TypeScript changes required.
+If you want to move to ReadiumCSS v2.0.x (currently v2.0.1), change your injectables URLs from v1 to v2. The reader will adapt automatically — no TypeScript changes required.
 
 **Before (v1.1.x):**
 
@@ -331,9 +357,9 @@ injectables: [
 
 ```javascript
 injectables: [
-  { type: "style", url: "https://unpkg.com/@readium/css@2.0.0/css/dist/ReadiumCSS-before.css", r2before: true },
-  { type: "style", url: "https://unpkg.com/@readium/css@2.0.0/css/dist/ReadiumCSS-default.css", r2default: true },
-  { type: "style", url: "https://unpkg.com/@readium/css@2.0.0/css/dist/ReadiumCSS-after.css", r2after: true },
+  { type: "style", url: "https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-before.css", r2before: true },
+  { type: "style", url: "https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-default.css", r2default: true },
+  { type: "style", url: "https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-after.css", r2after: true },
   // Optional Dita patch layer — fixes image stretching and line-height issues.
   // Must come AFTER the three Readium files so its rules take precedence.
   { type: "style", url: "/path/to/ReadiumCSS-dita-patch.css" },
@@ -387,6 +413,50 @@ await reader.applyUserSettings({
 
 All existing v2.5 settings (`fontSize`, `fontFamily`, `appearance`, `verticalScroll`, `columnCount`, `pageMargins`, `lineHeight`, `wordSpacing`, `letterSpacing`, `textAlignment`, `direction`, `bodyHyphens`, `paraSpacing`, `paraIndent`, `typeScale`, `backgroundColor`, `textColor`) keep the same names and semantics.
 
+### 5. If you copied our v1 ReadiumCSS bundle into your project (behavior change)
+
+Integrators who copied files from `viewer/readium-css/` into their own `public/readium-css/` (or similar) will see a behavior change: the old v1 bundle carried the image-no-stretch and line-height-compensation patches **inline** in `ReadiumCSS-before.css` and `ReadiumCSS-after.css`. The restructured v1 bundle has pristine upstream files; the patches now live in a separate `ReadiumCSS-dita-patch.css` layer.
+
+To keep the same behavior after the upgrade:
+
+1. Re-copy the v1 bundle (or just the new file) into your project:
+   ```bash
+   cp -r viewer/readium-css public/readium-css
+   ```
+2. Add `ReadiumCSS-dita-patch.css` to your injectables **after** `ReadiumCSS-after.css`:
+   ```ts
+   { type: "style", url: "/readium-css/ReadiumCSS-before.css", r2before: true },
+   { type: "style", url: "/readium-css/ReadiumCSS-default.css", r2default: true },
+   { type: "style", url: "/readium-css/ReadiumCSS-after.css", r2after: true },
+   { type: "style", url: "/readium-css/ReadiumCSS-dita-patch.css" },
+   ```
+
+Without the patch, images may stretch to fill the column (not just cap at max-width) and line-height will use the stock `var()` formula instead of the compensated calc. Neither is visually catastrophic, but the behavior differs from v2.5 and prior alphas.
+
+### 6. CJK-horizontal integrators: conditional injectables
+
+If your publications include Chinese, Japanese, or Korean content, use the `when` predicate to load the CJK-horizontal variant stylesheets instead of the base. Pattern:
+
+```ts
+const CJK_LANG_RE = /^(ja|zh|ko)(\b|-)/i;
+const isCJK = (pub) => {
+  const langs = pub?.metadata?.languages;
+  return Array.isArray(langs) && langs.some((l) => CJK_LANG_RE.test(l ?? ""));
+};
+
+injectables: [
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-before.css", r2before: true,
+    when: (ctx) => !isCJK(ctx.publication) },
+  // ... (base default.css, after.css with same !isCJK guard)
+  { type: "style", url: "/readium-css-v2/cjk-horizontal/ReadiumCSS-before.css", r2before: true,
+    when: (ctx) => isCJK(ctx.publication) },
+  // ... (cjk-horizontal default.css, after.css with same isCJK guard)
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-dita-patch.css" },
+]
+```
+
+Bundle the CJK-horizontal files from `viewer/readium-css-v2/cjk-horizontal/` into your project the same way as the base files. **Not available on unpkg** — fetch from the `readium/css` GitHub repo if you don't want to bundle. See `viewer/readium-css-v2/README.md` for the full manifest and upgrade procedure.
+
 ---
 
 ## Testing guide
@@ -406,8 +476,8 @@ Open [http://localhost:4444/viewer/index.html](http://localhost:4444/viewer/inde
 | Demo | CSS injected | Purpose |
 |---|---|---|
 | DITA Reader (ReadiumCSS v1) | Local v1.1.0 files | Regression test: rendering should match v2.5 baseline; only class attribute renames (e.g. `.dita-active`) changed |
-| DITA Reader (ReadiumCSS v2 local) | Local v2.0.0 files + our dita-patch.css | Primary v2 test, matches v1 visually |
-| DITA Reader (ReadiumCSS v2 CDN) | unpkg @readium/css@2.0.0 + our dita-patch.css | Integrator pattern test — proves the patch layer works over pristine CDN files |
+| DITA Reader (ReadiumCSS v2 local) | Local v2.0.1 files + our dita-patch.css | Primary v2 test, matches v1 visually |
+| DITA Reader (ReadiumCSS v2 CDN) | unpkg @readium/css@2.0.1 + our dita-patch.css | Integrator pattern test — proves the patch layer works over pristine CDN files |
 
 ### Per-demo checklist
 
@@ -459,7 +529,7 @@ Pick a demo and open DevTools in the iframe's parent document. Confirm:
 
 Open the v2 CDN demo (`index_dita_v2_cdn.html`) with DevTools Network tab:
 
-- [ ] Three CSS files fetched from `unpkg.com/@readium/css@2.0.0/css/dist/` with 200 status
+- [ ] Three CSS files fetched from `unpkg.com/@readium/css@2.0.1/css/dist/` with 200 status
 - [ ] `ReadiumCSS-dita-patch.css` fetched from localhost (served by our example server) with 200 status
 - [ ] Images display at intrinsic size (the patch layer's image no-stretch rule works)
 - [ ] Line height looks correct (the patch layer's compensation formula works)

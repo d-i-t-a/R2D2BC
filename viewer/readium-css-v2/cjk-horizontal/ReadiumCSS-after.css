@@ -212,81 +212,12 @@ body{
     max-width:var(--USER__lineLength) !important;
   }
 
-:root[style*="--USER__textAlign"]{
-  text-align:var(--USER__textAlign);
-}
-
-:root[style*="--USER__textAlign"] body,
-:root[style*="--USER__textAlign"] p:not(
-  blockquote p,
-  figcaption p,
-  header p,
-  hgroup p,
-  :root[style*="readium-experimentalHeaderFiltering-on"] p[class*="title"],
-  :root[style*="readium-experimentalHeaderFiltering-on"] div:has(+ *) > h1 + p,
-  :root[style*="readium-experimentalHeaderFiltering-on"] div:has(+ *) > p:has(+ h1)
-),
-:root[style*="--USER__textAlign"] li,
-:root[style*="--USER__textAlign"] dd{
-  text-align:var(--USER__textAlign) !important;
-  -moz-text-align-last:auto !important;
-  -epub-text-align-last:auto !important;
-  text-align-last:auto !important;
-}
-
-:root[style*="--USER__bodyHyphens"]{
-  -webkit-hyphens:var(--USER__bodyHyphens) !important;
-  -moz-hyphens:var(--USER__bodyHyphens) !important;
-  -ms-hyphens:var(--USER__bodyHyphens) !important;
-  -epub-hyphens:var(--USER__bodyHyphens) !important;
-  hyphens:var(--USER__bodyHyphens) !important;
-}
-
-:root[style*="--USER__bodyHyphens"] body,
-:root[style*="--USER__bodyHyphens"] p,
-:root[style*="--USER__bodyHyphens"] li,
-:root[style*="--USER__bodyHyphens"] div,
-:root[style*="--USER__bodyHyphens"] dd{
-  -webkit-hyphens:inherit;
-  -moz-hyphens:inherit;
-  -ms-hyphens:inherit;
-  -epub-hyphens:inherit;
-  hyphens:inherit;
-}
-
 :root[style*="--USER__fontFamily"]{
   font-family:var(--USER__fontFamily) !important;
 }
 
 :root[style*="--USER__fontFamily"] *{
   font-family:revert !important;
-}
-
-:root[style*="readium-a11y-on"]{
-  font-style:normal !important;
-  font-weight:normal !important;
-}
-
-:root[style*="readium-a11y-on"] body *:not(code):not(var):not(kbd):not(samp){
-  font-family:inherit !important;
-  font-style:inherit !important;
-  font-weight:inherit !important;
-}
-
-:root[style*="readium-a11y-on"] body *:not(a){
-  text-decoration:none !important;
-}
-
-:root[style*="readium-a11y-on"] body *{
-  font-variant-caps:normal !important;
-  font-variant-numeric:normal !important;
-  font-variant-position:normal !important;
-}
-
-:root[style*="readium-a11y-on"] sup,
-:root[style*="readium-a11y-on"] sub{
-  font-size:1rem !important;
-  vertical-align:baseline !important;
 }
 
 :root:not([style*="readium-deprecatedFontSize-on"]):not([style*="readium-iOSPatch-on"])[style*="--USER__fontSize"] body{
@@ -350,34 +281,21 @@ body{
   margin-bottom:var(--USER__paraSpacing) !important;
 }
 
-:root[style*="--USER__paraIndent"] p:not(
-  blockquote p,
-  figcaption p,
-  header p,
-  hgroup p,
-  :root[style*="readium-experimentalHeaderFiltering-on"] p[class*="title"],
-  :root[style*="readium-experimentalHeaderFiltering-on"] div:has(+ *) > h1 + p,
-  :root[style*="readium-experimentalHeaderFiltering-on"] div:has(+ *) > p:has(+ h1)
-){
-  text-indent:var(--USER__paraIndent) !important;
+:root[style*="--USER__fontWeight"] body{
+  font-weight:var(--USER__fontWeight) !important;
 }
 
-:root[style*="--USER__paraIndent"] p *{
-  text-indent:0 !important;
+:root[style*="--USER__fontWeight"] b,
+:root[style*="--USER__fontWeight"] strong{
+  font-weight:bolder;
 }
 
-:root[style*="--USER__wordSpacing"] h1,
-:root[style*="--USER__wordSpacing"] h2,
-:root[style*="--USER__wordSpacing"] h3,
-:root[style*="--USER__wordSpacing"] h4,
-:root[style*="--USER__wordSpacing"] h5,
-:root[style*="--USER__wordSpacing"] h6,
-:root[style*="--USER__wordSpacing"] p,
-:root[style*="--USER__wordSpacing"] li,
-:root[style*="--USER__wordSpacing"] div,
-:root[style*="--USER__wordSpacing"] dt,
-:root[style*="--USER__wordSpacing"] dd{
-  word-spacing:var(--USER__wordSpacing);
+:root[style*="--USER__fontWidth"] body{
+  font-stretch:var(--USER__fontWidth) !important;
+}
+
+:root[style*="--USER__fontOpticalSizing"] body{
+  font-optical-sizing:var(--USER__fontOpticalSizing) !important;
 }
 
 :root[style*="--USER__letterSpacing"] h1,
@@ -395,29 +313,9 @@ body{
   font-variant:none;
 }
 
-:root[style*="--USER__ligatures"]{
-  font-variant-ligatures:var(--USER__ligatures) !important;
-}
-
-:root[style*="--USER__ligatures"] *{
-  font-variant-ligatures:inherit !important;
-}
-
-:root[style*="--USER__fontWeight"] body{
-  font-weight:var(--USER__fontWeight) !important;
-}
-
-:root[style*="--USER__fontWeight"] b,
-:root[style*="--USER__fontWeight"] strong{
-  font-weight:bolder;
-}
-
-:root[style*="--USER__fontWidth"] body{
-  font-stretch:var(--USER__fontWidth) !important;
-}
-
-:root[style*="--USER__fontOpticalSizing"] body{
-  font-optical-sizing:var(--USER__fontOpticalSizing) !important;
+:root[style*="readium-noRuby-on"] body rt,
+:root[style*="readium-noRuby-on"] body rp{
+  display:none;
 }
 
 :root[style*="readium-blend-on"] svg,

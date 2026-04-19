@@ -801,10 +801,15 @@
         };
         let urlParams = getURLQueryParams();
         let defined_origin = window.location.origin;
+        // Note: unpkg ships only the 4 base ReadiumCSS files. Language variants
+        // (CJK-horizontal, CJK-vertical, RTL) are not available via the npm package
+        // and require fetching from the readium/css GitHub repo or bundling locally.
+        // CJK publications are therefore not supported in this pure-CDN demo.
+        // See viewer/index_dita_v2.html for a local-bundle demo with CJK-horizontal wiring.
         let injectables = [
-            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.0/css/dist/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.0/css/dist/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.0/css/dist/ReadiumCSS-after.css', r2after: true },
+            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-before.css', r2before: true },
+            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-default.css', r2default: true },
+            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-after.css', r2after: true },
             // Dita patch layer — injected AFTER pristine Readium CDN files.
             // Demonstrates the integrator pattern: use stock Readium + our override layer.
             { type: 'style', url: defined_origin + '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css' },

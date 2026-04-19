@@ -259,3 +259,18 @@ const myTransform: ResourceTransform = (resource) => {
 // Insert in the Fetcher chain
 const fetcher = new TransformingFetcher(innerFetcher, myTransform);
 ```
+
+### Integrators passing `injectables` / `injectablesFixed` arrays
+
+`Injectable.type` is now a literal union (no longer widened to `string`). If TypeScript reports TS2322 on your array, annotate it:
+
+```typescript
+import type { Injectable } from "@d-i-t-a/reader";
+
+const injectables: Injectable[] = [
+  { type: "style", url: "/readium-css/ReadiumCSS-before.css", r2before: true },
+  { type: "script", url: "/click.js" },
+];
+```
+
+No runtime change.

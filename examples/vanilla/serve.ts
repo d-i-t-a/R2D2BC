@@ -7,10 +7,10 @@ const PORT = 3000;
 // Serve the built library (reader.js, reader.css, etc.)
 app.use("/dist", express.static(path.join(__dirname, "../../dist")));
 
-// Serve ReadiumCSS from the react example
+// Serve ReadiumCSS v2 from the main viewer bundle
 app.use(
-  "/readium-css",
-  express.static(path.join(__dirname, "../react/readium-css"))
+  "/readium-css-v2",
+  express.static(path.join(__dirname, "../../viewer/readium-css-v2"))
 );
 
 // Serve the vanilla example

@@ -34,19 +34,21 @@ The reader injects CSS into content iframes via URL references. These files must
 
 ```
 public/
-  readium-css/
+  readium-css-v2/
     ReadiumCSS-before.css
     ReadiumCSS-default.css
     ReadiumCSS-after.css
+    ReadiumCSS-dita-patch.css
 ```
 
-You can find these files in the `viewer/readium-css/` directory of this repository. Then reference them as absolute paths in the injectables config:
+You can find these files in the `viewer/readium-css-v2/` directory of this repository. Then reference them as absolute paths in the injectables config:
 
 ```ts
 injectables: [
-  { type: "style", url: "/readium-css/ReadiumCSS-before.css", r2before: true },
-  { type: "style", url: "/readium-css/ReadiumCSS-default.css", r2default: true },
-  { type: "style", url: "/readium-css/ReadiumCSS-after.css", r2after: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-before.css", r2before: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-default.css", r2default: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-after.css", r2after: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-dita-patch.css" },
 ],
 ```
 
@@ -91,12 +93,12 @@ useEffect(() => {
 npm install @d-i-t-a/reader
 ```
 
-2. Copy ReadiumCSS into `public/readium-css/`:
+2. Copy ReadiumCSS v2 into `public/readium-css-v2/`:
 
 ```bash
-cp -r node_modules/@d-i-t-a/reader/viewer/readium-css public/readium-css
+cp -r node_modules/@d-i-t-a/reader/viewer/readium-css-v2 public/readium-css-v2
 # Or copy from this repository:
-# cp -r viewer/readium-css public/readium-css
+# cp -r viewer/readium-css-v2 public/readium-css-v2
 ```
 
 3. Copy the example files into your app:

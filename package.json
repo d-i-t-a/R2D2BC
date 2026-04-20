@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "3.0.0-alpha.16",
+  "version": "3.0.0-alpha.17",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -24,6 +24,7 @@
     "sass:release": "sass --style=compressed src/styles/sass/:dist",
     "examples": "npx ts-node examples/server.ts",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --fix",
+    "lint:css-vars": "ts-node -T scripts/check-readium-css-vars.ts",
     "example:clean": "rm -rf parcel-dist .parcel-cache",
     "example:react": "npm run example:clean && parcel examples/react/index.html --dist-dir parcel-dist",
     "example:vue": "npm run example:clean && parcel examples/vue/index.html --dist-dir parcel-dist --no-hmr",

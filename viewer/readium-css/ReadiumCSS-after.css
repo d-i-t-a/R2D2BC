@@ -6,6 +6,13 @@
  * LICENSE file present in the project repository where this source code is maintained.
 */
 
+@namespace url("http://www.w3.org/1999/xhtml");
+
+@namespace epub url("http://www.idpf.org/2007/ops");
+
+@namespace m url("http://www.w3.org/1998/Math/MathML/");
+
+@namespace svg url("http://www.w3.org/2000/svg");
 
 :root{
   --RS__colWidth:45em;
@@ -13,6 +20,7 @@
   --RS__colGap:0;
   --RS__maxLineLength:40rem;
   --RS__pageGutter:20px;
+  --RS__viewportWidth:100%;
 }
 
 @page{
@@ -34,11 +42,11 @@
   column-gap:var(--RS__colGap);
   -moz-column-fill:auto;
   column-fill:auto;
-  width:100%;
+  width:var(--RS__viewportWidth);
   height:100vh;
-  max-width:100%;
+  max-width:var(--RS__viewportWidth);
   max-height:100vh;
-  min-width:100%;
+  min-width:var(--RS__viewportWidth);
   min-height:100vh;
   padding:0 !important;
   margin:0 !important;
@@ -103,8 +111,6 @@ screen and (min-device-width: 36em) and (max-device-width: 47em) and (orientatio
 
 :root[style*="readium-scroll-on"] body{
   --RS__maxLineLength:40rem !important;
-  margin-top:var(--RS__pageGutter) !important;
-  margin-bottom:var(--RS__pageGutter) !important;
 }
 
 :root[style*="readium-night-on"]{
@@ -274,8 +280,6 @@ screen and (min-device-width: 36em) and (max-device-width: 47em) and (orientatio
   :root[style*="--USER__colCount: 1"],
   :root[style*="--USER__colCount:1"]{
     --RS__maxLineLength:40rem !important;
-  margin-top:var(--RS__pageGutter) !important;
-  margin-bottom:var(--RS__pageGutter) !important;
     --RS__colWidth:100vw;
   }
 
@@ -436,7 +440,7 @@ screen and (min-device-width: 36em) and (max-device-width: 47em) and (orientatio
 }
 
 :root[style*="readium-advanced-on"][style*="--USER__lineHeight"]{
-  line-height:calc((var(--USER__lineHeight) + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) * var(--RS__lineHeightCompensation)) !important;
+  line-height:var(--USER__lineHeight) !important;
 }
 
 :root[style*="readium-advanced-on"][style*="--USER__lineHeight"] body,

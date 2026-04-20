@@ -18,7 +18,7 @@
  */
 
 @media only screen and (max-width: 600px) {
-  .timeline,
+  .dita-timeline,
   .scrubber > input {
     display: none;
   }
@@ -28,7 +28,7 @@
   padding-right: 20px;
   padding-left: 20px;
 }
-.timeline {
+.dita-timeline {
   position: fixed;
   top: 1.5rem;
   left: 2.5rem;
@@ -49,7 +49,7 @@
         display: block;
       }
     }
-    &.active {
+    &.dita-active {
       background-color: $ui-default;
     }
   }
@@ -68,14 +68,14 @@
   }
 }
 [data-viewer-theme="night"] {
-  .timeline {
+  .dita-timeline {
     .chapter {
       border: 1px solid $ui-black;
     }
   }
 }
 [data-viewer-theme="sepia"] {
-  .timeline {
+  .dita-timeline {
     .chapter {
       border: 1px solid $sepia-bg;
     }

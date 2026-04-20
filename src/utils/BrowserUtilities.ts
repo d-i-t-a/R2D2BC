@@ -43,3 +43,26 @@ export function getHeight(): number {
 export function isZoomed(): boolean {
   return getWidth() !== window.innerWidth;
 }
+
+/**
+ * Detect iPadOS (including iPadOS 13+, which reports a desktop Safari user agent).
+ *
+ * iPadOS 13 and later default to "request desktop website" and set the user agent
+ * to match macOS Safari, so a plain UA check for "iPad" misses modern iPads.
+ * The reliable modern signal is: UA claims Macintosh, but the device reports
+ * multi-touch support — desktop Macs return `maxTouchPoints === 0`.
+ */
+export function isIPadOS(): boolean {
+  const ua = navigator.userAgent;
+  // Pre-iPadOS 13 devices, and iPhone/iPod (excluded) — match legacy iPad UA
+  if (/iPad/.test(ua)) return true;
+  // iPadOS 13+ reports as "Macintosh; Intel Mac OS X ..." with touch
+  if (
+    /Macintosh/.test(ua) &&
+    typeof navigator.maxTouchPoints === "number" &&
+    navigator.maxTouchPoints > 1
+  ) {
+    return true;
+  }
+  return false;
+}

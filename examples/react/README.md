@@ -36,5 +36,6 @@ examples/react/
   index.tsx         — Full React app (single file)
   tsconfig.json     — Extends root tsconfig
   parcel.d.ts       — Parcel url: import types
-  readium-css/      — Bundled ReadiumCSS files (shared by other examples)
 ```
+
+ReadiumCSS v2 is imported via `url:../../viewer/readium-css-v2/*` — no per-example copy.

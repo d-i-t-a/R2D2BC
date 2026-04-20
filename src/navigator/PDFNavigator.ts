@@ -432,7 +432,7 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
       justifyContent: "center",
       background: "white",
     });
-    el.className = "loading is-loading";
+    el.className = "dita-loading is-loading";
     (this.wrapper.parentElement ?? document.body).appendChild(el);
   }
 

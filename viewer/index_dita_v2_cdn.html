@@ -208,7 +208,14 @@
                 </div>
                 <div class="mui-divider"></div>
                 <div id="container-view-settings-custom" class="dropdown-content settings-view"
-                     style="width: 300px; padding: 8px 0;">
+                     style="width: 320px; padding: 8px 0;">
+
+                    <!-- ============================================================
+                         COMMON — works with ReadiumCSS v1.1.x and v2.0.x
+                         ============================================================ -->
+                    <div class="setting-row" style="padding: 4px 12px 0; color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <span>Common (v1 + v2)</span>
+                    </div>
 
                     <!-- Font Size -->
                     <div class="setting-row">
@@ -231,8 +238,6 @@
                         </select>
                     </div>
 
-                    <div style="border-top: 1px solid #eee; margin: 6px 12px;"></div>
-
                     <!-- Appearance -->
                     <div id="appearance" class="setting-row" style="justify-content: center; gap: 0;">
                         <button class="seg-btn seg-left" onclick="d2reader.applyUserSettings({appearance:'day'});setAppearance('day')" style="background:#fff;color:#000;">Day</button><button class="seg-btn seg-mid" onclick="d2reader.applyUserSettings({appearance:'sepia'});setAppearance('sepia')" style="background:#f5e6c8;color:#000;">Sepia</button><button class="seg-btn seg-right" onclick="d2reader.applyUserSettings({appearance:'night'});setAppearance('night')" style="background:#121212;color:#fff;">Night</button>
@@ -250,15 +255,13 @@
 
                     <!-- Columns -->
                     <div id="columnCount" class="setting-row" style="justify-content: center; gap: 0;">
-                        <button class="seg-btn seg-left" onclick="d2reader.applyUserSettings({columnCount:'auto'});setColumns('auto')">Auto</button><button class="seg-btn seg-mid" onclick="d2reader.applyUserSettings({columnCount:'1'});setColumns('1')">Single</button><button class="seg-btn seg-right" onclick="d2reader.applyUserSettings({columnCount:'2'});setColumns('2')">Double</button>
+                        <button class="seg-btn seg-left" style="min-width: 50px;" onclick="d2reader.applyUserSettings({columnCount:'auto'});setColumns('auto')">Auto</button><button class="seg-btn seg-mid" style="min-width: 36px; padding: 0 8px;" onclick="d2reader.applyUserSettings({columnCount:'1'});setColumns('1')">1</button><button class="seg-btn seg-mid" style="min-width: 36px; padding: 0 8px; border-left: 1px solid #d0d0d0;" onclick="d2reader.applyUserSettings({columnCount:'2'});setColumns('2')">2</button><button class="seg-btn seg-mid" style="min-width: 36px; padding: 0 8px; border-left: 1px solid #d0d0d0;" onclick="d2reader.applyUserSettings({columnCount:'3'});setColumns('3')">3</button><button class="seg-btn seg-right" style="min-width: 36px; padding: 0 8px;" onclick="d2reader.applyUserSettings({columnCount:'4'});setColumns('4')">4</button>
                     </div>
 
                     <!-- Direction -->
                     <div id="direction" class="setting-row" style="justify-content: center; gap: 0;">
                         <button class="seg-btn seg-left" onclick="d2reader.applyUserSettings({direction:'auto'});setDirection('auto')">Auto</button><button class="seg-btn seg-mid" onclick="d2reader.applyUserSettings({direction:'ltr'});setDirection('ltr')">LTR</button><button class="seg-btn seg-right" onclick="d2reader.applyUserSettings({direction:'rtl'});setDirection('rtl')">RTL</button>
                     </div>
-
-                    <div style="border-top: 1px solid #eee; margin: 6px 12px;"></div>
 
                     <!-- Spacing & sizing sliders -->
                     <div class="setting-row">
@@ -290,18 +293,43 @@
                         <span class="setting-value" id="lineHeightValue">1</span>
                     </div>
                     <div class="setting-row">
-                        <label>Paragraph Spacing</label>
+                        <label>Para Spacing</label>
                         <input type="range" min="0" max="3" step="0.5" value="0" id="paraSpacing"
                                oninput="document.getElementById('paraSpacingValue').textContent = this.value"
                                onchange="d2reader.applyUserSettings({ paraSpacing: parseFloat(this.value) })"/>
                         <span class="setting-value" id="paraSpacingValue">0</span>
                     </div>
                     <div class="setting-row">
-                        <label>Paragraph Indent</label>
+                        <label>Para Indent</label>
                         <input type="range" min="0" max="3" step="0.5" value="1" id="paraIndent"
                                oninput="document.getElementById('paraIndentValue').textContent = this.value"
                                onchange="d2reader.applyUserSettings({ paraIndent: parseFloat(this.value) })"/>
                         <span class="setting-value" id="paraIndentValue">1</span>
+                    </div>
+                    <div class="setting-row">
+                        <label>Hyphens</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="bodyHyphens"
+                                   onchange="d2reader.applyUserSettings({ bodyHyphens: this.checked })">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <label>Background</label>
+                        <input type="color" id="backgroundColor" value="#ffffff" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ backgroundColor: this.value })"/>
+                        <label style="margin-left: 12px;">Text</label>
+                        <input type="color" id="textColor" value="#000000" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ textColor: this.value })"/>
+                    </div>
+
+                    <div style="border-top: 1px solid #eee; margin: 6px 12px;"></div>
+
+                    <!-- ============================================================
+                         v1 ONLY — ignored by v2 ReadiumCSS
+                         ============================================================ -->
+                    <div class="setting-row" style="padding: 4px 12px 0; color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <span>v1 only &middot; ignored on v2</span>
                     </div>
                     <div class="setting-row">
                         <label>Type Scale</label>
@@ -313,24 +341,90 @@
 
                     <div style="border-top: 1px solid #eee; margin: 6px 12px;"></div>
 
-                    <!-- Toggles -->
+                    <!-- ============================================================
+                         v2 ONLY — silently no-op on v1 ReadiumCSS
+                         ============================================================ -->
+                    <div class="setting-row" style="padding: 4px 12px 0; color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <span>v2 only &middot; ignored on v1</span>
+                    </div>
+
+                    <!-- Line Length (direct control; pageMargins also maps to it) -->
                     <div class="setting-row">
-                        <label>Hyphens</label>
+                        <label>Line Length</label>
+                        <input type="text" id="lineLength" value="" placeholder="e.g. 70%, 40rem"
+                               style="flex:1;margin-left:10px;height:30px;font-size:8.5pt;border:1px solid #d0d0d0;border-radius:6px;padding:0 8px;background:#fff;color:#555;outline:none;"
+                               onchange="d2reader.applyUserSettings({ lineLength: this.value })"/>
+                    </div>
+
+                    <!-- Typography toggle -->
+                    <div class="setting-row">
+                        <label>Ligatures</label>
                         <label class="toggle-switch">
-                            <input type="checkbox" id="bodyHyphens"
-                                   onchange="d2reader.applyUserSettings({ bodyHyphens: this.checked })">
+                            <input type="checkbox" id="ligatures" checked
+                                   onchange="d2reader.applyUserSettings({ ligatures: this.checked ? 'common-ligatures' : 'none' })">
                             <span class="slider"></span>
                         </label>
                     </div>
 
-                    <!-- Colors -->
+                    <!--
+                      NOT exposed here: fontWeight, fontWidth, fontOpticalSizing, invertGaiji.
+                      Available in the TypeScript API — silently applied when set. These
+                      rely on variable fonts or CJK gaiji images that typical EPUBs don't
+                      ship. Integrators wanting them call
+                      d2reader.applyUserSettings({ fontWeight: 600 }) etc.
+                    -->
+
+
+                    <!-- Theme colors -->
                     <div class="setting-row">
-                        <label>Background</label>
-                        <input type="color" id="backgroundColor" value="#ffffff" class="color-swatch"
-                               onchange="d2reader.applyUserSettings({ backgroundColor: this.value })"/>
+                        <label>Link</label>
+                        <input type="color" id="linkColor" value="#0000ee" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ linkColor: this.value })"/>
+                        <label style="margin-left: 12px;">Visited</label>
+                        <input type="color" id="visitedColor" value="#551a8b" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ visitedColor: this.value })"/>
+                    </div>
+                    <div class="setting-row">
+                        <label>Selection BG</label>
+                        <input type="color" id="selectionBackgroundColor" value="#ffeb3b" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ selectionBackgroundColor: this.value })"/>
                         <label style="margin-left: 12px;">Text</label>
-                        <input type="color" id="textColor" value="#000000" class="color-swatch"
-                               onchange="d2reader.applyUserSettings({ textColor: this.value })"/>
+                        <input type="color" id="selectionTextColor" value="#000000" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ selectionTextColor: this.value })"/>
+                    </div>
+
+                    <!--
+                      NOT exposed here: blendImages, darkenImages, invertImages, invertGaiji.
+                      Available in the TypeScript API — integrators typically wire these
+                      into their appearance/theme logic rather than exposing them as
+                      end-user controls. Example:
+                        d2reader.applyUserSettings({ darkenImages: 0.6 })
+                        d2reader.applyUserSettings({ invertImages: true })
+                    -->
+
+                    <!-- Scroll-view padding (only takes effect in scroll mode) -->
+                    <div class="setting-row" style="padding: 4px 12px 0; color: #aaa; font-size: 10px;">
+                        <span>Scroll padding (scroll mode only)</span>
+                    </div>
+                    <div class="setting-row" style="flex-wrap:nowrap;">
+                        <label style="min-width:30px;">Top</label>
+                        <input type="text" id="scrollPaddingTop" value="" placeholder="0"
+                               style="width:60px;margin-left:6px;height:28px;font-size:8.5pt;border:1px solid #d0d0d0;border-radius:6px;padding:0 6px;background:#fff;color:#555;outline:none;box-sizing:border-box;"
+                               onchange="d2reader.applyUserSettings({ scrollPaddingTop: this.value })"/>
+                        <label style="margin-left:12px;min-width:36px;">Bot.</label>
+                        <input type="text" id="scrollPaddingBottom" value="" placeholder="0"
+                               style="width:60px;margin-left:6px;height:28px;font-size:8.5pt;border:1px solid #d0d0d0;border-radius:6px;padding:0 6px;background:#fff;color:#555;outline:none;box-sizing:border-box;"
+                               onchange="d2reader.applyUserSettings({ scrollPaddingBottom: this.value })"/>
+                    </div>
+                    <div class="setting-row" style="flex-wrap:nowrap;">
+                        <label style="min-width:30px;">Left</label>
+                        <input type="text" id="scrollPaddingLeft" value="" placeholder="0"
+                               style="width:60px;margin-left:6px;height:28px;font-size:8.5pt;border:1px solid #d0d0d0;border-radius:6px;padding:0 6px;background:#fff;color:#555;outline:none;box-sizing:border-box;"
+                               onchange="d2reader.applyUserSettings({ scrollPaddingLeft: this.value })"/>
+                        <label style="margin-left:12px;min-width:36px;">Right</label>
+                        <input type="text" id="scrollPaddingRight" value="" placeholder="0"
+                               style="width:60px;margin-left:6px;height:28px;font-size:8.5pt;border:1px solid #d0d0d0;border-radius:6px;padding:0 6px;background:#fff;color:#555;outline:none;box-sizing:border-box;"
+                               onchange="d2reader.applyUserSettings({ scrollPaddingRight: this.value })"/>
                     </div>
 
                     <div style="border-top: 1px solid #eee; margin: 6px 12px;"></div>
@@ -707,11 +801,18 @@
         };
         let urlParams = getURLQueryParams();
         let defined_origin = window.location.origin;
+        // Note: unpkg ships only the 4 base ReadiumCSS files. Language variants
+        // (CJK-horizontal, CJK-vertical, RTL) are not available via the npm package
+        // and require fetching from the readium/css GitHub repo or bundling locally.
+        // CJK publications are therefore not supported in this pure-CDN demo.
+        // See viewer/index_dita_v2.html for a local-bundle demo with CJK-horizontal wiring.
         let injectables = [
-            { type: 'style', url: defined_origin + '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: defined_origin + '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: defined_origin + '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
-            { type: 'style', url: defined_origin + '/viewer/readium-css/ReadiumCSS-dita-patch.css' },
+            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-before.css', r2before: true },
+            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-default.css', r2default: true },
+            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-after.css', r2after: true },
+            // Dita patch layer — injected AFTER pristine Readium CDN files.
+            // Demonstrates the integrator pattern: use stock Readium + our override layer.
+            { type: 'style', url: defined_origin + '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css' },
             { type: 'style', url: 'https://fonts.googleapis.com/icon?family=Material+Icons'},
             { type: 'style', url: defined_origin + '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
@@ -1580,7 +1681,10 @@
             }
         }
 
-        function setColumns(v) { setSegActive('columnCount', v === '2' ? 2 : v === '1' ? 1 : 0); }
+        function setColumns(v) {
+          const idx = v === '4' ? 4 : v === '3' ? 3 : v === '2' ? 2 : v === '1' ? 1 : 0;
+          setSegActive('columnCount', idx);
+        }
         function setDirection(v) { setSegActive('direction', v === 'rtl' ? 2 : v === 'ltr' ? 1 : 0); }
         function setScroll(v) { setSegActive('scrollMode', v === 'false' ? 1 : 0); }
         function setAlignment(v) { setSegActive('textAlignment', v === 'start' ? 2 : v === 'justify' ? 1 : 0); }

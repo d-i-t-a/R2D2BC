@@ -236,7 +236,7 @@ export class SearchModule
         div.style.marginTop = "10px";
 
         let pagination: HTMLUListElement = document.createElement("ul");
-        pagination.className = "pagination";
+        pagination.className = "dita-pagination";
 
         let previousResultPage: HTMLLIElement = document.createElement("li");
         previousResultPage.className = "disabled";
@@ -262,7 +262,7 @@ export class SearchModule
           let element: HTMLLIElement = document.createElement("li");
           element.className = "waves-effect";
           if (index === paginated.page) {
-            element.className = "active";
+            element.className = "dita-active";
             activeElement = element;
           }
           element.innerHTML = '<a href="#!">' + index + "</a>";
@@ -271,7 +271,7 @@ export class SearchModule
             event.preventDefault();
             event.stopPropagation();
             if (activeElement) activeElement.className = "waves-effect";
-            element.className = "active";
+            element.className = "dita-active";
             activeElement = element;
             goToResultPage(index);
           });
@@ -671,7 +671,7 @@ export class SearchModule
         div.style.marginTop = "10px";
 
         let pagination: HTMLUListElement = document.createElement("ul");
-        pagination.className = "pagination";
+        pagination.className = "dita-pagination";
 
         let previousResultPage: HTMLLIElement = document.createElement("li");
         previousResultPage.className = "disabled";
@@ -696,7 +696,7 @@ export class SearchModule
           let element: HTMLLIElement = document.createElement("li");
           element.className = "waves-effect";
           if (index === paginated.page) {
-            element.className = "active";
+            element.className = "dita-active";
             activeElement = element;
           }
           element.innerHTML = '<a href="#!">' + index + "</a>";
@@ -705,7 +705,7 @@ export class SearchModule
             event.preventDefault();
             event.stopPropagation();
             if (activeElement) activeElement.className = "waves-effect";
-            element.className = "active";
+            element.className = "dita-active";
             activeElement = element;
             goToResultPage(index);
           });

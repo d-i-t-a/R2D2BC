@@ -51,12 +51,12 @@
         }
       }
 
-      &.active {
+      &.dita-active {
         background: $ui-light-gray;
         color: $ui-black;
       }
 
-      &.active:hover {
+      &.dita-active:hover {
         background: $ui-dark-gray;
         color: $ui-light-gray;
       }
@@ -82,12 +82,12 @@
           }
         }
 
-        &.active {
+        &.dita-active {
           background: $ui-light-gray;
           color: $ui-black;
         }
 
-        &.active:hover {
+        &.dita-active:hover {
           background: $ui-black;
           color: $ui-light-gray;
         }
@@ -118,12 +118,12 @@
           }
         }
 
-        &.active {
+        &.dita-active {
           background: $ui-light-gray;
           color: $night-bg;
         }
 
-        &.active:hover {
+        &.dita-active:hover {
           background: $ui-dark-gray;
           color: $ui-light-gray;
         }

@@ -66,7 +66,7 @@ npm run dev
 npm run examples
 ```
 
-`npm run dev` builds the library (`dist/`), compiles SASS, and starts the esbuild watcher. The viewer loads the built library from `dist/` and uses its own ReadiumCSS from `viewer/readium-css/`.
+`npm run dev` builds the library (`dist/`), compiles SASS, and starts the esbuild watcher. The viewer loads the built library from `dist/` and uses its own ReadiumCSS from `viewer/readium-css-v2/`.
 
 `npm run examples` starts a streamer server (`dita-streamer-js`) that serves local EPUB files from `examples/epubs/` through multiple viewer variants:
 
@@ -153,12 +153,12 @@ D2Reader.load({
 
 ```html
 <main id="iframe-wrapper">
-    <div id="reader-loading" class="loading"></div>
-    <div id="reader-error" class="error"></div>
-    <div id="reader-info-top" class="info top">
+    <div id="reader-loading" class="dita-loading"></div>
+    <div id="reader-error" class="dita-error"></div>
+    <div id="reader-info-top" class="dita-info top">
         <span class="book-title"></span>
     </div>
-    <div id="reader-info-bottom" class="info bottom">
+    <div id="reader-info-bottom" class="dita-info bottom">
         <span class="chapter-position"></span>
         <span class="chapter-title"></span>
         <input type="range" id="positionSlider" />
@@ -258,11 +258,9 @@ examples/react/
   index.html       — Entry point with #root div
   index.tsx         — Full React app (single file)
   tsconfig.json     — Extends root tsconfig
-  readium-css/      — Bundled ReadiumCSS files
-    ReadiumCSS-before.css
-    ReadiumCSS-default.css
-    ReadiumCSS-after.css
 ```
+
+ReadiumCSS is imported from `viewer/readium-css-v2/` via relative Parcel `url:` imports; no per-example CSS copy is needed.
 
 ---
 

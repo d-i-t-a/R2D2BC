@@ -46,7 +46,7 @@
 
 @import "reader/timeline";
 
-.collection {
+.dita-collection {
   //margin: $element-top-margin 0 $element-bottom-margin 0;
   border-radius: 2px;
   overflow: hidden;
@@ -103,7 +103,7 @@
       border-bottom: none;
     }
 
-    &.active {
+    &.dita-active {
       //background-color: $collection-active-bg-color;
       //color: $collection-active-color;
 
@@ -116,7 +116,7 @@
     display: block;
     transition: 0.25s;
     //color: $collection-link-color;
-    &:not(.active) {
+    &:not(.dita-active) {
       &:hover {
         //background-color: $collection-hover-bg-color;
       }
@@ -137,7 +137,7 @@
     }
   }
 }
-.pagination {
+.dita-pagination {
   display: inline-block;
 
   li {
@@ -157,11 +157,11 @@
       line-height: 30px;
     }
 
-    &.active a {
+    &.dita-active a {
       color: #999;
     }
 
-    //&.active { background-color: $primary-color !important; }
+    //&.dita-active { background-color: $primary-color !important; }
 
     &.disabled a {
       cursor: default;
@@ -179,7 +179,7 @@
   }
 }
 
-.search-wrapper {
+.dita-search-wrapper {
   display: flex;
   align-items: center;
 }
@@ -196,7 +196,7 @@ $medium-and-down: "only screen and (max-width : #{$medium-screen})" !default;
   }
 }
 
-.logo-container {
+.dita-logo-container {
   i.editAnnotations {
     transform: rotate(-90deg);
     margin-top: 12px;

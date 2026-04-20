@@ -29,7 +29,7 @@
     .filter-btn.active { background: #222; color: #fff; border-color: #222; }
     .grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 16px; padding: 24px; max-width: 1200px; margin: 0 auto;
+      gap: 16px; padding: 24px; margin: 0 auto;
     }
     .card {
       background: #fff; border-radius: 8px; overflow: hidden;
@@ -169,10 +169,13 @@
         // Language-based tags
         const language = manifest.metadata?.language;
         const lang = Array.isArray(language) ? language[0] : language;
-        if (lang === 'ja' || lang === 'zh') {
+        const langCode = (lang ?? '').toLowerCase().split('-')[0];
+        const langTag = { ja: 'Japanese', zh: 'Chinese', ko: 'Korean' }[langCode];
+        if (langTag) {
           if (!pub.tags.includes('CJK')) pub.tags.push('CJK');
+          if (!pub.tags.includes(langTag)) pub.tags.push(langTag);
         }
-        if (lang === 'ar' || lang === 'he' || lang === 'fa') {
+        if (langCode === 'ar' || langCode === 'he' || langCode === 'fa') {
           if (!pub.tags.includes('RTL')) pub.tags.push('RTL');
         }
 
@@ -290,7 +293,17 @@
       grid.innerHTML = filtered.map(pub => {
         const icon = pub.type === 'pdf' ? '📄' : '📖';
         const badgeClass = pub.type === 'pdf' ? 'badge-pdf' : 'badge-epub';
-        const viewers = pub.viewers || [];
+        // FXL publications don't use ReadiumCSS, so hide the v2 variants and
+        // collapse to the single default DITA Reader link. Renames the v1 link
+        // back to plain "DITA Reader" for FXL tiles.
+        let viewers = pub.viewers || [];
+        if (pub.fxl) {
+          viewers = viewers
+            .filter(v => !v.title.includes('ReadiumCSS v2'))
+            .map(v => v.title === 'DITA Reader (ReadiumCSS v1)'
+              ? { ...v, title: 'DITA Reader' }
+              : v);
+        }
         const coverStyle = pub.coverUrl
           ? `background-image:url('${pub.coverUrl}');background-size:cover;background-position:center;`
           : '';

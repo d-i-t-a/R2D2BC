@@ -1,0 +1,94 @@
+/*
+ * ReadiumCSS Dita Patch Layer (v1.1.x)
+ *
+ * Thin override layer for ReadiumCSS v1.1.x that consolidates R2D2BC's
+ * long-standing customizations without modifying the upstream Readium CSS
+ * files. Integrators inject this AFTER ReadiumCSS-after.css so these rules
+ * take precedence.
+ *
+ * Injection order:
+ *   1. ReadiumCSS-before.css   (r2before: true)
+ *   2. ReadiumCSS-default.css  (r2default: true)
+ *   3. ReadiumCSS-after.css    (r2after: true)
+ *   4. ReadiumCSS-dita-patch.css  <-- this file, must come LAST
+ *
+ * Three long-standing customizations are carried here:
+ *   1. Image / media no-stretch
+ *   2. Line-height compensation formula
+ *   3. Scroll-mode + single-column vertical page gutters
+ *
+ * The v2 equivalent lives at viewer/readium-css-v2/ReadiumCSS-dita-patch.css.
+ * These two files share the first two rules; v1 adds the third because the
+ * scroll-mode vertical-gutter behavior was upstreamed away in v2.
+ */
+
+/* ---------------------------------------------------------------------- */
+/* 1. Image / media no-stretch                                            */
+/*                                                                        */
+/* Stock Readium sets `width: auto; height: auto` on img/svg/video which  */
+/* lets the browser stretch publisher images to fill the layout box in    */
+/* paginated column layouts. We want images to display at their intrinsic */
+/* size (capped by max-width/max-height) — not filled into the column.    */
+/*                                                                        */
+/* Setting width and height to `revert-layer` pops back to the previous   */
+/* cascade layer (publisher CSS or user-agent default), which respects    */
+/* the image's intrinsic size unless the publisher explicitly sets one.   */
+/* ---------------------------------------------------------------------- */
+
+img,
+svg,
+video {
+  width: revert-layer !important;
+  height: revert-layer !important;
+  max-width: var(--RS__maxMediaWidth) !important;
+  max-height: var(--RS__maxMediaHeight) !important;
+  object-fit: contain;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 2. Line-height compensation formula                                    */
+/*                                                                        */
+/* Stock `line-height: var(--USER__lineHeight)` doesn't account for font  */
+/* metrics (ex-height, ch-width) or base font-size differences. Our       */
+/* compensation formula factors these in, plus applies                    */
+/* --RS__lineHeightCompensation for CJK/Indic scripts that need 15-20%    */
+/* more leading.                                                          */
+/* ---------------------------------------------------------------------- */
+
+:root[style*="--USER__lineHeight"] {
+  line-height: calc(
+    (var(--USER__lineHeight) + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) *
+      var(--RS__lineHeightCompensation)
+  ) !important;
+}
+
+:root[style*="--USER__lineHeight"] body,
+:root[style*="--USER__lineHeight"] p,
+:root[style*="--USER__lineHeight"] li,
+:root[style*="--USER__lineHeight"] div {
+  line-height: inherit !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 3. Scroll-mode and single-column vertical page gutters                 */
+/*                                                                        */
+/* Upstream v1.1.x does not apply a vertical gutter in scroll mode or in  */
+/* single-column paginated layout — content sits flush against the top    */
+/* and bottom edges. Our long-standing behavior adds a page-gutter-sized  */
+/* top/bottom margin in those two modes so reading-area breathing room    */
+/* matches the horizontal gutter.                                         */
+/*                                                                        */
+/* Both rules target body; the second only fires when the integrator sets */
+/* --USER__colCount to 1.                                                 */
+/* ---------------------------------------------------------------------- */
+
+:root[style*="readium-scroll-on"] body {
+  margin-top: var(--RS__pageGutter) !important;
+  margin-bottom: var(--RS__pageGutter) !important;
+}
+
+:root[style*="--USER__colCount: 1"] body,
+:root[style*="--USER__colCount:1"] body {
+  margin-top: var(--RS__pageGutter) !important;
+  margin-bottom: var(--RS__pageGutter) !important;
+}

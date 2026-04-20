@@ -313,12 +313,12 @@
 
         <div id="D2Reader-Container" style="height: calc(100vh - 76px);">
             <main style="height: calc(100vh - 76px);" tabindex=-1 id="iframe-wrapper">
-                <div id="reader-loading" class="loading"></div>
-                <div id="reader-error" class="error"></div>
-                <div id="reader-info-top" class="info top">
+                <div id="reader-loading" class="dita-loading"></div>
+                <div id="reader-error" class="dita-error"></div>
+                <div id="reader-info-top" class="dita-info top">
                     <span class="book-title"></span>
                 </div>
-                <div id="reader-info-bottom" class="info bottom">
+                <div id="reader-info-bottom" class="dita-info bottom">
                     <div style="display: flex;justify-content: center;">
                         <span class="chapter-position"></span>&nbsp;
                         <span class="chapter-title"></span>
@@ -332,7 +332,7 @@
                 </div>
             </main>
             <div id="container-view-security" class="security"></div>
-            <div id="container-view-timeline" class="timeline" style="top: 5rem;bottom: 2.5rem;"></div>
+            <div id="container-view-timeline" class="dita-timeline" style="top: 5rem;bottom: 2.5rem;"></div>
             <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
                style="top: 76px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
                 <i class="material-icons black-text" style="left: calc(50% - 12px);
@@ -435,6 +435,7 @@
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-dita-patch.css' },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
             { type: 'style', fontFamily: 'Courier', systemFont: true },

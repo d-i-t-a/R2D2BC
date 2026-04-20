@@ -49,13 +49,13 @@
         <button class="pill" onclick="d2reader.nextResource()" title="Next chapter">Ch &raquo;</button>
         <div class="sep"></div>
         <button class="pill" id="btn-scroll" onclick="toggleScroll()" title="Toggle scroll/paginated">Paginated</button>
-        <span class="info" id="page-info"></span>
+        <span class="dita-info" id="page-info"></span>
     </div>
 
     <div id="D2Reader-Container">
         <main tabindex="-1" id="iframe-wrapper">
-            <div id="reader-loading" class="loading"></div>
-            <div id="reader-error" class="error"></div>
+            <div id="reader-loading" class="dita-loading"></div>
+            <div id="reader-error" class="dita-error"></div>
         </main>
     </div>
 
@@ -67,6 +67,7 @@
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
             { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-dita-patch.css' },
         ];
 
         D2Reader.load({

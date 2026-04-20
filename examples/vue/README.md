@@ -29,17 +29,18 @@ src/
 
 ### 2. Add ReadiumCSS files
 
-The reader requires ReadiumCSS stylesheets. Copy the three CSS files from the reader package (or from `viewer/readium-css/` in this repository) into your project's `public/` directory:
+The reader requires ReadiumCSS stylesheets. Copy the four CSS files from the reader package (or from `viewer/readium-css-v2/` in this repository) into your project's `public/` directory:
 
 ```
 public/
-  readium-css/
+  readium-css-v2/
     ReadiumCSS-before.css
     ReadiumCSS-default.css
     ReadiumCSS-after.css
+    ReadiumCSS-dita-patch.css
 ```
 
-The component references these at `/readium-css/ReadiumCSS-*.css`. Adjust the `injectables` array in the component if your paths differ.
+The component references these at `/readium-css-v2/ReadiumCSS-*.css`. Adjust the `injectables` array in the component if your paths differ.
 
 ### 3. Use the component
 
@@ -108,9 +109,10 @@ If you need custom CSS injected into EPUB content iframes, add entries to the `i
 
 ```ts
 const injectables = [
-  { type: "style", url: "/readium-css/ReadiumCSS-before.css", r2before: true },
-  { type: "style", url: "/readium-css/ReadiumCSS-default.css", r2default: true },
-  { type: "style", url: "/readium-css/ReadiumCSS-after.css", r2after: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-before.css", r2before: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-default.css", r2default: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-after.css", r2after: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-dita-patch.css" },
   { type: "style", url: "/my-custom-styles.css" },
 ];
 ```

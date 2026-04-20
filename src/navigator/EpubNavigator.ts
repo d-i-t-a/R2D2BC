@@ -378,7 +378,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     this.fxlHandTool?.activate();
     const panBtn = document.querySelector("#fxl-pan a") as HTMLElement;
     if (panBtn) {
-      panBtn.classList.add("active");
+      panBtn.classList.add("dita-active");
       panBtn.style.color = "#039be5";
     }
   }
@@ -391,7 +391,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     this.fxlHandTool?.deactivate();
     const panBtn = document.querySelector("#fxl-pan a") as HTMLElement;
     if (panBtn) {
-      panBtn.classList.remove("active");
+      panBtn.classList.remove("dita-active");
       panBtn.style.color = "";
     }
   }
@@ -890,11 +890,11 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       );
       this.infoTop = HTMLUtilities.findElement(
         mainElement,
-        "div[class='info top']"
+        "div[class='dita-info top']"
       );
       this.infoBottom = HTMLUtilities.findElement(
         mainElement,
-        "div[class='info bottom']"
+        "div[class='dita-info bottom']"
       );
 
       if (this.headerMenu)
@@ -2127,15 +2127,15 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     if (this.headerMenu) {
       var sidenav = HTMLUtilities.findElement(document, ".sidenav");
 
-      if (element.className.indexOf(" active") === -1) {
-        element.className += " active";
+      if (element.className.indexOf(" dita-active") === -1) {
+        element.className += " dita-active";
         sidenav.className += " expanded";
         element.innerText = "unfold_less";
         this.sideNavExpanded = true;
         this.modules.bookmarks?.showBookmarks();
         this.modules.annotations?.showHighlights();
       } else {
-        element.className = element.className.replace(" active", "");
+        element.className = element.className.replace(" dita-active", "");
         sidenav.className = sidenav.className.replace(" expanded", "");
         element.innerText = "unfold_more";
         this.sideNavExpanded = false;
@@ -2817,13 +2817,13 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         this.tocView.querySelectorAll("li > a")
       );
       for (const item of allItems) {
-        item.className = item.className.replace(" active", "");
+        item.className = item.className.replace(" dita-active", "");
       }
       const activeItem = this.tocView.querySelector(
         'li > a[href^="' + resource + '"]'
       );
       if (activeItem) {
-        activeItem.className += " active";
+        activeItem.className += " dita-active";
       }
     }
   }

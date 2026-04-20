@@ -28,11 +28,10 @@ import type {
 } from "./NavigatorFeatureMap";
 import {
   IFrameAttributes,
-  NavigatorAPI,
-  ReaderRights,
   RequestConfig,
   SampleRead,
 } from "../navigator/EpubNavigator";
+import type { NavigatorAPI, ReaderRights } from "../navigator/types";
 import { UserSettings } from "../model/user-settings/UserSettings";
 import { TextHighlighter } from "./highlight/TextHighlighter";
 
@@ -46,6 +45,9 @@ export interface ModuleHost {
   readonly settings: UserSettings;
   readonly rights: Partial<ReaderRights>;
   readonly api?: Partial<NavigatorAPI>;
+
+  // ── Content loading ─────────────────────────────────────────
+  readonly fetcher: import("../fetcher/Fetcher").Fetcher;
 
   // ── DOM access (shared by both navigators) ──────────────────
   readonly mainElement: HTMLElement;

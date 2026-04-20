@@ -109,7 +109,7 @@ const css = {
     color: "inherit",
   },
   slider: { width: 70, accentColor: "#4a90d9" },
-};
+} as const;
 
 const themes = {
   day: { bg: "#FFFFFF", fg: "#121212", border: "#e0e0e0" },
@@ -123,11 +123,16 @@ const themes = {
 // ── App ──────────────────────────────────────────────────────────────
 
 export default function EpubReader() {
-  const [reader, setReader] = useState(null);
+  const [reader, setReader] = useState<D2Reader | null>(null);
   const [, setTick] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("toc");
-  const [pageInfo, setPageInfo] = useState({});
+  const [pageInfo, setPageInfo] = useState<{
+    chapterTitle?: string;
+    pageIndex?: number;
+    pageCount?: number;
+    totalProgression?: number;
+  }>({});
   const [appearance, setAppearanceState] = useState("day");
   const refresh = useCallback(() => setTick((n) => n + 1), []);
 
@@ -169,7 +174,7 @@ export default function EpubReader() {
       if (a) setAppearanceState(a);
       setTimeout(() => updatePageInfo(r), 500);
     });
-  }, []);
+  }, [updatePageInfo]);
 
   useEffect(() => {
     if (!reader) return;

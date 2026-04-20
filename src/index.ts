@@ -76,6 +76,35 @@ export type {
 } from "./modules/interfaces";
 export { getPageFromLocations } from "./model/v3";
 
+// ─── Fetcher ────────────────────────────────────────────────────────────────
+
+export type { Fetcher, Resource } from "./fetcher/Fetcher";
+export type { Container } from "./fetcher/Container";
+export type {
+  RequestConfig,
+  GetContent,
+  GetContentBytesLength,
+} from "./fetcher/types";
+export { ZipContainer } from "./fetcher/ZipContainer";
+export { ReadError } from "./fetcher/ReadError";
+export type { ReadErrorType } from "./fetcher/ReadError";
+export { HttpFetcher } from "./fetcher/HttpFetcher";
+export { ContentFetcher } from "./fetcher/ContentFetcher";
+export { CacheFetcher } from "./fetcher/CacheFetcher";
+export { ZipFetcher } from "./fetcher/ZipFetcher";
+export { EpubParser } from "./fetcher/EpubParser";
+export { BlobUrlManager } from "./fetcher/BlobUrlManager";
+export { guessMediaType } from "./fetcher/mediaType";
+export { TransformingFetcher } from "./fetcher/TransformingFetcher";
+export type { ResourceTransform } from "./fetcher/TransformingFetcher";
+export {
+  parseEncryptionXml,
+  deobfuscateIdpf,
+  deobfuscateAdobe,
+  createDeobfuscationTransform,
+} from "./fetcher/FontDeobfuscator";
+export type { EncryptionInfo } from "./fetcher/FontDeobfuscator";
+
 // ─── Navigator / Config ─────────────────────────────────────────────────────
 
 export type {
@@ -84,7 +113,6 @@ export type {
   NavigatorAPI,
   IFrameAttributes,
   Injectable,
-  RequestConfig,
   SampleRead,
   PublicationServices,
   InitialAnnotations,

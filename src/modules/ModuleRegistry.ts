@@ -15,7 +15,7 @@ import type {
   NavigatorFeatureKey,
   NavigatorFeatureMap,
 } from "./NavigatorFeatureMap";
-import type { ReaderRights } from "../navigator/EpubNavigator";
+import type { ReaderRights } from "../navigator/types";
 
 /**
  * Registry for reader feature modules.

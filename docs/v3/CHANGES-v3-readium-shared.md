@@ -1,4 +1,4 @@
-# Workstream 3.0 — Replace r2-shared-js with @readium/shared
+# CHANGES — v3 Workstream 3.0: Replace r2-shared-js with @readium/shared
 
 ## What Changed
 

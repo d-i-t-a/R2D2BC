@@ -19,6 +19,7 @@
 
 import log from "loglevel";
 import { HostType } from "../modules/ReaderModule";
+import { HttpFetcher } from "../fetcher/HttpFetcher";
 import {
   VisualNavigator,
   NavigatorFeature,
@@ -62,7 +63,7 @@ import {
   releasePdfViewerDocument,
   releasePdfLinkServiceDocument,
 } from "../types/pdfjs-workarounds";
-import { NavigatorAPI, ReaderRights } from "./EpubNavigator";
+import type { NavigatorAPI, ReaderRights } from "./types";
 import { GrabToPan } from "../utils/GrabToPan";
 import { readerLoading } from "../utils/HTMLTemplates";
 
@@ -184,6 +185,14 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     return this._resource;
   }
 
+  // PDFNavigator's fetcher — used by ModuleHost interface. PDF content
+  // loading goes through pdfjs getDocument(), not the Fetcher, but modules
+  // that need to fetch resources (e.g. future PDF outline) use this.
+  private _fetcher!: import("../fetcher/Fetcher").Fetcher;
+  get fetcher(): import("../fetcher/Fetcher").Fetcher {
+    return this._fetcher;
+  }
+
   private resizeTimeout: ReturnType<typeof setTimeout> | undefined;
 
   // ── Factory ────────────────────────────────────────────────────────────────
@@ -231,6 +240,7 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     this._annotator = annotator;
     this.initialLastReadingPosition = initialLastReadingPosition;
     this._viewStore = viewStore;
+    this._fetcher = new HttpFetcher();
 
     // Register modules with hostType validation. Mismatches are logged
     // and skipped — same pattern as EpubNavigator.
@@ -446,7 +456,21 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     }
 
     try {
-      const task = getDocument(url);
+      // If the Fetcher is a ZipFetcher (e.g., a multi-file PDF bundled in a
+      // ZIP), extract the raw bytes and pass them to pdfjs instead of a URL.
+      let task;
+      if ("getBytes" in this._fetcher) {
+        const zipFetcher = this
+          ._fetcher as import("../fetcher/ZipFetcher").ZipFetcher;
+        const bytes = zipFetcher.getBytes(url);
+        if (bytes) {
+          task = getDocument({ data: bytes });
+        } else {
+          task = getDocument(url);
+        }
+      } else {
+        task = getDocument(url);
+      }
       const doc = await task.promise;
       this._pdfDoc = doc;
       this._pdfViewer.setDocument(doc);

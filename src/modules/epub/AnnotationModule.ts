@@ -528,9 +528,10 @@ export class AnnotationModule
     if (this.host.rights.enableAnnotations && this.highlighter) {
       if (this.api) {
         let highlights: Array<any> = [];
-        if (this.annotator) {
+        const locator = this.host.currentLocator();
+        if (this.annotator && locator?.href) {
           highlights = this.annotator.getAnnotationsByChapter(
-            this.host.currentLocator().href
+            locator.href
           ) as Array<any>;
         }
         if (
@@ -611,9 +612,10 @@ export class AnnotationModule
         }
       } else {
         let highlights: Array<any> = [];
-        if (this.annotator) {
+        const locator = this.host.currentLocator();
+        if (this.annotator && locator?.href) {
           highlights = this.annotator.getAnnotationsByChapter(
-            this.host.currentLocator().href
+            locator.href
           ) as Array<any>;
         }
         if (

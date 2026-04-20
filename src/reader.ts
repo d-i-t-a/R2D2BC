@@ -18,6 +18,7 @@
  */
 import { Annotation, Bookmark, Locator } from "./model/Locator";
 import { Publication } from "./model/Publication";
+import { Profile } from "@readium/shared";
 import { UserSettingsIncrementable } from "./model/user-settings/UserProperties";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import { AnnotationModule } from "./modules/epub/AnnotationModule";
@@ -151,19 +152,142 @@ export default class D2Reader {
     const footerMenu = findElement(document, "#footerMenu");
 
     let webPubManifestUrl = initialConfig.url;
-    let publication;
-    if (initialConfig.publication) {
+    let publication: Publication | null = null;
+    // Track the Fetcher for .epub file mode — may be a ZipFetcher directly,
+    // or a TransformingFetcher wrapping it (for font deobfuscation).
+    let epubZipFetcher: import("./fetcher/Fetcher").Fetcher | undefined;
+    let epubBlobUrlManager:
+      | import("./fetcher/BlobUrlManager").BlobUrlManager
+      | undefined;
+
+    if (initialConfig.epub) {
+      // ── Client-side EPUB opening ────────────────────────────────────
+      const { ZipFetcher } = await import("./fetcher/ZipFetcher");
+      const { EpubParser } = await import("./fetcher/EpubParser");
+      const { BlobUrlManager } = await import("./fetcher/BlobUrlManager");
+      const { parseEncryptionXml, createDeobfuscationTransform } =
+        await import("./fetcher/FontDeobfuscator");
+
+      // Accept File, Blob, ArrayBuffer, URL, or string — fetch if needed
+      let buffer: ArrayBuffer;
+      const epubInput = initialConfig.epub;
+      if (typeof epubInput === "string" || epubInput instanceof URL) {
+        const response = await fetch(
+          epubInput.toString(),
+          initialConfig.requestConfig
+        );
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch EPUB: ${response.status} ${response.statusText}`
+          );
+        }
+        buffer = await response.arrayBuffer();
+      } else if (epubInput instanceof ArrayBuffer) {
+        buffer = epubInput;
+      } else {
+        buffer = await epubInput.arrayBuffer();
+      }
+
+      // Parse the ZIP once, extract the identifier, then set the basePath.
+      // The basePath uses the page origin + a unique path so the URL
+      // constructor resolves relative paths correctly (custom schemes
+      // like epub:// don't work).
+      const rawZip = new ZipFetcher(buffer);
+      const publicationId = await EpubParser.extractIdentifier(rawZip);
+      const basePath = `${window.location.origin}/epub-local/${encodeURIComponent(publicationId)}/`;
+      rawZip.setBasePath(basePath);
+      epubZipFetcher = rawZip;
+
+      // Parse encryption.xml for font obfuscation info (IDPF/Adobe).
+      // The encryption map is set on both ZipFetcher (so Resources carry
+      // encryption metadata) and BlobUrlManager (so transforms can read it).
+      let encryptionMap:
+        | Map<string, import("./fetcher/FontDeobfuscator").EncryptionInfo>
+        | undefined;
+      try {
+        const encryptionResource = await rawZip.getByHref(
+          "META-INF/encryption.xml"
+        );
+        if (encryptionResource.text) {
+          encryptionMap = parseEncryptionXml(encryptionResource.text);
+          if (encryptionMap.size > 0) {
+            rawZip.setEncryptionMap(encryptionMap);
+          }
+        }
+      } catch {
+        // No encryption.xml — most EPUBs don't have one
+      }
+
+      // Create blob URLs for all ZIP resources so document.write()
+      // iframes can load images, CSS, fonts, and scripts.
+      // The deobfuscation transform handles encrypted fonts (IDPF/Adobe)
+      // before their blob URLs are created.
+      epubBlobUrlManager = new BlobUrlManager(rawZip.container);
+      if (encryptionMap && encryptionMap.size > 0) {
+        epubBlobUrlManager.setEncryptionMap(encryptionMap);
+      }
+      const deobfuscationTransform =
+        createDeobfuscationTransform(publicationId);
+      epubBlobUrlManager.addTransform(deobfuscationTransform);
+      await epubBlobUrlManager.initialize();
+
+      // Wrap the ZipFetcher in a TransformingFetcher so resources
+      // fetched through the chain (by modules, navigator, etc.) are
+      // also deobfuscated — not just blob URLs.
+      if (encryptionMap && encryptionMap.size > 0) {
+        const { TransformingFetcher } =
+          await import("./fetcher/TransformingFetcher");
+        epubZipFetcher = new TransformingFetcher(
+          rawZip,
+          deobfuscationTransform
+        );
+      }
+
+      const syntheticUrl = new URL(basePath + "manifest.json");
+      publication = await EpubParser.parse(rawZip, syntheticUrl);
+      webPubManifestUrl = syntheticUrl;
+
+      // Store encryption info on Publication links so any code with a
+      // Link can see which resources are encrypted and with what algorithm.
+      if (encryptionMap && encryptionMap.size > 0) {
+        const { Properties } = await import("@readium/shared");
+        const applyEncryption = (links: import("@readium/shared").Link[]) => {
+          for (const link of links) {
+            const linkEncryption = encryptionMap!.get(
+              link.href.replace(basePath, "")
+            );
+            if (linkEncryption) {
+              link.properties = link.properties
+                ? link.properties.add({ encrypted: linkEncryption })
+                : new Properties({ encrypted: linkEncryption });
+            }
+          }
+        };
+        if (publication.readingOrder) applyEncryption(publication.readingOrder);
+        if (publication.resources) applyEncryption(publication.resources);
+      }
+
+      // Auto-generate positions using byte lengths from the ZIP archive
+      // (no HTTP fetch needed — the ZipFetcher knows each entry's size).
+      const zipRef = rawZip;
+      await publication.autoGeneratePositions(undefined, async (href) => {
+        const resource = await zipRef.getByHref(href);
+        return resource.bytes?.byteLength ?? 0;
+      });
+    } else if (initialConfig.publication) {
       const pubInput = initialConfig.publication;
       if (pubInput instanceof Publication) {
         publication = pubInput;
       } else {
-        publication = Publication.fromJSON(pubInput, webPubManifestUrl);
+        publication = Publication.fromJSON(pubInput, webPubManifestUrl!);
       }
     }
     if (!publication) {
+      const { HttpFetcher } = await import("./fetcher/HttpFetcher");
       publication = await Publication.fromUrl(
-        webPubManifestUrl,
-        initialConfig.requestConfig
+        webPubManifestUrl!,
+        initialConfig.requestConfig,
+        new HttpFetcher(initialConfig.requestConfig)
       );
     }
 
@@ -193,9 +317,7 @@ export default class D2Reader {
 
     if (
       publication.metadata?.conformsTo &&
-      publication.metadata?.conformsTo.includes(
-        "https://readium.org/webpub-manifest/profiles/pdf"
-      )
+      publication.metadata?.conformsTo.includes(Profile.PDF)
     ) {
       const settings = await UserSettings.create({
         store: settingsStore,
@@ -256,20 +378,32 @@ export default class D2Reader {
        * Set up publication positions and weights by either auto
        * generating them or fetching them from provided services.
        */
-      if (rights.autoGeneratePositions) {
-        await publication.autoGeneratePositions(initialConfig.requestConfig);
-      } else {
-        if (initialConfig.services?.positions) {
-          await publication.fetchPositionsFromService(
-            initialConfig.services?.positions.href,
-            initialConfig.requestConfig
+      // Positions/weights — skip if the epub file path already handled this.
+      if (!epubZipFetcher) {
+        const { HttpFetcher } = await import("./fetcher/HttpFetcher");
+        const earlyFetcher = new HttpFetcher(initialConfig.requestConfig);
+
+        if (rights.autoGeneratePositions) {
+          await publication.autoGeneratePositions(
+            initialConfig.requestConfig,
+            async (href) => {
+              const resource = await earlyFetcher.getByHref(href);
+              return new TextEncoder().encode(resource.text).length;
+            }
           );
-        }
-        if (initialConfig.services?.weight) {
-          await publication.fetchWeightsFromService(
-            initialConfig.services?.weight.href,
-            initialConfig.requestConfig
-          );
+        } else {
+          if (initialConfig.services?.positions) {
+            await publication.fetchPositionsFromService(
+              initialConfig.services?.positions.href,
+              earlyFetcher
+            );
+          }
+          if (initialConfig.services?.weight) {
+            await publication.fetchWeightsFromService(
+              initialConfig.services?.weight.href,
+              earlyFetcher
+            );
+          }
         }
       }
 
@@ -442,6 +576,8 @@ export default class D2Reader {
         tts: initialConfig.tts,
         sample: initialConfig.sample,
         requestConfig: initialConfig.requestConfig,
+        fetcher: epubZipFetcher,
+        blobUrlManager: epubBlobUrlManager,
         injectables: publication.isFixedLayout
           ? (initialConfig.injectablesFixed ?? [])
           : initialConfig.injectables,

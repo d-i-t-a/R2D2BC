@@ -68,6 +68,11 @@ import SampleReadEventHandler from "../modules/epub/SampleReadEventHandler";
 import { ReaderModule, HostType } from "../modules/ReaderModule";
 import { EpubModuleHost } from "../modules/ModuleHost";
 import { TTSModuleConfig } from "../modules/epub/TTS/TTSSettings";
+import { HttpFetcher } from "../fetcher/HttpFetcher";
+import { Base64DecodingFetcher } from "../fetcher/Base64DecodingFetcher";
+import { InjectableManager } from "./InjectableManager";
+import { ContentFetcher } from "../fetcher/ContentFetcher";
+import { CacheFetcher } from "../fetcher/CacheFetcher";
 
 import { HighlightType } from "../modules/highlight/common/highlight";
 import { PageBreakModuleConfig } from "../modules/epub/PageBreakModule";
@@ -78,34 +83,24 @@ import { CitationModuleConfig } from "../modules/epub/CitationModule";
 import log from "loglevel";
 import { GrabToPan } from "../utils/GrabToPan";
 import { ConsumptionModuleConfig } from "../modules/epub/ConsumptionModule";
-export type GetContent = (href: string) => Promise<string>;
-export type GetContentBytesLength = (
-  href: string,
-  requestConfig?: RequestConfig
-) => Promise<number>;
-
-export interface RequestConfig extends RequestInit {
-  encoded?: boolean;
-}
-
-export interface NavigatorAPI {
-  updateSettings?: (settings: Record<string, unknown>) => Promise<void>;
-  getContent: GetContent;
-  getContentBytesLength: GetContentBytesLength;
-  resourceReady?: () => void;
-  resourceAtStart?: () => void;
-  resourceAtEnd?: () => void;
-  resourceFitsScreen?: () => void;
-  updateCurrentLocation?: (
-    locator: import("../model/Locator").ReadingPosition
-  ) => Promise<void>;
-  positionInfo?: (locator: import("../model/Locator").Locator) => void;
-  chapterInfo?: (title: string | undefined) => void;
-  keydownFallthrough?: (event: KeyboardEvent | undefined) => void;
-  clickThrough?: (event: MouseEvent | TouchEvent) => void;
-  direction?: (dir: string) => void;
-  onError?: (e: Error) => void;
-}
+import type {
+  GetContent,
+  GetContentBytesLength,
+  RequestConfig,
+} from "../fetcher/types";
+import type { NavigatorAPI, ReaderRights, Injectable } from "./types";
+// Re-exported for backwards compatibility.
+export type { GetContent, GetContentBytesLength, RequestConfig };
+export type {
+  NavigatorAPI,
+  ReaderRights,
+  Injectable,
+  InjectableContext,
+  StyleInjectable,
+  ScriptInjectable,
+  InlineStyleInjectable,
+  InlineScriptInjectable,
+} from "./types";
 
 export interface IFrameAttributes {
   margin: number;
@@ -134,6 +129,19 @@ export interface EpubNavigatorConfig {
   services?: PublicationServices;
   sample?: SampleRead;
   requestConfig?: RequestConfig;
+  /**
+   * Pre-built Fetcher to use for content loading. If provided, the
+   * navigator uses this instead of constructing its own HttpFetcher
+   * from requestConfig. Used when opening .epub files (ZipFetcher)
+   * or when the integrator wants full control over the content pipeline.
+   */
+  fetcher?: import("../fetcher/Fetcher").Fetcher;
+  /**
+   * Blob URL manager for ZIP-based content. Rewrites resource references
+   * (images, CSS, fonts) to blob URLs so document.write() iframes can
+   * load them. Only needed when opening .epub files directly.
+   */
+  blobUrlManager?: import("../fetcher/BlobUrlManager").BlobUrlManager;
   modules: Array<ReaderModule<any> | undefined>;
   highlighter: TextHighlighter;
 }
@@ -147,36 +155,6 @@ export interface SampleRead {
   popup?: string;
   minimum?: number;
 }
-export interface Injectable {
-  type: string;
-  url?: string;
-  r2after?: boolean;
-  r2before?: boolean;
-  r2default?: boolean;
-  fontFamily?: string;
-  systemFont?: boolean;
-  appearance?: string;
-  async?: boolean;
-}
-
-export interface ReaderRights {
-  enableBookmarks: boolean;
-  enableAnnotations: boolean;
-  enableTTS: boolean;
-  enableSearch: boolean;
-  enableDefinitions: boolean;
-  enableContentProtection: boolean;
-  enableTimeline: boolean;
-  autoGeneratePositions: boolean;
-  enableMediaOverlays: boolean;
-  enablePageBreaks: boolean;
-  enableLineFocus: boolean;
-  customKeyboardEvents: boolean;
-  enableHistory: boolean;
-  enableCitations: boolean;
-  enableConsumption: boolean;
-}
-
 export interface ReaderUI {
   settings: UserSettingsUIConfig;
 }
@@ -193,7 +171,23 @@ export interface InitialAnnotations {
 export interface ReaderConfig {
   /** Pre-parsed publication manifest JSON — if omitted the manifest is fetched from `url`. */
   publication?: Record<string, unknown>;
-  url: URL;
+  /**
+   * Manifest URL (webpub from server). Required unless `epub` is provided.
+   */
+  url?: URL;
+  /**
+   * Open an .epub file directly — no server/streamer needed.
+   * The reader parses the EPUB client-side (container.xml → OPF → manifest)
+   * and serves content from the ZIP via ZipFetcher.
+   *
+   * Accepts:
+   * - `File` or `Blob` — local file from drag-drop, file picker, IndexedDB
+   * - `ArrayBuffer` — raw bytes already in memory
+   * - `URL` or `string` — URL to a hosted .epub file (fetched automatically)
+   *
+   * Mutually exclusive with `url` (webpub manifest) — provide one or the other.
+   */
+  epub?: File | Blob | ArrayBuffer | URL | string;
   userSettings?: Partial<
     import("../model/user-settings/UserSettings").InitialUserSettings
   >;
@@ -253,6 +247,12 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   publication: Publication;
 
   highlighter?: TextHighlighter;
+  private _fetcher!: import("../fetcher/Fetcher").Fetcher;
+  private _blobUrlManager?: import("../fetcher/BlobUrlManager").BlobUrlManager;
+
+  get fetcher(): import("../fetcher/Fetcher").Fetcher {
+    return this._fetcher;
+  }
 
   supports(feature: NavigatorFeatureName): boolean {
     // Zoom is navigator-level, not module-based
@@ -471,6 +471,8 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   sample?: SampleRead;
   requestConfig?: RequestConfig;
   private didInitKeyboardEventHandler: boolean = false;
+  /** Owns the lifecycle of `Injectable` items across iframe loads. */
+  private injectableManager!: InjectableManager;
 
   public static async create(
     config: EpubNavigatorConfig
@@ -489,7 +491,9 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       config.sample,
       config.requestConfig,
       config.highlighter,
-      config.modules
+      config.modules,
+      config.fetcher,
+      config.blobUrlManager
     );
 
     await navigator.start(
@@ -515,9 +519,12 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     sample?: SampleRead,
     requestConfig?: RequestConfig,
     highlighter?: TextHighlighter,
-    modules?: Array<ReaderModule<any> | undefined>
+    modules?: Array<ReaderModule<any> | undefined>,
+    fetcher?: import("../fetcher/Fetcher").Fetcher,
+    blobUrlManager?: import("../fetcher/BlobUrlManager").BlobUrlManager
   ) {
     super();
+    this._blobUrlManager = blobUrlManager;
     this.highlighter = highlighter;
     if (this.highlighter) {
       this.highlighter.navigator = this;
@@ -532,6 +539,24 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       }
       this.registry.register(module, this);
     }
+    // Default chain (innermost first): HttpFetcher → ContentFetcher (if
+    // getContent) → Base64DecodingFetcher (if encoded) → CacheFetcher.
+    // Pre-built fetcher short-circuits (e.g. ZipFetcher for .epub files).
+    if (fetcher) {
+      this._fetcher = new CacheFetcher(fetcher);
+    } else {
+      let inner: import("../fetcher/Fetcher").Fetcher = new HttpFetcher(
+        requestConfig
+      );
+      if (api?.getContent) {
+        inner = new ContentFetcher(inner, api.getContent, publication);
+      }
+      if (requestConfig?.encoded) {
+        inner = new Base64DecodingFetcher(inner);
+      }
+      this._fetcher = new CacheFetcher(inner);
+    }
+
     this.settings = settings;
     this.annotator = annotator;
     this.view = settings.view;
@@ -574,6 +599,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     this.sample = sample;
     this.requestConfig = requestConfig;
     this.sampleReadEventHandler = new SampleReadEventHandler(this);
+    this.injectableManager = new InjectableManager(publication, settings);
   }
 
   stop() {
@@ -630,14 +656,20 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     );
 
     removeEventListenerOptional(window, "resize", this.onResize);
+    // Revoke any blob-content object URLs allocated for each iframe before
+    // removal so they don't leak when the reader is stopped.
     this.iframes.forEach((iframe) => {
+      this.injectableManager.cleanupForIframe(iframe);
       removeEventListenerOptional(iframe, "resize", this.onResize);
+      iframe.remove();
     });
 
     if (this.didInitKeyboardEventHandler)
       this.keyboardEventHandler.removeEvents(document);
 
     this.registry.stopAll();
+    this._fetcher?.destroy?.();
+    this._blobUrlManager?.destroy();
   }
   spreads: HTMLDivElement;
   firstSpread: HTMLDivElement;
@@ -1663,7 +1695,9 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         this.emit(ReaderEvent.ChapterInfo, undefined);
       }
 
-      await this.injectInjectablesIntoIframeHead(iframe);
+      // Static injectables (style / script / inline) were written into the
+      // document inside prepareDoc — they're loaded by the browser during
+      // iframe parse. Nothing to do on load beyond what the browser did.
 
       if (this.view?.layout !== "fixed" && this.highlighter !== undefined) {
         await this.highlighter.initialize(iframe);
@@ -1760,6 +1794,15 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
             this.view?.goToCssSelector(startContainer);
           }
         } else if (bookViewPosition && bookViewPosition >= 0) {
+          // Inject the odd-column spacer before restoring progression so the
+          // progression-to-scroll math uses the final, even-column layout.
+          // Without this, refreshing on an odd-column page restores position
+          // against pre-spacer scrollWidth; then hideLoadingMessage adds the
+          // spacer and the visible content jumps right (or the chapter
+          // navigation lands on the wrong column).
+          if (this.view?.layout !== "fixed") {
+            this.view?.padOddColumns?.();
+          }
           this.view?.goToProgression(bookViewPosition);
         }
 
@@ -1800,93 +1843,6 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       this.abortOnError(err);
       return Promise.reject(err);
     }
-  }
-
-  private async injectInjectablesIntoIframeHead(
-    iframe: HTMLIFrameElement
-  ): Promise<void> {
-    // Inject Readium CSS into Iframe Head
-    const injectablesToLoad: Promise<boolean>[] = [];
-
-    const addLoadingInjectable = (
-      injectable: HTMLLinkElement | HTMLScriptElement
-    ) => {
-      const loadPromise = new Promise<boolean>((resolve, reject) => {
-        injectable.onload = () => {
-          resolve(true);
-        };
-        injectable.onerror = (e) => {
-          const message =
-            typeof e === "string"
-              ? e
-              : `Injectable failed to load at: ${
-                  "href" in injectable ? injectable.href : injectable.src
-                }`;
-          reject(new Error(message));
-        };
-      });
-      injectablesToLoad.push(loadPromise);
-    };
-
-    const head = iframe.contentDocument?.head;
-    if (head) {
-      const bases = iframe.contentDocument.getElementsByTagName("base");
-      if (bases.length === 0) {
-        head.insertBefore(
-          EpubNavigator.createBase(this.currentChapterLink.href),
-          head.firstChild
-        );
-      }
-
-      this.injectables?.forEach((injectable) => {
-        if (injectable.type === "style") {
-          if (injectable.fontFamily) {
-            // UserSettings.fontFamilyValues.push(injectable.fontFamily)
-            // this.settings.setupEvents()
-            // this.settings.addFont(injectable.fontFamily);
-            this.settings.initAddedFont();
-            if (!injectable.systemFont && injectable.url) {
-              const link = EpubNavigator.createCssLink(injectable.url);
-              head.appendChild(link);
-              addLoadingInjectable(link);
-            }
-          } else if (injectable.r2before && injectable.url) {
-            const link = EpubNavigator.createCssLink(injectable.url);
-            head.insertBefore(link, head.firstChild);
-            addLoadingInjectable(link);
-          } else if (injectable.r2default && injectable.url) {
-            const link = EpubNavigator.createCssLink(injectable.url);
-            head.insertBefore(link, head.childNodes[1]);
-            addLoadingInjectable(link);
-          } else if (injectable.r2after && injectable.url) {
-            if (injectable.appearance) {
-              // this.settings.addAppearance(injectable.appearance);
-              this.settings.initAddedAppearance();
-            }
-            const link = EpubNavigator.createCssLink(injectable.url);
-            head.appendChild(link);
-            addLoadingInjectable(link);
-          } else if (injectable.url) {
-            const link = EpubNavigator.createCssLink(injectable.url);
-            head.appendChild(link);
-            addLoadingInjectable(link);
-          }
-        } else if (injectable.type === "script" && injectable.url) {
-          const script = EpubNavigator.createJavascriptLink(
-            injectable.url,
-            injectable.async ?? false
-          );
-          head.appendChild(script);
-          addLoadingInjectable(script);
-        }
-      });
-    }
-
-    if (injectablesToLoad.length === 0) {
-      return;
-    }
-
-    await Promise.all(injectablesToLoad);
   }
 
   /**
@@ -1939,7 +1895,20 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
 
     this.currentSpreadLinks = {};
 
-    function writeIframeDoc(content: string, href: string) {
+    // ── Content loading via Fetcher ──────────────────────────────────────────
+    // All chapter content flows through the Fetcher chain — any decoding,
+    // transform, or caching happens there. This callback just returns the
+    // final text.
+    const fetchContent = async (href: string): Promise<string> => {
+      const resource = await self._fetcher.getByHref(href);
+      return resource.text;
+    };
+
+    function prepareDoc(
+      content: string,
+      href: string,
+      iframe: HTMLIFrameElement
+    ): string {
       const parser = new DOMParser();
       const doc = parser.parseFromString(content, "application/xhtml+xml");
       if (doc.head) {
@@ -1951,7 +1920,31 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
           );
         }
       }
-      const newHTML = doc.documentElement.outerHTML;
+      // Inject static injectables (style / script / style-inline /
+      // script-inline) into the parsed doc's head/body before the iframe
+      // writes it. The browser then loads them in parallel with the body
+      // — no flash of unstyled content, and the iframe's own `load` event
+      // covers readiness without a second round-trip.
+      self.injectableManager.injectStaticIntoDoc(
+        doc,
+        iframe,
+        self.injectables,
+        href
+      );
+      // For ZIP-based EPUBs, rewrite resource URLs (images, CSS, fonts)
+      // to blob URLs so document.write() can load them.
+      if (self._blobUrlManager) {
+        // Extract ZIP-internal path from the full href
+        const publication = self.publication;
+        const zipPath = publication.getRelativeHref(href);
+        self._blobUrlManager.rewriteDom(doc, zipPath);
+      }
+      return doc.documentElement.outerHTML;
+    }
+
+    function writeIframeDoc(content: string, href: string) {
+      self.injectableManager.cleanupForIframe(self.iframes[0]);
+      const newHTML = prepareDoc(content, href, self.iframes[0]);
       const iframeDoc = self.iframes[0].contentDocument;
       if (iframeDoc) {
         iframeDoc.open();
@@ -1961,18 +1954,8 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     }
 
     function writeIframe2Doc(content: string, href: string) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(content, "application/xhtml+xml");
-      if (doc.head) {
-        const bases = doc.getElementsByTagName("base");
-        if (bases.length === 0) {
-          doc.head.insertBefore(
-            EpubNavigator.createBase(href),
-            doc.head.firstChild
-          );
-        }
-      }
-      const newHTML = doc.documentElement.outerHTML;
+      self.injectableManager.cleanupForIframe(self.iframes[1]);
+      const newHTML = prepareDoc(content, href, self.iframes[1]);
       const iframeDoc = self.iframes[1].contentDocument;
       if (iframeDoc) {
         iframeDoc.open();
@@ -1981,359 +1964,91 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       }
     }
 
-    const link = new URL(this.currentChapterLink.href);
-    const isSameOrigin =
-      window.location.protocol === link.protocol &&
-      window.location.port === link.port &&
-      window.location.hostname === link.hostname;
+    // ── Load content into iframes via Fetcher ─────────────────────────────────
+    // All content goes through the Fetcher pipeline (HttpFetcher, ContentFetcher,
+    // CacheFetcher, ZipFetcher, etc.). No more same-origin shortcuts or scattered
+    // api.getContent / fetch / encoded branching.
 
-    if (this.api?.getContent) {
-      if (this.publication.isFixedLayout) {
-        if (this.settings.columnCount !== 1) {
-          if (even) {
-            this.currentSpreadLinks.left = {
+    const loadIntoIframe = async (
+      href: string,
+      iframeIndex: number
+    ): Promise<void> => {
+      const content = await fetchContent(href);
+      if (iframeIndex === 0) {
+        writeIframeDoc.call(self, content, href);
+      } else {
+        writeIframe2Doc.call(self, content, href);
+      }
+    };
+
+    if (this.publication.isFixedLayout) {
+      if (this.settings.columnCount !== 1) {
+        // ── FXL spread (2-column) ────────────────────────────────────────────
+        if (even) {
+          // Even page → left iframe = current, right iframe = next
+          this.currentSpreadLinks.left = {
+            href: this.currentChapterLink.href,
+          };
+          loadIntoIframe(this.currentChapterLink.href, 0);
+
+          if (this.iframes.length === 2) {
+            if (
+              pageSpread !== "center" &&
+              (index ?? 0) < this.publication.readingOrder.length - 1
+            ) {
+              const next = this.publication.getNextSpineItem(
+                this.currentChapterLink.href
+              );
+              if (next) {
+                const href = this.publication.getAbsoluteHref(next.href);
+                this.currentSpreadLinks.right = { href };
+                loadIntoIframe(href, 1);
+              }
+            } else {
+              this.injectableManager.cleanupForIframe(this.iframes[1]);
+              this.iframes[1].src = "about:blank";
+              this.currentSpreadLinks.right = undefined;
+            }
+          }
+        } else {
+          // Odd page → left iframe = previous, right iframe = current
+          if ((index ?? 0) > 0) {
+            const prev = this.publication.getPreviousSpineItem(
+              this.currentChapterLink.href
+            );
+            if (prev) {
+              const href = this.publication.getAbsoluteHref(prev.href);
+              this.currentSpreadLinks.left = { href };
+              loadIntoIframe(href, 0);
+            }
+          } else {
+            this.injectableManager.cleanupForIframe(this.iframes[0]);
+            this.iframes[0].src = "about:blank";
+            this.currentSpreadLinks.left = undefined;
+          }
+
+          if (this.iframes.length === 2) {
+            this.currentSpreadLinks.right = {
               href: this.currentChapterLink.href,
             };
-
-            this.api
-              ?.getContent(this.currentChapterLink.href)
-              .then((content) => {
-                if (content === undefined) {
-                  if (isSameOrigin) {
-                    this.iframes[0].src = this.currentChapterLink.href;
-                  } else {
-                    fetch(this.currentChapterLink.href, this.requestConfig)
-                      .then((r) => r.text())
-                      .then(async (content) => {
-                        writeIframeDoc.call(
-                          this,
-                          content,
-                          this.currentChapterLink.href
-                        );
-                      });
-                  }
-                } else {
-                  writeIframeDoc.call(
-                    this,
-                    content,
-                    this.currentChapterLink.href
-                  );
-                }
-              });
-            if (this.iframes.length === 2) {
-              if (
-                pageSpread !== "center" &&
-                (index ?? 0) < this.publication.readingOrder.length - 1
-              ) {
-                const next = this.publication.getNextSpineItem(
-                  this.currentChapterLink.href
-                );
-                if (next) {
-                  const href = this.publication.getAbsoluteHref(next.href);
-                  this.currentSpreadLinks.right = {
-                    href: href,
-                  };
-                  this.api?.getContent(href).then((content) => {
-                    if (content === undefined) {
-                      if (isSameOrigin) {
-                        this.iframes[1].src = href;
-                      } else {
-                        fetch(href, this.requestConfig)
-                          .then((r) => r.text())
-                          .then(async (content) => {
-                            writeIframe2Doc.call(this, content, href);
-                            this.currentSpreadLinks.right = {
-                              href: href,
-                            };
-                          });
-                      }
-                    } else {
-                      writeIframe2Doc.call(this, content, href);
-                    }
-                  });
-                }
-              } else {
-                this.iframes[1].src = "about:blank";
-                this.currentSpreadLinks.right = undefined;
-              }
-            }
-          } else {
-            if ((index ?? 0) > 0) {
-              const prev = this.publication.getPreviousSpineItem(
-                this.currentChapterLink.href
-              );
-              if (prev) {
-                const href = this.publication.getAbsoluteHref(prev.href);
-                this.currentSpreadLinks.left = {
-                  href: href,
-                };
-                this.api?.getContent(href).then((content) => {
-                  if (content === undefined) {
-                    if (isSameOrigin) {
-                      this.iframes[0].src = href;
-                    } else {
-                      fetch(href, this.requestConfig)
-                        .then((r) => r.text())
-                        .then(async (content) => {
-                          writeIframeDoc.call(this, content, href);
-                        });
-                    }
-                  } else {
-                    writeIframeDoc.call(this, content, href);
-                  }
-                });
-              }
-            } else {
-              this.iframes[0].src = "about:blank";
-              this.currentSpreadLinks.left = undefined;
-            }
-            if (this.iframes.length === 2 && this.publication.isFixedLayout) {
-              this.currentSpreadLinks.right = {
-                href: this.currentChapterLink.href,
-              };
-
-              this.api
-                .getContent(this.currentChapterLink.href)
-                .then((content) => {
-                  if (content === undefined) {
-                    if (isSameOrigin) {
-                      this.iframes[1].src = this.currentChapterLink.href;
-                    } else {
-                      fetch(this.currentChapterLink.href, this.requestConfig)
-                        .then((r) => r.text())
-                        .then(async (content) => {
-                          writeIframe2Doc.call(
-                            this,
-                            content,
-                            this.currentChapterLink.href
-                          );
-                        });
-                    }
-                  } else {
-                    writeIframe2Doc.call(
-                      this,
-                      content,
-                      this.currentChapterLink.href
-                    );
-                  }
-                });
-            }
-          }
-        } else {
-          this.currentSpreadLinks.left = {
-            href: this.currentChapterLink.href,
-          };
-          this.api?.getContent(this.currentChapterLink.href).then((content) => {
-            if (content === undefined) {
-              if (isSameOrigin) {
-                this.iframes[0].src = this.currentChapterLink.href;
-              } else {
-                fetch(this.currentChapterLink.href, this.requestConfig)
-                  .then((r) => r.text())
-                  .then(async (content) => {
-                    writeIframeDoc.call(
-                      this,
-                      content,
-                      this.currentChapterLink.href
-                    );
-                  });
-              }
-            } else {
-              writeIframeDoc.call(this, content, this.currentChapterLink.href);
-            }
-          });
-        }
-      } else {
-        this.api?.getContent(this.currentChapterLink.href).then((content) => {
-          this.currentSpreadLinks.left = {
-            href: this.currentChapterLink.href,
-          };
-
-          if (content === undefined) {
-            if (isSameOrigin) {
-              this.iframes[0].src = this.currentChapterLink.href;
-            } else {
-              fetch(this.currentChapterLink.href, this.requestConfig)
-                .then((r) => r.text())
-                .then(async (content) => {
-                  writeIframeDoc.call(
-                    this,
-                    content,
-                    this.currentChapterLink.href
-                  );
-                });
-            }
-          } else {
-            writeIframeDoc.call(this, content, this.currentChapterLink.href);
-          }
-        });
-      }
-    } else {
-      if (this.publication.isFixedLayout) {
-        if (this.settings.columnCount !== 1) {
-          if (even) {
-            if (isSameOrigin) {
-              this.iframes[0].src = this.currentChapterLink.href;
-              this.currentSpreadLinks.left = {
-                href: this.currentChapterLink.href,
-              };
-
-              if (this.iframes.length === 2) {
-                if (
-                  pageSpread !== "center" &&
-                  (index ?? 0) < this.publication.readingOrder.length - 1
-                ) {
-                  const next = this.publication.getNextSpineItem(
-                    this.currentChapterLink.href
-                  );
-                  if (next) {
-                    const href = this.publication.getAbsoluteHref(next.href);
-                    this.iframes[1].src = href;
-                    this.currentSpreadLinks.right = {
-                      href: href,
-                    };
-                  }
-                } else {
-                  this.iframes[1].src = "about:blank";
-                  this.currentSpreadLinks.right = undefined;
-                }
-              }
-            } else {
-              fetch(this.currentChapterLink.href, this.requestConfig)
-                .then((r) => r.text())
-                .then(async (content) => {
-                  writeIframeDoc.call(
-                    this,
-                    content,
-                    this.currentChapterLink.href
-                  );
-                });
-              this.currentSpreadLinks.left = {
-                href: this.currentChapterLink.href,
-              };
-              if (this.iframes.length === 2) {
-                if (
-                  pageSpread !== "center" &&
-                  (index ?? 0) < this.publication.readingOrder.length - 1
-                ) {
-                  const next = this.publication.getNextSpineItem(
-                    this.currentChapterLink.href
-                  );
-                  if (next) {
-                    const href = this.publication.getAbsoluteHref(next.href);
-                    this.currentSpreadLinks.right = {
-                      href: href,
-                    };
-
-                    fetch(href, this.requestConfig)
-                      .then((r) => r.text())
-                      .then(async (content) => {
-                        writeIframe2Doc.call(this, content, href);
-                      });
-                  }
-                } else {
-                  this.iframes[1].src = "about:blank";
-                  this.currentSpreadLinks.right = undefined;
-                }
-              }
-            }
-          } else {
-            if ((index ?? 0) > 0) {
-              const prev = this.publication.getPreviousSpineItem(
-                this.currentChapterLink.href
-              );
-              if (prev) {
-                const href = this.publication.getAbsoluteHref(prev.href);
-                this.currentSpreadLinks.left = {
-                  href: href,
-                };
-                if (isSameOrigin) {
-                  this.iframes[0].src = href;
-                  if (this.iframes.length === 2) {
-                    this.iframes[1].src = this.currentChapterLink.href;
-                    this.currentSpreadLinks.right = {
-                      href: this.currentChapterLink.href,
-                    };
-                  }
-                } else {
-                  fetch(href, this.requestConfig)
-                    .then((r) => r.text())
-                    .then(async (content) => {
-                      writeIframeDoc.call(this, content, href);
-                    });
-                  if (this.iframes.length === 2) {
-                    this.currentSpreadLinks.right = {
-                      href: this.currentChapterLink.href,
-                    };
-                    fetch(this.currentChapterLink.href, this.requestConfig)
-                      .then((r) => r.text())
-                      .then(async (content) => {
-                        writeIframe2Doc.call(
-                          this,
-                          content,
-                          this.currentChapterLink.href
-                        );
-                      });
-                  }
-                }
-              }
-            } else {
-              this.iframes[0].src = "about:blank";
-              this.currentSpreadLinks.left = undefined;
-              if (this.iframes.length === 2) {
-                this.currentSpreadLinks.right = {
-                  href: this.currentChapterLink.href,
-                };
-
-                if (isSameOrigin) {
-                  this.iframes[1].src = this.currentChapterLink.href;
-                } else {
-                  fetch(this.currentChapterLink.href, this.requestConfig)
-                    .then((r) => r.text())
-                    .then(async (content) => {
-                      writeIframe2Doc.call(
-                        this,
-                        content,
-                        this.currentChapterLink.href
-                      );
-                    });
-                }
-              }
-            }
-          }
-        } else {
-          this.currentSpreadLinks.left = {
-            href: this.currentChapterLink.href,
-          };
-          if (isSameOrigin) {
-            this.iframes[0].src = this.currentChapterLink.href;
-          } else {
-            fetch(this.currentChapterLink.href, this.requestConfig)
-              .then((r) => r.text())
-              .then(async (content) => {
-                writeIframeDoc.call(
-                  this,
-                  content,
-                  this.currentChapterLink.href
-                );
-              });
+            loadIntoIframe(this.currentChapterLink.href, 1);
           }
         }
       } else {
+        // ── FXL single column ──────────────────────────────────────────────
         this.currentSpreadLinks.left = {
           href: this.currentChapterLink.href,
         };
-        if (isSameOrigin) {
-          this.iframes[0].src = this.currentChapterLink.href;
-        } else {
-          fetch(this.currentChapterLink.href, this.requestConfig)
-            .then((r) => r.text())
-            .then(async (content) => {
-              writeIframeDoc.call(this, content, this.currentChapterLink.href);
-            });
-        }
+        loadIntoIframe(this.currentChapterLink.href, 0);
       }
+    } else {
+      // ── Reflowable ─────────────────────────────────────────────────────
+      this.currentSpreadLinks.left = {
+        href: this.currentChapterLink.href,
+      };
+      loadIntoIframe(this.currentChapterLink.href, 0);
     }
+
     if (this.publication.isFixedLayout) {
       setTimeout(() => {
         let height, width;
@@ -2825,7 +2540,13 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         } else {
           doc = this.iframes[0].contentDocument;
         }
-        if (doc && doc.body) {
+        // Iframe may not have loaded yet — bail out of the FXL resize logic
+        // that reads viewport metadata from the iframe head. A later load
+        // event will trigger handleResize again.
+        if (!doc) {
+          return;
+        }
+        if (doc.body) {
           height = getComputedStyle(doc.body).height;
           width = getComputedStyle(doc.body).width;
         }
@@ -3168,6 +2889,12 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
             this.currentChapterLink.href + "#" + this.newElementId;
         }
 
+        // Inject the odd-column spacer before per-locator navigation so the
+        // progression-to-scroll math uses the even-column layout. Matches
+        // the fix in the initial-load path above.
+        if (this.view?.layout !== "fixed") {
+          this.view?.padOddColumns?.();
+        }
         if (this.newElementId) {
           for (const iframe of this.iframes) {
             const element = (iframe.contentDocument as any).getElementById(
@@ -3506,6 +3233,33 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         href: this.currentChapterLink.href,
       });
       this.registry.notifyResourceReady();
+
+      // Predictive prefetching — cache adjacent spine items so the next
+      // page turn is instant. Non-caching Fetchers ignore prefetch() calls.
+      if (this._fetcher.prefetch) {
+        const idx = this.publication.readingOrder.findIndex(
+          (item) =>
+            item.href &&
+            this.publication.getAbsoluteHref(item.href) ===
+              this.currentChapterLink.href
+        );
+        if (idx >= 0) {
+          const next = this.publication.readingOrder[idx + 1];
+          const prev = this.publication.readingOrder[idx - 1];
+          if (next) {
+            this._fetcher.prefetch({
+              ...next,
+              href: this.publication.getAbsoluteHref(next.href),
+            } as import("../model/v3").Link);
+          }
+          if (prev) {
+            this._fetcher.prefetch({
+              ...prev,
+              href: this.publication.getAbsoluteHref(prev.href),
+            } as import("../model/v3").Link);
+          }
+        }
+      }
     }, 150);
   }
 
@@ -3537,8 +3291,8 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
 
         let position: ReadingPosition | undefined;
         if (
-          (this.rights.autoGeneratePositions && this.publication.positions) ||
-          this.publication.positions
+          this.publication.positions &&
+          this.publication.positions.length > 0
         ) {
           const positions = this.publication.positionsByHref(
             this.publication.getRelativeHref(tocItem.href)
@@ -3592,37 +3346,15 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     }
   }
 
+  /**
+   * Create a `<base>` element for the iframe's document. Used by `prepareDoc`
+   * to anchor relative URLs in chapter content to the resource's href.
+   */
   private static createBase(href: string): HTMLBaseElement {
     const base = document.createElement("base");
     base.target = "_self";
     base.href = href;
     return base;
-  }
-
-  private static createCssLink(href: string): HTMLLinkElement {
-    const cssLink = document.createElement("link");
-    cssLink.rel = "stylesheet";
-    cssLink.type = "text/css";
-    cssLink.href = href;
-    return cssLink;
-  }
-  private static createJavascriptLink(
-    href: string,
-    isAsync: boolean
-  ): HTMLScriptElement {
-    const jsLink = document.createElement("script");
-    jsLink.type = "text/javascript";
-    jsLink.src = href;
-
-    // Enforce synchronous behaviour of injected scripts
-    // unless specifically marked async, as though they
-    // were inserted using <script> tags
-    //
-    // See comment on differing default behaviour of
-    // dynamically inserted script loading at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script#Attributes
-    jsLink.async = isAsync;
-
-    return jsLink;
   }
 
   activateMarker(id, position) {

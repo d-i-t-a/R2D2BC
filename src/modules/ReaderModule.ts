@@ -18,7 +18,7 @@
  */
 
 import type { ModuleHost } from "./ModuleHost";
-import type { ReaderRights } from "../navigator/EpubNavigator";
+import type { ReaderRights } from "../navigator/types";
 import type { NavigatorFeatureKey } from "./NavigatorFeatureMap";
 
 /**

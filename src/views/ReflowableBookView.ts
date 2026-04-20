@@ -330,7 +330,13 @@ export default class ReflowableBookView implements BookView {
       // trigger too early. Only rightWidth determines the real end.
       const doc = this.iframe.contentDocument;
       if (doc?.getElementById("r2d2bc-column-spacer")) return rightWidth <= 5;
-      return Math.ceil(this.getCurrentPage()) === this.getPageCount();
+      // Use Math.round to match how `displayInfo.resourceScreenIndex/Count`
+      // is computed in EpubNavigator. `Math.ceil` drifted above pageCount
+      // on sub-pixel scrollLeft variations, permanently locking atEnd to
+      // false on the last page even when the UI showed "Page N of N".
+      // Using `>=` also covers the case where currentPage computation
+      // overshoots pageCount slightly on the real last page.
+      return Math.round(this.getCurrentPage()) >= this.getPageCount();
     }
   }
 
@@ -612,6 +618,22 @@ export default class ReflowableBookView implements BookView {
     const rawScrollWidth = body.scrollWidth;
     const viewportWidth = this.getColumnWidth();
     const remainder = rawScrollWidth % viewportWidth;
+
+    // Guard against floated descendants (e.g. `float: right` images) which
+    // can inflate body.scrollWidth past the real content extent. Measure
+    // where the last real child actually ends; if that is clearly short of
+    // scrollWidth, the remainder we see is a float artifact, not a genuine
+    // odd column. Skip the spacer in that case.
+    const bodyLeft = body.getBoundingClientRect().left;
+    const last = body.lastElementChild as HTMLElement | null;
+    if (last) {
+      const realContentRight = last.getBoundingClientRect().right - bodyLeft;
+      // If real content ends more than half a viewport short of the declared
+      // scrollWidth, the tail is inflated by a float or similar.
+      if (rawScrollWidth - realContentRight > viewportWidth * 0.5) {
+        return false;
+      }
+    }
 
     // Only inject spacer when remainder is at least 25% of viewport —
     // an actual odd column is ~50% of viewport

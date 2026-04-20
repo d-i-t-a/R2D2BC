@@ -144,6 +144,14 @@
           pub.author = authors.map(a => typeof a === 'string' ? a : a.name || '').filter(Boolean).join(', ');
         }
 
+        // FXL detection
+        const layout = manifest.metadata?.layout
+          || manifest.metadata?.["rendition:layout"]
+          || manifest.metadata?.rendition?.layout;
+        if (layout === "fixed" || layout === "pre-paginated") {
+          pub.fxl = true;
+        }
+
         // Cover image
         const allLinks = [...(manifest.resources || []), ...(manifest.links || [])];
         const cover = allLinks.find(l =>
@@ -195,6 +203,7 @@
             <div class="card-cover" style="${coverStyle}">
               ${pub.coverUrl ? '' : icon}
               <span class="type-badge ${badgeClass}">${pub.type}</span>
+              ${pub.fxl ? '<span class="type-badge" style="background:#e67e22;top:8px;right:auto;left:8px;">FXL</span>' : ''}
               ${pub.hosted ? '<span class="type-badge" style="background:#888;top:8px;right:auto;left:8px;">hosted</span>' : ''}
             </div>
             <div class="card-body">

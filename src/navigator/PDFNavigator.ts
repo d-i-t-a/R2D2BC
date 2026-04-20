@@ -18,12 +18,15 @@
  */
 
 import debounce from "debounce";
-import EventEmitter from "eventemitter3";
-import Navigator from "./Navigator";
+import {
+  VisualNavigator,
+  NavigatorFeature,
+  NavigatorFeatureName,
+} from "./VisualNavigator";
 import { ReaderEvent } from "../utils/Events";
 import { UserSettings } from "../model/user-settings/UserSettings";
-import { Publication } from "../model/Publication";
-import { Bookmark, Locator, ReadingPosition } from "../model/Locator";
+import { Publication } from "../model/v3";
+import { Bookmark, Locator, ReadingPosition } from "../model/v3";
 import Annotator from "../store/Annotator";
 import Store from "../store/Store";
 import {
@@ -48,7 +51,7 @@ import {
   removeEventListenerOptional,
 } from "../utils/EventHandler";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
-import { NavigatorAPI } from "./IFrameNavigator";
+import { NavigatorAPI } from "./EpubNavigator";
 import { GrabToPan } from "../utils/GrabToPan";
 import { readerLoading } from "../utils/HTMLTemplates";
 
@@ -84,10 +87,25 @@ export enum ScaleType {
   Width = 1,
 }
 
-export class PDFNavigator extends EventEmitter implements Navigator {
+export class PDFNavigator extends VisualNavigator {
   readonly isPDF = true;
   settings: UserSettings;
   publication: Publication;
+
+  supports(feature: NavigatorFeatureName): boolean {
+    switch (feature) {
+      case NavigatorFeature.Search:
+        return true;
+      case NavigatorFeature.Annotations:
+        return true;
+      case NavigatorFeature.Zoom:
+        return true;
+      case NavigatorFeature.Bookmarks:
+        return true;
+      default:
+        return false;
+    }
+  }
 
   headerMenu?: HTMLElement | null;
   footerMenu?: HTMLElement | null;

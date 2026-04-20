@@ -32,7 +32,7 @@ import {
   removeEventListenerOptional,
 } from "../../utils/EventHandler";
 import sanitize from "sanitize-html";
-import { IFrameNavigator, ReaderRights } from "../../navigator/IFrameNavigator";
+import { EpubNavigator, ReaderRights } from "../../navigator/EpubNavigator";
 import { TextHighlighter } from "../highlight/TextHighlighter";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import { uniqueCssSelector } from "../highlight/renderer/common/cssselector2";
@@ -50,7 +50,7 @@ export class TTSModule2 implements ReaderModule {
   private clean: any;
   private rights: Partial<ReaderRights>;
   private readonly highlighter: TextHighlighter;
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   private body: any;
   private hasEventListener: boolean = false;
   private readonly headerMenu?: HTMLElement | null;

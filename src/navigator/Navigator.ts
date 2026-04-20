@@ -18,7 +18,7 @@
  */
 
 import { Locator } from "../model/Locator";
-import { IFrameAttributes } from "./IFrameNavigator";
+import { IFrameAttributes } from "./EpubNavigator";
 import { Publication } from "../model/Publication";
 import { Link } from "../model/Link";
 
@@ -70,19 +70,19 @@ interface Navigator {
 
   positions(): Locator[];
 
-  goTo(locator: Locator): void;
+  goTo(locator: Locator): void | Promise<void>;
 
-  goToPosition(value: number): void;
+  goToPosition(value: number): void | Promise<void>;
 
-  goToPage(page: number): void;
+  goToPage(page: number): void | Promise<void>;
 
-  nextResource(): void;
+  nextResource(): void | Promise<void>;
 
-  previousResource(): void;
+  previousResource(): void | Promise<void>;
 
-  nextPage(): void;
+  nextPage(): void | Promise<void>;
 
-  previousPage(): void;
+  previousPage(): void | Promise<void>;
 
   atStart?(): boolean;
 

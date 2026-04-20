@@ -18,7 +18,7 @@
  */
 
 import { Link } from "../model/Link";
-import { IFrameNavigator } from "../navigator/IFrameNavigator";
+import { EpubNavigator } from "../navigator/EpubNavigator";
 import { Popup } from "../modules/search/Popup";
 import log from "loglevel";
 
@@ -42,9 +42,9 @@ export function removeEventListenerOptional(
 }
 
 export default class EventHandler {
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   popup: Popup;
-  constructor(navigator: IFrameNavigator) {
+  constructor(navigator: EpubNavigator) {
     this.navigator = navigator;
     this.popup = new Popup(this.navigator);
   }

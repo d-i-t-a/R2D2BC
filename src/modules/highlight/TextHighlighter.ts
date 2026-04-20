@@ -41,7 +41,7 @@ import {
 import { uniqueCssSelector } from "./renderer/common/cssselector2";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { icons, iconTemplateColored } from "../../utils/IconLib";
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import { TTSModule2 } from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import * as lodash from "lodash";
@@ -150,7 +150,7 @@ export interface TextHighlighterConfig extends TextHighlighterProperties {
 
 export class TextHighlighter {
   private options: any;
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   layerSettings: LayerSettings;
   private lastSelectedHighlight?: number = undefined;
   properties: TextHighlighterProperties;

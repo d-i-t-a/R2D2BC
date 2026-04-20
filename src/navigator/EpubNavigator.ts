@@ -17,10 +17,14 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import Navigator from "./Navigator";
+import {
+  VisualNavigator,
+  NavigatorFeature,
+  NavigatorFeatureName,
+} from "./VisualNavigator";
 import { ReaderEvent } from "../utils/Events";
 import Annotator from "../store/Annotator";
-import { Publication } from "../model/Publication";
+import { Publication } from "../model/v3";
 import EventHandler, {
   addEventListenerOptional,
   removeEventListenerOptional,
@@ -28,12 +32,7 @@ import EventHandler, {
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import { readerError, readerLoading } from "../utils/HTMLTemplates";
-import {
-  Annotation,
-  Locations,
-  Locator,
-  ReadingPosition,
-} from "../model/Locator";
+import { Annotation, Locations, Locator, ReadingPosition } from "../model/v3";
 import {
   UserSettings,
   UserSettingsUIConfig,
@@ -69,7 +68,7 @@ import {
   MediaOverlayModule,
   MediaOverlayModuleConfig,
 } from "../modules/mediaoverlays/MediaOverlayModule";
-import { D2Link, Link } from "../model/Link";
+import { D2Link, Link } from "../model/v3";
 import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
 import { ReaderModule } from "../modules/ReaderModule";
 import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
@@ -85,7 +84,6 @@ import {
   DefinitionsModule,
   DefinitionsModuleConfig,
 } from "../modules/search/DefinitionsModule";
-import EventEmitter from "eventemitter3";
 import LineFocusModule, {
   LineFocusModuleConfig,
 } from "../modules/linefocus/LineFocusModule";
@@ -94,6 +92,7 @@ import CitationModule, {
   CitationModuleConfig,
 } from "../modules/citation/CitationModule";
 import log from "loglevel";
+import { GrabToPan } from "../utils/GrabToPan";
 import {
   ConsumptionModule,
   ConsumptionModuleConfig,
@@ -138,7 +137,7 @@ export interface IFrameAttributes {
   /** Whether to show a drop shadow on fixed-layout spreads. Defaults to true. */
   fixedLayoutShadow?: boolean;
 }
-export interface IFrameNavigatorConfig {
+export interface EpubNavigatorConfig {
   mainElement: HTMLElement;
   headerMenu?: HTMLElement | null;
   footerMenu?: HTMLElement | null;
@@ -249,8 +248,8 @@ export interface ReaderConfig {
   workerSrc?: string;
 }
 
-/** Class that shows webpub resources in an iframe, with navigation controls outside the iframe. */
-export class IFrameNavigator extends EventEmitter implements Navigator {
+/** EPUB navigator — renders spine items in iframes with navigation controls. */
+export class EpubNavigator extends VisualNavigator {
   iframes: Array<HTMLIFrameElement> = [];
 
   currentTocUrl: string | undefined;
@@ -272,6 +271,176 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   historyModule?: HistoryModule;
   citationModule?: CitationModule;
   consumptionModule?: ConsumptionModule;
+
+  supports(feature: NavigatorFeatureName): boolean {
+    switch (feature) {
+      case NavigatorFeature.TTS:
+        return !!this.rights.enableTTS && !!this.ttsModule;
+      case NavigatorFeature.MediaOverlays:
+        return (
+          !!this.rights.enableMediaOverlays &&
+          !!this.mediaOverlayModule &&
+          this.hasMediaOverlays
+        );
+      case NavigatorFeature.Search:
+        return !!this.rights.enableSearch && !!this.searchModule;
+      case NavigatorFeature.Annotations:
+        return !!this.rights.enableAnnotations && !!this.annotationModule;
+      case NavigatorFeature.Bookmarks:
+        return !!this.rights.enableBookmarks && !!this.bookmarkModule;
+      case NavigatorFeature.Zoom:
+        return this.publication.isFixedLayout;
+      case NavigatorFeature.LineFocus:
+        return !!this.rights.enableLineFocus && !!this.lineFocusModule;
+      case NavigatorFeature.Definitions:
+        return !!this.rights.enableDefinitions && !!this.definitionsModule;
+      case NavigatorFeature.Citations:
+        return !!this.rights.enableCitations && !!this.citationModule;
+      case NavigatorFeature.ContentProtection:
+        return (
+          !!this.rights.enableContentProtection &&
+          !!this.contentProtectionModule
+        );
+      case NavigatorFeature.Consumption:
+        return !!this.rights.enableConsumption && !!this.consumptionModule;
+      case NavigatorFeature.History:
+        return !!this.rights.enableHistory && !!this.historyModule;
+      case NavigatorFeature.Timeline:
+        return !!this.rights.enableTimeline && !!this.timelineModule;
+      default:
+        return false;
+    }
+  }
+
+  // ── FXL zoom ────────────────────────────────────────────────
+
+  private fxlZoomKeyHandler = (event: KeyboardEvent): void => {
+    if (
+      /input|select|option|textarea/i.test(
+        (event.target as HTMLElement).tagName
+      )
+    )
+      return;
+    const key = event.key;
+    if (key === "=" || key === "+") {
+      this.zoomIn();
+    } else if (key === "-") {
+      this.zoomOut();
+    } else if (key === "0") {
+      this.fitToPage();
+    } else {
+      return;
+    }
+    event.preventDefault();
+  };
+
+  private getFxlCurrentScale(): number {
+    const match = this.spreads?.style.transform?.match(/scale\(([^)]+)\)/);
+    return match ? parseFloat(match[1]) : 1;
+  }
+
+  fitToPage(): void {
+    if (!this.publication.isFixedLayout) return;
+    this.handleResize();
+  }
+
+  zoomIn(): void {
+    if (!this.publication.isFixedLayout) return;
+    this.setFxlScale(this.getFxlCurrentScale() * 1.15);
+  }
+
+  zoomOut(): void {
+    if (!this.publication.isFixedLayout) return;
+    this.setFxlScale(this.getFxlCurrentScale() / 1.15);
+  }
+
+  private setFxlScale(newScale: number): void {
+    if (!this.spreads || !this.fxlZoomContainer) return;
+    this.spreads.style.transform = "scale(" + newScale + ")";
+    this.updateFxlZoomContainer(newScale);
+  }
+
+  private updateFxlZoomContainer(scale: number): void {
+    if (
+      !this.fxlZoomContainer ||
+      !this.fxlContentWidth ||
+      !this.fxlContentHeight
+    )
+      return;
+    this.fxlZoomContainer.style.width = this.fxlContentWidth * scale + "px";
+    this.fxlZoomContainer.style.height = this.fxlContentHeight * scale + "px";
+    this.spreads.style.width = this.fxlContentWidth + "px";
+    this.spreads.style.height = this.fxlContentHeight + "px";
+
+    // Auto-activate pan when zoomed beyond fit, deactivate when back to fit
+    if (this.fxlHandTool) {
+      requestAnimationFrame(() => {
+        if (!this.fxlScrollContainer) return;
+        const isZoomed =
+          this.fxlScrollContainer.scrollWidth >
+            this.fxlScrollContainer.clientWidth ||
+          this.fxlScrollContainer.scrollHeight >
+            this.fxlScrollContainer.clientHeight;
+        if (isZoomed) {
+          this.activateHand();
+        } else {
+          this.deactivateHand();
+        }
+      });
+    }
+  }
+
+  // ── FXL pan (grab-to-scroll) ──────────────────────────────
+
+  private fxlPanOverlay: HTMLDivElement;
+  private fxlHandTool: GrabToPan;
+
+  private setupFxlPan(): void {
+    const el = this.fxlScrollContainer;
+    if (!el) return;
+
+    // Transparent overlay captures mouse events over iframes.
+    // Lives inside the zoom container so it scales with the content.
+    this.fxlPanOverlay = document.createElement("div");
+    this.fxlPanOverlay.style.position = "absolute";
+    this.fxlPanOverlay.style.top = "0";
+    this.fxlPanOverlay.style.left = "0";
+    this.fxlPanOverlay.style.width = "100%";
+    this.fxlPanOverlay.style.height = "100%";
+    this.fxlPanOverlay.style.pointerEvents = "none";
+    this.fxlPanOverlay.style.zIndex = "1";
+    this.fxlZoomContainer.style.position = "relative";
+    this.fxlZoomContainer.appendChild(this.fxlPanOverlay);
+
+    // GrabToPan scrolls the scroll container, mousedown captured by overlay
+    this.fxlHandTool = new GrabToPan({ element: el });
+  }
+
+  activateHand(): void {
+    if (!this.publication.isFixedLayout) return;
+    if (this.fxlPanOverlay) {
+      this.fxlPanOverlay.style.pointerEvents = "auto";
+    }
+    this.fxlHandTool?.activate();
+    const panBtn = document.querySelector("#fxl-pan a") as HTMLElement;
+    if (panBtn) {
+      panBtn.classList.add("active");
+      panBtn.style.color = "#039be5";
+    }
+  }
+
+  deactivateHand(): void {
+    if (!this.publication.isFixedLayout) return;
+    if (this.fxlPanOverlay) {
+      this.fxlPanOverlay.style.pointerEvents = "none";
+    }
+    this.fxlHandTool?.deactivate();
+    const panBtn = document.querySelector("#fxl-pan a") as HTMLElement;
+    if (panBtn) {
+      panBtn.classList.remove("active");
+      panBtn.style.color = "";
+    }
+  }
 
   sideNavExpanded: boolean = false;
 
@@ -350,8 +519,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   private didInitKeyboardEventHandler: boolean = false;
 
   public static async create(
-    config: IFrameNavigatorConfig
-  ): Promise<IFrameNavigator> {
+    config: EpubNavigatorConfig
+  ): Promise<EpubNavigator> {
     const navigator = new this(
       config.settings,
       config.annotator || undefined,
@@ -434,7 +603,15 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     this.annotator = annotator;
     this.view = settings.view;
     this.view.attributes = attributes;
-    this.view.navigator = this;
+    this.view.host = {
+      checkResourcePosition: () => this.checkResourcePosition(),
+      recalculateContentProtection: (delay?: number) =>
+        this.contentProtectionModule?.recalculate(delay),
+      isContentProtectionEnabled: () => !!this.rights.enableContentProtection,
+      isFixedLayout: () => this.publication.isFixedLayout,
+      isReflowable: () => this.publication.isReflowable,
+      setDirection: (direction?: string | null) => this.setDirection(direction),
+    };
     this.eventHandler = new EventHandler(this);
     this.touchEventHandler = new TouchEventHandler(this);
     this.keyboardEventHandler = new KeyboardEventHandler(this);
@@ -510,7 +687,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     removeEventListenerOptional(
       this.goBackButton,
       "click",
-      IFrameNavigator.goBack.bind(this)
+      EpubNavigator.goBack.bind(this)
     );
 
     removeEventListenerOptional(
@@ -529,15 +706,29 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   }
   spreads: HTMLDivElement;
   firstSpread: HTMLDivElement;
+  private fxlScrollContainer: HTMLDivElement;
+  private fxlZoomContainer: HTMLDivElement;
+  private fxlContentWidth: number = 0;
+  private fxlContentHeight: number = 0;
 
   setDirection(direction?: string | null) {
     let dir = "";
-    if (direction === "rtl" || direction === "ltr") dir = direction;
-    if (direction === "auto")
-      dir = this.publication.metadata?.readingProgression as string;
-    if (dir) {
-      if (dir === "rtl") this.spreads.style.flexDirection = "row-reverse";
-      if (dir === "ltr") this.spreads.style.flexDirection = "row";
+    if (direction === "rtl" || direction === "ltr") {
+      dir = direction;
+    } else if (direction === "auto") {
+      // Resolve from manifest: readingProgression or rendition:spread-direction
+      dir =
+        (this.publication.metadata?.readingProgression as string) ||
+        (this.publication.metadata?.otherMetadata?.[
+          "rendition:spread-direction"
+        ] as string) ||
+        "ltr";
+    }
+    if (dir === "rtl" || dir === "ltr") {
+      if (this.publication.isFixedLayout) {
+        this.spreads.style.flexDirection =
+          dir === "rtl" ? "row-reverse" : "row";
+      }
       this.keyboardEventHandler.rtl = dir === "rtl";
       if (this.api?.direction) this.api?.direction(dir);
       this.emit(ReaderEvent.Direction, dir);
@@ -572,6 +763,15 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (window.matchMedia("screen and (max-width: 600px)").matches) {
         this.settings.columnCount = 1;
       }
+      // Respect rendition:spread "none" — force single page display
+      if (this.publication.isFixedLayout) {
+        const spread =
+          this.publication.metadata?.otherMetadata?.["rendition:spread"] ??
+          this.publication.metadata?.otherMetadata?.rendition?.spread;
+        if (spread === "none") {
+          this.settings.columnCount = 1;
+        }
+      }
       if (this.iframes.length === 0) {
         wrapper.style.overflow = "auto";
         let iframe = document.createElement("iframe");
@@ -583,11 +783,41 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.spreads = document.createElement("div");
           this.firstSpread = document.createElement("div");
           this.spreads.style.display = "flex";
-          this.spreads.style.alignItems = "center";
-          this.spreads.style.justifyContent = "center";
+          this.spreads.style.transformOrigin = "0 0";
           this.spreads.appendChild(this.firstSpread);
           this.firstSpread.appendChild(this.iframes[0]);
-          wrapper.appendChild(this.spreads);
+
+          // Scroll container fills wrapper, handles overflow scrolling
+          this.fxlScrollContainer = document.createElement("div");
+          this.fxlScrollContainer.style.position = "absolute";
+          this.fxlScrollContainer.style.top = "0";
+          this.fxlScrollContainer.style.right = "0";
+          const timelineEl = document.getElementById("container-view-timeline");
+          this.fxlScrollContainer.style.left =
+            timelineEl && this.rights.enableTimeline ? "70px" : "0";
+          const infoBottom = document.getElementById("reader-info-bottom");
+          this.fxlScrollContainer.style.bottom = infoBottom
+            ? (this.attributes?.bottomInfoHeight ?? 40) + "px"
+            : "0";
+          this.fxlScrollContainer.style.overflow = "auto";
+          this.fxlScrollContainer.style.display = "flex";
+
+          // Sizer has visual dimensions, centered via margin: auto
+          this.fxlZoomContainer = document.createElement("div");
+          this.fxlZoomContainer.style.margin = "auto";
+          this.fxlZoomContainer.style.flexShrink = "0";
+          this.fxlZoomContainer.style.overflow = "hidden";
+          if (this.attributes?.fixedLayoutShadow !== false) {
+            this.fxlZoomContainer.style.padding = "12px";
+            this.fxlZoomContainer.style.boxSizing = "content-box";
+          }
+          this.fxlZoomContainer.appendChild(this.spreads);
+
+          this.fxlScrollContainer.appendChild(this.fxlZoomContainer);
+          wrapper.style.position = "relative";
+          wrapper.appendChild(this.fxlScrollContainer);
+          document.addEventListener("keydown", this.fxlZoomKeyHandler);
+          this.setupFxlPan();
           let dir = "";
           switch (this.settings.direction) {
             case 0:
@@ -645,15 +875,25 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       }
 
       if (this.publication.isFixedLayout) {
-        const minHeight = wrapper.clientHeight;
-        // wrapper.style.height = minHeight + 40 + "px";
-        var iframeParent = this.iframes[0].parentElement
-          ?.parentElement as HTMLElement;
-        iframeParent.style.height = minHeight + 40 + "px";
+        // Zoom container dimensions are set during scale calculation
       } else {
         if (this.iframes.length === 2) {
           this.iframes.pop();
         }
+        // Apply reading direction for reflowable (keyboard RTL + event)
+        let dir = "";
+        switch (this.settings.direction) {
+          case 0:
+            dir = "auto";
+            break;
+          case 1:
+            dir = "ltr";
+            break;
+          case 2:
+            dir = "rtl";
+            break;
+        }
+        this.setDirection(dir);
       }
 
       this.loadingMessage = HTMLUtilities.findElement(
@@ -869,7 +1109,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           if (menuSearch)
             menuSearch.parentElement?.style.setProperty("display", "none");
         }
-        if (menuSearch && this.view?.navigator.publication.isFixedLayout) {
+        if (menuSearch && this.publication.isFixedLayout) {
           menuSearch.parentElement?.style.setProperty("display", "none");
         }
         if (this.hasMediaOverlays) {
@@ -976,7 +1216,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     addEventListenerOptional(
       this.goBackButton,
       "click",
-      IFrameNavigator.goBack.bind(this)
+      EpubNavigator.goBack.bind(this)
     );
 
     addEventListenerOptional(
@@ -1514,6 +1754,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.didInitKeyboardEventHandler = true;
         }
       }
+      if (this.publication.isFixedLayout && iframe.contentDocument) {
+        iframe.contentDocument.addEventListener(
+          "keydown",
+          this.fxlZoomKeyHandler
+        );
+      }
       if (this.view?.layout !== "fixed") {
         if (this.view?.isScrollMode()) {
           iframe.height = "0";
@@ -1603,6 +1849,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         setTimeout(() => {
           if (this.mediaOverlayModule) {
             this.mediaOverlayModule.settings.resourceReady = true;
+            if (this.mediaOverlayModule.settings.playing) {
+              this.mediaOverlayModule.bindClickHandler();
+            }
           }
         }, 300);
       }, 200);
@@ -1646,7 +1895,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       const bases = iframe.contentDocument.getElementsByTagName("base");
       if (bases.length === 0) {
         head.insertBefore(
-          IFrameNavigator.createBase(this.currentChapterLink.href),
+          EpubNavigator.createBase(this.currentChapterLink.href),
           head.firstChild
         );
       }
@@ -1659,16 +1908,16 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             // this.settings.addFont(injectable.fontFamily);
             this.settings.initAddedFont();
             if (!injectable.systemFont && injectable.url) {
-              const link = IFrameNavigator.createCssLink(injectable.url);
+              const link = EpubNavigator.createCssLink(injectable.url);
               head.appendChild(link);
               addLoadingInjectable(link);
             }
           } else if (injectable.r2before && injectable.url) {
-            const link = IFrameNavigator.createCssLink(injectable.url);
+            const link = EpubNavigator.createCssLink(injectable.url);
             head.insertBefore(link, head.firstChild);
             addLoadingInjectable(link);
           } else if (injectable.r2default && injectable.url) {
-            const link = IFrameNavigator.createCssLink(injectable.url);
+            const link = EpubNavigator.createCssLink(injectable.url);
             head.insertBefore(link, head.childNodes[1]);
             addLoadingInjectable(link);
           } else if (injectable.r2after && injectable.url) {
@@ -1676,16 +1925,16 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               // this.settings.addAppearance(injectable.appearance);
               this.settings.initAddedAppearance();
             }
-            const link = IFrameNavigator.createCssLink(injectable.url);
+            const link = EpubNavigator.createCssLink(injectable.url);
             head.appendChild(link);
             addLoadingInjectable(link);
           } else if (injectable.url) {
-            const link = IFrameNavigator.createCssLink(injectable.url);
+            const link = EpubNavigator.createCssLink(injectable.url);
             head.appendChild(link);
             addLoadingInjectable(link);
           }
         } else if (injectable.type === "script" && injectable.url) {
-          const script = IFrameNavigator.createJavascriptLink(
+          const script = EpubNavigator.createJavascriptLink(
             injectable.url,
             injectable.async ?? false
           );
@@ -1715,7 +1964,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           ? e
           : typeof e === "string"
             ? new Error(e)
-            : new Error("An unknown error occurred in the IFrameNavigator.");
+            : new Error("An unknown error occurred in the EpubNavigator.");
       this.api.onError(trueError);
       this.emit(ReaderEvent.Error, trueError);
     } else {
@@ -1734,7 +1983,20 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   private precessContentForIframe() {
     const self = this;
     var index = this.publication.getSpineIndex(this.currentChapterLink.href);
-    var even: boolean = (index ?? 0) % 2 === 1;
+    // Determine spread position: use link's page property if set, else fall back to index parity
+    const spineLink =
+      index !== undefined ? this.publication.readingOrder?.[index] : undefined;
+    const pageSpread = spineLink?.properties?.page;
+    var even: boolean;
+    if (pageSpread === "left") {
+      even = true;
+    } else if (pageSpread === "right") {
+      even = false;
+    } else if (pageSpread === "center") {
+      even = true;
+    } else {
+      even = (index ?? 0) % 2 === 1;
+    }
     this.showLoadingMessageAfterDelay();
 
     this.currentSpreadLinks = {};
@@ -1746,7 +2008,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         const bases = doc.getElementsByTagName("base");
         if (bases.length === 0) {
           doc.head.insertBefore(
-            IFrameNavigator.createBase(href),
+            EpubNavigator.createBase(href),
             doc.head.firstChild
           );
         }
@@ -1767,7 +2029,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         const bases = doc.getElementsByTagName("base");
         if (bases.length === 0) {
           doc.head.insertBefore(
-            IFrameNavigator.createBase(href),
+            EpubNavigator.createBase(href),
             doc.head.firstChild
           );
         }
@@ -1821,7 +2083,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                 }
               });
             if (this.iframes.length === 2) {
-              if ((index ?? 0) < this.publication.readingOrder.length - 1) {
+              if (
+                pageSpread !== "center" &&
+                (index ?? 0) < this.publication.readingOrder.length - 1
+              ) {
                 const next = this.publication.getNextSpineItem(
                   this.currentChapterLink.href
                 );
@@ -1976,7 +2241,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               };
 
               if (this.iframes.length === 2) {
-                if ((index ?? 0) < this.publication.readingOrder.length - 1) {
+                if (
+                  pageSpread !== "center" &&
+                  (index ?? 0) < this.publication.readingOrder.length - 1
+                ) {
                   const next = this.publication.getNextSpineItem(
                     this.currentChapterLink.href
                   );
@@ -2006,7 +2274,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                 href: this.currentChapterLink.href,
               };
               if (this.iframes.length === 2) {
-                if ((index ?? 0) < this.publication.readingOrder.length - 1) {
+                if (
+                  pageSpread !== "center" &&
+                  (index ?? 0) < this.publication.readingOrder.length - 1
+                ) {
                   const next = this.publication.getNextSpineItem(
                     this.currentChapterLink.href
                   );
@@ -2164,22 +2435,20 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           }
         }
 
-        var iframeParent =
-          index === 0 && this.iframes.length === 2
-            ? this.iframes[1].parentElement?.parentElement
-            : (this.iframes[0].parentElement?.parentElement as HTMLElement);
-        if (iframeParent && width) {
+        if (width) {
+          if (!this.fxlScrollContainer) return;
           const fxlMargin = this.attributes?.fixedLayoutMargin ?? 100;
+          const contentW = parseInt(width.toString().replace("px", ""));
+          const contentH = parseInt(height.toString().replace("px", ""));
           var widthRatio =
-            (parseInt(getComputedStyle(iframeParent).width) - fxlMargin) /
+            (this.fxlScrollContainer.clientWidth - fxlMargin) /
             (this.iframes.length === 2
-              ? parseInt(width.toString().replace("px", "")) * 2 + fxlMargin * 2
-              : parseInt(width.toString().replace("px", "")));
+              ? contentW * 2 + fxlMargin * 2
+              : contentW);
           var heightRatio =
-            (parseInt(getComputedStyle(iframeParent).height) - fxlMargin) /
-            parseInt(height.toString().replace("px", ""));
+            (this.fxlScrollContainer.clientHeight - fxlMargin) / contentH;
           var scale = Math.min(widthRatio, heightRatio);
-          iframeParent.style.transform = "scale(" + scale + ")";
+          this.spreads.style.transform = "scale(" + scale + ")";
           for (const iframe of this.iframes) {
             iframe.style.height = height;
             iframe.style.width = width;
@@ -2187,6 +2456,10 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               iframe.parentElement.style.height = height;
             }
           }
+          this.fxlContentWidth =
+            this.iframes.length === 2 ? contentW * 2 : contentW;
+          this.fxlContentHeight = contentH;
+          this.updateFxlZoomContainer(scale);
         }
       }, 400);
     }
@@ -2609,16 +2882,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
     if (this.publication.isFixedLayout) {
       var index = this.publication.getSpineIndex(this.currentChapterLink.href);
-      const minHeight =
-        BrowserUtilities.getHeight() - 40 - (this.attributes?.margin ?? 0);
-
-      var iframeParent =
-        index === 0 && this.iframes.length === 2
-          ? this.iframes[1].parentElement?.parentElement
-          : (this.iframes[0].parentElement?.parentElement as HTMLElement);
-      if (iframeParent) {
-        iframeParent.style.height = minHeight + 40 + "px";
-
+      if (this.fxlScrollContainer) {
         let height, width;
         let doc;
         if (index === 0 && this.iframes?.length === 2) {
@@ -2665,26 +2929,17 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
 
         const fxlMargin = this.attributes?.fixedLayoutMargin ?? 100;
+        const contentW = parseInt(
+          width.toString().endsWith("px") ? width?.replace("px", "") : width
+        );
+        const contentH = parseInt(height.toString().replace("px", ""));
         var widthRatio =
-          (parseInt(getComputedStyle(iframeParent).width) - fxlMargin) /
-          (this.iframes.length === 2
-            ? parseInt(
-                width.toString().endsWith("px")
-                  ? width?.replace("px", "")
-                  : width
-              ) *
-                2 +
-              fxlMargin * 2
-            : parseInt(
-                width.toString().endsWith("px")
-                  ? width?.replace("px", "")
-                  : width
-              ));
+          (this.fxlScrollContainer.clientWidth - fxlMargin) /
+          (this.iframes.length === 2 ? contentW * 2 + fxlMargin * 2 : contentW);
         var heightRatio =
-          (parseInt(getComputedStyle(iframeParent).height) - fxlMargin) /
-          parseInt(height.toString().replace("px", ""));
+          (this.fxlScrollContainer.clientHeight - fxlMargin) / contentH;
         var scale = Math.min(widthRatio, heightRatio);
-        iframeParent.style.transform = "scale(" + scale + ")";
+        this.spreads.style.transform = "scale(" + scale + ")";
 
         for (const iframe of this.iframes) {
           iframe.style.height = height;
@@ -2693,6 +2948,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             iframe.parentElement.style.height = height;
           }
         }
+
+        this.fxlContentWidth =
+          this.iframes.length === 2 ? contentW * 2 : contentW;
+        this.fxlContentHeight = contentH;
+        this.updateFxlZoomContainer(scale);
       }
     }
 
@@ -3543,3 +3803,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     }
   }
 }
+
+// Backwards-compat aliases
+/** @deprecated Use EpubNavigator */
+export const IFrameNavigator = EpubNavigator;
+/** @deprecated Use EpubNavigatorConfig */
+export type IFrameNavigatorConfig = EpubNavigatorConfig;

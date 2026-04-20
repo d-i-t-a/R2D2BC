@@ -17,16 +17,13 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import {
-  IFrameNavigator,
-  IFrameAttributes,
-} from "../navigator/IFrameNavigator";
-import BookView from "./BookView";
+import { IFrameAttributes } from "../navigator/EpubNavigator";
+import BookView, { BookViewHost } from "./BookView";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 
 export default class FixedBookView implements BookView {
   layout = "fixed";
-  navigator: IFrameNavigator;
+  host: BookViewHost;
   name: string;
   label: string;
   iframe: HTMLIFrameElement;

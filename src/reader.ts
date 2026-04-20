@@ -38,11 +38,11 @@ import {
   TTSSettings,
 } from "./modules/TTS/TTSSettings";
 import {
-  IFrameNavigator,
+  EpubNavigator,
   IFrameAttributes,
   ReaderConfig,
   ReaderRights,
-} from "./navigator/IFrameNavigator";
+} from "./navigator/EpubNavigator";
 import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
@@ -56,7 +56,7 @@ import LineFocusModule from "./modules/linefocus/LineFocusModule";
 import { HistoryModule } from "./modules/history/HistoryModule";
 import CitationModule from "./modules/citation/CitationModule";
 import type { PDFNavigator } from "./navigator/PDFNavigator";
-import Navigator from "./navigator/Navigator";
+import { VisualNavigator, NavigatorFeature } from "./navigator/VisualNavigator";
 import { ConsumptionModule } from "./modules/consumption/ConsumptionModule";
 
 /**
@@ -90,7 +90,7 @@ function isPDFNavigator(nav: any): nav is PDFNavigator {
 export default class D2Reader {
   private constructor(
     private readonly settings: UserSettings,
-    private readonly navigator: Navigator | IFrameNavigator | PDFNavigator,
+    private readonly navigator: VisualNavigator,
     private readonly highlighter?: TextHighlighter,
     private readonly bookmarkModule?: BookmarkModule,
     private readonly annotationModule?: AnnotationModule,
@@ -110,12 +110,7 @@ export default class D2Reader {
   ) {}
 
   addEventListener(event: string, handler: (...args: any[]) => void) {
-    if (
-      this.navigator instanceof IFrameNavigator ||
-      isPDFNavigator(this.navigator)
-    ) {
-      (this.navigator as any).addListener(event, handler);
-    }
+    this.navigator.addListener(event, handler);
   }
 
   /**
@@ -397,7 +392,7 @@ export default class D2Reader {
         : undefined;
 
       // Navigator
-      const navigator = await IFrameNavigator.create({
+      const navigator = await EpubNavigator.create({
         mainElement: mainElement,
         headerMenu: headerMenu,
         footerMenu: footerMenu,
@@ -462,27 +457,19 @@ export default class D2Reader {
 
   /** Start TTS Read Aloud */
   startReadAloud = () => {
-    if (this.navigator instanceof IFrameNavigator) {
-      this.navigator.startReadAloud();
-    }
+    this.navigator.startReadAloud();
   };
-  /** Start TTS Read Aloud */
+  /** Stop TTS Read Aloud */
   stopReadAloud = () => {
-    if (this.navigator instanceof IFrameNavigator) {
-      this.navigator.stopReadAloud();
-    }
+    this.navigator.stopReadAloud();
   };
-  /** Start TTS Read Aloud */
+  /** Pause TTS Read Aloud */
   pauseReadAloud = () => {
-    if (this.navigator instanceof IFrameNavigator) {
-      this.navigator.pauseReadAloud();
-    }
+    this.navigator.pauseReadAloud();
   };
-  /** Start TTS Read Aloud */
+  /** Resume TTS Read Aloud */
   resumeReadAloud = () => {
-    if (this.navigator instanceof IFrameNavigator) {
-      this.navigator.resumeReadAloud();
-    }
+    this.navigator.resumeReadAloud();
   };
 
   /**
@@ -491,33 +478,22 @@ export default class D2Reader {
 
   /** Start Media Overlay Read Along */
   startReadAlong = () => {
-    if (this.navigator instanceof IFrameNavigator) {
-      this.navigator.startReadAlong();
-    }
+    this.navigator.startReadAlong();
   };
   /** Stop Media Overlay Read Along */
   stopReadAlong = () => {
-    if (this.navigator instanceof IFrameNavigator) {
-      this.navigator.stopReadAlong();
-    }
+    this.navigator.stopReadAlong();
   };
   /** Pause Media Overlay Read Along */
   pauseReadAlong = () => {
-    if (this.navigator instanceof IFrameNavigator) {
-      this.navigator.pauseReadAlong();
-    }
+    this.navigator.pauseReadAlong();
   };
   /** Resume Media Overlay Read Along */
   resumeReadAlong = () => {
-    if (this.navigator instanceof IFrameNavigator) {
-      this.navigator.resumeReadAlong();
-    }
+    this.navigator.resumeReadAlong();
   };
   get hasMediaOverlays() {
-    if (this.navigator instanceof IFrameNavigator) {
-      return this.navigator.hasMediaOverlays;
-    }
-    return false;
+    return this.navigator.publication.hasMediaOverlays ?? false;
   }
 
   /**
@@ -571,29 +547,21 @@ export default class D2Reader {
 
   /** Hide  Layer */
   hideLayer = (layer) => {
-    return this.navigator instanceof IFrameNavigator
-      ? this.navigator?.hideLayer(layer)
-      : false;
+    this.navigator.hideLayer(layer);
   };
   /** Show  Layer */
   showLayer = (layer) => {
-    return this.navigator instanceof IFrameNavigator
-      ? this.navigator?.showLayer(layer)
-      : false;
+    this.navigator.showLayer(layer);
   };
 
   /** Activate Marker <br>
    * Activated Marker will be used for active annotation creation */
   activateMarker = (id: string, position: string) => {
-    return this.navigator instanceof IFrameNavigator
-      ? this.navigator?.activateMarker(id, position)
-      : false;
+    this.navigator.activateMarker(id, position);
   };
   /** Deactivate Marker */
   deactivateMarker = () => {
-    return this.navigator instanceof IFrameNavigator
-      ? this.navigator?.deactivateMarker()
-      : false;
+    this.navigator.deactivateMarker();
   };
 
   /**
@@ -665,26 +633,17 @@ export default class D2Reader {
     return (await this.searchModule?.search(term, current)) ?? [];
   };
   goToSearchIndex = async (href: string, index: number, current: boolean) => {
-    if (
-      this.navigator instanceof IFrameNavigator &&
-      this.navigator.rights.enableSearch
-    ) {
+    if (this.navigator.supports(NavigatorFeature.Search)) {
       await this.searchModule?.goToSearchIndex(href, index, current);
     }
   };
   goToSearchID = async (href: string, index: number, current: boolean) => {
-    if (
-      this.navigator instanceof IFrameNavigator &&
-      this.navigator.rights.enableSearch
-    ) {
+    if (this.navigator.supports(NavigatorFeature.Search)) {
       await this.searchModule?.goToSearchID(href, index, current);
     }
   };
   clearSearch = async () => {
-    if (
-      this.navigator instanceof IFrameNavigator &&
-      this.navigator.rights.enableSearch
-    ) {
+    if (this.navigator.supports(NavigatorFeature.Search)) {
       await this.searchModule?.clearSearch();
     }
   };
@@ -696,9 +655,7 @@ export default class D2Reader {
     return this.navigator.currentResource();
   }
   get mostRecentNavigatedTocItem() {
-    return this.navigator instanceof IFrameNavigator
-      ? this.navigator.mostRecentNavigatedTocItem()
-      : false;
+    return this.navigator.mostRecentNavigatedTocItem?.() ?? undefined;
   }
   get totalResources() {
     return this.navigator.totalResources();
@@ -747,7 +704,7 @@ export default class D2Reader {
     return incremental === "mo_rate" || incremental === "mo_volume";
   }
 
-  w; /**
+  /**
    * Used to increase anything that can be increased,
    * such as pitch, rate, volume, fontSize
    */
@@ -758,17 +715,11 @@ export default class D2Reader {
       | MediaOverlayIncrementable
   ) => {
     if (this.isTTSIncrementable(incremental)) {
-      if (
-        this.navigator instanceof IFrameNavigator &&
-        this.navigator.rights.enableTTS
-      ) {
+      if (this.navigator.supports(NavigatorFeature.TTS)) {
         await this.ttsSettings?.increase(incremental);
       }
     } else if (this.isMOIncrementable(incremental)) {
-      if (
-        this.navigator instanceof IFrameNavigator &&
-        this.navigator.rights.enableMediaOverlays
-      ) {
+      if (this.navigator.supports(NavigatorFeature.MediaOverlays)) {
         await this.mediaOverlaySettings?.increase(incremental);
       }
     } else {
@@ -787,17 +738,11 @@ export default class D2Reader {
       | MediaOverlayIncrementable
   ) => {
     if (this.isTTSIncrementable(incremental)) {
-      if (
-        this.navigator instanceof IFrameNavigator &&
-        this.navigator.rights.enableTTS
-      ) {
+      if (this.navigator.supports(NavigatorFeature.TTS)) {
         await this.ttsSettings?.decrease(incremental);
       }
     } else if (this.isMOIncrementable(incremental)) {
-      if (
-        this.navigator instanceof IFrameNavigator &&
-        this.navigator.rights.enableMediaOverlays
-      ) {
+      if (this.navigator.supports(NavigatorFeature.MediaOverlays)) {
         await this.mediaOverlaySettings?.decrease(incremental);
       }
     } else {
@@ -817,18 +762,12 @@ export default class D2Reader {
    * TTS Settings
    */
   resetTTSSettings = () => {
-    if (
-      this.navigator instanceof IFrameNavigator &&
-      this.navigator.rights.enableTTS
-    ) {
+    if (this.navigator.supports(NavigatorFeature.TTS)) {
       this.ttsSettings?.resetTTSSettings();
     }
   };
   applyTTSSettings = async (ttsSettings: Partial<ITTSUserSettings>) => {
-    if (
-      this.navigator instanceof IFrameNavigator &&
-      this.navigator.rights.enableTTS
-    ) {
+    if (this.navigator.supports(NavigatorFeature.TTS)) {
       await this.ttsSettings?.applyTTSSettings(ttsSettings);
     }
   };
@@ -841,10 +780,7 @@ export default class D2Reader {
   //   }
   // };
   applyPreferredVoice = async (value: string) => {
-    if (
-      this.navigator instanceof IFrameNavigator &&
-      this.navigator.rights.enableTTS
-    ) {
+    if (this.navigator.supports(NavigatorFeature.TTS)) {
       await this.ttsSettings?.applyPreferredVoice(value);
     }
   };
@@ -853,20 +789,14 @@ export default class D2Reader {
    * Media Overlay Settings
    */
   resetMediaOverlaySettings = async () => {
-    if (
-      this.navigator instanceof IFrameNavigator &&
-      this.navigator.rights.enableMediaOverlays
-    ) {
+    if (this.navigator.supports(NavigatorFeature.MediaOverlays)) {
       await this.mediaOverlaySettings?.resetMediaOverlaySettings();
     }
   };
   applyMediaOverlaySettings = async (
     settings: Partial<IMediaOverlayUserSettings>
   ) => {
-    if (
-      this.navigator instanceof IFrameNavigator &&
-      this.navigator.rights.enableMediaOverlays
-    ) {
+    if (this.navigator.supports(NavigatorFeature.MediaOverlays)) {
       await this.mediaOverlaySettings?.applyMediaOverlaySettings(settings);
     }
   };
@@ -891,34 +821,22 @@ export default class D2Reader {
     await this.navigator.goToPage(page);
   };
   fitToPage = () => {
-    if (isPDFNavigator(this.navigator)) {
-      (this.navigator as PDFNavigator).fitToPage();
-    }
+    this.navigator.fitToPage();
   };
   fitToWidth = () => {
-    if (isPDFNavigator(this.navigator)) {
-      (this.navigator as PDFNavigator).fitToWidth();
-    }
+    this.navigator.fitToWidth();
   };
   zoomIn = () => {
-    if (isPDFNavigator(this.navigator)) {
-      (this.navigator as PDFNavigator).zoomIn();
-    }
+    this.navigator.zoomIn();
   };
   zoomOut = () => {
-    if (isPDFNavigator(this.navigator)) {
-      (this.navigator as PDFNavigator).zoomOut();
-    }
+    this.navigator.zoomOut();
   };
   activateHand = () => {
-    if (isPDFNavigator(this.navigator)) {
-      (this.navigator as PDFNavigator).activateHand();
-    }
+    this.navigator.activateHand();
   };
   deactivateHand = () => {
-    if (isPDFNavigator(this.navigator)) {
-      (this.navigator as PDFNavigator).deactivateHand();
-    }
+    this.navigator.deactivateHand();
   };
   copyToClipboard = (text) => {
     this.contentProtectionModule?.copyToClipboard(text);
@@ -936,28 +854,20 @@ export default class D2Reader {
     this.navigator.previousPage();
   };
   get atStart() {
-    return this.navigator instanceof IFrameNavigator
-      ? this.navigator.atStart()
-      : false;
+    return this.navigator.atStart();
   }
   get atEnd() {
-    return this.navigator instanceof IFrameNavigator
-      ? this.navigator.atEnd()
-      : false;
+    return this.navigator.atEnd();
   }
   snapToSelector = async (selector) => {
-    if (this.navigator instanceof IFrameNavigator) {
-      this.navigator.snapToSelector(selector);
-    }
+    this.navigator.snapToSelector?.(selector);
   };
   /**
    * You have attributes in the reader when you initialize it. You can set margin, navigationHeight etc...
    * This is in case you change the attributes after initializing the reader.
    */
   applyAttributes = (value: IFrameAttributes) => {
-    if (this.navigator instanceof IFrameNavigator) {
-      this.navigator.applyAttributes(value);
-    }
+    this.navigator.applyAttributes?.(value);
   };
 
   async applyLineFocusSettings(userSettings) {

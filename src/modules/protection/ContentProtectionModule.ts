@@ -19,7 +19,7 @@
 
 import { ReaderModule } from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import {
   addEventListenerOptional,
   removeEventListenerOptional,
@@ -73,7 +73,7 @@ interface ContentProtectionRect {
 
 export class ContentProtectionModule implements ReaderModule {
   private rects: Array<ContentProtectionRect>;
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   properties?: ContentProtectionModuleProperties;
   private hasEventListener: boolean = false;
   private isHacked: boolean = false;

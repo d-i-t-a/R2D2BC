@@ -18,7 +18,7 @@
  */
 
 import { Publication } from "../../model/Publication";
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import { ReaderModule } from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { addEventListenerOptional } from "../../utils/EventHandler";
@@ -32,7 +32,7 @@ export interface TimelineModuleConfig {
 
 export class TimelineModule implements ReaderModule {
   private publication: Publication;
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   private timelineContainer: HTMLDivElement;
   private positionSlider: HTMLInputElement;
 

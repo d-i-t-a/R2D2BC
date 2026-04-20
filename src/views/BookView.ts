@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 DITA (AM Consulting LLC)
+ * Copyright 2018-2026 DITA (AM Consulting LLC)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,20 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import {
-  IFrameNavigator,
-  IFrameAttributes,
-} from "../navigator/IFrameNavigator";
+import { IFrameAttributes } from "../navigator/EpubNavigator";
+
+/**
+ * Callbacks that the view needs from the navigator.
+ * Replaces the old direct EpubNavigator back-reference.
+ */
+export interface BookViewHost {
+  checkResourcePosition(): void;
+  recalculateContentProtection(delay?: number): void;
+  isContentProtectionEnabled(): boolean;
+  isFixedLayout(): boolean;
+  isReflowable(): boolean;
+  setDirection(direction?: string | null): void;
+}
 
 interface BookView {
   layout: string;
@@ -30,7 +40,7 @@ interface BookView {
   iframe: Element;
   sideMargin: number;
   height: number;
-  navigator: IFrameNavigator;
+  host: BookViewHost;
   attributes?: IFrameAttributes;
 
   setMode?(scroll: boolean);

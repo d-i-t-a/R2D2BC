@@ -17,11 +17,11 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { IFrameNavigator } from "../navigator/IFrameNavigator";
+import { EpubNavigator } from "../navigator/EpubNavigator";
 
 export default class TouchEventHandler {
-  navigator: IFrameNavigator;
-  constructor(navigator: IFrameNavigator) {
+  navigator: EpubNavigator;
+  constructor(navigator: EpubNavigator) {
     this.navigator = navigator;
   }
 

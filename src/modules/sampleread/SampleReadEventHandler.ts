@@ -18,11 +18,11 @@
  */
 
 import debounce from "debounce";
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 
 export default class SampleReadEventHandler {
-  navigator: IFrameNavigator;
-  constructor(navigator: IFrameNavigator) {
+  navigator: EpubNavigator;
+  constructor(navigator: EpubNavigator) {
     this.navigator = navigator;
   }
 

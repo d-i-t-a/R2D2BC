@@ -181,6 +181,24 @@ CJK-vertical and RTL are separate workstreams (not in this release).
 
 `examples/react/readium-css/` (previously a duplicate of `viewer/readium-css/` with its own inline patches) removed. All framework examples now import from `viewer/readium-css-v2/` via Parcel `url:` imports, eliminating two parallel bundles that had drifted apart.
 
+### iPadOS patch wiring (automatic)
+
+R2D2BC now detects iPadOS at runtime (legacy iPad UA + iPadOS 13+ Macintosh-reporting path via `navigator.maxTouchPoints > 1`) and sets `--readium-iPadOSPatch-on` on the iframe `<html>` element. The v2 `:root[style*="readium-iPadOSPatch-on"]` rules then disable Safari's `-webkit-text-size-adjust` and `-webkit-text-zoom` so they don't compound with v2's `zoom`-based font sizing. No integrator code changes.
+
+Files: `src/utils/BrowserUtilities.ts` (new `isIPadOS()` helper), `src/model/user-settings/UserSettings.ts` (toggle in `applyProperties()`).
+
+### CSS variable validator
+
+`scripts/check-readium-css-vars.ts` + `npm run lint:css-vars`. Cross-checks every `--USER__*` / `--RS__*` custom property written from `src/model/user-settings/ReadiumCSS.ts` against the bundled v1 + v2 CSS to catch silent drift after upstream syncs. Documents seven known dual-applicator writes (v1-compat substring matches) in an allow-list; orphaned writes outside the allow-list fail the check. Exits 0 today.
+
+### Demo fixes
+
+- `viewer/index_epub_file.html` — fetch spinner overlay shown during URL load and file-drop parsing, replacing the empty-viewport state that made long loads look broken.
+
+### Not included in this release
+
+The CJK-vertical + horizontal-RTL stylesheet bundling and per-language injection wiring are parked pending the navigator multi-mode refactor. This release supports CJK-horizontal but not vertical-rl or RTL-horizontal content at the navigator layer.
+
 ---
 
 ## Breaking changes
@@ -239,6 +257,7 @@ Apply **only** if the integrator changes their injected ReadiumCSS files from v1
 - **`advancedSettings` and `fontOverride` flags are removed.** v2 applies these settings directly. R2D2BC still writes the v1 flags (harmless on v2).
 - **Image blending in Sepia.** v1 implicitly set `mix-blend-mode: multiply` on images in Sepia so they blend with the warm background. v2 doesn't. R2D2BC auto-wires `blendImages: true` from the Sepia preset to match v1.
 - **`fontFamily: "Original"` now removes the CSS var** instead of setting it, to avoid v2's `* { font-family: revert !important }` rule that wipes publisher fonts.
+- **iPadOS font-size patch flag.** v2's `zoom`-based font-sizing compounds with Safari's native `text-size-adjust` / `text-zoom` on iPad, producing double-scaled text. R2D2BC now detects iPadOS (legacy iPad UA plus iPadOS 13+ that reports as Macintosh with `maxTouchPoints > 1`) and sets the `readium-iPadOSPatch-on` flag on the iframe `<html>` element automatically. v2 ReadiumCSS rules gated on the flag then neutralise Safari's scalers.
 
 #### 2b. Integrator-facing (action required)
 
@@ -251,15 +270,6 @@ Apply **only** if the integrator changes their injected ReadiumCSS files from v1
     src: url('/fonts/AccessibleDfA.woff2') format('woff2');
   }
   ```
-
-- **iOS / iPadOS font-size patches.** v2 uses CSS `zoom` to scale font-size. Without patches, font-size is broken on Apple platforms. Add the flag substring to the iframe `<html>` element's style attribute based on your user-agent detection:
-
-  ```javascript
-  if (isIOS()) html.style.setProperty('--platform-patch', 'readium-iOSPatch-on');
-  else if (isIPadOSDesktop()) html.style.setProperty('--platform-patch', 'readium-iPadOSPatch-on');
-  ```
-
-  (v2 uses substring matching, so the property name is arbitrary — only the value matters.)
 
 - **Publisher heading colours get overridden by themes.** v2's `:root[style*="--USER__textColor"] *:not(a) { color: inherit !important }` wipes publisher-declared colours on all non-anchor elements. v1 excluded h1-h6 and pre. Accept this as v2 design, or add a custom override in your own CSS layer after ReadiumCSS.
 - **Publisher fonts are fully overridden when `fontFamily` is set to a non-default.** v2's `:root[style*="--USER__fontFamily"] * { font-family: revert !important }` is more aggressive than v1. R2D2BC handles the "Publisher" default by removing the var; custom fonts override everything. Matches v2 design intent.

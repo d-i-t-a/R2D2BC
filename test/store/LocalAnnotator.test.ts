@@ -55,7 +55,8 @@ function makeAnnotation(
         rawText: "hello",
         cleanText: "hello",
       },
-      color: { red: 255, green: 255, blue: 0 },
+      color: "#ffff00",
+      marker: 0,
       pointerInteraction: true,
     },
   } as Annotation;

@@ -70,12 +70,13 @@ describe("Locator model", () => {
           rawText: "sample text",
           cleanText: "sample text",
         },
-        color: { red: 255, green: 200, blue: 0 },
+        color: "#ffc800",
+        marker: 0,
         pointerInteraction: true,
       },
     } as Annotation;
 
     expect(ann.highlight?.selectionInfo.rawText).toBe("sample text");
-    expect(ann.highlight?.color.red).toBe(255);
+    expect(ann.highlight?.color).toBe("#ffc800");
   });
 });

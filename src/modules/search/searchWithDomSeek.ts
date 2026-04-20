@@ -30,7 +30,7 @@ export interface ISearchResult {
   textBefore: string;
   textAfter: string;
   href: string;
-  title: string;
+  title: string | undefined;
   uuid: string;
   highlight?: any;
 }
@@ -76,7 +76,7 @@ export async function searchDocDomSeek(
   searchInput: string,
   doc: Document | null,
   href: string,
-  title: string,
+  title: string | undefined,
   fullWordSearch: boolean = false
 ): Promise<ISearchResult[]> {
   if (!doc) {

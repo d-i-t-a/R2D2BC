@@ -532,7 +532,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
   setDirection(direction?: string | null) {
     let dir = "";
     if (direction === "rtl" || direction === "ltr") dir = direction;
-    if (direction === "auto") dir = this.publication.Metadata.Direction2;
+    if (direction === "auto")
+      dir = this.publication.metadata?.readingProgression as string;
     if (dir) {
       if (dir === "rtl") this.spreads.style.flexDirection = "row-reverse";
       if (dir === "ltr") this.spreads.style.flexDirection = "row";
@@ -1234,18 +1235,18 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           linkElement.className = "chapter-link";
           linkElement.tabIndex = -1;
           let href = "";
-          if (link.Href) {
-            href = this.publication.getAbsoluteHref(link.Href);
+          if (link.href) {
+            href = this.publication.getAbsoluteHref(link.href);
             linkElement.href = href;
-            linkElement.innerHTML = link.Title || "";
+            linkElement.innerHTML = link.title || "";
             listItemElement.appendChild(linkElement);
           } else {
-            spanElement.innerHTML = link.Title || "";
+            spanElement.innerHTML = link.title || "";
             spanElement.className = "chapter-title";
             listItemElement.appendChild(spanElement);
           }
-          if (link.Children && link.Children.length > 0) {
-            createSubmenu(listItemElement, link.Children, true);
+          if (link.children?.items && link.children.items.length > 0) {
+            createSubmenu(listItemElement, link.children.items as Link[], true);
           }
 
           listElement.appendChild(listItemElement);
@@ -1339,8 +1340,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
       const startLink = this.publication.getStartLink();
       let startUrl: string | undefined = undefined;
-      if (startLink && startLink.Href) {
-        startUrl = this.publication.getAbsoluteHref(startLink.Href);
+      if (startLink && startLink.href) {
+        startUrl = this.publication.getAbsoluteHref(startLink.href);
       }
 
       if (lastReadingPosition) {
@@ -1358,7 +1359,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             progression: 0,
           },
           created: new Date(),
-          title: startLink?.Title,
+          title: startLink?.title,
         };
         await this.navigate(position);
       }
@@ -1387,11 +1388,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       let currentLocation = this.currentChapterLink.href;
       if (currentLocation) {
         const previous = this.publication.getPreviousSpineItem(currentLocation);
-        if (previous && previous.Href) {
+        if (previous && previous.href) {
           this.previousChapterLink = {
-            href: previous.Href,
-            title: previous.Title,
-            type: previous.TypeLink,
+            href: previous.href,
+            title: previous.title,
+            type: previous.type,
           };
         }
       }
@@ -1412,9 +1413,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       let res = this.publication.getNextSpineItem(currentLocation);
       if (res) {
         this.nextChapterLink = {
-          href: res.Href,
-          title: res.Title,
-          type: res.TypeLink,
+          href: res.href,
+          title: res.title,
+          type: res.type,
         };
       } else {
         this.nextChapterLink = undefined;
@@ -1442,15 +1443,16 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         this.setActiveTOCItem(currentLocation);
       }
 
-      if (this.publication.Metadata.Title) {
+      if (this.publication.metadata?.title) {
         if (this.bookTitle)
-          this.bookTitle.innerHTML = this.publication.Metadata.Title.toString();
+          this.bookTitle.innerHTML =
+            this.publication.metadata?.title.toString();
       }
 
       const spineItem = this.publication.getSpineItem(currentLocation);
       if (spineItem !== undefined) {
-        this.currentChapterLink.title = spineItem.Title;
-        this.currentChapterLink.type = spineItem.TypeLink;
+        this.currentChapterLink.title = spineItem.title;
+        this.currentChapterLink.type = spineItem.type;
       }
       let tocItem = this.publication.getTOCItem(currentLocation);
       if (this.currentTocUrl !== undefined) {
@@ -1459,16 +1461,16 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (
         !this.currentChapterLink.title &&
         tocItem !== undefined &&
-        tocItem.Title
+        tocItem.title
       ) {
-        this.currentChapterLink.title = tocItem.Title;
+        this.currentChapterLink.title = tocItem.title;
       }
       if (
         !this.currentChapterLink.type &&
         tocItem !== undefined &&
-        tocItem.TypeLink
+        tocItem.type
       ) {
-        this.currentChapterLink.title = tocItem.Title;
+        this.currentChapterLink.title = tocItem.title;
       }
 
       if (this.currentChapterLink.title) {
@@ -1822,7 +1824,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                   this.currentChapterLink.href
                 );
                 if (next) {
-                  const href = this.publication.getAbsoluteHref(next.Href);
+                  const href = this.publication.getAbsoluteHref(next.href);
                   this.currentSpreadLinks.right = {
                     href: href,
                   };
@@ -1856,7 +1858,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                 this.currentChapterLink.href
               );
               if (prev) {
-                const href = this.publication.getAbsoluteHref(prev.Href);
+                const href = this.publication.getAbsoluteHref(prev.href);
                 this.currentSpreadLinks.left = {
                   href: href,
                 };
@@ -1977,7 +1979,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                     this.currentChapterLink.href
                   );
                   if (next) {
-                    const href = this.publication.getAbsoluteHref(next.Href);
+                    const href = this.publication.getAbsoluteHref(next.href);
                     this.iframes[1].src = href;
                     this.currentSpreadLinks.right = {
                       href: href,
@@ -2007,7 +2009,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                     this.currentChapterLink.href
                   );
                   if (next) {
-                    const href = this.publication.getAbsoluteHref(next.Href);
+                    const href = this.publication.getAbsoluteHref(next.href);
                     this.currentSpreadLinks.right = {
                       href: href,
                     };
@@ -2030,7 +2032,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
                 this.currentChapterLink.href
               );
               if (prev) {
-                const href = this.publication.getAbsoluteHref(prev.Href);
+                const href = this.publication.getAbsoluteHref(prev.href);
                 this.currentSpreadLinks.left = {
                   href: href,
                 };
@@ -2390,7 +2392,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         }
         if (tocItem) {
           position = {
-            href: tocItem.Href,
+            href: tocItem.href,
             type: this.currentChapterLink.type,
             title: this.currentChapterLink.title,
             locations: {},
@@ -2802,12 +2804,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       if (index < 0) index = 0;
       const previous = this.publication.readingOrder[index];
       const position: Locator = {
-        href: this.publication.getAbsoluteHref(previous.Href),
+        href: this.publication.getAbsoluteHref(previous.href),
         locations: {
           progression: 0,
         },
-        type: previous.TypeLink,
-        title: previous.Title,
+        type: previous.type,
+        title: previous.title,
       };
 
       this.stopReadAloud();
@@ -2844,12 +2846,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         index = this.publication.readingOrder.length - 1;
       const next = this.publication.readingOrder[index];
       const position: Locator = {
-        href: this.publication.getAbsoluteHref(next.Href),
+        href: this.publication.getAbsoluteHref(next.href),
         locations: {
           progression: 0,
         },
-        type: next.TypeLink,
-        title: next.Title,
+        type: next.type,
+        title: next.title,
       };
 
       this.stopReadAloud();
@@ -2988,11 +2990,11 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         let currentLocation = this.currentChapterLink.href;
 
         const previous = this.publication.getPreviousSpineItem(currentLocation);
-        if (previous && previous.Href) {
+        if (previous && previous.href) {
           this.previousChapterLink = {
-            href: previous.Href,
-            type: previous.TypeLink,
-            title: previous.Title,
+            href: previous.href,
+            type: previous.type,
+            title: previous.title,
           };
         }
         if (this.previousChapterAnchorElement) {
@@ -3012,9 +3014,9 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         let res = this.publication.getNextSpineItem(currentLocation);
         if (res) {
           this.nextChapterLink = {
-            href: res.Href,
-            type: res.TypeLink,
-            title: res.Title,
+            href: res.href,
+            type: res.type,
+            title: res.title,
           };
         } else {
           this.nextChapterLink = undefined;
@@ -3038,16 +3040,16 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.setActiveTOCItem(currentLocation);
         }
 
-        if (this.publication.Metadata.Title) {
+        if (this.publication.metadata?.title) {
           if (this.bookTitle)
             this.bookTitle.innerHTML =
-              this.publication.Metadata.Title.toString();
+              this.publication.metadata?.title.toString();
         }
 
         const spineItem = this.publication.getSpineItem(currentLocation);
         if (spineItem !== undefined) {
-          this.currentChapterLink.title = spineItem.Title;
-          this.currentChapterLink.type = spineItem.TypeLink;
+          this.currentChapterLink.title = spineItem.title;
+          this.currentChapterLink.type = spineItem.type;
         }
         let tocItem = this.publication.getTOCItem(currentLocation);
         if (this.currentTocUrl !== undefined) {
@@ -3056,16 +3058,16 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
         if (
           !this.currentChapterLink.title &&
           tocItem !== undefined &&
-          tocItem.Title
+          tocItem.title
         ) {
-          this.currentChapterLink.title = tocItem.Title;
+          this.currentChapterLink.title = tocItem.title;
         }
         if (
           !this.currentChapterLink.type &&
           tocItem !== undefined &&
-          tocItem.TypeLink
+          tocItem.type
         ) {
-          this.currentChapterLink.title = tocItem.Title;
+          this.currentChapterLink.title = tocItem.title;
         }
 
         if (this.currentChapterLink.title) {
@@ -3200,8 +3202,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
     } else {
       const startLink = this.publication.getStartLink();
       let startUrl: string | undefined = undefined;
-      if (startLink && startLink.Href) {
-        startUrl = this.publication.getAbsoluteHref(startLink.Href);
+      if (startLink && startLink.href) {
+        startUrl = this.publication.getAbsoluteHref(startLink.href);
         if (startUrl) {
           const position: ReadingPosition = {
             href: startUrl,
@@ -3209,7 +3211,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
               progression: 0,
             },
             created: new Date(),
-            title: startLink.Title,
+            title: startLink.title,
           };
           await this.navigate(position);
         }
@@ -3303,8 +3305,8 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
       };
 
       if (tocItem) {
-        if (tocItem.Href.indexOf("#") !== -1) {
-          const elementId = tocItem.Href.slice(tocItem.Href.indexOf("#") + 1);
+        if (tocItem.href.indexOf("#") !== -1) {
+          const elementId = tocItem.href.slice(tocItem.href.indexOf("#") + 1);
           if (elementId !== undefined) {
             locations = {
               progression: this.view?.getCurrentPosition(),
@@ -3319,7 +3321,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           this.publication.positions
         ) {
           const positions = this.publication.positionsByHref(
-            this.publication.getRelativeHref(tocItem.Href)
+            this.publication.getRelativeHref(tocItem.href)
           );
           if (positions.length > 0) {
             const positionIndex = Math.ceil(
@@ -3331,7 +3333,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
               position = {
                 ...locator,
-                href: tocItem.Href,
+                href: tocItem.href,
                 created: new Date(),
                 title: this.currentChapterLink.title,
               };
@@ -3339,7 +3341,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
           }
         } else {
           position = {
-            href: tocItem.Href,
+            href: tocItem.href,
             locations: locations,
             created: new Date(),
             type: this.currentChapterLink.type,

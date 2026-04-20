@@ -199,7 +199,7 @@ export class SearchModule implements ReaderModule {
           const linkElement: HTMLAnchorElement = document.createElement("a");
           const element = paginated.data[index];
           linkElement.className = "collection-item";
-          linkElement.href = spineItem?.Href ?? "";
+          linkElement.href = spineItem?.href ?? "";
           linkElement.innerHTML =
             "..." +
             element.textBefore +
@@ -300,7 +300,7 @@ export class SearchModule implements ReaderModule {
       this.navigator.contentProtectionModule?.deactivate();
     }
     const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder[this.navigator.currentResource() ?? 0].Href
+      this.publication.readingOrder[this.navigator.currentResource() ?? 0].href
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
@@ -319,7 +319,7 @@ export class SearchModule implements ReaderModule {
       let doc = this.navigator.iframes[0].contentDocument;
       if (doc) {
         if (tocItem) {
-          searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
+          searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
             (result) => {
               result.forEach((searchItem) => {
                 let selectionInfo = {
@@ -734,7 +734,7 @@ export class SearchModule implements ReaderModule {
     for (let index = 0; index < this.publication.readingOrder.length; index++) {
       const linkHref = this.publication.getAbsoluteHref(
         this.publication.readingOrder
-          ? this.publication.readingOrder[index].Href
+          ? this.publication.readingOrder[index].href
           : ""
       );
 
@@ -743,13 +743,13 @@ export class SearchModule implements ReaderModule {
         tocItem = this.publication.readingOrder[index];
       }
       if (tocItem) {
-        let href = this.publication.getAbsoluteHref(tocItem.Href);
+        let href = this.publication.getAbsoluteHref(tocItem.href);
         if (this.navigator.api?.getContent) {
           await this.navigator.api?.getContent(href).then((content) => {
             let parser = new DOMParser();
             let doc = parser.parseFromString(content, "application/xhtml+xml");
             if (tocItem) {
-              searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
+              searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
                 (result) => {
                   result.forEach((searchItem) => {
                     localSearchResultBook.push(searchItem);
@@ -771,7 +771,7 @@ export class SearchModule implements ReaderModule {
                 "application/xhtml+xml"
               );
               if (tocItem) {
-                searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
+                searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
                   (result) => {
                     result.forEach((searchItem) => {
                       localSearchResultBook.push(searchItem);
@@ -803,7 +803,7 @@ export class SearchModule implements ReaderModule {
   async searchChapter(term: string): Promise<any> {
     let localSearchResultBook: any = [];
     const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder[this.navigator.currentResource() ?? 0].Href
+      this.publication.readingOrder[this.navigator.currentResource() ?? 0].href
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === null) {
@@ -812,13 +812,13 @@ export class SearchModule implements ReaderModule {
     }
 
     if (tocItem) {
-      let href = this.publication.getAbsoluteHref(tocItem.Href);
+      let href = this.publication.getAbsoluteHref(tocItem.href);
       if (this.navigator.api?.getContent) {
         await this.navigator.api?.getContent(href).then((content) => {
           let parser = new DOMParser();
           let doc = parser.parseFromString(content, "application/xhtml+xml");
           if (tocItem) {
-            searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
+            searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
               (result) => {
                 result.forEach((searchItem) => {
                   localSearchResultBook.push(searchItem);
@@ -840,7 +840,7 @@ export class SearchModule implements ReaderModule {
               "application/xhtml+xml"
             );
             if (tocItem) {
-              searchDocDomSeek(term, doc, tocItem.Href, tocItem.Title).then(
+              searchDocDomSeek(term, doc, tocItem.href, tocItem.title).then(
                 (result) => {
                   result.forEach((searchItem) => {
                     localSearchResultBook.push(searchItem);

@@ -58,11 +58,13 @@ export interface CitationModuleConfig extends CitationModuleProperties {
   api?: CitationModuleAPI;
 }
 
-/** Extract the display name from a r2-shared-js Contributor (Name may be string or IStringMap). */
-function contributorName(contributor: { Name: string | object }): string {
-  if (typeof contributor.Name === "string") return contributor.Name;
-  if (contributor.Name && typeof contributor.Name === "object") {
-    const vals = Object.values(contributor.Name);
+/** Extract the display name from a Contributor (supports both @readium/shared and r2-shared-js). */
+function contributorName(contributor: any): string {
+  // @readium/shared uses lowercase `name`
+  const n = contributor.name ?? contributor.Name;
+  if (typeof n === "string") return n;
+  if (n && typeof n === "object") {
+    const vals = Object.values(n);
     return vals.length > 0 ? String(vals[0]) : "";
   }
   return "";
@@ -176,10 +178,10 @@ export default class CitationModule implements ReaderModule {
       chicago = this.properties.author;
       mla = this.properties.author;
       apa = this.properties.author;
-    } else if (this.publication.Metadata.Author?.length > 0) {
-      const authors = this.publication.Metadata.Author;
+    } else if ((this.publication.metadata?.authors?.items?.length ?? 0) > 0) {
+      const authors = this.publication.metadata!.authors!.items;
       const names = authors
-        .map((a) => contributorName(a))
+        .map((a: any) => contributorName(a))
         .filter((n) => n.length > 0);
 
       if (names.length === 1) {
@@ -227,10 +229,12 @@ export default class CitationModule implements ReaderModule {
       mla += this.properties.publisher;
       chicago += this.properties.publisher;
     } else if (
-      this.publication.Metadata.Publisher?.length > 0 &&
-      contributorName(this.publication.Metadata.Publisher[0])
+      (this.publication.metadata?.publishers?.items?.length ?? 0) > 0 &&
+      contributorName(this.publication.metadata?.publishers?.items![0])
     ) {
-      const name = contributorName(this.publication.Metadata.Publisher[0]);
+      const name = contributorName(
+        this.publication.metadata?.publishers?.items![0]
+      );
       mla += name;
       chicago += name;
     }
@@ -239,8 +243,8 @@ export default class CitationModule implements ReaderModule {
     let year = "";
     if (this.properties.published) {
       year = this.properties.published;
-    } else if (this.publication.Metadata.PublicationDate) {
-      const y = this.publication.Metadata.PublicationDate.getFullYear();
+    } else if (this.publication.metadata?.published) {
+      const y = this.publication.metadata?.published.getFullYear();
       if (y > 0) year = String(y);
     }
 
@@ -262,7 +266,7 @@ export default class CitationModule implements ReaderModule {
 
   private bookTitleFormatted(): CitationTuple {
     const title =
-      this.properties.title || this.publication.Metadata.Title || "";
+      this.properties.title || this.publication.metadata?.title || "";
     if (title) {
       const formatted = "<em>" + title + "</em>. ";
       return [formatted, formatted, formatted];
@@ -284,10 +288,10 @@ export default class CitationModule implements ReaderModule {
     if (this.properties.publisher) {
       name = this.properties.publisher;
     } else if (
-      this.publication.Metadata.Publisher?.length > 0 &&
-      contributorName(this.publication.Metadata.Publisher[0])
+      (this.publication.metadata?.publishers?.items?.length ?? 0) > 0 &&
+      contributorName(this.publication.metadata?.publishers?.items![0])
     ) {
-      name = contributorName(this.publication.Metadata.Publisher[0]);
+      name = contributorName(this.publication.metadata?.publishers?.items![0]);
     }
 
     if (name) {
@@ -299,10 +303,10 @@ export default class CitationModule implements ReaderModule {
   private contributorsFormatted(): CitationTuple {
     const parts: string[] = [];
 
-    const editors = this.publication.Metadata.Editor;
-    if (editors?.length > 0) {
-      const names = editors
-        .map((e) => contributorName(e))
+    const editors = this.publication.metadata?.editors?.items;
+    if ((editors?.length ?? 0) > 0) {
+      const names = editors!
+        .map((e: any) => contributorName(e))
         .filter((n) => n.length > 0);
       if (names.length > 0) {
         parts.push(
@@ -316,10 +320,10 @@ export default class CitationModule implements ReaderModule {
       }
     }
 
-    const translators = this.publication.Metadata.Translator;
-    if (translators?.length > 0) {
-      const names = translators
-        .map((t) => contributorName(t))
+    const translators = this.publication.metadata?.translators?.items;
+    if ((translators?.length ?? 0) > 0) {
+      const names = translators!
+        .map((t: any) => contributorName(t))
         .filter((n) => n.length > 0);
       if (names.length > 0) {
         parts.push(
@@ -341,8 +345,8 @@ export default class CitationModule implements ReaderModule {
   }
 
   private eBookVersionFormatted(): CitationTuple {
-    if (this.publication.Metadata.Modified) {
-      const modified = this.publication.Metadata.Modified;
+    if (this.publication.metadata?.modified) {
+      const modified = this.publication.metadata?.modified;
       const version =
         modified.getFullYear() +
         "-" +
@@ -384,7 +388,7 @@ export default class CitationModule implements ReaderModule {
   }
 
   private seriesFormatted(): CitationTuple {
-    const series = this.publication.Metadata.BelongsTo?.Series;
+    const series = this.publication.metadata?.belongsToSeries?.items;
     if (series && series.length > 0) {
       const name = contributorName(series[0]);
       if (name) {

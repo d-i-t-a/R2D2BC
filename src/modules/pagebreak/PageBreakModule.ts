@@ -126,7 +126,7 @@ export class PageBreakModule implements ReaderModule {
     ) {
       var filteredPages = this.publication.pageList?.filter(
         (el: Link) =>
-          el.Href.slice(el.Href.indexOf("#") + 1).replace(/[^0-9]/g, "") ===
+          el.href.slice(el.href.indexOf("#") + 1).replace(/[^0-9]/g, "") ===
           this.goToPageNumberInput.value
       );
       if (filteredPages && filteredPages.length > 0) {
@@ -134,9 +134,9 @@ export class PageBreakModule implements ReaderModule {
         let locations: Locations = {
           progression: 0,
         };
-        if (firstPage.Href.indexOf("#") !== -1) {
-          const elementId = firstPage.Href.slice(
-            firstPage.Href.indexOf("#") + 1
+        if (firstPage.href.indexOf("#") !== -1) {
+          const elementId = firstPage.href.slice(
+            firstPage.href.indexOf("#") + 1
           );
           if (elementId !== null) {
             locations = {
@@ -145,10 +145,10 @@ export class PageBreakModule implements ReaderModule {
           }
         }
         const position: Locator = {
-          href: this.publication.getAbsoluteHref(firstPage.Href),
+          href: this.publication.getAbsoluteHref(firstPage.href),
           locations: locations,
-          type: firstPage.TypeLink,
-          title: firstPage.Title,
+          type: firstPage.type,
+          title: firstPage.title,
         };
 
         this.navigator.goTo(position);

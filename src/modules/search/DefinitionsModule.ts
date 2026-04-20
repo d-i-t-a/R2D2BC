@@ -110,7 +110,7 @@ export class DefinitionsModule implements ReaderModule {
     const linkHref = this.publication.getAbsoluteHref(
       this.publication.readingOrder
         ? this.publication.readingOrder[this.navigator.currentResource() ?? 0]
-            .Href
+            .href
         : ""
     );
     let tocItem = this.publication.getTOCItem(linkHref);
@@ -127,8 +127,8 @@ export class DefinitionsModule implements ReaderModule {
           await searchDocDomSeek(
             termKey,
             this.navigator.iframes[0].contentDocument,
-            tocItem.Href,
-            tocItem.Title,
+            tocItem.href,
+            tocItem.title,
             this.navigator.definitionsModule?.properties.fullWordSearch
           ).then((result) => {
             let i: number | undefined = undefined;

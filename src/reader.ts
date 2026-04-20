@@ -18,6 +18,7 @@
  */
 import { Annotation, Bookmark, Locator } from "./model/Locator";
 import { Publication } from "./model/Publication";
+import { Manifest } from "@readium/shared";
 import { UserSettingsIncrementable } from "./model/user-settings/UserProperties";
 import { UserSettings } from "./model/user-settings/UserSettings";
 import { AnnotationModule } from "./modules/AnnotationModule";
@@ -46,7 +47,7 @@ import {
 import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
-import { convertAndCamel } from "./model/Link";
+import { toPlainObject } from "./model/Link";
 import { LayerSettings } from "./modules/highlight/LayerSettings";
 import { PageBreakModule } from "./modules/pagebreak/PageBreakModule";
 import { TTSModule2 } from "./modules/TTS/TTSModule2";
@@ -55,7 +56,6 @@ import { DefinitionsModule } from "./modules/search/DefinitionsModule";
 import LineFocusModule from "./modules/linefocus/LineFocusModule";
 import { HistoryModule } from "./modules/history/HistoryModule";
 import CitationModule from "./modules/citation/CitationModule";
-import { TaJsonDeserialize } from "./utils/JsonUtil";
 import type { PDFNavigator } from "./navigator/PDFNavigator";
 import Navigator from "./navigator/Navigator";
 import { ConsumptionModule } from "./modules/consumption/ConsumptionModule";
@@ -154,12 +154,14 @@ export default class D2Reader {
     let webPubManifestUrl = initialConfig.url;
     let publication;
     if (initialConfig.publication) {
-      publication = TaJsonDeserialize<Publication>(
-        initialConfig.publication,
-        Publication
-      );
-      publication.manifestUrl = new URL(webPubManifestUrl);
-    } else {
+      const pubInput = initialConfig.publication;
+      if (pubInput instanceof Publication) {
+        publication = pubInput;
+      } else {
+        publication = Publication.fromJSON(pubInput, webPubManifestUrl);
+      }
+    }
+    if (!publication) {
       publication = await Publication.fromUrl(
         webPubManifestUrl,
         initialConfig.requestConfig
@@ -191,8 +193,8 @@ export default class D2Reader {
     rights = updateConfig(rights, publication);
 
     if (
-      publication.Metadata.ConformsTo &&
-      publication.Metadata.ConformsTo.includes(
+      publication.metadata?.conformsTo &&
+      publication.metadata?.conformsTo.includes(
         "https://readium.org/webpub-manifest/profiles/pdf"
       )
     ) {
@@ -244,11 +246,11 @@ export default class D2Reader {
         headerMenu: headerMenu,
         api: initialConfig.api,
         injectables:
-          (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          publication.isFixedLayout
             ? initialConfig.injectablesFixed
             : initialConfig.injectables,
         layout:
-          (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          publication.isFixedLayout
             ? "fixed"
             : "reflowable",
       });
@@ -412,7 +414,7 @@ export default class D2Reader {
         sample: initialConfig.sample,
         requestConfig: initialConfig.requestConfig,
         injectables:
-          (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
+          publication.isFixedLayout
             ? (initialConfig.injectablesFixed ?? [])
             : initialConfig.injectables,
         attributes: initialConfig.attributes,
@@ -613,19 +615,19 @@ export default class D2Reader {
 
   /** Table of Contents */
   get tableOfContents() {
-    return convertAndCamel(this.navigator.tableOfContents()) ?? [];
+    return toPlainObject(this.navigator.tableOfContents()) ?? [];
   }
   /** Landmarks */
   get landmarks() {
-    return convertAndCamel(this.navigator.landmarks()) ?? [];
+    return toPlainObject(this.navigator.landmarks()) ?? [];
   }
   /** Page List */
   get pageList() {
-    return convertAndCamel(this.navigator.pageList()) ?? [];
+    return toPlainObject(this.navigator.pageList()) ?? [];
   }
   /** Reading Order or Spine */
   get readingOrder() {
-    return convertAndCamel(this.navigator.readingOrder()) ?? [];
+    return toPlainObject(this.navigator.readingOrder()) ?? [];
   }
   /** Current Bookmarks */
   get bookmarks() {
@@ -706,7 +708,7 @@ export default class D2Reader {
     return this.navigator.totalResources();
   }
   get publicationLanguage() {
-    return this.navigator.publication.Metadata.Language;
+    return this.navigator.publication.metadata?.languages;
   }
 
   /**
@@ -749,7 +751,7 @@ export default class D2Reader {
     return incremental === "mo_rate" || incremental === "mo_volume";
   }
 
-  /**
+  w; /**
    * Used to increase anything that can be increased,
    * such as pitch, rate, volume, fontSize
    */

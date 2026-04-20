@@ -92,12 +92,12 @@ export class TimelineModule implements ReaderModule {
         this.timelineContainer.innerHTML = "";
       }
       this.publication.readingOrder?.forEach((link) => {
-        const linkHref = this.publication.getAbsoluteHref(link.Href);
+        const linkHref = this.publication.getAbsoluteHref(link.href);
         const tocItemAbs = this.publication.getTOCItemAbsolute(linkHref);
         const tocHref =
-          tocItemAbs?.Href.indexOf("#") !== -1
-            ? tocItemAbs?.Href.slice(0, tocItemAbs?.Href.indexOf("#"))
-            : tocItemAbs.Href;
+          tocItemAbs?.href.indexOf("#") !== -1
+            ? tocItemAbs?.href.slice(0, tocItemAbs?.href.indexOf("#"))
+            : tocItemAbs.href;
         const tocHrefAbs = this.publication.getAbsoluteHref(tocHref ?? "");
 
         var chapterHeight;
@@ -119,9 +119,9 @@ export class TimelineModule implements ReaderModule {
         chapter.style.width = "100%";
         chapter.className = "chapter";
 
-        if (tocItemAbs?.Title !== undefined) {
+        if (tocItemAbs?.title !== undefined) {
           var tooltip = document.createElement("span");
-          tooltip.innerHTML = tocItemAbs.Title;
+          tooltip.innerHTML = tocItemAbs.title;
           tooltip.className = "chapter-tooltip";
           chapter.appendChild(tooltip);
         }
@@ -137,7 +137,7 @@ export class TimelineModule implements ReaderModule {
           ) {
             position = {
               ...this.publication.positions.filter(
-                (el: Locator) => el.href === link.Href
+                (el: Locator) => el.href === link.href
               )[0],
             };
             position.href = this.publication.getAbsoluteHref(position.href);
@@ -147,8 +147,8 @@ export class TimelineModule implements ReaderModule {
               locations: {
                 progression: 0,
               },
-              type: link.TypeLink,
-              title: link.Title,
+              type: link.type,
+              title: link.title,
             };
           }
           log.log(position);

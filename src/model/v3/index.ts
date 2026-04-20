@@ -13,13 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Developed on behalf of: Bokbasen AS (https://www.bokbasen.no)
- * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
+ * Developed on behalf of: DITA (AM Consulting LLC)
  */
 
 /**
- * @deprecated Import from "./v3/Locator" instead. This file re-exports for backwards compatibility.
+ * v3 Model Layer
+ *
+ * Built on @readium/shared instead of r2-shared-js + ta-json-x.
+ * All models use plain JSON deserialization (no decorators).
+ * PascalCase compatibility getters provided for backwards compat.
  */
+
+export { Publication } from "./Publication";
+export { Link, D2Link, Links } from "./Link";
 export {
   Locator,
   LocatorText,
@@ -28,4 +34,5 @@ export {
   Bookmark,
   Annotation,
   AnnotationMarker,
-} from "./v3/Locator";
+} from "./Locator";
+export { MediaOverlayNode } from "./MediaOverlayNode";

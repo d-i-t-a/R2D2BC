@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "2.5.2",
+  "version": "3.0.0-alpha.7",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -38,6 +38,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@readium/shared": "^2.1.5",
     "browserslist-useragent-regexp": "^4.1.0",
     "cssesc": "^3.0.0",
     "debounce": "^2.0.0",
@@ -47,10 +48,8 @@
     "lodash": "^4.17.21",
     "loglevel": "^1.8.0",
     "pdfjs-dist": "^5.5.207",
-    "r2-shared-js": "^1.0.82",
     "recursive-readdir": "^2.2.2",
     "sanitize-html": "^2.3.3",
-    "ta-json-x": "^2.5.3",
     "util": "^0.12.4",
     "uuid": "^11.0.0"
   },

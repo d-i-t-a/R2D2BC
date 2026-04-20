@@ -36,6 +36,22 @@
             background: #4a90d9; color: #fff; border-radius: 24px; cursor: pointer;
         }
         #open-btn:hover { background: #3a7bc8; }
+
+        /* Fetch/load spinner — shown while the EPUB is being fetched and parsed */
+        #fetch-spinner {
+            position: fixed; inset: 51px 0 0 0; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            gap: 18px; background: rgba(255,255,255,0.92); z-index: 500;
+            font-size: 13px; color: #666;
+        }
+        #fetch-spinner.active { display: flex; }
+        #fetch-spinner .ring {
+            width: 44px; height: 44px; border: 3px solid #e0e0e0;
+            border-top-color: #4a90d9; border-radius: 50%;
+            animation: fetch-spin 0.9s linear infinite;
+        }
+        #fetch-spinner .label { white-space: nowrap; max-width: 80vw; overflow: hidden; text-overflow: ellipsis; }
+        @keyframes fetch-spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -69,6 +85,12 @@
                 Load URL
             </button>
         </div>
+    </div>
+
+    <!-- Spinner shown while the EPUB is being fetched and parsed -->
+    <div id="fetch-spinner">
+        <div class="ring"></div>
+        <div class="label" id="fetch-spinner-label">Loading…</div>
     </div>
 
     <!-- Reader container (shown after a file is loaded) -->
@@ -181,13 +203,23 @@
             await loadEpubBuffer(buffer, file.name);
         }
 
+        function showSpinner(label) {
+            document.getElementById('fetch-spinner-label').textContent = label;
+            document.getElementById('fetch-spinner').classList.add('active');
+        }
+        function hideSpinner() {
+            document.getElementById('fetch-spinner').classList.remove('active');
+        }
+
         async function loadFromUrl() {
             const input = document.getElementById('url-input');
             const url = input.value.trim();
             if (!url) return;
-            document.getElementById('page-info').textContent = 'Fetching ' + url + '...';
+            const filename = url.split('/').pop() || url;
+            document.getElementById('page-info').textContent = 'Fetching ' + filename + '...';
             document.getElementById('drop-zone').classList.add('hidden');
             document.getElementById('D2Reader-Container').style.display = '';
+            showSpinner('Fetching ' + filename + '…');
             try {
                 // Stop previous reader
                 if (d2reader) {
@@ -213,12 +245,14 @@
                         updateCurrentLocation: async () => {},
                     },
                 });
-                document.getElementById('page-info').textContent = url.split('/').pop() || url;
+                document.getElementById('page-info').textContent = filename;
             } catch (error) {
                 console.error('[EPUB File] Load from URL failed:', error);
                 document.getElementById('page-info').textContent = 'Error: ' + error.message;
                 document.getElementById('drop-zone').classList.remove('hidden');
                 document.getElementById('D2Reader-Container').style.display = 'none';
+            } finally {
+                hideSpinner();
             }
         }
 
@@ -232,6 +266,7 @@
             document.getElementById('page-info').textContent = 'Loading ' + name + '...';
             document.getElementById('drop-zone').classList.add('hidden');
             document.getElementById('D2Reader-Container').style.display = '';
+            showSpinner('Loading ' + name + '…');
 
             try {
                 d2reader = await D2Reader.load({
@@ -292,6 +327,8 @@
                 document.getElementById('page-info').textContent = 'Failed: ' + err.message;
                 document.getElementById('drop-zone').classList.remove('hidden');
                 document.getElementById('D2Reader-Container').style.display = 'none';
+            } finally {
+                hideSpinner();
             }
         }
 

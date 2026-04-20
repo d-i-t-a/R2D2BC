@@ -763,6 +763,18 @@ export class UserSettings implements IUserSettings {
       ) as HTMLHtmlElement;
 
       if (html) {
+        // iPadOS patch toggle — ReadiumCSS v2 ships rules gated on
+        // `:root[style*="readium-iPadOSPatch-on"]` that disable Safari's
+        // native text-size-adjust + text-zoom (which otherwise compound
+        // with v2's CSS `zoom`-based font sizing and produce double-scaled
+        // text on iPad). Apply as a CSS custom property so the substring
+        // selector matches without polluting real CSS vars.
+        if (BrowserUtilities.isIPadOS()) {
+          html.style.setProperty("--readium-iPadOSPatch-on", "1");
+        } else {
+          html.style.removeProperty("--readium-iPadOSPatch-on");
+        }
+
         const rootElement =
           HTMLUtilities.findElement(document, "#root") ||
           document.documentElement;

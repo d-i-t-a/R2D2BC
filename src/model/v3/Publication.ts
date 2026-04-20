@@ -170,8 +170,8 @@ export class Publication {
     // "rendition:layout": "pre-paginated" (colon key)
     // "rendition": { "layout": "fixed" } (nested object)
     const renditionLayout =
-      this.metadata?.otherMetadata?.["rendition:layout"]
-      ?? this.metadata?.otherMetadata?.rendition?.layout;
+      this.metadata?.otherMetadata?.["rendition:layout"] ??
+      this.metadata?.otherMetadata?.rendition?.layout;
     return renditionLayout === "pre-paginated" || renditionLayout === "fixed";
   }
 

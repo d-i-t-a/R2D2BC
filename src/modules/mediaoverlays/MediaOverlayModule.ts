@@ -21,6 +21,7 @@ import { Publication } from "../../model/Publication";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { ReaderModule } from "../ReaderModule";
 import { Link } from "../../model/Link";
+import { ReaderEvent } from "../../utils/Events";
 import { MediaOverlayNode } from "../../model/v3/MediaOverlayNode";
 import {
   MediaOverlaySettings,
@@ -64,6 +65,7 @@ export class MediaOverlayModule implements ReaderModule {
   private audioElement: HTMLMediaElement;
   settings: MediaOverlaySettings;
   private properties: MediaOverlayModuleProperties;
+  private api?: MediaOverlayModuleAPI;
   private play: HTMLLinkElement = HTMLUtilities.findElement(
     document,
     "#menu-button-play"
@@ -92,6 +94,7 @@ export class MediaOverlayModule implements ReaderModule {
       config.settings,
       config as MediaOverlayModuleProperties
     );
+    mediaOverlay.api = config.api;
     mediaOverlay.start();
     return mediaOverlay;
   }
@@ -184,10 +187,32 @@ export class MediaOverlayModule implements ReaderModule {
         await this.playLink();
       } else {
         if (this.settings.autoTurn && this.settings.playing) {
-          if (this.audioElement) {
-            await this.audioElement.pause();
+          const currentLink = this.currentLinks[this.currentLinkIndex];
+          const nextLink = currentLink
+            ? this.publication.getNextSpineItem(
+                this.publication.getAbsoluteHref(currentLink.href)
+              )
+            : undefined;
+          if (nextLink) {
+            if (this.audioElement) {
+              await this.audioElement.pause();
+            }
+            this.navigator.nextResource();
+          } else {
+            // End of book — no more resources
+            await this.stopReadAloud();
+            if (this.api?.finished) this.api.finished();
+            this.navigator.emit(ReaderEvent.ReadAlongFinished, "finished", {
+              href: this.currentLinks[this.currentLinkIndex]?.href,
+            });
           }
-          this.navigator.nextResource();
+        } else if (this.settings.playing) {
+          // autoTurn off, no audio on this page
+          await this.stopReadAloud();
+          if (this.api?.stopped) this.api.stopped();
+          this.navigator.emit(ReaderEvent.ReadAlongStopped, "stopped", {
+            href: this.currentLinks[this.currentLinkIndex]?.href,
+          });
         } else {
           await this.stopReadAloud();
         }
@@ -323,6 +348,10 @@ export class MediaOverlayModule implements ReaderModule {
       if (this.play) this.play.style.display = "none";
       if (this.pause) this.pause.style.removeProperty("display");
       this.bindClickHandler();
+      if (this.api?.started) this.api.started();
+      this.navigator.emit(ReaderEvent.ReadAlongStarted, "started", {
+        href: this.currentLinks[this.currentLinkIndex]?.href,
+      });
     }
   }
   async stopReadAloud() {
@@ -342,6 +371,10 @@ export class MediaOverlayModule implements ReaderModule {
       this.audioElement.pause();
       if (this.play) this.play.style.removeProperty("display");
       if (this.pause) this.pause.style.display = "none";
+      if (this.api?.paused) this.api.paused();
+      this.navigator.emit(ReaderEvent.ReadAlongPaused, "paused", {
+        href: this.currentLinks[this.currentLinkIndex]?.href,
+      });
     }
   }
   async resumeReadAloud() {
@@ -350,6 +383,10 @@ export class MediaOverlayModule implements ReaderModule {
       await this.audioElement.play();
       if (this.play) this.play.style.display = "none";
       if (this.pause) this.pause.style.removeProperty("display");
+      if (this.api?.resumed) this.api.resumed();
+      this.navigator.emit(ReaderEvent.ReadAlongResumed, "resumed", {
+        href: this.currentLinks[this.currentLinkIndex]?.href,
+      });
     }
   }
 
@@ -478,8 +515,29 @@ export class MediaOverlayModule implements ReaderModule {
         } else {
           this.audioElement.pause();
           if (this.settings.autoTurn && this.settings.playing) {
-            this.audioElement.pause();
-            this.navigator.nextResource();
+            const currentLink = this.currentLinks[this.currentLinkIndex];
+            const nextLink = currentLink
+              ? this.publication.getNextSpineItem(
+                  this.publication.getAbsoluteHref(currentLink.href)
+                )
+              : undefined;
+            if (nextLink) {
+              this.navigator.nextResource();
+            } else {
+              // End of book
+              this.stopReadAloud();
+              if (this.api?.finished) this.api.finished();
+              this.navigator.emit(ReaderEvent.ReadAlongFinished, "finished", {
+                href: this.currentLinks[this.currentLinkIndex]?.href,
+              });
+            }
+          } else if (this.settings.playing) {
+            // autoTurn off, chapter ended
+            this.stopReadAloud();
+            if (this.api?.stopped) this.api.stopped();
+            this.navigator.emit(ReaderEvent.ReadAlongStopped, "stopped", {
+              href: this.currentLinks[this.currentLinkIndex]?.href,
+            });
           } else {
             this.stopReadAloud();
           }
@@ -896,9 +954,11 @@ export class MediaOverlayModule implements ReaderModule {
     log.log("moHighlight:  ## " + id);
     // Get active class from metadata: try @readium/shared method, then otherMetadata, then settings fallback
     let classActive =
-      (this.publication.metadata as any)?.getMediaOverlay?.()?.activeClass
-      ?? this.publication.metadata?.otherMetadata?.["media-overlay"]?.["active-class"]
-      ?? this.settings.color;
+      (this.publication.metadata as any)?.getMediaOverlay?.()?.activeClass ??
+      this.publication.metadata?.otherMetadata?.["media-overlay"]?.[
+        "active-class"
+      ] ??
+      this.settings.color;
     const styleAttr =
       this.navigator.iframes[0].contentDocument?.documentElement.getAttribute(
         "style"
@@ -945,10 +1005,7 @@ export class MediaOverlayModule implements ReaderModule {
       }
       this.pid = id;
     }
-    if (
-      current &&
-      !this.publication.isFixedLayout
-    ) {
+    if (current && !this.publication.isFixedLayout) {
       current.scrollIntoView({
         block: "center",
         behavior: "smooth",

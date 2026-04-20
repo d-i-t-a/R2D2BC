@@ -1138,6 +1138,9 @@
                     selectionMenuClose: function() {
                         console.log("selectionMenuClose");
                     },
+                    selection: function() {
+                      console.log("selection through callback");
+                    },
                 },
                 preventScrollOnSelection: true,
             },
@@ -1338,7 +1341,9 @@
                 }
             },
             injectables: injectables,
-            injectablesFixed: [],
+            injectablesFixed: [
+                { type: 'style', url: defined_origin + '/viewer/injectables/style/style.css' },
+            ],
             userSettings: userSettings,
             useLocalStorage: true, // true = uses local storage, false = uses session storage (default)
             useStorageType: "local", // local, session or memory !! use either this or useLocalStorage,
@@ -1349,39 +1354,150 @@
             console.log("D2reader instance ready", instance);
             d2reader = instance;
 
-            instance.addEventListener("readalong.started", (detail) => {
-                console.log("Something in the annotations has changed. ");
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("readaloud.started", (detail) => {
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("readaloud.stopped", (detail) => {
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("readaloud.paused", (detail) => {
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("readaloud.resumed", (detail) => {
-                console.log("listener " + detail);
+            // ── Resource lifecycle ──────────────────────────────────
+            instance.addEventListener("resource.ready", () => {
+                console.log("[EVENT] resource.ready");
             });
             instance.addEventListener("resource.start", () => {
-                console.log("listener start");
+                console.log("[EVENT] resource.start");
             });
             instance.addEventListener("resource.end", () => {
-                console.log("listener end");
+                console.log("[EVENT] resource.end");
             });
             instance.addEventListener("resource.fits", () => {
-                console.log("listener fits");
+                console.log("[EVENT] resource.fits");
             });
-            instance.addEventListener("resource.ready", () => {
-                console.log("listener ready");
+            instance.addEventListener("resource.error", (error) => {
+                console.log("[EVENT] resource.error", error);
+            });
+
+            // ── Navigation info ───────────────────────────────────
+            instance.addEventListener("direction", (dir) => {
+                console.log("[EVENT] direction:", dir);
+            });
+            instance.addEventListener("chapterinfo", (title) => {
+                console.log("[EVENT] chapterinfo:", title);
+            });
+            instance.addEventListener("positioninfo", (locator) => {
+                console.log("[EVENT] positioninfo:", locator);
+            });
+            instance.addEventListener("location.changed", (position) => {
+                console.log("[EVENT] location.changed:", position);
+            });
+
+            // ── User interaction ──────────────────────────────────
+            instance.addEventListener("click", (event) => {
+                console.log("[EVENT] click:", event.type);
             });
             instance.addEventListener("keydown", (event) => {
-                console.log("keydown: " + event.key);
+                console.log("[EVENT] keydown:", event.key);
             });
-            instance.addEventListener("click", (event) => {
-                console.log("click through: " + event.detail);
+
+            // ── Error ─────────────────────────────────────────────
+            instance.addEventListener("error", (error) => {
+                console.log("[EVENT] error:", error);
+            });
+
+            // ── TTS / Read Aloud ──────────────────────────────────
+            instance.addEventListener("readaloud.started", (detail) => {
+                console.log("[EVENT] readaloud.started:", detail);
+            });
+            instance.addEventListener("readaloud.stopped", (detail) => {
+                console.log("[EVENT] readaloud.stopped:", detail);
+            });
+            instance.addEventListener("readaloud.paused", (detail) => {
+                console.log("[EVENT] readaloud.paused:", detail);
+            });
+            instance.addEventListener("readaloud.resumed", (detail) => {
+                console.log("[EVENT] readaloud.resumed:", detail);
+            });
+            instance.addEventListener("readaloud.finished", (detail) => {
+                console.log("[EVENT] readaloud.finished:", detail);
+            });
+
+            // ── Media Overlays / Read Along ───────────────────────
+            instance.addEventListener("readalong.started", (detail) => {
+                console.log("[EVENT] readalong.started:", detail);
+            });
+            instance.addEventListener("readalong.stopped", (detail) => {
+                console.log("[EVENT] readalong.stopped:", detail);
+            });
+            instance.addEventListener("readalong.paused", (detail) => {
+                console.log("[EVENT] readalong.paused:", detail);
+            });
+            instance.addEventListener("readalong.resumed", (detail) => {
+                console.log("[EVENT] readalong.resumed:", detail);
+            });
+            instance.addEventListener("readalong.finished", (detail) => {
+                console.log("[EVENT] readalong.finished:", detail);
+            });
+
+            // ── Bookmarks ─────────────────────────────────────────
+            instance.addEventListener("bookmark.created", (bookmark) => {
+                console.log("[EVENT] bookmark.created:", bookmark);
+            });
+            instance.addEventListener("bookmark.deleted", (bookmark) => {
+                console.log("[EVENT] bookmark.deleted:", bookmark);
+            });
+
+            // ── Annotations ───────────────────────────────────────
+            instance.addEventListener("annotation.created", (annotation) => {
+                console.log("[EVENT] annotation.created:", annotation);
+            });
+            instance.addEventListener("annotation.deleted", (annotation) => {
+                console.log("[EVENT] annotation.deleted:", annotation);
+            });
+            instance.addEventListener("annotation.updated", (annotation) => {
+                console.log("[EVENT] annotation.updated:", annotation);
+            });
+            instance.addEventListener("annotation.selected", (annotation) => {
+                console.log("[EVENT] annotation.selected:", annotation);
+            });
+            instance.addEventListener("annotation.comment.added", (annotation) => {
+                console.log("[EVENT] annotation.comment.added:", annotation);
+            });
+
+            // ── Text selection / Toolbox ──────────────────────────
+            instance.addEventListener("toolbox.opened", (detail) => {
+                console.log("[EVENT] toolbox.opened:", detail);
+            });
+            instance.addEventListener("toolbox.closed", (detail) => {
+                console.log("[EVENT] toolbox.closed:", detail);
+            });
+            instance.addEventListener("text.selected", (detail) => {
+                console.log("[EVENT] text.selected:", detail);
+            });
+
+            // ── Definitions ───────────────────────────────────────
+            instance.addEventListener("definition.success", (result) => {
+                console.log("[EVENT] definition.success:", result);
+            });
+            instance.addEventListener("definition.click", (result, highlight) => {
+                console.log("[EVENT] definition.click:", result, highlight);
+            });
+            instance.addEventListener("definition.visible", (item, highlight) => {
+                console.log("[EVENT] definition.visible:", item, highlight);
+            });
+
+            // ── Citation ──────────────────────────────────────────
+            instance.addEventListener("citation.created", (message) => {
+                console.log("[EVENT] citation.created:", message);
+            });
+            instance.addEventListener("citation.failed", (message) => {
+                console.log("[EVENT] citation.failed:", message);
+            });
+
+            // ── Content Protection ────────────────────────────────
+            instance.addEventListener("inspect.detected", () => {
+                console.log("[EVENT] inspect.detected");
+            });
+
+            // ── Consumption ───────────────────────────────────────
+            instance.addEventListener("consumption.action", (detail) => {
+                console.log("[EVENT] consumption.action:", detail);
+            });
+            instance.addEventListener("consumption.idle", (seconds) => {
+                console.log("[EVENT] consumption.idle:", seconds);
             });
 
         }).catch(error => {

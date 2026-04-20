@@ -37,6 +37,11 @@ export {
   AnnotationMarker,
 } from "./model/Locator";
 
+// ─── Events ─────────────────────────────────────────────────────────────────
+
+export { ReaderEvent } from "./utils/Events";
+export type { ReaderEventName, ReaderEventMap } from "./utils/Events";
+
 // ─── Navigator / Config ─────────────────────────────────────────────────────
 
 export type {

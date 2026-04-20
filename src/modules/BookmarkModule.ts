@@ -43,6 +43,7 @@ import { getClientRectsNoOverlap } from "./highlight/common/rect-utils";
 import { _highlights } from "./highlight/TextHighlighter";
 import log from "loglevel";
 import { Action } from "./consumption/ConsumptionModule";
+import { ReaderEvent } from "../utils/Events";
 
 export interface BookmarkModuleAPI {
   addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
@@ -178,6 +179,7 @@ export class BookmarkModule implements ReaderModule {
         let deleted = await this.annotator.deleteBookmark(bookmark);
 
         log.log("Bookmark deleted " + JSON.stringify(deleted));
+        this.navigator.emit(ReaderEvent.BookmarkDeleted, bookmark);
         await this.showBookmarks();
         await this.drawBookmarks();
         return deleted;
@@ -185,6 +187,7 @@ export class BookmarkModule implements ReaderModule {
         let deleted = await this.annotator.deleteBookmark(bookmark);
 
         log.log("Bookmark deleted " + JSON.stringify(deleted));
+        this.navigator.emit(ReaderEvent.BookmarkDeleted, bookmark);
         await this.showBookmarks();
         await this.drawBookmarks();
         return deleted;
@@ -269,6 +272,7 @@ export class BookmarkModule implements ReaderModule {
             let saved = this.annotator.saveBookmark(bookmark);
 
             log.log("Bookmark added " + JSON.stringify(saved));
+            this.navigator.emit(ReaderEvent.BookmarkCreated, bookmark);
             this.showBookmarks();
             await this.drawBookmarks();
             return saved;
@@ -276,6 +280,7 @@ export class BookmarkModule implements ReaderModule {
             let saved = this.annotator.saveBookmark(bookmark);
 
             log.log("Bookmark added " + JSON.stringify(saved));
+            this.navigator.emit(ReaderEvent.BookmarkCreated, bookmark);
             this.showBookmarks();
             await this.drawBookmarks();
             return saved;
@@ -507,11 +512,13 @@ export class BookmarkModule implements ReaderModule {
           if (this.api?.addBookmark) {
             let result = await this.api.addBookmark(annotation);
             const saved = await this.annotator.saveAnnotation(result);
+            this.navigator.emit(ReaderEvent.BookmarkCreated, annotation);
             await this.showBookmarks();
             await this.drawBookmarks();
             return new Promise<Annotation>((resolve) => resolve(saved));
           } else {
             const saved = await this.annotator.saveAnnotation(annotation);
+            this.navigator.emit(ReaderEvent.BookmarkCreated, annotation);
             await this.showBookmarks();
             await this.drawBookmarks();
             return new Promise<Annotation>((resolve) => resolve(saved));

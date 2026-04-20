@@ -27,6 +27,7 @@ import {
 } from "../highlight/TextHighlighter";
 import * as lodash from "lodash";
 import { searchDocDomSeek } from "./searchWithDomSeek";
+import { ReaderEvent } from "../../utils/Events";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
 import debounce from "debounce";
 import { ISelectionInfo } from "../highlight/common/selection";
@@ -177,7 +178,9 @@ export class DefinitionsModule implements ReaderModule {
     await this.searchAndPaint(item, async (result) => {
       if (this.api?.success) {
         this.api?.success(lodash.omit(item, "callbacks"), result);
-        this.navigator.emit("definition.success", result);
+        if (result && result.length > 0) {
+          this.navigator.emit(ReaderEvent.DefinitionSuccess, result);
+        }
 
         if (this.api?.visible) {
           result.forEach((highlight) => {
@@ -196,7 +199,11 @@ export class DefinitionsModule implements ReaderModule {
                       lodash.omit(item, "callbacks"),
                       lodash.omit(highlight, "definition")
                     );
-                    this.navigator.emit("definition.visible", item, highlight);
+                    this.navigator.emit(
+                      ReaderEvent.DefinitionVisible,
+                      item,
+                      highlight
+                    );
                   }
                 });
               },

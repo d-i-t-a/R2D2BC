@@ -48,6 +48,34 @@ export { NavigatorFeature } from "./navigator/VisualNavigator";
 export type { NavigatorFeatureName } from "./navigator/VisualNavigator";
 export { EpubNavigator, IFrameNavigator } from "./navigator/EpubNavigator";
 
+// ─── Module System ──────────────────────────────────────────────────────────
+
+export type {
+  ReaderModule,
+  HostTypeName,
+  RightsKeyName,
+} from "./modules/ReaderModule";
+export { HostType, RightsKey } from "./modules/ReaderModule";
+export type {
+  ModuleHost,
+  EpubModuleHost,
+  PDFModuleHost,
+} from "./modules/ModuleHost";
+export type {
+  NavigatorFeatureMap,
+  NavigatorFeatureKey,
+} from "./modules/NavigatorFeatureMap";
+export { ModuleRegistry } from "./modules/ModuleRegistry";
+export { ModuleAccessors } from "./modules/ModuleAccessors";
+export type {
+  IBookmarkModule,
+  ISearchModule,
+  IAnnotationModule,
+  IHistoryModule,
+  SearchOptions,
+} from "./modules/interfaces";
+export { getPageFromLocations } from "./model/v3";
+
 // ─── Navigator / Config ─────────────────────────────────────────────────────
 
 export type {

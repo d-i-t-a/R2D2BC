@@ -912,8 +912,60 @@
 
         ]
 
+        // Example: custom EPUB module — vocabulary builder
+        // Double-click a word in the book to add it to your vocabulary list
+        // Access the word list in console: vocabularyBuilder.getWords()
+        class VocabularyBuilder {
+            name = "vocabulary-builder";
+            hostType = "epub";
+            host;
+            words = [];
+            _handler = null;
+
+            attach(host) { this.host = host; }
+            setup() {
+                this._handler = (e) => {
+                    const doc = this.host?.iframes?.[0]?.contentDocument;
+                    if (!doc) return;
+                    const selection = doc.getSelection();
+                    const word = selection?.toString().trim();
+                    if (!word || word.includes(" ")) return;
+                    const range = selection?.getRangeAt(0);
+                    const sentence = range?.startContainer?.parentElement?.textContent?.trim()?.substring(0, 120) ?? "";
+                    const chapter = this.host?.currentChapterLink?.title || this.host?.currentChapterLink?.href;
+                    this.words.push({ word, sentence, chapter });
+                    console.log("[VocabularyBuilder]", this.getWords());
+                    this._showToast("📖 " + word + " added to vocabulary (" + this.words.length + " words)");
+                };
+            }
+            onResourceReady() {
+                const doc = this.host?.iframes?.[0]?.contentDocument;
+                if (doc && this._handler) doc.addEventListener("dblclick", this._handler);
+            }
+            getWords() { return this.words; }
+            stop() {
+                const doc = this.host?.iframes?.[0]?.contentDocument;
+                if (doc && this._handler) doc.removeEventListener("dblclick", this._handler);
+            }
+            _showToast(msg) {
+                let el = document.getElementById("vocab-toast");
+                if (!el) {
+                    el = document.createElement("div");
+                    el.id = "vocab-toast";
+                    el.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;z-index:9999;transition:opacity 0.3s;pointer-events:none;";
+                    document.body.appendChild(el);
+                }
+                el.textContent = msg;
+                el.style.opacity = "1";
+                clearTimeout(el._timeout);
+                el._timeout = setTimeout(() => { el.style.opacity = "0"; }, 2000);
+            }
+        }
+        const vocabularyBuilder = new VocabularyBuilder();
+
         let d2reader;
         D2Reader.load({
+            modules: [vocabularyBuilder],
             url: new URL(urlParams["url"]),
             // requestConfig: {
             //     method: "GET",

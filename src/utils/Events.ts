@@ -102,6 +102,12 @@ export const ReaderEvent = {
   // Consumption tracking
   ActionTracked: "consumption.action",
   IdleSince: "consumption.idle",
+
+  // PDF page navigation
+  PageChanged: "page.changed",
+
+  // PDF search matches
+  PdfMatchesUpdated: "pdf.matches.updated",
 } as const;
 
 export type ReaderEventName = (typeof ReaderEvent)[keyof typeof ReaderEvent];
@@ -174,4 +180,8 @@ export interface ReaderEventMap {
   // Consumption
   [ReaderEvent.ActionTracked]: { locator: Locator; action: any };
   [ReaderEvent.IdleSince]: number;
+
+  // PDF
+  [ReaderEvent.PageChanged]: { page: number; totalPages: number };
+  [ReaderEvent.PdfMatchesUpdated]: { current: number; total: number };
 }

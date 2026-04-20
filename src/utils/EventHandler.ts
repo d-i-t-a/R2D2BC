@@ -19,7 +19,7 @@
 
 import { Link } from "../model/Link";
 import { EpubNavigator } from "../navigator/EpubNavigator";
-import { Popup } from "../modules/search/Popup";
+import { Popup } from "../modules/epub/search/Popup";
 import log from "loglevel";
 
 export function addEventListenerOptional(

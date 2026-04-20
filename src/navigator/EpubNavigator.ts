@@ -40,63 +40,44 @@ import {
 import {
   BookmarkModule,
   BookmarkModuleConfig,
-} from "../modules/BookmarkModule";
+} from "../modules/epub/BookmarkModule";
 import {
   AnnotationModule,
   AnnotationModuleConfig,
-} from "../modules/AnnotationModule";
+} from "../modules/epub/AnnotationModule";
 import {
   SearchModule,
   SearchModuleConfig,
-} from "../modules/search/SearchModule";
-import {
-  ContentProtectionModule,
-  ContentProtectionModuleConfig,
-} from "../modules/protection/ContentProtectionModule";
+} from "../modules/epub/search/SearchModule";
+import { ModuleAccessors } from "../modules/ModuleAccessors";
+import { HistoryModule } from "../modules/epub/HistoryModule";
+import { ContentProtectionModuleConfig } from "../modules/epub/ContentProtectionModule";
 import {
   HighlightContainer,
   TextHighlighter,
   TextHighlighterConfig,
 } from "../modules/highlight/TextHighlighter";
-import { TimelineModule } from "../modules/positions/TimelineModule";
 import debounce from "debounce";
 import TouchEventHandler from "../utils/TouchEventHandler";
 import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 import BookView from "../views/BookView";
 
-import {
-  MediaOverlayModule,
-  MediaOverlayModuleConfig,
-} from "../modules/mediaoverlays/MediaOverlayModule";
+import { MediaOverlayModuleConfig } from "../modules/epub/mediaoverlays/MediaOverlayModule";
 import { D2Link, Link } from "../model/v3";
-import SampleReadEventHandler from "../modules/sampleread/SampleReadEventHandler";
-import { ReaderModule } from "../modules/ReaderModule";
-import { TTSModuleConfig } from "../modules/TTS/TTSSettings";
+import SampleReadEventHandler from "../modules/epub/SampleReadEventHandler";
+import { ReaderModule, HostType } from "../modules/ReaderModule";
+import { EpubModuleHost } from "../modules/ModuleHost";
+import { TTSModuleConfig } from "../modules/epub/TTS/TTSSettings";
 
 import { HighlightType } from "../modules/highlight/common/highlight";
-import {
-  PageBreakModule,
-  PageBreakModuleConfig,
-} from "../modules/pagebreak/PageBreakModule";
+import { PageBreakModuleConfig } from "../modules/epub/PageBreakModule";
 import { Switchable } from "../model/user-settings/UserProperties";
-import { TTSModule2 } from "../modules/TTS/TTSModule2";
-import {
-  DefinitionsModule,
-  DefinitionsModuleConfig,
-} from "../modules/search/DefinitionsModule";
-import LineFocusModule, {
-  LineFocusModuleConfig,
-} from "../modules/linefocus/LineFocusModule";
-import { HistoryModule } from "../modules/history/HistoryModule";
-import CitationModule, {
-  CitationModuleConfig,
-} from "../modules/citation/CitationModule";
+import { DefinitionsModuleConfig } from "../modules/epub/search/DefinitionsModule";
+import { LineFocusModuleConfig } from "../modules/epub/LineFocusModule";
+import { CitationModuleConfig } from "../modules/epub/CitationModule";
 import log from "loglevel";
 import { GrabToPan } from "../utils/GrabToPan";
-import {
-  ConsumptionModule,
-  ConsumptionModuleConfig,
-} from "../modules/consumption/ConsumptionModule";
+import { ConsumptionModuleConfig } from "../modules/epub/ConsumptionModule";
 export type GetContent = (href: string) => Promise<string>;
 export type GetContentBytesLength = (
   href: string,
@@ -153,7 +134,7 @@ export interface EpubNavigatorConfig {
   services?: PublicationServices;
   sample?: SampleRead;
   requestConfig?: RequestConfig;
-  modules: Array<ReaderModule | undefined>;
+  modules: Array<ReaderModule<any> | undefined>;
   highlighter: TextHighlighter;
 }
 export interface PublicationServices {
@@ -224,6 +205,8 @@ export interface ReaderConfig {
   search?: Partial<SearchModuleConfig>;
   define?: Partial<DefinitionsModuleConfig>;
   protection?: Partial<ContentProtectionModuleConfig>;
+  /** Config for @d-i-t-a/web-content-protection (used for PDF, future: replaces legacy protection) */
+  webProtection?: import("@d-i-t-a/web-content-protection").ContentProtectionConfig;
   mediaOverlays?: Partial<MediaOverlayModuleConfig>;
   pagebreak?: Partial<PageBreakModuleConfig>;
   annotations?: Partial<AnnotationModuleConfig>;
@@ -232,6 +215,8 @@ export interface ReaderConfig {
   citations?: Partial<CitationModuleConfig>;
   consumption?: Partial<ConsumptionModuleConfig>;
   highlighter?: Partial<TextHighlighterConfig>;
+  /** Custom modules to register alongside built-in modules */
+  modules?: Array<ReaderModule<any>>;
   injectables: Array<Injectable>;
   injectablesFixed?: Array<Injectable>;
   useLocalStorage?: boolean;
@@ -249,67 +234,36 @@ export interface ReaderConfig {
 }
 
 /** EPUB navigator — renders spine items in iframes with navigation controls. */
-export class EpubNavigator extends VisualNavigator {
+export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   iframes: Array<HTMLIFrameElement> = [];
+
+  // Override the base `modules` accessor with concrete EPUB module types
+  // so internal navigator code sees the full API (not just the shared
+  // interface contract).
+  readonly modules = new ModuleAccessors<
+    BookmarkModule,
+    AnnotationModule,
+    SearchModule,
+    HistoryModule
+  >(this.registry);
 
   currentTocUrl: string | undefined;
   headerMenu?: HTMLElement | null;
   mainElement: HTMLElement;
   publication: Publication;
 
-  bookmarkModule?: BookmarkModule;
-  annotationModule?: AnnotationModule;
-  ttsModule?: ReaderModule;
-  searchModule?: SearchModule;
-  definitionsModule?: DefinitionsModule;
-  contentProtectionModule?: ContentProtectionModule;
   highlighter?: TextHighlighter;
-  timelineModule?: TimelineModule;
-  pageBreakModule?: PageBreakModule;
-  mediaOverlayModule?: MediaOverlayModule;
-  lineFocusModule?: LineFocusModule;
-  historyModule?: HistoryModule;
-  citationModule?: CitationModule;
-  consumptionModule?: ConsumptionModule;
 
   supports(feature: NavigatorFeatureName): boolean {
-    switch (feature) {
-      case NavigatorFeature.TTS:
-        return !!this.rights.enableTTS && !!this.ttsModule;
-      case NavigatorFeature.MediaOverlays:
-        return (
-          !!this.rights.enableMediaOverlays &&
-          !!this.mediaOverlayModule &&
-          this.hasMediaOverlays
-        );
-      case NavigatorFeature.Search:
-        return !!this.rights.enableSearch && !!this.searchModule;
-      case NavigatorFeature.Annotations:
-        return !!this.rights.enableAnnotations && !!this.annotationModule;
-      case NavigatorFeature.Bookmarks:
-        return !!this.rights.enableBookmarks && !!this.bookmarkModule;
-      case NavigatorFeature.Zoom:
-        return this.publication.isFixedLayout;
-      case NavigatorFeature.LineFocus:
-        return !!this.rights.enableLineFocus && !!this.lineFocusModule;
-      case NavigatorFeature.Definitions:
-        return !!this.rights.enableDefinitions && !!this.definitionsModule;
-      case NavigatorFeature.Citations:
-        return !!this.rights.enableCitations && !!this.citationModule;
-      case NavigatorFeature.ContentProtection:
-        return (
-          !!this.rights.enableContentProtection &&
-          !!this.contentProtectionModule
-        );
-      case NavigatorFeature.Consumption:
-        return !!this.rights.enableConsumption && !!this.consumptionModule;
-      case NavigatorFeature.History:
-        return !!this.rights.enableHistory && !!this.historyModule;
-      case NavigatorFeature.Timeline:
-        return !!this.rights.enableTimeline && !!this.timelineModule;
-      default:
-        return false;
+    // Zoom is navigator-level, not module-based
+    if (feature === NavigatorFeature.Zoom)
+      return this.publication.isFixedLayout;
+    // MediaOverlays has an extra runtime condition beyond the rights flag
+    if (feature === NavigatorFeature.MediaOverlays) {
+      return this.registry.has(feature) && this.hasMediaOverlays;
     }
+    // Registry.has() already enforces rightsKey gating.
+    return this.registry.has(feature);
   }
 
   // ── FXL zoom ────────────────────────────────────────────────
@@ -543,6 +497,7 @@ export class EpubNavigator extends VisualNavigator {
       config.headerMenu,
       config.footerMenu
     );
+    await navigator.registry.setupAll();
     return new Promise((resolve) => resolve(navigator));
   }
 
@@ -560,7 +515,7 @@ export class EpubNavigator extends VisualNavigator {
     sample?: SampleRead,
     requestConfig?: RequestConfig,
     highlighter?: TextHighlighter,
-    modules?: Array<ReaderModule | undefined>
+    modules?: Array<ReaderModule<any> | undefined>
   ) {
     super();
     this.highlighter = highlighter;
@@ -569,35 +524,13 @@ export class EpubNavigator extends VisualNavigator {
     }
     for (const module of modules ?? []) {
       if (!module) continue;
-      // Allow modules to back-reference the navigator for coordination
-      (module as any).navigator = this;
-      if (module instanceof AnnotationModule) {
-        this.annotationModule = module;
-      } else if (module instanceof BookmarkModule) {
-        this.bookmarkModule = module;
-      } else if (module instanceof TTSModule2) {
-        this.ttsModule = module;
-      } else if (module instanceof SearchModule) {
-        this.searchModule = module;
-      } else if (module instanceof DefinitionsModule) {
-        this.definitionsModule = module;
-      } else if (module instanceof TimelineModule) {
-        this.timelineModule = module;
-      } else if (module instanceof ContentProtectionModule) {
-        this.contentProtectionModule = module;
-      } else if (module instanceof CitationModule) {
-        this.citationModule = module;
-      } else if (module instanceof MediaOverlayModule) {
-        this.mediaOverlayModule = module;
-      } else if (module instanceof PageBreakModule) {
-        this.pageBreakModule = module;
-      } else if (module instanceof LineFocusModule) {
-        this.lineFocusModule = module;
-      } else if (module instanceof HistoryModule) {
-        this.historyModule = module;
-      } else if (module instanceof ConsumptionModule) {
-        this.consumptionModule = module;
+      if (module.hostType !== HostType.Epub) {
+        log.warn(
+          `Module "${module.name}" requires host type "${module.hostType}" but navigator is EPUB — skipping`
+        );
+        continue;
       }
+      this.registry.register(module, this);
     }
     this.settings = settings;
     this.annotator = annotator;
@@ -606,7 +539,7 @@ export class EpubNavigator extends VisualNavigator {
     this.view.host = {
       checkResourcePosition: () => this.checkResourcePosition(),
       recalculateContentProtection: (delay?: number) =>
-        this.contentProtectionModule?.recalculate(delay),
+        this.modules.contentProtection?.recalculate(delay),
       isContentProtectionEnabled: () => !!this.rights.enableContentProtection,
       isFixedLayout: () => this.publication.isFixedLayout,
       isReflowable: () => this.publication.isReflowable,
@@ -703,6 +636,8 @@ export class EpubNavigator extends VisualNavigator {
 
     if (this.didInitKeyboardEventHandler)
       this.keyboardEventHandler.removeEvents(document);
+
+    this.registry.stopAll();
   }
   spreads: HTMLDivElement;
   firstSpread: HTMLDivElement;
@@ -1430,26 +1365,26 @@ export class EpubNavigator extends VisualNavigator {
           );
 
           if (this.highlighter) {
-            if (this.rights.enableAnnotations && this.annotationModule) {
-              await this.annotationModule.drawHighlights();
+            if (this.rights.enableAnnotations && this.modules.annotations) {
+              await this.modules.annotations.drawHighlights();
             }
 
-            if (this.rights.enableBookmarks && this.bookmarkModule) {
-              await this.bookmarkModule.drawBookmarks();
+            if (this.rights.enableBookmarks && this.modules.bookmarks) {
+              await this.modules.bookmarks.drawBookmarks();
             }
 
-            if (this.rights.enableSearch && this.searchModule) {
+            if (this.rights.enableSearch && this.modules.search) {
               await this.highlighter.destroyHighlights(HighlightType.Search);
-              this.searchModule.drawSearch();
+              this.modules.search.drawSearch();
             }
 
-            if (this.rights.enablePageBreaks && this.pageBreakModule) {
+            if (this.rights.enablePageBreaks && this.modules.pageBreaks) {
               await this.highlighter.destroyHighlights(HighlightType.PageBreak);
-              await this.pageBreakModule.drawPageBreaks();
+              await this.modules.pageBreaks.drawPageBreaks();
             }
 
-            if (this.rights.enableDefinitions && this.definitionsModule) {
-              await this.definitionsModule.drawDefinitions();
+            if (this.rights.enableDefinitions && this.modules.definitions) {
+              await this.modules.definitions.drawDefinitions();
             }
           }
         }, 200);
@@ -1674,8 +1609,8 @@ export class EpubNavigator extends VisualNavigator {
         }
       }
 
-      if (this.historyModule) {
-        this.historyModule.setup();
+      if (this.modules.history) {
+        this.modules.history.setup();
       }
 
       if (this.currentTocUrl !== undefined) {
@@ -1767,42 +1702,45 @@ export class EpubNavigator extends VisualNavigator {
         }
       }
 
-      if (this.rights.enableContentProtection && this.contentProtectionModule) {
-        await this.contentProtectionModule.initialize(iframe);
+      if (
+        this.rights.enableContentProtection &&
+        this.modules.contentProtection
+      ) {
+        await this.modules.contentProtection.initialize(iframe);
       }
 
-      if (this.rights.enableConsumption && this.consumptionModule) {
-        await this.consumptionModule.initialize(iframe);
+      if (this.rights.enableConsumption && this.modules.consumption) {
+        await this.modules.consumption.initialize(iframe);
       }
 
-      if (this.rights.enableAnnotations && this.annotationModule) {
-        await this.annotationModule.initialize(iframe);
+      if (this.rights.enableAnnotations && this.modules.annotations) {
+        await this.modules.annotations.initialize(iframe);
       }
 
-      if (this.rights.enableBookmarks && this.bookmarkModule) {
-        await this.bookmarkModule.initialize();
+      if (this.rights.enableBookmarks && this.modules.bookmarks) {
+        await this.modules.bookmarks.initialize();
       }
 
-      if (this.rights.enableLineFocus && this.lineFocusModule) {
-        await this.lineFocusModule.initialize(iframe);
+      if (this.rights.enableLineFocus && this.modules.lineFocus) {
+        await this.modules.lineFocus.initialize(iframe);
       }
 
-      if (this.rights.enableTTS && this.ttsModule) {
+      if (this.rights.enableTTS && this.modules.tts) {
         const body = iframe.contentDocument?.body;
-        const ttsModule = this.ttsModule as TTSModule2;
+        const ttsModule = this.modules.tts;
         await ttsModule.initialize(body);
       }
 
-      if (this.rights.enableTimeline && this.timelineModule) {
-        await this.timelineModule.initialize();
+      if (this.rights.enableTimeline && this.modules.timeline) {
+        await this.modules.timeline.initialize();
       }
 
       if (
         this.rights.enableMediaOverlays &&
-        this.mediaOverlayModule &&
+        this.modules.mediaOverlays &&
         this.hasMediaOverlays
       ) {
-        await this.mediaOverlayModule.initialize();
+        await this.modules.mediaOverlays.initialize();
       }
 
       setTimeout(async () => {
@@ -1828,8 +1766,8 @@ export class EpubNavigator extends VisualNavigator {
         this.newPosition = undefined;
 
         if (this.rights?.enableContentProtection) {
-          if (this.contentProtectionModule !== undefined) {
-            await this.contentProtectionModule.recalculate(10);
+          if (this.modules.contentProtection !== undefined) {
+            await this.modules.contentProtection.recalculate(10);
           }
         }
 
@@ -1838,19 +1776,19 @@ export class EpubNavigator extends VisualNavigator {
 
         if (
           this.rights.enableMediaOverlays &&
-          this.mediaOverlayModule &&
+          this.modules.mediaOverlays &&
           this.hasMediaOverlays
         ) {
           let link = this.currentLink();
-          await this.mediaOverlayModule?.initializeResource(link);
+          await this.modules.mediaOverlays?.initializeResource(link);
         }
         await this.updatePositionInfo();
         await this.view?.setSize();
         setTimeout(() => {
-          if (this.mediaOverlayModule) {
-            this.mediaOverlayModule.settings.resourceReady = true;
-            if (this.mediaOverlayModule.settings.playing) {
-              this.mediaOverlayModule.bindClickHandler();
+          if (this.modules.mediaOverlays) {
+            this.modules.mediaOverlays.settings.resourceReady = true;
+            if (this.modules.mediaOverlays.settings.playing) {
+              this.modules.mediaOverlays.bindClickHandler();
             }
           }
         }, 300);
@@ -2479,15 +2417,15 @@ export class EpubNavigator extends VisualNavigator {
         sidenav.className += " expanded";
         element.innerText = "unfold_less";
         this.sideNavExpanded = true;
-        this.bookmarkModule?.showBookmarks();
-        this.annotationModule?.showHighlights();
+        this.modules.bookmarks?.showBookmarks();
+        this.modules.annotations?.showHighlights();
       } else {
         element.className = element.className.replace(" active", "");
         sidenav.className = sidenav.className.replace(" expanded", "");
         element.innerText = "unfold_more";
         this.sideNavExpanded = false;
-        this.bookmarkModule?.showBookmarks();
-        this.annotationModule?.showHighlights();
+        this.modules.bookmarks?.showBookmarks();
+        this.modules.annotations?.showHighlights();
       }
     }
     event.preventDefault();
@@ -2498,17 +2436,16 @@ export class EpubNavigator extends VisualNavigator {
   }
   startReadAloud() {
     if (this.rights.enableTTS) {
-      const ttsModule = this.ttsModule as TTSModule2;
-      ttsModule.speakPlay();
+      this.modules.tts?.speakPlay();
     }
   }
   startReadAlong() {
     if (
       this.rights.enableMediaOverlays &&
-      this.mediaOverlayModule !== undefined &&
+      this.modules.mediaOverlays !== undefined &&
       this.hasMediaOverlays
     ) {
-      this.mediaOverlayModule?.startReadAloud();
+      this.modules.mediaOverlays?.startReadAloud();
     }
   }
   stopReadAloud() {
@@ -2519,11 +2456,11 @@ export class EpubNavigator extends VisualNavigator {
   stopReadAlong() {
     if (
       this.rights.enableMediaOverlays &&
-      this.mediaOverlayModule !== undefined &&
+      this.modules.mediaOverlays !== undefined &&
       this.hasMediaOverlays
     ) {
-      const wasPlaying = this.mediaOverlayModule.settings.playing;
-      this.mediaOverlayModule?.stopReadAloud();
+      const wasPlaying = this.modules.mediaOverlays.settings.playing;
+      this.modules.mediaOverlays?.stopReadAloud();
       if (wasPlaying) {
         this.emit(ReaderEvent.ReadAlongStopped, "stopped");
       }
@@ -2532,35 +2469,33 @@ export class EpubNavigator extends VisualNavigator {
 
   pauseReadAloud() {
     if (this.rights.enableTTS) {
-      const ttsModule = this.ttsModule as TTSModule2;
-      ttsModule.speakPause();
-      if (this.annotationModule !== undefined) {
-        this.annotationModule.drawHighlights();
+      this.modules.tts?.speakPause();
+      if (this.modules.annotations !== undefined) {
+        this.modules.annotations.drawHighlights();
       }
     }
   }
   pauseReadAlong() {
     if (
       this.rights.enableMediaOverlays &&
-      this.mediaOverlayModule !== undefined &&
+      this.modules.mediaOverlays !== undefined &&
       this.hasMediaOverlays
     ) {
-      this.mediaOverlayModule?.pauseReadAloud();
+      this.modules.mediaOverlays?.pauseReadAloud();
     }
   }
   resumeReadAloud() {
     if (this.rights.enableTTS) {
-      const ttsModule = this.ttsModule as TTSModule2;
-      ttsModule.speakResume();
+      this.modules.tts?.speakResume();
     }
   }
   resumeReadAlong() {
     if (
       this.rights.enableMediaOverlays &&
-      this.mediaOverlayModule !== undefined &&
+      this.modules.mediaOverlays !== undefined &&
       this.hasMediaOverlays
     ) {
-      this.mediaOverlayModule?.resumeReadAloud();
+      this.modules.mediaOverlays?.resumeReadAloud();
     }
   }
 
@@ -2704,8 +2639,8 @@ export class EpubNavigator extends VisualNavigator {
     }
   }
   async goToPage(page: number) {
-    if (this.pageBreakModule !== undefined) {
-      await this.pageBreakModule.goToPageNumber(page);
+    if (this.modules.pageBreaks !== undefined) {
+      await this.modules.pageBreaks.goToPageNumber(page);
     }
   }
   snapToSelector(selector) {
@@ -2997,30 +2932,30 @@ export class EpubNavigator extends VisualNavigator {
       }
       this.updatePositionInfo(false);
 
-      if (this.contentProtectionModule !== undefined) {
-        await this.contentProtectionModule.handleResize();
+      if (this.modules.contentProtection !== undefined) {
+        await this.modules.contentProtection.handleResize();
       }
 
-      if (this.annotationModule !== undefined) {
-        await this.annotationModule.handleResize();
+      if (this.modules.annotations !== undefined) {
+        await this.modules.annotations.handleResize();
       }
-      if (this.bookmarkModule !== undefined) {
-        await this.bookmarkModule.handleResize();
+      if (this.modules.bookmarks !== undefined) {
+        await this.modules.bookmarks.handleResize();
       }
-      if (this.searchModule !== undefined) {
-        await this.searchModule.handleResize();
+      if (this.modules.search !== undefined) {
+        await this.modules.search.handleResize();
       }
-      if (this.definitionsModule !== undefined) {
-        await this.definitionsModule.handleResize();
+      if (this.modules.definitions !== undefined) {
+        await this.modules.definitions.handleResize();
       }
-      if (this.pageBreakModule !== undefined) {
-        await this.pageBreakModule.handleResize();
+      if (this.modules.pageBreaks !== undefined) {
+        await this.modules.pageBreaks.handleResize();
       }
-      if (this.lineFocusModule !== undefined) {
-        this.lineFocusModule.handleResize();
+      if (this.modules.lineFocus !== undefined) {
+        this.modules.lineFocus.handleResize();
       }
-      if (this.historyModule !== undefined) {
-        await this.historyModule.handleResize();
+      if (this.modules.history !== undefined) {
+        await this.modules.history.handleResize();
       }
     }, 150);
   }
@@ -3173,13 +3108,13 @@ export class EpubNavigator extends VisualNavigator {
   }
 
   async navigate(locator: Locator, history: boolean = true): Promise<void> {
-    if (this.rights.enableConsumption && this.consumptionModule) {
+    if (this.rights.enableConsumption && this.modules.consumption) {
       if (history) {
-        this.consumptionModule.startReadingSession(locator);
+        this.modules.consumption.startReadingSession(locator);
       }
     }
-    if (this.historyModule) {
-      await this.historyModule.push(locator, history);
+    if (this.modules.history) {
+      await this.modules.history.push(locator, history);
     }
 
     const exists = this.publication.getTOCItem(locator.href);
@@ -3351,11 +3286,11 @@ export class EpubNavigator extends VisualNavigator {
         }
         await this.updatePositionInfo();
       } else {
-        if (this.lineFocusModule !== undefined) {
-          this.lineFocusModule.disableLineFocus(false);
+        if (this.modules.lineFocus !== undefined) {
+          this.modules.lineFocus.disableLineFocus(false);
         }
-        if (this.searchModule !== undefined) {
-          this.searchModule.clearSearch();
+        if (this.modules.search !== undefined) {
+          this.modules.search.clearSearch();
         }
         if (locator.locations.fragment === undefined) {
           this.currentTocUrl = undefined;
@@ -3379,55 +3314,57 @@ export class EpubNavigator extends VisualNavigator {
 
         if (
           this.rights.enableContentProtection &&
-          this.contentProtectionModule !== undefined
+          this.modules.contentProtection !== undefined
         ) {
-          await this.contentProtectionModule.initializeResource();
+          await this.modules.contentProtection.initializeResource();
         }
 
         if (
           this.rights.enableMediaOverlays &&
-          this.mediaOverlayModule !== undefined &&
+          this.modules.mediaOverlays !== undefined &&
           this.hasMediaOverlays
         ) {
-          await this.mediaOverlayModule.initializeResource(this.currentLink());
+          await this.modules.mediaOverlays.initializeResource(
+            this.currentLink()
+          );
         }
 
         if (
           this.rights.enableContentProtection &&
-          this.contentProtectionModule !== undefined
+          this.modules.contentProtection !== undefined
         ) {
-          await this.contentProtectionModule.recalculate(300);
+          await this.modules.contentProtection.recalculate(300);
         }
 
-        if (this.bookmarkModule) {
-          await this.bookmarkModule.drawBookmarks();
-          await this.bookmarkModule.showBookmarks();
+        if (this.modules.bookmarks) {
+          await this.modules.bookmarks.drawBookmarks();
+          await this.modules.bookmarks.showBookmarks();
         }
 
-        if (this.pageBreakModule) {
+        if (this.modules.pageBreaks) {
           await this.highlighter?.destroyHighlights(HighlightType.PageBreak);
-          await this.pageBreakModule.drawPageBreaks();
+          await this.modules.pageBreaks.drawPageBreaks();
         }
 
         if (
           this.rights.enableSearch &&
-          this.searchModule !== undefined &&
+          this.modules.search !== undefined &&
           this.highlighter !== undefined
         ) {
           await this.highlighter.destroyHighlights(HighlightType.Search);
-          this.searchModule.drawSearch();
+          this.modules.search.drawSearch();
         }
 
         if (
           this.rights.enableDefinitions &&
-          this.definitionsModule &&
+          this.modules.definitions &&
           this.highlighter
         ) {
-          await this.definitionsModule.drawDefinitions();
+          await this.modules.definitions.drawDefinitions();
         }
 
-        if (this.rights.enableConsumption && this.consumptionModule) {
-          this.consumptionModule.continueReadingSession(locator);
+        if (this.rights.enableConsumption && this.modules.consumption) {
+          this.modules.consumption.continueReadingSession(locator);
         }
 
         if (this.view?.layout === "fixed") {
@@ -3524,8 +3461,8 @@ export class EpubNavigator extends VisualNavigator {
       this.loadingMessage.style.display = "block";
       this.loadingMessage.classList.add("is-loading");
     }
-    if (this.mediaOverlayModule !== undefined) {
-      this.mediaOverlayModule.settings.resourceReady = false;
+    if (this.modules.mediaOverlays !== undefined) {
+      this.modules.mediaOverlays.settings.resourceReady = false;
     }
   }
 
@@ -3568,6 +3505,7 @@ export class EpubNavigator extends VisualNavigator {
       this.emit(ReaderEvent.ResourceReady, {
         href: this.currentChapterLink.href,
       });
+      this.registry.notifyResourceReady();
     }, 150);
   }
 
@@ -3646,8 +3584,8 @@ export class EpubNavigator extends VisualNavigator {
             this.annotator.saveLastReadingPosition(position);
           }
           this.emit(ReaderEvent.LocationChanged, position);
-          if (this.consumptionModule) {
-            this.consumptionModule.continueReadingSession(position);
+          if (this.modules.consumption) {
+            this.modules.consumption.continueReadingSession(position);
           }
         }
       }
@@ -3688,13 +3626,18 @@ export class EpubNavigator extends VisualNavigator {
   }
 
   activateMarker(id, position) {
-    if (this.annotationModule !== undefined) {
+    // activeAnnotationMarker* are EPUB-specific fields on the concrete
+    // AnnotationModule — not part of IAnnotationModule. Cast to access.
+    const annotations = this.modules.annotations as
+      | AnnotationModule
+      | undefined;
+    if (annotations !== undefined) {
       if (
-        this.annotationModule.activeAnnotationMarkerId === undefined ||
-        this.annotationModule.activeAnnotationMarkerId !== id
+        annotations.activeAnnotationMarkerId === undefined ||
+        annotations.activeAnnotationMarkerId !== id
       ) {
-        this.annotationModule.activeAnnotationMarkerId = id;
-        this.annotationModule.activeAnnotationMarkerPosition = position;
+        annotations.activeAnnotationMarkerId = id;
+        annotations.activeAnnotationMarkerPosition = position;
         if (this.highlighter) {
           this.highlighter.activeAnnotationMarkerId = id;
         }
@@ -3705,9 +3648,12 @@ export class EpubNavigator extends VisualNavigator {
   }
 
   deactivateMarker() {
-    if (this.annotationModule !== undefined) {
-      this.annotationModule.activeAnnotationMarkerId = undefined;
-      this.annotationModule.activeAnnotationMarkerPosition = undefined;
+    const annotations = this.modules.annotations as
+      | AnnotationModule
+      | undefined;
+    if (annotations !== undefined) {
+      annotations.activeAnnotationMarkerId = undefined;
+      annotations.activeAnnotationMarkerPosition = undefined;
       if (this.highlighter) {
         this.highlighter.activeAnnotationMarkerId = undefined;
       }

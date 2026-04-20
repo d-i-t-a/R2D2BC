@@ -17,16 +17,23 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import debounce from "debounce";
+import log from "loglevel";
+import { HostType } from "../modules/ReaderModule";
 import {
   VisualNavigator,
   NavigatorFeature,
   NavigatorFeatureName,
 } from "./VisualNavigator";
 import { ReaderEvent } from "../utils/Events";
+import { PDFModuleHost } from "../modules/ModuleHost";
 import { UserSettings } from "../model/user-settings/UserSettings";
 import { Publication } from "../model/v3";
-import { Bookmark, Locator, ReadingPosition } from "../model/v3";
+import {
+  Link,
+  Locator,
+  ReadingPosition,
+  getPageFromLocations,
+} from "../model/v3";
 import Annotator from "../store/Annotator";
 import Store from "../store/Store";
 import {
@@ -51,7 +58,11 @@ import {
   removeEventListenerOptional,
 } from "../utils/EventHandler";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
-import { NavigatorAPI } from "./EpubNavigator";
+import {
+  releasePdfViewerDocument,
+  releasePdfLinkServiceDocument,
+} from "../types/pdfjs-workarounds";
+import { NavigatorAPI, ReaderRights } from "./EpubNavigator";
 import { GrabToPan } from "../utils/GrabToPan";
 import { readerLoading } from "../utils/HTMLTemplates";
 
@@ -80,31 +91,30 @@ export interface PDFNavigatorConfig {
    * across sessions.  Pass the publication store from D2Reader.load().
    */
   store?: Store;
+  rights?: Partial<ReaderRights>;
+  /**
+   * Modules to register with this navigator. Includes built-in PDF modules
+   * (PdfBookmarkModule, PdfSearchModule, PdfAnnotationModule, PdfHistoryModule,
+   * PdfViewSettingsModule) plus any third-party custom modules. Module
+   * hostType must be "pdf" — mismatches are logged and skipped.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  modules?: Array<
+    import("../modules/ReaderModule").ReaderModule<any> | undefined
+  >;
 }
 
-export enum ScaleType {
-  Page = 0,
-  Width = 1,
-}
-
-export class PDFNavigator extends VisualNavigator {
+export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   readonly isPDF = true;
   settings: UserSettings;
   publication: Publication;
+  rights: Partial<ReaderRights> = {};
 
   supports(feature: NavigatorFeatureName): boolean {
-    switch (feature) {
-      case NavigatorFeature.Search:
-        return true;
-      case NavigatorFeature.Annotations:
-        return true;
-      case NavigatorFeature.Zoom:
-        return true;
-      case NavigatorFeature.Bookmarks:
-        return true;
-      default:
-        return false;
-    }
+    // Zoom is navigator-level (not module-based) — always supported.
+    if (feature === NavigatorFeature.Zoom) return true;
+    // Everything else goes through the registry with rights gating.
+    return this.registry.has(feature);
   }
 
   headerMenu?: HTMLElement | null;
@@ -118,24 +128,61 @@ export class PDFNavigator extends VisualNavigator {
   pageNum = 1;
   resourceIndex = 0;
 
-  private pdfDoc: PDFDocumentProxy | null = null;
-  private resource: any;
+  // ── Internal state ──────────────────────────────────────────
+  // These fields are accessed by PDF modules via the PDFModuleHost getters
+  // defined below. Kept private so only PDFNavigator can mutate them.
+  private _pdfDoc: PDFDocumentProxy | null = null;
+  private _resource: import("../model/v3").Link | undefined;
   private workerSrc: string;
   private _numPages = 0;
-  private annotator?: Annotator;
-  private viewStore?: Store;
+  private _annotator?: Annotator;
+  private _viewStore?: Store;
   private initialLastReadingPosition?: ReadingPosition;
   private _positionRestored = false;
-  // Saved annotations grouped by page index, waiting for their layer to render.
-  private _pendingAnnotations: Map<number, unknown[]> | null = null;
 
-  private pdfViewer!: PDFViewer;
-  // Public so callers can subscribe to PDF.js events directly (e.g. pagechanging, updatefindmatchescount).
-  public eventBus!: EventBus;
-  private linkService!: PDFLinkService;
-  private findController!: PDFFindController;
+  private _pdfViewer!: PDFViewer;
+  private _eventBus!: EventBus;
+  private _linkService!: PDFLinkService;
+  private _findController!: PDFFindController;
   private pdfHistory!: PDFHistory;
   private handTool!: GrabToPan;
+
+  // ── PDFModuleHost implementation (read-only access for modules) ──
+  get pdfDoc(): PDFDocumentProxy | null {
+    return this._pdfDoc;
+  }
+  get pdfViewer(): PDFViewer {
+    return this._pdfViewer;
+  }
+  get eventBus(): EventBus {
+    return this._eventBus;
+  }
+  get linkService(): PDFLinkService {
+    return this._linkService;
+  }
+  get findController(): PDFFindController {
+    return this._findController;
+  }
+  get currentPage(): number {
+    return this.pageNum;
+  }
+  get totalPages(): number {
+    return this._pdfDoc?.numPages ?? this._numPages ?? 0;
+  }
+  get fingerprint(): string | undefined {
+    return this._pdfDoc?.fingerprints[0] ?? undefined;
+  }
+  // goToPage(page) is implemented as an abstract override below (required
+  // by the Navigator interface). PDFModuleHost.goToPage matches that signature.
+  get viewStore(): Store | undefined {
+    return this._viewStore;
+  }
+  get annotator(): Annotator | undefined {
+    return this._annotator;
+  }
+  get currentResourceLink(): import("../model/v3").Link | undefined {
+    return this._resource;
+  }
 
   private resizeTimeout: ReturnType<typeof setTimeout> | undefined;
 
@@ -151,7 +198,9 @@ export class PDFNavigator extends VisualNavigator {
       config.workerSrc,
       config.annotator,
       config.initialLastReadingPosition,
-      config.store
+      config.store,
+      config.rights,
+      config.modules
     );
     await nav.start(config.mainElement, config.headerMenu, config.footerMenu);
     return nav;
@@ -164,18 +213,37 @@ export class PDFNavigator extends VisualNavigator {
     workerSrc?: string,
     annotator?: Annotator,
     initialLastReadingPosition?: ReadingPosition,
-    viewStore?: Store
+    viewStore?: Store,
+    rights?: Partial<ReaderRights>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    modules?: Array<
+      import("../modules/ReaderModule").ReaderModule<any> | undefined
+    >
   ) {
     super();
     this.settings = settings;
     this.publication = publication;
     this.api = api;
+    this.rights = rights ?? {};
     this.workerSrc =
       workerSrc ??
       `https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`;
-    this.annotator = annotator;
+    this._annotator = annotator;
     this.initialLastReadingPosition = initialLastReadingPosition;
-    this.viewStore = viewStore;
+    this._viewStore = viewStore;
+
+    // Register modules with hostType validation. Mismatches are logged
+    // and skipped — same pattern as EpubNavigator.
+    for (const module of modules ?? []) {
+      if (!module) continue;
+      if (module.hostType !== HostType.PDF) {
+        log.warn(
+          `Module "${module.name}" requires host type "${module.hostType}" but navigator is PDF — skipping`
+        );
+        continue;
+      }
+      this.registry.register(module, this);
+    }
   }
 
   // ── Startup ────────────────────────────────────────────────────────────────
@@ -190,7 +258,7 @@ export class PDFNavigator extends VisualNavigator {
     this.mainElement = mainElement;
 
     this.resourceIndex = 0;
-    this.resource = this.publication.readingOrder[this.resourceIndex];
+    this._resource = this.publication.readingOrder[this.resourceIndex];
 
     GlobalWorkerOptions.workerSrc = this.workerSrc;
 
@@ -217,21 +285,21 @@ export class PDFNavigator extends VisualNavigator {
     this.handTool = new GrabToPan({ element: this.wrapper });
 
     // ── Build pdfjs viewer stack ─────────────────────────────────────────────
-    this.eventBus = new EventBus();
+    this._eventBus = new EventBus();
 
-    this.linkService = new PDFLinkService({ eventBus: this.eventBus });
+    this._linkService = new PDFLinkService({ eventBus: this._eventBus });
 
-    this.findController = new PDFFindController({
-      linkService: this.linkService,
-      eventBus: this.eventBus,
+    this._findController = new PDFFindController({
+      linkService: this._linkService,
+      eventBus: this._eventBus,
     });
 
-    this.pdfViewer = new PDFViewer({
+    this._pdfViewer = new PDFViewer({
       container: this.wrapper as HTMLDivElement,
       viewer: this.pdfContainer as HTMLDivElement,
-      eventBus: this.eventBus,
-      linkService: this.linkService,
-      findController: this.findController,
+      eventBus: this._eventBus,
+      linkService: this._linkService,
+      findController: this._findController,
       // Enables text selection and search highlight overlay.
       textLayerMode: 1, // TextLayerMode.ENABLE
       // Renders PDF annotations AND stores user-created ones in AnnotationStorage.
@@ -246,31 +314,40 @@ export class PDFNavigator extends VisualNavigator {
         "Yellow=#FFFF98,Green=#53FFBC,Blue=#80EBFF,Pink=#FFCBE6,Red=#FF4F5F",
     });
 
-    this.linkService.setViewer(this.pdfViewer);
+    this._linkService.setViewer(this._pdfViewer);
     // spreadMode must be set after viewer construction, not in options.
-    this.pdfViewer.spreadMode = SpreadMode.NONE;
+    this._pdfViewer.spreadMode = SpreadMode.NONE;
 
     // PDFHistory integrates PDF navigation with the browser history API.
     this.pdfHistory = new PDFHistory({
-      eventBus: this.eventBus,
-      linkService: this.linkService,
+      eventBus: this._eventBus,
+      linkService: this._linkService,
     });
-    this.linkService.setHistory(this.pdfHistory);
+    this._linkService.setHistory(this.pdfHistory);
 
     // ── Wire events ──────────────────────────────────────────────────────────
 
-    // pagesinit fires once PDFViewer has sized all page slots; restore saved settings here.
-    this.eventBus.on("pagesinit", () => {
-      this.restoreViewSettings();
-      this.pdfViewer.currentPageNumber = this.pageNum;
+    // pagesinit fires once PDFViewer has sized all page slots. PdfViewSettingsModule
+    // restores saved view preferences (scroll/spread/scale/rotate); navigator only
+    // needs to ensure the current page number is applied.
+    this._eventBus.on("pagesinit", () => {
+      this._pdfViewer.currentPageNumber = this.pageNum;
     });
 
     // Keep pageNum in sync and persist the reading position on every page turn.
-    this.eventBus.on(
+    // Note: intentionally NOT calling registry.notifyResourceReady() here —
+    // that is a per-resource lifecycle event, not a per-page one. Resources
+    // only change when loadDocument() swaps to a new PDF (handled by the
+    // pagesloaded handler below).
+    this._eventBus.on(
       "pagechanging",
       ({ pageNumber }: { pageNumber: number }) => {
         this.pageNum = pageNumber;
         this.saveLastReadingPosition();
+        this.emit(ReaderEvent.PageChanged, {
+          page: pageNumber,
+          totalPages: this._pdfDoc?.numPages ?? this._numPages,
+        });
         // Emit boundary events so integrators get the same signals as EPUB.
         if (this.atStart()) {
           this.api?.resourceAtStart?.();
@@ -287,7 +364,7 @@ export class PDFNavigator extends VisualNavigator {
     );
 
     // pagesloaded fires after all pages finish their first render pass.
-    this.eventBus.on(
+    this._eventBus.on(
       "pagesloaded",
       async ({ pagesCount }: { pagesCount: number }) => {
         this._numPages = pagesCount;
@@ -296,6 +373,7 @@ export class PDFNavigator extends VisualNavigator {
         this.emit(ReaderEvent.ResourceReady, {
           href: this.publication.readingOrder[0]?.href,
         });
+        this.registry.notifyResourceReady();
         // Restore saved position once — on the very first document load only.
         if (!this._positionRestored) {
           this._positionRestored = true;
@@ -304,69 +382,20 @@ export class PDFNavigator extends VisualNavigator {
       }
     );
 
-    // When an annotation editor layer finishes rendering for a page, inject
-    // any pending saved annotations for that page via the proper deserialize
-    // path so they appear as live editors (not just raw storage values).
-    //
-    // NOTE: evt.source is PDFPageView; its .annotationEditorLayer property is
-    // an AnnotationEditorLayerBuilder (a wrapper).  The actual AnnotationEditorLayer
-    // with deserialize() / addOrRebuild() lives one level deeper as
-    // .annotationEditorLayer.annotationEditorLayer.
-    this.eventBus.on(
-      "annotationeditorlayerrendered",
-      async (evt: { source: any; pageNumber: number; error?: unknown }) => {
-        if (evt.error || !this._pendingAnnotations) return;
-        const pageIndex = evt.pageNumber - 1;
-        const pending = this._pendingAnnotations.get(pageIndex);
-        if (!pending || pending.length === 0) return;
-        // Claim this page's pending set immediately to prevent double-restore.
-        this._pendingAnnotations.delete(pageIndex);
-        // Drill past the builder wrapper to the actual AnnotationEditorLayer.
-        const layer = evt.source?.annotationEditorLayer?.annotationEditorLayer;
-        if (!layer || !this.pdfDoc) return;
+    // Annotation persistence (layer-rendered + state-changed handlers,
+    // pending queue, debounced save, onSetModified wiring) now lives in
+    // PdfAnnotationModule. Registered via reader.ts and hooked up through
+    // the module lifecycle (setup / onResourceReady / stop).
 
-        // Suppress onSetModified during the restore loop.  Without this, the
-        // callback fires after the *first* addOrRebuild and saveAnnotations()
-        // runs before the remaining editors on this page are in live storage —
-        // overwriting them.  We do a single authoritative save afterward.
-        const storage = this.pdfDoc.annotationStorage as any;
-        const savedOnSetModified = storage.onSetModified;
-        storage.onSetModified = null;
-
-        for (const data of pending) {
-          try {
-            const editor = await layer.deserialize(data);
-            if (editor) layer.addOrRebuild(editor);
-          } catch (err) {
-            console.warn(
-              "PDFNavigator: failed to restore annotation",
-              data,
-              err
-            );
-          }
-        }
-
-        // Restore the callback and do one complete save (live editors for this
-        // page are now all in annotationStorage; remaining pending pages still
-        // in _pendingAnnotations).
-        storage.onSetModified = savedOnSetModified;
-        this.saveAnnotations(this.pdfDoc.fingerprints[0] ?? "");
-      }
-    );
-
-    // Also save after any annotation state change (debounced) — this fires
-    // after editors are committed, catching cases where onSetModified fired
-    // before the annotation content was finalised (e.g., empty highlight).
-    const debouncedSave = debounce(() => {
-      if (this.pdfDoc) {
-        this.saveAnnotations(this.pdfDoc.fingerprints[0] ?? "");
-      }
-    }, 200);
-    this.eventBus.on("annotationeditorstateschanged", debouncedSave);
+    // Run module setup BEFORE loading the document — modules subscribe to
+    // eventBus events (annotationeditorlayerrendered, updatefindmatchescount,
+    // pagesinit for view settings restore, etc.) during setup(). If the
+    // document loads first, those initial events are missed.
+    await this.registry.setupAll();
 
     this.showLoading();
     await this.loadDocument(
-      this.publication.getAbsoluteHref(this.resource.href),
+      this.publication.getAbsoluteHref(this._resource.href),
       1
     );
 
@@ -409,27 +438,22 @@ export class PDFNavigator extends VisualNavigator {
     this.pageNum = pageNum;
 
     // Destroy the previous document to free memory before loading the next.
-    if (this.pdfDoc) {
-      this.pdfViewer.setDocument(null as any);
-      this.linkService.setDocument(null as any);
-      await this.pdfDoc.destroy();
-      this.pdfDoc = null;
+    if (this._pdfDoc) {
+      releasePdfViewerDocument(this._pdfViewer);
+      releasePdfLinkServiceDocument(this._linkService);
+      await this._pdfDoc.destroy();
+      this._pdfDoc = null;
     }
 
     try {
       const task = getDocument(url);
       const doc = await task.promise;
-      this.pdfDoc = doc;
-      this.pdfViewer.setDocument(doc);
-      this.linkService.setDocument(doc);
+      this._pdfDoc = doc;
+      this._pdfViewer.setDocument(doc);
+      this._linkService.setDocument(doc);
       this.pdfHistory.initialize({ fingerprint: doc.fingerprints[0] ?? "" });
-      // Restore saved annotations before pages render, then wire save-on-change.
-      this.restoreAnnotations(doc.fingerprints[0] ?? "");
-      // onSetModified is typed as `null` in the pdfjs-dist declarations but is
-      // a settable callback in the runtime implementation.
-      (doc.annotationStorage as any).onSetModified = () => {
-        this.saveAnnotations(doc.fingerprints[0] ?? "");
-      };
+      // Annotation restore + onSetModified wiring moved to PdfAnnotationModule,
+      // which hooks in via its onResourceReady lifecycle once pagesloaded fires.
     } catch (err) {
       this.hideLoading();
       const error = err instanceof Error ? err : new Error(String(err));
@@ -444,29 +468,29 @@ export class PDFNavigator extends VisualNavigator {
   private onResize = (): void => {
     clearTimeout(this.resizeTimeout);
     this.resizeTimeout = setTimeout(() => {
-      if (this.pdfViewer) {
+      if (this._pdfViewer) {
         // Re-assigning the same scaleValue triggers a layout recalculation.
-        const v = this.pdfViewer.currentScaleValue;
-        this.pdfViewer.currentScaleValue = v;
+        const v = this._pdfViewer.currentScaleValue;
+        this._pdfViewer.currentScaleValue = v;
       }
     }, 200);
   };
 
   // ── Navigator interface ────────────────────────────────────────────────────
 
-  readingOrder(): any {
+  readingOrder(): Link[] {
     return this.publication.readingOrder;
   }
 
-  tableOfContents(): any {
+  tableOfContents(): Link[] {
     return this.publication.tableOfContents;
   }
 
-  landmarks(): any {
+  landmarks(): Link[] {
     return [];
   }
 
-  pageList(): any {
+  pageList(): Link[] {
     return [];
   }
 
@@ -477,7 +501,7 @@ export class PDFNavigator extends VisualNavigator {
   atEnd(): boolean {
     const lastResource =
       this.resourceIndex >= this.publication.readingOrder.length - 1;
-    return lastResource && this.pageNum >= (this.pdfDoc?.numPages ?? 1);
+    return lastResource && this.pageNum >= (this._pdfDoc?.numPages ?? 1);
   }
 
   currentResource(): number {
@@ -489,23 +513,24 @@ export class PDFNavigator extends VisualNavigator {
   }
 
   currentLocator(): Locator {
-    const totalPages = this.pdfDoc?.numPages ?? this._numPages ?? 1;
+    const totalPages = this._pdfDoc?.numPages ?? this._numPages ?? 1;
     const progression =
       totalPages > 1 ? (this.pageNum - 1) / (totalPages - 1) : 0;
-    return {
-      href: this.resource
-        ? this.publication.getAbsoluteHref(this.resource.href)
+    const locator: Locator = {
+      href: this._resource
+        ? this.publication.getAbsoluteHref(this._resource.href)
         : "",
       title: `Page ${this.pageNum}`,
       locations: {
-        position: this.pageNum,
+        page: this.pageNum,
         progression,
       },
       type: "application/pdf",
-    } as unknown as Locator;
+    };
+    return locator;
   }
 
-  positions(): any {
+  positions(): Locator[] {
     return this.publication.positions ?? [];
   }
 
@@ -519,13 +544,13 @@ export class PDFNavigator extends VisualNavigator {
   // ── Page navigation ────────────────────────────────────────────────────────
 
   nextPage(): void {
-    if (this.pageNum >= (this.pdfDoc?.numPages ?? 1)) {
+    if (this.pageNum >= (this._pdfDoc?.numPages ?? 1)) {
       this.nextResource();
       return;
     }
     // Use PDFViewer.nextPage() directly — it calls #getPageAdvance() internally
     // which advances by 2 in spread mode and by 1 in single-page mode.
-    this.pdfViewer.nextPage();
+    this._pdfViewer.nextPage();
   }
 
   previousPage(): void {
@@ -533,7 +558,7 @@ export class PDFNavigator extends VisualNavigator {
       this.previousResource();
       return;
     }
-    this.pdfViewer.previousPage();
+    this._pdfViewer.previousPage();
   }
 
   // ── Resource navigation ────────────────────────────────────────────────────
@@ -541,26 +566,28 @@ export class PDFNavigator extends VisualNavigator {
   nextResource(): void {
     if (this.resourceIndex >= this.publication.readingOrder.length - 1) return;
     this.resourceIndex++;
-    this.resource = this.publication.readingOrder[this.resourceIndex];
-    this.loadDocument(this.publication.getAbsoluteHref(this.resource.href), 1);
+    this._resource = this.publication.readingOrder[this.resourceIndex];
+    this.loadDocument(this.publication.getAbsoluteHref(this._resource.href), 1);
   }
 
   previousResource(): void {
     if (this.resourceIndex === 0) return;
     this.resourceIndex--;
-    this.resource = this.publication.readingOrder[this.resourceIndex];
+    this._resource = this.publication.readingOrder[this.resourceIndex];
     this.loadDocument(
-      this.publication.getAbsoluteHref(this.resource.href),
-      this.pdfDoc?.numPages ?? 1
+      this.publication.getAbsoluteHref(this._resource.href),
+      this._pdfDoc?.numPages ?? 1
     );
   }
 
   // ── Location ───────────────────────────────────────────────────────────────
 
   goTo(locator: Locator): void {
-    // 1. Explicit position field takes priority (used by bookmarks / reading positions).
-    if (typeof locator.locations?.position === "number") {
-      this.pdfViewer.currentPageNumber = locator.locations.position;
+    // 1. Explicit page field takes priority (used by bookmarks / reading positions).
+    //    Accepts legacy `position` too via getPageFromLocations for backwards compat.
+    const explicitPage = getPageFromLocations(locator.locations);
+    if (typeof explicitPage === "number") {
+      this._pdfViewer.currentPageNumber = explicitPage;
       return;
     }
 
@@ -581,16 +608,16 @@ export class PDFNavigator extends VisualNavigator {
       });
       if (targetIdx >= 0 && targetIdx !== this.resourceIndex) {
         this.resourceIndex = targetIdx;
-        this.resource = this.publication.readingOrder[this.resourceIndex];
+        this._resource = this.publication.readingOrder[this.resourceIndex];
         this.loadDocument(
-          this.publication.getAbsoluteHref(this.resource.href),
+          this.publication.getAbsoluteHref(this._resource.href),
           page
         );
         return;
       }
     }
 
-    this.pdfViewer.currentPageNumber = page;
+    this._pdfViewer.currentPageNumber = page;
   }
 
   /**
@@ -626,316 +653,34 @@ export class PDFNavigator extends VisualNavigator {
   }
 
   goToPosition(value: number): void {
-    this.pdfViewer.currentPageNumber = value;
+    this._pdfViewer.currentPageNumber = value;
   }
 
   async goToPage(page: number): Promise<void> {
-    this.pdfViewer.currentPageNumber = page;
+    this._pdfViewer.currentPageNumber = page;
   }
 
-  // ── View settings persistence ──────────────────────────────────────────────
+  // View settings persistence moved to PdfViewSettingsModule.
+  // Annotation persistence moved to PdfAnnotationModule.
+  // Bookmarks moved to PdfBookmarkModule.
+  // Search moved to PdfSearchModule.
 
-  private static readonly KEY_SCROLL = "pdf-scroll-mode";
-  private static readonly KEY_SPREAD = "pdf-spread-mode";
-  private static readonly KEY_SCALE = "pdf-scale-value";
-  private static readonly KEY_ROTATE = "pdf-rotation";
-
-  private saveViewSetting(key: string, value: string | number): void {
-    this.viewStore?.set(key, String(value));
-  }
-
-  private restoreViewSettings(): void {
-    const scroll = this.viewStore?.get(PDFNavigator.KEY_SCROLL);
-    const spread = this.viewStore?.get(PDFNavigator.KEY_SPREAD);
-    const scale = this.viewStore?.get(PDFNavigator.KEY_SCALE);
-    const rotate = this.viewStore?.get(PDFNavigator.KEY_ROTATE);
-
-    this.pdfViewer.currentScaleValue = scale ?? "page-fit";
-    if (scroll !== null && scroll !== undefined)
-      this.pdfViewer.scrollMode = Number(scroll);
-    if (spread !== null && spread !== undefined)
-      this.pdfViewer.spreadMode = Number(spread);
-    if (rotate !== null && rotate !== undefined)
-      this.pdfViewer.pagesRotation = Number(rotate);
-  }
-
-  // ── Annotation persistence ─────────────────────────────────────────────────
-
-  private annotationKey(fingerprint: string): string {
-    return `pdf-ann-${fingerprint || this.resourceIndex}`;
-  }
-
-  /**
-   * Serialize the in-memory AnnotationStorage and write it to the viewStore.
-   * Called via `annotationStorage.onSetModified` whenever an annotation is
-   * added, edited, or deleted.
-   *
-   * Entries with bitmaps (image stamps) are skipped because ImageBitmap
-   * cannot be JSON-serialised — they would need separate binary storage.
-   */
-  /**
-   * Recursively converts TypedArray instances (Float32Array, etc.) to plain
-   * arrays so they survive JSON round-trip. TypedArrays stringify as objects
-   * { "0": n, "1": n, … } which have no .length, breaking pdfjs deserialization.
-   */
-  private static toJsonSafe(value: unknown): unknown {
-    if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) {
-      return Array.from(value as unknown as ArrayLike<number>);
-    }
-    if (Array.isArray(value)) {
-      return value.map(PDFNavigator.toJsonSafe);
-    }
-    if (value !== null && typeof value === "object") {
-      const out: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(value)) {
-        out[k] = PDFNavigator.toJsonSafe(v);
-      }
-      return out;
-    }
-    return value;
-  }
-
-  private saveAnnotations(fingerprint: string): void {
-    if (!this.viewStore || !this.pdfDoc) return;
-    const key = this.annotationKey(fingerprint);
-    const plain: Record<string, unknown> = {};
-
-    // 1. Live annotations — pages already rendered and deserialized into editors.
-    const { map } = this.pdfDoc.annotationStorage.serializable as {
-      map?: Map<string, Record<string, unknown>>;
-    };
-    if (map) {
-      for (const [id, value] of map) {
-        if ((value as any).bitmap) continue; // ImageBitmap can't JSON round-trip
-        plain[id] = PDFNavigator.toJsonSafe(value);
-      }
-    }
-
-    // 2. Pending annotations — pages not yet scrolled into view, still awaiting
-    //    their annotation editor layer.  We must include these so that a save
-    //    triggered by restoring page N doesn't silently drop pages N+1, N+2 …
-    //    restoreAnnotations() groups by pageIndex from Object.values(), so the
-    //    synthetic key format doesn't matter as long as it's unique.
-    if (this._pendingAnnotations) {
-      let i = 0;
-      for (const [pageIndex, anns] of this._pendingAnnotations) {
-        for (const ann of anns) {
-          plain[`_pending_p${pageIndex}_${i++}`] = ann;
-        }
-      }
-    }
-
-    if (Object.keys(plain).length === 0) {
-      this.viewStore.remove(key);
-    } else {
-      this.viewStore.set(key, JSON.stringify(plain));
-    }
-  }
-
-  /**
-   * Parse saved annotations from the store and group them by page index so
-   * the `annotationeditorlayerrendered` listener can inject each page's
-   * editors as their layer becomes ready.  This must be called right after
-   * `pdfViewer.setDocument()` so the data is in place before pages render.
-   *
-   * We do NOT call `annotationStorage.setValue()` here — that only fills the
-   * raw storage map and is never read back by the AnnotationEditorUIManager.
-   * Instead, `layer.deserialize()` + `layer.addOrRebuild()` reconstructs
-   * proper AnnotationEditor instances from the saved JSON.
-   */
-  private restoreAnnotations(fingerprint: string): void {
-    this._pendingAnnotations = null;
-    if (!this.viewStore) return;
-    const key = this.annotationKey(fingerprint);
-    const raw = this.viewStore.get(key);
-    if (!raw) return;
-    try {
-      const plain = JSON.parse(raw) as Record<string, unknown>;
-      const grouped = new Map<number, unknown[]>();
-      for (const value of Object.values(plain)) {
-        const ann = value as any;
-        const pageIndex: number = ann.pageIndex ?? 0;
-        if (!grouped.has(pageIndex)) grouped.set(pageIndex, []);
-        grouped.get(pageIndex)!.push(ann);
-      }
-      this._pendingAnnotations = grouped;
-    } catch {
-      // Corrupted store entry — ignore and start fresh.
-    }
-  }
-
-  // ── Zoom ──────────────────────────────────────────────────────────────────
+  // ── Zoom (navigator-level — called by D2Reader.fitToPage() etc.) ──────────
 
   fitToWidth(): void {
-    this.pdfViewer.currentScaleValue = "page-width";
-    this.saveViewSetting(PDFNavigator.KEY_SCALE, "page-width");
+    this.modules.viewSettings?.fitToWidth();
   }
 
   fitToPage(): void {
-    this.pdfViewer.currentScaleValue = "page-fit";
-    this.saveViewSetting(PDFNavigator.KEY_SCALE, "page-fit");
+    this.modules.viewSettings?.fitToPage();
   }
 
   zoomIn(): void {
-    this.pdfViewer.increaseScale();
-    this.saveViewSetting(
-      PDFNavigator.KEY_SCALE,
-      this.pdfViewer.currentScaleValue
-    );
+    this.modules.viewSettings?.zoomIn();
   }
 
   zoomOut(): void {
-    this.pdfViewer.decreaseScale();
-    this.saveViewSetting(
-      PDFNavigator.KEY_SCALE,
-      this.pdfViewer.currentScaleValue
-    );
-  }
-
-  // ── Rotation ──────────────────────────────────────────────────────────────
-
-  rotateCw(): void {
-    this.pdfViewer.pagesRotation = (this.pdfViewer.pagesRotation + 90) % 360;
-    this.saveViewSetting(PDFNavigator.KEY_ROTATE, this.pdfViewer.pagesRotation);
-  }
-
-  rotateCcw(): void {
-    this.pdfViewer.pagesRotation = (this.pdfViewer.pagesRotation + 270) % 360;
-    this.saveViewSetting(PDFNavigator.KEY_ROTATE, this.pdfViewer.pagesRotation);
-  }
-
-  // ── Spread mode ────────────────────────────────────────────────────────────
-
-  setSpreadMode(mode: number): void {
-    this.pdfViewer.spreadMode = mode;
-    this.saveViewSetting(PDFNavigator.KEY_SPREAD, mode);
-  }
-
-  // ── Annotation editor ──────────────────────────────────────────────────────
-
-  /**
-   * Activate an annotation editor tool.
-   * Pass an `AnnotationEditorType` value:
-   *   NONE = 0      — editor on, no tool active (cursor / select mode)
-   *   FREETEXT = 3  — add text notes
-   *   HIGHLIGHT = 9 — highlight selected text
-   *   STAMP = 13    — insert image stamps
-   *   INK = 15      — freehand drawing
-   */
-  setAnnotationEditorMode(mode: number): void {
-    // The PDFViewer exposes annotationEditorMode as a setter that accepts { mode }.
-    // Do NOT dispatch "switchannotationeditormode" — that event is emitted BY the
-    // AnnotationEditorUIManager, not listened to by PDFViewer.
-    this.pdfViewer.annotationEditorMode = { mode };
-  }
-
-  /**
-   * The AnnotationStorage instance that holds all user-created annotations
-   * for the current document.  Serialize with `.serializable` to persist them.
-   */
-  get annotationStorage() {
-    return this.pdfDoc?.annotationStorage;
-  }
-
-  /**
-   * Clear all user-created annotations for the current document and remove
-   * the persisted copy from the store.
-   */
-  /**
-   * Returns every annotation across all pages — both those already deserialized
-   * into live editor objects (in annotationStorage) and those still waiting for
-   * their page to render (in _pendingAnnotations).  The sidebar uses this so it
-   * can show the complete list without requiring every page to be scrolled into view.
-   */
-  getAllAnnotations(): Record<string, unknown>[] {
-    const result: Record<string, unknown>[] = [];
-
-    // Live annotations: already deserialized on rendered pages.
-    const { map } = (this.pdfDoc?.annotationStorage.serializable ?? {}) as {
-      map?: Map<string, Record<string, unknown>>;
-    };
-    if (map) {
-      for (const value of map.values()) {
-        result.push(PDFNavigator.toJsonSafe(value) as Record<string, unknown>);
-      }
-    }
-
-    // Pending annotations: pages not yet rendered, still awaiting their layer.
-    if (this._pendingAnnotations) {
-      for (const anns of this._pendingAnnotations.values()) {
-        for (const ann of anns) {
-          result.push(ann as Record<string, unknown>);
-        }
-      }
-    }
-
-    result.sort(
-      (a, b) => ((a.pageIndex as number) ?? 0) - ((b.pageIndex as number) ?? 0)
-    );
-    return result;
-  }
-
-  clearAnnotations(): void {
-    if (!this.pdfDoc) return;
-    const storage = this.pdfDoc.annotationStorage;
-    // Remove every stored entry individually.
-    const { map } = storage.serializable as {
-      map?: Map<string, unknown>;
-    };
-    if (map) {
-      for (const id of map.keys()) {
-        storage.remove(id);
-      }
-    }
-    if (this.viewStore && this.pdfDoc.fingerprints[0]) {
-      this.viewStore.remove(this.annotationKey(this.pdfDoc.fingerprints[0]));
-    }
-  }
-
-  // ── Bookmarks ─────────────────────────────────────────────────────────────
-
-  private makeBookmark(): Bookmark {
-    return {
-      id: crypto.randomUUID(),
-      href: this.resource
-        ? this.publication.getAbsoluteHref(this.resource.href)
-        : "",
-      locations: { position: this.pageNum },
-      type: "application/pdf",
-      title: `Page ${this.pageNum}`,
-      created: new Date(),
-    };
-  }
-
-  /** Save a bookmark for the current page. Returns null if already bookmarked. */
-  saveBookmark(): Bookmark | null {
-    if (!this.annotator) return null;
-    // Use position-based check — locatorExists only compares `locations.progression`
-    // which is undefined on PDF bookmarks, so it always matches.
-    if (this.isCurrentPageBookmarked()) return null;
-    return this.annotator.saveBookmark(this.makeBookmark());
-  }
-
-  /** Delete a previously saved bookmark. */
-  deleteBookmark(bookmark: Bookmark): void {
-    this.annotator?.deleteBookmark(bookmark);
-  }
-
-  /** Return all bookmarks for the current resource. */
-  getBookmarks(): Bookmark[] {
-    if (!this.annotator || !this.resource) return [];
-    return this.annotator.getBookmarks(
-      this.publication.getAbsoluteHref(this.resource.href)
-    );
-  }
-
-  /** True if the current page already has a bookmark. */
-  isCurrentPageBookmarked(): boolean {
-    // Compare by page position — locatorExists uses `locations.progression`
-    // which is undefined for PDF locators and would produce false positives.
-    return this.getBookmarks().some(
-      (b) => b.locations?.position === this.pageNum
-    );
+    this.modules.viewSettings?.zoomOut();
   }
 
   // ── Hand tool (pan / grab) ─────────────────────────────────────────────────
@@ -948,75 +693,36 @@ export class PDFNavigator extends VisualNavigator {
     this.handTool.deactivate();
   }
 
-  // ── Scroll mode ────────────────────────────────────────────────────────────
+  // ── Scroll mode (called by D2Reader.scroll()) ─────────────────────────────
 
   async scroll(scroll: boolean, direction?: string): Promise<void> {
-    const mode = scroll
-      ? direction === "horizontal"
-        ? ScrollMode.HORIZONTAL
-        : direction === "wrapped"
-          ? ScrollMode.WRAPPED
-          : ScrollMode.VERTICAL
-      : ScrollMode.PAGE;
-    this.pdfViewer.scrollMode = mode;
-    this.saveViewSetting(PDFNavigator.KEY_SCROLL, mode);
+    this.modules.viewSettings?.setScrollMode(scroll, direction);
   }
 
-  // ── Text search (wired to PDFFindController) ────────────────────────────────
-
-  find(
-    query: string,
-    options?: {
-      caseSensitive?: boolean;
-      highlightAll?: boolean;
-      findPrevious?: boolean;
-    }
-  ): void {
-    this.eventBus.dispatch("find", {
-      query,
-      caseSensitive: options?.caseSensitive ?? false,
-      highlightAll: options?.highlightAll ?? true,
-      findPrevious: options?.findPrevious ?? false,
-      type: "",
-    });
-  }
-
-  findNext(): void {
-    this.eventBus.dispatch("find", {
-      query: (this.findController as any).state?.query ?? "",
-      caseSensitive: false,
-      highlightAll: true,
-      findPrevious: false,
-      type: "again",
-    });
-  }
-
-  findPrevious(): void {
-    this.eventBus.dispatch("find", {
-      query: (this.findController as any).state?.query ?? "",
-      caseSensitive: false,
-      highlightAll: true,
-      findPrevious: true,
-      type: "again",
-    });
+  /**
+   * The AnnotationStorage instance that holds all user-created annotations
+   * for the current document. Serialize with `.serializable` to persist them.
+   */
+  get annotationStorage() {
+    return this._pdfDoc?.annotationStorage;
   }
 
   // ── Reading position persistence ───────────────────────────────────────────
 
   private saveLastReadingPosition(): void {
-    if (!this.annotator || !this.resource) return;
+    if (!this._annotator || !this._resource) return;
     const position: ReadingPosition = {
-      href: this.publication.getAbsoluteHref(this.resource.href),
-      locations: { position: this.pageNum },
+      href: this.publication.getAbsoluteHref(this._resource.href),
+      locations: { page: this.pageNum },
       type: "application/pdf",
       created: new Date(),
     };
     if (this.api?.updateCurrentLocation) {
       this.api.updateCurrentLocation(position).then(() => {
-        this.annotator!.saveLastReadingPosition(position);
+        this._annotator!.saveLastReadingPosition(position);
       });
     } else {
-      this.annotator.saveLastReadingPosition(position);
+      this._annotator.saveLastReadingPosition(position);
     }
     this.emit(ReaderEvent.LocationChanged, position);
   }
@@ -1024,14 +730,14 @@ export class PDFNavigator extends VisualNavigator {
   private async restoreLastReadingPosition(): Promise<void> {
     // Seed the annotator from config if provided (allows host app to pre-load a position).
     if (this.initialLastReadingPosition) {
-      this.annotator?.initLastReadingPosition(this.initialLastReadingPosition);
+      this._annotator?.initLastReadingPosition(this.initialLastReadingPosition);
     }
-    if (!this.annotator) return;
+    if (!this._annotator) return;
 
-    const saved = this.annotator.getLastReadingPosition();
+    const saved = this._annotator.getLastReadingPosition();
     if (!saved) return;
 
-    const page = (saved.locations?.position as number) ?? 1;
+    const page = getPageFromLocations(saved.locations) ?? 1;
 
     // Find the matching resource by comparing absolute hrefs.
     const idx = this.publication.readingOrder.findIndex(
@@ -1042,23 +748,24 @@ export class PDFNavigator extends VisualNavigator {
     if (idx >= 0 && idx !== this.resourceIndex) {
       // Saved position is in a different resource — load it.
       this.resourceIndex = idx;
-      this.resource = this.publication.readingOrder[this.resourceIndex];
+      this._resource = this.publication.readingOrder[this.resourceIndex];
       await this.loadDocument(
-        this.publication.getAbsoluteHref(this.resource.href),
+        this.publication.getAbsoluteHref(this._resource.href),
         page
       );
     } else {
       // Same resource — just jump to the saved page.
-      this.pdfViewer.currentPageNumber = page;
+      this._pdfViewer.currentPageNumber = page;
     }
   }
 
   // ── Cleanup ────────────────────────────────────────────────────────────────
 
   stop(): void {
+    this.registry.stopAll();
     removeEventListenerOptional(window, "resize", this.onResize);
-    this.pdfViewer?.setDocument(null as any);
-    this.pdfDoc?.destroy();
-    this.pdfDoc = null;
+    if (this._pdfViewer) releasePdfViewerDocument(this._pdfViewer);
+    this._pdfDoc?.destroy();
+    this._pdfDoc = null;
   }
 }

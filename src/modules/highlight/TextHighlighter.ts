@@ -42,12 +42,11 @@ import { uniqueCssSelector } from "./renderer/common/cssselector2";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { icons, iconTemplateColored } from "../../utils/IconLib";
 import { EpubNavigator } from "../../navigator/EpubNavigator";
-import { TTSModule2 } from "../TTS/TTSModule2";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import * as lodash from "lodash";
 import { LayerSettings } from "./LayerSettings";
 import { Switchable } from "../../model/user-settings/UserProperties";
-import { Popup } from "../search/Popup";
+import { Popup } from "../epub/search/Popup";
 import log from "loglevel";
 
 export enum HighlightContainer {
@@ -1101,7 +1100,7 @@ export class TextHighlighter {
                 getCssSelector
               );
               if (selectionInfo) {
-                self.navigator.annotationModule?.annotator?.saveTemporarySelectionInfo(
+                self.navigator.modules.annotations?.annotator?.saveTemporarySelectionInfo(
                   selectionInfo
                 );
               }
@@ -1348,7 +1347,7 @@ export class TextHighlighter {
                 if (selectionInfo === undefined) {
                   let doc = self.navigator.iframes[0].contentDocument;
                   selectionInfo =
-                    self.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+                    self.navigator.modules.annotations?.annotator?.getTemporarySelectionInfo(
                       doc
                     ) ?? undefined;
                 }
@@ -1386,20 +1385,20 @@ export class TextHighlighter {
                         self.options.onAfterHighlight(highlight, marker);
 
                         if (self.navigator.rights.enableAnnotations) {
-                          self.navigator.annotationModule
+                          self.navigator.modules.annotations
                             ?.saveAnnotation(highlight[0])
                             .then((anno) => {
                               if (menuItem?.note) {
                                 if (anno.highlight) {
                                   // notes on custom icons , new note
-                                  self.navigator.annotationModule?.api
+                                  self.navigator.modules.annotations?.api
                                     ?.addCommentToAnnotation(anno)
                                     .then((result) => {
                                       self.navigator.emit(
                                         ReaderEvent.AnnotationCommentAdded,
                                         result
                                       );
-                                      self.navigator.annotationModule
+                                      self.navigator.modules.annotations
                                         ?.updateAnnotation(result)
                                         .then(async () => {
                                           log.log(
@@ -1411,7 +1410,7 @@ export class TextHighlighter {
                               }
                             });
                         } else if (self.navigator.rights.enableBookmarks) {
-                          self.navigator.bookmarkModule?.saveAnnotation(
+                          self.navigator.modules.bookmarks?.saveAnnotation(
                             highlight[0]
                           );
                         }
@@ -1465,7 +1464,7 @@ export class TextHighlighter {
       if (selectionInfo === undefined) {
         let doc = self.navigator.iframes[0].contentDocument;
         selectionInfo =
-          this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+          this.navigator.modules.annotations?.annotator?.getTemporarySelectionInfo(
             doc
           ) ?? undefined;
       }
@@ -1493,12 +1492,12 @@ export class TextHighlighter {
               this.navigator.rights.enableAnnotations &&
               marker !== AnnotationMarker.Bookmark
             ) {
-              this.navigator.annotationModule?.saveAnnotation(highlight[0]);
+              this.navigator.modules.annotations?.saveAnnotation(highlight[0]);
             } else if (
               this.navigator.rights.enableBookmarks &&
               marker === AnnotationMarker.Bookmark
             ) {
-              this.navigator.bookmarkModule?.saveAnnotation(highlight[0]);
+              this.navigator.modules.bookmarks?.saveAnnotation(highlight[0]);
             }
           }
         }
@@ -1543,13 +1542,13 @@ export class TextHighlighter {
         if (selectionInfo === undefined) {
           let doc = self.navigator.iframes[0].contentDocument;
           selectionInfo =
-            self.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+            self.navigator.modules.annotations?.annotator?.getTemporarySelectionInfo(
               doc
             ) ?? undefined;
         }
 
         if (selectionInfo !== undefined) {
-          (this.navigator.ttsModule as TTSModule2).speak(
+          this.navigator.modules.tts?.speak(
             selectionInfo as any,
             true,
             () => {}
@@ -1694,7 +1693,7 @@ export class TextHighlighter {
       if (doc) {
         this.dom(doc.body).removeAllRanges();
       }
-      (this.navigator.ttsModule as TTSModule2).cancel();
+      this.navigator.modules.tts?.cancel();
       if (reload) {
         this.navigator.reload();
       }
@@ -2362,17 +2361,17 @@ export class TextHighlighter {
         let self = this;
         let anno;
         if (self.navigator.rights.enableAnnotations) {
-          anno = (await this.navigator.annotationModule?.getAnnotation(
+          anno = (await this.navigator.modules.annotations?.getAnnotation(
             payload.highlight
           )) as Annotation;
         } else if (self.navigator.rights.enableBookmarks) {
-          anno = (await this.navigator.bookmarkModule?.getAnnotation(
+          anno = (await this.navigator.modules.bookmarks?.getAnnotation(
             payload.highlight
           )) as Annotation;
         }
 
         if (payload.highlight.type === HighlightType.Annotation) {
-          this.navigator.annotationModule?.api
+          this.navigator.modules.annotations?.api
             ?.selectedAnnotation(anno)
             .then(async () => {});
           this.navigator.emit(ReaderEvent.AnnotationSelected, anno);
@@ -2405,14 +2404,14 @@ export class TextHighlighter {
               }
               function noteH() {
                 // existing note
-                self.navigator.annotationModule?.api
+                self.navigator.modules.annotations?.api
                   ?.addCommentToAnnotation(anno)
                   .then((result) => {
                     self.navigator.emit(
                       ReaderEvent.AnnotationCommentAdded,
                       result
                     );
-                    self.navigator.annotationModule
+                    self.navigator.modules.annotations
                       ?.updateAnnotation(result)
                       .then(async () => {
                         log.log("update highlight " + result.id);
@@ -2451,7 +2450,7 @@ export class TextHighlighter {
 
               function deleteH() {
                 if (self.navigator.rights.enableAnnotations) {
-                  self.navigator.annotationModule
+                  self.navigator.modules.annotations
                     ?.deleteSelectedHighlight(anno)
                     .then(async () => {
                       log.log("delete highlight " + anno.id);
@@ -2461,7 +2460,7 @@ export class TextHighlighter {
                       self.selectionMenuClosed();
                     });
                 } else if (self.navigator.rights.enableBookmarks) {
-                  self.navigator.bookmarkModule
+                  self.navigator.modules.bookmarks
                     ?.deleteSelectedHighlight(anno)
                     .then(async () => {
                       log.log("delete highlight " + anno.id);
@@ -2506,12 +2505,12 @@ export class TextHighlighter {
             popup.showPopup(defElement.dataset.definition, ev);
           }
           let result =
-            this.navigator.definitionsModule?.properties?.definitions?.filter(
+            this.navigator.modules.definitions?.properties?.definitions?.filter(
               (el: any) => el.order === Number(defElement?.dataset.order)
             )[0];
           log.log(result);
-          if (this.navigator.definitionsModule?.api?.click) {
-            this.navigator.definitionsModule.api?.click(
+          if (this.navigator.modules.definitions?.api?.click) {
+            this.navigator.modules.definitions.api?.click(
               lodash.omit(result, "callbacks"),
               lodash.omit(foundHighlight, "definition")
             );
@@ -3279,15 +3278,15 @@ export class TextHighlighter {
       highlightAreaIcon.addEventListener("click", async function (ev) {
         let anno;
         if (self.navigator.rights.enableAnnotations) {
-          anno = (await self.navigator.annotationModule?.getAnnotationByID(
+          anno = (await self.navigator.modules.annotations?.getAnnotationByID(
             highlight.id
           )) as Annotation;
-          self.navigator.annotationModule?.api
+          self.navigator.modules.annotations?.api
             ?.selectedAnnotation(anno)
             .then(async () => {});
           self.navigator.emit(ReaderEvent.AnnotationSelected, anno);
         } else if (self.navigator.rights.enableBookmarks) {
-          anno = (await self.navigator.bookmarkModule?.getAnnotationByID(
+          anno = (await self.navigator.modules.bookmarks?.getAnnotationByID(
             highlight.id
           )) as Annotation;
         }
@@ -3329,7 +3328,7 @@ export class TextHighlighter {
 
             function deleteH() {
               if (self.navigator.rights.enableAnnotations) {
-                self.navigator.annotationModule
+                self.navigator.modules.annotations
                   ?.deleteSelectedHighlight(anno)
                   .then(async () => {
                     log.log("delete highlight " + anno.id);
@@ -3337,7 +3336,7 @@ export class TextHighlighter {
                     self.selectionMenuClosed();
                   });
               } else if (self.navigator.rights.enableBookmarks) {
-                self.navigator.bookmarkModule
+                self.navigator.modules.bookmarks
                   ?.deleteSelectedHighlight(anno)
                   .then(async () => {
                     log.log("delete highlight " + anno.id);

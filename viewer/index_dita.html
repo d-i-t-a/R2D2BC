@@ -974,16 +974,16 @@
             //     credentials: "include",
             // },
             attributes: {
-                // margin: 65, // subtract this from the iframe height , when setting the iframe minimum height
-                // iframePaddingTop: 20, // top padding inside iframe
+                // margin: 65,            // Extra px reserved below the iframe. Optional.
+                // iframePaddingTop: 20,  // @deprecated — use `iframe.padding.top`.
+                // Iframe CSS padding. Not applied to fixed-layout.
                 iframe: {
                   padding: {
                     bottom: 20
                   }
                 },
-                // Reserve live-measured space for the integrator's top + bottom chrome
-                // so the selection toolbox never overlaps them. Toggling visibility on
-                // these elements automatically reclaims the space.
+                // Fixed chrome the reader avoids for toolbox placement and iframe sizing.
+                // Measured live — toggling visibility reclaims the space automatically.
                 safeArea: {
                     top: () => document.querySelector('.mui-appbar'),
                     bottom: () => document.getElementById('reader-info-bottom'),

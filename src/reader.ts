@@ -1028,8 +1028,9 @@ export default class D2Reader {
     this.navigator.snapToSelector?.(selector);
   };
   /**
-   * You have attributes in the reader when you initialize it. You can set margin, navigationHeight etc...
-   * This is in case you change the attributes after initializing the reader.
+   * Update the navigator `IFrameAttributes` after the reader has been initialized.
+   * Use this to change `margin`, `iframe.padding`, `safeArea`, or fixed-layout
+   * attributes at runtime. The navigator re-applies them on the next resize.
    */
   applyAttributes = (value: IFrameAttributes) => {
     this.navigator.applyAttributes?.(value);

@@ -695,7 +695,9 @@
         D2Reader.load({
             url: new URL(urlParams['url']),
             attributes: {
+                // Extra px reserved below the iframe. Optional.
                 margin: 15,
+                // @deprecated — use `iframe: { padding: { top: 10 } }`.
                 iframePaddingTop: 10,
             },
             rights: {

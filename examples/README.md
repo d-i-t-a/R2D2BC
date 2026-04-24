@@ -111,16 +111,15 @@ D2Reader.load({
     injectables: [...],
     injectablesFixed: [...],
     attributes: {
+        // Extra px reserved below the iframe. Optional.
         margin: 5,
-        // Reflowable iframe CSS padding — single number sets all four sides,
-        // or pass an object { top?, bottom?, left?, right? } for per-side.
-        // Not applied in fixed-layout publications.
+        // Iframe CSS padding. Number sets all four sides, or { top?, bottom?, left?, right? }.
+        // Not applied to fixed-layout publications.
         iframe: {
             padding: { top: 0 },
         },
-        // Live-measured chrome heights the reader avoids when placing the
-        // selection toolbox. Callback returns the element; measured at
-        // placement time so toggling visibility reclaims space automatically.
+        // Fixed chrome the reader avoids for toolbox placement and iframe sizing.
+        // Measured live — toggling visibility reclaims the space automatically.
         safeArea: {
             top: () => document.querySelector('.my-navbar'),
             bottom: () => document.getElementById('my-progress-bar'),

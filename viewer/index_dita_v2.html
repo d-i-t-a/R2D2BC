@@ -1088,9 +1088,11 @@
             //     mode: "cors",
             //     credentials: "include",
             // },
-            attributes: { // TODO: review these attributes and eventually needs better naming.
-                margin: 75, // subtract this from the iframe height , when setting the iframe minimum height
-                iframePaddingTop: 20, // top padding inside iframe
+            attributes: {
+                // Extra px reserved below the iframe. Optional.
+                margin: 75,
+                // @deprecated — use `iframe: { padding: { top: 20 } }`.
+                iframePaddingTop: 20,
             },
             rights: {
                 enableBookmarks: true,

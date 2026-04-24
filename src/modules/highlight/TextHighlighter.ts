@@ -1168,14 +1168,120 @@ export class TextHighlighter {
         toolbox.style.position = "absolute";
         toolbox.style.setProperty("--content", "revert");
       } else {
-        const paginated = this.navigator.view?.isPaginated();
-        if (paginated) {
-          toolbox.style.top =
-            rect.top + (this.navigator.attributes?.navHeight ?? 0) + "px";
-        } else {
-          toolbox.style.top = rect.top + "px";
+        // Selection rects are iframe-viewport-relative. Translate to outer-
+        // viewport coords using the iframe's content-box origin (border-box
+        // + border + padding), so the toolbox lines up with the selection
+        // regardless of iframe padding or chrome above.
+        const iframe = this.navigator.iframes[0];
+        const iframeRect = iframe?.getBoundingClientRect();
+        const cs = iframe ? getComputedStyle(iframe) : null;
+        const padTop = cs ? parseFloat(cs.paddingTop) || 0 : 0;
+        const padLeft = cs ? parseFloat(cs.paddingLeft) || 0 : 0;
+        const contentTop =
+          (iframeRect?.top ?? 0) + (iframe?.clientTop ?? 0) + padTop;
+        const contentLeft =
+          (iframeRect?.left ?? 0) + (iframe?.clientLeft ?? 0) + padLeft;
+
+        // Anchor the toolbox at the selection FOCUS (where the user
+        // released the mouse) and flip direction based on whether the
+        // selection went top-to-bottom (focus after anchor → forward) or
+        // bottom-to-top (focus before anchor → backward).
+        const selection = iframe?.contentWindow?.getSelection();
+        let focusRect: DOMRect | null = null;
+        let forward = true;
+        if (selection && selection.focusNode && selection.anchorNode) {
+          const cmp = selection.anchorNode.compareDocumentPosition(
+            selection.focusNode
+          );
+          if (cmp & Node.DOCUMENT_POSITION_PRECEDING) {
+            forward = false; // focus before anchor → backward
+          } else if (cmp === 0) {
+            forward = selection.anchorOffset <= selection.focusOffset;
+          }
+          // Caret rect at the focus position (where mouse-up happened).
+          try {
+            const doc = iframe!.contentDocument!;
+            const focusRange = doc.createRange();
+            focusRange.setStart(selection.focusNode, selection.focusOffset);
+            focusRange.collapse(true);
+            const rects = focusRange.getClientRects();
+            if (rects.length > 0) focusRect = rects[0];
+          } catch (e) {
+            focusRect = null;
+          }
         }
-        toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
+
+        // Use `position: fixed` so the toolbox is removed from flow (lets
+        // `fit-content` render icons in one row in narrow parents) and
+        // `top` / `left` are viewport-relative — matching the content-box
+        // translation above.
+        toolbox.style.position = "fixed";
+
+        // Default CSS transform: translate(-50%, -100%) — toolbox renders
+        // ABOVE its top anchor (arrow at bottom, pointing down).
+        // `.below` class flips transform-origin and pointer — toolbox
+        // renders BELOW its top anchor (arrow at top, pointing up).
+        const toolboxHeight = toolbox.offsetHeight || 0;
+        const viewportHeight = window.innerHeight;
+
+        // Rects for the top and bottom of the selection in outer-viewport Y.
+        const topEdgeY = (focusRect?.top ?? rect.top) + contentTop;
+        const bottomEdgeY = (focusRect?.bottom ?? rect.bottom) + contentTop;
+
+        // Safe-area reservations from the integrator's `safeArea.top` /
+        // `safeArea.bottom` callbacks — measured live so toggleable chrome
+        // (navbar, progress bar) automatically reclaims space when hidden.
+        const safeArea = this.navigator.attributes?.safeArea;
+        const measure = (cb?: () => Element | null) => {
+          try {
+            return cb?.()?.getBoundingClientRect().height ?? 0;
+          } catch {
+            return 0;
+          }
+        };
+        const safeTop = measure(safeArea?.top);
+        const safeBottom = measure(safeArea?.bottom);
+
+        // Single-line selection → always render toolbox above (below would
+        // overlap the next text line). Multi-line → flip per direction.
+        const selectionRects = range.getClientRects();
+        const multiLine = selectionRects.length > 1;
+        let placeBelow = multiLine && forward;
+        // Adaptive: if the chosen side would clip into the integrator's
+        // safe area (or the viewport edge), flip to the other.
+        const abovewouldClip = topEdgeY - toolboxHeight < safeTop;
+        const belowWouldClip =
+          bottomEdgeY + toolboxHeight > viewportHeight - safeBottom;
+        if (placeBelow && belowWouldClip && !abovewouldClip) {
+          placeBelow = false;
+        } else if (!placeBelow && abovewouldClip && !belowWouldClip) {
+          placeBelow = true;
+        }
+
+        if (placeBelow) {
+          toolbox.classList.add("below");
+          toolbox.style.top = bottomEdgeY + "px";
+        } else {
+          toolbox.classList.remove("below");
+          toolbox.style.top = topEdgeY + "px";
+        }
+
+        // Horizontal: anchor on the focus X (mouse-up X) when available,
+        // else selection's end edge. Clamp inside viewport.
+        const focusX =
+          focusRect != null ? focusRect.left : forward ? rect.right : rect.left;
+        const targetX = contentLeft + focusX;
+        const toolboxWidth = toolbox.offsetWidth || 0;
+        const viewportWidth = window.innerWidth;
+        let clampedX: number;
+        if (toolboxWidth >= viewportWidth) {
+          clampedX = viewportWidth / 2;
+        } else {
+          const minX = toolboxWidth / 2;
+          const maxX = viewportWidth - toolboxWidth / 2;
+          clampedX = Math.max(minX, Math.min(maxX, targetX));
+        }
+        toolbox.style.left = clampedX + "px";
       }
     }
   }
@@ -2384,8 +2490,10 @@ export class TextHighlighter {
           let toolbox = document.getElementById("highlight-toolbox");
 
           if (toolbox) {
-            toolbox.style.top =
-              ev.clientY + (this.navigator.attributes?.navHeight ?? 0) + "px";
+            // ev.clientY is iframe-relative; translate to outer-viewport Y.
+            const iframeTop =
+              this.navigator.iframes[0]?.getBoundingClientRect().top ?? 0;
+            toolbox.style.top = ev.clientY + iframeTop + "px";
             toolbox.style.left = ev.clientX + "px";
 
             if (getComputedStyle(toolbox).display === "none") {
@@ -3296,8 +3404,10 @@ export class TextHighlighter {
         self.lastSelectedHighlight = anno.id;
         let toolbox = document.getElementById("highlight-toolbox");
         if (toolbox) {
-          toolbox.style.top =
-            ev.clientY + (self.navigator.attributes?.navHeight ?? 0) + "px";
+          // ev.clientY is iframe-relative; translate to outer-viewport Y.
+          const iframeTop =
+            self.navigator.iframes[0]?.getBoundingClientRect().top ?? 0;
+          toolbox.style.top = ev.clientY + iframeTop + "px";
           toolbox.style.left = ev.clientX + "px";
 
           if (getComputedStyle(toolbox).display === "none") {

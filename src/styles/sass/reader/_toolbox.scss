@@ -39,6 +39,18 @@
     background-color: inherit;
     transform: rotate(45deg);
   }
+  // `.below` — toolbox rendered below the selection end (forward selection).
+  // Transform-origin shifts so the anchor is the toolbox's TOP edge; the
+  // pointer arrow flips to the top, pointing up at the selection.
+  &.below {
+    transform: translate(-50%, 0);
+    transform-origin: top;
+    &:before {
+      $size: 0.4rem;
+      top: - math.div($size, 2);
+      bottom: auto;
+    }
+  }
   > div > button {
     display: inline-block;
   }

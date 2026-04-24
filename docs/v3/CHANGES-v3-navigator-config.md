@@ -1,6 +1,6 @@
 # CHANGES — v3 Workstream 3.5.1: Navigator Config Cleanup
 
-Published as: *pending (will ship as `3.0.0-alpha.18`)*
+Published as: `3.0.0-alpha.18`
 Branch: `feature/v3-navigator-config` (stacked on `feature/v3-readiumcss-v2`)
 
 Scoped to `IFrameAttributes`, the iframe-height formula used in reflowable

@@ -593,15 +593,6 @@
                 <div id="reader-info-top" class="dita-info top">
                     <span class="book-title"></span>
                 </div>
-                <div id="reader-info-bottom" class="dita-info bottom">
-                    <div style="display: flex;justify-content: center;">
-                        <span class="chapter-position"></span>&nbsp;
-                        <span class="chapter-title"></span>
-                    </div>
-                    <div class="scrubber">
-                        <input class="range-slider__range" style="margin-left:30px;display: none" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="d2reader.goToPosition( this.value )" />
-                    </div>
-                </div>
                 <div style="height: 0px">
                     <div id="highlight-toolbox" class="highlight-toolbox" >
                         <div id="highlight-toolbox-mode-colors">
@@ -659,6 +650,15 @@
                     </div>
                 </div>
             </main>
+            <div id="reader-info-bottom" class="dita-info bottom" style="height: 75px;">
+                <div style="display: flex;justify-content: center;">
+                    <span class="chapter-position"></span>&nbsp;
+                    <span class="chapter-title"></span>
+                </div>
+                <div class="scrubber">
+                    <input class="range-slider__range" style="margin-left:30px;display: none" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="d2reader.goToPosition( this.value )" />
+                </div>
+            </div>
             <div id="container-view-security" class="security"></div>
             <div id="container-view-timeline" class="dita-timeline" style="top: 5rem;bottom: 2.5rem;"></div>
             <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
@@ -973,11 +973,25 @@
             //     mode: "cors",
             //     credentials: "include",
             // },
-            attributes: { // TODO: review these attributes and eventually needs better naming.
-                margin: 75, // subtract this from the iframe height , when setting the iframe minimum height
-                navHeight: 10, // used for positioning the toolbox
-                iframePaddingTop: 20, // top padding inside iframe
-                bottomInfoHeight: 75, // #reader-info-bottom height
+            attributes: {
+                // margin: 65,            // Extra px reserved below the iframe. Optional.
+                // iframePaddingTop: 20,  // @deprecated — use `iframe.padding.top`.
+                // Iframe CSS padding. Not applied to fixed-layout.
+                iframe: {
+                  padding: {
+                    bottom: 20
+                  }
+                },
+                // Fixed chrome the reader avoids for toolbox placement and iframe sizing.
+                // Measured live — toggling visibility reclaims the space automatically.
+                safeArea: {
+                    top: () => document.querySelector('.mui-appbar'),
+                    bottom: () => document.getElementById('reader-info-bottom'),
+                },
+                // `margin` not set — reader fills the iframe's parent container
+                // (`#iframe-wrapper`), whose CSS height (`calc(100vh - 140px)`)
+                // accounts for the 65px top bar and the 75px #reader-info-bottom
+                // strip below it.
             },
             rights: {
                 enableBookmarks: true,

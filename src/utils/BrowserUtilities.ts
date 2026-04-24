@@ -18,6 +18,7 @@
  */
 
 import * as HTMLUtilities from "./HTMLUtilities";
+import type { IFrameAttributes } from "../navigator/types";
 
 /** Returns the current width of the document. */
 export function getWidth(): number {
@@ -37,6 +38,27 @@ export function getHeight(): number {
   );
 
   return wrapper.clientHeight;
+}
+
+/**
+ * Computes the target height for an iframe rendering reflowable content.
+ *
+ * Formula: `parent.clientHeight − safeArea.bottom − iframe padding − margin`.
+ * Falls back to `getHeight()` if the iframe has no parent.
+ */
+export function computeIframeContentHeight(
+  iframe: HTMLIFrameElement | null | undefined,
+  attributes: IFrameAttributes | undefined
+): number {
+  const parentHeight = iframe?.parentElement?.clientHeight ?? getHeight();
+  const safeAreaBottom =
+    attributes?.safeArea?.bottom?.()?.getBoundingClientRect().height ?? 0;
+  const cs = iframe ? window.getComputedStyle(iframe) : null;
+  const padding =
+    (parseFloat(cs?.paddingTop ?? "0") || 0) +
+    (parseFloat(cs?.paddingBottom ?? "0") || 0);
+  const margin = attributes?.margin ?? 0;
+  return parentHeight - safeAreaBottom - padding - margin;
 }
 
 /** Returns true if the browser is zoomed in with pinch-to-zoom on mobile. */

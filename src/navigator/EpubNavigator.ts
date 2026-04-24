@@ -88,7 +88,12 @@ import type {
   GetContentBytesLength,
   RequestConfig,
 } from "../fetcher/types";
-import type { NavigatorAPI, ReaderRights, Injectable } from "./types";
+import type {
+  NavigatorAPI,
+  ReaderRights,
+  Injectable,
+  IFrameAttributes,
+} from "./types";
 // Re-exported for backwards compatibility.
 export type { GetContent, GetContentBytesLength, RequestConfig };
 export type {
@@ -100,19 +105,8 @@ export type {
   ScriptInjectable,
   InlineStyleInjectable,
   InlineScriptInjectable,
+  IFrameAttributes,
 } from "./types";
-
-export interface IFrameAttributes {
-  margin: number;
-  navHeight?: number;
-  iframePaddingTop?: number;
-  bottomInfoHeight?: number;
-  sideNavPosition?: "left" | "right";
-  /** Margin (in px) around fixed-layout content. Defaults to 100. */
-  fixedLayoutMargin?: number;
-  /** Whether to show a drop shadow on fixed-layout spreads. Defaults to true. */
-  fixedLayoutShadow?: boolean;
-}
 export interface EpubNavigatorConfig {
   mainElement: HTMLElement;
   headerMenu?: HTMLElement | null;
@@ -486,7 +480,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       config.rights,
       config.tts,
       config.injectables,
-      config.attributes || { margin: 0 },
+      config.attributes,
       config.services,
       config.sample,
       config.requestConfig,
@@ -559,8 +553,9 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
 
     this.settings = settings;
     this.annotator = annotator;
+    this.attributes = attributes ?? {};
     this.view = settings.view;
-    this.view.attributes = attributes;
+    this.view.attributes = this.attributes;
     this.view.host = {
       checkResourcePosition: () => this.checkResourcePosition(),
       recalculateContentProtection: (delay?: number) =>
@@ -594,7 +589,6 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     };
     this.tts = tts;
     this.injectables = injectables;
-    this.attributes = attributes || { margin: 0 };
     this.services = services;
     this.sample = sample;
     this.requestConfig = requestConfig;
@@ -722,9 +716,11 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       let iframe2 = HTMLUtilities.findElement(mainElement, "#second");
 
       if (iframe) {
+        (iframe as HTMLIFrameElement).style.verticalAlign = "top";
         this.iframes.push(iframe);
       }
       if (iframe2) {
+        (iframe2 as HTMLIFrameElement).style.verticalAlign = "top";
         this.iframes.push(iframe2);
       }
       if (window.matchMedia("screen and (max-width: 600px)").matches) {
@@ -744,6 +740,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         let iframe = document.createElement("iframe");
         iframe.setAttribute("SCROLLING", "no");
         iframe.setAttribute("allowtransparency", "true");
+        iframe.style.verticalAlign = "top";
         this.iframes.push(iframe);
 
         if (this.publication.isFixedLayout) {
@@ -764,7 +761,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
             timelineEl && this.rights.enableTimeline ? "70px" : "0";
           const infoBottom = document.getElementById("reader-info-bottom");
           this.fxlScrollContainer.style.bottom = infoBottom
-            ? (this.attributes?.bottomInfoHeight ?? 40) + "px"
+            ? infoBottom.offsetHeight + "px"
             : "0";
           this.fxlScrollContainer.style.overflow = "auto";
           this.fxlScrollContainer.style.display = "flex";
@@ -817,6 +814,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
             iframe2.style.opacity = "1";
             iframe2.style.border = "none";
             iframe2.style.overflow = "hidden";
+            iframe2.style.verticalAlign = "top";
             this.iframes.push(iframe2);
 
             secondSpread.appendChild(this.iframes[1]);
@@ -836,8 +834,37 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
             }
           }
         } else {
-          this.iframes[0].style.paddingTop =
-            (this.attributes?.iframePaddingTop ?? 0) + "px";
+          // Reflowable iframe padding — CSS padding applied to the iframe
+          // element itself, shifting its internal browsing context inward
+          // on each side by the given pixel amount. Not applied in FXL.
+          //
+          // New API: `attributes.iframe.padding` accepts a number (all four
+          // sides the same) or a per-side object `{ top, bottom, left, right }`.
+          // Legacy `attributes.iframePaddingTop` still works when the new
+          // API is not set.
+          //
+          // Only sides the integrator explicitly specified are written to
+          // the iframe's inline style. Unspecified sides inherit from the
+          // stylesheet (no forced zero).
+          const iframe = this.iframes[0];
+          const pad = this.attributes?.iframe?.padding;
+          if (pad !== undefined) {
+            if (typeof pad === "number") {
+              iframe.style.padding = pad + "px";
+            } else {
+              if (pad.top !== undefined)
+                iframe.style.paddingTop = pad.top + "px";
+              if (pad.bottom !== undefined)
+                iframe.style.paddingBottom = pad.bottom + "px";
+              if (pad.left !== undefined)
+                iframe.style.paddingLeft = pad.left + "px";
+              if (pad.right !== undefined)
+                iframe.style.paddingRight = pad.right + "px";
+            }
+          } else if (this.attributes?.iframePaddingTop !== undefined) {
+            // Legacy path — iframe.padding not set, honour iframePaddingTop
+            iframe.style.paddingTop = this.attributes.iframePaddingTop + "px";
+          }
         }
       }
 
@@ -1229,8 +1256,10 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     } else {
       this.settings.isPaginated().then((paginated) => {
         if (paginated) {
-          this.view.height =
-            BrowserUtilities.getHeight() - 40 - (this.attributes?.margin ?? 0);
+          this.view.height = BrowserUtilities.computeIframeContentHeight(
+            this.iframes[0],
+            this.attributes
+          );
           if (this.infoBottom) this.infoBottom.style.removeProperty("display");
           document.body.onscroll = () => {};
           if (this.nextChapterBottomAnchorElement)
@@ -2367,8 +2396,8 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     }
   }
   applyAttributes(attributes: IFrameAttributes) {
-    this.attributes = attributes;
-    this.view.attributes = attributes;
+    this.attributes = attributes ?? {};
+    this.view.attributes = this.attributes;
     this.handleResize();
   }
 
@@ -2621,18 +2650,17 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     if (this.infoTop) this.infoTop.style.height = 0 + "px";
     if (this.infoTop) this.infoTop.style.minHeight = 0 + "px";
 
-    // TODO paginator page info
-    // 0 = hide , 40 = show
-    if (this.infoBottom)
-      this.infoBottom.style.height = this.attributes?.bottomInfoHeight
-        ? this.attributes.bottomInfoHeight + "px"
-        : 40 + "px";
+    // #reader-info-bottom height is driven by the integrator's own CSS.
+    // The reader only toggles visibility (display) based on scroll vs
+    // paginated mode — see below.
 
     if (this.view?.layout !== "fixed") {
       this.settings.isPaginated().then((paginated) => {
         if (paginated) {
-          this.view.height =
-            BrowserUtilities.getHeight() - 40 - (this.attributes?.margin ?? 0);
+          this.view.height = BrowserUtilities.computeIframeContentHeight(
+            this.iframes[0],
+            this.attributes
+          );
           if (this.infoBottom) this.infoBottom.style.removeProperty("display");
         } else {
           if (this.infoBottom) this.infoBottom.style.display = "none";

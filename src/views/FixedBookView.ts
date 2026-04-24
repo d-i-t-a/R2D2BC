@@ -30,7 +30,7 @@ export default class FixedBookView implements BookView {
   iframe2: HTMLIFrameElement;
   sideMargin: number = 20;
   height: number = 0;
-  attributes: IFrameAttributes = { margin: 0 };
+  attributes: IFrameAttributes = {};
 
   start(): void {}
 

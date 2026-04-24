@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createRoot } from "react-dom/client";
-import D2Reader from "../../src";
+import D2Reader, { Injectable } from "../../src";
 import readiumBefore from "url:../../viewer/readium-css-v2/ReadiumCSS-before.css";
 import readiumAfter from "url:../../viewer/readium-css-v2/ReadiumCSS-after.css";
 import readiumDefault from "url:../../viewer/readium-css-v2/ReadiumCSS-default.css";
@@ -19,7 +19,7 @@ const isCJK = (pub: any) => {
   );
 };
 
-const injectables = [
+const injectables: Injectable[] = [
   // Base — non-CJK only
   {
     type: "style",

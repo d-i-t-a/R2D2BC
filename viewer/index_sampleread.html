@@ -318,7 +318,7 @@
                 <div id="reader-info-top" class="dita-info top">
                     <span class="book-title"></span>
                 </div>
-                <div id="reader-info-bottom" class="dita-info bottom">
+                <div id="reader-info-bottom" class="dita-info bottom" style="height: 60px;">
                     <div style="display: flex;justify-content: center;">
                         <span class="chapter-position"></span>&nbsp;
                         <span class="chapter-title"></span>
@@ -458,11 +458,14 @@
         D2Reader.load({
             url: new URL(urlParams['url']),
             attributes: {
-                margin: 120,
-                navHeight: 76,
-                iframePaddingTop: 20,
-                bottomInfoHeight: 60,
-                sideNavPosition: 'right'
+                // Extra px reserved below the iframe. Optional.
+                margin: 40,
+                // Iframe CSS padding. Not applied to fixed-layout.
+                iframe: {
+                  padding: {
+                    top: 20
+                  }
+                }
             },
             rights: {
                 enableMaterial: true,

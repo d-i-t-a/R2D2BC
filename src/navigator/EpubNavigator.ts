@@ -716,9 +716,11 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       let iframe2 = HTMLUtilities.findElement(mainElement, "#second");
 
       if (iframe) {
+        (iframe as HTMLIFrameElement).style.verticalAlign = "top";
         this.iframes.push(iframe);
       }
       if (iframe2) {
+        (iframe2 as HTMLIFrameElement).style.verticalAlign = "top";
         this.iframes.push(iframe2);
       }
       if (window.matchMedia("screen and (max-width: 600px)").matches) {
@@ -738,6 +740,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         let iframe = document.createElement("iframe");
         iframe.setAttribute("SCROLLING", "no");
         iframe.setAttribute("allowtransparency", "true");
+        iframe.style.verticalAlign = "top";
         this.iframes.push(iframe);
 
         if (this.publication.isFixedLayout) {
@@ -811,6 +814,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
             iframe2.style.opacity = "1";
             iframe2.style.border = "none";
             iframe2.style.overflow = "hidden";
+            iframe2.style.verticalAlign = "top";
             this.iframes.push(iframe2);
 
             secondSpread.appendChild(this.iframes[1]);

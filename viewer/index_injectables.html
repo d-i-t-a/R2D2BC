@@ -376,6 +376,11 @@
             url: new URL(urlParams['url']),
             injectables: injectables,
             injectablesFixed: [],
+            attributes: {
+              margin: -40,
+              // navHeight: 76,
+              iframePaddingTop: 20,
+            },
             api: {
                 updateCurrentLocation: async function (loc) {
                     const title = loc.title || '';

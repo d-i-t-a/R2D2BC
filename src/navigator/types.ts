@@ -168,6 +168,56 @@ export type Injectable =
   | InlineScriptInjectable;
 
 /**
+ * Integrator-supplied configuration for iframe sizing and the selection
+ * toolbox's safe-area avoidance.
+ */
+export interface IFrameAttributes {
+  margin?: number;
+
+  /**
+   * Reflowable iframe styling. Not applied in fixed-layout publications.
+   *
+   * `padding` accepts a single number (same value on all four sides) or an
+   * object with individual `top` / `bottom` / `left` / `right` values.
+   */
+  iframe?: {
+    padding?:
+      | number
+      | {
+          top?: number;
+          bottom?: number;
+          left?: number;
+          right?: number;
+        };
+  };
+
+  /** @deprecated Use `iframe.padding.top`. */
+  iframePaddingTop?: number;
+
+  /**
+   * Integrator-provided "safe areas" at the top and/or bottom of the
+   * viewport that the reader should avoid placing floating UI (selection
+   * toolbox) over. Useful when the integrator renders fixed chrome
+   * (navbar, progress bar, etc.) that overlays the reader.
+   *
+   * Each entry is a callback returning the element whose current height
+   * should be reserved. The reader calls it at placement time and
+   * measures `getBoundingClientRect().height`, so toggling visibility on
+   * the element (e.g. `display: none` → 0 height) automatically reclaims
+   * the space without any further config change.
+   */
+  safeArea?: {
+    top?: () => Element | null;
+    bottom?: () => Element | null;
+  };
+
+  /** Margin (in px) around fixed-layout content. Defaults to 100. */
+  fixedLayoutMargin?: number;
+  /** Whether to show a drop shadow on fixed-layout spreads. Defaults to true. */
+  fixedLayoutShadow?: boolean;
+}
+
+/**
  * Feature toggles gating which modules are loaded and which reader
  * capabilities are exposed. Shared by EpubNavigator and PDFNavigator.
  */

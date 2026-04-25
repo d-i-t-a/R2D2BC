@@ -1822,7 +1822,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
           if (startContainer) {
             this.view?.goToCssSelector(startContainer);
           }
-        } else if (bookViewPosition && bookViewPosition >= 0) {
+        } else if (bookViewPosition !== undefined && bookViewPosition >= 0) {
           // Inject the odd-column spacer before restoring progression so the
           // progression-to-scroll math uses the final, even-column layout.
           // Without this, refreshing on an odd-column page restores position

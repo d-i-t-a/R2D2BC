@@ -211,6 +211,19 @@ export interface IFrameAttributes {
     bottom?: () => Element | null;
   };
 
+  /**
+   * Scroll-mode viewport model. Opt-in.
+   *
+   * - `"host"` (default): iframe grows to its content height and
+   *   `#iframe-wrapper` provides the scrollbar. Existing behaviour.
+   * - `"iframe"`: iframe stays at viewport height and scrolls internally.
+   *   Prevents the feedback loop when injected styles create a 100%
+   *   height chain (e.g. `body { height: 100% }` on cover pages).
+   *
+   * Only affects scroll mode. Paginated and fixed-layout are unchanged.
+   */
+  scrollContainer?: "host" | "iframe";
+
   /** Margin (in px) around fixed-layout content. Defaults to 100. */
   fixedLayoutMargin?: number;
   /** Whether to show a drop shadow on fixed-layout spreads. Defaults to true. */

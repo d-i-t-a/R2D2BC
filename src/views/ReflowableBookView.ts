@@ -75,6 +75,15 @@ export default class ReflowableBookView implements BookView {
         const spacer = doc.getElementById("r2d2bc-column-spacer");
         if (spacer) spacer.remove();
       }
+      // In iframe-scroll mode, the iframe stays at viewport height and its
+      // own document scrolls. Compute the target height the same way the
+      // paginated path does so the iframe fits the wrapper minus chrome.
+      if (this.scrollContainerMode === "iframe") {
+        this.height = BrowserUtilities.computeIframeContentHeight(
+          this.iframe,
+          this.attributes
+        );
+      }
       this.setSize();
       this.setIframeHeight(this.iframe);
     } else {
@@ -168,13 +177,9 @@ export default class ReflowableBookView implements BookView {
   }
 
   getCurrentPosition(): number {
-    const wrapper = HTMLUtilities.findRequiredElement(
-      document,
-      "#iframe-wrapper"
-    );
-
     if (this.scrollMode) {
-      return wrapper.scrollTop / this.scrollingElement.scrollHeight;
+      const extent = this.getScrollExtent();
+      return extent > 0 ? this.getScrollOffset() / extent : 0;
     } else {
       const width = this.getColumnWidth();
       const leftWidth = this.getLeftColumnsWidth();
@@ -185,33 +190,29 @@ export default class ReflowableBookView implements BookView {
   }
 
   goToProgression(position: number): void {
-    const wrapper = HTMLUtilities.findRequiredElement(
-      document,
-      "#iframe-wrapper"
-    );
     if (this.scrollMode) {
-      wrapper.scrollTop = this.scrollingElement.scrollHeight * position;
-    } else {
-      // If the window has changed size since the columns were set up,
-      // we need to reset position, so we can determine the new total width.
-
-      const width = this.getColumnWidth();
-      const leftWidth = this.getLeftColumnsWidth();
-      const rightWidth = this.getRightColumnsWidth();
-      const totalWidth = leftWidth + width + rightWidth;
-
-      const newLeftWidth = position * totalWidth;
-
-      // Round the new left width, so it's a multiple of the column width.
-
-      let roundedLeftWidth = Math.round(newLeftWidth / width) * width;
-      if (roundedLeftWidth >= totalWidth) {
-        // We've gone too far and all the columns are off to the left.
-        // Move one column back into the viewport.
-        roundedLeftWidth = roundedLeftWidth - width;
-      }
-      this.setLeftColumnsWidth(roundedLeftWidth);
+      this.setScrollOffset(this.getScrollExtent() * position);
+      return;
     }
+    // If the window has changed size since the columns were set up,
+    // we need to reset position, so we can determine the new total width.
+
+    const width = this.getColumnWidth();
+    const leftWidth = this.getLeftColumnsWidth();
+    const rightWidth = this.getRightColumnsWidth();
+    const totalWidth = leftWidth + width + rightWidth;
+
+    const newLeftWidth = position * totalWidth;
+
+    // Round the new left width, so it's a multiple of the column width.
+
+    let roundedLeftWidth = Math.round(newLeftWidth / width) * width;
+    if (roundedLeftWidth >= totalWidth) {
+      // We've gone too far and all the columns are off to the left.
+      // Move one column back into the viewport.
+      roundedLeftWidth = roundedLeftWidth - width;
+    }
+    this.setLeftColumnsWidth(roundedLeftWidth);
   }
 
   goToCssSelector(cssSelector: string, relative?: boolean): void {
@@ -301,12 +302,7 @@ export default class ReflowableBookView implements BookView {
   // at top in scroll mode
   atStart(): boolean {
     if (this.scrollMode) {
-      const wrapper = HTMLUtilities.findRequiredElement(
-        document,
-        "#iframe-wrapper"
-      );
-
-      return wrapper.scrollTop === 0;
+      return this.getScrollOffset() === 0;
     } else {
       const leftWidth = this.getLeftColumnsWidth();
       return leftWidth <= 0;
@@ -316,12 +312,8 @@ export default class ReflowableBookView implements BookView {
   // at bottom in scroll mode
   atEnd(): boolean {
     if (this.scrollMode) {
-      const wrapper = HTMLUtilities.findRequiredElement(
-        document,
-        "#iframe-wrapper"
-      );
       return (
-        Math.ceil(this.scrollingElement.scrollHeight - wrapper.scrollTop) - 1 <=
+        Math.ceil(this.getScrollExtent() - this.getScrollOffset()) - 1 <=
         BrowserUtilities.getHeight()
       );
     } else {
@@ -344,20 +336,11 @@ export default class ReflowableBookView implements BookView {
   }
 
   goToPreviousPage(): void {
-    const wrapper = HTMLUtilities.findRequiredElement(
-      document,
-      "#iframe-wrapper"
-    );
-
     if (this.scrollMode) {
-      const leftHeight = wrapper.scrollTop;
+      const leftHeight = this.getScrollOffset();
       const height = this.getScreenHeight() - 40;
       const offset = leftHeight - height;
-      if (offset >= 0) {
-        wrapper.scrollTop = offset;
-      } else {
-        wrapper.scrollTop = 0;
-      }
+      this.setScrollOffset(offset >= 0 ? offset : 0);
     } else {
       const leftWidth = this.getLeftColumnsWidth();
       const width = this.getColumnWidth();
@@ -375,21 +358,12 @@ export default class ReflowableBookView implements BookView {
   }
 
   goToNextPage(): void {
-    const wrapper = HTMLUtilities.findRequiredElement(
-      document,
-      "#iframe-wrapper"
-    );
-
     if (this.scrollMode) {
-      const leftHeight = wrapper.scrollTop;
+      const leftHeight = this.getScrollOffset();
       const height = this.getScreenHeight() - 40;
-      const scrollHeight = this.scrollingElement.scrollHeight;
+      const scrollHeight = this.getScrollExtent();
       const offset = leftHeight + height;
-      if (offset < scrollHeight) {
-        wrapper.scrollTop = offset;
-      } else {
-        wrapper.scrollTop = scrollHeight;
-      }
+      this.setScrollOffset(offset < scrollHeight ? offset : scrollHeight);
     } else {
       const leftWidth = this.getLeftColumnsWidth();
       const width = this.getColumnWidth();
@@ -487,7 +461,54 @@ export default class ReflowableBookView implements BookView {
     return wrapper.clientHeight;
   }
 
+  /**
+   * Which element provides the scrollbar in scroll mode.
+   *
+   * - `"host"` (default): `#iframe-wrapper` scrolls; iframe grows to content.
+   * - `"iframe"`: iframe's own document scrolls; iframe stays at viewport.
+   */
+  private get scrollContainerMode(): "host" | "iframe" {
+    return this.attributes?.scrollContainer === "iframe" ? "iframe" : "host";
+  }
+
+  /** Current scroll offset (px from top) of the active scroll container. */
+  private getScrollOffset(): number {
+    if (this.scrollContainerMode === "iframe") {
+      return this.scrollingElement?.scrollTop ?? 0;
+    }
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    );
+    return wrapper.scrollTop;
+  }
+
+  /** Set scroll offset on the active scroll container. */
+  private setScrollOffset(value: number): void {
+    if (this.scrollContainerMode === "iframe") {
+      if (this.scrollingElement) this.scrollingElement.scrollTop = value;
+      return;
+    }
+    const wrapper = HTMLUtilities.findRequiredElement(
+      document,
+      "#iframe-wrapper"
+    );
+    wrapper.scrollTop = value;
+  }
+
+  /**
+   * Total scrollable height. Same value in both modes — iframe's internal
+   * document `scrollHeight`, because the iframe's document is always the
+   * source of truth for "how much content is there."
+   */
+  private getScrollExtent(): number {
+    return this.scrollingElement?.scrollHeight ?? 0;
+  }
+
   setIframeHeight(iframe: any) {
+    // Iframe-scroll mode keeps the iframe at viewport height; sizing is
+    // owned by `setSize()` and there is nothing to debounce-grow here.
+    if (this.scrollContainerMode === "iframe") return;
     let d = debounce((iframe: any) => {
       if (iframe) {
         let body = iframe.contentWindow.document.body,
@@ -531,12 +552,20 @@ export default class ReflowableBookView implements BookView {
   setSize(): void {
     this.iframe.width = BrowserUtilities.getWidth() + "px";
     if (!this.scrollMode) {
+      // Paginated: iframe and its document are constrained to the same
+      // height so columns fit the viewport.
       let doc = this.iframe.contentDocument;
       if (doc && doc.documentElement) {
         doc.documentElement.style.height = this.height + "px";
       }
       this.iframe.height = this.height + "px";
+    } else if (this.scrollContainerMode === "iframe") {
+      // Iframe-scroll: iframe stays at viewport height; its document is
+      // intentionally unconstrained so it overflows and scrolls inside
+      // the iframe.
+      this.iframe.height = this.height + "px";
     } else {
+      // Host-scroll: iframe grows to content; #iframe-wrapper scrolls.
       let html = this.iframe.contentWindow?.document?.documentElement;
       this.iframe.height = html?.offsetHeight + "px";
     }

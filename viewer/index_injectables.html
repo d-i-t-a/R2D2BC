@@ -376,12 +376,6 @@
             url: new URL(urlParams['url']),
             injectables: injectables,
             injectablesFixed: [],
-            attributes: {
-              // Extra px reserved below the iframe. Optional.
-              margin: -40,
-              // @deprecated — use `iframe: { padding: { top: 20 } }`.
-              iframePaddingTop: 20,
-            },
             api: {
                 updateCurrentLocation: async function (loc) {
                     const title = loc.title || '';

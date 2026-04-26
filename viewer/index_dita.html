@@ -974,24 +974,21 @@
             //     credentials: "include",
             // },
             attributes: {
+                scrollContainer: "iframe",
                 // margin: 65,            // Extra px reserved below the iframe. Optional.
                 // iframePaddingTop: 20,  // @deprecated — use `iframe.padding.top`.
                 // Iframe CSS padding. Not applied to fixed-layout.
-                iframe: {
-                  padding: {
-                    bottom: 20
-                  }
-                },
+                // iframe: {
+                //   padding: {
+                //     bottom: 20
+                //   }
+                // },
                 // Fixed chrome the reader avoids for toolbox placement and iframe sizing.
                 // Measured live — toggling visibility reclaims the space automatically.
                 safeArea: {
                     top: () => document.querySelector('.mui-appbar'),
                     bottom: () => document.getElementById('reader-info-bottom'),
                 },
-                // `margin` not set — reader fills the iframe's parent container
-                // (`#iframe-wrapper`), whose CSS height (`calc(100vh - 140px)`)
-                // accounts for the 65px top bar and the 75px #reader-info-bottom
-                // strip below it.
             },
             rights: {
                 enableBookmarks: true,

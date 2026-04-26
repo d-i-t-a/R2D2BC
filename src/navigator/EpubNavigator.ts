@@ -738,7 +738,14 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       if (this.iframes.length === 0) {
         wrapper.style.overflow = "auto";
         let iframe = document.createElement("iframe");
-        iframe.setAttribute("SCROLLING", "no");
+        // `scrolling="no"` disables the iframe's internal scrollbar — required
+        // in host-scroll mode (iframe grows to content; #iframe-wrapper scrolls).
+        // In iframe-scroll mode the iframe stays at viewport size and its own
+        // document needs to scroll, so we use `auto`.
+        iframe.setAttribute(
+          "scrolling",
+          this.attributes?.scrollContainer === "iframe" ? "auto" : "no"
+        );
         iframe.setAttribute("allowtransparency", "true");
         iframe.style.verticalAlign = "top";
         this.iframes.push(iframe);
@@ -1338,8 +1345,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
             "#iframe-wrapper"
           );
 
-          // document.body.style.overflow = "auto";
-          wrapper.onscroll = async () => {
+          const onScroll = async () => {
             this.isScrolling = true;
             await this.savePosition();
             if (this.view?.atEnd()) {
@@ -1392,6 +1398,19 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
             }
             onDoScrolling();
           };
+
+          // Scroll event source depends on `attributes.scrollContainer`:
+          // - "host" (default): #iframe-wrapper scrolls (iframe grows to content).
+          // - "iframe": iframe's own contentWindow scrolls (iframe stays at viewport).
+          // Re-attached on every updateBookView so a chapter swap (new
+          // contentWindow) gets a fresh listener.
+          if (this.attributes?.scrollContainer === "iframe") {
+            wrapper.onscroll = null;
+            const cw = this.iframes[0]?.contentWindow;
+            if (cw) cw.onscroll = onScroll;
+          } else {
+            wrapper.onscroll = onScroll;
+          }
 
           if (this.chapterTitle) this.chapterTitle.style.display = "none";
           if (this.chapterPosition) this.chapterPosition.style.display = "none";
@@ -1807,6 +1826,16 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       }
 
       setTimeout(async () => {
+        // Wait for the iframe's @font-face fonts to load before restoring
+        // position. Font loading is asynchronous and reflows the document
+        // when it completes — without this, scrollHeight (scroll mode) and
+        // column widths (paginated) computed before fonts arrive are stale,
+        // and the saved progression maps to the wrong px/column. Resolves
+        // immediately when no fonts are pending.
+        const iframeDocument = iframe.contentDocument as any;
+        if (iframeDocument?.fonts?.ready) {
+          await iframeDocument.fonts.ready;
+        }
         if (this.newElementId) {
           const element = (iframe.contentDocument as any).getElementById(
             this.newElementId

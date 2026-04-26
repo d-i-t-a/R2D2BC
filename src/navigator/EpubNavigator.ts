@@ -1826,6 +1826,16 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       }
 
       setTimeout(async () => {
+        // Wait for the iframe's @font-face fonts to load before restoring
+        // position. Font loading is asynchronous and reflows the document
+        // when it completes — without this, scrollHeight (scroll mode) and
+        // column widths (paginated) computed before fonts arrive are stale,
+        // and the saved progression maps to the wrong px/column. Resolves
+        // immediately when no fonts are pending.
+        const iframeDocument = iframe.contentDocument as any;
+        if (iframeDocument?.fonts?.ready) {
+          await iframeDocument.fonts.ready;
+        }
         if (this.newElementId) {
           const element = (iframe.contentDocument as any).getElementById(
             this.newElementId

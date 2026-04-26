@@ -1,6 +1,6 @@
 # CHANGES — v3 Workstream 3.5.2: Scroll Container Option
 
-Published as: *pending (will ship as `3.0.0-alpha.20`)*
+Published as: `3.0.0-alpha.20`
 Branch: `feature/v3-scroll-container` (stacked on `v3`, which now includes the chapter-nav scroll-reset bugfix shipped as `3.0.0-alpha.19`)
 
 Adds opt-in alternate viewport model for scroll mode. Default behaviour unchanged.

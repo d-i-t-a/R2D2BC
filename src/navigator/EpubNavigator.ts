@@ -738,14 +738,12 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       if (this.iframes.length === 0) {
         wrapper.style.overflow = "auto";
         let iframe = document.createElement("iframe");
-        // `scrolling="no"` disables the iframe's internal scrollbar — required
-        // in host-scroll mode (iframe grows to content; #iframe-wrapper scrolls).
-        // In iframe-scroll mode the iframe stays at viewport size and its own
-        // document needs to scroll, so we use `auto`.
-        iframe.setAttribute(
-          "scrolling",
-          this.attributes?.scrollContainer === "iframe" ? "auto" : "no"
-        );
+        // Default to `scrolling="no"` so paginated mode never exposes the
+        // iframe's internal scrollbar (paginated columns overflow horizontally
+        // for page-flip math). The active renderer flips this to `"auto"`
+        // inside `engage()` only when the user is in scroll mode AND
+        // scrollContainer is "iframe".
+        iframe.setAttribute("scrolling", "no");
         iframe.setAttribute("allowtransparency", "true");
         iframe.style.verticalAlign = "top";
         this.iframes.push(iframe);

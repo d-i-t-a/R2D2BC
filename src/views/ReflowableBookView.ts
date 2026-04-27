@@ -109,7 +109,12 @@ export default class ReflowableBookView implements Renderer {
         }
       }
       this.setSize();
-      this.padOddColumns();
+      // padOddColumns intentionally NOT called here. Pre-settled layout at
+      // this point (mid-applyProperties, before fonts.ready / images, before
+      // multi-column flow has stabilized) produces non-deterministic
+      // remainder math — sometimes injects a spacer that isn't needed. The
+      // call sites in handleIFrameLoad / navigate / hideLoadingMessage all
+      // fire after layout has settled and handle this correctly.
     }
     if (this.host.isContentProtectionEnabled()) {
       this.host.recalculateContentProtection();

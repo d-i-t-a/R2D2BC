@@ -21,17 +21,17 @@ import { UserProperty } from "../model/user-settings/UserProperties";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import * as BrowserUtilities from "../utils/BrowserUtilities";
 import Store from "../store/Store";
-import BookView, { BookViewHost } from "./BookView";
-import { IFrameAttributes } from "../navigator/EpubNavigator";
+import Renderer, { RendererHost } from "./Renderer";
+import { IFrameAttributes } from "../navigator/types";
 import debounce from "debounce";
 
-export default class ReflowableBookView implements BookView {
+export default class ReflowableBookView implements Renderer {
   layout = "reflowable";
 
   private readonly USERSETTINGS = "userSetting";
   private readonly store: Store;
   private scrollMode: boolean;
-  host: BookViewHost;
+  host: RendererHost;
   constructor(store: Store) {
     this.store = store;
 

@@ -41,8 +41,8 @@ import { addEventListenerOptional } from "../../utils/EventHandler";
 import { Injectable } from "../../navigator/EpubNavigator";
 import type { NavigatorAPI } from "../../navigator/types";
 import ReflowableBookView from "../../views/ReflowableBookView";
-import FixedBookView from "../../views/FixedBookView";
-import BookView from "../../views/BookView";
+import FixedRenderer from "../../views/FixedRenderer";
+import Renderer from "../../views/Renderer";
 import log from "loglevel";
 
 export interface UserSettingsConfig {
@@ -243,7 +243,7 @@ export class UserSettings implements IUserSettings {
 
   userProperties?: UserProperties;
 
-  view: BookView;
+  view: Renderer;
 
   private settingsChangeCallback: () => void = () => {};
   private settingsColumnsChangeCallback: () => void = () => {};
@@ -550,7 +550,7 @@ export class UserSettings implements IUserSettings {
 
     this.view =
       layout === "fixed"
-        ? new FixedBookView()
+        ? new FixedRenderer()
         : new ReflowableBookView(this.store);
 
     this.headerMenu = headerMenu;

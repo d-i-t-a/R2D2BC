@@ -16,7 +16,7 @@
  * Developed on behalf of: DITA (AM Consulting LLC)
  */
 
-import BookView from "../views/BookView";
+import Renderer from "../views/Renderer";
 import { D2Link } from "../model/v3";
 import { Locator } from "../model/v3";
 import { Publication } from "../model/v3";
@@ -128,7 +128,7 @@ export interface EpubModuleHost extends ModuleHost {
   readonly sample?: SampleRead;
 
   // ── View ────────────────────────────────────────────────────
-  readonly view: BookView;
+  readonly view: Renderer;
   readonly errorMessage: HTMLDivElement;
   sideNavExpanded: boolean;
 

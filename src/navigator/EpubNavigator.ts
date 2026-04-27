@@ -60,7 +60,7 @@ import {
 import debounce from "debounce";
 import TouchEventHandler from "../utils/TouchEventHandler";
 import KeyboardEventHandler from "../utils/KeyboardEventHandler";
-import BookView from "../views/BookView";
+import Renderer from "../views/Renderer";
 
 import { MediaOverlayModuleConfig } from "../modules/epub/mediaoverlays/MediaOverlayModule";
 import { D2Link, Link } from "../model/v3";
@@ -400,7 +400,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   settings: UserSettings;
   private readonly annotator: Annotator | undefined;
 
-  view: BookView;
+  view: Renderer;
 
   private readonly eventHandler: EventHandler;
   private readonly touchEventHandler: TouchEventHandler;
@@ -1048,7 +1048,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       this.settings.onColumnSettingsChange(
         this.handleNumberOfIframes.bind(this)
       );
-      this.settings.onViewChange(this.updateBookView.bind(this));
+      this.settings.onViewChange(this.updateRenderer.bind(this));
 
       if (this.initialLastReadingPosition) {
         this.annotator?.initLastReadingPosition(
@@ -1231,7 +1231,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   }
 
   isScrolling: boolean;
-  private updateBookView(options?: { skipDrawingAnnotations?: boolean }): void {
+  private updateRenderer(options?: { skipDrawingAnnotations?: boolean }): void {
     if (this.view?.layout === "fixed") {
       if (this.nextPageAnchorElement)
         this.nextPageAnchorElement.style.display = "none";
@@ -1400,7 +1400,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
           // Scroll event source depends on `attributes.scrollContainer`:
           // - "host" (default): #iframe-wrapper scrolls (iframe grows to content).
           // - "iframe": iframe's own contentWindow scrolls (iframe stays at viewport).
-          // Re-attached on every updateBookView so a chapter swap (new
+          // Re-attached on every updateRenderer so a chapter swap (new
           // contentWindow) gets a fresh listener.
           if (this.attributes?.scrollContainer === "iframe") {
             wrapper.onscroll = null;
@@ -1630,12 +1630,12 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     if (this.errorMessage) this.errorMessage.style.display = "none";
     this.showLoadingMessageAfterDelay();
     try {
-      let bookViewPosition: number | undefined = 0;
+      let rendererPosition: number | undefined = 0;
       if (this.newPosition) {
-        bookViewPosition = this.newPosition.locations.progression;
+        rendererPosition = this.newPosition.locations.progression;
       }
       await this.handleResize();
-      this.updateBookView({ skipDrawingAnnotations: true });
+      this.updateRenderer({ skipDrawingAnnotations: true });
 
       await this.settings.applyProperties();
 
@@ -1849,7 +1849,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
           if (startContainer) {
             this.view?.goToCssSelector(startContainer);
           }
-        } else if (bookViewPosition !== undefined && bookViewPosition >= 0) {
+        } else if (rendererPosition !== undefined && rendererPosition >= 0) {
           // Inject the odd-column spacer before restoring progression so the
           // progression-to-scroll math uses the final, even-column layout.
           // Without this, refreshing on an odd-column page restores position
@@ -1859,7 +1859,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
           if (this.view?.layout !== "fixed") {
             this.view?.padOddColumns?.();
           }
-          this.view?.goToProgression(bookViewPosition);
+          this.view?.goToProgression(rendererPosition);
         }
 
         this.newPosition = undefined;

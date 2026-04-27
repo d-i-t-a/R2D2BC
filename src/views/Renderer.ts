@@ -17,13 +17,13 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IFrameAttributes } from "../navigator/EpubNavigator";
+import { IFrameAttributes } from "../navigator/types";
 
 /**
- * Callbacks that the view needs from the navigator.
+ * Callbacks that the renderer needs from the navigator.
  * Replaces the old direct EpubNavigator back-reference.
  */
-export interface BookViewHost {
+export interface RendererHost {
   checkResourcePosition(): void;
   recalculateContentProtection(delay?: number): void;
   isContentProtectionEnabled(): boolean;
@@ -32,7 +32,7 @@ export interface BookViewHost {
   setDirection(direction?: string | null): void;
 }
 
-interface BookView {
+interface Renderer {
   layout: string;
   name: string;
   label: string;
@@ -40,7 +40,7 @@ interface BookView {
   iframe: Element;
   sideMargin: number;
   height: number;
-  host: BookViewHost;
+  host: RendererHost;
   attributes?: IFrameAttributes;
 
   setMode?(scroll: boolean);
@@ -52,10 +52,10 @@ interface BookView {
   setSize(): void;
   getScreenHeight(): number;
 
-  /** Load this view in its book element, at the specified position. */
+  /** Load this renderer in its book element, at the specified position. */
   start(): void;
 
-  /** Remove this view from its book element. */
+  /** Remove this renderer from its book element. */
   stop(): void;
 
   getCurrentPosition(): number;
@@ -72,4 +72,4 @@ interface BookView {
   getPageCount(): number;
   padOddColumns?(): void;
 }
-export default BookView;
+export default Renderer;

@@ -1573,6 +1573,15 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             this.view?.goToCssSelector(startContainer);
           }
         } else if (bookViewPosition && bookViewPosition >= 0) {
+          // Inject the odd-column spacer before restoring progression so the
+          // progression-to-scroll math uses the final, even-column layout.
+          // Without this, refreshing on an odd-column page restores position
+          // against pre-spacer scrollWidth; then hideLoadingMessage adds the
+          // spacer and the visible content jumps right (or the chapter
+          // navigation lands on the wrong column).
+          if (this.view?.layout !== "fixed") {
+            this.view?.padOddColumns?.();
+          }
           this.view?.goToProgression(bookViewPosition);
         }
 
@@ -2965,6 +2974,12 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             this.currentChapterLink.href + "#" + this.newElementId;
         }
 
+        // Inject the odd-column spacer before per-locator navigation so the
+        // progression-to-scroll math uses the even-column layout. Matches
+        // the fix in the initial-load path above.
+        if (this.view?.layout !== "fixed") {
+          this.view?.padOddColumns?.();
+        }
         if (this.newElementId) {
           for (const iframe of this.iframes) {
             const element = (iframe.contentDocument as any).getElementById(

@@ -100,7 +100,13 @@ export default class ReflowableBookView implements BookView {
         }
       }
       this.setSize();
-      this.padOddColumns();
+      // padOddColumns intentionally NOT called here. Pre-settled layout at
+      // this point (mid-applyProperties, before fonts.ready / images, before
+      // multi-column flow has stabilized) produces non-deterministic
+      // remainder math — sometimes injects a spacer that isn't needed. The
+      // call sites in IFrameNavigator (initial-load and per-locator restore
+      // paths, plus hideLoadingMessage) all fire after layout has settled
+      // and handle this correctly.
     }
     if (this.navigator.rights.enableContentProtection) {
       this.navigator.contentProtectionModule?.recalculate();

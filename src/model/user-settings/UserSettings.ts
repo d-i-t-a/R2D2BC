@@ -40,7 +40,8 @@ import * as BrowserUtilities from "../../utils/BrowserUtilities";
 import { addEventListenerOptional } from "../../utils/EventHandler";
 import { Injectable } from "../../navigator/EpubNavigator";
 import type { NavigatorAPI } from "../../navigator/types";
-import ReflowableBookView from "../../views/ReflowableBookView";
+import ColumnRenderer from "../../views/ColumnRenderer";
+import ScrollRenderer from "../../views/ScrollRenderer";
 import FixedRenderer from "../../views/FixedRenderer";
 import Renderer from "../../views/Renderer";
 import log from "loglevel";
@@ -549,9 +550,7 @@ export class UserSettings implements IUserSettings {
     this.store = store;
 
     this.view =
-      layout === "fixed"
-        ? new FixedRenderer()
-        : new ReflowableBookView(this.store);
+      layout === "fixed" ? new FixedRenderer() : new ColumnRenderer(this.store);
 
     this.headerMenu = headerMenu;
     this.api = api;
@@ -1312,7 +1311,7 @@ export class UserSettings implements IUserSettings {
           //   );
           // }
           this.isScrollMode().then((scroll) => {
-            this.view?.setMode?.(scroll);
+            this.swapRenderer(scroll);
           });
         }
       }
@@ -1325,6 +1324,47 @@ export class UserSettings implements IUserSettings {
       this.view.iframe = iframe;
     }
     if (this.settingsView) UserSettings.renderControls(this.settingsView);
+  }
+
+  /**
+   * Pick the right reflowable renderer for the current scroll mode and apply
+   * mode-specific iframe setup. Replaces the historical `view.setMode(scroll)`
+   * call: when the mode actually changes we instantiate a fresh renderer of
+   * the correct class, transfer the iframe / host / attributes / sizing
+   * state, then call `engage()` on the new instance. When mode is unchanged
+   * we just re-engage the existing renderer (matches the old setMode
+   * idempotent behavior).
+   *
+   * Fixed-layout publications use FixedRenderer and ignore the toggle.
+   */
+  private swapRenderer(scroll: boolean): void {
+    if (this.view instanceof FixedRenderer) return;
+
+    const currentIsScroll = this.view instanceof ScrollRenderer;
+    const current = this.view as ColumnRenderer | ScrollRenderer | undefined;
+
+    if (currentIsScroll === scroll) {
+      current?.engage();
+      return;
+    }
+
+    const next = scroll
+      ? new ScrollRenderer(this.store)
+      : new ColumnRenderer(this.store);
+    if (current) {
+      next.iframe = current.iframe;
+      next.host = current.host;
+      next.attributes = current.attributes;
+      next.sideMargin = current.sideMargin;
+      next.height = current.height;
+    }
+    this.view = next;
+    next.engage();
+    // Notify so listeners (EpubNavigator's updateRenderer) re-sync to the
+    // new instance. Otherwise external `view` refs go stale on the silent
+    // swap path (applyProperties), since only the explicit user-toggle
+    // paths fire viewChangeCallback themselves.
+    this.viewChangeCallback();
   }
 
   private static renderControls(element: HTMLElement): void {
@@ -1814,7 +1854,7 @@ export class UserSettings implements IUserSettings {
         prop.value = this.verticalScroll;
         await this.saveProperty(prop);
       }
-      this.view?.setMode?.(this.verticalScroll);
+      this.swapRenderer(this.verticalScroll);
       if (position) {
         this.view?.goToProgression(position);
       }
@@ -1996,7 +2036,7 @@ export class UserSettings implements IUserSettings {
       await this.saveProperty(prop);
     }
     await this.applyProperties();
-    this.view?.setMode?.(this.verticalScroll);
+    this.swapRenderer(this.verticalScroll);
     if (position) {
       this.view?.goToProgression(position);
     }

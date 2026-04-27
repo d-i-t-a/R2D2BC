@@ -1232,6 +1232,12 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
 
   isScrolling: boolean;
   private updateRenderer(options?: { skipDrawingAnnotations?: boolean }): void {
+    // Re-sync from settings: when scroll mode toggles, UserSettings swaps
+    // the renderer instance. The navigator's local reference is otherwise
+    // stale after the swap.
+    if (this.settings?.view && this.view !== this.settings.view) {
+      this.view = this.settings.view;
+    }
     if (this.view?.layout === "fixed") {
       if (this.nextPageAnchorElement)
         this.nextPageAnchorElement.style.display = "none";

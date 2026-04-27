@@ -43,7 +43,6 @@ interface Renderer {
   host: RendererHost;
   attributes?: IFrameAttributes;
 
-  setMode?(scroll: boolean);
   isScrollMode();
   isPaginated();
   goToElement?(element: HTMLElement | null, relative?: boolean): void;

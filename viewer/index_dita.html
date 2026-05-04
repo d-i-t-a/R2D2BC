@@ -974,7 +974,7 @@
             //     credentials: "include",
             // },
             attributes: {
-                scrollContainer: "iframe",
+                // scrollContainer: "iframe",
                 // margin: 65,            // Extra px reserved below the iframe. Optional.
                 // iframePaddingTop: 20,  // @deprecated — use `iframe.padding.top`.
                 // Iframe CSS padding. Not applied to fixed-layout.
@@ -997,7 +997,7 @@
                 enableSearch: true,
                 enableTimeline: true,
                 enableDefinitions: true,
-                enableContentProtection: false,
+                enableContentProtection: true,
                 enableMediaOverlays: true,
                 enablePageBreaks: true,
                 autoGeneratePositions: true,
@@ -1406,7 +1406,8 @@
                     console.log(error);
                 },
                 direction: function(dir) {
-                    document.getElementById("positionSlider").dir = dir
+                    const slider = document.getElementById("positionSlider");
+                    if (slider) slider.dir = dir;
                 }
             },
             injectables: injectables,

@@ -211,6 +211,16 @@ export class TextHighlighter {
     if (doc) {
       this.dom(doc.body).addClass(this.options.contextClass);
     }
+
+    // Create highlight containers (R2_ID_HIGHLIGHTS_CONTAINER,
+    // R2_ID_LINEFOCUS_CONTAINER, etc.) upfront so modules using them
+    // can find them without depending on a later draw call (which only
+    // fires if there are highlights to draw) or scroll-mode toggle to
+    // lazily create them via the gated `updateRenderer` path.
+    if (iframe.contentWindow) {
+      await this.prepareContainers(iframe.contentWindow);
+    }
+
     this.bindEvents(iframe.contentDocument?.body, this, this.hasEventListener);
 
     this.initializeToolbox();

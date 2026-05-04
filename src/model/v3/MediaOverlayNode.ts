@@ -21,7 +21,7 @@
  *
  * @readium/shared only provides MediaOverlay metadata (activeClass, playbackActiveClass).
  * The full SMIL overlay tree (Text, Audio, Children, Role) is an R2D2BC model
- * because the ts-toolkit doesn't implement media overlay playback.
+ * because @readium/shared doesn't carry the playback tree.
  */
 export class MediaOverlayNode {
   /** Text fragment reference (e.g., "chapter1.xhtml#para1") */

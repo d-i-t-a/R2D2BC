@@ -47,8 +47,7 @@ interface Renderer {
   isPaginated();
   goToElement?(element: HTMLElement | null, relative?: boolean): void;
   setSize(): void;
-  setIframeHeight?(iframe: any);
-  setSize(): void;
+  growIframeToContent?(iframe: any);
   getScreenHeight(): number;
 
   /** Load this renderer in its book element, at the specified position. */
@@ -70,5 +69,20 @@ interface Renderer {
   getCurrentPage(): number;
   getPageCount(): number;
   padOddColumns?(): void;
+  clearSpacers?(): void;
+
+  /**
+   * Returns the surface that scrolls in this renderer's active mode.
+   * Used by modules (e.g. ContentProtectionModule) to decide whether
+   * to attach scroll listeners / read scroll-position from the host's
+   * `#iframe-wrapper` (host-scroll) or from the iframe's content
+   * document (iframe-internal scroll). VerticalRenderer always returns
+   * `"iframe"` because vertical scripts are iframe-scroll by design;
+   * ScrollRenderer branches on `attributes.scrollContainer`;
+   * ColumnRenderer / FixedRenderer return `"host"`.
+   */
+  getScrollSurface():
+    | { kind: "host"; element: HTMLElement }
+    | { kind: "iframe"; iframe: HTMLIFrameElement };
 }
 export default Renderer;

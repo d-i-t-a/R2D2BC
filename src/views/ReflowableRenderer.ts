@@ -47,6 +47,10 @@ export default abstract class ReflowableRenderer implements Renderer {
   abstract name: string;
   abstract label: string;
 
+  abstract getScrollSurface():
+    | { kind: "host"; element: HTMLElement }
+    | { kind: "iframe"; iframe: HTMLIFrameElement };
+
   constructor(store: Store) {
     this.store = store;
   }

@@ -64,6 +64,18 @@ export default class FixedRenderer implements Renderer {
     return 1;
   }
 
+  getScrollSurface():
+    | { kind: "host"; element: HTMLElement }
+    | { kind: "iframe"; iframe: HTMLIFrameElement } {
+    if (this.attributes?.scrollContainer === "iframe") {
+      return { kind: "iframe", iframe: this.iframe };
+    }
+    return {
+      kind: "host",
+      element: HTMLUtilities.findRequiredElement(document, "#iframe-wrapper"),
+    };
+  }
+
   setSize(): void {}
 
   isPaginated() {

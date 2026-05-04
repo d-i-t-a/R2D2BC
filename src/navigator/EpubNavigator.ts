@@ -61,6 +61,7 @@ import debounce from "debounce";
 import TouchEventHandler from "../utils/TouchEventHandler";
 import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 import Renderer from "../views/Renderer";
+import { ScriptMode, getScriptMode } from "../utils/ScriptMode";
 
 import { MediaOverlayModuleConfig } from "../modules/epub/mediaoverlays/MediaOverlayModule";
 import { D2Link, Link } from "../model/v3";
@@ -402,6 +403,16 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
 
   view: Renderer;
 
+  /**
+   * Script mode of the loaded publication, derived once at construct time
+   * from `metadata.languages` + `readingProgression`. Drives:
+   * - `dir` propagation onto the iframe document at load
+   * - ReadiumCSS variant selection (rtl, cjk-horizontal, cjk-vertical)
+   * - VerticalRenderer selection for cjk-vertical / mongolian-vertical
+   * - direction-normalized math in ColumnRenderer for `rtl`
+   */
+  readonly scriptMode: ScriptMode;
+
   private readonly eventHandler: EventHandler;
   private readonly touchEventHandler: TouchEventHandler;
   private readonly keyboardEventHandler: KeyboardEventHandler;
@@ -551,7 +562,12 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       this._fetcher = new CacheFetcher(inner);
     }
 
+    this.publication = publication;
+    this.scriptMode = getScriptMode(publication);
     this.settings = settings;
+    // Propagate scriptMode so settings.swapRenderer can pick VerticalRenderer
+    // for cjk-vertical / mongolian-vertical publications.
+    this.settings.scriptMode = this.scriptMode;
     this.annotator = annotator;
     this.attributes = attributes ?? {};
     this.view = settings.view;
@@ -569,7 +585,6 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     this.touchEventHandler = new TouchEventHandler(this);
     this.keyboardEventHandler = new KeyboardEventHandler(this);
     this.initialLastReadingPosition = initialLastReadingPosition;
-    this.publication = publication;
     this.api = api;
     this.rights = rights ?? {
       autoGeneratePositions: false,
@@ -672,6 +687,42 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   private fxlContentWidth: number = 0;
   private fxlContentHeight: number = 0;
 
+  /**
+   * Set `dir` on the iframe's `<html>` and `<body>` based on the
+   * publication's script mode, but only if the document author hasn't
+   * already set it. Vertical scripts (cjk-vertical, mongolian-vertical)
+   * skip this — their layout is driven by CSS `writing-mode`, and `dir`
+   * applies to in-flow horizontal text where the author should retain
+   * control.
+   */
+  private applyScriptModeAttributes(iframe: HTMLIFrameElement): void {
+    const doc = iframe.contentDocument;
+    if (!doc) return;
+    const inferredDir = this.inferDirAttribute(this.scriptMode);
+    if (!inferredDir) return;
+    const html = doc.documentElement;
+    if (html && !html.getAttribute("dir")) {
+      html.setAttribute("dir", inferredDir);
+    }
+    const body = doc.body;
+    if (body && !body.getAttribute("dir")) {
+      body.setAttribute("dir", inferredDir);
+    }
+  }
+
+  private inferDirAttribute(scriptMode: ScriptMode): "ltr" | "rtl" | null {
+    switch (scriptMode) {
+      case "ltr":
+      case "cjk-horizontal":
+        return "ltr";
+      case "rtl":
+        return "rtl";
+      case "cjk-vertical":
+      case "mongolian-vertical":
+        return null;
+    }
+  }
+
   setDirection(direction?: string | null) {
     let dir = "";
     if (direction === "rtl" || direction === "ltr") {
@@ -743,7 +794,21 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         // for page-flip math). The active renderer flips this to `"auto"`
         // inside `engage()` only when the user is in scroll mode AND
         // scrollContainer is "iframe".
-        iframe.setAttribute("scrolling", "no");
+        //
+        // Vertical scripts (cjk-vertical / mongolian-vertical) always use
+        // iframe-scroll regardless of `attributes.scrollContainer`. The
+        // post-load attribute change is unreliable on already-loaded iframes,
+        // and `scrolling="no"` overrides any document-level CSS overflow,
+        // so we bake `scrolling="auto"` in at iframe creation for vertical.
+        // VerticalRenderer.scrollContainerMode also returns "iframe"
+        // unconditionally — the integrator's `scrollContainer: "host"`
+        // setting is ignored for vertical because host-scroll on vertical-rl
+        // is unreliable (negative scrollLeft, reading-axis flicker on resize).
+        const isVerticalScript =
+          this.scriptMode === "cjk-vertical" ||
+          this.scriptMode === "mongolian-vertical";
+        const useIframeScroll = isVerticalScript;
+        iframe.setAttribute("scrolling", useIframeScroll ? "auto" : "no");
         iframe.setAttribute("allowtransparency", "true");
         iframe.style.verticalAlign = "top";
         this.iframes.push(iframe);
@@ -1444,11 +1509,10 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       });
       if (!options?.skipDrawingAnnotations) {
         setTimeout(async () => {
-          await this.highlighter?.prepareContainers(
-            this.iframes[0].contentWindow as any
-          );
-
           if (this.highlighter) {
+            await this.highlighter.prepareContainers(
+              this.iframes[0].contentWindow as any
+            );
             if (this.rights.enableAnnotations && this.modules.annotations) {
               await this.modules.annotations.drawHighlights();
             }
@@ -1635,6 +1699,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   private async handleIFrameLoad(iframe: HTMLIFrameElement): Promise<void> {
     if (this.errorMessage) this.errorMessage.style.display = "none";
     this.showLoadingMessageAfterDelay();
+    this.applyScriptModeAttributes(iframe);
     try {
       let rendererPosition: number | undefined = 0;
       if (this.newPosition) {
@@ -1761,7 +1826,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       if (details) {
         let self = this;
         details.addEventListener("toggle", async (_event) => {
-          await self.view?.setIframeHeight?.(iframe);
+          await self.view?.growIframeToContent?.(iframe);
         });
       }
 
@@ -1783,8 +1848,27 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       }
       if (this.view?.layout !== "fixed") {
         if (this.view?.isScrollMode()) {
-          iframe.height = "0";
-          this.view?.setIframeHeight?.(iframe);
+          // Reset the renderer's growth axis to 0 so growIframeToContent's
+          // debounce can grow it cleanly to content extent. Only relevant
+          // in host-scroll mode (where the iframe element grows to content);
+          // in iframe-scroll mode the iframe stays at viewport size and
+          // the document scrolls internally, so zeroing would just leave a
+          // collapsed iframe until the next engage/resize.
+          //
+          // Vertical scripts always run in iframe-scroll mode (forced by
+          // VerticalRenderer regardless of `attributes.scrollContainer`),
+          // so the zero step is skipped for them. Only ScrollRenderer in
+          // host-scroll mode needs it.
+          const isVerticalScript =
+            this.scriptMode === "cjk-vertical" ||
+            this.scriptMode === "mongolian-vertical";
+          if (
+            !isVerticalScript &&
+            this.attributes?.scrollContainer !== "iframe"
+          ) {
+            iframe.height = "0";
+          }
+          this.view?.growIframeToContent?.(iframe);
         }
       }
 
@@ -2703,8 +2787,21 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
 
     setTimeout(() => {
       if (this.view?.layout !== "fixed") {
+        // Re-apply renderer-specific sizing on resize. setSize is a no-op
+        // for FixedRenderer and idempotent for the others, so calling it
+        // unconditionally keeps the resize path simple. VerticalRenderer
+        // refreshes its own this.height inside setSize.
+        this.view?.setSize();
         if (this.view?.isScrollMode()) {
-          this.view?.setIframeHeight?.(this.iframes[0]);
+          this.view?.growIframeToContent?.(this.iframes[0]);
+        } else {
+          // Paginated: column count or page width may have changed (window
+          // resize, settings 2→3 col). Strip stale spacers from the old
+          // layout so padOddColumns can re-pad with the new count, then
+          // re-pad. The existing-spacer guards in each variant would
+          // otherwise block re-padding.
+          this.view?.clearSpacers?.();
+          this.view?.padOddColumns?.();
         }
       }
     }, 100);

@@ -36,6 +36,34 @@
   width: 1.25rem;
   display: flex;
   flex-direction: column;
+
+  /* Vertical-script publications (cjk-vertical, mongolian-vertical):
+     90° rotation of the LTR vertical column into a horizontal strip
+     at the bottom. flex-direction `row-reverse` so chapter order
+     follows vertical-rl reading flow (first chapter on the right).
+     Each chapter fills the strip's full height; chapter widths come
+     from a JS axis swap (in the viewer) that maps the inline
+     `height: X%` (set by TimelineModule) to `width: X%`.
+
+     `!important` is required because the timeline element has inline
+     `style="top:5rem;bottom:2.5rem"` from the LTR layout that would
+     otherwise win over class rules. */
+  body.script-vertical & {
+    top: auto !important;
+    bottom: 1.5rem !important;
+    left: 5rem !important;
+    right: 5rem !important;
+    width: auto !important;
+    height: 1.25rem !important;
+    flex-direction: row-reverse !important;
+
+    .chapter {
+      border-left: none !important;
+      border-top: 6px solid transparent !important;
+      height: 100% !important;
+      box-sizing: border-box !important;
+    }
+  }
   .chapter {
     border-left: 6px solid transparent;
     transition: border-color 300ms ease-out;

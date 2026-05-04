@@ -264,9 +264,13 @@ export default class LineFocusModule implements ReaderModule<EpubModuleHost> {
       "html"
     ) as HTMLHtmlElement;
 
+    const visibleHeight = BrowserUtilities.computeIframeContentHeight(
+      this.host.iframes[0],
+      this.host.attributes
+    );
     let maxHeight = this.properties.maxHeight
-      ? (BrowserUtilities.getHeight() * this.properties.maxHeight) / 100
-      : BrowserUtilities.getHeight() / 2;
+      ? (visibleHeight * this.properties.maxHeight) / 100
+      : visibleHeight / 2;
 
     html.style.setProperty("--USER__maxMediaHeight", maxHeight + "px");
 
@@ -407,7 +411,6 @@ export default class LineFocusModule implements ReaderModule<EpubModuleHost> {
         doc,
         "#" + HighlightContainer.R2_ID_LINEFOCUS_CONTAINER
       );
-
       if (container) {
         for (const clientRect of newGroupedLines) {
           const highlightArea = document.createElement(

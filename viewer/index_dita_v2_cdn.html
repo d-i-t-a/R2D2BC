@@ -88,6 +88,12 @@
         /* Reset button */
         .reset-btn { height: 32px; padding: 0 24px; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #d0d0d0; border-radius: 16px; background: #fff; color: #555; cursor: pointer; transition: all .15s; }
         .reset-btn:hover { background: #f5f5f5; color: #000; }
+
+        /* Prevent edge-swipe back/forward gestures from triggering when
+           horizontally scrolling inside the iframe wrapper or the iframe
+           document itself (RTL paginated, vertical-rl scroll). */
+        #iframe-wrapper { overscroll-behavior-x: contain; }
+        #iframe-wrapper iframe { overscroll-behavior-x: contain; }
     </style>
 
 </head>
@@ -801,18 +807,39 @@
         };
         let urlParams = getURLQueryParams();
         let defined_origin = window.location.origin;
-        // Note: unpkg ships only the 4 base ReadiumCSS files. Language variants
-        // (CJK-horizontal, CJK-vertical, RTL) are not available via the npm package
-        // and require fetching from the readium/css GitHub repo or bundling locally.
-        // CJK publications are therefore not supported in this pure-CDN demo.
-        // See viewer/index_dita_v2.html for a local-bundle demo with CJK-horizontal wiring.
+        // ReadiumCSS variant per script mode. ctx.scriptMode is derived by
+        // the navigator from publication metadata (languages + readingProgression).
+        // unpkg ships all four ReadiumCSS variants under @readium/css@2.0.1/css/dist.
+        const isLtr = (ctx) => ctx.scriptMode === "ltr";
+        const isRtl = (ctx) => ctx.scriptMode === "rtl";
+        const isCjkHorizontal = (ctx) => ctx.scriptMode === "cjk-horizontal";
+        const isCjkVertical = (ctx) =>
+            ctx.scriptMode === "cjk-vertical" || ctx.scriptMode === "mongolian-vertical";
+
+        const RCSS_CDN = 'https://unpkg.com/@readium/css@2.0.1/css/dist';
+
         let injectables = [
-            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: 'https://unpkg.com/@readium/css@2.0.1/css/dist/ReadiumCSS-after.css', r2after: true },
-            // Dita patch layer — injected AFTER pristine Readium CDN files.
-            // Demonstrates the integrator pattern: use stock Readium + our override layer.
-            { type: 'style', url: defined_origin + '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css' },
+            // Base ReadiumCSS v2 — LTR (default Latin / non-CJK)
+            { type: 'style', url: `${RCSS_CDN}/ReadiumCSS-before.css`, r2before: true, when: isLtr },
+            { type: 'style', url: `${RCSS_CDN}/ReadiumCSS-default.css`, r2default: true, when: isLtr },
+            { type: 'style', url: `${RCSS_CDN}/ReadiumCSS-after.css`, r2after: true, when: isLtr },
+            // RTL ReadiumCSS — Arabic, Hebrew, Persian, etc.
+            { type: 'style', url: `${RCSS_CDN}/rtl/ReadiumCSS-before.css`, r2before: true, when: isRtl },
+            { type: 'style', url: `${RCSS_CDN}/rtl/ReadiumCSS-default.css`, r2default: true, when: isRtl },
+            { type: 'style', url: `${RCSS_CDN}/rtl/ReadiumCSS-after.css`, r2after: true, when: isRtl },
+            // CJK-horizontal ReadiumCSS — Chinese, Japanese, Korean (horizontal)
+            { type: 'style', url: `${RCSS_CDN}/cjk-horizontal/ReadiumCSS-before.css`, r2before: true, when: isCjkHorizontal },
+            { type: 'style', url: `${RCSS_CDN}/cjk-horizontal/ReadiumCSS-default.css`, r2default: true, when: isCjkHorizontal },
+            { type: 'style', url: `${RCSS_CDN}/cjk-horizontal/ReadiumCSS-after.css`, r2after: true, when: isCjkHorizontal },
+            // CJK-vertical ReadiumCSS — Japanese vertical, Mongolian-vertical
+            { type: 'style', url: `${RCSS_CDN}/cjk-vertical/ReadiumCSS-before.css`, r2before: true, when: isCjkVertical },
+            { type: 'style', url: `${RCSS_CDN}/cjk-vertical/ReadiumCSS-default.css`, r2default: true, when: isCjkVertical },
+            { type: 'style', url: `${RCSS_CDN}/cjk-vertical/ReadiumCSS-after.css`, r2after: true, when: isCjkVertical },
+            // Dita patch layer (LTR / RTL / cjk-horizontal) — injected AFTER
+            // pristine Readium CDN files so its rules take precedence.
+            { type: 'style', url: defined_origin + '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css', when: (ctx) => !isCjkVertical(ctx) },
+            // Dita patch layer (cjk-vertical / mongolian-vertical).
+            { type: 'style', url: defined_origin + '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-dita-patch.css', r2after: true, when: isCjkVertical },
             { type: 'style', url: 'https://fonts.googleapis.com/icon?family=Material+Icons'},
             { type: 'style', url: defined_origin + '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
@@ -1496,7 +1523,8 @@
                     console.log(error);
                 },
                 direction: function(dir) {
-                    document.getElementById("positionSlider").dir = dir
+                    const slider = document.getElementById("positionSlider");
+                    if (slider) slider.dir = dir;
                 }
             },
             injectables: injectables,

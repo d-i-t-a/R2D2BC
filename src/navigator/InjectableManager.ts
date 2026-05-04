@@ -16,6 +16,8 @@ import type {
   ScriptInjectable,
   StyleInjectable,
 } from "./types";
+import { getScriptMode } from "../utils/ScriptMode";
+import type { ScriptMode } from "../utils/ScriptMode";
 
 /**
  * Owns `Injectable` insertion into chapter iframes.
@@ -33,10 +35,18 @@ export class InjectableManager {
   /** Per-iframe object URLs created from `Blob` content. Revoked on cleanup. */
   private objectUrlRegistry = new Map<HTMLIFrameElement, string[]>();
 
+  /**
+   * Cached script mode for the publication. Derived once at construct so
+   * every iframe load reuses the same value without re-walking metadata.
+   */
+  private readonly scriptMode: ScriptMode;
+
   constructor(
     private readonly publication: Publication,
     private readonly settings: UserSettings
-  ) {}
+  ) {
+    this.scriptMode = getScriptMode(publication);
+  }
 
   /**
    * Inject into the parsed chapter HTML's head. Mutates `doc` in place.
@@ -54,6 +64,7 @@ export class InjectableManager {
       publication: this.publication,
       resourceHref,
       doc,
+      scriptMode: this.scriptMode,
     };
 
     const trackObjectUrl = (url: string) => {

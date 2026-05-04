@@ -624,7 +624,7 @@
     function toggleBookmark() {
         const bkm = d2reader?.navigator?.modules?.bookmarks;
         if (!bkm) return;
-        if (bkm.isCurrentBookmarked()) {
+        if (bkm.hasBookmarkAt()) {
             const existing = bkm.list().find(b =>
                 (b.locations?.page ?? b.locations?.position) === d2reader?.navigator?.currentPage
             );
@@ -639,7 +639,7 @@
     function updateBookmarkButton() {
         const btn = document.getElementById('bkm-toggle-btn');
         if (!btn) return;
-        const bookmarked = d2reader?.navigator?.modules?.bookmarks?.isCurrentBookmarked?.() ?? false;
+        const bookmarked = d2reader?.navigator?.modules?.bookmarks?.hasBookmarkAt?.() ?? false;
         const icon = btn.querySelector('i');
         if (icon) {
             icon.textContent = bookmarked ? 'star' : 'star_border';

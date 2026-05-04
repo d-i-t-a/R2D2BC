@@ -49,6 +49,12 @@ export interface InjectableContext {
   resourceHref: string;
   /** Parsed XHTML document of the chapter. Read-only by convention. */
   doc: Document;
+  /**
+   * Script mode of the publication, derived from `metadata.languages` +
+   * `readingProgression`. Lets `when` predicates select ReadiumCSS
+   * variants (rtl, cjk-horizontal, cjk-vertical) without re-deriving.
+   */
+  scriptMode: import("../utils/ScriptMode").ScriptMode;
 }
 
 /**
@@ -195,20 +201,22 @@ export interface IFrameAttributes {
   iframePaddingTop?: number;
 
   /**
-   * Integrator-provided "safe areas" at the top and/or bottom of the
-   * viewport that the reader should avoid placing floating UI (selection
-   * toolbox) over. Useful when the integrator renders fixed chrome
-   * (navbar, progress bar, etc.) that overlays the reader.
+   * Integrator-provided "safe areas" around the viewport that the reader
+   * should avoid placing floating UI (selection toolbox) over and that
+   * reduce the iframe's usable size. Useful when the integrator renders
+   * fixed chrome (navbar, progress bar, side rail, vertical timeline)
+   * that overlays the reader.
    *
-   * Each entry is a callback returning the element whose current height
-   * should be reserved. The reader calls it at placement time and
-   * measures `getBoundingClientRect().height`, so toggling visibility on
-   * the element (e.g. `display: none` → 0 height) automatically reclaims
-   * the space without any further config change.
+   * Each entry is a callback returning the element whose current dimension
+   * (width for left/right, height for top/bottom) should be reserved. The
+   * reader calls it at placement time, so toggling visibility on the
+   * element (`display: none` → 0) automatically reclaims the space.
    */
   safeArea?: {
     top?: () => Element | null;
     bottom?: () => Element | null;
+    left?: () => Element | null;
+    right?: () => Element | null;
   };
 
   /**

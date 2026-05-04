@@ -103,6 +103,12 @@
             text-transform: uppercase; padding-bottom: 6px;
             border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 6px;
         }
+        /* Prevent edge-swipe back/forward gestures from triggering when
+           horizontally scrolling inside the iframe wrapper or the iframe
+           document itself (RTL paginated, vertical-rl scroll). */
+        #iframe-wrapper { overscroll-behavior-x: contain; }
+        #iframe-wrapper iframe { overscroll-behavior-x: contain; }
+        html, body { overscroll-behavior-x: contain; }
     </style>
 </head>
 <body>
@@ -271,11 +277,27 @@
         }
 
         // ---- Build the injectables array from active variants ----
+        const isLtr = (ctx) => ctx.scriptMode === "ltr";
+        const isRtl = (ctx) => ctx.scriptMode === "rtl";
+        const isCjkHorizontal = (ctx) => ctx.scriptMode === "cjk-horizontal";
+        const isCjkVertical = (ctx) =>
+            ctx.scriptMode === "cjk-vertical" || ctx.scriptMode === "mongolian-vertical";
+
         const readiumCss = [
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-dita-patch.css' },
+            { type: 'style', url: '/viewer/readium-css-v2/ReadiumCSS-before.css', r2before: true, when: isLtr },
+            { type: 'style', url: '/viewer/readium-css-v2/ReadiumCSS-default.css', r2default: true, when: isLtr },
+            { type: 'style', url: '/viewer/readium-css-v2/ReadiumCSS-after.css', r2after: true, when: isLtr },
+            { type: 'style', url: '/viewer/readium-css-v2/rtl/ReadiumCSS-before.css', r2before: true, when: isRtl },
+            { type: 'style', url: '/viewer/readium-css-v2/rtl/ReadiumCSS-default.css', r2default: true, when: isRtl },
+            { type: 'style', url: '/viewer/readium-css-v2/rtl/ReadiumCSS-after.css', r2after: true, when: isRtl },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-before.css', r2before: true, when: isCjkHorizontal },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-default.css', r2default: true, when: isCjkHorizontal },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-after.css', r2after: true, when: isCjkHorizontal },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-before.css', r2before: true, when: isCjkVertical },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-default.css', r2default: true, when: isCjkVertical },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-after.css', r2after: true, when: isCjkVertical },
+            { type: 'style', url: '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css', when: isLtr },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-dita-patch.css', r2after: true, when: isCjkVertical },
             { type: 'style', url: '/viewer/injectables/style/style.css' },
         ];
         const injectables = [...readiumCss];
@@ -410,11 +432,6 @@
             btn.classList.toggle('on', isScroll);
         });
 
-        document.addEventListener('keydown', function (e) {
-            if (!d2reader) return;
-            if (e.key === 'ArrowLeft') d2reader.previousPage();
-            else if (e.key === 'ArrowRight') d2reader.nextPage();
-        });
     </script>
 </body>
 </html>

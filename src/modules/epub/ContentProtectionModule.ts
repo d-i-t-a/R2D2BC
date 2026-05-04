@@ -51,6 +51,20 @@ export interface ContentProtectionModuleProperties {
   disableDrag: boolean;
   supportedBrowsers: string[];
   excludeNodes: string[];
+  /**
+   * Pixels of slack added to viewport bounds when classifying rects as
+   * outside (and thus scrambled). Override for the historical defaults:
+   *   - top    = `lineHeight` (Feb 2024 — scroll-mode line flicker)
+   *   - bottom = `0`
+   *   - left   = `window.innerWidth` (Aug 2021 — paginated page-flip)
+   *   - right  = `window.innerWidth`
+   *
+   * Pass a number to apply equally on all sides, or a per-side object;
+   * omitted sides fall back to the historical default.
+   */
+  viewportSlack?:
+    | number
+    | { top?: number; bottom?: number; left?: number; right?: number };
 }
 
 export interface ContentProtectionModuleConfig extends Partial<ContentProtectionModuleProperties> {
@@ -83,10 +97,12 @@ export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
   }
   properties?: ContentProtectionModuleProperties;
   private hasEventListener: boolean = false;
+  private scrollHandler?: EventListener;
+  private scrollListenerTarget?: HTMLElement;
   private isHacked: boolean = false;
   private securityContainer: HTMLDivElement;
   private mutationObserver: MutationObserver;
-  private wrapper: HTMLDivElement;
+  private scrollSurface: HTMLElement;
   citation: boolean;
   public static async setupPreloadProtection(
     config: Partial<ContentProtectionModuleConfig>
@@ -155,11 +171,6 @@ export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
 
   protected async start(): Promise<void> {
     if (this.properties?.enableObfuscation) {
-      this.wrapper = HTMLUtilities.findRequiredElement(
-        document,
-        "#iframe-wrapper"
-      );
-
       this.securityContainer = HTMLUtilities.findElement(
         document,
         "#container-view-security"
@@ -449,11 +460,16 @@ export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
       this.preventDrag(false);
     }
 
-    removeEventListenerOptional(
-      this.wrapper,
-      "scroll",
-      this.handleScroll.bind(this)
-    );
+    if (this.scrollHandler && this.scrollListenerTarget) {
+      removeEventListenerOptional(
+        this.scrollListenerTarget,
+        "scroll",
+        this.scrollHandler
+      );
+      this.scrollHandler = undefined;
+      this.scrollListenerTarget = undefined;
+      this.hasEventListener = false;
+    }
   }
 
   observe(): any {
@@ -888,10 +904,66 @@ export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
   }
 
   public async initialize(iframe: HTMLIFrameElement) {
-    if (this.properties?.enableObfuscation) {
+    // Listener attachment for copy/print/keyboard/contextmenu features
+    // runs regardless of `enableObfuscation` so integrators using only
+    // copy-protection still get those listeners.
+    this.setupEvents();
+
+    // Skip obfuscation for FXL — both spread iframes are always
+    // visible, the off-viewport-scrambling model doesn't apply. Other
+    // protection features (copy/print/keyboard/contextmenu/hideTargetUrl/
+    // disableDrag) still apply through `setupEvents` (above) and
+    // `initializeResource`.
+    const isFxl = this.host.view.layout === "fixed";
+
+    if (this.properties?.enableObfuscation && !isFxl) {
       return new Promise<void>(async (resolve) => {
         await (document as any).fonts.ready;
         if (iframe.contentDocument) {
+          // Renderer-authoritative: each renderer knows its own scroll
+          // surface (host vs iframe). For iframe-mode we wrap in a proxy
+          // because BCR on iframe-internal nodes already returns
+          // post-scroll viewport-relative coords, so windowTop/Left must
+          // stay 0 (the viewport frame origin), not actual scroll position.
+          const surface = this.host.view.getScrollSurface();
+          this.scrollSurface = (surface.kind === "iframe"
+            ? {
+                get scrollLeft() {
+                  return 0;
+                },
+                get scrollTop() {
+                  return 0;
+                },
+                get clientWidth() {
+                  return (
+                    surface.iframe.contentDocument?.scrollingElement
+                      ?.clientWidth ?? surface.iframe.clientWidth
+                  );
+                },
+                get clientHeight() {
+                  return (
+                    surface.iframe.contentDocument?.scrollingElement
+                      ?.clientHeight ?? surface.iframe.clientHeight
+                  );
+                },
+                addEventListener: (
+                  type: string,
+                  listener: EventListenerOrEventListenerObject
+                ) =>
+                  surface.iframe.contentDocument?.addEventListener(
+                    type,
+                    listener
+                  ),
+                removeEventListener: (
+                  type: string,
+                  listener: EventListenerOrEventListenerObject
+                ) =>
+                  surface.iframe.contentDocument?.removeEventListener(
+                    type,
+                    listener
+                  ),
+              }
+            : surface.element) as unknown as HTMLElement;
           const body = HTMLUtilities.findRequiredIframeElement(
             iframe.contentDocument,
             "body"
@@ -904,15 +976,24 @@ export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
               this.toggleRect(rect, this.securityContainer, this.isHacked)
             );
 
-            this.setupEvents();
-            if (!this.hasEventListener) {
-              this.hasEventListener = true;
-              addEventListenerOptional(
-                this.wrapper,
+            // Remove the listener from the previous chapter's scroll
+            // surface (if any) — `iframe.contentDocument` is replaced
+            // on chapter navigation, so the old listener is dead.
+            if (this.scrollHandler && this.scrollListenerTarget) {
+              removeEventListenerOptional(
+                this.scrollListenerTarget,
                 "scroll",
-                this.handleScroll.bind(this)
+                this.scrollHandler
               );
             }
+            this.scrollHandler = this.handleScroll.bind(this);
+            this.scrollListenerTarget = this.scrollSurface;
+            this.hasEventListener = true;
+            addEventListenerOptional(
+              this.scrollListenerTarget,
+              "scroll",
+              this.scrollHandler
+            );
             resolve();
           }, 10);
         }
@@ -921,6 +1002,7 @@ export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
   }
 
   handleScroll() {
+    this.calcRects(this.rects);
     this.rects.forEach((rect) =>
       this.toggleRect(rect, this.securityContainer, this.isHacked)
     );
@@ -1396,44 +1478,45 @@ export class ContentProtectionModule implements ReaderModule<EpubModuleHost> {
   }
 
   isOutsideViewport(rect: ContentProtectionRect): boolean {
-    const windowLeft = this.wrapper.scrollLeft;
-    const windowRight = windowLeft + this.wrapper.clientWidth;
+    const windowLeft = this.scrollSurface.scrollLeft;
+    const windowRight = windowLeft + this.scrollSurface.clientWidth;
     const right = rect.left + rect.width;
     const bottom = rect.top + rect.height;
-    const windowTop =
-      this.wrapper.scrollTop -
-      (rect.node.parentElement
-        ? parseInt(
-            getComputedStyle(rect.node.parentElement).lineHeight.replace(
-              "px",
-              ""
-            )
-          )
-        : 10);
-    const windowBottom =
-      windowTop +
-      this.wrapper.clientHeight +
-      (rect.node.parentElement
-        ? parseInt(
-            getComputedStyle(rect.node.parentElement).lineHeight.replace(
-              "px",
-              ""
-            )
-          )
-        : 10);
+    const lineHeight = rect.node.parentElement
+      ? parseInt(
+          getComputedStyle(rect.node.parentElement).lineHeight.replace("px", "")
+        ) || 10
+      : 10;
 
-    const isAbove = bottom < windowTop;
-    const isBelow = rect.top > windowBottom;
+    // Default slack preserves historical behavior; override via
+    // `properties.viewportSlack` (number = all sides, or per-side object).
+    // Clamped to >= 0: negative values would shrink the window inward
+    // and scramble visible content.
+    const slack = this.properties?.viewportSlack;
+    const slackTop = Math.max(
+      0,
+      typeof slack === "number" ? slack : (slack?.top ?? lineHeight)
+    );
+    const slackBottom = Math.max(
+      0,
+      typeof slack === "number" ? slack : (slack?.bottom ?? 0)
+    );
+    const slackLeft = Math.max(
+      0,
+      typeof slack === "number" ? slack : (slack?.left ?? window.innerWidth)
+    );
+    const slackRight = Math.max(
+      0,
+      typeof slack === "number" ? slack : (slack?.right ?? window.innerWidth)
+    );
 
-    // Consider left boundary to be one full screen width left of the leftmost
-    // edge of the viewing area. This is so text originating on the previous
-    // screen does not flow onto the current screen scrambled.
-    const isLeft = right < windowLeft - window.innerWidth;
+    const windowTop = this.scrollSurface.scrollTop;
+    const windowBottom = windowTop + this.scrollSurface.clientHeight;
 
-    // Consider right boundary to be one full screen width right of the rightmost
-    // edge of the viewing area. This is so quickly paging through the book
-    // does not result in visible page descrambling.
-    const isRight = rect.left > windowRight + window.innerWidth;
+    const isAbove = bottom < windowTop - slackTop;
+    const isBelow = rect.top > windowBottom + slackBottom;
+    const isLeft = right < windowLeft - slackLeft;
+    const isRight = rect.left > windowRight + slackRight;
 
     return isAbove || isBelow || isLeft || isRight;
   }

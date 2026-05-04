@@ -45,6 +45,10 @@ async function start() {
           title: "DITA Reader (ReadiumCSS v2 CDN)",
           url: `/viewer/index_dita_v2_cdn.html?url=https://alice.dita.digital/manifest.json`,
         },
+        {
+          title: "Small Window (600×500)",
+          url: `/viewer/index_small_window.html?url=https://alice.dita.digital/manifest.json`,
+        },
       ],
     },
   ];
@@ -199,6 +203,10 @@ async function start() {
           {
             title: "Injectables",
             url: `/viewer/index_injectables.html?url=${manifestUrl}`,
+          },
+          {
+            title: "Small Window (600×500)",
+            url: `/viewer/index_small_window.html?url=${manifestUrl}`,
           },
         ],
       });

@@ -189,6 +189,12 @@
             cursor: pointer; text-decoration: none; transition: background .15s;
         }
         .sample-popup .cta-btn:hover { background: #6d28d9; }
+        /* Prevent edge-swipe back/forward gestures from triggering when
+           horizontally scrolling inside the iframe wrapper or the iframe
+           document itself (RTL paginated, vertical-rl scroll). */
+        #iframe-wrapper { overscroll-behavior-x: contain; }
+        #iframe-wrapper iframe { overscroll-behavior-x: contain; }
+        html, body { overscroll-behavior-x: contain; }
     </style>
 
 </head>
@@ -431,11 +437,27 @@
         }
 
         /* ── Injectables ── */
+        const isLtr = (ctx) => ctx.scriptMode === "ltr";
+        const isRtl = (ctx) => ctx.scriptMode === "rtl";
+        const isCjkHorizontal = (ctx) => ctx.scriptMode === "cjk-horizontal";
+        const isCjkVertical = (ctx) =>
+            ctx.scriptMode === "cjk-vertical" || ctx.scriptMode === "mongolian-vertical";
+
         let injectables = [
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-dita-patch.css' },
+            { type: 'style', url: '/viewer/readium-css-v2/ReadiumCSS-before.css', r2before: true, when: isLtr },
+            { type: 'style', url: '/viewer/readium-css-v2/ReadiumCSS-default.css', r2default: true, when: isLtr },
+            { type: 'style', url: '/viewer/readium-css-v2/ReadiumCSS-after.css', r2after: true, when: isLtr },
+            { type: 'style', url: '/viewer/readium-css-v2/rtl/ReadiumCSS-before.css', r2before: true, when: isRtl },
+            { type: 'style', url: '/viewer/readium-css-v2/rtl/ReadiumCSS-default.css', r2default: true, when: isRtl },
+            { type: 'style', url: '/viewer/readium-css-v2/rtl/ReadiumCSS-after.css', r2after: true, when: isRtl },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-before.css', r2before: true, when: isCjkHorizontal },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-default.css', r2default: true, when: isCjkHorizontal },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-after.css', r2after: true, when: isCjkHorizontal },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-before.css', r2before: true, when: isCjkVertical },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-default.css', r2default: true, when: isCjkVertical },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-after.css', r2after: true, when: isCjkVertical },
+            { type: 'style', url: '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css', when: isLtr },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-dita-patch.css', r2after: true, when: isCjkVertical },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
@@ -615,30 +637,7 @@
             setScroll(String(scrollMode).toLowerCase());
         }
 
-        /* ── Keyboard navigation ── */
-        document.addEventListener('keydown', function (e) {
-            if (!d2reader) return;
-            switch (e.key) {
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    d2reader.previousPage();
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    d2reader.nextPage();
-                    break;
-                case 'ArrowUp':
-                    e.preventDefault();
-                    d2reader.previousPage();
-                    break;
-                case 'ArrowDown':
-                    e.preventDefault();
-                    d2reader.nextPage();
-                    break;
-            }
-        });
-
-        /* ── Dismiss sample popup on overlay click ── */
+/* ── Dismiss sample popup on overlay click ── */
         document.getElementById('samplePopupOverlay').addEventListener('click', function (e) {
             if (e.target === this) {
                 this.classList.remove('visible');

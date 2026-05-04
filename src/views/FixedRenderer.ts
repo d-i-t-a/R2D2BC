@@ -17,13 +17,13 @@
  * Licensed to: CAST under one or more contributor license agreements.
  */
 
-import { IFrameAttributes } from "../navigator/EpubNavigator";
-import BookView, { BookViewHost } from "./BookView";
+import { IFrameAttributes } from "../navigator/types";
+import Renderer, { RendererHost } from "./Renderer";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 
-export default class FixedBookView implements BookView {
+export default class FixedRenderer implements Renderer {
   layout = "fixed";
-  host: BookViewHost;
+  host: RendererHost;
   name: string;
   label: string;
   iframe: HTMLIFrameElement;
@@ -62,6 +62,18 @@ export default class FixedBookView implements BookView {
 
   getPageCount(): number {
     return 1;
+  }
+
+  getScrollSurface():
+    | { kind: "host"; element: HTMLElement }
+    | { kind: "iframe"; iframe: HTMLIFrameElement } {
+    if (this.attributes?.scrollContainer === "iframe") {
+      return { kind: "iframe", iframe: this.iframe };
+    }
+    return {
+      kind: "host",
+      element: HTMLUtilities.findRequiredElement(document, "#iframe-wrapper"),
+    };
   }
 
   setSize(): void {}

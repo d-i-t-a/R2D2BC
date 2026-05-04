@@ -117,10 +117,18 @@ export class ReadiumCSS {
     "--USER__" + ReadiumCSS.SELECTION_TEXT_COLOR_REF;
 
   // Scroll-view padding (RS-scoped, replaces pageGutter in scroll mode)
+  static readonly SCROLL_PADDING_TOP_REF = "scrollPaddingTop";
   static readonly SCROLL_PADDING_TOP_KEY = "--RS__scrollPaddingTop";
+  static readonly SCROLL_PADDING_BOTTOM_REF = "scrollPaddingBottom";
   static readonly SCROLL_PADDING_BOTTOM_KEY = "--RS__scrollPaddingBottom";
+  static readonly SCROLL_PADDING_LEFT_REF = "scrollPaddingLeft";
   static readonly SCROLL_PADDING_LEFT_KEY = "--RS__scrollPaddingLeft";
+  static readonly SCROLL_PADDING_RIGHT_REF = "scrollPaddingRight";
   static readonly SCROLL_PADDING_RIGHT_KEY = "--RS__scrollPaddingRight";
+
+  // RS-scoped pagination toggle. Used by cjk-vertical alongside
+  // --USER__scroll: readium-scroll-on to expand root horizontally.
+  static readonly DISABLE_PAGINATION_KEY = "--RS__disablePagination";
 
   // Fallback: opts into v1 font-size normalization when the browser does not
   // support CSS `zoom`.

@@ -17,13 +17,13 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IFrameAttributes } from "../navigator/EpubNavigator";
+import { IFrameAttributes } from "../navigator/types";
 
 /**
- * Callbacks that the view needs from the navigator.
+ * Callbacks that the renderer needs from the navigator.
  * Replaces the old direct EpubNavigator back-reference.
  */
-export interface BookViewHost {
+export interface RendererHost {
   checkResourcePosition(): void;
   recalculateContentProtection(delay?: number): void;
   isContentProtectionEnabled(): boolean;
@@ -32,7 +32,7 @@ export interface BookViewHost {
   setDirection(direction?: string | null): void;
 }
 
-interface BookView {
+interface Renderer {
   layout: string;
   name: string;
   label: string;
@@ -40,22 +40,20 @@ interface BookView {
   iframe: Element;
   sideMargin: number;
   height: number;
-  host: BookViewHost;
+  host: RendererHost;
   attributes?: IFrameAttributes;
 
-  setMode?(scroll: boolean);
   isScrollMode();
   isPaginated();
   goToElement?(element: HTMLElement | null, relative?: boolean): void;
   setSize(): void;
-  setIframeHeight?(iframe: any);
-  setSize(): void;
+  growIframeToContent?(iframe: any);
   getScreenHeight(): number;
 
-  /** Load this view in its book element, at the specified position. */
+  /** Load this renderer in its book element, at the specified position. */
   start(): void;
 
-  /** Remove this view from its book element. */
+  /** Remove this renderer from its book element. */
   stop(): void;
 
   getCurrentPosition(): number;
@@ -71,5 +69,20 @@ interface BookView {
   getCurrentPage(): number;
   getPageCount(): number;
   padOddColumns?(): void;
+  clearSpacers?(): void;
+
+  /**
+   * Returns the surface that scrolls in this renderer's active mode.
+   * Used by modules (e.g. ContentProtectionModule) to decide whether
+   * to attach scroll listeners / read scroll-position from the host's
+   * `#iframe-wrapper` (host-scroll) or from the iframe's content
+   * document (iframe-internal scroll). VerticalRenderer always returns
+   * `"iframe"` because vertical scripts are iframe-scroll by design;
+   * ScrollRenderer branches on `attributes.scrollContainer`;
+   * ColumnRenderer / FixedRenderer return `"host"`.
+   */
+  getScrollSurface():
+    | { kind: "host"; element: HTMLElement }
+    | { kind: "iframe"; iframe: HTMLIFrameElement };
 }
-export default BookView;
+export default Renderer;

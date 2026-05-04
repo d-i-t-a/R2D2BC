@@ -209,43 +209,15 @@ export class BookmarkModule
 
   async saveBookmark(): Promise<any> {
     if (this.annotator) {
-      var tocItem = this.publication.getTOCItem(
-        this.host.currentChapterLink.href
-      );
-      if (this.host.currentTocUrl) {
-        tocItem = this.publication.getTOCItem(this.host.currentTocUrl);
-      }
-
-      if (tocItem === undefined) {
-        tocItem = this.publication.getTOCItemAbsolute(
-          this.host.currentChapterLink.href
-        );
-      }
-      if (tocItem) {
-        let href = tocItem.href;
-        if (href.indexOf("#") > 0) {
-          href = href.slice(0, href.indexOf("#"));
-        }
-
+      const href = this.getCurrentChapterHref();
+      if (href) {
         const progression = this.host.view?.getCurrentPosition();
         const id: string = uuid();
+        const positionLocator = this.getCurrentPositionLocator(progression);
         let bookmark: Bookmark;
-        if (
-          (this.host.rights.autoGeneratePositions &&
-            this.publication.positions) ||
-          this.publication.positions
-        ) {
-          const positions = this.publication.positionsByHref(
-            this.publication.getRelativeHref(this.host.currentChapterLink.href)
-          );
-
-          const positionIndex = Math.ceil(
-            (progression ?? 0) * (positions.length - 1)
-          );
-          const locator = positions[positionIndex];
-
+        if (positionLocator) {
           bookmark = {
-            ...locator,
+            ...positionLocator,
             id: id,
             href: href,
             created: new Date(),
@@ -885,21 +857,103 @@ export class BookmarkModule
   list(): Bookmark[] {
     return this.getBookmarks() as Bookmark[];
   }
-  isCurrentBookmarked(): boolean {
-    // EPUB check requires a candidate bookmark built from current position;
-    // we reuse locatorExists via a lightweight synthetic locator at the
-    // current progression. Returns false if annotator is missing.
-    if (!this.annotator) return false;
-    const progression = this.host.view?.getCurrentPosition();
-    if (progression === undefined) return false;
-    // locatorExists returns the matching Bookmark or undefined/null —
-    // coerce to boolean for the interface contract.
-    return !!this.annotator.locatorExists(
-      {
-        href: this.host.currentChapterLink.href,
-        locations: { progression },
-      } as Bookmark,
-      AnnotationType.Bookmark
+  /**
+   * Resolves the canonical href for the current chapter — the same
+   * derivation `saveBookmark` uses (TOC lookup chain + fragment strip).
+   * Returns null if no TOC entry matches.
+   */
+  private getCurrentChapterHref(): string | null {
+    let tocItem = this.publication.getTOCItem(
+      this.host.currentChapterLink.href
     );
+    if (this.host.currentTocUrl) {
+      tocItem = this.publication.getTOCItem(this.host.currentTocUrl);
+    }
+    if (tocItem === undefined) {
+      tocItem = this.publication.getTOCItemAbsolute(
+        this.host.currentChapterLink.href
+      );
+    }
+    if (!tocItem) return null;
+    let href = tocItem.href;
+    if (href.indexOf("#") > 0) href = href.slice(0, href.indexOf("#"));
+    return href;
+  }
+
+  /**
+   * Resolves the positions-array locator at the current reading position,
+   * or null if positions aren't available. Used by `saveBookmark` to spread
+   * into the saved bookmark and by `findBookmarkAt` to compute the
+   * progression that matches what's stored.
+   */
+  private getCurrentPositionLocator(rawProgression?: number): Locator | null {
+    const hasPositions =
+      (this.host.rights.autoGeneratePositions && this.publication.positions) ||
+      this.publication.positions;
+    if (!hasPositions) return null;
+    const positions = this.publication.positionsByHref(
+      this.publication.getRelativeHref(this.host.currentChapterLink.href)
+    );
+    if (positions.length === 0) return null;
+    const progression =
+      rawProgression ?? this.host.view?.getCurrentPosition() ?? 0;
+    const positionIndex = Math.ceil(progression * (positions.length - 1));
+    return (positions[positionIndex] as Locator) ?? null;
+  }
+
+  /**
+   * Returns the saved bookmark at a given reading position, or null.
+   * When `locator` is omitted, uses the reader's current locator.
+   *
+   * Uses the same href/progression derivation as `saveBookmark` so the
+   * lookup matches what was actually stored.
+   *
+   * For publications with a positions array, matches on `position` (the
+   * page index) instead of `progression` so the indicator stays stable
+   * across all scroll positions within the same page rather than flicker
+   * when raw progression edges past a positions-array boundary.
+   */
+  findBookmarkAt(locator?: Locator): Bookmark | null {
+    if (!this.annotator) return null;
+    const stored = this.getBookmarks() as Bookmark[];
+
+    // Resolve target href + progression from the supplied locator or the
+    // reader's current state.
+    const href = locator?.href ?? this.getCurrentChapterHref();
+    if (!href) return null;
+    const rawProgression =
+      locator?.locations?.progression ?? this.host.view?.getCurrentPosition();
+    if (rawProgression === undefined) return null;
+
+    // Prefer position-matching when available (positions array gives stable
+    // page-aligned identity across scroll subpixel changes).
+    const explicitPosition = locator?.locations?.position;
+    const derivedPosition =
+      explicitPosition ??
+      this.getCurrentPositionLocator(rawProgression)?.locations?.position;
+    if (derivedPosition !== undefined) {
+      return (
+        stored.find(
+          (b) => b.href === href && b.locations?.position === derivedPosition
+        ) ?? null
+      );
+    }
+
+    // Non-positions fallback: tolerance-match on raw progression so tiny
+    // float differences (subpixel scroll, re-derivation rounding) don't
+    // mask a saved bookmark stored at "the same" position.
+    const tolerance = 0.001;
+    return (
+      stored.find(
+        (b) =>
+          b.href === href &&
+          typeof b.locations?.progression === "number" &&
+          Math.abs(b.locations.progression - rawProgression) < tolerance
+      ) ?? null
+    );
+  }
+
+  hasBookmarkAt(locator?: Locator): boolean {
+    return this.findBookmarkAt(locator) !== null;
   }
 }

@@ -116,7 +116,11 @@ export default class LocalAnnotator implements Annotator {
           el.locations.progression === locator.locations.progression
       );
       if (filteredLocators.length > 0) {
-        return locator;
+        // Return the stored locator (with its `id` and other persisted
+        // fields), not the input synthetic. Callers that just need a
+        // truthy/null check are unaffected; callers that want the actual
+        // bookmark for deletion or jump now get usable data.
+        return filteredLocators[0];
       }
     }
     return null;

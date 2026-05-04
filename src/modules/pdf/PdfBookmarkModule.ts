@@ -12,7 +12,7 @@ import { HostType, RightsKey } from "../ReaderModule";
 import { IBookmarkModule } from "../interfaces";
 import { PDFModuleHost } from "../ModuleHost";
 import { NavigatorFeature } from "../../navigator/VisualNavigator";
-import { Bookmark, getPageFromLocations } from "../../model/v3";
+import { Bookmark, Locator, getPageFromLocations } from "../../model/v3";
 
 /**
  * PDF bookmark module.
@@ -35,7 +35,7 @@ export class PdfBookmarkModule implements IBookmarkModule<PDFModuleHost> {
   /** Save a bookmark at the current page. Returns null if already bookmarked. */
   save(): Bookmark | null {
     if (!this.host.annotator) return null;
-    if (this.isCurrentBookmarked()) return null;
+    if (this.hasBookmarkAt()) return null;
     return this.host.annotator.saveBookmark(this.makeBookmark()) ?? null;
   }
 
@@ -52,10 +52,26 @@ export class PdfBookmarkModule implements IBookmarkModule<PDFModuleHost> {
     );
   }
 
-  /** True if the current page already has a bookmark. */
-  isCurrentBookmarked(): boolean {
-    return this.list().some(
-      (b) => getPageFromLocations(b.locations) === this.host.currentPage
+  /**
+   * True if a bookmark exists at the given locator (or current page if
+   * omitted). PDF locators carry a page in `locations.position`.
+   */
+  hasBookmarkAt(locator?: Locator): boolean {
+    return this.findBookmarkAt(locator) !== null;
+  }
+
+  /**
+   * Saved bookmark at the given locator (or current page if omitted), or null.
+   * For PDF, identity is page-based.
+   */
+  findBookmarkAt(locator?: Locator): Bookmark | null {
+    const targetPage =
+      (locator ? getPageFromLocations(locator.locations) : undefined) ??
+      this.host.currentPage;
+    return (
+      this.list().find(
+        (b) => getPageFromLocations(b.locations) === targetPage
+      ) ?? null
     );
   }
 

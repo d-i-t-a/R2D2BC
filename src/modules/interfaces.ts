@@ -48,8 +48,18 @@ export interface IBookmarkModule<
   /** Return all bookmarks for the current resource. */
   list(): Bookmark[];
 
-  /** True if the current reading location already has a bookmark. */
-  isCurrentBookmarked(): boolean;
+  /**
+   * True if a bookmark exists at the given locator. When omitted, defaults
+   * to the reader's current locator.
+   */
+  hasBookmarkAt(locator?: Locator): boolean;
+
+  /**
+   * Returns the saved bookmark at the given locator, or null. When omitted,
+   * defaults to the reader's current locator. Useful for "toggle" UIs that
+   * need the actual stored bookmark (with `id`) to pass back to `delete()`.
+   */
+  findBookmarkAt(locator?: Locator): Bookmark | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

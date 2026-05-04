@@ -16,11 +16,11 @@
  * Developed on behalf of: NYPL, Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
  * Licensed to: NYPL, Bokbasen AS and CAST under one or more contributor license agreements.
  */
-import { Annotation, Bookmark, Locator } from "./model/Locator";
-import { Publication } from "./model/Publication";
+import { Annotation, Bookmark, Locator, Publication } from "./model/v3";
 import { Profile } from "@readium/shared";
 import { UserSettingsIncrementable } from "./model/user-settings/UserProperties";
 import { UserSettings } from "./model/user-settings/UserSettings";
+import { getScriptMode } from "./utils/ScriptMode";
 import { AnnotationModule } from "./modules/epub/AnnotationModule";
 import { BookmarkModule } from "./modules/epub/BookmarkModule";
 import { TextHighlighter } from "./modules/highlight/TextHighlighter";
@@ -323,6 +323,7 @@ export default class D2Reader {
         store: settingsStore,
         initialUserSettings: initialConfig.userSettings,
         layout: "",
+        scriptMode: getScriptMode(publication),
       });
       const PDFNav = await loadPDFNavigator();
 
@@ -419,6 +420,7 @@ export default class D2Reader {
           ? initialConfig.injectablesFixed
           : initialConfig.injectables,
         layout: publication.isFixedLayout ? "fixed" : "reflowable",
+        scriptMode: getScriptMode(publication),
       });
 
       // Highlighter
@@ -762,6 +764,21 @@ export default class D2Reader {
   get bookmarks() {
     return this.navigator.modules.bookmarks?.list() ?? [];
   }
+  /**
+   * True if a bookmark exists at the given locator. When omitted, checks
+   * the reader's current locator. Works for both EPUB and PDF.
+   */
+  hasBookmarkAt(locator?: Locator): boolean {
+    return this.navigator.modules.bookmarks?.hasBookmarkAt(locator) ?? false;
+  }
+  /**
+   * Saved bookmark at the given locator, or null. When omitted, returns
+   * the bookmark at the reader's current locator. Works for both EPUB
+   * and PDF.
+   */
+  findBookmarkAt(locator?: Locator): Bookmark | null {
+    return this.navigator.modules.bookmarks?.findBookmarkAt(locator) ?? null;
+  }
   /** Current Annotations. Works for both EPUB and PDF. */
   get annotations() {
     return this.navigator.modules.annotations?.getAll() ?? [];
@@ -769,6 +786,24 @@ export default class D2Reader {
 
   get publicationLayout() {
     return this.navigator.publication.layout;
+  }
+
+  /**
+   * Publication's derived script mode — `"ltr"`, `"rtl"`, `"cjk-horizontal"`,
+   * `"cjk-vertical"`, or `"mongolian-vertical"`. Computed from
+   * `metadata.languages` + `readingProgression`. Use to drive script-mode-
+   * specific UI (e.g. timeline orientation, page-arrow placement).
+   * Returns `undefined` if publication isn't available (e.g. PDF navigator
+   * without an EPUB-shaped publication).
+   */
+  get scriptMode() {
+    const publication = this.navigator.publication;
+    if (!publication) return undefined;
+    try {
+      return getScriptMode(publication);
+    } catch {
+      return undefined;
+    }
   }
 
   /** History Back. Works for both EPUB and PDF. */

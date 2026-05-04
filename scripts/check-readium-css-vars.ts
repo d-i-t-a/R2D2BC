@@ -30,14 +30,14 @@ const CSS_DIRS = [
 ];
 
 /**
- * Known dual-applicator writes — TS writes these `--USER__` properties
- * so v1 CSS can match on the VALUE via `[style*="readium-<name>-on"]`
- * substring selectors. v2 does not consume these variables directly;
- * v2 gets the same semantics via other writes (e.g. color preset vars
- * for appearance). Do not remove these TS writes — they are
- * load-bearing for v1 compatibility.
+ * v1-compatibility dual-applicator writes — TS writes these `--USER__`
+ * properties so v1 CSS can match on the VALUE via
+ * `[style*="readium-<name>-on"]` substring selectors. v2 does not
+ * consume these variables directly; v2 gets the same semantics via
+ * other writes (e.g. color preset vars for appearance). Do not remove
+ * these TS writes — load-bearing for v1 compatibility.
  */
-const DUAL_APPLICATOR_ALLOWED: ReadonlySet<string> = new Set([
+const V1_DUAL_APPLICATOR_ALLOWED: ReadonlySet<string> = new Set([
   "--USER__advancedSettings",
   "--USER__appearance",
   "--USER__blendImages",
@@ -50,12 +50,38 @@ const DUAL_APPLICATOR_ALLOWED: ReadonlySet<string> = new Set([
   "--USER__fontSizeNormalize",
 ]);
 
+/**
+ * v2 substring-match writes — TS writes these `--RS__` properties whose
+ * VALUES (not the variable names) are matched by v2 CSS via
+ * `[style*="<value>"]` substring selectors. Not a `var(--X)` consumer,
+ * but legitimately load-bearing.
+ */
+const V2_SUBSTRING_MATCH_ALLOWED: ReadonlySet<string> = new Set([
+  // Set to `readium-noVerticalPagination-on` for cjk-vertical /
+  // mongolian-vertical scripts; v2 cjk-vertical CSS matches the value
+  // via `:root[style*="readium-noVerticalPagination-on"]` to force
+  // `columns: auto auto !important` (vertical-rl horizontal-overflow
+  // layout).
+  "--RS__disablePagination",
+]);
+
 function extractTsVars(tsSource: string): string[] {
   const names = new Set<string>();
-  // REF constants → "--USER__" + value
-  const refRe = /static\s+readonly\s+\w+_REF\s*=\s*"([^"]+)"/g;
+  // Collect REF/KEY pair prefixes so we can skip REFs that are paired
+  // with a `_KEY` (those REFs are store-key strings, not CSS variable
+  // suffixes — the actual CSS var is the KEY value).
+  const pairedRefPrefixes = new Set<string>();
+  const keyRe =
+    /static\s+readonly\s+(\w+)_KEY\s*=\s*"(?:--USER__|--RS__)[^"]+"/g;
+  for (const match of tsSource.matchAll(keyRe)) {
+    pairedRefPrefixes.add(match[1]);
+  }
+  // REF constants → "--USER__" + value, EXCEPT when paired with a KEY
+  // (in which case the REF is a store-key alias, not a CSS variable).
+  const refRe = /static\s+readonly\s+(\w+)_REF\s*=\s*"([^"]+)"/g;
   for (const match of tsSource.matchAll(refRe)) {
-    names.add("--USER__" + match[1]);
+    if (pairedRefPrefixes.has(match[1])) continue;
+    names.add("--USER__" + match[2]);
   }
   // KEY constants that use "--RS__" directly (e.g. scroll padding)
   const rsKeyRe = /static\s+readonly\s+\w+_KEY\s*=\s*"(--RS__[^"]+)"/g;
@@ -97,11 +123,14 @@ const tsVars = extractTsVars(tsSource);
 const cssVars = extractCssVars(CSS_DIRS);
 
 const orphans: string[] = [];
-const dualApplicator: string[] = [];
+const v1DualApplicator: string[] = [];
+const v2SubstringMatch: string[] = [];
 for (const name of tsVars) {
   if (cssVars.has(name)) continue;
-  if (DUAL_APPLICATOR_ALLOWED.has(name)) {
-    dualApplicator.push(name);
+  if (V1_DUAL_APPLICATOR_ALLOWED.has(name)) {
+    v1DualApplicator.push(name);
+  } else if (V2_SUBSTRING_MATCH_ALLOWED.has(name)) {
+    v2SubstringMatch.push(name);
   } else {
     orphans.push(name);
   }
@@ -110,20 +139,27 @@ for (const name of tsVars) {
 console.log(
   `\nChecked ${tsVars.length} CSS vars written by TS against ${cssVars.size} vars used in bundled CSS.`
 );
-if (dualApplicator.length) {
+if (v1DualApplicator.length) {
   console.log(
-    `\n${dualApplicator.length} dual-applicator writes (v1 compatibility, expected):`
+    `\n${v1DualApplicator.length} v1-compatibility dual-applicator writes (expected):`
   );
-  for (const n of dualApplicator) console.log(`  ${n}`);
+  for (const n of v1DualApplicator) console.log(`  ${n}`);
+}
+if (v2SubstringMatch.length) {
+  console.log(
+    `\n${v2SubstringMatch.length} v2 substring-match writes (expected):`
+  );
+  for (const n of v2SubstringMatch) console.log(`  ${n}`);
 }
 if (orphans.length) {
   console.error(
-    `\n❌ ${orphans.length} orphaned TS writes — not consumed by any CSS and not in the dual-applicator allow-list:`
+    `\n❌ ${orphans.length} orphaned TS writes — not consumed by any CSS and not in the allow-lists:`
   );
   for (const n of orphans) console.error(`  ${n}`);
   console.error(
     "\nEither: remove the TS write, add the consuming CSS, or extend " +
-      "DUAL_APPLICATOR_ALLOWED in scripts/check-readium-css-vars.ts with a reason."
+      "V1_DUAL_APPLICATOR_ALLOWED / V2_SUBSTRING_MATCH_ALLOWED in " +
+      "scripts/check-readium-css-vars.ts with a reason."
   );
   process.exit(1);
 }

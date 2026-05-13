@@ -85,6 +85,7 @@
     <button class="filter-btn active" data-filter="all">All</button>
     <button class="filter-btn" data-filter="epub">EPUB</button>
     <button class="filter-btn" data-filter="pdf">PDF</button>
+    <button class="filter-btn" data-filter="audiobook">Audiobook</button>
     <span id="tag-filters"></span>
     <a href="index_epub_file.html" target="_blank" style="text-decoration:none;margin-left:auto;padding:6px 14px;font-size:11px;border:1px solid #d0d0d0;border-radius:14px;background:#fff;color:#555;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;">Open EPUB File</a>
   </div>
@@ -248,8 +249,13 @@
         allPublications = [...fixViewerUrls(await resp.json()), ...epub3Samples];
         renderGrid();
 
-        // Enrich with metadata in background (only for API publications, not samples)
-        const apiPubs = allPublications.filter(p => !p.hosted);
+        // Enrich with metadata in background. We attempt enrichment for
+        // every API publication (including hosted ones, since their
+        // manifest may still be reachable for cover/metadata extraction).
+        // `enrichWithMetadata` swallows fetch failures, so cross-origin
+        // manifests that block CORS just degrade silently to whatever
+        // metadata the server already provided.
+        const apiPubs = allPublications.filter(p => !epub3Samples.includes(p));
         await Promise.allSettled(apiPubs.map(pub => enrichWithMetadata(pub)));
         renderGrid();
       } catch (e) {
@@ -291,8 +297,8 @@
       }
 
       grid.innerHTML = filtered.map(pub => {
-        const icon = pub.type === 'pdf' ? '📄' : '📖';
-        const badgeClass = pub.type === 'pdf' ? 'badge-pdf' : 'badge-epub';
+        const icon = pub.type === 'pdf' ? '📄' : pub.type === 'audiobook' ? '🎧' : '📖';
+        const badgeClass = pub.type === 'pdf' ? 'badge-pdf' : pub.type === 'audiobook' ? 'badge-audiobook' : 'badge-epub';
         // FXL publications don't use ReadiumCSS, so hide the v2 variants and
         // collapse to the single default DITA Reader link. Renames the v1 link
         // back to plain "DITA Reader" for FXL tiles.

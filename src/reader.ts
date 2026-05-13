@@ -16,7 +16,13 @@
  * Developed on behalf of: NYPL, Bokbasen AS (https://www.bokbasen.no), CAST (http://www.cast.org)
  * Licensed to: NYPL, Bokbasen AS and CAST under one or more contributor license agreements.
  */
-import { Annotation, Bookmark, Locator, Publication } from "./model/v3";
+import {
+  Annotation,
+  Bookmark,
+  Comment,
+  Locator,
+  Publication,
+} from "./model/v3";
 import { Profile } from "@readium/shared";
 import { UserSettingsIncrementable } from "./model/user-settings/UserProperties";
 import { UserSettings } from "./model/user-settings/UserSettings";
@@ -41,9 +47,9 @@ import {
 import {
   EpubNavigator,
   IFrameAttributes,
-  ReaderConfig,
   ReaderRights,
 } from "./navigator/EpubNavigator";
+import type { ReaderConfig } from "./navigator/ReaderConfig";
 import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
@@ -55,46 +61,76 @@ import { DefinitionsModule } from "./modules/epub/search/DefinitionsModule";
 import LineFocusModule from "./modules/epub/LineFocusModule";
 import { HistoryModule } from "./modules/epub/HistoryModule";
 import CitationModule from "./modules/epub/CitationModule";
-import type { PDFNavigator } from "./navigator/PDFNavigator";
+import Navigator from "./navigator/Navigator";
+import type { AudiobookNavigator } from "./navigator/AudiobookNavigator";
 import { VisualNavigator, NavigatorFeature } from "./navigator/VisualNavigator";
 import { ConsumptionModule } from "./modules/epub/ConsumptionModule";
 
 /**
- * Dynamically import PDFNavigator to avoid loading pdfjs-dist in SSR/Node.
- * pdfjs-dist references browser-only APIs (DOMMatrix, canvas) at import time.
- */
-let _PDFNavigatorClass:
-  | (typeof import("./navigator/PDFNavigator"))["PDFNavigator"]
-  | undefined;
-async function loadPDFNavigator() {
-  if (!_PDFNavigatorClass) {
-    const mod = await import("./navigator/PDFNavigator");
-    _PDFNavigatorClass = mod.PDFNavigator;
-  }
-  return _PDFNavigatorClass;
-}
-function isPDFNavigator(nav: any): nav is PDFNavigator {
-  return nav?.isPDF === true;
-}
-
-/**
  * A class that, once instantiated using the public `.build` method,
  * is the primary interface into the D2 Reader.
- * @TODO :
- *  - Type all function arguments
- *  - DEV logger
- *  - Default config
- *  - Different types for initial config and final config
- *  - Testing
  */
 export default class D2Reader {
+  /**
+   * Class reference for the audiobook navigator, populated by
+   * `loadAudiobookNavigator` on first dynamic load. Used by `asAudio`
+   * for `instanceof` narrowing against a lazy-loaded class without
+   * value-importing it at the top of this file. Future lazy navigators
+   * follow the same shape: one static field per medium, one loader.
+   */
+  private static audiobookNavigatorClass?: typeof AudiobookNavigator;
+
+  /**
+   * Dynamically import PDFNavigator to avoid loading pdfjs-dist in SSR/Node.
+   * pdfjs-dist references browser-only APIs (DOMMatrix, canvas) at import time.
+   * Module deduplication is handled natively by the dynamic-import system.
+   */
+  private static async loadPDFNavigator() {
+    const { PDFNavigator } = await import("./navigator/PDFNavigator");
+    return PDFNavigator;
+  }
+
+  /**
+   * Dynamically import AudiobookNavigator. Keeps the audio engine code
+   * (HTMLAudioElement wrapper, pool, etc.) out of the bundle for
+   * EPUB-only and PDF-only integrators. Caches the class on
+   * `D2Reader.audiobookNavigatorClass` so `asAudio` can `instanceof`-check
+   * against a lazy-loaded class without value-importing it at the top of
+   * this file (which would defeat the lazy load).
+   */
+  private static async loadAudiobookNavigator() {
+    const { AudiobookNavigator } =
+      await import("./navigator/AudiobookNavigator");
+    D2Reader.audiobookNavigatorClass = AudiobookNavigator;
+    return AudiobookNavigator;
+  }
+
   private constructor(
     private readonly settings: UserSettings,
-    private readonly navigator: VisualNavigator,
+    private readonly navigator: Navigator,
     private readonly highlighter?: TextHighlighter,
     private readonly ttsSettings?: TTSSettings,
     private readonly mediaOverlaySettings?: MediaOverlaySettings
   ) {}
+
+  // ── Type guards — the only place `instanceof` appears in D2Reader.
+  // Call sites use `this.asVisual()?.X()` / `this.asAudio()?.X()` to
+  // dispatch medium-specific methods without scattering instanceof
+  // checks. `VisualNavigator` is value-imported (direct instanceof);
+  // lazy-loaded navigators are checked against the class reference
+  // captured at load time on the static field above.
+  private asVisual(): VisualNavigator | null {
+    return this.navigator instanceof VisualNavigator ? this.navigator : null;
+  }
+  private asEpub(): EpubNavigator | null {
+    return this.navigator instanceof EpubNavigator ? this.navigator : null;
+  }
+  private asAudio(): AudiobookNavigator | null {
+    return D2Reader.audiobookNavigatorClass &&
+      this.navigator instanceof D2Reader.audiobookNavigatorClass
+      ? (this.navigator as AudiobookNavigator)
+      : null;
+  }
 
   // ── Concrete EPUB module accessors ──────────────────────────
   // Reader methods below that are EPUB-specific (using methods not on
@@ -104,13 +140,13 @@ export default class D2Reader {
   // of the EPUB-specific methods should only be invoked in EPUB contexts
   // (either the navigator is EPUB, or the method no-ops via optional chaining).
   private get epubBookmarkModule(): BookmarkModule | undefined {
-    return this.navigator.modules.bookmarks as BookmarkModule | undefined;
+    return this.asEpub()?.modules.bookmarks as BookmarkModule | undefined;
   }
   private get epubAnnotationModule(): AnnotationModule | undefined {
-    return this.navigator.modules.annotations as AnnotationModule | undefined;
+    return this.asEpub()?.modules.annotations as AnnotationModule | undefined;
   }
   private get epubSearchModule(): SearchModule | undefined {
-    return this.navigator.modules.search as SearchModule | undefined;
+    return this.asEpub()?.modules.search as SearchModule | undefined;
   }
 
   addEventListener(event: string, handler: (...args: any[]) => void) {
@@ -317,6 +353,86 @@ export default class D2Reader {
 
     if (
       publication.metadata?.conformsTo &&
+      publication.metadata?.conformsTo.includes(Profile.AUDIOBOOK)
+    ) {
+      const settings = await UserSettings.create({
+        store: settingsStore,
+        initialUserSettings: initialConfig.userSettings,
+        layout: "",
+        scriptMode: getScriptMode(publication),
+      });
+
+      const { AudiobookSettings } =
+        await import("./model/user-settings/AudiobookSettings");
+      const audiobookSettings = await AudiobookSettings.create({
+        store: settingsStore,
+        initialAudiobookSettings: initialConfig.audiobook?.userSettings,
+      });
+
+      // Built-in audiobook modules so far: AudiobookBookmarkModule (task 6).
+      // Annotation / History / Consumption modules land in tasks 7–9.
+      // Integrator-supplied `initialConfig.modules` are passed through and
+      // validated by AudiobookNavigator's hostType check.
+
+      const AudiobookNavigator = await D2Reader.loadAudiobookNavigator();
+      const { AudiobookBookmarkModule } =
+        await import("./modules/audiobook/AudiobookBookmarkModule");
+      const { AudiobookCommentsModule } =
+        await import("./modules/audiobook/AudiobookCommentsModule");
+      const { AudiobookTimelineModule } =
+        await import("./modules/audiobook/AudiobookTimelineModule");
+
+      const bookmarkModule = rights.enableBookmarks
+        ? await AudiobookBookmarkModule.create({
+            annotator,
+            publication,
+            ...initialConfig.audiobook?.bookmarks,
+          })
+        : undefined;
+
+      const commentsModule = rights.enableComments
+        ? await AudiobookCommentsModule.create({
+            annotator,
+            publication,
+            ...initialConfig.audiobook?.comments,
+          })
+        : undefined;
+
+      // Timeline module: when enabled, owns whole-book progress math
+      // AND renders the scrubber UI into integrator-supplied containers
+      // (chapter and/or whole-book). Without containers it runs in
+      // math-only mode for integrator-built UI.
+      const timelineModule = rights.enableTimeline
+        ? await AudiobookTimelineModule.create({
+            publication,
+            settings: audiobookSettings,
+            ...initialConfig.audiobook?.timeline,
+          })
+        : undefined;
+
+      const navigator = await AudiobookNavigator.create({
+        publication: publication,
+        rights: rights,
+        settings: audiobookSettings,
+        api: initialConfig.api,
+        annotator: annotator,
+        initialLastReadingPosition: initialConfig.lastReadingPosition,
+        preservePitchWorkletUrl:
+          initialConfig.audiobook?.preservePitchWorkletUrl,
+        prefetch: initialConfig.audiobook?.prefetch,
+        chapterListContainer: initialConfig.audiobook?.chapterListContainer,
+        colors: initialConfig.audiobook?.colors,
+        modules: [
+          bookmarkModule,
+          commentsModule,
+          timelineModule,
+          ...(initialConfig.modules ?? []),
+        ],
+      });
+
+      return new D2Reader(settings, navigator);
+    } else if (
+      publication.metadata?.conformsTo &&
       publication.metadata?.conformsTo.includes(Profile.PDF)
     ) {
       const settings = await UserSettings.create({
@@ -325,11 +441,8 @@ export default class D2Reader {
         layout: "",
         scriptMode: getScriptMode(publication),
       });
-      const PDFNav = await loadPDFNavigator();
+      const PDFNavigator = await D2Reader.loadPDFNavigator();
 
-      // Built-in PDF modules. The navigator registers them during
-      // construction (host-type validated). Custom user modules from
-      // initialConfig.modules are concatenated after.
       const { PdfBookmarkModule } =
         await import("./modules/pdf/PdfBookmarkModule");
       const { PdfSearchModule } = await import("./modules/pdf/PdfSearchModule");
@@ -340,15 +453,23 @@ export default class D2Reader {
       const { PdfViewSettingsModule } =
         await import("./modules/pdf/PdfViewSettingsModule");
 
-      const pdfBuiltIns = [
-        new PdfBookmarkModule(),
-        new PdfSearchModule(),
-        new PdfAnnotationModule(),
-        new PdfHistoryModule(),
-        new PdfViewSettingsModule(),
-      ];
+      const bookmarkModule = rights.enableBookmarks
+        ? new PdfBookmarkModule({ annotator, publication })
+        : undefined;
+      const searchModule = rights.enableSearch
+        ? new PdfSearchModule()
+        : undefined;
+      const annotationModule = rights.enableAnnotations
+        ? new PdfAnnotationModule({ viewStore: store })
+        : undefined;
+      const historyModule = rights.enableHistory
+        ? new PdfHistoryModule()
+        : undefined;
+      const viewSettingsModule = new PdfViewSettingsModule({
+        viewStore: store,
+      });
 
-      const navigator = await PDFNav.create({
+      const navigator = await PDFNavigator.create({
         mainElement: mainElement,
         publication: publication,
         settings: settings,
@@ -357,8 +478,14 @@ export default class D2Reader {
         workerSrc: initialConfig.workerSrc,
         annotator: annotator,
         initialLastReadingPosition: initialConfig.lastReadingPosition,
-        store: store,
-        modules: [...pdfBuiltIns, ...(initialConfig.modules ?? [])],
+        modules: [
+          bookmarkModule,
+          searchModule,
+          annotationModule,
+          historyModule,
+          viewSettingsModule,
+          ...(initialConfig.modules ?? []),
+        ],
       });
 
       // setupAll() is called inside PDFNavigator.start() — before the
@@ -620,19 +747,19 @@ export default class D2Reader {
 
   /** Start TTS Read Aloud */
   startReadAloud = () => {
-    this.navigator.startReadAloud();
+    this.asVisual()?.startReadAloud();
   };
   /** Stop TTS Read Aloud */
   stopReadAloud = () => {
-    this.navigator.stopReadAloud();
+    this.asVisual()?.stopReadAloud();
   };
   /** Pause TTS Read Aloud */
   pauseReadAloud = () => {
-    this.navigator.pauseReadAloud();
+    this.asVisual()?.pauseReadAloud();
   };
   /** Resume TTS Read Aloud */
   resumeReadAloud = () => {
-    this.navigator.resumeReadAloud();
+    this.asVisual()?.resumeReadAloud();
   };
 
   /**
@@ -641,19 +768,19 @@ export default class D2Reader {
 
   /** Start Media Overlay Read Along */
   startReadAlong = () => {
-    this.navigator.startReadAlong();
+    this.asVisual()?.startReadAlong();
   };
   /** Stop Media Overlay Read Along */
   stopReadAlong = () => {
-    this.navigator.stopReadAlong();
+    this.asVisual()?.stopReadAlong();
   };
   /** Pause Media Overlay Read Along */
   pauseReadAlong = () => {
-    this.navigator.pauseReadAlong();
+    this.asVisual()?.pauseReadAlong();
   };
   /** Resume Media Overlay Read Along */
   resumeReadAlong = () => {
-    this.navigator.resumeReadAlong();
+    this.asVisual()?.resumeReadAlong();
   };
   get hasMediaOverlays() {
     return this.navigator.publication.hasMediaOverlays ?? false;
@@ -698,6 +825,33 @@ export default class D2Reader {
     );
   };
 
+  /**
+   * Comments — free-text user notes anchored to a position. For audio,
+   * anchored to `(href, time)` and shown during playback within each
+   * comment's `displayBefore` / `displayAfter` window. The
+   * `CommentsActive` event fires when the visible set changes.
+   */
+  /** Save a comment with the given body at the current position. */
+  addComment = (body: string): Comment | null => {
+    return this.navigator.modules.comments?.add(body) ?? null;
+  };
+  /** Update an existing comment's body. Returns the updated comment or null. */
+  updateComment = (id: string, body: string): Comment | null => {
+    return this.navigator.modules.comments?.update(id, body) ?? null;
+  };
+  /** Delete a previously saved comment. */
+  deleteComment = (comment: Comment): void => {
+    this.navigator.modules.comments?.delete(comment);
+  };
+  /** All comments for the loaded publication, sorted by anchor time. */
+  get comments(): Comment[] {
+    return this.navigator.modules.comments?.list() ?? [];
+  }
+  /** Comments anchored at the given position (or current playback position). */
+  findCommentsAt = (locator?: Locator): Comment[] => {
+    return this.navigator.modules.comments?.findAt(locator) ?? [];
+  };
+
   /** Change highlighter color to a specific HEX string */
   changeHighlighterColor = (color: string) => {
     this.highlighter?.setColor(color);
@@ -714,21 +868,21 @@ export default class D2Reader {
 
   /** Hide  Layer */
   hideLayer = (layer) => {
-    this.navigator.hideLayer(layer);
+    this.asVisual()?.hideLayer(layer);
   };
   /** Show  Layer */
   showLayer = (layer) => {
-    this.navigator.showLayer(layer);
+    this.asVisual()?.showLayer(layer);
   };
 
   /** Activate Marker <br>
    * Activated Marker will be used for active annotation creation */
   activateMarker = (id: string, position: string) => {
-    this.navigator.activateMarker(id, position);
+    this.asVisual()?.activateMarker(id, position);
   };
   /** Deactivate Marker */
   deactivateMarker = () => {
-    this.navigator.deactivateMarker();
+    this.asVisual()?.deactivateMarker();
   };
 
   /**
@@ -824,6 +978,246 @@ export default class D2Reader {
   }
 
   /**
+   * Audiobook playback
+   *
+   * Implemented by AudiobookNavigator. For EPUB and PDF navigators
+   * the underlying optional methods are undefined — actions become
+   * no-ops via optional chaining and getters return safe defaults.
+   * Use `isAudiobook` to gate audiobook-only UI.
+   */
+
+  /** Begin playback. No-op for non-audiobook navigators. */
+  play(): Promise<void> {
+    return this.asAudio()?.play() ?? Promise.resolve();
+  }
+
+  /** Pause playback. */
+  pause(): void {
+    this.asAudio()?.pause();
+  }
+
+  /** Seek to a time in the current resource (seconds). */
+  seek(seconds: number): void {
+    this.asAudio()?.seek(seconds);
+  }
+
+  /** Jump by a relative offset (seconds; negative for backward). */
+  jump(seconds: number): void {
+    this.asAudio()?.jump(seconds);
+  }
+
+  /** Skip forward by `skipForwardInterval` (default 30s). */
+  skipForward(): void {
+    this.asAudio()?.skipForward();
+  }
+
+  /** Skip backward by `skipBackwardInterval` (default 15s). */
+  skipBackward(): void {
+    this.asAudio()?.skipBackward();
+  }
+
+  /** Advance to the next resource (chapter). Resumes playback if it was playing. */
+  nextChapter(): Promise<void> {
+    return this.asAudio()?.goForward() ?? Promise.resolve();
+  }
+
+  /** Return to the previous resource (chapter). Resumes playback if it was playing. */
+  previousChapter(): Promise<void> {
+    return this.asAudio()?.goBackward() ?? Promise.resolve();
+  }
+
+  /** Set playback rate (1.0 = normal). */
+  setPlaybackRate(rate: number): void {
+    this.asAudio()?.setPlaybackRate(rate);
+  }
+
+  /** Set volume in [0, 1]. */
+  setVolume(value: number): void {
+    this.asAudio()?.setVolume(value);
+  }
+
+  /** Set muted state (independent of volume). */
+  setMuted(value: boolean): void {
+    this.asAudio()?.setMuted(value);
+  }
+
+  /** Current playback time in seconds. 0 for non-audiobook. */
+  get currentTime(): number {
+    return this.asAudio()?.currentTime ?? 0;
+  }
+
+  /** Duration of the current resource in seconds. 0 for non-audiobook. */
+  get duration(): number {
+    return this.asAudio()?.duration ?? 0;
+  }
+
+  /** Whether audio is currently playing. False for non-audiobook. */
+  get isPlaying(): boolean {
+    return this.asAudio()?.isPlaying ?? false;
+  }
+
+  /** Whether audio is currently paused. True for non-audiobook (no audio to play). */
+  get isPaused(): boolean {
+    return this.asAudio()?.isPaused ?? true;
+  }
+
+  /**
+   * Whether playback is currently waiting on audio data (cross-chapter
+   * load, cold-start, or mid-playback rebuffer). False for non-audiobook.
+   * Subscribe to `playback.waiting` event for change notifications.
+   */
+  get isWaiting(): boolean {
+    return this.asAudio()?.isWaiting ?? false;
+  }
+
+  /** Current playback rate. 1 for non-audiobook. */
+  get playbackRate(): number {
+    return this.asAudio()?.playbackRate ?? 1;
+  }
+
+  /** Volume in [0, 1]. 1 for non-audiobook. */
+  get volume(): number {
+    return this.asAudio()?.volume ?? 1;
+  }
+
+  /** Muted state. False for non-audiobook. */
+  get muted(): boolean {
+    return this.asAudio()?.muted ?? false;
+  }
+
+  /**
+   * Typed audiobook playback settings (volume, playbackRate, preservePitch,
+   * skip intervals, pollInterval, autoPlay, enableMediaSession). Returns
+   * `null` for non-audiobook publications.
+   *
+   * Settings are persisted via the same `LocalStorageStore` the reader uses
+   * for EPUB/PDF preferences. Subscribe to `onChange` to keep UI in sync.
+   */
+  get audiobookSettings():
+    | import("./model/user-settings/AudiobookSettings").AudiobookSettings
+    | null {
+    return this.asAudio()?.settings ?? null;
+  }
+
+  /**
+   * The audiobook timeline module, or `null` when not enabled
+   * (`rights.enableTimeline = false`) or when the publication is not
+   * an audiobook. Provides whole-book progress math: cumulative
+   * chapter offsets, total duration, and conversions between (chapter,
+   * time) and absolute book time.
+   *
+   * Viewers should treat `null` as "no timeline support" and fall back
+   * to a simple per-chapter scrubber.
+   */
+  get audiobookTimeline():
+    | import("./modules/audiobook/AudiobookTimelineModule").AudiobookTimelineModule
+    | null {
+    const nav = this.asAudio();
+    if (!nav) return null;
+    return (
+      nav.getModule<
+        import("./modules/audiobook/AudiobookTimelineModule").AudiobookTimelineModule
+      >("timeline") ?? null
+    );
+  }
+
+  /**
+   * Start a time-based sleep timer (audiobook only). Pauses playback after
+   * `minutes` minutes of wall-clock time. Replaces any active timer.
+   * No-op for non-audiobook publications.
+   */
+  startSleepTimerMinutes(minutes: number): void {
+    this.asAudio()?.startSleepTimerMinutes(minutes);
+  }
+
+  /**
+   * Arm the sleep timer to pause at the end of the current chapter
+   * (audiobook only). Wins over `settings.autoPlay`. No-op for non-audiobook.
+   */
+  startSleepTimerAtChapterEnd(): void {
+    this.asAudio()?.startSleepTimerAtChapterEnd();
+  }
+
+  /** Cancel the audiobook sleep timer if armed. Idempotent. No-op for non-audiobook. */
+  cancelSleepTimer(): void {
+    this.asAudio()?.cancelSleepTimer();
+  }
+
+  /**
+   * Snapshot of the audiobook sleep timer state, or `null` if no timer is
+   * armed (or non-audiobook publication). Subscribe to `SleepTimerTick`
+   * for live countdown updates.
+   */
+  sleepTimerState():
+    | import("./navigator/audio/SleepTimer").SleepTimerSnapshot
+    | null {
+    return this.asAudio()?.sleepTimerState() ?? null;
+  }
+
+  /** Whether there's a next resource (chapter) to advance to. False for non-audiobook. */
+  get hasNextChapter(): boolean {
+    return this.asAudio()?.canGoForward ?? false;
+  }
+
+  /** Whether there's a previous resource (chapter) to return to. False for non-audiobook. */
+  get hasPreviousChapter(): boolean {
+    return this.asAudio()?.canGoBackward ?? false;
+  }
+
+  /** Whether playback is at the start of the current resource. */
+  get isTrackStart(): boolean {
+    return this.asAudio()?.isTrackStart ?? false;
+  }
+
+  /** Whether playback is at the end of the current resource. */
+  get isTrackEnd(): boolean {
+    return this.asAudio()?.isTrackEnd ?? false;
+  }
+
+  /** True when the loaded publication is an audiobook. */
+  get isAudiobook(): boolean {
+    return this.asAudio() !== null;
+  }
+
+  /** The loaded publication. Useful when integrators need access to
+   *  raw manifest fields beyond the convenience getters below. */
+  get publication(): Publication {
+    return this.navigator.publication;
+  }
+
+  /** The publication's metadata (title, author, language, etc.).
+   *  Convenience for `publication.metadata`. */
+  get metadata() {
+    return this.navigator.publication.metadata;
+  }
+
+  /** Manifest `resources` array — supplementary files (cover image,
+   *  alternate audio, etc.) referenced by the publication but not part
+   *  of the readingOrder. */
+  get resources() {
+    return this.navigator.publication.resources;
+  }
+
+  /** Absolute URL of the publication's cover image, or `undefined`.
+   *  Looks across links, resources, and readingOrder for `rel="cover"`,
+   *  then falls back to any bitmap or SVG. Drop into `<img src=...>` or
+   *  `background-image: url(...)` directly. For the underlying Link
+   *  (height, width, type, etc.), use `publication.cover`. */
+  get cover(): string | undefined {
+    const link = this.navigator.publication.cover;
+    if (!link?.href) return undefined;
+    return this.navigator.publication.getAbsoluteHref(link.href);
+  }
+
+  /** The publication's timeline — readingOrder cross-referenced with
+   *  the table of contents. Useful for chapter-aware UI: "what TOC
+   *  entry is currently playing", search-result grouping, breadcrumbs.
+   *  See `Publication.timeline` for the full API. */
+  get timeline() {
+    return this.navigator.publication.timeline;
+  }
+
+  /**
    * Search
    */
   /** Search by term and current resource or entire book <br>
@@ -855,7 +1249,7 @@ export default class D2Reader {
     return this.navigator.currentResource();
   }
   get mostRecentNavigatedTocItem() {
-    return this.navigator.mostRecentNavigatedTocItem?.() ?? undefined;
+    return this.asVisual()?.mostRecentNavigatedTocItem() ?? undefined;
   }
   get totalResources() {
     return this.navigator.totalResources();
@@ -877,8 +1271,9 @@ export default class D2Reader {
     return await this.settings.applyUserSettings(userSettings);
   };
   scroll = async (value: boolean, direction?: string) => {
-    if (isPDFNavigator(this.navigator)) {
-      return this.navigator.scroll(value, direction);
+    const visual = this.asVisual();
+    if (visual && typeof visual.scroll === "function") {
+      return visual.scroll(value, direction);
     }
     return await this.settings.scroll(value);
   };
@@ -951,14 +1346,6 @@ export default class D2Reader {
   };
 
   /**
-   * Publisher?
-   * Disabled
-   */
-  // publisher = (on) => {
-  //   this.settings.publisher(on);
-  // };
-
-  /**
    * TTS Settings
    */
   resetTTSSettings = () => {
@@ -971,14 +1358,6 @@ export default class D2Reader {
       await this.ttsSettings?.applyTTSSettings(ttsSettings);
     }
   };
-  /**
-   * Disabled
-   */
-  // applyTTSSetting = (key: string, value: any) => {
-  //   if (this.navigator.rights.enableTTS) {
-  //     this.ttsSettings.applyTTSSetting(key, value);
-  //   }
-  // };
   applyPreferredVoice = async (value: string) => {
     if (this.navigator.supports(NavigatorFeature.TTS)) {
       await this.ttsSettings?.applyPreferredVoice(value);
@@ -1009,34 +1388,34 @@ export default class D2Reader {
     return this.navigator.currentLocator();
   }
   get positions() {
-    return this.navigator.positions();
+    return this.asVisual()?.positions() ?? [];
   }
   goTo = async (locator: Locator) => {
-    this.navigator.goTo(locator);
+    await this.navigator.goTo(locator);
   };
   goToPosition = async (value: number) => {
     return this.navigator.goToPosition(value);
   };
   goToPage = async (page: number) => {
-    await this.navigator.goToPage(page);
+    await this.asVisual()?.goToPage(page);
   };
   fitToPage = () => {
-    this.navigator.fitToPage();
+    this.asVisual()?.fitToPage();
   };
   fitToWidth = () => {
-    this.navigator.fitToWidth();
+    this.asVisual()?.fitToWidth();
   };
   zoomIn = () => {
-    this.navigator.zoomIn();
+    this.asVisual()?.zoomIn();
   };
   zoomOut = () => {
-    this.navigator.zoomOut();
+    this.asVisual()?.zoomOut();
   };
   activateHand = () => {
-    this.navigator.activateHand();
+    this.asVisual()?.activateHand();
   };
   deactivateHand = () => {
-    this.navigator.deactivateHand();
+    this.asVisual()?.deactivateHand();
   };
   copyToClipboard = (text) => {
     this.navigator.modules.contentProtection?.copyToClipboard(text);
@@ -1048,10 +1427,10 @@ export default class D2Reader {
     this.navigator.previousResource();
   };
   nextPage = async () => {
-    this.navigator.nextPage();
+    this.asVisual()?.nextPage();
   };
   previousPage = async () => {
-    this.navigator.previousPage();
+    this.asVisual()?.previousPage();
   };
   get atStart() {
     return this.navigator.atStart();
@@ -1060,7 +1439,7 @@ export default class D2Reader {
     return this.navigator.atEnd();
   }
   snapToSelector = async (selector) => {
-    this.navigator.snapToSelector?.(selector);
+    this.asVisual()?.snapToSelector(selector);
   };
   /**
    * Update the navigator `IFrameAttributes` after the reader has been initialized.
@@ -1068,7 +1447,7 @@ export default class D2Reader {
    * attributes at runtime. The navigator re-applies them on the next resize.
    */
   applyAttributes = (value: IFrameAttributes) => {
-    this.navigator.applyAttributes?.(value);
+    this.asVisual()?.applyAttributes(value);
   };
 
   async applyLineFocusSettings(userSettings) {

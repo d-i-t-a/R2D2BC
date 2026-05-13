@@ -108,17 +108,19 @@ export type { EncryptionInfo } from "./fetcher/FontDeobfuscator";
 // ─── Navigator / Config ─────────────────────────────────────────────────────
 
 export type {
-  ReaderConfig,
   ReaderRights,
   NavigatorAPI,
   IFrameAttributes,
   Injectable,
   SampleRead,
   PublicationServices,
-  InitialAnnotations,
   EpubNavigatorConfig,
   IFrameNavigatorConfig,
 } from "./navigator/EpubNavigator";
+export type {
+  ReaderConfig,
+  InitialAnnotations,
+} from "./navigator/ReaderConfig";
 
 // ─── User Settings ───────────────────────────────────────────────────────────
 

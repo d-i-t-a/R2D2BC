@@ -18,6 +18,11 @@ import {
   getAnnotationStorageOnModified,
   getSerializable,
 } from "../../types/pdfjs-workarounds";
+import Store from "../../store/Store";
+
+export interface PdfAnnotationModuleConfig {
+  viewStore: Store;
+}
 
 /**
  * PDF annotation module.
@@ -64,12 +69,17 @@ export class PdfAnnotationModule implements IAnnotationModule<PDFModuleHost> {
   readonly hostType = HostType.PDF;
   readonly rightsKey = RightsKey.Annotations;
 
+  private readonly viewStore: Store;
   private host!: PDFModuleHost;
   // Saved annotations grouped by page index, waiting for their layer to render.
   private pendingAnnotations: Map<number, unknown[]> | null = null;
   // Fingerprint of the last-restored document, used to detect resource changes.
   private lastFingerprint: string | undefined;
   private debouncedSave!: () => void;
+
+  constructor(config: PdfAnnotationModuleConfig) {
+    this.viewStore = config.viewStore;
+  }
 
   attach(host: PDFModuleHost): void {
     this.host = host;
@@ -168,8 +178,8 @@ export class PdfAnnotationModule implements IAnnotationModule<PDFModuleHost> {
       }
     }
     const fingerprint = this.host.fingerprint;
-    if (this.host.viewStore && fingerprint) {
-      this.host.viewStore.remove(this.storageKey(fingerprint));
+    if (this.viewStore && fingerprint) {
+      this.viewStore.remove(this.storageKey(fingerprint));
     }
     this.pendingAnnotations = null;
   }
@@ -248,7 +258,7 @@ export class PdfAnnotationModule implements IAnnotationModule<PDFModuleHost> {
    * drop others.
    */
   private save(): void {
-    if (!this.host.viewStore || !this.host.pdfDoc) return;
+    if (!this.viewStore || !this.host.pdfDoc) return;
     const fingerprint = this.host.fingerprint ?? "";
     const key = this.storageKey(fingerprint);
     const plain: Record<string, unknown> = {};
@@ -271,9 +281,9 @@ export class PdfAnnotationModule implements IAnnotationModule<PDFModuleHost> {
     }
 
     if (Object.keys(plain).length === 0) {
-      this.host.viewStore.remove(key);
+      this.viewStore.remove(key);
     } else {
-      this.host.viewStore.set(key, JSON.stringify(plain));
+      this.viewStore.set(key, JSON.stringify(plain));
     }
   }
 
@@ -289,9 +299,9 @@ export class PdfAnnotationModule implements IAnnotationModule<PDFModuleHost> {
    */
   private restore(fingerprint: string): void {
     this.pendingAnnotations = null;
-    if (!this.host.viewStore) return;
+    if (!this.viewStore) return;
     const key = this.storageKey(fingerprint);
-    const raw = this.host.viewStore.get(key);
+    const raw = this.viewStore.get(key);
     if (!raw) return;
     try {
       const plain = JSON.parse(raw) as Record<string, unknown>;

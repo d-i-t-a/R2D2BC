@@ -25,7 +25,7 @@
 
 import type { ReaderModule } from "./ReaderModule";
 import type { ModuleHost } from "./ModuleHost";
-import type { Bookmark, Locator } from "../model/v3";
+import type { Bookmark, Comment, Locator } from "../model/v3";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // IBookmarkModule
@@ -122,6 +122,44 @@ export interface IAnnotationModule<
 
   /** Remove every annotation in the current resource. */
   clear(): void;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ICommentsModule
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Comments management contract.
+ *
+ * Comments are free-text user notes anchored to a position. Unlike
+ * annotations, they don't require a text selection — they attach to a
+ * locator (visual: page/progression; audio: time). Designed for media
+ * without rendered text (audiobook), and for position-anchored notes on
+ * visual content where the user wants to comment without highlighting.
+ *
+ * Single-user only at this layer. Multi-user threading and replies
+ * belong above the module (integrator-supplied backend).
+ */
+export interface ICommentsModule<
+  H extends ModuleHost = ModuleHost,
+> extends ReaderModule<H> {
+  /** Save a comment at the given locator (or current locator if omitted). */
+  add(body: string, locator?: Locator): Comment | null;
+
+  /** Update an existing comment's text. Returns the updated comment or null if not found. */
+  update(id: string, body: string): Comment | null;
+
+  /** Delete a previously saved comment. */
+  delete(comment: Comment): void;
+
+  /** All comments for the publication. */
+  list(): Comment[];
+
+  /**
+   * Comments anchored at the given locator (or the current locator).
+   * Multiple comments can share the same anchor — returns all of them.
+   */
+  findAt(locator?: Locator): Comment[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

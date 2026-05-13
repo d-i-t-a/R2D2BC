@@ -28,6 +28,7 @@ import type { NavigatorFeatureKey } from "./NavigatorFeatureMap";
 export const HostType = {
   Epub: "epub",
   PDF: "pdf",
+  Audiobook: "audiobook",
 } as const;
 export type HostTypeName = (typeof HostType)[keyof typeof HostType];
 
@@ -51,6 +52,7 @@ export const RightsKey = {
   History: "enableHistory",
   Citations: "enableCitations",
   Consumption: "enableConsumption",
+  Comments: "enableComments",
 } as const satisfies Record<string, keyof ReaderRights>;
 export type RightsKeyName = (typeof RightsKey)[keyof typeof RightsKey];
 

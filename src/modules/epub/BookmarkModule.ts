@@ -20,7 +20,7 @@
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { NavigatorFeature } from "../../navigator/VisualNavigator";
 import Annotator, { AnnotationType } from "../../store/Annotator";
-import { InitialAnnotations } from "../../navigator/EpubNavigator";
+import { InitialAnnotations } from "../../navigator/ReaderConfig";
 import { EpubModuleHost } from "../ModuleHost";
 import { ReaderModule, HostType, RightsKey } from "../ReaderModule";
 import { IBookmarkModule } from "../interfaces";

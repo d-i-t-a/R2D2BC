@@ -16,113 +16,47 @@
  * Developed on behalf of: DITA (AM Consulting LLC)
  */
 
-import EventEmitter from "eventemitter3";
 import Navigator from "./Navigator";
 import { Locator } from "../model/v3";
-import { Publication } from "../model/v3";
-import { Link } from "../model/v3";
-import { IFrameAttributes } from "./EpubNavigator";
-import { ReaderModule } from "../modules/ReaderModule";
-import { ModuleRegistry } from "../modules/ModuleRegistry";
-import { ModuleAccessors } from "../modules/ModuleAccessors";
-import type {
-  NavigatorFeatureKey,
-  NavigatorFeatureMap,
-} from "../modules/NavigatorFeatureMap";
-import type { ReaderRights } from "./types";
+import type { IFrameAttributes } from "./types";
+
+import {
+  NavigatorFeature,
+  type NavigatorFeatureName,
+} from "./NavigatorFeature";
+export { NavigatorFeature, type NavigatorFeatureName };
 
 /**
- * Typed feature names for navigator capability queries.
- */
-export const NavigatorFeature = {
-  TTS: "tts",
-  MediaOverlays: "mediaOverlays",
-  Search: "search",
-  Annotations: "annotations",
-  Bookmarks: "bookmarks",
-  Zoom: "zoom",
-  LineFocus: "lineFocus",
-  Definitions: "definitions",
-  Citations: "citations",
-  ContentProtection: "contentProtection",
-  Consumption: "consumption",
-  History: "history",
-  Timeline: "timeline",
-  PageBreaks: "pageBreaks",
-  ViewSettings: "viewSettings",
-} as const;
-
-export type NavigatorFeatureName =
-  (typeof NavigatorFeature)[keyof typeof NavigatorFeature];
-
-/**
- * Abstract base class for all visual navigators.
+ * Abstract base class for visual navigators (EPUB, PDF, future DiViNa).
  *
- * Extends EventEmitter for the event system.
- * Implements the Navigator interface for backwards compatibility.
- *
- * Subclasses: EpubNavigator (reflowable + FXL), PDFNavigator (PDF.js),
- * and future navigators (AudiobookNavigator, DiViNaNavigator).
+ * Extends `Navigator` to inherit module registry, event emitter,
+ * publication-derived list accessors, and the navigation contract.
+ * Adds visual-only concerns: RTL-aware goLeft/goRight, page navigation,
+ * and default no-ops for read-aloud / read-along / layer / marker /
+ * zoom features that concrete subclasses override.
  */
-export abstract class VisualNavigator
-  extends EventEmitter
-  implements Navigator
-{
-  abstract publication: Publication;
-  abstract rights: Partial<ReaderRights>;
-
-  // ── Module registry (shared by all navigators) ────────────────
-  readonly registry = new ModuleRegistry(() => this.rights);
-  readonly modules = new ModuleAccessors(this.registry);
-
-  // ── Required implementations ──────────────────────────────────
-
-  abstract currentLocator(): Locator;
-  abstract positions(): Locator[];
-  abstract currentResource(): number | undefined;
-  abstract totalResources(): number;
-
-  abstract goTo(locator: Locator): void | Promise<void>;
-  abstract goToPosition(value: number): void | Promise<void>;
+export abstract class VisualNavigator extends Navigator {
+  // ── Visual-only abstracts ─────────────────────────────────────
+  // Page navigation is a visual concept (paginated/scrolled rendered
+  // content). Audiobook navigators don't have pages — they use time
+  // and resource indices instead.
   abstract goToPage(page: number): void | Promise<void>;
   abstract nextPage(): void | Promise<void>;
   abstract previousPage(): void | Promise<void>;
-  abstract nextResource(): void | Promise<void>;
-  abstract previousResource(): void | Promise<void>;
-
-  abstract atStart(): boolean;
-  abstract atEnd(): boolean;
-
-  abstract tableOfContents(): Link[];
-  abstract landmarks(): Link[];
-  abstract pageList(): Link[];
-  abstract readingOrder(): Link[];
-
-  abstract stop(): void;
-
-  // ── Capability query ──────────────────────────────────────────
 
   /**
-   * Check if this navigator supports a given feature.
-   * Replaces instanceof checks in D2Reader. Each concrete navigator
-   * must implement this — there is no sensible default.
+   * Position list for the visual publication. EPUB and PDF both source
+   * this from `publication.positions` (auto-generated for EPUB, derived
+   * from page count for PDF). Override only if a subclass needs to
+   * compute it differently.
    */
-  abstract supports(feature: NavigatorFeatureName): boolean;
-
-  /** Typed lookup for a built-in module by NavigatorFeature key. */
-  getModule<K extends NavigatorFeatureKey>(
-    name: K
-  ): NavigatorFeatureMap[K] | undefined;
-  /** Untyped lookup for custom modules not in NavigatorFeatureMap. */
-  getModule<T extends ReaderModule = ReaderModule>(name: string): T | undefined;
-  getModule(name: string): ReaderModule | undefined {
-    return this.registry.get(name);
+  positions(): Locator[] {
+    return this.publication.positions ?? [];
   }
 
-  // ── Default no-ops for optional features ──────────────────────
-  // Subclasses override what they support. D2Reader calls these
-  // without instanceof checks — if the navigator doesn't support
-  // the feature, the no-op runs silently.
+  // ── Default no-ops for optional visual features ──────────────
+  // EPUB and PDF override what they support. Audiobook is not a
+  // VisualNavigator and therefore never inherits these.
 
   startReadAloud(): void {}
   stopReadAloud(): void {}
@@ -140,30 +74,32 @@ export abstract class VisualNavigator
   activateMarker(_id: string, _position: string): void {}
   deactivateMarker(): void {}
 
-  snapToSelector?(_selector: string): void {}
-  applyAttributes?(_value: IFrameAttributes): void {}
+  snapToSelector(_selector: string): void {}
+  applyAttributes(_value: IFrameAttributes): void {}
 
-  mostRecentNavigatedTocItem?(): string | undefined {
+  mostRecentNavigatedTocItem(): string | undefined {
     return undefined;
   }
 
   // ── RTL-aware navigation ──────────────────────────────────────
+
+  /** True when the publication renders right-to-left. */
+  private isRtl(): boolean {
+    return (
+      this.publication.metadata?.readingProgression === "rtl" ||
+      this.publication.metadata?.otherMetadata?.[
+        "rendition:spread-direction"
+      ] === "rtl"
+    );
+  }
 
   /**
    * Navigate left — respects reading progression direction.
    * In LTR: goes to previous page. In RTL: goes to next page.
    */
   goLeft(): void {
-    const rtl =
-      this.publication.metadata?.readingProgression === "rtl" ||
-      this.publication.metadata?.otherMetadata?.[
-        "rendition:spread-direction"
-      ] === "rtl";
-    if (rtl) {
-      this.nextPage();
-    } else {
-      this.previousPage();
-    }
+    if (this.isRtl()) this.nextPage();
+    else this.previousPage();
   }
 
   /**
@@ -171,25 +107,18 @@ export abstract class VisualNavigator
    * In LTR: goes to next page. In RTL: goes to previous page.
    */
   goRight(): void {
-    const rtl =
-      this.publication.metadata?.readingProgression === "rtl" ||
-      this.publication.metadata?.otherMetadata?.[
-        "rendition:spread-direction"
-      ] === "rtl";
-    if (rtl) {
-      this.previousPage();
-    } else {
-      this.nextPage();
-    }
+    if (this.isRtl()) this.previousPage();
+    else this.nextPage();
   }
 
-  // ── Zoom (for FXL and PDF) ────────────────────────────────────
-  // Default no-ops. PDFNavigator and EpubNavigator (FXL) override.
-
+  // ── Zoom (for FXL and PDF) — defaults overridden by subclasses ──
   fitToPage(): void {}
   fitToWidth(): void {}
   zoomIn(): void {}
   zoomOut(): void {}
   activateHand(): void {}
   deactivateHand(): void {}
+
+  // ── PDF scroll-mode toggle (PDFNavigator overrides) ──────────
+  scroll?(value: boolean, direction?: string): void | Promise<void>;
 }

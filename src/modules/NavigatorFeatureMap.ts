@@ -22,6 +22,7 @@ import type {
   IBookmarkModule,
   ISearchModule,
   IAnnotationModule,
+  ICommentsModule,
   IHistoryModule,
 } from "./interfaces";
 import { NavigatorFeature } from "../navigator/VisualNavigator";
@@ -44,6 +45,7 @@ export interface NavigatorFeatureMap {
   [NavigatorFeature.Annotations]: IAnnotationModule;
   [NavigatorFeature.Search]: ISearchModule;
   [NavigatorFeature.History]: IHistoryModule;
+  [NavigatorFeature.Comments]: ICommentsModule;
 
   // EPUB-only (no PDF counterpart yet — concrete classes):
   [NavigatorFeature.TTS]: TTSModule2;

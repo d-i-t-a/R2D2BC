@@ -1,0 +1,447 @@
+/*
+ * Internet Archive → Readium Audiobook Profile manifest converter.
+ *
+ * Given an IA item identifier (e.g. `treasureisland_librivox`), fetches
+ * the item's metadata via `https://archive.org/metadata/{id}`, picks the
+ * highest-quality MP3 derivative for each track, and constructs a webpub
+ * manifest that conforms to the Readium Audiobook Profile.
+ *
+ * IA serves audio files with permissive CORS, so the resulting manifest
+ * is directly playable from the audiobook viewer without proxying.
+ *
+ * One in-process LRU cache keeps repeated requests cheap; entries are
+ * evicted on the next miss past `CACHE_MAX`. Manifest payloads are tiny
+ * (~5–30 KB), so memory cost is negligible for the example server.
+ */
+
+import * as https from "https";
+
+/**
+ * Maximum manifests to keep in memory. The example server hits each
+ * identifier once per page reload — anything larger than the number of
+ * configured publications is plenty.
+ */
+const CACHE_MAX = 32;
+
+const cache = new Map<string, { json: ReadiumAudiobookManifest; ts: number }>();
+
+interface TocEntry {
+  href: string;
+  title: string;
+  children?: TocEntry[];
+}
+
+interface ReadiumAudiobookManifest {
+  "@context": string;
+  metadata: {
+    "@type": string;
+    conformsTo: string;
+    title: string;
+    author?: string;
+    narrator?: string;
+    duration?: number;
+    identifier?: string;
+    description?: string;
+  };
+  links: Array<{ rel: string; href: string; type: string }>;
+  readingOrder: Array<{
+    href: string;
+    type: string;
+    title: string;
+    duration: number;
+  }>;
+  resources: Array<{ href: string; type: string; rel?: string }>;
+  /**
+   * Hierarchical table of contents derived from track-title patterns
+   * (`buildToc`). Omitted when no usable grouping is found — the
+   * timeline service falls back to flat `readingOrder` in that case.
+   */
+  toc?: TocEntry[];
+}
+
+export interface ArchiveFile {
+  name: string;
+  format?: string;
+  length?: string;
+  title?: string;
+  track?: string;
+  size?: string;
+}
+
+export interface ArchiveMetadataResponse {
+  metadata?: {
+    title?: string | string[];
+    creator?: string | string[];
+    runtime?: string;
+    description?: string | string[];
+    identifier?: string;
+  };
+  files?: ArchiveFile[];
+}
+
+/**
+ * Convert IA's variable-format `length` field to seconds.
+ * Some derivatives report `"1430.54"` (numeric seconds), others
+ * `"23:51"` (MM:SS) or `"1:23:45"` (HH:MM:SS). Returns 0 on any
+ * parse failure — the manifest still renders, just without a duration
+ * for that track.
+ */
+export function parseLength(raw: string | undefined): number {
+  if (!raw) return 0;
+  const s = raw.trim();
+  if (!s) return 0;
+  if (s.includes(":")) {
+    const parts = s.split(":").map((p) => Number(p));
+    if (parts.some((n) => !Number.isFinite(n))) return 0;
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    return 0;
+  }
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * Take the first string value from an IA field that might be a string,
+ * an array of strings, or missing.
+ */
+export function firstString(value: string | string[] | undefined): string {
+  if (!value) return "";
+  if (Array.isArray(value)) return value[0] ?? "";
+  return value;
+}
+
+/**
+ * Pick one audio derivative per track. LibriVox items typically include
+ * `VBR MP3`, `128Kbps MP3`, and `64Kbps MP3` for each track. The
+ * quality preference flips depending on context:
+ *
+ *   - `"highest"` (default) — VBR > 128 > 64. For live streaming where
+ *     audio comes straight from archive.org and bandwidth is cheap.
+ *   - `"smallest"` — 64 > 128 > VBR. For local `.audiobook` bundles
+ *     where ZIP size matters more than fidelity.
+ *
+ * The track key strips both the extension and the `_NNkb` quality
+ * suffix so different derivatives of the same recording group together.
+ */
+export function selectAudioFiles(
+  files: ArchiveFile[],
+  prefer: "highest" | "smallest" = "highest"
+): ArchiveFile[] {
+  const FORMAT_RANK: Record<string, number> = {
+    "VBR MP3": 3,
+    "128Kbps MP3": 2,
+    "64Kbps MP3": 1,
+  };
+  const score = (f: ArchiveFile): number => {
+    const r = FORMAT_RANK[f.format ?? ""] ?? 0;
+    return prefer === "smallest" ? -r : r;
+  };
+  const audio = files.filter((f) => f.format && f.format in FORMAT_RANK);
+  const byTrack = new Map<string, ArchiveFile>();
+  for (const f of audio) {
+    const key = f.name.replace(/\.[^.]+$/, "").replace(/_\d+kb(?:ps)?$/i, "");
+    const existing = byTrack.get(key);
+    if (!existing || score(f) > score(existing)) {
+      byTrack.set(key, f);
+    }
+  }
+  return Array.from(byTrack.values()).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+}
+
+/**
+ * Pick the cover image. IA usually exposes a `<id>.jpg` plus a thumb
+ * variant; prefer the full-size one and skip the autogenerated
+ * `__ia_thumb.jpg` and any `*_thumb.jpg`.
+ */
+export function selectCover(files: ArchiveFile[]): ArchiveFile | undefined {
+  return files.find(
+    (f) =>
+      f.name.toLowerCase().endsWith(".jpg") &&
+      !f.name.startsWith("__") &&
+      !/_thumb\.jpg$/i.test(f.name) &&
+      !/_itemimage\.jpg$/i.test(f.name)
+  );
+}
+
+/**
+ * Strip an IA chapter title down to the chapter portion. IA file
+ * titles look like `"01 - Chapter I"`; we drop the leading number/dash
+ * if the rest is non-empty, otherwise return as-is.
+ */
+export function tidyTrackTitle(
+  raw: string | undefined,
+  fallback: string
+): string {
+  if (!raw) return fallback;
+  const m = raw.match(/^\s*\d+\s*[-–.]\s*(.+)$/);
+  return (m ? m[1] : raw).trim() || fallback;
+}
+
+/**
+ * Heuristic group-label extractor. LibriVox track titles often start
+ * with `"Part 1, Sections 1 - 3"` / `"Book III, Chapter 2"` /
+ * `"Chapter Five"`. Returns the leading group key (`"Part 1"`,
+ * `"Book III"`, `"Chapter Five"`) when the pattern matches; otherwise
+ * `undefined`. The trailing `,`/`:`/`–`/` -` separator is treated as
+ * the boundary between group and the within-group descriptor.
+ */
+function extractGroup(title: string): string | undefined {
+  const match =
+    /^\s*(Part|Book|Chapter|Section|Volume)\s+([0-9]+|[IVXLCDM]+|[A-Za-z]+)\b/i.exec(
+      title
+    );
+  if (!match) return undefined;
+  // Normalize whitespace and case so `"part  1"` and `"Part 1"` group together.
+  return `${match[1][0].toUpperCase()}${match[1].slice(1).toLowerCase()} ${match[2]}`;
+}
+
+/**
+ * Build a hierarchical TOC from the reading order's titles, when one
+ * is derivable. Groups tracks whose titles share a leading
+ * Part/Book/Chapter/Section/Volume key into nested parent entries;
+ * tracks without a recognizable prefix are emitted as flat top-level
+ * entries (so "Preface" tracks before "Book 1" stay visible).
+ *
+ * Output shape (positional — entries appear in reading order):
+ *   - flat top-level entry per ungrouped track
+ *   - parent entry per group, with its children in reading order
+ *
+ * Falls back to `undefined` when fewer than two distinct groups are
+ * detected, or when most tracks have no group prefix — in that case
+ * the manifest's `readingOrder` is the chapter list (flat).
+ */
+function buildToc(readingOrder: ReadingOrderEntry[]): TocEntry[] | undefined {
+  if (readingOrder.length < 2) return undefined;
+
+  // Pass 1: tag each track with its group key (or null) and tally.
+  const tagged = readingOrder.map((track) => ({
+    track,
+    key: extractGroup(track.title),
+  }));
+  const groupedCount = tagged.filter((t) => t.key !== undefined).length;
+  const distinctGroups = new Set(
+    tagged.map((t) => t.key).filter((k): k is string => k !== undefined)
+  );
+
+  // Need at least two distinct groups AND a majority of tracks grouped
+  // for the TOC to be meaningful. Otherwise nesting wouldn't help.
+  if (distinctGroups.size < 2) return undefined;
+  if (groupedCount / readingOrder.length < 0.6) return undefined;
+
+  // Pass 2: emit positional output — flat ungrouped entries and parent
+  // entries for groups, in reading-order. A group's parent entry is
+  // emitted at the position of its first track; subsequent tracks of
+  // the same group fold into that parent's children.
+  const toc: TocEntry[] = [];
+  const parents = new Map<string, TocEntry>();
+  for (const { track, key } of tagged) {
+    if (key === undefined) {
+      toc.push({ title: track.title, href: track.href });
+      continue;
+    }
+    let parent = parents.get(key);
+    if (!parent) {
+      parent = { title: key, href: track.href, children: [] };
+      parents.set(key, parent);
+      toc.push(parent);
+    }
+    parent.children!.push({ title: track.title, href: track.href });
+  }
+  return toc;
+}
+
+interface ReadingOrderEntry {
+  href: string;
+  type: string;
+  title: string;
+  duration: number;
+}
+
+export function fetchJSON(url: string): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, (res) => {
+        if (res.statusCode && res.statusCode >= 400) {
+          reject(new Error(`IA fetch ${res.statusCode}: ${url}`));
+          res.resume();
+          return;
+        }
+        let body = "";
+        res.setEncoding("utf8");
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          try {
+            resolve(JSON.parse(body));
+          } catch (err) {
+            reject(err);
+          }
+        });
+      })
+      .on("error", reject);
+  });
+}
+
+function trimCache(): void {
+  while (cache.size > CACHE_MAX) {
+    const oldest = cache.keys().next().value;
+    if (oldest === undefined) break;
+    cache.delete(oldest);
+  }
+}
+
+/**
+ * Shared options for building a manifest from IA. Two callers:
+ *
+ *   - `manifestFromArchive` (live IA route) — `quality: "highest"`,
+ *     `hrefMode: "absolute"`. Audio fetched directly from archive.org.
+ *   - `buildAudiobookFromArchive` (local-bundle builder) —
+ *     `quality: "smallest"`, `hrefMode: "relative"`. Audio downloaded
+ *     into a `.audiobook` ZIP next to the manifest.
+ *
+ * Both modes produce manifests where `readingOrder` and `toc` use the
+ * same href shape, so the chapter list lookup matches without any
+ * navigator-side normalization.
+ */
+export interface ArchiveManifestOptions {
+  /** Self-link href written into `manifest.links[rel="self"]`. */
+  manifestUrl: string;
+  /** Quality preference for derivative selection. */
+  quality?: "highest" | "smallest";
+  /**
+   * `"absolute"` — hrefs are full `https://archive.org/download/...`
+   *   URLs (live streaming).
+   * `"relative"` — hrefs are bare filenames (`track-01.mp3`), assuming
+   *   audio is co-located with the manifest (local bundle).
+   */
+  hrefMode?: "absolute" | "relative";
+}
+
+/**
+ * Result of building a manifest. Includes the manifest JSON plus the
+ * source archive.org file objects, so callers that need to download
+ * the audio (the bundle builder) can fetch each track without
+ * re-querying IA.
+ */
+export interface ArchiveManifestResult {
+  manifest: ReadiumAudiobookManifest;
+  /** Per-readingOrder track: source archive.org file + the absolute URL it lives at. */
+  trackSources: Array<{ file: ArchiveFile; absoluteUrl: string }>;
+  /** Cover source, if any. */
+  coverSource?: { file: ArchiveFile; absoluteUrl: string };
+}
+
+/**
+ * Build a Readium Audiobook Profile manifest from an IA identifier.
+ * Throws if the identifier doesn't exist or has no playable MP3 files.
+ */
+export async function buildArchiveManifest(
+  identifier: string,
+  options: ArchiveManifestOptions
+): Promise<ArchiveManifestResult> {
+  const meta = (await fetchJSON(
+    `https://archive.org/metadata/${encodeURIComponent(identifier)}`
+  )) as ArchiveMetadataResponse;
+
+  const tracks = selectAudioFiles(
+    meta.files ?? [],
+    options.quality ?? "highest"
+  );
+  if (tracks.length === 0) {
+    throw new Error(`No playable MP3 tracks for IA item "${identifier}"`);
+  }
+
+  const downloadBase = `https://archive.org/download/${encodeURIComponent(
+    identifier
+  )}`;
+  const hrefFor = (file: ArchiveFile): string =>
+    options.hrefMode === "relative"
+      ? file.name
+      : `${downloadBase}/${encodeURI(file.name)}`;
+
+  const trackSources = tracks.map((file) => ({
+    file,
+    absoluteUrl: `${downloadBase}/${encodeURI(file.name)}`,
+  }));
+
+  const readingOrder: ReadingOrderEntry[] = tracks.map((t, i) => ({
+    href: hrefFor(t),
+    type: "audio/mpeg",
+    title: tidyTrackTitle(t.title, `Track ${i + 1}`),
+    duration: parseLength(t.length),
+  }));
+
+  const totalDuration = readingOrder.reduce((sum, t) => sum + t.duration, 0);
+
+  const coverFile = selectCover(meta.files ?? []);
+  const coverSource = coverFile
+    ? {
+        file: coverFile,
+        absoluteUrl: `${downloadBase}/${encodeURI(coverFile.name)}`,
+      }
+    : undefined;
+  const resources: Array<{ href: string; type: string; rel?: string }> = [];
+  if (coverFile) {
+    resources.push({
+      href: hrefFor(coverFile),
+      type: "image/jpeg",
+      rel: "cover",
+    });
+  }
+
+  const title = firstString(meta.metadata?.title) || identifier;
+  const author = firstString(meta.metadata?.creator);
+  const description = firstString(meta.metadata?.description);
+
+  const toc = buildToc(readingOrder);
+
+  const manifest: ReadiumAudiobookManifest = {
+    "@context": "https://readium.org/webpub-manifest/context.jsonld",
+    metadata: {
+      "@type": "Audiobook",
+      conformsTo: "https://readium.org/webpub-manifest/profiles/audiobook",
+      title,
+      ...(author ? { author } : {}),
+      ...(totalDuration > 0 ? { duration: totalDuration } : {}),
+      identifier: `urn:archive.org:${identifier}`,
+      ...(description ? { description } : {}),
+    },
+    links: [
+      {
+        rel: "self",
+        href: options.manifestUrl,
+        type: "application/audiobook+json",
+      },
+    ],
+    readingOrder,
+    resources,
+    ...(toc ? { toc } : {}),
+  };
+
+  return { manifest, trackSources, coverSource };
+}
+
+/**
+ * Live-route convenience wrapper: returns just the manifest, with
+ * absolute archive.org URLs. Caches by identifier — repeated requests
+ * for the same item don't re-query IA.
+ */
+export async function manifestFromArchive(
+  identifier: string,
+  manifestUrl: string
+): Promise<ReadiumAudiobookManifest> {
+  const cached = cache.get(identifier);
+  if (cached) return cached.json;
+
+  const result = await buildArchiveManifest(identifier, {
+    manifestUrl,
+    quality: "highest",
+    hrefMode: "absolute",
+  });
+
+  cache.set(identifier, { json: result.manifest, ts: Date.now() });
+  trimCache();
+  return result.manifest;
+}

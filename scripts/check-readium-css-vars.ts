@@ -12,8 +12,8 @@
  * Validate that every CSS custom property R2D2BC writes to the iframe
  * `<html>` element is consumed by at least one bundled ReadiumCSS file
  * (v1 or v2), or is a known dual-applicator write (v1-compatibility
- * substring match on the value in the style attribute — see
- * ~/.claude/.../memory/readiumcss-dual-applicator-writes.md).
+ * substring match on the value in the style attribute — see the
+ * V1_DUAL_APPLICATOR_ALLOWED set below for the documented exceptions).
  *
  * Exits 0 when all writes are accounted for, non-zero otherwise.
  *

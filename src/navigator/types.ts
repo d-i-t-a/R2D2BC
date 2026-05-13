@@ -9,7 +9,8 @@
  */
 
 import type { GetContent, GetContentBytesLength } from "../fetcher/types";
-import type { Publication } from "../model/v3";
+import type { Publication, Locator, ReadingPosition } from "../model/v3";
+import type { ScriptMode } from "../utils/ScriptMode";
 
 /**
  * Callbacks the integrator can supply for the reader to emit state changes
@@ -23,10 +24,8 @@ export interface NavigatorAPI {
   resourceAtStart?: () => void;
   resourceAtEnd?: () => void;
   resourceFitsScreen?: () => void;
-  updateCurrentLocation?: (
-    locator: import("../model/Locator").ReadingPosition
-  ) => Promise<void>;
-  positionInfo?: (locator: import("../model/Locator").Locator) => void;
+  updateCurrentLocation?: (locator: ReadingPosition) => Promise<void>;
+  positionInfo?: (locator: Locator) => void;
   chapterInfo?: (title: string | undefined) => void;
   keydownFallthrough?: (event: KeyboardEvent | undefined) => void;
   clickThrough?: (event: MouseEvent | TouchEvent) => void;
@@ -54,7 +53,7 @@ export interface InjectableContext {
    * `readingProgression`. Lets `when` predicates select ReadiumCSS
    * variants (rtl, cjk-horizontal, cjk-vertical) without re-deriving.
    */
-  scriptMode: import("../utils/ScriptMode").ScriptMode;
+  scriptMode: ScriptMode;
 }
 
 /**
@@ -258,4 +257,5 @@ export interface ReaderRights {
   enableHistory: boolean;
   enableCitations: boolean;
   enableConsumption: boolean;
+  enableComments: boolean;
 }

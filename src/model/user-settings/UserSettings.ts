@@ -291,7 +291,7 @@ export class UserSettings implements IUserSettings {
   view!: Renderer;
 
   /** Stashed in the constructor, consumed by `selectInitialRenderer()`. */
-  private layout?: string;
+  private readonly layout?: string;
 
   private settingsChangeCallback: () => void = () => {};
   private settingsColumnsChangeCallback: () => void = () => {};
@@ -1028,7 +1028,9 @@ export class UserSettings implements IUserSettings {
 
   async applyProperties(): Promise<any> {
     this.userProperties = this.getUserSettings();
-    let doc = this.iframe.contentDocument;
+    // PDF (and other non-iframe-based) navigators don't set this.iframe.
+    // Optional chain so applyProperties is a safe no-op there.
+    let doc = this.iframe?.contentDocument;
     if (doc) {
       const html = HTMLUtilities.findIframeElement(
         doc,

@@ -16,7 +16,11 @@
  * Developed on behalf of: DITA (AM Consulting LLC)
  */
 
-import { Manifest, Link as ReadiumLink } from "@readium/shared";
+import {
+  Manifest,
+  Link as ReadiumLink,
+  Publication as ReadiumPublication,
+} from "@readium/shared";
 import { Locator } from "./Locator";
 import { Link } from "./Link";
 import {
@@ -70,6 +74,8 @@ export class Publication {
   private _resources?: Link[];
   private _toc?: Link[];
   private _links?: Link[];
+  /** Lazy Readium `Publication` for delegating accessors like `getCover()`. */
+  private _readiumPublication?: ReadiumPublication;
 
   constructor(manifest: Manifest, manifestUrl: URL) {
     this.manifest = manifest;
@@ -160,6 +166,43 @@ export class Publication {
       this._links = toLinks(this.manifest.links?.items);
     }
     return this._links;
+  }
+
+  /**
+   * The publication's cover image, if any. Delegates to Readium
+   * shared's `Publication.getCover()` — first looks for `rel="cover"`
+   * across links / resources / readingOrder, then falls back to any
+   * bitmap or SVG image. Returns `undefined` when nothing matches.
+   * Resolve to a usable URL with `getAbsoluteHref(cover.href)`.
+   */
+  get cover(): Link | undefined {
+    const found = this.readiumPublication.getCover();
+    return found ? toLink(found) : undefined;
+  }
+
+  /**
+   * The publication's timeline — readingOrder cross-referenced with
+   * the table of contents. Each readingOrder item becomes one
+   * top-level `TimelineItem`; TOC entries with fragments (e.g. an
+   * audio `#t=60` cue, EPUB anchor `#section-2`) become flat
+   * children of the matching item. Useful for rendering a chapter
+   * list with parts/sections nested below each chapter.
+   *
+   * Built once and cached on first access. Delegates to Readium
+   * shared's `Publication.timeline`.
+   */
+  get timeline() {
+    return this.readiumPublication.timeline;
+  }
+
+  /** Lazy Readium Publication instance — used by `cover`, `timeline`, etc. */
+  private get readiumPublication(): ReadiumPublication {
+    if (!this._readiumPublication) {
+      this._readiumPublication = new ReadiumPublication({
+        manifest: this.manifest,
+      });
+    }
+    return this._readiumPublication;
   }
 
   // ── Layout detection ─────────────────────────────────────────

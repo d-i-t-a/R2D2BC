@@ -17,32 +17,33 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import log from "loglevel";
 import { HostType } from "../modules/ReaderModule";
+import type { ReaderModule } from "../modules/ReaderModule";
 import { HttpFetcher } from "../fetcher/HttpFetcher";
+import type { Fetcher } from "../fetcher/Fetcher";
+import type { ZipFetcher } from "../fetcher/ZipFetcher";
+import type { Link } from "../model/v3";
 import {
-  VisualNavigator,
   NavigatorFeature,
   NavigatorFeatureName,
+  VisualNavigator,
 } from "./VisualNavigator";
 import { ReaderEvent } from "../utils/Events";
 import { PDFModuleHost } from "../modules/ModuleHost";
 import { UserSettings } from "../model/user-settings/UserSettings";
-import { Publication } from "../model/v3";
 import {
-  Link,
-  Locator,
-  ReadingPosition,
   getPageFromLocations,
+  Locator,
+  Publication,
+  ReadingPosition,
 } from "../model/v3";
 import Annotator from "../store/Annotator";
-import Store from "../store/Store";
 import {
+  AnnotationEditorType,
+  AnnotationMode,
   getDocument,
   GlobalWorkerOptions,
   PDFDocumentProxy,
-  AnnotationMode,
-  AnnotationEditorType,
   version as pdfjsVersion,
 } from "pdfjs-dist";
 import {
@@ -60,8 +61,8 @@ import {
 } from "../utils/EventHandler";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import {
-  releasePdfViewerDocument,
   releasePdfLinkServiceDocument,
+  releasePdfViewerDocument,
 } from "../types/pdfjs-workarounds";
 import type { NavigatorAPI, ReaderRights } from "./types";
 import { GrabToPan } from "../utils/GrabToPan";
@@ -87,11 +88,6 @@ export interface PDFNavigatorConfig {
   annotator?: Annotator;
   /** Pre-loaded reading position to seed the annotator before navigation. */
   initialLastReadingPosition?: ReadingPosition;
-  /**
-   * Store used to persist PDF view settings (scroll mode, spread mode, zoom, rotation)
-   * across sessions.  Pass the publication store from D2Reader.load().
-   */
-  store?: Store;
   rights?: Partial<ReaderRights>;
   /**
    * Modules to register with this navigator. Includes built-in PDF modules
@@ -100,16 +96,13 @@ export interface PDFNavigatorConfig {
    * hostType must be "pdf" — mismatches are logged and skipped.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  modules?: Array<
-    import("../modules/ReaderModule").ReaderModule<any> | undefined
-  >;
+  modules?: Array<ReaderModule<any> | undefined>;
 }
 
 export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
-  readonly isPDF = true;
   settings: UserSettings;
-  publication: Publication;
-  rights: Partial<ReaderRights> = {};
+  readonly publication: Publication;
+  readonly rights: Partial<ReaderRights> = {};
 
   supports(feature: NavigatorFeatureName): boolean {
     // Zoom is navigator-level (not module-based) — always supported.
@@ -124,73 +117,45 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   pdfContainer: HTMLElement;
   wrapper: HTMLElement;
 
-  api?: Partial<NavigatorAPI>;
+  readonly api?: Partial<NavigatorAPI>;
 
   pageNum = 1;
   resourceIndex = 0;
 
   // ── Internal state ──────────────────────────────────────────
-  // These fields are accessed by PDF modules via the PDFModuleHost getters
-  // defined below. Kept private so only PDFNavigator can mutate them.
-  private _pdfDoc: PDFDocumentProxy | null = null;
-  private _resource: import("../model/v3").Link | undefined;
-  private workerSrc: string;
-  private _numPages = 0;
-  private _annotator?: Annotator;
-  private _viewStore?: Store;
-  private initialLastReadingPosition?: ReadingPosition;
-  private _positionRestored = false;
+  // pdfjs primitives modules consume via the PDFModuleHost interface
+  // (declared `readonly` there so module callers can't mutate them).
+  // The class itself writes to them as the document loads / unloads.
+  pdfDoc: PDFDocumentProxy | null = null;
+  pdfViewer!: PDFViewer;
+  eventBus!: EventBus;
+  fetcher!: Fetcher;
 
-  private _pdfViewer!: PDFViewer;
-  private _eventBus!: EventBus;
-  private _linkService!: PDFLinkService;
-  private _findController!: PDFFindController;
+  private resource: Link | undefined;
+  private readonly workerSrc: string;
+  private numPages = 0;
+  private readonly annotator?: Annotator;
+  private readonly initialLastReadingPosition?: ReadingPosition;
+  private positionRestored = false;
+  private linkService!: PDFLinkService;
+  private findController!: PDFFindController;
   private pdfHistory!: PDFHistory;
   private handTool!: GrabToPan;
 
-  // ── PDFModuleHost implementation (read-only access for modules) ──
-  get pdfDoc(): PDFDocumentProxy | null {
-    return this._pdfDoc;
-  }
-  get pdfViewer(): PDFViewer {
-    return this._pdfViewer;
-  }
-  get eventBus(): EventBus {
-    return this._eventBus;
-  }
-  get linkService(): PDFLinkService {
-    return this._linkService;
-  }
-  get findController(): PDFFindController {
-    return this._findController;
-  }
+  // ── PDFModuleHost implementation (read-only via interface) ──
   get currentPage(): number {
     return this.pageNum;
   }
   get totalPages(): number {
-    return this._pdfDoc?.numPages ?? this._numPages ?? 0;
+    return this.pdfDoc?.numPages ?? this.numPages ?? 0;
   }
   get fingerprint(): string | undefined {
-    return this._pdfDoc?.fingerprints[0] ?? undefined;
+    return this.pdfDoc?.fingerprints[0] ?? undefined;
   }
   // goToPage(page) is implemented as an abstract override below (required
   // by the Navigator interface). PDFModuleHost.goToPage matches that signature.
-  get viewStore(): Store | undefined {
-    return this._viewStore;
-  }
-  get annotator(): Annotator | undefined {
-    return this._annotator;
-  }
-  get currentResourceLink(): import("../model/v3").Link | undefined {
-    return this._resource;
-  }
-
-  // PDFNavigator's fetcher — used by ModuleHost interface. PDF content
-  // loading goes through pdfjs getDocument(), not the Fetcher, but modules
-  // that need to fetch resources (e.g. future PDF outline) use this.
-  private _fetcher!: import("../fetcher/Fetcher").Fetcher;
-  get fetcher(): import("../fetcher/Fetcher").Fetcher {
-    return this._fetcher;
+  get currentResourceLink(): Link | undefined {
+    return this.resource;
   }
 
   private resizeTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -200,60 +165,25 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   public static async create(
     config: PDFNavigatorConfig
   ): Promise<PDFNavigator> {
-    const nav = new this(
-      config.settings,
-      config.publication,
-      config.api,
-      config.workerSrc,
-      config.annotator,
-      config.initialLastReadingPosition,
-      config.store,
-      config.rights,
-      config.modules
-    );
+    const nav = new this(config);
     await nav.start(config.mainElement, config.headerMenu, config.footerMenu);
     return nav;
   }
 
-  protected constructor(
-    settings: UserSettings,
-    publication: Publication,
-    api?: Partial<NavigatorAPI>,
-    workerSrc?: string,
-    annotator?: Annotator,
-    initialLastReadingPosition?: ReadingPosition,
-    viewStore?: Store,
-    rights?: Partial<ReaderRights>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    modules?: Array<
-      import("../modules/ReaderModule").ReaderModule<any> | undefined
-    >
-  ) {
+  protected constructor(config: PDFNavigatorConfig) {
     super();
-    this.settings = settings;
-    this.publication = publication;
-    this.api = api;
-    this.rights = rights ?? {};
+    this.settings = config.settings;
+    this.publication = config.publication;
+    this.api = config.api;
+    this.rights = config.rights ?? {};
     this.workerSrc =
-      workerSrc ??
+      config.workerSrc ??
       `https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`;
-    this._annotator = annotator;
-    this.initialLastReadingPosition = initialLastReadingPosition;
-    this._viewStore = viewStore;
-    this._fetcher = new HttpFetcher();
+    this.annotator = config.annotator;
+    this.initialLastReadingPosition = config.initialLastReadingPosition;
+    this.fetcher = new HttpFetcher();
 
-    // Register modules with hostType validation. Mismatches are logged
-    // and skipped — same pattern as EpubNavigator.
-    for (const module of modules ?? []) {
-      if (!module) continue;
-      if (module.hostType !== HostType.PDF) {
-        log.warn(
-          `Module "${module.name}" requires host type "${module.hostType}" but navigator is PDF — skipping`
-        );
-        continue;
-      }
-      this.registry.register(module, this);
-    }
+    this.registerModules(config.modules, HostType.PDF);
   }
 
   // ── Startup ────────────────────────────────────────────────────────────────
@@ -268,7 +198,7 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     this.mainElement = mainElement;
 
     this.resourceIndex = 0;
-    this._resource = this.publication.readingOrder[this.resourceIndex];
+    this.resource = this.publication.readingOrder[this.resourceIndex];
 
     GlobalWorkerOptions.workerSrc = this.workerSrc;
 
@@ -295,21 +225,21 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     this.handTool = new GrabToPan({ element: this.wrapper });
 
     // ── Build pdfjs viewer stack ─────────────────────────────────────────────
-    this._eventBus = new EventBus();
+    this.eventBus = new EventBus();
 
-    this._linkService = new PDFLinkService({ eventBus: this._eventBus });
+    this.linkService = new PDFLinkService({ eventBus: this.eventBus });
 
-    this._findController = new PDFFindController({
-      linkService: this._linkService,
-      eventBus: this._eventBus,
+    this.findController = new PDFFindController({
+      linkService: this.linkService,
+      eventBus: this.eventBus,
     });
 
-    this._pdfViewer = new PDFViewer({
+    this.pdfViewer = new PDFViewer({
       container: this.wrapper as HTMLDivElement,
       viewer: this.pdfContainer as HTMLDivElement,
-      eventBus: this._eventBus,
-      linkService: this._linkService,
-      findController: this._findController,
+      eventBus: this.eventBus,
+      linkService: this.linkService,
+      findController: this.findController,
       // Enables text selection and search highlight overlay.
       textLayerMode: 1, // TextLayerMode.ENABLE
       // Renders PDF annotations AND stores user-created ones in AnnotationStorage.
@@ -324,24 +254,24 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
         "Yellow=#FFFF98,Green=#53FFBC,Blue=#80EBFF,Pink=#FFCBE6,Red=#FF4F5F",
     });
 
-    this._linkService.setViewer(this._pdfViewer);
+    this.linkService.setViewer(this.pdfViewer);
     // spreadMode must be set after viewer construction, not in options.
-    this._pdfViewer.spreadMode = SpreadMode.NONE;
+    this.pdfViewer.spreadMode = SpreadMode.NONE;
 
     // PDFHistory integrates PDF navigation with the browser history API.
     this.pdfHistory = new PDFHistory({
-      eventBus: this._eventBus,
-      linkService: this._linkService,
+      eventBus: this.eventBus,
+      linkService: this.linkService,
     });
-    this._linkService.setHistory(this.pdfHistory);
+    this.linkService.setHistory(this.pdfHistory);
 
     // ── Wire events ──────────────────────────────────────────────────────────
 
     // pagesinit fires once PDFViewer has sized all page slots. PdfViewSettingsModule
     // restores saved view preferences (scroll/spread/scale/rotate); navigator only
     // needs to ensure the current page number is applied.
-    this._eventBus.on("pagesinit", () => {
-      this._pdfViewer.currentPageNumber = this.pageNum;
+    this.eventBus.on("pagesinit", () => {
+      this.pdfViewer.currentPageNumber = this.pageNum;
     });
 
     // Keep pageNum in sync and persist the reading position on every page turn.
@@ -349,14 +279,14 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     // that is a per-resource lifecycle event, not a per-page one. Resources
     // only change when loadDocument() swaps to a new PDF (handled by the
     // pagesloaded handler below).
-    this._eventBus.on(
+    this.eventBus.on(
       "pagechanging",
       ({ pageNumber }: { pageNumber: number }) => {
         this.pageNum = pageNumber;
         this.saveLastReadingPosition();
         this.emit(ReaderEvent.PageChanged, {
           page: pageNumber,
-          totalPages: this._pdfDoc?.numPages ?? this._numPages,
+          totalPages: this.pdfDoc?.numPages ?? this.numPages,
         });
         // Emit boundary events so integrators get the same signals as EPUB.
         if (this.atStart()) {
@@ -374,10 +304,10 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     );
 
     // pagesloaded fires after all pages finish their first render pass.
-    this._eventBus.on(
+    this.eventBus.on(
       "pagesloaded",
       async ({ pagesCount }: { pagesCount: number }) => {
-        this._numPages = pagesCount;
+        this.numPages = pagesCount;
         this.hideLoading();
         this.api?.resourceReady?.();
         this.emit(ReaderEvent.ResourceReady, {
@@ -385,8 +315,8 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
         });
         this.registry.notifyResourceReady();
         // Restore saved position once — on the very first document load only.
-        if (!this._positionRestored) {
-          this._positionRestored = true;
+        if (!this.positionRestored) {
+          this.positionRestored = true;
           await this.restoreLastReadingPosition();
         }
       }
@@ -405,7 +335,7 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
 
     this.showLoading();
     await this.loadDocument(
-      this.publication.getAbsoluteHref(this._resource.href),
+      this.publication.getAbsoluteHref(this.resource.href),
       1
     );
 
@@ -448,20 +378,19 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     this.pageNum = pageNum;
 
     // Destroy the previous document to free memory before loading the next.
-    if (this._pdfDoc) {
-      releasePdfViewerDocument(this._pdfViewer);
-      releasePdfLinkServiceDocument(this._linkService);
-      await this._pdfDoc.destroy();
-      this._pdfDoc = null;
+    if (this.pdfDoc) {
+      releasePdfViewerDocument(this.pdfViewer);
+      releasePdfLinkServiceDocument(this.linkService);
+      await this.pdfDoc.destroy();
+      this.pdfDoc = null;
     }
 
     try {
       // If the Fetcher is a ZipFetcher (e.g., a multi-file PDF bundled in a
       // ZIP), extract the raw bytes and pass them to pdfjs instead of a URL.
       let task;
-      if ("getBytes" in this._fetcher) {
-        const zipFetcher = this
-          ._fetcher as import("../fetcher/ZipFetcher").ZipFetcher;
+      if ("getBytes" in this.fetcher) {
+        const zipFetcher = this.fetcher as ZipFetcher;
         const bytes = zipFetcher.getBytes(url);
         if (bytes) {
           task = getDocument({ data: bytes });
@@ -472,9 +401,9 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
         task = getDocument(url);
       }
       const doc = await task.promise;
-      this._pdfDoc = doc;
-      this._pdfViewer.setDocument(doc);
-      this._linkService.setDocument(doc);
+      this.pdfDoc = doc;
+      this.pdfViewer.setDocument(doc);
+      this.linkService.setDocument(doc);
       this.pdfHistory.initialize({ fingerprint: doc.fingerprints[0] ?? "" });
       // Annotation restore + onSetModified wiring moved to PdfAnnotationModule,
       // which hooks in via its onResourceReady lifecycle once pagesloaded fires.
@@ -492,31 +421,15 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   private onResize = (): void => {
     clearTimeout(this.resizeTimeout);
     this.resizeTimeout = setTimeout(() => {
-      if (this._pdfViewer) {
+      if (this.pdfViewer) {
         // Re-assigning the same scaleValue triggers a layout recalculation.
-        const v = this._pdfViewer.currentScaleValue;
-        this._pdfViewer.currentScaleValue = v;
+        const value = this.pdfViewer.currentScaleValue;
+        this.pdfViewer.currentScaleValue = value;
       }
     }, 200);
   };
 
   // ── Navigator interface ────────────────────────────────────────────────────
-
-  readingOrder(): Link[] {
-    return this.publication.readingOrder;
-  }
-
-  tableOfContents(): Link[] {
-    return this.publication.tableOfContents;
-  }
-
-  landmarks(): Link[] {
-    return [];
-  }
-
-  pageList(): Link[] {
-    return [];
-  }
 
   atStart(): boolean {
     return this.pageNum <= 1 && this.resourceIndex === 0;
@@ -525,24 +438,20 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   atEnd(): boolean {
     const lastResource =
       this.resourceIndex >= this.publication.readingOrder.length - 1;
-    return lastResource && this.pageNum >= (this._pdfDoc?.numPages ?? 1);
+    return lastResource && this.pageNum >= (this.pdfDoc?.numPages ?? 1);
   }
 
   currentResource(): number {
     return this.resourceIndex;
   }
 
-  totalResources(): number {
-    return this.publication.readingOrder.length;
-  }
-
   currentLocator(): Locator {
-    const totalPages = this._pdfDoc?.numPages ?? this._numPages ?? 1;
+    const totalPages = this.pdfDoc?.numPages ?? this.numPages ?? 1;
     const progression =
       totalPages > 1 ? (this.pageNum - 1) / (totalPages - 1) : 0;
-    const locator: Locator = {
-      href: this._resource
-        ? this.publication.getAbsoluteHref(this._resource.href)
+    return {
+      href: this.resource
+        ? this.publication.getAbsoluteHref(this.resource.href)
         : "",
       title: `Page ${this.pageNum}`,
       locations: {
@@ -551,30 +460,18 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
       },
       type: "application/pdf",
     };
-    return locator;
-  }
-
-  positions(): Locator[] {
-    return this.publication.positions ?? [];
-  }
-
-  // ── Accessors ──────────────────────────────────────────────────────────────
-
-  /** Total page count of the currently loaded document. */
-  get numPages(): number {
-    return this._numPages;
   }
 
   // ── Page navigation ────────────────────────────────────────────────────────
 
   nextPage(): void {
-    if (this.pageNum >= (this._pdfDoc?.numPages ?? 1)) {
+    if (this.pageNum >= (this.pdfDoc?.numPages ?? 1)) {
       this.nextResource();
       return;
     }
     // Use PDFViewer.nextPage() directly — it calls #getPageAdvance() internally
     // which advances by 2 in spread mode and by 1 in single-page mode.
-    this._pdfViewer.nextPage();
+    this.pdfViewer.nextPage();
   }
 
   previousPage(): void {
@@ -582,7 +479,7 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
       this.previousResource();
       return;
     }
-    this._pdfViewer.previousPage();
+    this.pdfViewer.previousPage();
   }
 
   // ── Resource navigation ────────────────────────────────────────────────────
@@ -590,17 +487,17 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   nextResource(): void {
     if (this.resourceIndex >= this.publication.readingOrder.length - 1) return;
     this.resourceIndex++;
-    this._resource = this.publication.readingOrder[this.resourceIndex];
-    this.loadDocument(this.publication.getAbsoluteHref(this._resource.href), 1);
+    this.resource = this.publication.readingOrder[this.resourceIndex];
+    this.loadDocument(this.publication.getAbsoluteHref(this.resource.href), 1);
   }
 
   previousResource(): void {
     if (this.resourceIndex === 0) return;
     this.resourceIndex--;
-    this._resource = this.publication.readingOrder[this.resourceIndex];
+    this.resource = this.publication.readingOrder[this.resourceIndex];
     this.loadDocument(
-      this.publication.getAbsoluteHref(this._resource.href),
-      this._pdfDoc?.numPages ?? 1
+      this.publication.getAbsoluteHref(this.resource.href),
+      this.pdfDoc?.numPages ?? 1
     );
   }
 
@@ -611,7 +508,7 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     //    Accepts legacy `position` too via getPageFromLocations for backwards compat.
     const explicitPage = getPageFromLocations(locator.locations);
     if (typeof explicitPage === "number") {
-      this._pdfViewer.currentPageNumber = explicitPage;
+      this.pdfViewer.currentPageNumber = explicitPage;
       return;
     }
 
@@ -632,16 +529,16 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
       });
       if (targetIdx >= 0 && targetIdx !== this.resourceIndex) {
         this.resourceIndex = targetIdx;
-        this._resource = this.publication.readingOrder[this.resourceIndex];
+        this.resource = this.publication.readingOrder[this.resourceIndex];
         this.loadDocument(
-          this.publication.getAbsoluteHref(this._resource.href),
+          this.publication.getAbsoluteHref(this.resource.href),
           page
         );
         return;
       }
     }
 
-    this._pdfViewer.currentPageNumber = page;
+    this.pdfViewer.currentPageNumber = page;
   }
 
   /**
@@ -677,11 +574,11 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   }
 
   goToPosition(value: number): void {
-    this._pdfViewer.currentPageNumber = value;
+    this.pdfViewer.currentPageNumber = value;
   }
 
   async goToPage(page: number): Promise<void> {
-    this._pdfViewer.currentPageNumber = page;
+    this.pdfViewer.currentPageNumber = page;
   }
 
   // View settings persistence moved to PdfViewSettingsModule.
@@ -723,30 +620,22 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     this.modules.viewSettings?.setScrollMode(scroll, direction);
   }
 
-  /**
-   * The AnnotationStorage instance that holds all user-created annotations
-   * for the current document. Serialize with `.serializable` to persist them.
-   */
-  get annotationStorage() {
-    return this._pdfDoc?.annotationStorage;
-  }
-
   // ── Reading position persistence ───────────────────────────────────────────
 
   private saveLastReadingPosition(): void {
-    if (!this._annotator || !this._resource) return;
+    if (!this.annotator || !this.resource) return;
     const position: ReadingPosition = {
-      href: this.publication.getAbsoluteHref(this._resource.href),
+      href: this.publication.getAbsoluteHref(this.resource.href),
       locations: { page: this.pageNum },
       type: "application/pdf",
       created: new Date(),
     };
     if (this.api?.updateCurrentLocation) {
       this.api.updateCurrentLocation(position).then(() => {
-        this._annotator!.saveLastReadingPosition(position);
+        this.annotator!.saveLastReadingPosition(position);
       });
     } else {
-      this._annotator.saveLastReadingPosition(position);
+      this.annotator.saveLastReadingPosition(position);
     }
     this.emit(ReaderEvent.LocationChanged, position);
   }
@@ -754,11 +643,11 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   private async restoreLastReadingPosition(): Promise<void> {
     // Seed the annotator from config if provided (allows host app to pre-load a position).
     if (this.initialLastReadingPosition) {
-      this._annotator?.initLastReadingPosition(this.initialLastReadingPosition);
+      this.annotator?.initLastReadingPosition(this.initialLastReadingPosition);
     }
-    if (!this._annotator) return;
+    if (!this.annotator) return;
 
-    const saved = this._annotator.getLastReadingPosition();
+    const saved = this.annotator.getLastReadingPosition();
     if (!saved) return;
 
     const page = getPageFromLocations(saved.locations) ?? 1;
@@ -772,14 +661,14 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     if (idx >= 0 && idx !== this.resourceIndex) {
       // Saved position is in a different resource — load it.
       this.resourceIndex = idx;
-      this._resource = this.publication.readingOrder[this.resourceIndex];
+      this.resource = this.publication.readingOrder[this.resourceIndex];
       await this.loadDocument(
-        this.publication.getAbsoluteHref(this._resource.href),
+        this.publication.getAbsoluteHref(this.resource.href),
         page
       );
     } else {
       // Same resource — just jump to the saved page.
-      this._pdfViewer.currentPageNumber = page;
+      this.pdfViewer.currentPageNumber = page;
     }
   }
 
@@ -788,8 +677,8 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   stop(): void {
     this.registry.stopAll();
     removeEventListenerOptional(window, "resize", this.onResize);
-    if (this._pdfViewer) releasePdfViewerDocument(this._pdfViewer);
-    this._pdfDoc?.destroy();
-    this._pdfDoc = null;
+    if (this.pdfViewer) releasePdfViewerDocument(this.pdfViewer);
+    this.pdfDoc?.destroy();
+    this.pdfDoc = null;
   }
 }

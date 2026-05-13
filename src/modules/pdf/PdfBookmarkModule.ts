@@ -12,43 +12,62 @@ import { HostType, RightsKey } from "../ReaderModule";
 import { IBookmarkModule } from "../interfaces";
 import { PDFModuleHost } from "../ModuleHost";
 import { NavigatorFeature } from "../../navigator/VisualNavigator";
-import { Bookmark, Locator, getPageFromLocations } from "../../model/v3";
+import {
+  Bookmark,
+  Locator,
+  Publication,
+  getPageFromLocations,
+} from "../../model/v3";
+import Annotator from "../../store/Annotator";
+
+export interface PdfBookmarkModuleConfig {
+  annotator: Annotator;
+  publication: Publication;
+}
 
 /**
  * PDF bookmark module.
  *
- * Page-based bookmarks backed by the host annotator. Replaces the inline
- * bookmark methods previously on PDFNavigator. Writes `locations.page`
- * (new field) and reads either `page` or `position` via
- * `getPageFromLocations` for backwards compatibility with pre-rework data.
+ * Page-based bookmarks backed by an annotator passed in at construction.
+ * Writes `locations.page` (new field) and reads either `page` or
+ * `position` via `getPageFromLocations` for backwards compatibility with
+ * pre-rework data. Dynamic state (current resource, current page) still
+ * comes from the host via `attach()`.
  */
 export class PdfBookmarkModule implements IBookmarkModule<PDFModuleHost> {
   readonly name = NavigatorFeature.Bookmarks;
   readonly hostType = HostType.PDF;
   readonly rightsKey = RightsKey.Bookmarks;
 
+  private readonly annotator: Annotator;
+  private readonly publication: Publication;
   private host!: PDFModuleHost;
+
+  constructor(config: PdfBookmarkModuleConfig) {
+    this.annotator = config.annotator;
+    this.publication = config.publication;
+  }
+
   attach(host: PDFModuleHost): void {
     this.host = host;
   }
 
   /** Save a bookmark at the current page. Returns null if already bookmarked. */
   save(): Bookmark | null {
-    if (!this.host.annotator) return null;
     if (this.hasBookmarkAt()) return null;
-    return this.host.annotator.saveBookmark(this.makeBookmark()) ?? null;
+    return this.annotator.saveBookmark(this.makeBookmark()) ?? null;
   }
 
   /** Delete a previously saved bookmark. */
   delete(bookmark: Bookmark): void {
-    this.host.annotator?.deleteBookmark(bookmark);
+    this.annotator.deleteBookmark(bookmark);
   }
 
   /** Return all bookmarks for the current resource. */
   list(): Bookmark[] {
-    if (!this.host.annotator || !this.host.currentResourceLink) return [];
-    return this.host.annotator.getBookmarks(
-      this.host.publication.getAbsoluteHref(this.host.currentResourceLink.href)
+    if (!this.host.currentResourceLink) return [];
+    return this.annotator.getBookmarks(
+      this.publication.getAbsoluteHref(this.host.currentResourceLink.href)
     );
   }
 
@@ -83,9 +102,7 @@ export class PdfBookmarkModule implements IBookmarkModule<PDFModuleHost> {
     return {
       id: crypto.randomUUID(),
       href: this.host.currentResourceLink
-        ? this.host.publication.getAbsoluteHref(
-            this.host.currentResourceLink.href
-          )
+        ? this.publication.getAbsoluteHref(this.host.currentResourceLink.href)
         : "",
       locations: { page: this.host.currentPage },
       type: "application/pdf",

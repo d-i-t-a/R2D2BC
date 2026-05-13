@@ -12,6 +12,11 @@ import { ReaderModule, HostType } from "../ReaderModule";
 import { PDFModuleHost } from "../ModuleHost";
 import { NavigatorFeature } from "../../navigator/VisualNavigator";
 import { ScrollMode } from "pdfjs-dist/web/pdf_viewer.mjs";
+import Store from "../../store/Store";
+
+export interface PdfViewSettingsModuleConfig {
+  viewStore: Store;
+}
 
 /**
  * PDF view settings module.
@@ -35,7 +40,13 @@ export class PdfViewSettingsModule implements ReaderModule<PDFModuleHost> {
   private static readonly KEY_SCALE = "pdf-scale-value";
   private static readonly KEY_ROTATE = "pdf-rotation";
 
+  private readonly viewStore: Store;
   private host!: PDFModuleHost;
+
+  constructor(config: PdfViewSettingsModuleConfig) {
+    this.viewStore = config.viewStore;
+  }
+
   attach(host: PDFModuleHost): void {
     this.host = host;
   }
@@ -122,12 +133,11 @@ export class PdfViewSettingsModule implements ReaderModule<PDFModuleHost> {
   // ── Persistence ─────────────────────────────────────────────
 
   private saveSetting(key: string, value: string | number): void {
-    this.host.viewStore?.set(key, String(value));
+    this.viewStore.set(key, String(value));
   }
 
   private restore(): void {
-    const store = this.host.viewStore;
-    if (!store) return;
+    const store = this.viewStore;
 
     const scroll = store.get(PdfViewSettingsModule.KEY_SCROLL);
     const spread = store.get(PdfViewSettingsModule.KEY_SPREAD);

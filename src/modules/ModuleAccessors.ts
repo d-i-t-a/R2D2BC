@@ -22,6 +22,7 @@ import type {
   IBookmarkModule,
   ISearchModule,
   IAnnotationModule,
+  ICommentsModule,
   IHistoryModule,
 } from "./interfaces";
 import { ModuleRegistry } from "./ModuleRegistry";
@@ -46,6 +47,7 @@ export class ModuleAccessors<
   A extends IAnnotationModule = IAnnotationModule,
   S extends ISearchModule = ISearchModule,
   H extends IHistoryModule = IHistoryModule,
+  C extends ICommentsModule = ICommentsModule,
 > {
   constructor(private readonly registry: ModuleRegistry) {}
 
@@ -61,6 +63,9 @@ export class ModuleAccessors<
   }
   get history(): H | undefined {
     return this.registry.get(NavigatorFeature.History) as H | undefined;
+  }
+  get comments(): C | undefined {
+    return this.registry.get(NavigatorFeature.Comments) as C | undefined;
   }
 
   // ── EPUB-only concrete modules ──────────────────────────────

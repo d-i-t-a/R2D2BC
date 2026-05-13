@@ -1,0 +1,76 @@
+/*
+ * Copyright 2018-2026 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+// Audiobook chapter list.
+//
+// Rendered by AudiobookNavigator into the integrator-supplied
+// `audiobookChapters.listContainer`. Top-level entries match the
+// publication's readingOrder (one row per audio track / chapter).
+// Sub-rows (`-section`) come from TOC fragments referencing the
+// same resource (e.g. parts/sections inside a single MP3).
+//
+// Theme-able via two layers of CSS custom properties:
+//   --dita-audiobook-chapters-accent  → falls back to --dita-audiobook-accent
+//   --dita-audiobook-chapters-hover   → chapter-list-only (no shared layer)
+// Set the shared token to theme everything; set the chapters-specific
+// override to give the chapter list a different accent than the
+// scrubber.
+
+.dita-audiobook-chapters {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+}
+
+.dita-audiobook-chapters-sub {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 24px;
+}
+
+.dita-audiobook-chapters-chapter,
+.dita-audiobook-chapters-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.12s;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--dita-audiobook-chapters-hover, rgba(0, 0, 0, 0.04));
+    outline: none;
+  }
+
+  &[data-current="true"] {
+    color: var(
+      --dita-audiobook-chapters-accent,
+      var(--dita-audiobook-accent, #1db954)
+    );
+    font-weight: 600;
+  }
+}
+
+.dita-audiobook-chapters-section {
+  font-size: 0.92em;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.dita-audiobook-chapters-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

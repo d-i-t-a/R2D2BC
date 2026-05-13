@@ -1,13 +1,16 @@
 import { Server } from "r2-streamer-js";
 import * as express from "express";
 import * as path from "path";
+import * as fs from "fs";
+import { execSync } from "child_process";
 
 import recursive from "recursive-readdir";
+import { manifestFromArchive } from "./audiobookFromArchive";
 
 interface PublicationEntry {
   title: string;
   filename: string;
-  type: "epub" | "pdf";
+  type: "epub" | "pdf" | "audiobook";
   hosted?: boolean;
   viewers: { title: string; url: string }[];
 }
@@ -48,6 +51,117 @@ async function start() {
         {
           title: "Small Window (600×500)",
           url: `/viewer/index_small_window.html?url=https://alice.dita.digital/manifest.json`,
+        },
+      ],
+    },
+    // The Readium spec hosts a Flatland manifest at
+    // `https://readium.org/webpub-manifest/examples/Flatland/`, but its
+    // readingOrder uses legacy `http://www.archive.org/...` URLs that
+    // omit CORS headers on the redirect chain — incompatible with our
+    // Web Audio pipeline (`MediaElementAudioSourceNode` requires
+    // `crossOrigin="anonymous"` on a fully CORS-clean source).
+    //
+    // We use the same LibriVox source via our `/archive/` converter,
+    // which goes through `https://archive.org/download/...` (CORS-clean
+    // through every redirect).
+    {
+      title: "Flatland",
+      filename: "flatland (LibriVox)",
+      type: "audiobook",
+      hosted: true,
+      viewers: [
+        {
+          title: "Audiobook Reader",
+          url: `/viewer/index_audiobook.html?url=/archive/flatland_rg_librivox/manifest.json`,
+        },
+        {
+          title: "Minimal Player",
+          url: `/viewer/index_audiobook_minimal.html?url=/archive/flatland_rg_librivox/manifest.json`,
+        },
+      ],
+    },
+    // LibriVox audiobooks via the Internet Archive metadata API.
+    // The `/archive/:id/manifest.json` route below converts each IA
+    // item into a Readium Audiobook Profile manifest on demand.
+    // Identifiers were verified to have VBR / 128Kbps MP3 derivatives
+    // with valid per-track durations.
+    {
+      title: "Pride and Prejudice",
+      filename: "pride_prejudice (LibriVox)",
+      type: "audiobook",
+      hosted: true,
+      viewers: [
+        {
+          title: "Audiobook Reader",
+          url: `/viewer/index_audiobook.html?url=/archive/pride_prejudice_krs_librivox/manifest.json`,
+        },
+        {
+          title: "Minimal Player",
+          url: `/viewer/index_audiobook_minimal.html?url=/archive/pride_prejudice_krs_librivox/manifest.json`,
+        },
+      ],
+    },
+    {
+      title: "Treasure Island",
+      filename: "treasureisland (LibriVox)",
+      type: "audiobook",
+      hosted: true,
+      viewers: [
+        {
+          title: "Audiobook Reader",
+          url: `/viewer/index_audiobook.html?url=/archive/treasureisland_librivox/manifest.json`,
+        },
+        {
+          title: "Minimal Player",
+          url: `/viewer/index_audiobook_minimal.html?url=/archive/treasureisland_librivox/manifest.json`,
+        },
+      ],
+    },
+    {
+      title: "The Call of the Wild",
+      filename: "callofthewild (LibriVox)",
+      type: "audiobook",
+      hosted: true,
+      viewers: [
+        {
+          title: "Audiobook Reader",
+          url: `/viewer/index_audiobook.html?url=/archive/callofthewild_tc_1010_librivox/manifest.json`,
+        },
+        {
+          title: "Minimal Player",
+          url: `/viewer/index_audiobook_minimal.html?url=/archive/callofthewild_tc_1010_librivox/manifest.json`,
+        },
+      ],
+    },
+    {
+      title: "The Time Machine",
+      filename: "timemachine (LibriVox)",
+      type: "audiobook",
+      hosted: true,
+      viewers: [
+        {
+          title: "Audiobook Reader",
+          url: `/viewer/index_audiobook.html?url=/archive/time_machine_v6_2008_librivox/manifest.json`,
+        },
+        {
+          title: "Minimal Player",
+          url: `/viewer/index_audiobook_minimal.html?url=/archive/time_machine_v6_2008_librivox/manifest.json`,
+        },
+      ],
+    },
+    {
+      title: "The Art of War",
+      filename: "artofwar (LibriVox)",
+      type: "audiobook",
+      hosted: true,
+      viewers: [
+        {
+          title: "Audiobook Reader",
+          url: `/viewer/index_audiobook.html?url=/archive/artofwar_2008_librivox/manifest.json`,
+        },
+        {
+          title: "Minimal Player",
+          url: `/viewer/index_audiobook_minimal.html?url=/archive/artofwar_2008_librivox/manifest.json`,
         },
       ],
     },
@@ -119,6 +233,37 @@ async function start() {
     };
 
     res.json(manifest);
+  });
+
+  // ── Internet Archive → Readium Audiobook manifest ──────────────────
+  //
+  // GET /archive/{ID}/manifest.json
+  // Fetches IA item metadata, picks the highest-quality MP3 derivatives
+  // per track, and returns a Readium Audiobook Profile manifest. IA
+  // serves audio with permissive CORS so the manifest plays directly
+  // without proxying.
+  server.expressUse("/archive", async (req: any, res: any, next: any) => {
+    // /archive/<id>/manifest.json — pull the id segment.
+    const m = req.path.match(/^\/([^/]+)\/manifest\.json\/?$/);
+    if (!m) {
+      next();
+      return;
+    }
+    const id = decodeURIComponent(m[1]);
+    const selfUrl = `${req.protocol}://${req.get("host")}/archive/${encodeURIComponent(id)}/manifest.json`;
+    try {
+      const manifest = await manifestFromArchive(id, selfUrl);
+      res.setHeader("Content-Type", "application/audiobook+json");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      res.json(manifest);
+    } catch (err: any) {
+      console.error(`[archive] ${id}:`, err?.message ?? err);
+      res.status(502).json({
+        error: "Failed to build manifest",
+        id,
+        message: String(err?.message ?? err),
+      });
+    }
   });
 
   // ── EPUB fetch (pass-through for CORS-restricted URLs) ─────────────
@@ -207,6 +352,69 @@ async function start() {
           {
             title: "Small Window (600×500)",
             url: `/viewer/index_small_window.html?url=${manifestUrl}`,
+          },
+        ],
+      });
+    });
+  });
+
+  // ── Local audiobooks ────────────────────────────────────────────────
+  //
+  // The Readium Audiobook Profile distribution format is the W3C
+  // Lightweight Packaging Format (LPF) — a ZIP file containing a
+  // manifest.json and the audio resources, conventionally with the
+  // `.audiobook` extension. Drop one in examples/epubs/ alongside
+  // .epub and .pdf files; the server unpacks it on startup so the
+  // viewer can fetch the manifest and audio over plain HTTP.
+
+  const audiobookCachePath = path.join(__dirname, "./.audiobook-cache");
+  if (!fs.existsSync(audiobookCachePath)) {
+    fs.mkdirSync(audiobookCachePath, { recursive: true });
+  }
+  //@ts-ignore
+  server.expressUse("/audiobook-cache", express.static(audiobookCachePath));
+
+  recursive(epubsPath, ["!*.audiobook"], function (err, files) {
+    if (err) {
+      console.error("Error scanning audiobooks:", err);
+      return;
+    }
+    console.log(`🎧 Found ${files.length} audiobook(s)`);
+    files.forEach((filePath) => {
+      const filename = path.basename(filePath);
+      const basename = filename.replace(/\.audiobook$/i, "");
+      const title = basename.replace(/[_-]/g, " ");
+      const cacheDir = path.join(audiobookCachePath, basename);
+
+      // Re-extract if the cache is missing or older than the source.
+      const cacheStale =
+        !fs.existsSync(cacheDir) ||
+        !fs.existsSync(path.join(cacheDir, "manifest.json")) ||
+        fs.statSync(filePath).mtimeMs > fs.statSync(cacheDir).mtimeMs;
+
+      if (cacheStale) {
+        fs.rmSync(cacheDir, { recursive: true, force: true });
+        fs.mkdirSync(cacheDir, { recursive: true });
+        try {
+          execSync(`unzip -q -o "${filePath}" -d "${cacheDir}"`);
+        } catch (extractError) {
+          console.error(`Failed to extract ${filename}:`, extractError);
+          return;
+        }
+      }
+
+      publications.push({
+        title,
+        filename,
+        type: "audiobook",
+        viewers: [
+          {
+            title: "Audiobook Reader",
+            url: `/viewer/index_audiobook.html?url=/audiobook-cache/${basename}/manifest.json`,
+          },
+          {
+            title: "Minimal Player",
+            url: `/viewer/index_audiobook_minimal.html?url=/audiobook-cache/${basename}/manifest.json`,
           },
         ],
       });

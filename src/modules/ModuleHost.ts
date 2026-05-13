@@ -36,22 +36,17 @@ import { UserSettings } from "../model/user-settings/UserSettings";
 import { TextHighlighter } from "./highlight/TextHighlighter";
 
 /**
- * Base interface that all modules use to interact with any navigator.
- * Both EpubNavigator and PDFNavigator implement this.
+ * Minimal host interface every navigator provides — visual or not.
+ *
+ * Audiobook navigators implement this directly; EPUB and PDF
+ * navigators implement `VisualModuleHost` which extends this with
+ * DOM / settings / fetcher fields that don't apply to audio.
  */
 export interface ModuleHost {
   // ── Core ────────────────────────────────────────────────────
   readonly publication: Publication;
-  readonly settings: UserSettings;
   readonly rights: Partial<ReaderRights>;
   readonly api?: Partial<NavigatorAPI>;
-
-  // ── Content loading ─────────────────────────────────────────
-  readonly fetcher: import("../fetcher/Fetcher").Fetcher;
-
-  // ── DOM access (shared by both navigators) ──────────────────
-  readonly mainElement: HTMLElement;
-  readonly headerMenu?: HTMLElement | null;
 
   // ── Navigation ──────────────────────────────────────────────
   goTo(locator: Locator): void | Promise<void>;
@@ -82,19 +77,39 @@ export interface ModuleHost {
 }
 
 /**
+ * Host interface for navigators that render the publication into a
+ * DOM container — EPUB and PDF.
+ *
+ * Adds the visual concerns (settings, fetcher, main element, header
+ * menu) that audio-only navigators don't have.
+ */
+export interface VisualModuleHost extends ModuleHost {
+  // ── Settings ────────────────────────────────────────────────
+  readonly settings: UserSettings;
+
+  // ── Content loading ─────────────────────────────────────────
+  readonly fetcher: import("../fetcher/Fetcher").Fetcher;
+
+  // ── DOM access ──────────────────────────────────────────────
+  readonly mainElement: HTMLElement;
+  readonly headerMenu?: HTMLElement | null;
+}
+
+/**
  * Extended host interface for PDF-specific modules.
  *
  * Exposes pdfjs primitives that modules need to interact with the viewer,
  * page state, and persistence layer. Modules never touch the pdfjs internals
  * directly — they go through this host interface.
  */
-export interface PDFModuleHost extends ModuleHost {
+export interface PDFModuleHost extends VisualModuleHost {
   // ── pdfjs primitives (read-only) ────────────────────────────
+  // Only the primitives modules actually consume are exposed here.
+  // `linkService`, `findController` are PDF-internal; access via the
+  // navigator if a module ever needs them.
   readonly pdfDoc: import("pdfjs-dist").PDFDocumentProxy | null;
   readonly pdfViewer: import("pdfjs-dist/web/pdf_viewer.mjs").PDFViewer;
-  readonly findController: import("pdfjs-dist/web/pdf_viewer.mjs").PDFFindController;
   readonly eventBus: import("pdfjs-dist/web/pdf_viewer.mjs").EventBus;
-  readonly linkService: import("pdfjs-dist/web/pdf_viewer.mjs").PDFLinkService;
 
   // ── Page state ──────────────────────────────────────────────
   readonly currentPage: number;
@@ -104,9 +119,9 @@ export interface PDFModuleHost extends ModuleHost {
   // ── Navigation ──────────────────────────────────────────────
   goToPage(page: number): void;
 
-  // ── Persistence ─────────────────────────────────────────────
-  readonly viewStore?: import("../store/Store").default;
-  readonly annotator?: import("../store/Annotator").default;
+  // Persistence (`annotator`, `viewStore`) is no longer pulled from the
+  // host — PDF modules receive it via constructor injection (mirrors
+  // EpubBookmarkModule / EpubAnnotationModule).
 
   // ── Resource info ───────────────────────────────────────────
   readonly currentResourceLink: import("../model/v3").Link | undefined;
@@ -116,7 +131,7 @@ export interface PDFModuleHost extends ModuleHost {
  * Extended host interface for EPUB-specific modules.
  * Modules that need iframe DOM access, highlighter, or view use this.
  */
-export interface EpubModuleHost extends ModuleHost {
+export interface EpubModuleHost extends VisualModuleHost {
   // ── EPUB content access ─────────────────────────────────────
   readonly iframes: HTMLIFrameElement[];
   readonly currentChapterLink: D2Link;
@@ -142,4 +157,27 @@ export interface EpubModuleHost extends ModuleHost {
   hideLayer(layer: string): void;
   showLayer(layer: string): void;
   navigate(locator: Locator, history?: boolean): void;
+}
+
+/**
+ * Host interface for audio-only navigators (AudiobookNavigator).
+ *
+ * Currently no audio-specific fields are required by any module —
+ * `currentLocator()` from the base ModuleHost is enough to derive
+ * the playback position (it includes `locations.time` for audiobook).
+ * Add fields here only when a real module need surfaces (e.g. a
+ * future TranscriptModule might want a typed audio-time accessor).
+ */
+export interface AudiobookModuleHost extends ModuleHost {
+  /**
+   * Hint the navigator to begin loading `readingOrder[index]` ahead of
+   * time. Used by the timeline module: as the user drags the whole-book
+   * scrubber across chapter boundaries, calling this for each crossed
+   * chapter warms the audio cache so the post-release seek lands fast
+   * instead of paying the cold-fetch latency.
+   *
+   * Fire-and-forget — calls are non-blocking, idempotent, and silently
+   * no-op if the target is already cached or out of range.
+   */
+  prefetchResource(index: number): void;
 }

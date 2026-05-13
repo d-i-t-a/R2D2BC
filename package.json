@@ -1,6 +1,6 @@
 {
   "name": "@d-i-t-a/reader",
-  "version": "3.0.0-alpha.21",
+  "version": "3.0.0-alpha.22",
   "description": "A viewer application for EPUB files.",
   "repository": "https://github.com/d-i-t-a/R2D2BC",
   "license": "Apache-2.0",
@@ -23,6 +23,7 @@
     "sass:debug": "sass --source-map src/styles/sass/:dist",
     "sass:release": "sass --style=compressed src/styles/sass/:dist",
     "examples": "npx ts-node examples/server.ts",
+    "build:audiobook": "npx ts-node -T examples/buildAudiobookFromArchive.ts",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --fix",
     "lint:css-vars": "ts-node -T scripts/check-readium-css-vars.ts",
     "example:clean": "rm -rf parcel-dist .parcel-cache",
@@ -40,7 +41,7 @@
   },
   "dependencies": {
     "@d-i-t-a/web-content-protection": "^1.0.1",
-    "@readium/shared": "^2.1.5",
+    "@readium/shared": "^2.2.0",
     "browserslist-useragent-regexp": "^4.1.0",
     "cssesc": "^3.0.0",
     "debounce": "^2.0.0",

@@ -21,7 +21,8 @@ import {
   ReadingPosition,
   Bookmark,
   Annotation,
-} from "../model/Locator";
+  Comment,
+} from "../model/v3";
 
 /**
  * Typed event names for the R2D2BC reader.
@@ -108,6 +109,37 @@ export const ReaderEvent = {
 
   // PDF search matches
   PdfMatchesUpdated: "pdf.matches.updated",
+
+  // Audiobook playback (3.9)
+  PlaybackStarted: "playback.started",
+  PlaybackPaused: "playback.paused",
+  PlaybackEnded: "playback.ended",
+  PlaybackStalled: "playback.stalled",
+  PlaybackError: "playback.error",
+  /**
+   * Toggled when playback is or is no longer waiting on audio data.
+   * Fires on cross-chapter navigation, cold-start (play before bytes
+   * arrive), and mid-playback buffer exhaustion. Payload carries the
+   * new state. Swap the play button for a spinner when `waiting=true`.
+   */
+  PlaybackWaiting: "playback.waiting",
+  TimeUpdated: "playback.timeupdate",
+  TrackChanged: "playback.trackchanged",
+  DurationChanged: "playback.durationchanged",
+  PlaybackRateChanged: "playback.ratechanged",
+
+  // Audiobook sleep timer (3.9 Phase 3)
+  SleepTimerStarted: "playback.sleeptimer.started",
+  SleepTimerCancelled: "playback.sleeptimer.cancelled",
+  SleepTimerTick: "playback.sleeptimer.tick",
+  SleepTimerExpired: "playback.sleeptimer.expired",
+
+  // Comments (3.9)
+  CommentCreated: "comments.created",
+  CommentUpdated: "comments.updated",
+  CommentDeleted: "comments.deleted",
+  /** Emitted when the set of comments visible at the current playback time changes. */
+  CommentsActive: "comments.active",
 } as const;
 
 export type ReaderEventName = (typeof ReaderEvent)[keyof typeof ReaderEvent];
@@ -184,4 +216,32 @@ export interface ReaderEventMap {
   // PDF
   [ReaderEvent.PageChanged]: { page: number; totalPages: number };
   [ReaderEvent.PdfMatchesUpdated]: { current: number; total: number };
+
+  // Audiobook playback (3.9)
+  [ReaderEvent.PlaybackStarted]: { locator: Locator; currentTime: number };
+  [ReaderEvent.PlaybackPaused]: { locator: Locator; currentTime: number };
+  [ReaderEvent.PlaybackEnded]: { locator: Locator };
+  [ReaderEvent.PlaybackStalled]: { locator: Locator; currentTime: number };
+  [ReaderEvent.PlaybackError]: { error: unknown; locator: Locator };
+  [ReaderEvent.PlaybackWaiting]: { waiting: boolean; locator: Locator };
+  [ReaderEvent.TimeUpdated]: {
+    locator: Locator;
+    currentTime: number;
+    duration: number;
+  };
+  [ReaderEvent.TrackChanged]: { previous: Locator | null; current: Locator };
+  [ReaderEvent.DurationChanged]: { duration: number; locator: Locator };
+  [ReaderEvent.PlaybackRateChanged]: { rate: number };
+
+  // Sleep timer
+  [ReaderEvent.SleepTimerStarted]: import("../navigator/audio/SleepTimer").SleepTimerSnapshot;
+  [ReaderEvent.SleepTimerCancelled]: void;
+  [ReaderEvent.SleepTimerTick]: import("../navigator/audio/SleepTimer").SleepTimerSnapshot;
+  [ReaderEvent.SleepTimerExpired]: import("../navigator/audio/SleepTimer").SleepTimerSnapshot;
+
+  // Comments (3.9)
+  [ReaderEvent.CommentCreated]: Comment;
+  [ReaderEvent.CommentUpdated]: Comment;
+  [ReaderEvent.CommentDeleted]: { id: string };
+  [ReaderEvent.CommentsActive]: { active: Comment[]; currentTime: number };
 }

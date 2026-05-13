@@ -1,0 +1,98 @@
+/*
+ * Copyright 2018-2026 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+// Audiobook comment list.
+//
+// Rendered by AudiobookCommentsModule into the integrator-supplied
+// `audiobookComments.listContainer`. Chapter-grouped rows with the
+// comment body, time, and edit/delete actions.
+//
+// Theme via the layered CSS custom properties:
+//   --dita-audiobook-comments-accent → falls back to --dita-audiobook-accent
+//   --dita-audiobook-comments-hover  → comment-list-only
+
+.dita-audiobook-comments {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+}
+
+.dita-audiobook-comments-heading {
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 12px 12px 4px;
+}
+
+.dita-audiobook-comments-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.12s;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--dita-audiobook-comments-hover, rgba(0, 0, 0, 0.04));
+    outline: none;
+  }
+}
+
+.dita-audiobook-comments-body {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.dita-audiobook-comments-time {
+  font-variant-numeric: tabular-nums;
+  color: var(
+    --dita-audiobook-comments-accent,
+    var(--dita-audiobook-accent, #1db954)
+  );
+  font-weight: 500;
+  font-size: 0.85em;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.dita-audiobook-comments-edit,
+.dita-audiobook-comments-delete {
+  font: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition:
+    opacity 0.12s,
+    color 0.12s,
+    background 0.12s;
+  align-self: center;
+
+  &:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  .dita-audiobook-comments-row:hover &,
+  .dita-audiobook-comments-row:focus-within & {
+    opacity: 1;
+  }
+}

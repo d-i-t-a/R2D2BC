@@ -1,0 +1,87 @@
+/*
+ * Copyright 2018-2026 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+// Audiobook bookmark list.
+//
+// Rendered by AudiobookBookmarkModule into the integrator-supplied
+// `audiobookBookmarks.listContainer`. Chapter-grouped rows with the
+// bookmark time + a delete action.
+//
+// Theme via the layered CSS custom properties:
+//   --dita-audiobook-bookmarks-accent → falls back to --dita-audiobook-accent
+//   --dita-audiobook-bookmarks-hover  → bookmark-list-only
+
+.dita-audiobook-bookmarks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+}
+
+.dita-audiobook-bookmarks-heading {
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 12px 12px 4px;
+}
+
+.dita-audiobook-bookmarks-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.12s;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--dita-audiobook-bookmarks-hover, rgba(0, 0, 0, 0.04));
+    outline: none;
+  }
+}
+
+.dita-audiobook-bookmarks-time {
+  font-variant-numeric: tabular-nums;
+  color: var(
+    --dita-audiobook-bookmarks-accent,
+    var(--dita-audiobook-accent, #1db954)
+  );
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+}
+
+.dita-audiobook-bookmarks-delete {
+  font: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition:
+    opacity 0.12s,
+    color 0.12s,
+    background 0.12s;
+
+  &:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  .dita-audiobook-bookmarks-row:hover &,
+  .dita-audiobook-bookmarks-row:focus-within & {
+    opacity: 1;
+  }
+}

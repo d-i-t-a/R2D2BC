@@ -34,6 +34,9 @@ export {
   Bookmark,
   Annotation,
   AnnotationMarker,
+  Comment,
   getPageFromLocations,
+  getTimeFromLocations,
+  locationsFromTime,
 } from "./Locator";
 export { MediaOverlayNode } from "./MediaOverlayNode";

@@ -1,0 +1,2168 @@
+<!--
+ * Copyright 2018-2026 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>D2 Reader — Audiobook</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <link rel="stylesheet" href="player.css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <script src="reader.js"></script>
+    <style>
+        :root {
+            --color-bg: #f7f7f8;
+            --color-surface: #ffffff;
+            --color-surface-2: #fafafa;
+            --color-border: #e8e8e8;
+            --color-divider: #f0f0f0;
+            --color-text: #1a1a1a;
+            --color-text-muted: #666;
+            --color-text-subtle: #999;
+            --color-accent: #1db954; /* audiobook green, same as library badge */
+            --color-accent-fade: rgba(29, 185, 84, 0.12);
+            --color-error-bg: #ffe8e8;
+            --color-error-fg: #a00;
+            --color-error-border: #f5c0c0;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.10);
+            --radius: 8px;
+            --radius-sm: 6px;
+            --radius-pill: 999px;
+            --header-height: 48px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        button, select, input { font: inherit; color: inherit; }
+        button { background: none; border: 0; cursor: pointer; }
+        button:focus-visible, select:focus-visible, [role="slider"]:focus-visible {
+            outline: 2px solid var(--color-accent);
+            outline-offset: 2px;
+        }
+
+        /* Horizontal flip — used to mirror Material Icons that ship in
+           one direction only (e.g. `replay` → clockwise version for skip-forward). */
+        .flipped-h { transform: scaleX(-1); }
+
+        /* Visually hide but keep accessible to screen readers */
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0;
+            margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;
+        }
+
+        /* ── Header ─────────────────────────────────────────────────── */
+
+        .header {
+            position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); z-index: 100;
+            display: flex; align-items: center; gap: 12px;
+            padding: 0 16px;
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
+        }
+        .header .back-link {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 10px;
+            font-size: 12px; color: var(--color-text-muted);
+            text-decoration: none; border-radius: var(--radius-pill);
+            transition: background 0.12s;
+        }
+        .header .back-link:hover { background: var(--color-surface-2); }
+        .header .back-link .material-icons { font-size: 16px; }
+        .header .title-bar {
+            font-size: 13px; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            flex: 1;
+        }
+        .header .badge {
+            font-size: 9px; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; padding: 3px 8px;
+            border-radius: var(--radius-pill);
+            background: var(--color-accent); color: #fff;
+        }
+        .header .status {
+            font-size: 11px; color: var(--color-text-subtle);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 240px;
+        }
+
+        /* ── Layout ─────────────────────────────────────────────────── */
+
+        .app {
+            position: fixed; top: var(--header-height); left: 0; right: 0; bottom: 0;
+            display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+            gap: 32px; padding: 24px;
+            max-width: 1200px; margin: 0 auto;
+            overflow: hidden;
+        }
+        @media (max-width: 880px) {
+            .app {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+                overflow: auto;
+                gap: 16px;
+            }
+        }
+
+        /* ── Now-playing panel (cover + meta + transport) ──────────── */
+
+        .now-playing {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: flex-start; gap: 18px;
+            min-height: 0; padding: 8px 0;
+            overflow-y: auto;
+        }
+        .cover {
+            width: 100%; max-width: 280px; aspect-ratio: 1 / 1;
+            background: var(--color-surface) center/cover no-repeat;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--color-text-subtle); font-size: 48px;
+            flex-shrink: 0;
+        }
+        .meta { text-align: center; max-width: 480px; }
+        .meta .title { font-size: 1.25rem; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
+        .meta .author { font-size: 0.95rem; color: var(--color-text-muted); }
+        .meta .narrator { font-size: 0.85rem; color: var(--color-text-subtle); margin-top: 4px; }
+
+        /* Transport block, beneath the meta */
+        .transport {
+            width: 100%; max-width: 480px;
+            display: flex; flex-direction: column; gap: 14px;
+            margin-top: 4px;
+        }
+
+        /* Aux row (speed, volume, bookmark, sleep timer) */
+        .aux-row {
+            display: flex; align-items: center; gap: 10px;
+            justify-content: center; flex-wrap: wrap;
+        }
+        .pill-button {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 12px;
+            font-size: 12px; color: var(--color-text-muted);
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-pill);
+            transition: background 0.12s, color 0.12s;
+        }
+        .pill-button:hover:not(:disabled) { background: var(--color-surface-2); color: var(--color-text); }
+        .pill-button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pill-button.active {
+            background: var(--color-accent-fade);
+            color: var(--color-accent);
+            border-color: var(--color-accent);
+        }
+        .pill-button .material-icons { font-size: 16px; }
+
+        /* ── Side panel (tabs) ──────────────────────────────────────── */
+
+        .side-panel {
+            display: flex; flex-direction: column;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            min-height: 0;
+            overflow: hidden;
+        }
+        .tab-list {
+            display: flex; gap: 4px;
+            padding: 8px 8px 0;
+            border-bottom: 1px solid var(--color-divider);
+            flex-shrink: 0;
+        }
+        .tab {
+            padding: 8px 14px;
+            font-size: 12px; font-weight: 500;
+            color: var(--color-text-muted);
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            border-bottom: 2px solid transparent;
+            transition: color 0.12s, border-color 0.12s;
+        }
+        .tab:hover:not([disabled]) { color: var(--color-text); }
+        .tab[aria-selected="true"] {
+            color: var(--color-accent);
+            border-bottom-color: var(--color-accent);
+        }
+        .tab:disabled { opacity: 0.4; cursor: not-allowed; }
+        .tab-panel { flex: 1; overflow-y: auto; padding: 8px 0; }
+        .tab-panel[hidden] { display: none; }
+
+        .panel-empty {
+            padding: 48px 24px; text-align: center;
+            color: var(--color-text-subtle); font-size: 13px;
+        }
+
+        /* ── Chapter list ───────────────────────────────────────────── */
+
+        .chapter {
+            display: grid; grid-template-columns: 28px 1fr auto;
+            align-items: center; gap: 10px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--color-divider);
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+        .chapter:last-child { border-bottom: 0; }
+        .chapter:hover { background: var(--color-surface-2); }
+        .chapter[aria-current="true"] {
+            background: var(--color-accent-fade);
+        }
+        .chapter:focus { outline: 0; background: var(--color-surface-2); }
+        .chapter:focus-visible { background: var(--color-surface-2); box-shadow: inset 0 0 0 2px var(--color-accent); }
+        .chapter .index {
+            font-size: 11px; color: var(--color-text-subtle); text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .chapter[aria-current="true"] .index { color: var(--color-accent); font-weight: 700; }
+        .chapter .title {
+            font-size: 13px; line-height: 1.3;
+            overflow: hidden; text-overflow: ellipsis;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        }
+        .chapter .duration {
+            font-size: 11px; color: var(--color-text-subtle);
+            font-variant-numeric: tabular-nums;
+        }
+        .chapter-group-heading {
+            display: grid; grid-template-columns: 28px 1fr;
+            align-items: center; gap: 10px;
+            padding: 10px 14px 4px;
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--color-text-subtle);
+        }
+        .chapter-group-heading .index { text-align: right; }
+        .chapter-group-heading .title { font-weight: 600; }
+        .bookmark-item { padding-left: 28px; }
+
+        /* Bookmark row: clickable to seek, with hover-revealed delete. */
+        .bookmark-row {
+            display: grid; grid-template-columns: 24px auto 1fr auto;
+            align-items: center; gap: 10px;
+            padding: 8px 14px 8px 28px;
+            border-bottom: 1px solid var(--color-divider);
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+        .bookmark-row:last-child { border-bottom: 0; }
+        .bookmark-row:hover { background: var(--color-surface-2); }
+        .bookmark-row .icon { color: var(--color-text-muted); display: inline-flex; }
+        .bookmark-row .icon .material-icons { font-size: 14px; }
+        .bookmark-row .time {
+            font-size: 11px; color: var(--color-text-subtle);
+            font-variant-numeric: tabular-nums;
+        }
+        .bookmark-row .row-actions {
+            display: flex; gap: 4px;
+            opacity: 0;
+            transition: opacity 0.12s;
+        }
+        .bookmark-row:hover .row-actions,
+        .bookmark-row:focus-within .row-actions {
+            opacity: 1;
+        }
+        .bookmark-row .row-actions button {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            color: var(--color-text-muted);
+        }
+        .bookmark-row .row-actions button:hover { background: var(--color-surface); color: var(--color-text); }
+        .bookmark-row .row-actions .material-icons { font-size: 16px; }
+
+        /* ── Scrubber ──────────────────────────────────────────────── */
+
+        .scrubber-row {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .time { font-size: 11px; color: var(--color-text-muted); font-variant-numeric: tabular-nums; min-width: 44px; }
+        .time.right { text-align: right; }
+        /* The scrubber is just a layout placeholder — `AudiobookTimelineModule`
+           writes its own bar / fill / thumb / markers / tooltip inside. */
+        .scrubber { flex: 1; }
+
+        /* ── Transport buttons ─────────────────────────────────────── */
+
+        .controls-row {
+            display: flex; align-items: center; gap: 8px;
+            justify-content: center;
+        }
+        .icon-button {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            color: var(--color-text);
+            transition: background 0.12s, opacity 0.12s;
+        }
+        .icon-button:hover:not(:disabled) { background: var(--color-surface-2); }
+        .icon-button:disabled { opacity: 0.35; cursor: not-allowed; }
+        .icon-button .material-icons { font-size: 24px; }
+        .icon-button.primary {
+            width: 56px; height: 56px;
+            background: var(--color-accent); color: #fff;
+            box-shadow: var(--shadow-md);
+        }
+        .icon-button.primary:hover:not(:disabled) { background: #17a64b; }
+        .icon-button.primary .material-icons { font-size: 32px; }
+        /* Spinner state — when the navigator reports waiting=true, the
+           play icon is hidden and a rotating ring takes its place inside
+           the button. CSS-only, no asset. */
+        .icon-button.primary.waiting .material-icons { visibility: hidden; }
+        .icon-button.primary.waiting::after {
+            content: "";
+            position: absolute;
+            width: 28px; height: 28px;
+            border: 3px solid rgba(255, 255, 255, 0.35);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: dita-audiobook-spin 0.8s linear infinite;
+        }
+        .icon-button.primary { position: relative; }
+        @keyframes dita-audiobook-spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ── Aux controls ──────────────────────────────────────────── */
+
+        .speed-select {
+            font-size: 12px; padding: 4px 6px;
+            border: 1px solid var(--color-border);
+            background: var(--color-surface);
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+        }
+        .speed-select:hover { background: var(--color-surface-2); }
+        /* Active state for icon-only toggle buttons (bookmark + comment) */
+        .icon-button.active {
+            background: var(--color-accent-fade);
+            color: var(--color-accent);
+        }
+        /* Sleep-timer pill: icon-only when no timer; expands to show
+           countdown text only when armed (data-active="true"). */
+        .pill-button.icon-only {
+            padding: 8px;
+        }
+        .pill-button.icon-only > .pill-label { display: none; }
+        .pill-button[data-active="true"] {
+            padding: 6px 12px;
+        }
+        .pill-button[data-active="true"] > .pill-label { display: inline; }
+        .speed-group {
+            display: flex; align-items: center; gap: 4px;
+        }
+        .volume-group {
+            display: flex; align-items: center; gap: 6px;
+        }
+        .volume-slider {
+            width: 100%; height: 24px;
+            display: flex; align-items: center;
+            position: relative; cursor: pointer;
+            touch-action: none;
+        }
+        .volume-popover { width: 240px; }
+        .volume-slider::before {
+            content: ""; position: absolute; left: 0; right: 0; height: 3px;
+            background: var(--color-border); border-radius: 2px;
+        }
+        .volume-fill {
+            position: absolute; left: 0; height: 3px;
+            background: var(--color-text-muted); border-radius: 2px;
+            pointer-events: none;
+        }
+
+        /* ── Active comments overlay (floating card) ────────────────── */
+
+        .comments-overlay {
+            width: 100%; max-width: 480px;
+            display: flex; flex-direction: column; gap: 6px;
+            margin: 0 auto;
+            opacity: 0; transform: translateY(-8px);
+            pointer-events: none;
+            transition: opacity 0.18s, transform 0.18s;
+        }
+        .comments-overlay.visible {
+            opacity: 1; transform: translateY(0);
+            pointer-events: auto;
+        }
+        .comment-card {
+            display: flex; gap: 10px; align-items: flex-start;
+            padding: 10px 12px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-accent);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            font-size: 13px; line-height: 1.4;
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+        .comment-card:hover { background: var(--color-surface-2); }
+        .comment-card .icon {
+            color: var(--color-accent); font-size: 18px;
+            flex-shrink: 0;
+        }
+        .comment-card .body {
+            flex: 1;
+            white-space: pre-wrap; word-break: break-word;
+        }
+        .comment-card .time {
+            font-size: 11px; color: var(--color-text-subtle);
+            margin-top: 4px;
+        }
+
+        /* ── Comment input form (inline above aux-row) ──────────────── */
+
+        .comment-form {
+            display: none;
+            width: 100%; max-width: 480px;
+            margin: 0 auto;
+            padding: 12px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-accent);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            flex-direction: column; gap: 8px;
+        }
+        .comment-form.visible { display: flex; }
+        .comment-form .anchor-time {
+            font-size: 11px; color: var(--color-text-subtle);
+            font-variant-numeric: tabular-nums;
+        }
+        .comment-form textarea {
+            width: 100%; min-height: 64px; resize: vertical;
+            padding: 8px 10px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            font-size: 13px; line-height: 1.4;
+            background: var(--color-bg);
+        }
+        .comment-form textarea:focus {
+            outline: 0; border-color: var(--color-accent);
+        }
+        .comment-form .actions {
+            display: flex; gap: 8px; justify-content: flex-end;
+        }
+        .comment-form .actions button {
+            padding: 6px 14px;
+            font-size: 12px; font-weight: 500;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--color-border);
+            background: var(--color-surface);
+            color: var(--color-text-muted);
+            transition: background 0.12s, color 0.12s;
+        }
+        .comment-form .actions button:hover { background: var(--color-surface-2); color: var(--color-text); }
+        .comment-form .actions button.primary {
+            background: var(--color-accent); color: #fff; border-color: var(--color-accent);
+        }
+        .comment-form .actions button.primary:hover { background: #17a64b; }
+        .comment-form .actions button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ── Comments list (Notes tab) ──────────────────────────────── */
+
+        .comment-list-add {
+            margin: 8px 14px;
+        }
+        .comment-list-add button {
+            width: 100%;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 8px 12px;
+            font-size: 12px; color: var(--color-accent);
+            background: var(--color-surface);
+            border: 1px dashed var(--color-accent);
+            border-radius: var(--radius-pill);
+        }
+        .comment-list-add button:hover { background: var(--color-accent-fade); }
+        .comment-list-add .material-icons { font-size: 16px; }
+        .comment-row {
+            display: grid; grid-template-columns: 60px 1fr auto;
+            align-items: start; gap: 10px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--color-divider);
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+        .comment-row:last-child { border-bottom: 0; }
+        .comment-row:hover { background: var(--color-surface-2); }
+        .comment-row[data-active="true"] {
+            background: var(--color-accent-fade);
+        }
+        .comment-row .time {
+            font-size: 11px; color: var(--color-text-subtle);
+            font-variant-numeric: tabular-nums;
+        }
+        .comment-row[data-active="true"] .time { color: var(--color-accent); font-weight: 600; }
+        .comment-row .body {
+            font-size: 13px; line-height: 1.4;
+            white-space: pre-wrap; word-break: break-word;
+            min-width: 0;
+        }
+        .comment-row .row-actions {
+            display: flex; gap: 4px;
+            opacity: 0;
+            transition: opacity 0.12s;
+        }
+        .comment-row:hover .row-actions,
+        .comment-row:focus-within .row-actions {
+            opacity: 1;
+        }
+        .comment-row .row-actions button {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            color: var(--color-text-muted);
+        }
+        .comment-row .row-actions button:hover { background: var(--color-surface); color: var(--color-text); }
+        .comment-row .row-actions .material-icons { font-size: 16px; }
+
+        /* `AudiobookTimelineModule` writes its own bar / fill / thumb /
+           markers / boundaries / chapter bands / tooltip inside both
+           `#scrubber` and `#book-strip` — the viewer only provides
+           layout containers and lets the library style the visuals. */
+
+        .book-strip-row {
+            margin-top: 6px;
+            padding: 0 14px;
+        }
+        .book-strip { /* layout container only — view fills it */ }
+
+        /* ── Settings popover ─────────────────────────────────────── */
+
+        .settings-anchor { position: relative; }
+        .header-icon-button {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            color: var(--color-text-muted);
+            transition: background 0.12s, color 0.12s;
+        }
+        .header-icon-button:hover { background: var(--color-surface-2); color: var(--color-text); }
+        .header-icon-button .material-icons { font-size: 20px; }
+        .settings-popover {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 280px;
+            padding: 14px 16px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            z-index: 150;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .settings-popover[hidden] { display: none; }
+        .settings-popover .settings-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .settings-popover .settings-row > .row-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .settings-popover .toggle {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .settings-popover .toggle input {
+            position: absolute;
+            inset: 0;
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 1;
+        }
+        .settings-popover .toggle .track {
+            position: absolute;
+            inset: 0;
+            background: var(--color-surface-2);
+            border: 1px solid var(--color-border);
+            border-radius: 20px;
+            transition: background 120ms;
+            cursor: pointer;
+        }
+        .settings-popover .toggle .track::before {
+            content: "";
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            left: 2px;
+            top: 2px;
+            background: var(--color-text);
+            border-radius: 50%;
+            transition: transform 120ms;
+        }
+        .settings-popover .toggle input:checked + .track {
+            background: var(--color-accent, #2563eb);
+            border-color: var(--color-accent, #2563eb);
+        }
+        .settings-popover .toggle input:checked + .track::before {
+            transform: translateX(16px);
+            background: #fff;
+        }
+        .settings-popover .toggle input:focus-visible + .track {
+            outline: 2px solid var(--color-focus, #2563eb);
+            outline-offset: 2px;
+        }
+        .settings-popover .pill-row {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .settings-popover .pill-row button {
+            padding: 4px 10px;
+            font-size: 12px;
+            background: var(--color-surface-2);
+            border: 1px solid var(--color-border);
+            border-radius: 999px;
+            cursor: pointer;
+        }
+        .settings-popover .pill-row button[aria-pressed="true"] {
+            background: var(--color-accent, #2563eb);
+            border-color: var(--color-accent, #2563eb);
+            color: #fff;
+        }
+        /* Sleep popover anchors at the bottom controls — open upward. */
+        .settings-popover.sleep-popover {
+            top: auto;
+            bottom: calc(100% + 8px);
+        }
+        .settings-popover .sleep-end-of-chapter,
+        .settings-popover .sleep-cancel {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            font-size: 13px;
+            background: var(--color-surface-2);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            justify-content: center;
+            width: 100%;
+        }
+        .settings-popover .sleep-end-of-chapter[aria-pressed="true"] {
+            background: var(--color-accent, #2563eb);
+            border-color: var(--color-accent, #2563eb);
+            color: #fff;
+        }
+        .settings-popover .sleep-end-of-chapter .material-icons,
+        .settings-popover .sleep-cancel .material-icons {
+            font-size: 16px;
+        }
+        .settings-popover .sleep-cancel { color: var(--color-error-fg, #b91c1c); }
+        .pill-button.sleep-active {
+            background: var(--color-accent, #2563eb);
+            color: #fff;
+            border-color: var(--color-accent, #2563eb);
+        }
+
+        /* ── Error ──────────────────────────────────────────────────── */
+
+        .error-banner {
+            position: fixed; top: calc(var(--header-height) + 12px);
+            left: 50%; transform: translateX(-50%);
+            max-width: 720px; padding: 10px 16px;
+            font-size: 13px;
+            background: var(--color-error-bg);
+            color: var(--color-error-fg);
+            border: 1px solid var(--color-error-border);
+            border-radius: var(--radius);
+            z-index: 200;
+            box-shadow: var(--shadow-md);
+        }
+        .error-banner[hidden] { display: none; }
+    </style>
+</head>
+<body>
+    <header class="header" role="banner">
+        <a class="back-link" href="index.html?filter=audiobook" title="Back to library">
+            <span class="material-icons" aria-hidden="true">arrow_back</span>
+            Library
+        </a>
+        <span class="badge" aria-label="Audiobook">Audiobook</span>
+        <span class="title-bar" id="header-title"></span>
+        <span class="status" id="status" aria-live="polite" aria-atomic="true">Loading…</span>
+        <div class="settings-anchor">
+            <button class="header-icon-button" id="settings-button" aria-label="Playback settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-popover" title="Playback settings">
+                <span class="material-icons" aria-hidden="true">settings</span>
+            </button>
+            <div
+                class="settings-popover"
+                id="settings-popover"
+                role="dialog"
+                aria-label="Playback settings"
+                hidden
+            >
+                <div class="settings-row">
+                    <div class="row-head">
+                        <label for="setting-preserve-pitch">Preserve pitch</label>
+                        <span class="toggle">
+                            <input type="checkbox" id="setting-preserve-pitch">
+                            <span class="track" aria-hidden="true"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="row-head">
+                        <span>Skip back (s)</span>
+                    </div>
+                    <div class="pill-row" id="setting-skip-back" role="group" aria-label="Skip backward interval in seconds">
+                        <button type="button" data-value="5">5</button>
+                        <button type="button" data-value="10">10</button>
+                        <button type="button" data-value="15">15</button>
+                        <button type="button" data-value="30">30</button>
+                        <button type="button" data-value="60">60</button>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="row-head">
+                        <span>Skip forward (s)</span>
+                    </div>
+                    <div class="pill-row" id="setting-skip-forward" role="group" aria-label="Skip forward interval in seconds">
+                        <button type="button" data-value="10">10</button>
+                        <button type="button" data-value="15">15</button>
+                        <button type="button" data-value="30">30</button>
+                        <button type="button" data-value="60">60</button>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="row-head">
+                        <label for="setting-auto-play">Auto-play next chapter</label>
+                        <span class="toggle">
+                            <input type="checkbox" id="setting-auto-play">
+                            <span class="track" aria-hidden="true"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="settings-row" id="setting-timeline-mode-row">
+                    <div class="row-head">
+                        <span>Timeline</span>
+                    </div>
+                    <div class="pill-row" id="setting-timeline-mode" role="group" aria-label="Timeline display mode">
+                        <button type="button" data-value="chapter">Chapter</button>
+                        <button type="button" data-value="book">Book</button>
+                        <button type="button" data-value="both">Both</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="error-banner" id="error" role="alert" hidden></div>
+
+    <main class="app" id="D2Reader-Container">
+        <section class="now-playing" aria-label="Now playing">
+            <div class="cover" id="cover" aria-hidden="true">
+                <span class="material-icons" id="cover-fallback">graphic_eq</span>
+            </div>
+
+            <div class="meta">
+                <h1 class="title" id="meta-title"></h1>
+                <p class="author" id="meta-author"></p>
+                <p class="narrator" id="meta-narrator"></p>
+            </div>
+
+            <div class="transport">
+                <div class="scrubber-row">
+                    <time class="time" id="time-current" aria-hidden="true">0:00</time>
+                    <!-- Scrubber container — `AudiobookTimelineModule`
+                         from the library writes the bar, fill, thumb,
+                         markers, boundaries, chapter bands, and tooltip
+                         inside this div on `.start()`. -->
+                    <div class="scrubber" id="scrubber"></div>
+                    <time class="time right" id="time-duration" aria-hidden="true">0:00</time>
+                </div>
+
+                <!-- Secondary whole-book strip (shown only in `both`
+                     mode) — same `AudiobookTimelineModule` class with
+                     `mode: "book"` configured to always operate in
+                     book-time semantics. -->
+                <div class="book-strip-row" id="book-strip-row" hidden aria-hidden="true">
+                    <div class="book-strip" id="book-strip"></div>
+                </div>
+
+                <div class="comments-overlay" id="comments-overlay" aria-live="polite" aria-atomic="false"></div>
+
+                <form class="comment-form" id="comment-form" aria-label="Add comment">
+                    <div class="anchor-time" id="comment-form-anchor">At 0:00</div>
+                    <textarea
+                        id="comment-form-text"
+                        placeholder="Write a comment about this moment…"
+                        aria-label="Comment text"
+                    ></textarea>
+                    <div class="actions">
+                        <button type="button" id="comment-form-cancel">Cancel</button>
+                        <button type="submit" class="primary" id="comment-form-save">Save</button>
+                    </div>
+                </form>
+
+                <div class="controls-row">
+                    <button class="icon-button" id="previous-chapter-button" aria-label="Previous chapter (Shift+Left)">
+                        <span class="material-icons" aria-hidden="true">skip_previous</span>
+                    </button>
+                    <button class="icon-button" id="skip-back-button" aria-label="Skip back 15 seconds (Left arrow)">
+                        <span class="material-icons" aria-hidden="true">replay</span>
+                    </button>
+                    <button class="icon-button primary" id="play-button" aria-label="Play (Space)">
+                        <span class="material-icons" id="play-icon" aria-hidden="true">play_arrow</span>
+                    </button>
+                    <button class="icon-button" id="skip-forward-button" aria-label="Skip forward 30 seconds (Right arrow)">
+                        <span class="material-icons flipped-h" aria-hidden="true">replay</span>
+                    </button>
+                    <button class="icon-button" id="next-chapter-button" aria-label="Next chapter (Shift+Right)">
+                        <span class="material-icons" aria-hidden="true">skip_next</span>
+                    </button>
+                </div>
+
+                <div class="aux-row">
+                    <div class="settings-anchor speed-anchor">
+                        <button type="button" class="pill-button icon-only" id="speed-button" aria-label="Playback speed" aria-haspopup="dialog" aria-expanded="false" aria-controls="speed-popover" title="Playback speed">
+                            <span class="material-icons" aria-hidden="true">speed</span>
+                            <span class="pill-label" id="speed-label">1×</span>
+                        </button>
+                        <div class="settings-popover speed-popover" id="speed-popover" role="dialog" aria-label="Playback speed" hidden>
+                            <div class="settings-row">
+                                <div class="row-head"><span>Speed</span></div>
+                                <div class="pill-row" id="speed-options" role="group" aria-label="Playback speed options">
+                                    <button type="button" data-value="0.5">0.5×</button>
+                                    <button type="button" data-value="0.75">0.75×</button>
+                                    <button type="button" data-value="1">1×</button>
+                                    <button type="button" data-value="1.25">1.25×</button>
+                                    <button type="button" data-value="1.5">1.5×</button>
+                                    <button type="button" data-value="1.75">1.75×</button>
+                                    <button type="button" data-value="2">2×</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-anchor volume-anchor">
+                        <button type="button" class="pill-button icon-only" id="volume-button" aria-label="Volume" aria-haspopup="dialog" aria-expanded="false" aria-controls="volume-popover" title="Volume">
+                            <span class="material-icons" id="volume-icon" aria-hidden="true">volume_up</span>
+                            <span class="pill-label" id="volume-label">100%</span>
+                        </button>
+                        <div class="settings-popover volume-popover" id="volume-popover" role="dialog" aria-label="Volume" hidden>
+                            <div class="settings-row">
+                                <div class="row-head">
+                                    <span>Volume</span>
+                                    <button type="button" id="mute-button" class="icon-button" aria-label="Mute (M)" title="Mute (M)">
+                                        <span class="material-icons" id="mute-icon" aria-hidden="true">volume_up</span>
+                                    </button>
+                                </div>
+                                <div
+                                    class="volume-slider"
+                                    id="volume-slider"
+                                    role="slider"
+                                    tabindex="0"
+                                    aria-label="Volume"
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                    aria-valuenow="100"
+                                    aria-valuetext="100 percent"
+                                >
+                                    <div class="volume-fill" id="volume-fill"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-anchor sleep-anchor">
+                        <button class="pill-button icon-only" id="sleep-timer-button" aria-label="Sleep timer" aria-haspopup="dialog" aria-expanded="false" aria-controls="sleep-popover" title="Set sleep timer">
+                            <span class="material-icons" aria-hidden="true">bedtime</span>
+                            <span class="pill-label" id="sleep-timer-label">Sleep timer</span>
+                        </button>
+                        <div
+                            class="settings-popover sleep-popover"
+                            id="sleep-popover"
+                            role="dialog"
+                            aria-label="Sleep timer"
+                            hidden
+                        >
+                            <div class="settings-row">
+                                <div class="row-head">
+                                    <span>Pause after</span>
+                                </div>
+                                <div class="pill-row" id="sleep-minutes" role="group" aria-label="Sleep timer minutes">
+                                    <button type="button" data-value="5">5 min</button>
+                                    <button type="button" data-value="15">15 min</button>
+                                    <button type="button" data-value="30">30 min</button>
+                                    <button type="button" data-value="45">45 min</button>
+                                    <button type="button" data-value="60">60 min</button>
+                                    <button type="button" data-value="90">90 min</button>
+                                </div>
+                            </div>
+                            <div class="settings-row">
+                                <button type="button" class="sleep-end-of-chapter" id="sleep-end-of-chapter">
+                                    <span class="material-icons" aria-hidden="true">flag</span>
+                                    End of chapter
+                                </button>
+                            </div>
+                            <div class="settings-row" id="sleep-cancel-row" hidden>
+                                <button type="button" class="sleep-cancel" id="sleep-cancel">
+                                    <span class="material-icons" aria-hidden="true">cancel</span>
+                                    Cancel timer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="side-panel" aria-label="Audiobook navigation">
+            <div class="tab-list" role="tablist">
+                <button class="tab" role="tab" aria-selected="true" aria-controls="panel-chapters" id="tab-chapters" data-tab="chapters">
+                    Chapters
+                </button>
+                <button class="tab" role="tab" aria-selected="false" aria-controls="panel-bookmarks" id="tab-bookmarks" data-tab="bookmarks">
+                    Bookmarks
+                </button>
+                <button class="tab" role="tab" aria-selected="false" aria-controls="panel-notes" id="tab-notes" data-tab="notes">
+                    Comments
+                </button>
+                <button class="tab" role="tab" aria-selected="false" aria-controls="panel-insights" id="tab-insights" data-tab="insights" disabled title="Insights — coming in task 9">
+                    Insights
+                </button>
+            </div>
+            <div class="tab-panel" role="tabpanel" id="panel-chapters" aria-labelledby="tab-chapters">
+                <div id="chapter-list" role="listbox" aria-label="Chapters" tabindex="-1"></div>
+            </div>
+            <div class="tab-panel" role="tabpanel" id="panel-bookmarks" aria-labelledby="tab-bookmarks" hidden>
+                <div class="comment-list-add">
+                    <button type="button" id="bookmark-button" title="Add bookmark at the current position (B)" aria-label="Add bookmark at the current position">
+                        <span class="material-icons" id="bookmark-icon" aria-hidden="true">bookmark_border</span>
+                        <span id="bookmark-button-label">Add bookmark</span>
+                    </button>
+                </div>
+                <div id="bookmark-list" role="list" aria-label="Bookmarks"></div>
+                <p class="panel-empty" id="bookmark-empty" hidden>No bookmarks yet. Tap the button above to save the current position.</p>
+            </div>
+            <div class="tab-panel" role="tabpanel" id="panel-notes" aria-labelledby="tab-notes" hidden>
+                <div class="comment-list-add">
+                    <button type="button" id="comment-add-from-list" aria-label="Add a comment at the current position">
+                        <span class="material-icons" aria-hidden="true">add</span>
+                        Add comment
+                    </button>
+                </div>
+                <div id="comment-list" role="list" aria-label="Comments"></div>
+                <p class="panel-empty" id="comment-empty">No comments yet. Tap the + Comment button to add one at the current position.</p>
+            </div>
+            <div class="tab-panel" role="tabpanel" id="panel-insights" aria-labelledby="tab-insights" hidden>
+                <p class="panel-empty">Listening insights will appear here once the consumption module ships.</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // ── DOM references ────────────────────────────────────────────
+        const ui = {
+            headerTitle: document.getElementById("header-title"),
+            status: document.getElementById("status"),
+            error: document.getElementById("error"),
+            cover: document.getElementById("cover"),
+            coverFallback: document.getElementById("cover-fallback"),
+            metaTitle: document.getElementById("meta-title"),
+            metaAuthor: document.getElementById("meta-author"),
+            metaNarrator: document.getElementById("meta-narrator"),
+            chapterList: document.getElementById("chapter-list"),
+            tabs: Array.from(document.querySelectorAll("[role='tab']")),
+            tabPanels: Array.from(document.querySelectorAll("[role='tabpanel']")),
+            timeCurrent: document.getElementById("time-current"),
+            timeDuration: document.getElementById("time-duration"),
+            scrubber: document.getElementById("scrubber"),
+            // The library's AudiobookTimelineModule owns the inner DOM
+            // of #scrubber and #book-strip — viewer doesn't reference
+            // their inner elements directly.
+            bookStripRow: document.getElementById("book-strip-row"),
+            bookStrip: document.getElementById("book-strip"),
+            previousChapterButton: document.getElementById("previous-chapter-button"),
+            skipBackButton: document.getElementById("skip-back-button"),
+            playButton: document.getElementById("play-button"),
+            playIcon: document.getElementById("play-icon"),
+            skipForwardButton: document.getElementById("skip-forward-button"),
+            nextChapterButton: document.getElementById("next-chapter-button"),
+            speedButton: document.getElementById("speed-button"),
+            speedLabel: document.getElementById("speed-label"),
+            speedPopover: document.getElementById("speed-popover"),
+            speedOptions: document.getElementById("speed-options"),
+            volumeButton: document.getElementById("volume-button"),
+            volumeLabel: document.getElementById("volume-label"),
+            volumePopover: document.getElementById("volume-popover"),
+            muteIcon: document.getElementById("mute-icon"),
+            muteButton: document.getElementById("mute-button"),
+            volumeIcon: document.getElementById("volume-icon"),
+            volumeSlider: document.getElementById("volume-slider"),
+            volumeFill: document.getElementById("volume-fill"),
+            bookmarkButton: document.getElementById("bookmark-button"),
+            bookmarkButtonLabel: document.getElementById("bookmark-button-label"),
+            bookmarkIcon: document.getElementById("bookmark-icon"),
+            bookmarkList: document.getElementById("bookmark-list"),
+            bookmarkEmpty: document.getElementById("bookmark-empty"),
+            commentsOverlay: document.getElementById("comments-overlay"),
+            commentForm: document.getElementById("comment-form"),
+            commentFormAnchor: document.getElementById("comment-form-anchor"),
+            commentFormText: document.getElementById("comment-form-text"),
+            commentFormCancel: document.getElementById("comment-form-cancel"),
+            commentFormSave: document.getElementById("comment-form-save"),
+            commentList: document.getElementById("comment-list"),
+            commentEmpty: document.getElementById("comment-empty"),
+            commentAddFromList: document.getElementById("comment-add-from-list"),
+            settingsButton: document.getElementById("settings-button"),
+            settingsPopover: document.getElementById("settings-popover"),
+            settingPreservePitch: document.getElementById("setting-preserve-pitch"),
+            settingAutoPlay: document.getElementById("setting-auto-play"),
+            settingSkipBack: document.getElementById("setting-skip-back"),
+            settingSkipForward: document.getElementById("setting-skip-forward"),
+            settingTimelineMode: document.getElementById("setting-timeline-mode"),
+            settingTimelineModeRow: document.getElementById("setting-timeline-mode-row"),
+            sleepTimerButton: document.getElementById("sleep-timer-button"),
+            sleepTimerLabel: document.getElementById("sleep-timer-label"),
+            sleepPopover: document.getElementById("sleep-popover"),
+            sleepMinutes: document.getElementById("sleep-minutes"),
+            sleepEndOfChapter: document.getElementById("sleep-end-of-chapter"),
+            sleepCancelRow: document.getElementById("sleep-cancel-row"),
+            sleepCancel: document.getElementById("sleep-cancel"),
+        };
+
+        const urlParams = Object.fromEntries(new URL(location.href).searchParams);
+        const manifestUrl = urlParams.url;
+
+        // ── State ─────────────────────────────────────────────────────
+        let d2reader = null;
+        let isPlaying = false;
+        let currentIndex = -1;
+        // ── Timeline scope ───────────────────────────────────────────
+        // Used for the time labels (timeCurrent / timeDuration) at the
+        // ends of the scrubber row. The scrubber DOM itself is owned
+        // by `AudiobookTimelineModule` (created in boot) — viewer no
+        // longer manages bar visuals or fisheye math.
+        function timelineScope() {
+            const mode = d2reader?.audiobookSettings?.timelineMode ?? "chapter";
+            const m = d2reader?.audiobookTimeline;
+            if (mode === "book" && m && m.isUsable) {
+                return {
+                    mode: "book",
+                    duration: m.bookDuration,
+                    position: m.currentBookTime(),
+                };
+            }
+            return {
+                mode: "chapter",
+                duration: d2reader?.duration ?? 0,
+                position: d2reader?.currentTime ?? 0,
+            };
+        }
+
+        // Comment form state — captures the locator at the moment the user
+        // clicks "+ Comment" so the anchor stays put even if the user types
+        // for 30 seconds.
+        let commentFormAnchor = null;
+        let commentFormWasPlaying = false;
+        let commentFormEditingId = null;
+
+        // ── Helpers ───────────────────────────────────────────────────
+        function formatTime(seconds) {
+            if (!Number.isFinite(seconds) || seconds < 0) seconds = 0;
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            const minutesPadded = minutes.toString().padStart(hours > 0 ? 2 : 1, "0");
+            const secondsPadded = secs.toString().padStart(2, "0");
+            return hours > 0
+                ? `${hours}:${minutesPadded}:${secondsPadded}`
+                : `${minutesPadded}:${secondsPadded}`;
+        }
+
+        function announceStatus(text) {
+            ui.status.textContent = text;
+        }
+
+        function showError(message) {
+            ui.error.textContent = message;
+            ui.error.hidden = false;
+        }
+
+        function clearError() {
+            ui.error.hidden = true;
+        }
+
+        function findCoverUrl(publication) {
+            const cover = publication?.manifest?.linkWithRel?.("cover");
+            if (!cover?.href) return null;
+            return publication.getAbsoluteHref(cover.href);
+        }
+
+        // ── Render ────────────────────────────────────────────────────
+        // Pulls a plain string out of any of these shapes:
+        // - a string ("Flatland")
+        // - a LocalizedString (@readium/shared, has getTranslation())
+        // - a Contributors collection (@readium/shared, has .items array)
+        // - a Contributor (has .name which is a LocalizedString)
+        // - a plain {name} object
+        // - an array of any of the above (takes the first)
+        function readableString(value) {
+            if (!value) return "";
+            if (typeof value === "string") return value;
+            if (Array.isArray(value)) return readableString(value[0]);
+            if (Array.isArray(value.items)) return readableString(value.items[0]);
+            if (typeof value.getTranslation === "function") {
+                return value.getTranslation();
+            }
+            if (typeof value.name !== "undefined") return readableString(value.name);
+            return "";
+        }
+
+        function renderMeta(publication) {
+            const metadata = publication.metadata;
+            const title = readableString(metadata?.title) || "(untitled)";
+            const author = readableString(metadata?.authors ?? metadata?.author);
+            const narrator = readableString(metadata?.narrators ?? metadata?.narrator);
+
+            ui.headerTitle.textContent = title;
+            ui.metaTitle.textContent = title;
+            ui.metaAuthor.textContent = author;
+            ui.metaNarrator.textContent = narrator ? `Narrated by ${narrator}` : "";
+
+            const coverUrl = findCoverUrl(publication);
+            if (coverUrl) {
+                ui.cover.style.backgroundImage = `url("${coverUrl}")`;
+                ui.coverFallback.style.display = "none";
+            }
+        }
+
+        function renderChapters(readingOrder) {
+            ui.chapterList.innerHTML = "";
+            readingOrder.forEach((link, index) => {
+                const item = document.createElement("button");
+                item.className = "chapter";
+                item.setAttribute("role", "option");
+                item.setAttribute("aria-current", index === currentIndex ? "true" : "false");
+                item.dataset.index = String(index);
+                item.tabIndex = 0;
+                item.innerHTML = `
+                    <span class="index">${index + 1}</span>
+                    <span class="title">${escapeHtml(link.title || link.href)}</span>
+                    <span class="duration">${link.duration ? formatTime(link.duration) : ""}</span>
+                `;
+                item.addEventListener("click", async () => {
+                    await d2reader.goTo({ href: link.href, locations: { time: 0 } });
+                    await d2reader.play();
+                });
+                ui.chapterList.appendChild(item);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function highlightChapter(index) {
+            currentIndex = index;
+            for (const item of ui.chapterList.querySelectorAll(".chapter")) {
+                const isCurrent = Number(item.dataset.index) === index;
+                item.setAttribute("aria-current", isCurrent ? "true" : "false");
+                if (isCurrent) item.scrollIntoView({ block: "nearest", behavior: "smooth" });
+            }
+        }
+
+        function renderPlayingState(playing) {
+            isPlaying = playing;
+            ui.playIcon.textContent = playing ? "pause" : "play_arrow";
+            ui.playButton.setAttribute("aria-label", playing ? "Pause (Space)" : "Play (Space)");
+        }
+
+        // Updates time labels (current / duration) and toggles the
+        // secondary book-strip row visibility. Scrubber bar visuals
+        // are owned by AudiobookTimelineModule.
+        function renderTime() {
+            const scope = timelineScope();
+            ui.timeCurrent.textContent = formatTime(scope.position);
+            ui.timeDuration.textContent = formatTime(scope.duration);
+            renderBookProgressStrip(scope);
+        }
+
+        // Show / hide the secondary book-strip row based on mode.
+        function renderBookProgressStrip(scope) {
+            const mode = d2reader?.audiobookSettings?.timelineMode ?? "chapter";
+            const m = d2reader?.audiobookTimeline;
+            if (mode !== "both" || !m || !m.isUsable) {
+                if (ui.bookStripRow) ui.bookStripRow.hidden = true;
+                return;
+            }
+            if (!ui.bookStripRow) return;
+            ui.bookStripRow.hidden = false;
+        }
+
+        function renderBoundary() {
+            ui.previousChapterButton.disabled = !d2reader.hasPreviousChapter;
+            ui.nextChapterButton.disabled = !d2reader.hasNextChapter;
+        }
+
+        function renderVolume(volume, muted) {
+            const displayVolume = muted ? 0 : volume;
+            ui.volumeFill.style.width = (displayVolume * 100) + "%";
+            ui.volumeSlider.setAttribute("aria-valuenow", String(Math.round(volume * 100)));
+            ui.volumeSlider.setAttribute("aria-valuetext", `${Math.round(volume * 100)} percent${muted ? ", muted" : ""}`);
+            const iconName = muted || displayVolume === 0
+                ? "volume_off"
+                : displayVolume < 0.5 ? "volume_down" : "volume_up";
+            ui.volumeIcon.textContent = iconName;
+            ui.muteIcon.textContent = iconName;
+            ui.muteButton.setAttribute("aria-label", muted ? "Unmute (M)" : "Mute (M)");
+
+            // Pill: icon-only at 100% (unmuted), expanded with percentage
+            // when off-default or muted. Same pattern as speed / sleep timer.
+            const pct = Math.round(displayVolume * 100);
+            ui.volumeLabel.textContent = muted ? "Muted" : `${pct}%`;
+            const isDefault = !muted && volume === 1;
+            if (isDefault) {
+                ui.volumeButton.classList.add("icon-only");
+                ui.volumeButton.removeAttribute("data-active");
+            } else {
+                ui.volumeButton.classList.remove("icon-only");
+                ui.volumeButton.setAttribute("data-active", "true");
+            }
+        }
+
+        // Reflect the persisted audiobookSettings into every settings UI
+        // control. Called at load and whenever settings.onChange fires
+        // (so external mutations stay in sync).
+        function renderSettings() {
+            const settings = d2reader.audiobookSettings;
+            if (!settings) return;
+            renderSpeed(settings.playbackRate);
+            ui.settingPreservePitch.checked = settings.preservePitch;
+            ui.settingAutoPlay.checked = settings.autoPlay;
+            highlightPill(ui.settingSkipBack, settings.skipBackwardInterval);
+            highlightPill(ui.settingSkipForward, settings.skipForwardInterval);
+            highlightPillByString(ui.settingTimelineMode, settings.timelineMode);
+            ui.skipBackButton.setAttribute(
+                "aria-label",
+                `Skip back ${settings.skipBackwardInterval} seconds (Left arrow)`
+            );
+            ui.skipForwardButton.setAttribute(
+                "aria-label",
+                `Skip forward ${settings.skipForwardInterval} seconds (Right arrow)`
+            );
+        }
+
+        // Speed pill: icon-only at 1× (default), expanded with rate label
+        // when off-default. Same icon-only/data-active pattern as sleep timer.
+        function renderSpeed(rate) {
+            ui.speedLabel.textContent = `${rate}×`;
+            if (rate === 1) {
+                ui.speedButton.classList.add("icon-only");
+                ui.speedButton.removeAttribute("data-active");
+            } else {
+                ui.speedButton.classList.remove("icon-only");
+                ui.speedButton.setAttribute("data-active", "true");
+            }
+            // Highlight the active option pill in the popover.
+            for (const button of ui.speedOptions.querySelectorAll("button[data-value]")) {
+                button.setAttribute(
+                    "aria-pressed",
+                    Number(button.dataset.value) === rate ? "true" : "false"
+                );
+            }
+        }
+
+        function openSpeedPopover() {
+            ui.speedPopover.hidden = false;
+            ui.speedButton.setAttribute("aria-expanded", "true");
+        }
+
+        function closeSpeedPopover() {
+            ui.speedPopover.hidden = true;
+            ui.speedButton.setAttribute("aria-expanded", "false");
+        }
+
+        function openVolumePopover() {
+            ui.volumePopover.hidden = false;
+            ui.volumeButton.setAttribute("aria-expanded", "true");
+        }
+
+        function closeVolumePopover() {
+            ui.volumePopover.hidden = true;
+            ui.volumeButton.setAttribute("aria-expanded", "false");
+        }
+
+        function highlightPill(container, value) {
+            for (const button of container.querySelectorAll("button[data-value]")) {
+                button.setAttribute(
+                    "aria-pressed",
+                    Number(button.dataset.value) === value ? "true" : "false"
+                );
+            }
+        }
+
+        function highlightPillByString(container, value) {
+            for (const button of container.querySelectorAll("button[data-value]")) {
+                button.setAttribute(
+                    "aria-pressed",
+                    button.dataset.value === value ? "true" : "false"
+                );
+            }
+        }
+
+        function openSettingsPopover() {
+            ui.settingsPopover.hidden = false;
+            ui.settingsButton.setAttribute("aria-expanded", "true");
+            ui.settingPreservePitch.focus();
+        }
+
+        function closeSettingsPopover() {
+            ui.settingsPopover.hidden = true;
+            ui.settingsButton.setAttribute("aria-expanded", "false");
+        }
+
+        // Update the sleep-timer pill + popover state based on the current
+        // timer snapshot. Pass `null` when no timer is armed.
+        function renderSleepTimer(snap) {
+            if (!snap) {
+                // No timer: collapse to icon-only.
+                ui.sleepTimerLabel.textContent = "Sleep timer";
+                ui.sleepTimerButton.classList.remove("sleep-active");
+                ui.sleepTimerButton.classList.add("icon-only");
+                ui.sleepTimerButton.removeAttribute("data-active");
+                ui.sleepCancelRow.hidden = true;
+                ui.sleepEndOfChapter.setAttribute("aria-pressed", "false");
+                highlightPill(ui.sleepMinutes, NaN);
+                return;
+            }
+            // Timer armed: expand pill to show countdown / mode label.
+            ui.sleepTimerButton.classList.add("sleep-active");
+            ui.sleepTimerButton.classList.remove("icon-only");
+            ui.sleepTimerButton.setAttribute("data-active", "true");
+            ui.sleepCancelRow.hidden = false;
+            if (snap.kind === "endOfChapter") {
+                ui.sleepTimerLabel.textContent = "End of chapter";
+                ui.sleepEndOfChapter.setAttribute("aria-pressed", "true");
+                highlightPill(ui.sleepMinutes, NaN);
+            } else {
+                const totalSeconds = Math.ceil(snap.remainingMs / 1000);
+                const m = Math.floor(totalSeconds / 60);
+                const s = totalSeconds % 60;
+                ui.sleepTimerLabel.textContent = `${m}:${String(s).padStart(2, "0")}`;
+                ui.sleepEndOfChapter.setAttribute("aria-pressed", "false");
+                highlightPill(ui.sleepMinutes, Math.round(snap.totalMs / 60000));
+            }
+        }
+
+        function openSleepPopover() {
+            ui.sleepPopover.hidden = false;
+            ui.sleepTimerButton.setAttribute("aria-expanded", "true");
+        }
+
+        function closeSleepPopover() {
+            ui.sleepPopover.hidden = true;
+            ui.sleepTimerButton.setAttribute("aria-expanded", "false");
+        }
+
+        // ── Tabs ──────────────────────────────────────────────────────
+        // Persisted across reloads via localStorage so the user lands on
+        // the tab they were last looking at.
+        const TAB_STORAGE_KEY = "audiobook-viewer:active-tab";
+
+        function selectTab(name, persist = true) {
+            for (const tab of ui.tabs) {
+                const isSelected = tab.dataset.tab === name;
+                tab.setAttribute("aria-selected", isSelected ? "true" : "false");
+                tab.tabIndex = isSelected ? 0 : -1;
+            }
+            for (const panel of ui.tabPanels) {
+                panel.hidden = panel.id !== `panel-${name}`;
+            }
+            if (persist) {
+                try { localStorage.setItem(TAB_STORAGE_KEY, name); } catch {}
+            }
+        }
+        for (const tab of ui.tabs) {
+            tab.addEventListener("click", () => {
+                if (tab.disabled) return;
+                selectTab(tab.dataset.tab);
+            });
+        }
+        // Restore the last-selected tab if it exists and isn't disabled.
+        try {
+            const stored = localStorage.getItem(TAB_STORAGE_KEY);
+            if (stored) {
+                const target = ui.tabs.find((t) => t.dataset.tab === stored);
+                if (target && !target.disabled) {
+                    selectTab(stored, false);
+                }
+            }
+        } catch {}
+
+        // Scrubber rendering, hover, fisheye, drag, and tooltip are now
+        // owned by the library's `AudiobookTimelineModule` class. The
+        // viewer just creates two view instances (primary + book-strip)
+        // in boot — see the `start()` block below.
+
+        // ── Volume drag ───────────────────────────────────────────────
+        function volumePercentFromEvent(event) {
+            const rect = ui.volumeSlider.getBoundingClientRect();
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const percent = (clientX - rect.left) / rect.width;
+            return Math.max(0, Math.min(1, percent));
+        }
+        function beginVolumeDrag(event) {
+            if (!d2reader) return;
+            updateVolumeDrag(event);
+            window.addEventListener("pointermove", updateVolumeDrag);
+            window.addEventListener("pointerup", endVolumeDrag, { once: true });
+        }
+        function updateVolumeDrag(event) {
+            if (!d2reader) return;
+            const percent = volumePercentFromEvent(event);
+            d2reader.setVolume(percent);
+            d2reader.setMuted(false);
+            renderVolume(percent, false);
+        }
+        function endVolumeDrag() {
+            window.removeEventListener("pointermove", updateVolumeDrag);
+        }
+        ui.volumeSlider.addEventListener("pointerdown", beginVolumeDrag);
+
+        // ── Keyboard shortcuts ────────────────────────────────────────
+        const SCRUB_STEP = 5;
+        const VOLUME_STEP = 0.05;
+
+        document.addEventListener("keydown", (event) => {
+            if (!d2reader) return;
+            // Don't intercept keys while typing in form fields.
+            const tag = event.target.tagName;
+            if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+                if (event.key !== "Escape") return;
+            }
+            switch (event.key) {
+                case " ":
+                case "k":
+                    event.preventDefault();
+                    if (isPlaying) d2reader.pause();
+                    else d2reader.play();
+                    break;
+                case "ArrowLeft":
+                    event.preventDefault();
+                    if (event.shiftKey) d2reader.previousChapter();
+                    else d2reader.skipBackward();
+                    break;
+                case "ArrowRight":
+                    event.preventDefault();
+                    if (event.shiftKey) d2reader.nextChapter();
+                    else d2reader.skipForward();
+                    break;
+                case "ArrowUp": {
+                    event.preventDefault();
+                    const next = Math.min(1, d2reader.volume + VOLUME_STEP);
+                    d2reader.setVolume(next);
+                    d2reader.setMuted(false);
+                    renderVolume(next, false);
+                    break;
+                }
+                case "ArrowDown": {
+                    event.preventDefault();
+                    const next = Math.max(0, d2reader.volume - VOLUME_STEP);
+                    d2reader.setVolume(next);
+                    renderVolume(next, d2reader.muted);
+                    break;
+                }
+                case "m":
+                case "M": {
+                    event.preventDefault();
+                    const muted = !d2reader.muted;
+                    d2reader.setMuted(muted);
+                    renderVolume(d2reader.volume, muted);
+                    break;
+                }
+                default:
+                    break;
+            }
+        });
+
+        // Scrubber keyboard control is owned by AudiobookTimelineModule
+        // (focus the bar and use arrows / Home / End).
+
+        // ── Boot ──────────────────────────────────────────────────────
+        async function start() {
+            if (!manifestUrl) {
+                announceStatus("Add ?url=… to load a manifest");
+                return;
+            }
+            announceStatus("Loading manifest…");
+
+            try {
+                d2reader = await D2Reader.load({
+                    url: new URL(manifestUrl, location.href),
+                    rights: {
+                        enableBookmarks: true,
+                        enableComments: true,
+                        enableTimeline: true,
+                    },
+                    useLocalStorage: true,
+                    audiobook: {
+                        preservePitchWorkletUrl: "/viewer/PreservePitchProcessor.js",
+                        // Audiobook timeline module config — when
+                        // containers are supplied, the module renders
+                        // scrubber UI into them. Chapter scrubber
+                        // follows the user's `timelineMode` (chapter
+                        // / book); whole-book strip is always
+                        // whole-book and shown only when
+                        // `timelineMode === "both"` (row visibility
+                        // toggled by `renderBookProgressStrip` below).
+                        timeline: {
+                            chapterScrubberContainer: document.getElementById("scrubber"),
+                            bookScrubberContainer: document.getElementById("book-strip"),
+                        },
+                    },
+                });
+            } catch (error) {
+                showError("Failed to load: " + (error?.message || String(error)));
+                announceStatus("Error");
+                return;
+            }
+
+            if (!d2reader.isAudiobook) {
+                showError(
+                    "Loaded publication is not an audiobook. Confirm conformsTo includes the Audiobook profile."
+                );
+                announceStatus("Wrong type");
+                return;
+            }
+
+            const publication = d2reader.publication;
+            const readingOrder = d2reader.readingOrder;
+            currentIndex = d2reader.currentResource ?? 0;
+
+            // Hide the Timeline pill row in the gear menu when the module
+            // isn't loaded or can't drive whole-book mode (no usable
+            // chapter durations). Keeps the user from picking a mode that
+            // would silently degrade.
+            if (ui.settingTimelineModeRow) {
+                const tm = d2reader.audiobookTimeline;
+                ui.settingTimelineModeRow.hidden = !(tm && tm.isUsable);
+            }
+
+            renderMeta(publication);
+            highlightChapter(currentIndex);
+            renderChapters(readingOrder);
+            renderTime(d2reader.currentTime, d2reader.duration);
+            renderBoundary();
+            renderVolume(d2reader.volume, d2reader.muted);
+            renderSettings();
+
+            announceStatus("Ready");
+            clearError();
+
+            // Wire reader events.
+            d2reader.addEventListener("playback.started", () => {
+                renderPlayingState(true);
+                announceStatus("Playing");
+            });
+            d2reader.addEventListener("playback.paused", () => {
+                renderPlayingState(false);
+                announceStatus("Paused");
+            });
+            d2reader.addEventListener("playback.ended", () => {
+                renderPlayingState(false);
+            });
+            d2reader.addEventListener("playback.timeupdate", (payload) => {
+                renderTime(payload.currentTime, payload.duration);
+            });
+            d2reader.addEventListener("playback.trackchanged", (payload) => {
+                const href = payload.current?.href;
+                const index = readingOrder.findIndex((link) => link.href === href);
+                if (index >= 0) highlightChapter(index);
+                renderBoundary();
+                renderTime(d2reader.currentTime, d2reader.duration);
+            });
+            d2reader.addEventListener("playback.durationchanged", () => {
+                renderTime();
+            });
+            d2reader.addEventListener("playback.stalled", () => {
+                announceStatus("Buffering…");
+            });
+            // Spinner UI: cross-chapter load, cold-start, and rebuffer
+            // all fire here. Class swap hides the play icon and shows a
+            // rotating ring via the CSS rules above.
+            d2reader.addEventListener("playback.waiting", (payload) => {
+                ui.playButton.classList.toggle("waiting", !!payload?.waiting);
+                ui.playButton.setAttribute(
+                    "aria-busy",
+                    payload?.waiting ? "true" : "false"
+                );
+                if (payload?.waiting) announceStatus("Loading…");
+            });
+            d2reader.addEventListener("playback.error", (payload) => {
+                showError("Playback error: " + (payload?.error?.message || String(payload?.error)));
+            });
+
+            // Wire UI controls.
+            ui.playButton.addEventListener("click", () => {
+                if (isPlaying) d2reader.pause();
+                else d2reader.play();
+            });
+            ui.skipBackButton.addEventListener("click", () => d2reader.skipBackward());
+            ui.skipForwardButton.addEventListener("click", () => d2reader.skipForward());
+            ui.previousChapterButton.addEventListener("click", () => d2reader.previousChapter());
+            ui.nextChapterButton.addEventListener("click", () => d2reader.nextChapter());
+            // Speed pill toggles popover; click an option pill to set rate.
+            ui.speedButton.addEventListener("click", () => {
+                if (ui.speedPopover.hidden) openSpeedPopover();
+                else closeSpeedPopover();
+            });
+            ui.speedOptions.addEventListener("click", (event) => {
+                const button = event.target.closest("button[data-value]");
+                if (!button) return;
+                d2reader.setPlaybackRate(Number(button.dataset.value));
+                closeSpeedPopover();
+            });
+            // Click outside the speed popover closes it.
+            document.addEventListener("click", (event) => {
+                if (ui.speedPopover.hidden) return;
+                if (
+                    event.target === ui.speedButton ||
+                    ui.speedButton.contains(event.target) ||
+                    ui.speedPopover.contains(event.target)
+                ) return;
+                closeSpeedPopover();
+            });
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape" && !ui.speedPopover.hidden) {
+                    closeSpeedPopover();
+                    ui.speedButton.focus();
+                }
+            });
+            ui.muteButton.addEventListener("click", () => {
+                const muted = !d2reader.muted;
+                d2reader.setMuted(muted);
+                renderVolume(d2reader.volume, muted);
+            });
+
+            // Volume pill toggles popover (slider + mute live inside).
+            ui.volumeButton.addEventListener("click", () => {
+                if (ui.volumePopover.hidden) openVolumePopover();
+                else closeVolumePopover();
+            });
+            document.addEventListener("click", (event) => {
+                if (ui.volumePopover.hidden) return;
+                if (
+                    event.target === ui.volumeButton ||
+                    ui.volumeButton.contains(event.target) ||
+                    ui.volumePopover.contains(event.target)
+                ) return;
+                closeVolumePopover();
+            });
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape" && !ui.volumePopover.hidden) {
+                    closeVolumePopover();
+                    ui.volumeButton.focus();
+                }
+            });
+
+            // ── Settings popover ───────────────────────────────────
+            const settings = d2reader.audiobookSettings;
+
+            // Settings → UI: keep every control in sync if anything
+            // (this viewer, an integrator API call, the keyboard, etc.)
+            // mutates settings.
+            settings.onChange((key) => {
+                if (key === "volume") {
+                    renderVolume(d2reader.volume, d2reader.muted);
+                } else if (key === "timelineMode") {
+                    // Time labels + book-strip-row visibility track
+                    // the mode here; the scrubber bar visuals respond
+                    // to the same setting via AudiobookTimelineModule.
+                    renderSettings();
+                    renderTime();
+                } else {
+                    renderSettings();
+                }
+            });
+
+            ui.settingsButton.addEventListener("click", () => {
+                const open = !ui.settingsPopover.hidden;
+                if (open) closeSettingsPopover();
+                else openSettingsPopover();
+            });
+            document.addEventListener("click", (event) => {
+                if (ui.settingsPopover.hidden) return;
+                if (
+                    event.target === ui.settingsButton ||
+                    ui.settingsButton.contains(event.target) ||
+                    ui.settingsPopover.contains(event.target)
+                ) return;
+                closeSettingsPopover();
+            });
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape" && !ui.settingsPopover.hidden) {
+                    closeSettingsPopover();
+                    ui.settingsButton.focus();
+                }
+            });
+
+            ui.settingPreservePitch.addEventListener("change", () => {
+                settings.preservePitch = ui.settingPreservePitch.checked;
+            });
+            ui.settingAutoPlay.addEventListener("change", () => {
+                settings.autoPlay = ui.settingAutoPlay.checked;
+            });
+            ui.settingSkipBack.addEventListener("click", (event) => {
+                const button = event.target.closest("button[data-value]");
+                if (!button) return;
+                settings.skipBackwardInterval = Number(button.dataset.value);
+            });
+            ui.settingSkipForward.addEventListener("click", (event) => {
+                const button = event.target.closest("button[data-value]");
+                if (!button) return;
+                settings.skipForwardInterval = Number(button.dataset.value);
+            });
+            ui.settingTimelineMode.addEventListener("click", (event) => {
+                const button = event.target.closest("button[data-value]");
+                if (!button) return;
+                settings.timelineMode = button.dataset.value;
+            });
+
+            // ── Sleep timer ────────────────────────────────────────
+            ui.sleepTimerButton.addEventListener("click", () => {
+                if (!ui.sleepPopover.hidden) closeSleepPopover();
+                else openSleepPopover();
+            });
+            document.addEventListener("click", (event) => {
+                if (ui.sleepPopover.hidden) return;
+                if (
+                    event.target === ui.sleepTimerButton ||
+                    ui.sleepTimerButton.contains(event.target) ||
+                    ui.sleepPopover.contains(event.target)
+                ) return;
+                closeSleepPopover();
+            });
+            ui.sleepMinutes.addEventListener("click", (event) => {
+                const button = event.target.closest("button[data-value]");
+                if (!button) return;
+                d2reader.startSleepTimerMinutes(Number(button.dataset.value));
+                closeSleepPopover();
+            });
+            ui.sleepEndOfChapter.addEventListener("click", () => {
+                d2reader.startSleepTimerAtChapterEnd();
+                closeSleepPopover();
+            });
+            ui.sleepCancel.addEventListener("click", () => {
+                d2reader.cancelSleepTimer();
+                closeSleepPopover();
+            });
+
+            d2reader.addEventListener("playback.sleeptimer.started", (snap) => {
+                renderSleepTimer(snap);
+            });
+            d2reader.addEventListener("playback.sleeptimer.tick", (snap) => {
+                renderSleepTimer(snap);
+            });
+            d2reader.addEventListener("playback.sleeptimer.cancelled", () => {
+                renderSleepTimer(null);
+            });
+            d2reader.addEventListener("playback.sleeptimer.expired", () => {
+                renderSleepTimer(null);
+                announceStatus("Sleep timer ended");
+            });
+
+            renderSleepTimer(d2reader.sleepTimerState());
+
+            // ── Bookmarks ──────────────────────────────────────────
+            ui.bookmarkButton.addEventListener("click", async () => {
+                const existing = d2reader.findBookmarkAt();
+                if (existing) {
+                    await d2reader.deleteBookmark(existing);
+                } else {
+                    await d2reader.saveBookmark();
+                }
+                renderBookmarkState();
+                renderBookmarkList();
+            });
+
+            // Keyboard: B toggles bookmark at current position
+            document.addEventListener("keydown", async (event) => {
+                if (event.key !== "b" && event.key !== "B") return;
+                const tag = event.target.tagName;
+                if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+                event.preventDefault();
+                ui.bookmarkButton.click();
+            });
+
+            renderBookmarkState();
+            renderBookmarkList();
+
+            // Refresh bookmark UI as playback advances or chapters change.
+            d2reader.addEventListener("playback.timeupdate", renderBookmarkState);
+            d2reader.addEventListener("playback.trackchanged", () => {
+                renderBookmarkState();
+                renderBookmarkList();
+            });
+            // Refresh on add/delete so the side-panel list stays in sync.
+            // (Scrubber markers re-render via AudiobookTimelineModule's
+            // own subscription to the same events.)
+            d2reader.addEventListener("bookmark.created", () => {
+                renderBookmarkState();
+                renderBookmarkList();
+            });
+            d2reader.addEventListener("bookmark.deleted", () => {
+                renderBookmarkState();
+                renderBookmarkList();
+            });
+
+            // ── Comments ──────────────────────────────────────────
+            ui.commentAddFromList.addEventListener("click", () => openCommentForm());
+            ui.commentFormCancel.addEventListener("click", () => closeCommentForm(false));
+            ui.commentForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                saveCommentFromForm();
+            });
+            ui.commentFormText.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") {
+                    event.preventDefault();
+                    closeCommentForm(false);
+                }
+            });
+
+            // Keyboard: C opens the comment form at current position
+            document.addEventListener("keydown", (event) => {
+                if (event.key !== "c" && event.key !== "C") return;
+                const tag = event.target.tagName;
+                if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+                event.preventDefault();
+                openCommentForm();
+            });
+
+            // Subscribe to the active-comment stream so the floating overlay
+            // shows comments whose display window covers the current time.
+            d2reader.addEventListener("comments.active", (payload) => {
+                renderCommentsOverlay(payload.active);
+                refreshActiveRowsInList(payload.active);
+            });
+            d2reader.addEventListener("comments.created", () => {
+                renderCommentList();
+            });
+            d2reader.addEventListener("comments.updated", () => {
+                renderCommentList();
+            });
+            d2reader.addEventListener("comments.deleted", () => {
+                renderCommentList();
+            });
+
+            renderCommentList();
+
+            // Timeline views are mounted by the reader during `load()`
+            // via `audiobookTimelineViews` config above — no post-load
+            // wiring needed. Reader also tears them down on `stop()`.
+
+            // Expose for console debugging.
+            window.d2reader = d2reader;
+        }
+
+        // ── Comments: form (add/edit) ─────────────────────────────────
+        function openCommentForm(existingComment) {
+            if (!d2reader) return;
+            commentFormEditingId = existingComment?.id ?? null;
+            commentFormWasPlaying = isPlaying;
+            if (existingComment) {
+                commentFormAnchor = {
+                    href: existingComment.href,
+                    locations: existingComment.locations,
+                    type: existingComment.type,
+                    title: existingComment.title,
+                };
+                ui.commentFormText.value = existingComment.body ?? "";
+            } else {
+                // Capture the locator NOW — anchors the comment to the moment
+                // the user clicked, even if they spend a while typing.
+                commentFormAnchor = d2reader.currentLocator;
+                ui.commentFormText.value = "";
+            }
+            const anchorTime = commentFormAnchor?.locations?.time ?? 0;
+            ui.commentFormAnchor.textContent = existingComment
+                ? `Editing comment at ${formatTime(anchorTime)}`
+                : `At ${formatTime(anchorTime)}`;
+            if (commentFormWasPlaying) d2reader.pause();
+            ui.commentForm.classList.add("visible");
+            // Focus the textarea after CSS transition kicks in
+            setTimeout(() => ui.commentFormText.focus(), 0);
+        }
+
+        function closeCommentForm(saved) {
+            ui.commentForm.classList.remove("visible");
+            ui.commentFormText.value = "";
+            const editingBefore = commentFormEditingId;
+            commentFormAnchor = null;
+            commentFormEditingId = null;
+            // Resume playback only if the user was playing AND wasn't editing
+            // (auto-resume on add). Editing leaves the user paused — feels
+            // intentional since they were navigating to an existing comment.
+            const shouldResume = saved && commentFormWasPlaying && !editingBefore;
+            commentFormWasPlaying = false;
+            if (shouldResume) d2reader.play();
+        }
+
+        function saveCommentFromForm() {
+            const body = ui.commentFormText.value.trim();
+            if (!body) return;
+            if (commentFormEditingId) {
+                d2reader.updateComment(commentFormEditingId, body);
+            } else if (commentFormAnchor) {
+                // Pass the captured locator so the anchor stays where the
+                // user clicked, not where playback is now.
+                d2reader.navigator.modules.comments?.add(body, commentFormAnchor);
+            }
+            closeCommentForm(true);
+        }
+
+        // ── Comments: floating overlay ───────────────────────────────
+        function renderCommentsOverlay(active) {
+            const container = ui.commentsOverlay;
+            container.innerHTML = "";
+            if (!active || active.length === 0) {
+                container.classList.remove("visible");
+                return;
+            }
+            for (const comment of active.slice(0, 3)) {
+                const card = document.createElement("div");
+                card.className = "comment-card";
+                card.setAttribute("role", "button");
+                card.tabIndex = 0;
+                card.innerHTML = `
+                    <span class="material-icons icon" aria-hidden="true">chat_bubble</span>
+                    <div>
+                        <div class="body">${escapeHtml(comment.body)}</div>
+                        <div class="time">At ${formatTime(comment.locations?.time ?? 0)}</div>
+                    </div>
+                `;
+                card.addEventListener("click", () => openCommentForm(comment));
+                card.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openCommentForm(comment);
+                    }
+                });
+                container.appendChild(card);
+            }
+            if (active.length > 3) {
+                const more = document.createElement("div");
+                more.className = "comment-card";
+                more.style.justifyContent = "center";
+                more.style.cursor = "default";
+                more.innerHTML = `<div class="body" style="color: var(--color-text-subtle); font-size: 12px;">+${active.length - 3} more in this moment</div>`;
+                container.appendChild(more);
+            }
+            container.classList.add("visible");
+        }
+
+        // ── Comments: list (Notes tab) ───────────────────────────────
+        function renderCommentList() {
+            if (!d2reader) return;
+            const comments = d2reader.comments ?? [];
+            ui.commentList.innerHTML = "";
+            ui.commentEmpty.hidden = comments.length > 0;
+            if (comments.length === 0) return;
+
+            const readingOrder = d2reader.readingOrder ?? [];
+            const publication = d2reader.publication;
+
+            // Group comments by absolute resource href, render in chapter order.
+            const groups = new Map();
+            for (const comment of comments) {
+                const key = comment.href ?? "";
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(comment);
+            }
+
+            readingOrder.forEach((link, chapterIndex) => {
+                const absHref = publication.getAbsoluteHref(link.href);
+                const inThisChapter = groups.get(absHref);
+                if (!inThisChapter || inThisChapter.length === 0) return;
+
+                const heading = document.createElement("div");
+                heading.className = "chapter-group-heading";
+                heading.innerHTML = `
+                    <span class="index">${chapterIndex + 1}</span>
+                    <span class="title">${escapeHtml(link.title || link.href)}</span>
+                `;
+                ui.commentList.appendChild(heading);
+
+                inThisChapter
+                    .slice()
+                    .sort((a, b) => (a.locations?.time ?? 0) - (b.locations?.time ?? 0))
+                    .forEach((comment) => {
+                        const time = comment.locations?.time ?? 0;
+                        const row = document.createElement("div");
+                        row.className = "comment-row";
+                        row.setAttribute("role", "listitem");
+                        row.dataset.id = comment.id;
+                        row.innerHTML = `
+                            <span class="time">${formatTime(time)}</span>
+                            <span class="body">${escapeHtml(comment.body)}</span>
+                            <span class="row-actions">
+                                <button type="button" data-act="edit" title="Edit comment" aria-label="Edit comment">
+                                    <span class="material-icons" aria-hidden="true">edit</span>
+                                </button>
+                                <button type="button" data-act="delete" title="Delete comment" aria-label="Delete comment">
+                                    <span class="material-icons" aria-hidden="true">delete</span>
+                                </button>
+                            </span>
+                        `;
+                        // Click row body → seek to comment.
+                        row.addEventListener("click", async (event) => {
+                            const target = event.target;
+                            if (target.closest("[data-act]")) return;
+                            await d2reader.goTo({
+                                href: link.href,
+                                locations: { time },
+                            });
+                            await d2reader.play();
+                        });
+                        row.querySelector('[data-act="edit"]').addEventListener("click", (event) => {
+                            event.stopPropagation();
+                            openCommentForm(comment);
+                        });
+                        row.querySelector('[data-act="delete"]').addEventListener("click", (event) => {
+                            event.stopPropagation();
+                            if (!confirm("Delete this comment?")) return;
+                            d2reader.deleteComment(comment);
+                        });
+                        ui.commentList.appendChild(row);
+                    });
+            });
+        }
+
+        // Toggle [data-active="true"] on rows currently in the active set.
+        function refreshActiveRowsInList(active) {
+            const activeIds = new Set((active ?? []).map((c) => c.id));
+            for (const row of ui.commentList.querySelectorAll(".comment-row")) {
+                row.dataset.active = activeIds.has(row.dataset.id) ? "true" : "false";
+            }
+        }
+
+        function renderBookmarkState() {
+            if (!d2reader) return;
+            const isBookmarked = d2reader.hasBookmarkAt();
+            ui.bookmarkIcon.textContent = isBookmarked ? "bookmark" : "bookmark_border";
+            ui.bookmarkButton.classList.toggle("active", isBookmarked);
+            ui.bookmarkButtonLabel.textContent = isBookmarked
+                ? "Remove bookmark"
+                : "Add bookmark";
+            ui.bookmarkButton.title = isBookmarked
+                ? "Remove bookmark at the current position (B)"
+                : "Add bookmark at the current position (B)";
+        }
+
+        function renderBookmarkList() {
+            if (!d2reader) return;
+            const bookmarks = d2reader.bookmarks ?? [];
+            ui.bookmarkList.innerHTML = "";
+            ui.bookmarkEmpty.hidden = bookmarks.length > 0;
+            if (bookmarks.length === 0) return;
+
+            const readingOrder = d2reader.readingOrder ?? [];
+            const publication = d2reader.publication;
+
+            // Group bookmarks by absolute resource href.
+            const groups = new Map();
+            for (const bookmark of bookmarks) {
+                const key = bookmark.href ?? "";
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(bookmark);
+            }
+
+            // Render in readingOrder sequence so groups follow chapter order.
+            readingOrder.forEach((link, chapterIndex) => {
+                const absHref = publication.getAbsoluteHref(link.href);
+                const inThisChapter = groups.get(absHref);
+                if (!inThisChapter || inThisChapter.length === 0) return;
+
+                const heading = document.createElement("div");
+                heading.className = "chapter-group-heading";
+                heading.innerHTML = `
+                    <span class="index">${chapterIndex + 1}</span>
+                    <span class="title">${escapeHtml(link.title || link.href)}</span>
+                `;
+                ui.bookmarkList.appendChild(heading);
+
+                inThisChapter
+                    .slice()
+                    .sort((a, b) => (a.locations?.time ?? 0) - (b.locations?.time ?? 0))
+                    .forEach((bookmark) => {
+                        const time = bookmark.locations?.time ?? 0;
+                        const row = document.createElement("div");
+                        row.className = "bookmark-row";
+                        row.setAttribute("role", "listitem");
+                        row.setAttribute("tabindex", "0");
+                        row.setAttribute(
+                            "aria-label",
+                            `Bookmark at ${formatTime(time)} in ${link.title || link.href}`
+                        );
+                        row.innerHTML = `
+                            <span class="icon"><span class="material-icons" aria-hidden="true">bookmark</span></span>
+                            <span class="time">${formatTime(time)}</span>
+                            <span></span>
+                            <span class="row-actions">
+                                <button type="button" data-act="delete" title="Delete bookmark" aria-label="Delete bookmark">
+                                    <span class="material-icons" aria-hidden="true">delete</span>
+                                </button>
+                            </span>
+                        `;
+                        // Click row body → seek to bookmark.
+                        row.addEventListener("click", async (event) => {
+                            if (event.target.closest("[data-act]")) return;
+                            await d2reader.goTo({
+                                href: link.href,
+                                locations: { time },
+                            });
+                            await d2reader.play();
+                        });
+                        row.querySelector('[data-act="delete"]').addEventListener("click", async (event) => {
+                            event.stopPropagation();
+                            if (!confirm("Delete this bookmark?")) return;
+                            await d2reader.deleteBookmark(bookmark);
+                        });
+                        ui.bookmarkList.appendChild(row);
+                    });
+            });
+        }
+
+        start();
+    </script>
+</body>
+</html>

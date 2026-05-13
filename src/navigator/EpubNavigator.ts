@@ -33,29 +33,17 @@ import * as BrowserUtilities from "../utils/BrowserUtilities";
 import * as HTMLUtilities from "../utils/HTMLUtilities";
 import { readerError, readerLoading } from "../utils/HTMLTemplates";
 import { Annotation, Locations, Locator, ReadingPosition } from "../model/v3";
-import {
-  UserSettings,
-  UserSettingsUIConfig,
-} from "../model/user-settings/UserSettings";
-import {
-  BookmarkModule,
-  BookmarkModuleConfig,
-} from "../modules/epub/BookmarkModule";
-import {
-  AnnotationModule,
-  AnnotationModuleConfig,
-} from "../modules/epub/AnnotationModule";
-import {
-  SearchModule,
-  SearchModuleConfig,
-} from "../modules/epub/search/SearchModule";
+import { UserSettings } from "../model/user-settings/UserSettings";
+import type { Fetcher } from "../fetcher/Fetcher";
+import type { BlobUrlManager } from "../fetcher/BlobUrlManager";
+import { BookmarkModule } from "../modules/epub/BookmarkModule";
+import { AnnotationModule } from "../modules/epub/AnnotationModule";
+import { SearchModule } from "../modules/epub/search/SearchModule";
 import { ModuleAccessors } from "../modules/ModuleAccessors";
 import { HistoryModule } from "../modules/epub/HistoryModule";
-import { ContentProtectionModuleConfig } from "../modules/epub/ContentProtectionModule";
 import {
   HighlightContainer,
   TextHighlighter,
-  TextHighlighterConfig,
 } from "../modules/highlight/TextHighlighter";
 import debounce from "debounce";
 import TouchEventHandler from "../utils/TouchEventHandler";
@@ -63,7 +51,6 @@ import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 import Renderer from "../views/Renderer";
 import { ScriptMode, getScriptMode } from "../utils/ScriptMode";
 
-import { MediaOverlayModuleConfig } from "../modules/epub/mediaoverlays/MediaOverlayModule";
 import { D2Link, Link } from "../model/v3";
 import SampleReadEventHandler from "../modules/epub/SampleReadEventHandler";
 import { ReaderModule, HostType } from "../modules/ReaderModule";
@@ -76,14 +63,9 @@ import { ContentFetcher } from "../fetcher/ContentFetcher";
 import { CacheFetcher } from "../fetcher/CacheFetcher";
 
 import { HighlightType } from "../modules/highlight/common/highlight";
-import { PageBreakModuleConfig } from "../modules/epub/PageBreakModule";
 import { Switchable } from "../model/user-settings/UserProperties";
-import { DefinitionsModuleConfig } from "../modules/epub/search/DefinitionsModule";
-import { LineFocusModuleConfig } from "../modules/epub/LineFocusModule";
-import { CitationModuleConfig } from "../modules/epub/CitationModule";
 import log from "loglevel";
 import { GrabToPan } from "../utils/GrabToPan";
-import { ConsumptionModuleConfig } from "../modules/epub/ConsumptionModule";
 import type {
   GetContent,
   GetContentBytesLength,
@@ -130,13 +112,13 @@ export interface EpubNavigatorConfig {
    * from requestConfig. Used when opening .epub files (ZipFetcher)
    * or when the integrator wants full control over the content pipeline.
    */
-  fetcher?: import("../fetcher/Fetcher").Fetcher;
+  fetcher?: Fetcher;
   /**
    * Blob URL manager for ZIP-based content. Rewrites resource references
    * (images, CSS, fonts) to blob URLs so document.write() iframes can
    * load them. Only needed when opening .epub files directly.
    */
-  blobUrlManager?: import("../fetcher/BlobUrlManager").BlobUrlManager;
+  blobUrlManager?: BlobUrlManager;
   modules: Array<ReaderModule<any> | undefined>;
   highlighter: TextHighlighter;
 }
@@ -150,77 +132,9 @@ export interface SampleRead {
   popup?: string;
   minimum?: number;
 }
-export interface ReaderUI {
-  settings: UserSettingsUIConfig;
-}
-
-/**
- * Shape of the initial annotations object passed to `D2Reader.load()`.
- * Both `bookmarks` and `highlights` are optional arrays of their respective types.
- */
-export interface InitialAnnotations {
-  bookmarks?: import("../model/Locator").Bookmark[];
-  highlights?: import("../model/Locator").Annotation[];
-}
-
-export interface ReaderConfig {
-  /** Pre-parsed publication manifest JSON — if omitted the manifest is fetched from `url`. */
-  publication?: Record<string, unknown>;
-  /**
-   * Manifest URL (webpub from server). Required unless `epub` is provided.
-   */
-  url?: URL;
-  /**
-   * Open an .epub file directly — no server/streamer needed.
-   * The reader parses the EPUB client-side (container.xml → OPF → manifest)
-   * and serves content from the ZIP via ZipFetcher.
-   *
-   * Accepts:
-   * - `File` or `Blob` — local file from drag-drop, file picker, IndexedDB
-   * - `ArrayBuffer` — raw bytes already in memory
-   * - `URL` or `string` — URL to a hosted .epub file (fetched automatically)
-   *
-   * Mutually exclusive with `url` (webpub manifest) — provide one or the other.
-   */
-  epub?: File | Blob | ArrayBuffer | URL | string;
-  userSettings?: Partial<
-    import("../model/user-settings/UserSettings").InitialUserSettings
-  >;
-  initialAnnotations?: InitialAnnotations;
-  lastReadingPosition?: import("../model/Locator").ReadingPosition;
-  rights?: Partial<ReaderRights>;
-  api?: Partial<NavigatorAPI>;
-  tts?: Partial<TTSModuleConfig>;
-  search?: Partial<SearchModuleConfig>;
-  define?: Partial<DefinitionsModuleConfig>;
-  protection?: Partial<ContentProtectionModuleConfig>;
-  /** Config for @d-i-t-a/web-content-protection (used for PDF, future: replaces legacy protection) */
-  webProtection?: import("@d-i-t-a/web-content-protection").ContentProtectionConfig;
-  mediaOverlays?: Partial<MediaOverlayModuleConfig>;
-  pagebreak?: Partial<PageBreakModuleConfig>;
-  annotations?: Partial<AnnotationModuleConfig>;
-  bookmarks?: Partial<BookmarkModuleConfig>;
-  lineFocus?: Partial<LineFocusModuleConfig>;
-  citations?: Partial<CitationModuleConfig>;
-  consumption?: Partial<ConsumptionModuleConfig>;
-  highlighter?: Partial<TextHighlighterConfig>;
-  /** Custom modules to register alongside built-in modules */
-  modules?: Array<ReaderModule<any>>;
-  injectables: Array<Injectable>;
-  injectablesFixed?: Array<Injectable>;
-  useLocalStorage?: boolean;
-  useStorageType?: string;
-  attributes?: IFrameAttributes;
-  services?: PublicationServices;
-  sample?: SampleRead;
-  requestConfig?: RequestConfig;
-  /**
-   * Override the PDF.js worker URL (PDF publications only).
-   * Defaults to the unpkg CDN for the bundled pdfjs-dist version.
-   * Set to a local path when self-hosting the worker, e.g. `"/viewer/pdf.worker.min.mjs"`.
-   */
-  workerSrc?: string;
-}
+// `ReaderConfig` and `InitialAnnotations` live in `./ReaderConfig` —
+// they span EPUB / PDF / audiobook concerns and shouldn't be defined
+// inside the EPUB navigator file.
 
 /** EPUB navigator — renders spine items in iframes with navigation controls. */
 export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
@@ -239,15 +153,11 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   currentTocUrl: string | undefined;
   headerMenu?: HTMLElement | null;
   mainElement: HTMLElement;
-  publication: Publication;
+  readonly publication: Publication;
 
   highlighter?: TextHighlighter;
-  private _fetcher!: import("../fetcher/Fetcher").Fetcher;
-  private _blobUrlManager?: import("../fetcher/BlobUrlManager").BlobUrlManager;
-
-  get fetcher(): import("../fetcher/Fetcher").Fetcher {
-    return this._fetcher;
-  }
+  fetcher!: Fetcher;
+  private blobUrlManager?: BlobUrlManager;
 
   supports(feature: NavigatorFeatureName): boolean {
     // Zoom is navigator-level, not module-based
@@ -432,10 +342,6 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   private landmarksSection: HTMLDivElement;
   private pageListView: HTMLDivElement;
 
-  private links: HTMLUListElement;
-  private linksTopLeft: HTMLUListElement;
-  private linksBottom: HTMLUListElement;
-  private linksMiddle: HTMLUListElement;
   private tocView: HTMLDivElement;
   private loadingMessage: HTMLDivElement;
   errorMessage: HTMLDivElement;
@@ -452,8 +358,8 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   private isBeingStyled: boolean;
   private isLoading: boolean;
   private readonly initialLastReadingPosition?: ReadingPosition;
-  api?: Partial<NavigatorAPI>;
-  rights: Partial<ReaderRights> = {
+  readonly api?: Partial<NavigatorAPI>;
+  readonly rights: Partial<ReaderRights> = {
     autoGeneratePositions: false,
     enableAnnotations: false,
     enableBookmarks: false,
@@ -525,41 +431,30 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     requestConfig?: RequestConfig,
     highlighter?: TextHighlighter,
     modules?: Array<ReaderModule<any> | undefined>,
-    fetcher?: import("../fetcher/Fetcher").Fetcher,
-    blobUrlManager?: import("../fetcher/BlobUrlManager").BlobUrlManager
+    fetcher?: Fetcher,
+    blobUrlManager?: BlobUrlManager
   ) {
     super();
-    this._blobUrlManager = blobUrlManager;
+    this.blobUrlManager = blobUrlManager;
     this.highlighter = highlighter;
     if (this.highlighter) {
       this.highlighter.navigator = this;
     }
-    for (const module of modules ?? []) {
-      if (!module) continue;
-      if (module.hostType !== HostType.Epub) {
-        log.warn(
-          `Module "${module.name}" requires host type "${module.hostType}" but navigator is EPUB — skipping`
-        );
-        continue;
-      }
-      this.registry.register(module, this);
-    }
+    this.registerModules(modules, HostType.Epub);
     // Default chain (innermost first): HttpFetcher → ContentFetcher (if
     // getContent) → Base64DecodingFetcher (if encoded) → CacheFetcher.
     // Pre-built fetcher short-circuits (e.g. ZipFetcher for .epub files).
     if (fetcher) {
-      this._fetcher = new CacheFetcher(fetcher);
+      this.fetcher = new CacheFetcher(fetcher);
     } else {
-      let inner: import("../fetcher/Fetcher").Fetcher = new HttpFetcher(
-        requestConfig
-      );
+      let inner: Fetcher = new HttpFetcher(requestConfig);
       if (api?.getContent) {
         inner = new ContentFetcher(inner, api.getContent, publication);
       }
       if (requestConfig?.encoded) {
         inner = new Base64DecodingFetcher(inner);
       }
-      this._fetcher = new CacheFetcher(inner);
+      this.fetcher = new CacheFetcher(inner);
     }
 
     this.publication = publication;
@@ -677,8 +572,8 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       this.keyboardEventHandler.removeEvents(document);
 
     this.registry.stopAll();
-    this._fetcher?.destroy?.();
-    this._blobUrlManager?.destroy();
+    this.fetcher?.destroy?.();
+    this.blobUrlManager?.destroy();
   }
   spreads: HTMLDivElement;
   firstSpread: HTMLDivElement;
@@ -807,8 +702,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         const isVerticalScript =
           this.scriptMode === "cjk-vertical" ||
           this.scriptMode === "mongolian-vertical";
-        const useIframeScroll = isVerticalScript;
-        iframe.setAttribute("scrolling", useIframeScroll ? "auto" : "no");
+        iframe.setAttribute("scrolling", isVerticalScript ? "auto" : "no");
         iframe.setAttribute("allowtransparency", "true");
         iframe.style.verticalAlign = "top";
         this.iframes.push(iframe);
@@ -1025,14 +919,6 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       // Header Menu
 
       if (this.headerMenu)
-        this.links = HTMLUtilities.findElement(this.headerMenu, "ul.links.top");
-      if (this.headerMenu)
-        this.linksTopLeft = HTMLUtilities.findElement(
-          this.headerMenu,
-          "#nav-mobile-left"
-        );
-
-      if (this.headerMenu)
         this.tocView = HTMLUtilities.findElement(
           this.headerMenu,
           "#container-view-toc"
@@ -1052,18 +938,6 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         this.pageListView = HTMLUtilities.findElement(
           this.headerMenu,
           "#container-view-pagelist"
-        );
-
-      // Footer Menu
-      if (footerMenu)
-        this.linksBottom = HTMLUtilities.findElement(
-          footerMenu,
-          "ul.links.bottom"
-        );
-      if (footerMenu)
-        this.linksMiddle = HTMLUtilities.findElement(
-          footerMenu,
-          "ul.links.middle"
         );
 
       if (this.headerMenu)
@@ -1511,7 +1385,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         setTimeout(async () => {
           if (this.highlighter) {
             await this.highlighter.prepareContainers(
-              this.iframes[0].contentWindow as any
+              this.iframes[0].contentWindow
             );
             if (this.rights.enableAnnotations && this.modules.annotations) {
               await this.modules.annotations.drawHighlights();
@@ -1920,15 +1794,15 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         // column widths (paginated) computed before fonts arrive are stale,
         // and the saved progression maps to the wrong px/column. Resolves
         // immediately when no fonts are pending.
-        const iframeDocument = iframe.contentDocument as any;
+        const iframeDocument = iframe.contentDocument;
         if (iframeDocument?.fonts?.ready) {
           await iframeDocument.fonts.ready;
         }
         if (this.newElementId) {
-          const element = (iframe.contentDocument as any).getElementById(
+          const element = iframe.contentDocument?.getElementById(
             this.newElementId
           );
-          this.view?.goToElement?.(element);
+          if (element) this.view?.goToElement?.(element);
           this.newElementId = undefined;
         } else if (
           this.newPosition &&
@@ -2046,7 +1920,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     // transform, or caching happens there. This callback just returns the
     // final text.
     const fetchContent = async (href: string): Promise<string> => {
-      const resource = await self._fetcher.getByHref(href);
+      const resource = await self.fetcher.getByHref(href);
       return resource.text;
     };
 
@@ -2079,11 +1953,11 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       );
       // For ZIP-based EPUBs, rewrite resource URLs (images, CSS, fonts)
       // to blob URLs so document.write() can load them.
-      if (self._blobUrlManager) {
+      if (self.blobUrlManager) {
         // Extract ZIP-internal path from the full href
         const publication = self.publication;
         const zipPath = publication.getRelativeHref(href);
-        self._blobUrlManager.rewriteDom(doc, zipPath);
+        self.blobUrlManager.rewriteDom(doc, zipPath);
       }
       return doc.documentElement.outerHTML;
     }
@@ -2360,9 +2234,6 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     }
   }
 
-  totalResources(): number {
-    return this.publication.readingOrder.length;
-  }
   mostRecentNavigatedTocItem(): string {
     return this.publication.getRelativeHref(this.currentTOCRawLink);
   }
@@ -2389,18 +2260,6 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     return [this.publication.getSpineItem(currentLocation!)];
   }
 
-  tableOfContents(): any {
-    return this.publication.tableOfContents;
-  }
-  landmarks(): any {
-    return this.publication.landmarks;
-  }
-  pageList(): any {
-    return this.publication.pageList;
-  }
-  readingOrder(): any {
-    return this.publication.readingOrder;
-  }
   atStart(): boolean {
     return this.view?.atStart() ?? false;
   }
@@ -2488,9 +2347,6 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     return position;
   }
 
-  positions(): Locator[] {
-    return this.publication.positions ?? [];
-  }
   goToPosition(position: number) {
     if (this.publication.positions) {
       let locator = this.publication.positions.filter(
@@ -3055,10 +2911,10 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
         }
         if (this.newElementId) {
           for (const iframe of this.iframes) {
-            const element = (iframe.contentDocument as any).getElementById(
+            const element = iframe.contentDocument?.getElementById(
               this.newElementId
             );
-            this.view?.goToElement?.(element);
+            if (element) this.view?.goToElement?.(element);
           }
           this.newElementId = undefined;
         } else {
@@ -3394,7 +3250,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
 
       // Predictive prefetching — cache adjacent spine items so the next
       // page turn is instant. Non-caching Fetchers ignore prefetch() calls.
-      if (this._fetcher.prefetch) {
+      if (this.fetcher.prefetch) {
         const idx = this.publication.readingOrder.findIndex(
           (item) =>
             item.href &&
@@ -3405,16 +3261,16 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
           const next = this.publication.readingOrder[idx + 1];
           const prev = this.publication.readingOrder[idx - 1];
           if (next) {
-            this._fetcher.prefetch({
+            this.fetcher.prefetch({
               ...next,
               href: this.publication.getAbsoluteHref(next.href),
-            } as import("../model/v3").Link);
+            } as Link);
           }
           if (prev) {
-            this._fetcher.prefetch({
+            this.fetcher.prefetch({
               ...prev,
               href: this.publication.getAbsoluteHref(prev.href),
-            } as import("../model/v3").Link);
+            } as Link);
           }
         }
       }

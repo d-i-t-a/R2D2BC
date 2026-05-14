@@ -7,9 +7,17 @@ const PORT = 3000;
 // Serve the built library (reader.js, reader.css, etc.)
 app.use("/dist", express.static(path.join(__dirname, "../../dist")));
 
-// Serve ReadiumCSS v2 from the main viewer bundle
+// Serve ReadiumCSS v2 from the npm package
 app.use(
-  "/readium-css-v2",
+  "/node_modules/@readium/css/css/dist",
+  express.static(
+    path.join(__dirname, "../../node_modules/@readium/css/css/dist")
+  )
+);
+
+// Serve the DITA patch overlay (local — not in the npm package)
+app.use(
+  "/viewer/readium-css-v2",
   express.static(path.join(__dirname, "../../viewer/readium-css-v2"))
 );
 

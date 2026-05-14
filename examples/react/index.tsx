@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import D2Reader, { Injectable } from "../../src";
-import readiumBefore from "url:../../viewer/readium-css-v2/ReadiumCSS-before.css";
-import readiumAfter from "url:../../viewer/readium-css-v2/ReadiumCSS-after.css";
-import readiumDefault from "url:../../viewer/readium-css-v2/ReadiumCSS-default.css";
+import readiumBefore from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-before.css";
+import readiumAfter from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-after.css";
+import readiumDefault from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-default.css";
 import readiumDitaPatch from "url:../../viewer/readium-css-v2/ReadiumCSS-dita-patch.css";
-import cjkBefore from "url:../../viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-before.css";
-import cjkAfter from "url:../../viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-after.css";
-import cjkDefault from "url:../../viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-default.css";
+import cjkBefore from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-before.css";
+import cjkAfter from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-after.css";
+import cjkDefault from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-default.css";
 
 // Detect CJK (Chinese, Japanese, Korean) publications from metadata.languages
 // so we can load the CJK-horizontal stylesheet variant instead of the base.

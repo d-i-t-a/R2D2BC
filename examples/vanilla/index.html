@@ -278,13 +278,18 @@
 <script type="module">
   import D2Reader from '/dist/esm/index.js';
 
-  // ── ReadiumCSS v2 injectables (served from viewer/readium-css-v2 by serve.ts) ──
-  const cssBase = new URL('/readium-css-v2/', window.location.href).href;
+  // ── ReadiumCSS v2 injectables ────────────────────────────────────
+  // Upstream files come from the @readium/css npm package (served from
+  // node_modules by serve.ts). The DITA patch overlay is local to this
+  // repo (also served by serve.ts) and must load AFTER the upstream
+  // files so its overrides win.
+  const cssBase = new URL('/node_modules/@readium/css/css/dist/', window.location.href).href;
+  const patchBase = new URL('/viewer/readium-css-v2/', window.location.href).href;
   const injectables = [
     { type: 'style', url: cssBase + 'ReadiumCSS-before.css', r2before: true },
     { type: 'style', url: cssBase + 'ReadiumCSS-default.css', r2default: true },
     { type: 'style', url: cssBase + 'ReadiumCSS-after.css', r2after: true },
-    { type: 'style', url: cssBase + 'ReadiumCSS-dita-patch.css' },
+    { type: 'style', url: patchBase + 'ReadiumCSS-dita-patch.css' },
   ];
 
   // ── Theme sync ──

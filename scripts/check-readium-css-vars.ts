@@ -25,7 +25,11 @@ import * as path from "path";
 
 const TS_FILE = path.resolve("src/model/user-settings/ReadiumCSS.ts");
 const CSS_DIRS = [
+  // v1 — frozen local snapshot. Readium does not publish v1 on npm.
   path.resolve("viewer/readium-css"),
+  // v2 — upstream from the @readium/css npm package since 3.5.4.
+  path.resolve("node_modules/@readium/css/css/dist"),
+  // Local DITA patch overlays (loaded after upstream; rules win).
   path.resolve("viewer/readium-css-v2"),
 ];
 

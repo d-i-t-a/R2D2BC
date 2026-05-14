@@ -38,4 +38,4 @@ examples/react/
   parcel.d.ts       — Parcel url: import types
 ```
 
-ReadiumCSS v2 is imported via `url:../../viewer/readium-css-v2/*` — no per-example copy.
+ReadiumCSS v2 upstream files are imported from the `@readium/css` npm package via `url:../../node_modules/@readium/css/css/dist/*`. The DITA patch overlay is imported from `url:../../viewer/readium-css-v2/ReadiumCSS-dita-patch.css` (local to this repo, not in the npm package). No per-example copy.

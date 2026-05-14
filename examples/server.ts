@@ -41,12 +41,8 @@ async function start() {
           url: `/viewer/index_dita.html?url=https://alice.dita.digital/manifest.json`,
         },
         {
-          title: "DITA Reader (ReadiumCSS v2 local)",
+          title: "DITA Reader (ReadiumCSS v2)",
           url: `/viewer/index_dita_v2.html?url=https://alice.dita.digital/manifest.json`,
-        },
-        {
-          title: "DITA Reader (ReadiumCSS v2 CDN)",
-          url: `/viewer/index_dita_v2_cdn.html?url=https://alice.dita.digital/manifest.json`,
         },
         {
           title: "Small Window (600×500)",
@@ -184,6 +180,15 @@ async function start() {
   );
   //@ts-ignore
   server.expressUse("/viewer", express.static(path.join(__dirname, "../dist")));
+
+  // Serve node_modules so viewer HTML files can reference @readium/css
+  // directly without a build step.
+  //@ts-ignore
+  server.expressUse(
+    "/node_modules",
+    //@ts-ignore
+    express.static(path.join(__dirname, "../node_modules"))
+  );
 
   // ── Landing page ────────────────────────────────────────────────────
 
@@ -326,12 +331,8 @@ async function start() {
             url: `/viewer/index_dita.html?url=${manifestUrl}`,
           },
           {
-            title: "DITA Reader (ReadiumCSS v2 local)",
+            title: "DITA Reader (ReadiumCSS v2)",
             url: `/viewer/index_dita_v2.html?url=${manifestUrl}`,
-          },
-          {
-            title: "DITA Reader (ReadiumCSS v2 CDN)",
-            url: `/viewer/index_dita_v2_cdn.html?url=${manifestUrl}`,
           },
           {
             title: "Minimal",

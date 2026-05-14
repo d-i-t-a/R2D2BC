@@ -28,20 +28,21 @@ A regular `import EpubReader from "./EpubReader"` will crash during server-side 
 
 The component that calls `D2Reader.load()` needs React hooks and browser APIs, so it must be marked with `"use client"` at the top of the file.
 
-### 3. ReadiumCSS files go in `public/`
+### 3. ReadiumCSS files must be served statically
 
-The reader injects CSS into content iframes via URL references. These files must be served statically. Copy the ReadiumCSS files into your Next.js `public/` directory:
+The reader injects CSS into content iframes via URL references. Install ReadiumCSS from npm and copy the upstream files plus the local DITA patch overlay into your Next.js `public/` directory:
 
+```bash
+npm install @readium/css
+
+# Copy upstream CSS from the npm package
+cp -r node_modules/@readium/css/css/dist public/readium-css-v2
+
+# Copy the DITA patch overlay from this repo (not in the npm package)
+cp viewer/readium-css-v2/ReadiumCSS-dita-patch.css public/readium-css-v2/
 ```
-public/
-  readium-css-v2/
-    ReadiumCSS-before.css
-    ReadiumCSS-default.css
-    ReadiumCSS-after.css
-    ReadiumCSS-dita-patch.css
-```
 
-You can find these files in the `viewer/readium-css-v2/` directory of this repository. Then reference them as absolute paths in the injectables config:
+Reference them as absolute paths in the injectables config:
 
 ```ts
 injectables: [
@@ -93,12 +94,13 @@ useEffect(() => {
 npm install @d-i-t-a/reader
 ```
 
-2. Copy ReadiumCSS v2 into `public/readium-css-v2/`:
+2. Install ReadiumCSS and copy the files into `public/readium-css-v2/`:
 
 ```bash
-cp -r node_modules/@d-i-t-a/reader/viewer/readium-css-v2 public/readium-css-v2
-# Or copy from this repository:
-# cp -r viewer/readium-css-v2 public/readium-css-v2
+npm install @readium/css
+cp -r node_modules/@readium/css/css/dist public/readium-css-v2
+# Add the DITA patch overlay (local to the R2D2BC repo, not in the npm package):
+cp node_modules/@d-i-t-a/reader/viewer/readium-css-v2/ReadiumCSS-dita-patch.css public/readium-css-v2/
 ```
 
 3. Copy the example files into your app:

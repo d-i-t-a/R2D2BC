@@ -66,7 +66,7 @@ npm run dev
 npm run examples
 ```
 
-`npm run dev` builds the library (`dist/`), compiles SASS, and starts the esbuild watcher. The viewer loads the built library from `dist/` and uses its own ReadiumCSS from `viewer/readium-css-v2/`.
+`npm run dev` builds the library (`dist/`), compiles SASS, and starts the esbuild watcher. The viewer loads the built library from `dist/` and consumes ReadiumCSS from the `@readium/css` npm package (served from `node_modules/`) plus local overrides from `viewer/readium-css-v2/ReadiumCSS-dita-patch.css`.
 
 `npm run examples` starts a streamer server (`dita-streamer-js`) that serves local EPUB files from `examples/epubs/` through multiple viewer variants:
 
@@ -269,7 +269,7 @@ examples/react/
   tsconfig.json     — Extends root tsconfig
 ```
 
-ReadiumCSS is imported from `viewer/readium-css-v2/` via relative Parcel `url:` imports; no per-example CSS copy is needed.
+ReadiumCSS upstream files are imported from `node_modules/@readium/css/css/dist/` via relative Parcel `url:` imports; the local DITA patch overlay comes from `viewer/readium-css-v2/ReadiumCSS-dita-patch.css`. No per-example CSS copy is needed.
 
 ---
 

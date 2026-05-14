@@ -186,23 +186,23 @@
 
         let injectables = [
             // Base ReadiumCSS v2 — LTR (default Latin / non-CJK)
-            { type: 'style', url: origin + '/viewer/readium-css-v2/ReadiumCSS-before.css', r2before: true, when: isLtr },
-            { type: 'style', url: origin + '/viewer/readium-css-v2/ReadiumCSS-default.css', r2default: true, when: isLtr },
-            { type: 'style', url: origin + '/viewer/readium-css-v2/ReadiumCSS-after.css', r2after: true, when: isLtr },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-before.css', r2before: true, when: isLtr },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-default.css', r2default: true, when: isLtr },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-after.css', r2after: true, when: isLtr },
             // RTL ReadiumCSS — Arabic, Hebrew, Persian, etc.
-            // Files expected at /viewer/readium-css-v2/rtl/ (add bundle to enable).
-            { type: 'style', url: origin + '/viewer/readium-css-v2/rtl/ReadiumCSS-before.css', r2before: true, when: isRtl },
-            { type: 'style', url: origin + '/viewer/readium-css-v2/rtl/ReadiumCSS-default.css', r2default: true, when: isRtl },
-            { type: 'style', url: origin + '/viewer/readium-css-v2/rtl/ReadiumCSS-after.css', r2after: true, when: isRtl },
+            // Files expected at /node_modules/@readium/css/css/dist/rtl/ (add bundle to enable).
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-before.css', r2before: true, when: isRtl },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-default.css', r2default: true, when: isRtl },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-after.css', r2after: true, when: isRtl },
             // CJK-horizontal ReadiumCSS — Chinese, Japanese, Korean (horizontal)
-            { type: 'style', url: origin + '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-before.css', r2before: true, when: isCjkHorizontal },
-            { type: 'style', url: origin + '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-default.css', r2default: true, when: isCjkHorizontal },
-            { type: 'style', url: origin + '/viewer/readium-css-v2/cjk-horizontal/ReadiumCSS-after.css', r2after: true, when: isCjkHorizontal },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-before.css', r2before: true, when: isCjkHorizontal },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-default.css', r2default: true, when: isCjkHorizontal },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-after.css', r2after: true, when: isCjkHorizontal },
             // CJK-vertical ReadiumCSS — Japanese vertical, Mongolian-vertical (writing-mode: vertical-rl / vertical-lr)
-            // Files expected at /viewer/readium-css-v2/cjk-vertical/ (add bundle to enable).
-            { type: 'style', url: origin + '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-before.css', r2before: true, when: isCjkVertical },
-            { type: 'style', url: origin + '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-default.css', r2default: true, when: isCjkVertical },
-            { type: 'style', url: origin + '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-after.css', r2after: true, when: isCjkVertical },
+            // Files expected at /node_modules/@readium/css/css/dist/cjk-vertical/ (add bundle to enable).
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-before.css', r2before: true, when: isCjkVertical },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-default.css', r2default: true, when: isCjkVertical },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-after.css', r2after: true, when: isCjkVertical },
             // Dita patch layer (LTR / RTL / cjk-horizontal) — image sizing
             // + line-height compensation. Loaded after the bundle.
             { type: 'style', url: origin + '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css', when: (ctx) => !isCjkVertical(ctx) },

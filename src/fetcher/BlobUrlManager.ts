@@ -268,6 +268,8 @@ export class BlobUrlManager {
       url.startsWith("blob:") ||
       // eslint-disable-next-line no-script-url
       url.startsWith("javascript:") ||
+      // eslint-disable-next-line no-script-url
+      url.startsWith("vbscript:") ||
       url.startsWith("mailto:")
     );
   }

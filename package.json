@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@d-i-t-a/web-content-protection": "^1.0.1",
+    "@readium/css": "^2.0.5",
     "@readium/shared": "^2.2.0",
     "browserslist-useragent-regexp": "^4.1.0",
     "cssesc": "^3.0.0",

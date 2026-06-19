@@ -60,7 +60,7 @@ won't move chapter content in `"iframe"` mode. Use the reader API instead — `r
 
 ### Cross-origin chapter content
 
-`"iframe"` mode attaches a scroll listener on `iframe.contentWindow`. If chapter content is served from a different origin than the host page, browser cross-origin policy blocks that listener and scroll-driven features (position save, atStart/atEnd UI, anchor visibility) won't fire. R2D2BC's standard webpub setup serves chapters same-origin via the fetcher, so this only matters if you've configured a non-standard cross-origin source.
+`"iframe"` mode attaches a scroll listener on `iframe.contentWindow`. If chapter content is served from a different origin than the host page, browser cross-origin policy blocks that listener and scroll-driven features (position save, atStart/atEnd UI, anchor visibility) won't fire. DITA Toolkit's standard webpub setup serves chapters same-origin via the fetcher, so this only matters if you've configured a non-standard cross-origin source.
 
 ### Switching modes at runtime
 

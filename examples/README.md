@@ -1,4 +1,4 @@
-# R2D2BC Examples
+# DITA Toolkit Examples
 
 Eight example implementations are included to demonstrate how to integrate `@d-i-t-a/reader` across different frameworks and environments.
 

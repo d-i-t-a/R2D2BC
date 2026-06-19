@@ -20,7 +20,7 @@
  * Media Overlay Node for SMIL-based synchronized audio+text.
  *
  * @readium/shared only provides MediaOverlay metadata (activeClass, playbackActiveClass).
- * The full SMIL overlay tree (Text, Audio, Children, Role) is an R2D2BC model
+ * The full SMIL overlay tree (Text, Audio, Children, Role) is an DITA Toolkit model
  * because @readium/shared doesn't carry the playback tree.
  */
 export class MediaOverlayNode {

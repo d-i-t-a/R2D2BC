@@ -1,7 +1,7 @@
 /*
  * ReadiumCSS Dita Patch Layer (v1.1.x)
  *
- * Thin override layer for ReadiumCSS v1.1.x that consolidates R2D2BC's
+ * Thin override layer for ReadiumCSS v1.1.x that consolidates DITA Toolkit's
  * long-standing customizations without modifying the upstream Readium CSS
  * files. Integrators inject this AFTER ReadiumCSS-after.css so these rules
  * take precedence.

@@ -37,11 +37,11 @@ async function start() {
       hosted: true,
       viewers: [
         {
-          title: "DITA Reader (ReadiumCSS v1)",
+          title: "DITA Toolkit (ReadiumCSS v1)",
           url: `/viewer/index_dita.html?url=https://alice.dita.digital/manifest.json`,
         },
         {
-          title: "DITA Reader (ReadiumCSS v2)",
+          title: "DITA Toolkit (ReadiumCSS v2)",
           url: `/viewer/index_dita_v2.html?url=https://alice.dita.digital/manifest.json`,
         },
         {
@@ -327,11 +327,11 @@ async function start() {
         type: "epub",
         viewers: [
           {
-            title: "DITA Reader (ReadiumCSS v1)",
+            title: "DITA Toolkit (ReadiumCSS v1)",
             url: `/viewer/index_dita.html?url=${manifestUrl}`,
           },
           {
-            title: "DITA Reader (ReadiumCSS v2)",
+            title: "DITA Toolkit (ReadiumCSS v2)",
             url: `/viewer/index_dita_v2.html?url=${manifestUrl}`,
           },
           {
@@ -456,7 +456,7 @@ async function start() {
   const data = await server.start(4444, false);
 
   console.log(
-    `\n🚀 R2D2BC Library: http://localhost:${data.urlPort}/viewer/index.html\n`
+    `\n🚀 DITA Toolkit Library: http://localhost:${data.urlPort}/viewer/index.html\n`
   );
 }
 

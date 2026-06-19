@@ -1,6 +1,6 @@
 # Remix (React Router v7) Integration Example for @d-i-t-a/reader
 
-This example shows how to integrate the R2D2BC EPUB reader into a Remix application using React Router v7 conventions.
+This example shows how to integrate the DITA Toolkit EPUB reader into a Remix application using React Router v7 conventions.
 
 ## Key Gotchas
 
@@ -158,7 +158,7 @@ npm install @d-i-t-a/reader
 ```bash
 npm install @readium/css
 cp -r node_modules/@readium/css/css/dist public/readium-css-v2
-# Add the DITA patch overlay (local to the R2D2BC repo, not in the npm package):
+# Add the DITA patch overlay (local to the DITA Toolkit repo, not in the npm package):
 cp node_modules/@d-i-t-a/reader/viewer/readium-css-v2/ReadiumCSS-dita-patch.css public/readium-css-v2/
 ```
 

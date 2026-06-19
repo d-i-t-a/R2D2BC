@@ -42,7 +42,7 @@ import readiumBefore from "url:../../node_modules/@readium/css/css/dist/ReadiumC
 
 If you're integrating into a Vue project that doesn't use Parcel, copy the files from `node_modules/@readium/css/css/dist/` into your project's `public/` directory (or configure your bundler to serve them at a URL) and update the `injectables` array in the component.
 
-The DITA patch overlay (`viewer/readium-css-v2/ReadiumCSS-dita-patch.css`) is local to the R2D2BC repo — it's separate from the npm package and contains fixes layered on top of upstream. Copy it into your project alongside the upstream files if you want the same fixes.
+The DITA patch overlay (`viewer/readium-css-v2/ReadiumCSS-dita-patch.css`) is local to the DITA Toolkit repo — it's separate from the npm package and contains fixes layered on top of upstream. Copy it into your project alongside the upstream files if you want the same fixes.
 
 ### 3. Use the component
 

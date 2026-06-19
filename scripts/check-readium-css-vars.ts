@@ -9,7 +9,7 @@
  */
 
 /**
- * Validate that every CSS custom property R2D2BC writes to the iframe
+ * Validate that every CSS custom property DITA Toolkit writes to the iframe
  * `<html>` element is consumed by at least one bundled ReadiumCSS file
  * (v1 or v2), or is a known dual-applicator write (v1-compatibility
  * substring match on the value in the style attribute — see the
@@ -49,7 +49,7 @@ const V1_DUAL_APPLICATOR_ALLOWED: ReadonlySet<string> = new Set([
   "--USER__fontOverride",
   "--USER__pageMargins",
   "--USER__scroll",
-  // FONT_SIZE_NORMALIZE is written by R2D2BC internally as a zoom
+  // FONT_SIZE_NORMALIZE is written by DITA Toolkit internally as a zoom
   // fallback; no integrator-facing REF. Also retained.
   "--USER__fontSizeNormalize",
 ]);

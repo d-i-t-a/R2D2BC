@@ -30,8 +30,8 @@ import {
 } from "../../navigator/EpubNavigator";
 
 /**
- * Convert a @readium/shared Link into an R2D2BC Link.
- * Creates a proper Link instance with all R2D2BC extensions available.
+ * Convert a @readium/shared Link into an DITA Toolkit Link.
+ * Creates a proper Link instance with all DITA Toolkit extensions available.
  */
 function toLink(link: ReadiumLink): Link {
   if (link instanceof Link) return link;
@@ -58,8 +58,8 @@ function toLinks(links: ReadiumLink[] | undefined): Link[] {
 }
 
 /**
- * R2D2BC Publication — wraps @readium/shared Manifest with
- * all R2D2BC-specific extensions (positions, sample read, spine helpers).
+ * DITA Toolkit Publication — wraps @readium/shared Manifest with
+ * all DITA Toolkit-specific extensions (positions, sample read, spine helpers).
  *
  * No Proxies. Clean property access. All camelCase.
  */

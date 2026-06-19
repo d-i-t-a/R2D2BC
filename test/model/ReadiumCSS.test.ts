@@ -16,7 +16,7 @@ describe("ReadiumCSS constants", () => {
     // Integrator-controlled settings live under --USER__*. Most have a
     // matching REF (the bare setting name); when a REF is present the
     // KEY must equal "--USER__" + REF. A few --USER__ keys are applied
-    // only by R2D2BC internally (e.g. FONT_SIZE_NORMALIZE, a v1 fallback
+    // only by DITA Toolkit internally (e.g. FONT_SIZE_NORMALIZE, a v1 fallback
     // activated when the browser does not support CSS zoom) and have no
     // integrator-facing REF.
     const userKeyEntries = Object.entries(ReadiumCSS).filter(
@@ -40,7 +40,7 @@ describe("ReadiumCSS constants", () => {
 
   it("reading-system KEYs follow the --RS__<name> pattern", () => {
     // Reading-system properties (e.g. scroll padding) live under --RS__*.
-    // They are applied directly by R2D2BC and don't expose a REF to the
+    // They are applied directly by DITA Toolkit and don't expose a REF to the
     // integrator, so the pattern check is simpler.
     const rsKeyEntries = Object.entries(ReadiumCSS).filter(
       ([name, value]) =>

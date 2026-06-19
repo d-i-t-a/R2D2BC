@@ -1549,6 +1549,56 @@
                             chapterScrubberContainer: document.getElementById("scrubber"),
                             bookScrubberContainer: document.getElementById("book-strip"),
                         },
+                        // ── Bookmark write-through callbacks ──────
+                        // The audiobook bookmark module calls
+                        // `addBookmark(bookmark)` / `deleteBookmark(bookmark)`
+                        // BEFORE writing to the local annotator. Return
+                        // the bookmark (optionally with a server-assigned
+                        // id stamped on it). The module then writes
+                        // locally and emits `BookmarkCreated` / `BookmarkDeleted`.
+                        bookmarks: {
+                            api: {
+                                addBookmark: function (bookmark) {
+                                    console.log("addBookmark", bookmark);
+                                    const t = bookmark.locations?.time;
+                                    alert("Bookmark added (t=" + (typeof t === "number" ? t.toFixed(1) + "s" : "?") + ")");
+                                    bookmark.id = Math.random();
+                                    return Promise.resolve(bookmark);
+                                },
+                                deleteBookmark: function (bookmark) {
+                                    console.log("deleteBookmark", bookmark);
+                                    alert("Bookmark deleted (id " + bookmark.id + ")");
+                                    return Promise.resolve(bookmark);
+                                },
+                            },
+                        },
+                        // ── Comment write-through callbacks ───────
+                        // `addComment(comment)` runs before persisting
+                        // a new comment; `updateComment(comment)` runs
+                        // before persisting an edit; `deleteComment(comment)`
+                        // runs before delete. Each returns the comment
+                        // (with server id stamped on add, or modified
+                        // body on update).
+                        comments: {
+                            api: {
+                                addComment: function (comment) {
+                                    console.log("addComment", comment);
+                                    alert("Comment added: " + (comment.body ?? ""));
+                                    comment.id = Math.random();
+                                    return Promise.resolve(comment);
+                                },
+                                updateComment: function (comment) {
+                                    console.log("updateComment", comment);
+                                    alert("Comment updated: " + (comment.body ?? ""));
+                                    return Promise.resolve(comment);
+                                },
+                                deleteComment: function (comment) {
+                                    console.log("deleteComment", comment);
+                                    alert("Comment deleted: " + (comment.body ?? ""));
+                                    return Promise.resolve(comment);
+                                },
+                            },
+                        },
                     },
                 });
             } catch (error) {

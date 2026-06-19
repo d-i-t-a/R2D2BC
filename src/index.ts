@@ -18,7 +18,7 @@
  */
 import D2Reader from "./reader";
 
-/** R2D2BC Reader */
+/** D2Reader — main entry point of DITA Toolkit. */
 export default D2Reader;
 
 /** for interop with \<script\> based usage */

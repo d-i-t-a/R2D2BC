@@ -1,4 +1,4 @@
-# R2D2BC Angular Example
+# DITA Toolkit Angular Example
 
 A standalone Angular component that integrates the `@d-i-t-a/reader` EPUB reader. This is meant to be dropped into an existing Angular project, not a full Angular CLI scaffold.
 

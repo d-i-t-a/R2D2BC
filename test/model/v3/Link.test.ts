@@ -7,7 +7,7 @@ describe("Link (v3)", () => {
     expect(link.href).toBe("chapter1.xhtml");
   });
 
-  it("supports R2D2BC extensions", () => {
+  it("supports DITA Toolkit extensions", () => {
     const link = new Link({ href: "chapter1.xhtml" });
     expect(link.contentLength).toBeUndefined();
     expect(link.contentWeight).toBeUndefined();

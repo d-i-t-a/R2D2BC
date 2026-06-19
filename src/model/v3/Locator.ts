@@ -26,7 +26,7 @@ import {
  * Locator model aligned with the Readium Locator spec.
  * https://github.com/readium/architecture/tree/master/models/locators
  *
- * R2D2BC extensions (remainingPositions, totalRemainingPositions, displayInfo)
+ * DITA Toolkit extensions (remainingPositions, totalRemainingPositions, displayInfo)
  * are preserved for backwards compatibility.
  */
 export interface Locator {
@@ -35,7 +35,7 @@ export interface Locator {
   title?: string;
   locations: Locations;
   text?: LocatorText;
-  /** @deprecated R2D2BC extension — may be removed in a future version */
+  /** @deprecated DITA Toolkit extension — may be removed in a future version */
   displayInfo?: any;
 }
 
@@ -75,9 +75,9 @@ export interface Locations {
   time?: number;
   /** Progression in the publication expressed as a percentage (0–1) */
   totalProgression?: number;
-  /** R2D2BC extension: remaining positions in current resource */
+  /** DITA Toolkit extension: remaining positions in current resource */
   remainingPositions?: number;
-  /** R2D2BC extension: remaining positions in publication */
+  /** DITA Toolkit extension: remaining positions in publication */
   totalRemainingPositions?: number;
 }
 
@@ -85,7 +85,7 @@ export interface Locations {
  * Extract the page number from a Locations object.
  *
  * Accepts either the new `page` field (Readium-compliant) or the legacy
- * `position` field, which earlier R2D2BC PDF builds used to store page
+ * `position` field, which earlier DITA Toolkit PDF builds used to store page
  * numbers incorrectly. When only `position` is present, it's treated as
  * a page number for backwards compatibility. New writes should ALWAYS
  * use `page`.
@@ -160,9 +160,21 @@ export enum AnnotationMarker {
 }
 
 export interface Annotation extends Locator {
-  id?: any;
+  id?: string;
   created: Date;
   highlight?: IHighlight;
+  /**
+   * PDF-only opaque field carrying the pdfjs editor serialization blob
+   * (rects, quadPoints, color array, annotationType, opacity, thickness,
+   * etc.) needed to faithfully restore the highlight into pdfjs's
+   * AnnotationEditorLayer. Top-level locator fields (`href`,
+   * `locations.page`, `id`, `text.highlight`, `highlight.color`) are
+   * still populated for human-readable server-side queries; this field
+   * exists because pdfjs's restore path needs the original serialized
+   * shape — partial reconstruction from decomposed fields loses
+   * fidelity across pdfjs versions. EPUB ignores this field entirely.
+   */
+  pdfHighlight?: Record<string, unknown>;
 }
 
 /**

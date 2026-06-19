@@ -54,7 +54,20 @@ export class MEDIAOVERLAYREFS {
 
 export interface MediaOverlayConfig {
   store: Store;
-  initialMediaOverlaySettings?: MediaOverlayModuleProperties;
+  /**
+   * Initial media overlay settings.
+   *
+   *   - `{...}`     → partial overrides; supplied fields are written
+   *                   to the local store, omitted fields fall back to
+   *                   whatever's already there.
+   *   - `null`      → **wipe** the media-overlay local cache and fall
+   *                   back to library defaults. Use this for
+   *                   multi-user shared-browser scenarios so a prior
+   *                   user's MO volume / rate / auto-turn don't bleed
+   *                   through.
+   *   - `undefined` → don't touch the local store.
+   */
+  initialMediaOverlaySettings?: MediaOverlayModuleProperties | null;
   headerMenu?: HTMLElement | null;
   api?: MediaOverlayModuleAPI;
 }
@@ -100,6 +113,14 @@ export class MediaOverlaySettings implements IMediaOverlayUserSettings {
 
   public static create(config: MediaOverlayConfig): any {
     const settings = new this(config.store, config.api, config.headerMenu);
+
+    // `initialMediaOverlaySettings === null` is the explicit "wipe
+    // local cache" signal — done before applying overrides so a prior
+    // user's MO volume / rate / auto-turn on a shared browser is
+    // cleared.
+    if (config.initialMediaOverlaySettings === null) {
+      config.store.remove(settings.MEDIAOVERLAYSETTINGS);
+    }
 
     if (config.initialMediaOverlaySettings) {
       let initialSettings = config.initialMediaOverlaySettings;

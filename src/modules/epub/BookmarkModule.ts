@@ -146,11 +146,11 @@ export class BookmarkModule
         );
     }
 
+    // Treat initialAnnotations as source of truth — overwrite local
+    // storage even when empty so a prior user's bookmarks on a shared
+    // browser don't leak through.
     if (this.initialAnnotations) {
-      const bookmarks = this.initialAnnotations["bookmarks"] || null;
-      if (bookmarks) {
-        this.annotator?.initBookmarks(bookmarks);
-      }
+      this.annotator?.initBookmarks(this.initialAnnotations.bookmarks ?? []);
     }
   }
 

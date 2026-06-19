@@ -151,7 +151,7 @@ export interface AudiobookConfig {
    * back to the annotator's stored position (if any), then to
    * `initialIndex`.
    */
-  initialLastReadingPosition?: Locator;
+  initialLastReadingPosition?: ReadingPosition | null;
   /**
    * Modules to register at construction. Includes built-in audiobook
    * modules (AudiobookBookmarkModule, etc.) plus integrator-supplied
@@ -623,14 +623,22 @@ export class AudiobookNavigator
     const order = navigator.publication.readingOrder;
     if (order.length === 0) return navigator;
 
-    let restoreLocator: Locator | undefined =
-      config.initialLastReadingPosition ?? undefined;
-    if (restoreLocator) {
+    // initialLastReadingPosition contract:
+    //   {...}     → integrator owns state; overwrite local
+    //   null      → integrator explicitly says no position; clear local
+    //                so a prior user on the same browser doesn't leak
+    //                their last-played track through
+    //   undefined → integrator not managing; fall through to local
+    let restoreLocator: Locator | undefined;
+    if (config.initialLastReadingPosition) {
       const readingPosition: ReadingPosition = {
-        ...restoreLocator,
-        created: new Date(),
+        ...config.initialLastReadingPosition,
+        created: config.initialLastReadingPosition.created ?? new Date(),
       };
       navigator.annotator?.initLastReadingPosition(readingPosition);
+      restoreLocator = readingPosition;
+    } else if (config.initialLastReadingPosition === null) {
+      navigator.annotator?.clearLastReadingPosition();
     } else {
       const stored = navigator.annotator?.getLastReadingPosition() as
         | Locator

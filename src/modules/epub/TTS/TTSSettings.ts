@@ -74,7 +74,19 @@ export class TTSREFS {
 
 export interface TTSSettingsConfig {
   store: Store;
-  initialTTSSettings?: TTSModuleProperties;
+  /**
+   * Initial TTS settings.
+   *
+   *   - `{...}`     → partial overrides; supplied fields are written
+   *                   to the local store, omitted fields fall back to
+   *                   whatever's already there.
+   *   - `null`      → **wipe** the TTS local cache and fall back to
+   *                   library defaults. Use this for multi-user
+   *                   shared-browser scenarios so a prior user's TTS
+   *                   rate / pitch / voice don't bleed through.
+   *   - `undefined` → don't touch the local store.
+   */
+  initialTTSSettings?: TTSModuleProperties | null;
   headerMenu?: HTMLElement | null;
   api?: TTSModuleAPI;
 }
@@ -127,6 +139,13 @@ export class TTSSettings implements ITTSUserSettings {
 
   public static create(config: TTSSettingsConfig) {
     const settings = new this(config.store, config.api, config.headerMenu);
+
+    // `initialTTSSettings === null` is the explicit "wipe local cache"
+    // signal — done before applying overrides so a prior user's
+    // rate / pitch / voice on a shared browser is cleared.
+    if (config.initialTTSSettings === null) {
+      config.store.remove(settings.TTSSETTINGS);
+    }
 
     if (config.initialTTSSettings) {
       let initialTTSSettings = config.initialTTSSettings;

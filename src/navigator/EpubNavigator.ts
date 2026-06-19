@@ -97,7 +97,7 @@ export interface EpubNavigatorConfig {
   publication: Publication;
   settings: UserSettings;
   annotator?: Annotator;
-  initialLastReadingPosition?: ReadingPosition;
+  initialLastReadingPosition?: ReadingPosition | null;
   rights: Partial<ReaderRights>;
   api?: Partial<NavigatorAPI>;
   tts?: Partial<TTSModuleConfig>;
@@ -357,7 +357,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   private newElementId: string | undefined;
   private isBeingStyled: boolean;
   private isLoading: boolean;
-  private readonly initialLastReadingPosition?: ReadingPosition;
+  private readonly initialLastReadingPosition?: ReadingPosition | null;
   readonly api?: Partial<NavigatorAPI>;
   readonly rights: Partial<ReaderRights> = {
     autoGeneratePositions: false,
@@ -391,7 +391,12 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
     const navigator = new this(
       config.settings,
       config.annotator || undefined,
-      config.initialLastReadingPosition || undefined,
+      // Pass null through — distinct from undefined. null = "integrator
+      // explicitly says no position, clear local"; undefined = "not
+      // managing, fall through to local store".
+      config.initialLastReadingPosition === undefined
+        ? undefined
+        : config.initialLastReadingPosition,
       config.publication,
       config.api,
       config.rights,
@@ -419,7 +424,7 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
   protected constructor(
     settings: UserSettings,
     annotator: Annotator | undefined = undefined,
-    initialLastReadingPosition: ReadingPosition | undefined = undefined,
+    initialLastReadingPosition: ReadingPosition | null | undefined = undefined,
     publication: Publication,
     api?: Partial<NavigatorAPI>,
     rights?: Partial<ReaderRights>,
@@ -989,10 +994,18 @@ export class EpubNavigator extends VisualNavigator implements EpubModuleHost {
       );
       this.settings.onViewChange(this.updateRenderer.bind(this));
 
+      // initialLastReadingPosition contract:
+      //   {...}     → integrator owns state; overwrite local
+      //   null      → integrator explicitly says no position; clear
+      //                local so a prior user on the same browser
+      //                doesn't leak their last page through
+      //   undefined → integrator not managing; fall through to local
       if (this.initialLastReadingPosition) {
         this.annotator?.initLastReadingPosition(
           this.initialLastReadingPosition
         );
+      } else if (this.initialLastReadingPosition === null) {
+        this.annotator?.clearLastReadingPosition();
       }
 
       if (this.headerMenu) {

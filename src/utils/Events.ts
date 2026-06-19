@@ -25,7 +25,7 @@ import {
 } from "../model/v3";
 
 /**
- * Typed event names for the R2D2BC reader.
+ * Typed event names for DITA Toolkit.
  *
  * Both navigators and modules emit these events through the EventEmitter.
  * Integrators can listen via:

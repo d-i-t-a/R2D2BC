@@ -142,11 +142,13 @@ export class AnnotationModule
         "#container-view-highlights"
       ) as HTMLDivElement;
 
+    // When the integrator supplies initialAnnotations, treat it as the
+    // canonical source of truth and overwrite local storage — even if
+    // `.highlights` is empty/missing. Otherwise a previous user's
+    // highlights stored in LocalStorage on the same browser bleed
+    // through to the next user (multi-user shared-device scenario).
     if (this.initialAnnotations) {
-      var highlights = this.initialAnnotations["highlights"] || null;
-      if (highlights) {
-        this.annotator?.initAnnotations(highlights);
-      }
+      this.annotator?.initAnnotations(this.initialAnnotations.highlights ?? []);
     }
 
     setTimeout(() => {
@@ -309,7 +311,7 @@ export class AnnotationModule
   }
 
   async updateLocalHighlight(annotation: Annotation): Promise<any> {
-    if (this.annotator) {
+    if (this.annotator && annotation.id) {
       let deleted = await this.annotator.deleteAnnotation(annotation.id);
       let added = await this.addAnnotation(annotation);
 

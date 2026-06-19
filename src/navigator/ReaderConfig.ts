@@ -18,6 +18,7 @@
  */
 
 import type { Bookmark, Annotation, ReadingPosition } from "../model/Locator";
+import type { Comment } from "../model/v3";
 import type { ReaderModule } from "../modules/ReaderModule";
 import type { InitialUserSettings } from "../model/user-settings/UserSettings";
 import type { TTSModuleConfig } from "../modules/epub/TTS/TTSSettings";
@@ -42,12 +43,24 @@ import type {
 import type { PublicationServices, SampleRead } from "./EpubNavigator";
 
 /**
- * Shape of the initial annotations object passed to `D2Reader.load()`.
- * Both `bookmarks` and `highlights` are optional arrays of their respective types.
+ * Previously-persisted annotations passed to `D2Reader.load()` to
+ * restore the annotator from external persistence (server, prior
+ * session DB, file). Holds whatever a user has previously added on top
+ * of a publication:
+ *
+ * - `bookmarks` — position markers. EPUB / PDF / Audiobook.
+ * - `highlights` — text-anchored highlights. EPUB only.
+ * - `comments` — time-anchored notes. Audiobook only.
+ *
+ * Each navigator's modules pick the field they care about and call
+ * `annotator.initBookmarks` / `initAnnotations` / `initComments` on
+ * `attach()` so the annotator is restored to the integrator's last
+ * known state before the first `list()` call.
  */
 export interface InitialAnnotations {
   bookmarks?: Bookmark[];
   highlights?: Annotation[];
+  comments?: Comment[];
 }
 
 export interface ReaderConfig {
@@ -70,18 +83,75 @@ export interface ReaderConfig {
    * Mutually exclusive with `url` (webpub manifest) — provide one or the other.
    */
   epub?: File | Blob | ArrayBuffer | URL | string;
-  userSettings?: Partial<InitialUserSettings>;
+  /**
+   * Integrator-supplied initial user settings. Shape depends on the
+   * publication format being loaded — the library dispatches to the
+   * matching settings class.
+   *
+   *   - EPUB      → `Partial<InitialUserSettings>` — typography,
+   *                 theme, columns, alignment, etc.
+   *   - PDF       → `PdfViewSettingsState` — scroll mode, spread,
+   *                 scale, rotation.
+   *   - Audiobook → `InitialAudiobookSettings` — volume, playback
+   *                 rate, autoplay, etc.
+   *
+   * Tri-state contract is uniform across formats:
+   *
+   *   - `{...}`     → partial overrides on top of whatever's in the
+   *                   local store.
+   *   - `null`      → wipe the local cache and fall back to library
+   *                   defaults. Use this for multi-user shared-browser
+   *                   scenarios so a prior user's choices don't bleed
+   *                   through.
+   *   - `undefined` → leave the local store alone.
+   */
+  userSettings?:
+    | Partial<InitialUserSettings>
+    | import("../modules/pdf/PdfViewSettingsModule").PdfViewSettingsState
+    | import("../model/user-settings/AudiobookSettings").InitialAudiobookSettings
+    | null;
   initialAnnotations?: InitialAnnotations;
-  lastReadingPosition?: ReadingPosition;
+  /**
+   * The user's saved last reading position, or an explicit signal that
+   * they have none.
+   *
+   *   - `{...}`     → integrator owns state; the local store is
+   *                   overwritten with this on load.
+   *   - `null`      → integrator explicitly says no position. The
+   *                   local store is **cleared** on load — use this for
+   *                   multi-user shared-browser scenarios so a prior
+   *                   user's stored position doesn't bleed into the
+   *                   new user's session.
+   *   - `undefined` → integrator isn't managing this; the local store
+   *                   is read as-is.
+   */
+  lastReadingPosition?: ReadingPosition | null;
   rights?: Partial<ReaderRights>;
   api?: Partial<NavigatorAPI>;
-  tts?: Partial<TTSModuleConfig>;
+  /**
+   * EPUB TTS module config — initial overrides + api callbacks +
+   * module deps in one block.
+   *
+   *   - `{...}`     → overrides + api wiring (current shape).
+   *   - `null`      → wipe the TTS local cache, skip module init. Use
+   *                   for multi-user shared-browser scenarios.
+   *   - `undefined` → leave the local store alone (current default).
+   */
+  tts?: Partial<TTSModuleConfig> | null;
   search?: Partial<SearchModuleConfig>;
   define?: Partial<DefinitionsModuleConfig>;
   protection?: Partial<ContentProtectionModuleConfig>;
   /** Config for @d-i-t-a/web-content-protection (used for PDF, future: replaces legacy protection) */
   webProtection?: import("@d-i-t-a/web-content-protection").ContentProtectionConfig;
-  mediaOverlays?: Partial<MediaOverlayModuleConfig>;
+  /**
+   * EPUB Media Overlay module config — initial overrides + api
+   * callbacks + module deps in one block.
+   *
+   *   - `{...}`     → overrides + api wiring (current shape).
+   *   - `null`      → wipe the MO local cache, skip module init.
+   *   - `undefined` → leave the local store alone.
+   */
+  mediaOverlays?: Partial<MediaOverlayModuleConfig> | null;
   pagebreak?: Partial<PageBreakModuleConfig>;
   annotations?: Partial<AnnotationModuleConfig>;
   bookmarks?: Partial<BookmarkModuleConfig>;
@@ -114,13 +184,6 @@ export interface ReaderConfig {
    * surfaces at the top level; only audiobook nests its surface here.
    */
   audiobook?: {
-    /**
-     * Initial audiobook playback settings. Values here override
-     * anything previously persisted via `LocalStorageStore`. Field
-     * set + names match Readium ts-toolkit's `AudioPreferences` —
-     * see `AudiobookSettings.ts` for documentation.
-     */
-    userSettings?: import("../model/user-settings/AudiobookSettings").InitialAudiobookSettings;
     /**
      * Audiobook timeline module config. When containers are supplied,
      * the module renders scrubber UI inside them; without containers
@@ -191,5 +254,33 @@ export interface ReaderConfig {
       bytes?: number;
       concurrency?: number;
     };
+  };
+  /**
+   * PDF navigator config. Mirrors the audiobook nesting — PDF-specific
+   * module configuration lives here rather than at the top level so
+   * EPUB and PDF integrator config stays cleanly separated.
+   */
+  pdf?: {
+    /**
+     * PDF bookmark module config. Gated by `rights.enableBookmarks`.
+     * Use `api` to receive write-through callbacks on save / delete.
+     */
+    bookmarks?: Partial<
+      Omit<
+        import("../modules/pdf/PdfBookmarkModule").PdfBookmarkModuleConfig,
+        "publication" | "annotator"
+      >
+    >;
+    /**
+     * PDF annotation module config. Gated by `rights.enableAnnotations`.
+     * Use `api.saveAnnotations` to receive a write-through callback on
+     * every debounced save of the pdfjs editor state.
+     */
+    annotations?: Partial<
+      Omit<
+        import("../modules/pdf/PdfAnnotationModule").PdfAnnotationModuleConfig,
+        "viewStore"
+      >
+    >;
   };
 }

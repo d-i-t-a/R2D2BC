@@ -6,7 +6,7 @@ Closes: *no issue filed*
 
 ## At a glance
 
-R2D2BC used to ship ReadiumCSS as a manually-copied snapshot under `viewer/readium-css-v2/` — base files at one upstream version, RTL and CJK-vertical variants at a lower one, upstream itself had moved on. The snapshot had drifted.
+DITA Toolkit used to ship ReadiumCSS as a manually-copied snapshot under `viewer/readium-css-v2/` — base files at one upstream version, RTL and CJK-vertical variants at a lower one, upstream itself had moved on. The snapshot had drifted.
 
 This workstream replaces the snapshot with [`@readium/css`](https://www.npmjs.com/package/@readium/css) from npm. Upstream catches up via `npm update`; the manifest of "which files came from which commit at which version" goes away; integrators consuming the published package get the same dependency surface.
 
@@ -60,7 +60,7 @@ What remains is patch-overlay-only:
 - **12 viewer HTML files** had their ReadiumCSS injectables repointed:
   - `viewer/index_api.html`, `index_epub_file.html`, `index_sampleread.html`, `index_dita_v2.html`, `index_minimal.html`, `index_injectables.html`, `index_small_window.html`, `demo_config_demo.html`, `demo_config_hide.html`, `demo_config_cloudlibrary.html`, `demo_config_clusive.html` — base path swapped from `/viewer/readium-css-v2/...` to `/node_modules/@readium/css/css/dist/...`. Patch URLs (`/viewer/readium-css-v2/ReadiumCSS-dita-patch.css`, `/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-dita-patch.css`) unchanged.
 - **`viewer/index_dita_v2_cdn.html` removed.** The CDN-specific demo viewer is redundant once the canonical npm path is wired: integrators wanting CDN derive the URL pattern (e.g. `https://unpkg.com/@readium/css@<version>/css/dist/...`) from the standard viewer themselves. One v2 viewer (`viewer/index_dita_v2.html`), not two.
-- **`examples/server.ts`** — added `/node_modules` static mount so the dev landing-page demos can resolve `/node_modules/@readium/css/css/dist/...` URLs from the served HTML. Reader-list entries renamed: "DITA Reader (ReadiumCSS v2 local)" → "DITA Reader (ReadiumCSS v2)"; "DITA Reader (ReadiumCSS v2 CDN)" entries removed.
+- **`examples/server.ts`** — added `/node_modules` static mount so the dev landing-page demos can resolve `/node_modules/@readium/css/css/dist/...` URLs from the served HTML. Reader-list entries renamed: "DITA Toolkit (ReadiumCSS v2 local)" → "DITA Toolkit (ReadiumCSS v2)"; "DITA Toolkit (ReadiumCSS v2 CDN)" entries removed.
 
 ---
 

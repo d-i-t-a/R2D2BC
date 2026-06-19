@@ -49,7 +49,7 @@ export const PRESERVE_PITCH_PROCESSOR_NAME =
  * `import.meta.url` is available NOR an override has been supplied via
  * `setPreservePitchWorkletUrl()`.
  *
- * Integrators bundling R2D2BC into custom build pipelines should call
+ * Integrators bundling DITA Toolkit into custom build pipelines should call
  * `setPreservePitchWorkletUrl(myUrl)` once at startup with a URL pointing
  * at the deployed worklet file. The default tries `import.meta.url`,
  * which works under modern ESM bundlers (Vite, esbuild ESM, Rollup) but

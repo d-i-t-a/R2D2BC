@@ -60,6 +60,10 @@ export default class LocalAnnotator implements Annotator {
     }
   }
 
+  public clearLastReadingPosition() {
+    this.store.remove(LocalAnnotator.LAST_READING_POSITION);
+  }
+
   public saveLastReadingPosition(position: any) {
     if (typeof position === "string") {
       this.store.set(LocalAnnotator.LAST_READING_POSITION, position);

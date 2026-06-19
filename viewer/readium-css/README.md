@@ -1,6 +1,6 @@
 # ReadiumCSS v1 demo bundle
 
-These files are **demo assets only**. R2D2BC does not ship ReadiumCSS as part of the npm package — integrators supply their own ReadiumCSS via the injectables system. This bundle exists so that `viewer/index_dita.html` and the other v1 demo viewers have a working local copy to load.
+These files are **demo assets only**. DITA Toolkit does not ship ReadiumCSS as part of the npm package — integrators supply their own ReadiumCSS via the injectables system. This bundle exists so that `viewer/index_dita.html` and the other v1 demo viewers have a working local copy to load.
 
 > **v1 is legacy.** New integrations should target the [v2 bundle](../readium-css-v2/). v1 is retained for integrators who haven't migrated yet.
 
@@ -15,13 +15,13 @@ These files are **demo assets only**. R2D2BC does not ship ReadiumCSS as part of
 | `ReadiumCSS-dita-patch.css` | (local — not from upstream) | n/a | n/a | 2026-04-19 |
 | `LICENSE` | [readium/css](https://github.com/readium/css) | — | — | — |
 
-All upstream files are **pristine** — byte-identical to upstream at the recorded commit. No inline modifications. All R2D2BC customizations live in `ReadiumCSS-dita-patch.css`, which is injected as a separate layer after the upstream cascade.
+All upstream files are **pristine** — byte-identical to upstream at the recorded commit. No inline modifications. All DITA Toolkit customizations live in `ReadiumCSS-dita-patch.css`, which is injected as a separate layer after the upstream cascade.
 
 > **Note:** The version strings inside upstream file headers read `(v. 1.1.0)` because the Readium v.1.1.1 release did not bump the in-file version comments. The files are genuinely at the v.1.1.1 commit SHA recorded above.
 
 ## ReadiumCSS-dita-patch.css
 
-Thin override layer carrying three long-standing R2D2BC customizations:
+Thin override layer carrying three long-standing DITA Toolkit customizations:
 
 1. **Image / media no-stretch** — stock Readium sets `width: auto; height: auto` on `img/svg/video`, which lets the browser stretch publisher images to fill the layout box in paginated column layouts. The patch restores intrinsic-size behavior while respecting `max-width` / `max-height`.
 2. **Line-height compensation formula** — stock `line-height: var(--USER__lineHeight)` doesn't account for font metrics (ex-height, ch-width) or base font-size differences. The patch factors these in and applies `--RS__lineHeightCompensation` for CJK / Indic scripts that need 15–20% more leading.
@@ -44,7 +44,7 @@ Upstream Readium docs recommend loading it **conditionally** — only when the b
 - v1: `<dc:description id="ebpaj-guide">ebpaj-guide-1.0</dc:description>`
 - v1.1: `<meta property="ebpaj:guide-version">1.1</meta>`
 
-R2D2BC does not auto-detect this metadata. Integrators serving EBPAJ-template Japanese books can inject this file manually via the injectables system when appropriate.
+DITA Toolkit does not auto-detect this metadata. Integrators serving EBPAJ-template Japanese books can inject this file manually via the injectables system when appropriate.
 
 ## Upgrade procedure
 

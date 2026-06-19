@@ -14,8 +14,55 @@ import { NavigatorFeature } from "../../navigator/VisualNavigator";
 import { ScrollMode } from "pdfjs-dist/web/pdf_viewer.mjs";
 import Store from "../../store/Store";
 
+/**
+ * Typed view of PDF view settings persisted across sessions.
+ *
+ *   - `scrollMode` — pdfjs ScrollMode (0 vertical, 1 horizontal, 2 wrapped, 3 page)
+ *   - `spreadMode` — pdfjs SpreadMode (0 none, 1 odd, 2 even)
+ *   - `scale`      — pdfjs scale value: numeric ("1.25") or symbolic
+ *                    ("page-fit", "page-width", "auto")
+ *   - `rotation`   — 0 / 90 / 180 / 270
+ */
+export interface PdfViewSettingsState {
+  scrollMode?: number;
+  spreadMode?: number;
+  scale?: string | number;
+  rotation?: number;
+}
+
+/**
+ * Integrator-supplied write-through hook for PDF view settings.
+ *
+ * Fires on every user-driven change (zoom, scroll mode, spread, rotation)
+ * so the integrator can persist the snapshot to their own server. Snapshot
+ * shape matches what the local viewStore holds.
+ */
+export interface PdfViewSettingsModuleAPI {
+  updateSettings: (settings: PdfViewSettingsState) => Promise<void>;
+}
+
 export interface PdfViewSettingsModuleConfig {
   viewStore: Store;
+  /**
+   * Integrator-supplied initial PDF user settings (scroll mode,
+   * spread, scale, rotation).
+   *
+   *   - `{...}`     → partial overrides; supplied fields are written
+   *                   to viewStore, omitted fields fall back to
+   *                   whatever's already in viewStore.
+   *   - `null`      → **wipe** the PDF user-settings local cache, fall
+   *                   back to library defaults. Use this for
+   *                   multi-user shared-browser scenarios so a prior
+   *                   user's scroll mode / zoom don't bleed through.
+   *   - `undefined` → don't touch viewStore.
+   */
+  initial?: PdfViewSettingsState | null;
+  /**
+   * Optional integrator write-through callback. Fires on every
+   * user-driven change with the full current snapshot. Same shape as
+   * EPUB's `api.updateSettings`.
+   */
+  api?: PdfViewSettingsModuleAPI;
 }
 
 /**
@@ -41,14 +88,22 @@ export class PdfViewSettingsModule implements ReaderModule<PDFModuleHost> {
   private static readonly KEY_ROTATE = "pdf-rotation";
 
   private readonly viewStore: Store;
+  private readonly api?: PdfViewSettingsModuleAPI;
+  private readonly initial?: PdfViewSettingsState | null;
   private host!: PDFModuleHost;
 
   constructor(config: PdfViewSettingsModuleConfig) {
     this.viewStore = config.viewStore;
+    this.api = config.api;
+    this.initial = config.initial;
   }
 
   attach(host: PDFModuleHost): void {
     this.host = host;
+    // Apply the initial-settings contract BEFORE pdfjs has rendered
+    // pages — the restore on `pagesinit` will then read whatever's in
+    // viewStore (or fall back to defaults if we just cleared it).
+    this.applyInitialSettings();
   }
 
   setup(): void {
@@ -134,6 +189,62 @@ export class PdfViewSettingsModule implements ReaderModule<PDFModuleHost> {
 
   private saveSetting(key: string, value: string | number): void {
     this.viewStore.set(key, String(value));
+    // Write-through to integrator with the full snapshot (matches the
+    // EPUB `api.updateSettings` shape — full settings on every change,
+    // not a diff). Fire-and-forget — errors don't block local writes.
+    this.fireUpdateSettings();
+  }
+
+  private fireUpdateSettings(): void {
+    if (!this.api?.updateSettings) return;
+    const snapshot = this.currentSnapshot();
+    void this.api.updateSettings(snapshot);
+  }
+
+  private currentSnapshot(): PdfViewSettingsState {
+    const scroll = this.viewStore.get(PdfViewSettingsModule.KEY_SCROLL);
+    const spread = this.viewStore.get(PdfViewSettingsModule.KEY_SPREAD);
+    const scale = this.viewStore.get(PdfViewSettingsModule.KEY_SCALE);
+    const rotate = this.viewStore.get(PdfViewSettingsModule.KEY_ROTATE);
+    const snap: PdfViewSettingsState = {};
+    if (scroll !== null && scroll !== undefined) snap.scrollMode = Number(scroll);
+    if (spread !== null && spread !== undefined) snap.spreadMode = Number(spread);
+    if (scale !== null && scale !== undefined) snap.scale = scale;
+    if (rotate !== null && rotate !== undefined) snap.rotation = Number(rotate);
+    return snap;
+  }
+
+  /**
+   * Apply the integrator's `initialSettings` contract to the local
+   * viewStore. Runs once on `attach()` — BEFORE `pagesinit` fires and
+   * `restore()` reads the store back.
+   *
+   *   - object → overwrite supplied fields, leave others untouched
+   *   - null   → wipe all four keys (clear cross-user leak)
+   *   - undef  → do nothing
+   */
+  private applyInitialSettings(): void {
+    if (this.initial === undefined) return;
+    if (this.initial === null) {
+      this.viewStore.remove(PdfViewSettingsModule.KEY_SCROLL);
+      this.viewStore.remove(PdfViewSettingsModule.KEY_SPREAD);
+      this.viewStore.remove(PdfViewSettingsModule.KEY_SCALE);
+      this.viewStore.remove(PdfViewSettingsModule.KEY_ROTATE);
+      return;
+    }
+    const s = this.initial;
+    if (s.scrollMode !== undefined) {
+      this.viewStore.set(PdfViewSettingsModule.KEY_SCROLL, String(s.scrollMode));
+    }
+    if (s.spreadMode !== undefined) {
+      this.viewStore.set(PdfViewSettingsModule.KEY_SPREAD, String(s.spreadMode));
+    }
+    if (s.scale !== undefined) {
+      this.viewStore.set(PdfViewSettingsModule.KEY_SCALE, String(s.scale));
+    }
+    if (s.rotation !== undefined) {
+      this.viewStore.set(PdfViewSettingsModule.KEY_ROTATE, String(s.rotation));
+    }
   }
 
   private restore(): void {

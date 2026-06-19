@@ -79,7 +79,7 @@ describe("Publication (v3)", () => {
       expect(link.title).toBe("Chapter 1");
     });
 
-    it("Link has R2D2BC extensions", () => {
+    it("Link has DITA Toolkit extensions", () => {
       const pub = createPublication();
       const link = pub.readingOrder[0];
       expect(link.contentLength).toBeUndefined();

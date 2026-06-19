@@ -144,13 +144,16 @@ export interface ICommentsModule<
   H extends ModuleHost = ModuleHost,
 > extends ReaderModule<H> {
   /** Save a comment at the given locator (or current locator if omitted). */
-  add(body: string, locator?: Locator): Comment | null;
+  add(
+    body: string,
+    locator?: Locator
+  ): Promise<Comment | null> | Comment | null;
 
   /** Update an existing comment's text. Returns the updated comment or null if not found. */
-  update(id: string, body: string): Comment | null;
+  update(id: string, body: string): Promise<Comment | null> | Comment | null;
 
   /** Delete a previously saved comment. */
-  delete(comment: Comment): void;
+  delete(comment: Comment): Promise<void> | void;
 
   /** All comments for the publication. */
   list(): Comment[];

@@ -487,6 +487,58 @@
             enableHistory: true,
             enableContentProtection: true,
         },
+        api:{
+
+        },
+        pdf:{
+          // ── Bookmark write-through callbacks ──────────────────
+          // The PDF bookmark module calls `addBookmark(bookmark)` and
+          // `deleteBookmark(bookmark)` BEFORE writing to the local
+          // annotator. Return the bookmark (optionally with a
+          // server-assigned id stamped on it). The module then writes
+          // the returned bookmark locally and emits `BookmarkCreated`
+          // / `BookmarkDeleted`.
+          bookmarks: {
+            api: {
+              addBookmark: function(bookmark) {
+                console.log("addBookmark", bookmark);
+                alert("Bookmark added (page " + (bookmark.locations?.page ?? "?") + ")");
+                bookmark.id = Math.random();
+                return Promise.resolve(bookmark);
+              },
+              deleteBookmark: function(bookmark) {
+                console.log("deleteBookmark", bookmark);
+                alert("Bookmark deleted (id " + bookmark.id + ")");
+                return Promise.resolve(bookmark);
+              },
+            },
+          },
+          // ── PDF annotation per-item callbacks ─────────────────
+          // Same shape as the EPUB annotation api. PDF annotations
+          // are now `Annotation` locators (with the pdfjs editor
+          // blob carried in `pdfHighlight`), so server-side
+          // persistence works the same way as EPUB highlights.
+          // Color changes after creation also fire updateAnnotation.
+          annotations: {
+            api: {
+              addAnnotation: function(annotation) {
+                console.log("addAnnotation", annotation);
+                alert("Annotation added (page " + annotation.locations?.page + ")");
+                return Promise.resolve(annotation);
+              },
+              updateAnnotation: function(annotation) {
+                console.log("updateAnnotation", annotation);
+                alert("Annotation updated (id " + annotation.id + ")");
+                return Promise.resolve(annotation);
+              },
+              deleteAnnotation: function(annotation) {
+                console.log("deleteAnnotation", annotation);
+                alert("Annotation deleted (id " + annotation.id + ")");
+                return Promise.resolve(annotation);
+              },
+            },
+          },
+        },
         webProtection: {
             onEvent: (e) => console.log('[Protection]', e.type, e.detail),
             copyProtection: {

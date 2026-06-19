@@ -1,6 +1,6 @@
 # ReadiumCSS v2 — local patch overlay
 
-This directory holds R2D2BC's **local DITA patch overlay** for ReadiumCSS v2. Upstream ReadiumCSS itself is no longer bundled here — since `3.0.0-alpha.23` the library consumes [`@readium/css`](https://www.npmjs.com/package/@readium/css) from npm. The patch files in this directory layer on top of upstream and are loaded last in the injectables chain.
+This directory holds DITA Toolkit's **local DITA patch overlay** for ReadiumCSS v2. Upstream ReadiumCSS itself is no longer bundled here — since `3.0.0-alpha.23` the library consumes [`@readium/css`](https://www.npmjs.com/package/@readium/css) from npm. The patch files in this directory layer on top of upstream and are loaded last in the injectables chain.
 
 ## Contents
 
@@ -57,7 +57,7 @@ A worked example covering all four script modes lives at `viewer/index_dita_v2.h
 
 ## Upgrading upstream
 
-`npm update @readium/css` (or bump the version in `package.json`). Run `npm run lint:css-vars` afterward to confirm every CSS custom property R2D2BC writes is still consumed by the new upstream. Then run the manual test pass across LTR / RTL / CJK / iPadOS / DITA patches before releasing.
+`npm update @readium/css` (or bump the version in `package.json`). Run `npm run lint:css-vars` afterward to confirm every CSS custom property DITA Toolkit writes is still consumed by the new upstream. Then run the manual test pass across LTR / RTL / CJK / iPadOS / DITA patches before releasing.
 
 ## Upgrading the patch overlay
 

@@ -15,7 +15,7 @@ import Store from "../../store/Store";
  *
  * Field set + names match Readium ts-toolkit's `AudioPreferences`
  * (navigator/src/audio/preferences/AudioPreferences.ts) so that
- * integrators porting between R2D2BC and Readium see the same vocabulary.
+ * integrators porting between DITA Toolkit and Readium see the same vocabulary.
  *
  * Persisted via the same `Store` abstraction EPUB and PDF use — drop-in
  * with `LocalStorageStore`. All eight values are persisted; values
@@ -86,9 +86,38 @@ export type InitialAudiobookSettings = Partial<IAudiobookSettings>;
 
 export type AudiobookSettingsKey = keyof IAudiobookSettings;
 
+/**
+ * Integrator-supplied write-through hook for audiobook playback
+ * settings. Fires on every user-driven change with the full current
+ * snapshot — same shape EPUB's `api.updateSettings` uses, so the
+ * integrator can persist all formats through one server endpoint.
+ */
+export interface AudiobookSettingsAPI {
+  updateSettings: (settings: IAudiobookSettings) => Promise<void>;
+}
+
 export interface AudiobookSettingsConfig {
   store: Store;
-  initialAudiobookSettings?: InitialAudiobookSettings;
+  /**
+   * Integrator-supplied initial audiobook playback settings.
+   *
+   *   - `{...}`     → partial overrides; supplied fields are written
+   *                   to the local store, omitted fields fall back to
+   *                   whatever's already in the store.
+   *   - `null`      → **wipe** the audiobook-settings local cache and
+   *                   fall back to library defaults. Use this for
+   *                   multi-user shared-browser scenarios so a prior
+   *                   user's volume / playback rate don't bleed
+   *                   through.
+   *   - `undefined` → don't touch the local store.
+   */
+  initial?: InitialAudiobookSettings | null;
+  /**
+   * Optional integrator write-through callback. Fires on every
+   * user-driven change with the full current snapshot. Fire-and-forget
+   * — errors don't block local writes.
+   */
+  api?: AudiobookSettingsAPI;
 }
 
 const DEFAULTS: IAudiobookSettings = {
@@ -119,8 +148,23 @@ const RANGES = {
 
 const STORE_PREFIX = "audiobook-";
 
+// Keys read/written under `STORE_PREFIX` — used by the null-clear
+// branch of `create()` to wipe the audiobook-settings local cache.
+const STORE_KEYS: AudiobookSettingsKey[] = [
+  "volume",
+  "playbackRate",
+  "preservePitch",
+  "skipBackwardInterval",
+  "skipForwardInterval",
+  "pollInterval",
+  "autoPlay",
+  "enableMediaSession",
+  "timelineMode",
+];
+
 export class AudiobookSettings implements IAudiobookSettings {
   private readonly store: Store;
+  private readonly api?: AudiobookSettingsAPI;
   private readonly listeners = new Set<(key: AudiobookSettingsKey) => void>();
 
   private _volume: number = DEFAULTS.volume;
@@ -142,16 +186,26 @@ export class AudiobookSettings implements IAudiobookSettings {
   static async create(
     config: AudiobookSettingsConfig
   ): Promise<AudiobookSettings> {
-    const settings = new AudiobookSettings(config.store);
+    const settings = new AudiobookSettings(config.store, config.api);
+
+    // `initial === null` is the explicit "wipe local cache" signal —
+    // done BEFORE loadFromStore so the in-memory values fall back to
+    // defaults instead of inheriting a prior user's volume / rate /
+    // autoplay on a shared browser.
+    if (config.initial === null) {
+      for (const k of STORE_KEYS) settings.store.remove(STORE_PREFIX + k);
+    }
+
     settings.loadFromStore();
-    if (config.initialAudiobookSettings) {
-      settings.apply(config.initialAudiobookSettings);
+    if (config.initial) {
+      settings.apply(config.initial);
     }
     return settings;
   }
 
-  private constructor(store: Store) {
+  private constructor(store: Store, api?: AudiobookSettingsAPI) {
     this.store = store;
+    this.api = api;
   }
 
   private loadFromStore(): void {
@@ -382,6 +436,28 @@ export class AudiobookSettings implements IAudiobookSettings {
   ): void {
     this.store.set(STORE_PREFIX + key, String(value));
     for (const fn of this.listeners) fn(key);
+    // Write-through to integrator with the full snapshot (matches the
+    // EPUB `api.updateSettings` shape — full state on every change,
+    // not a per-key diff). Fire-and-forget — errors don't block local
+    // writes.
+    if (this.api?.updateSettings) {
+      void this.api.updateSettings(this.snapshot());
+    }
+  }
+
+  /** Plain-JSON snapshot of every public setting. */
+  snapshot(): IAudiobookSettings {
+    return {
+      volume: this._volume,
+      playbackRate: this._playbackRate,
+      preservePitch: this._preservePitch,
+      skipBackwardInterval: this._skipBackwardInterval,
+      skipForwardInterval: this._skipForwardInterval,
+      pollInterval: this._pollInterval,
+      autoPlay: this._autoPlay,
+      enableMediaSession: this._enableMediaSession,
+      timelineMode: this._timelineMode,
+    };
   }
 }
 

@@ -28,12 +28,12 @@ export interface D2Link {
 }
 
 /**
- * R2D2BC Link — extends @readium/shared Link with R2D2BC extensions.
+ * DITA Toolkit Link — extends @readium/shared Link with DITA Toolkit extensions.
  *
  * All property access uses camelCase directly (href, type, title, etc.).
  * No Proxy, no PascalCase compat layer — clean code.
  *
- * R2D2BC extensions: contentLength, contentWeight, mediaOverlayNode
+ * DITA Toolkit extensions: contentLength, contentWeight, mediaOverlayNode
  */
 export class Link extends ReadiumLink {
   /** Byte size of the resource (used for position calculation) */

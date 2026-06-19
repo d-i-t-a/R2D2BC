@@ -14,6 +14,7 @@ import { AudiobookModuleHost } from "../ModuleHost";
 import { NavigatorFeature } from "../../navigator/NavigatorFeature";
 import { Bookmark, Locator, Publication } from "../../model/v3";
 import Annotator from "../../store/Annotator";
+import type { InitialAnnotations } from "../../navigator/ReaderConfig";
 import { ReaderEvent } from "../../utils/Events";
 
 /**
@@ -30,6 +31,20 @@ function formatTime(seconds: number): string {
   return hours > 0 ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
+/**
+ * Integrator-supplied write-through hooks for audiobook bookmarks.
+ * Mirrors the EPUB / PDF `BookmarkModuleAPI` shape.
+ *
+ * `addBookmark` runs before the module persists locally — the returned
+ * `Bookmark` is what gets written to the annotator (integrator can
+ * stamp an id, server timestamp, etc.). `deleteBookmark` runs before
+ * the module deletes locally.
+ */
+export interface AudiobookBookmarkModuleAPI {
+  addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
+  deleteBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
+}
+
 export interface AudiobookBookmarkModuleConfig {
   annotator: Annotator;
   publication: Publication;
@@ -40,6 +55,21 @@ export interface AudiobookBookmarkModuleConfig {
    * Without a container the module is data-only (`list()` plus events).
    */
   listContainer?: HTMLElement | null;
+  /**
+   * Previously-persisted annotations to restore the annotator from on
+   * `attach()`. When supplied, the module calls
+   * `annotator.initBookmarks(initialAnnotations.bookmarks)` so the
+   * integrator can restore from server-side / external persistence
+   * before the first `list()` call. Mirrors EPUB / PDF bookmark modules.
+   */
+  initialAnnotations?: InitialAnnotations;
+  /**
+   * Optional integrator write-through callbacks. When provided, the
+   * module awaits the matching callback before mutating the annotator
+   * so server-side persistence can fail the operation. Mirrors EPUB /
+   * PDF bookmark module API shapes.
+   */
+  api?: AudiobookBookmarkModuleAPI;
 }
 
 /**
@@ -72,6 +102,8 @@ export class AudiobookBookmarkModule implements IBookmarkModule<AudiobookModuleH
   private readonly annotator: Annotator;
   private readonly publication: Publication;
   private readonly listContainer?: HTMLElement | null;
+  private readonly initialAnnotations?: InitialAnnotations;
+  private readonly api?: AudiobookBookmarkModuleAPI;
   private host!: AudiobookModuleHost;
 
   /**
@@ -89,10 +121,18 @@ export class AudiobookBookmarkModule implements IBookmarkModule<AudiobookModuleH
     this.annotator = config.annotator;
     this.publication = config.publication;
     this.listContainer = config.listContainer;
+    this.initialAnnotations = config.initialAnnotations;
+    this.api = config.api;
   }
 
   attach(host: AudiobookModuleHost): void {
     this.host = host;
+    // Treat initialAnnotations as source of truth — overwrite local
+    // storage even when empty so a prior user's bookmarks on a shared
+    // browser don't leak through.
+    if (this.initialAnnotations) {
+      this.annotator?.initBookmarks(this.initialAnnotations.bookmarks ?? []);
+    }
     if (this.listContainer) this.renderList();
   }
 
@@ -101,10 +141,13 @@ export class AudiobookBookmarkModule implements IBookmarkModule<AudiobookModuleH
    * already bookmarked. Emits `BookmarkCreated` so subscribers (UI list,
    * scrubber markers, integrator analytics) can refresh without polling.
    */
-  save(): Bookmark | null {
+  async save(): Promise<Bookmark | null> {
     if (this.hasBookmarkAt()) return null;
-    const bookmark = this.makeBookmark();
+    let bookmark = this.makeBookmark();
     if (!bookmark) return null;
+    if (this.api?.addBookmark) {
+      bookmark = await this.api.addBookmark(bookmark);
+    }
     const saved = this.annotator.saveBookmark(bookmark) ?? null;
     if (saved) {
       this.host.emit(ReaderEvent.BookmarkCreated, saved);
@@ -117,7 +160,10 @@ export class AudiobookBookmarkModule implements IBookmarkModule<AudiobookModuleH
    * Delete a previously saved bookmark. Emits `BookmarkDeleted` with the
    * removed bookmark for the same reasons as `save`.
    */
-  delete(bookmark: Bookmark): void {
+  async delete(bookmark: Bookmark): Promise<void> {
+    if (this.api?.deleteBookmark) {
+      await this.api.deleteBookmark(bookmark);
+    }
     this.annotator.deleteBookmark(bookmark);
     this.host.emit(ReaderEvent.BookmarkDeleted, bookmark);
     if (this.listContainer) this.renderList();
@@ -153,9 +199,7 @@ export class AudiobookBookmarkModule implements IBookmarkModule<AudiobookModuleH
     if (!href || typeof time !== "number") return null;
 
     const tolerance = AudiobookBookmarkModule.MATCH_TOLERANCE_SECONDS;
-    const candidates = this.annotator.getBookmarks(
-      this.publication.getAbsoluteHref(href)
-    );
+    const candidates = this.annotator.getBookmarks(href);
     return (
       candidates.find((bookmark) => {
         const bookmarkTime = bookmark.locations?.time;
@@ -191,9 +235,8 @@ export class AudiobookBookmarkModule implements IBookmarkModule<AudiobookModuleH
     const root = document.createElement("ol");
     root.className = "dita-audiobook-bookmarks";
     order.forEach((link, chapterIndex) => {
-      const absHref = this.publication.getAbsoluteHref(link.href);
       const inThisChapter = bookmarks
-        .filter((b) => b.href === absHref)
+        .filter((b) => b.href === link.href)
         .sort((a, b) => (a.locations?.time ?? 0) - (b.locations?.time ?? 0));
       if (inThisChapter.length === 0) return;
       const heading = document.createElement("li");
@@ -254,7 +297,7 @@ export class AudiobookBookmarkModule implements IBookmarkModule<AudiobookModuleH
     if (!locator.href) return null;
     return {
       id: crypto.randomUUID(),
-      href: this.publication.getAbsoluteHref(locator.href),
+      href: locator.href,
       type: locator.type ?? "audio/*",
       title: locator.title,
       locations: locator.locations,

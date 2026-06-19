@@ -1,14 +1,14 @@
 # CHANGES — v3 Workstream 3.5: ReadiumCSS v2.0 + CSS Overhaul
 
-Published as: *pending (will ship as `3.0.0-alpha.17`)*
+Published as: `3.0.0-alpha.17`
 Branch: `feature/v3-readiumcss-v2` (based on `feature/v3-fetcher`)
 Closes: [#641](https://github.com/d-i-t-a/R2D2BC/issues/641)
 
 ## At a glance
 
-R2D2BC now understands ReadiumCSS **v1.1.x AND v2.0.x** simultaneously. An integrator can inject either version (or switch between them) without changing their TypeScript config — UserSettings writes both v1 and v2 CSS custom properties on the iframe's `<html>` element, and the active stylesheet picks up what it understands.
+DITA Toolkit now understands ReadiumCSS **v1.1.x AND v2.0.x** simultaneously. An integrator can inject either version (or switch between them) without changing their TypeScript config — UserSettings writes both v1 and v2 CSS custom properties on the iframe's `<html>` element, and the active stylesheet picks up what it understands.
 
-R2D2BC itself never bundles ReadiumCSS — the files in `viewer/readium-css-v2/` are demo assets only. Integrators continue to supply their own ReadiumCSS via the injectables system.
+DITA Toolkit itself never bundles ReadiumCSS — the files in `viewer/readium-css-v2/` are demo assets only. Integrators continue to supply their own ReadiumCSS via the injectables system.
 
 Three demo viewers now ship:
 - `viewer/index_dita.html` — ReadiumCSS v1.1.0 baseline (reader shell updated for `dita-` class prefix)
@@ -59,7 +59,7 @@ interface InitialUserSettings {
 
 ### Appearance auto-wires image filters per theme
 
-v1 ReadiumCSS implicitly applies `mix-blend-mode: multiply` to all images in Sepia so they blend with the warm background. v2 does not; R2D2BC now drives `blendImages` from the preset to match.
+v1 ReadiumCSS implicitly applies `mix-blend-mode: multiply` to all images in Sepia so they blend with the warm background. v2 does not; DITA Toolkit now drives `blendImages` from the preset to match.
 
 | Theme | Auto-applied filters |
 |---|---|
@@ -183,7 +183,7 @@ CJK-vertical and RTL are separate workstreams (not in this release).
 
 ### iPadOS patch wiring (automatic)
 
-R2D2BC now detects iPadOS at runtime (legacy iPad UA + iPadOS 13+ Macintosh-reporting path via `navigator.maxTouchPoints > 1`) and sets `--readium-iPadOSPatch-on` on the iframe `<html>` element. The v2 `:root[style*="readium-iPadOSPatch-on"]` rules then disable Safari's `-webkit-text-size-adjust` and `-webkit-text-zoom` so they don't compound with v2's `zoom`-based font sizing. No integrator code changes.
+DITA Toolkit now detects iPadOS at runtime (legacy iPad UA + iPadOS 13+ Macintosh-reporting path via `navigator.maxTouchPoints > 1`) and sets `--readium-iPadOSPatch-on` on the iframe `<html>` element. The v2 `:root[style*="readium-iPadOSPatch-on"]` rules then disable Safari's `-webkit-text-size-adjust` and `-webkit-text-zoom` so they don't compound with v2's `zoom`-based font sizing. No integrator code changes.
 
 Files: `src/utils/BrowserUtilities.ts` (new `isIPadOS()` helper), `src/model/user-settings/UserSettings.ts` (toggle in `applyProperties()`).
 
@@ -203,9 +203,9 @@ The CJK-vertical + horizontal-RTL stylesheet bundling and per-language injection
 
 ## Breaking changes
 
-This workstream covers both R2D2BC changes and ReadiumCSS v2 support. There are two independent sets of breaking changes — read both.
+This workstream covers both DITA Toolkit changes and ReadiumCSS v2 support. There are two independent sets of breaking changes — read both.
 
-### 1. R2D2BC changes
+### 1. DITA Toolkit changes
 
 Apply to every integrator upgrading to v3, regardless of which ReadiumCSS version they inject.
 
@@ -247,21 +247,21 @@ See *Migration guide → 1. CSS class rename* below for find-and-replace instruc
 
 ### 2. ReadiumCSS v1 → v2 changes
 
-Apply **only** if the integrator changes their injected ReadiumCSS files from v1.1.x to v2.0.x. These are Readium's changes, not R2D2BC's — they apply to any reader library using ReadiumCSS.
+Apply **only** if the integrator changes their injected ReadiumCSS files from v1.1.x to v2.0.x. These are Readium's changes, not DITA Toolkit's — they apply to any reader library using ReadiumCSS.
 
-#### 2a. Handled automatically by R2D2BC (no action needed)
+#### 2a. Handled automatically by DITA Toolkit (no action needed)
 
-- **Default `lineLength` is `100%`** (v1 was `40rem`). Without `pageMargins`, text fills the viewport in v2. R2D2BC writes both `--USER__pageMargins` and `--USER__lineLength` using a translation formula, so the default `pageMargins: 2` gives comfortable line length on v2.
-- **Responsive columns removed from v2 CSS.** R2D2BC resolves `columnCount: "auto"` in JavaScript with a debounced resize listener — v1 auto-column behaviour is preserved and extended (1–4 columns based on viewport width).
-- **`--USER__appearance` flag does not exist in v2.** R2D2BC writes individual v2 colour vars (`--USER__backgroundColor`, `--USER__textColor`, `--USER__linkColor`, `--USER__visitedColor`, `--USER__selectionBackgroundColor`, `--USER__selectionTextColor`) with values matching v1's built-in palette.
-- **`advancedSettings` and `fontOverride` flags are removed.** v2 applies these settings directly. R2D2BC still writes the v1 flags (harmless on v2).
-- **Image blending in Sepia.** v1 implicitly set `mix-blend-mode: multiply` on images in Sepia so they blend with the warm background. v2 doesn't. R2D2BC auto-wires `blendImages: true` from the Sepia preset to match v1.
+- **Default `lineLength` is `100%`** (v1 was `40rem`). Without `pageMargins`, text fills the viewport in v2. DITA Toolkit writes both `--USER__pageMargins` and `--USER__lineLength` using a translation formula, so the default `pageMargins: 2` gives comfortable line length on v2.
+- **Responsive columns removed from v2 CSS.** DITA Toolkit resolves `columnCount: "auto"` in JavaScript with a debounced resize listener — v1 auto-column behaviour is preserved and extended (1–4 columns based on viewport width).
+- **`--USER__appearance` flag does not exist in v2.** DITA Toolkit writes individual v2 colour vars (`--USER__backgroundColor`, `--USER__textColor`, `--USER__linkColor`, `--USER__visitedColor`, `--USER__selectionBackgroundColor`, `--USER__selectionTextColor`) with values matching v1's built-in palette.
+- **`advancedSettings` and `fontOverride` flags are removed.** v2 applies these settings directly. DITA Toolkit still writes the v1 flags (harmless on v2).
+- **Image blending in Sepia.** v1 implicitly set `mix-blend-mode: multiply` on images in Sepia so they blend with the warm background. v2 doesn't. DITA Toolkit auto-wires `blendImages: true` from the Sepia preset to match v1.
 - **`fontFamily: "Original"` now removes the CSS var** instead of setting it, to avoid v2's `* { font-family: revert !important }` rule that wipes publisher fonts.
-- **iPadOS font-size patch flag.** v2's `zoom`-based font-sizing compounds with Safari's native `text-size-adjust` / `text-zoom` on iPad, producing double-scaled text. R2D2BC now detects iPadOS (legacy iPad UA plus iPadOS 13+ that reports as Macintosh with `maxTouchPoints > 1`) and sets the `readium-iPadOSPatch-on` flag on the iframe `<html>` element automatically. v2 ReadiumCSS rules gated on the flag then neutralise Safari's scalers.
+- **iPadOS font-size patch flag.** v2's `zoom`-based font-sizing compounds with Safari's native `text-size-adjust` / `text-zoom` on iPad, producing double-scaled text. DITA Toolkit now detects iPadOS (legacy iPad UA plus iPadOS 13+ that reports as Macintosh with `maxTouchPoints > 1`) and sets the `readium-iPadOSPatch-on` flag on the iframe `<html>` element automatically. v2 ReadiumCSS rules gated on the flag then neutralise Safari's scalers.
 
 #### 2b. Integrator-facing (action required)
 
-- **`typeScale` is removed in v2.** R2D2BC still writes `--USER__typeScale` for v1 compatibility; v2 ignores it. Remove the control from your UI if you've moved to v2-only. Integrators who exposed a type-scale slider should either drop it, map it to `fontSize`, or keep it for v1 users only.
+- **`typeScale` is removed in v2.** DITA Toolkit still writes `--USER__typeScale` for v1 compatibility; v2 ignores it. Remove the control from your UI if you've moved to v2-only. Integrators who exposed a type-scale slider should either drop it, map it to `fontSize`, or keep it for v1 users only.
 - **Fonts are no longer bundled.** AccessibleDfA, iA Writer Duospace, and Android FXL fonts are not in the v2 package. Host the font files yourself and register via `@font-face` in an injectable CSS:
 
   ```css
@@ -272,7 +272,7 @@ Apply **only** if the integrator changes their injected ReadiumCSS files from v1
   ```
 
 - **Publisher heading colours get overridden by themes.** v2's `:root[style*="--USER__textColor"] *:not(a) { color: inherit !important }` wipes publisher-declared colours on all non-anchor elements. v1 excluded h1-h6 and pre. Accept this as v2 design, or add a custom override in your own CSS layer after ReadiumCSS.
-- **Publisher fonts are fully overridden when `fontFamily` is set to a non-default.** v2's `:root[style*="--USER__fontFamily"] * { font-family: revert !important }` is more aggressive than v1. R2D2BC handles the "Publisher" default by removing the var; custom fonts override everything. Matches v2 design intent.
+- **Publisher fonts are fully overridden when `fontFamily` is set to a non-default.** v2's `:root[style*="--USER__fontFamily"] * { font-family: revert !important }` is more aggressive than v1. DITA Toolkit handles the "Publisher" default by removing the var; custom fonts override everything. Matches v2 design intent.
 
 #### 2c. Third-party CSS risk (action required if affected)
 
@@ -479,15 +479,15 @@ npm run build
 npm run examples
 ```
 
-Open [http://localhost:4444/viewer/index.html](http://localhost:4444/viewer/index.html) — the library lists your local EPUBs and PDFs. Each reflowable EPUB card exposes three viewer variants; fixed-layout EPUBs (FXL) show just the baseline DITA Reader.
+Open [http://localhost:4444/viewer/index.html](http://localhost:4444/viewer/index.html) — the library lists your local EPUBs and PDFs. Each reflowable EPUB card exposes three viewer variants; fixed-layout EPUBs (FXL) show just the baseline DITA Toolkit.
 
 ### What each demo tests
 
 | Demo | CSS injected | Purpose |
 |---|---|---|
-| DITA Reader (ReadiumCSS v1) | Local v1.1.0 files | Regression test: rendering should match v2.5 baseline; only class attribute renames (e.g. `.dita-active`) changed |
-| DITA Reader (ReadiumCSS v2 local) | Local v2.0.1 files + our dita-patch.css | Primary v2 test, matches v1 visually |
-| DITA Reader (ReadiumCSS v2 CDN) | unpkg @readium/css@2.0.1 + our dita-patch.css | Integrator pattern test — proves the patch layer works over pristine CDN files |
+| DITA Toolkit (ReadiumCSS v1) | Local v1.1.0 files | Regression test: rendering should match v2.5 baseline; only class attribute renames (e.g. `.dita-active`) changed |
+| DITA Toolkit (ReadiumCSS v2 local) | Local v2.0.1 files + our dita-patch.css | Primary v2 test, matches v1 visually |
+| DITA Toolkit (ReadiumCSS v2 CDN) | unpkg @readium/css@2.0.1 + our dita-patch.css | Integrator pattern test — proves the patch layer works over pristine CDN files |
 
 ### Per-demo checklist
 

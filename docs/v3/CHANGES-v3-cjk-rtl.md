@@ -1,12 +1,12 @@
 # CHANGES — v3 Workstream 3.5.3: CJK Vertical & RTL Support
 
-Published as: *pending*
+Published as: `3.0.0-alpha.21`
 Branch: `feature/v3-cjk-rtl` (based on `feature/v3-readiumcss-v2`)
 Closes: [#1013](https://github.com/d-i-t-a/R2D2BC/issues/1013)
 
 ## At a glance
 
-R2D2BC now first-class-supports three reading flows beyond plain LTR:
+DITA Toolkit now first-class-supports three reading flows beyond plain LTR:
 
 - **RTL paginated** (Arabic, Hebrew, RTL CJK) — `scrollLeft` is negated, multi-column spacer math is direction-aware, and the spacer count for partial-last-pages is correct in 2-col, 3-col, and N-col layouts.
 - **CJK vertical** (Japanese tategaki, vertical Chinese) — a new `VerticalRenderer` runs vertical-rl content with a horizontal scroll axis. Scroll-only by design (no in-resource pagination).

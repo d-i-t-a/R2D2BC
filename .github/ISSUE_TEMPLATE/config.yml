@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/d-i-t-a/R2D2BC/security/advisories/new
+    about: Please report vulnerabilities privately, not in a public issue. See SECURITY.md for details.
+  - name: Question or discussion
+    url: https://github.com/d-i-t-a/R2D2BC/discussions
+    about: For usage questions, design discussions, or general feedback, please use GitHub Discussions.

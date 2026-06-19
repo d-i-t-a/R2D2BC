@@ -1,12 +1,12 @@
 # CHANGES — v3 Workstream 3.9: Audiobook Support
 
-Published as: 3.0.0-alpha.22
+Published as: `3.0.0-alpha.22`
 Branch: `feature/v3-audiobook` (based on `v3`, which has 3.5.3 + alpha.21 at tip `80b5f01`)
 Closes: none filed (aligns with [Readium Audiobook profile](https://readium.org/webpub-manifest/profiles/audiobook.html))
 
 ## At a glance
 
-R2D2BC gains first-class support for Readium Audiobook Profile publications. `D2Reader.load()` detects `Profile.AUDIOBOOK` in `publication.metadata.conformsTo` and dynamic-imports an `AudiobookNavigator` parallel to the existing `EpubNavigator` / `PDFNavigator` dispatch.
+DITA Toolkit gains first-class support for Readium Audiobook Profile publications. `D2Reader.load()` detects `Profile.AUDIOBOOK` in `publication.metadata.conformsTo` and dynamic-imports an `AudiobookNavigator` parallel to the existing `EpubNavigator` / `PDFNavigator` dispatch.
 
 The audiobook stack is pluggable end-to-end. One persistent `AudioEngine` per navigator lifetime; track transitions go through `engine.changeSrc(source)` on the engine's `<audio>` element — RemotePlayback session, MediaSession bindings, and event listener wiring survive every track change. The `AudioSource` discriminated union (`url` / `drm` / `hls` / `vendor`) carries source-specific configuration so integrators can substitute the default `WebAudioEngine` with a vendor SDK wrapper without widening the navigator contract.
 
@@ -89,7 +89,7 @@ Emits `playback.sleeptimer.started`, `tick`, `expired`, `cancelled`. Navigator's
 
 ### MediaSessionController
 
-`navigator.mediaSession.metadata` + action handlers (`play`, `pause`, `seekto`, `previoustrack`, `nexttrack`, `seekbackward`, `seekforward`). Updated on every `TrackChanged`. Surfaces in CarPlay / Android Auto when integrator embeds R2D2BC in a webview shell. Gated by `audiobook.userSettings.enableMediaSession` (toggling the setting installs / tears down the controller live).
+`navigator.mediaSession.metadata` + action handlers (`play`, `pause`, `seekto`, `previoustrack`, `nexttrack`, `seekbackward`, `seekforward`). Updated on every `TrackChanged`. Surfaces in CarPlay / Android Auto when integrator embeds DITA Toolkit in a webview shell. Gated by `audiobook.userSettings.enableMediaSession` (toggling the setting installs / tears down the controller live).
 
 ### Reading-position auto-restore
 

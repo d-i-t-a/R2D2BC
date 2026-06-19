@@ -11,7 +11,7 @@
 // We vendor this file (rather than depend on @readium/navigator) because
 // AudioWorklet code must be loaded by URL into an AudioContext — depending
 // on the upstream package would force consumers to ship their bundler
-// configuration around it. By owning the file, R2D2BC integrators get a
+// configuration around it. By owning the file, DITA Toolkit integrators get a
 // stable URL via `import.meta.url` from the matching `.ts` shim.
 //
 // Algorithm (Readium's design, unchanged):

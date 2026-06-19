@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>R2D2BC Library</title>
+  <title>DITA Toolkit Library</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -77,7 +77,7 @@
 </head>
 <body>
   <header>
-    <h1>R2D2BC</h1>
+    <h1>DITA Toolkit</h1>
     <span class="subtitle">Local Publication Library</span>
   </header>
 
@@ -300,14 +300,14 @@
         const icon = pub.type === 'pdf' ? '📄' : pub.type === 'audiobook' ? '🎧' : '📖';
         const badgeClass = pub.type === 'pdf' ? 'badge-pdf' : pub.type === 'audiobook' ? 'badge-audiobook' : 'badge-epub';
         // FXL publications don't use ReadiumCSS, so hide the v2 variants and
-        // collapse to the single default DITA Reader link. Renames the v1 link
-        // back to plain "DITA Reader" for FXL tiles.
+        // collapse to the single default DITA Toolkit link. Renames the v1 link
+        // back to plain "DITA Toolkit" for FXL tiles.
         let viewers = pub.viewers || [];
         if (pub.fxl) {
           viewers = viewers
             .filter(v => !v.title.includes('ReadiumCSS v2'))
-            .map(v => v.title === 'DITA Reader (ReadiumCSS v1)'
-              ? { ...v, title: 'DITA Reader' }
+            .map(v => v.title === 'DITA Toolkit (ReadiumCSS v1)'
+              ? { ...v, title: 'DITA Toolkit' }
               : v);
         }
         const coverStyle = pub.coverUrl

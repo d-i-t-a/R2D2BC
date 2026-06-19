@@ -68,7 +68,19 @@ function parseImageFilter(
 export interface UserSettingsConfig {
   /** Store to save the user's selections in. */
   store: Store;
-  initialUserSettings?: Partial<InitialUserSettings>;
+  /**
+   * Integrator-supplied initial settings.
+   *
+   *   - `{...}`     → partial overrides; supplied fields are written
+   *                   to the local store, omitted fields fall back to
+   *                   whatever's already in the store.
+   *   - `null`      → wipe the user-settings local store, then fall
+   *                   back to library defaults. Use this for
+   *                   multi-user shared-browser scenarios so a prior
+   *                   user's theme / font choices don't bleed through.
+   *   - `undefined` → don't touch the local store at all.
+   */
+  initialUserSettings?: Partial<InitialUserSettings> | null;
   headerMenu?: HTMLElement | null;
   api?: Partial<NavigatorAPI>;
   injectables?: Array<Injectable>;
@@ -330,6 +342,16 @@ export class UserSettings implements IUserSettings {
       config.layout,
       config.scriptMode
     );
+
+    // `initialUserSettings === null` is the integrator's explicit
+    // signal that there are no server-side preferences for this user
+    // and the local cache must be wiped. Done BEFORE initialise() so
+    // the library starts from defaults instead of inheriting a prior
+    // user's theme / font choices in LocalStorage on a shared browser.
+    if (config.initialUserSettings === null) {
+      await config.store.remove(settings.USERSETTINGS);
+    }
+
     await settings.initialise();
 
     if (config.initialUserSettings) {

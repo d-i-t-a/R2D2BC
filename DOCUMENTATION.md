@@ -1,4 +1,4 @@
-# R2D2BC Documentation
+# DITA Toolkit Documentation
 
 ## Table of Contents
 
@@ -25,26 +25,31 @@
 
 ## Overview
 
-**R2D2BC** (`@d-i-t-a/reader`) is a modular Readium v2 EPUB reader for the web. It is built as a configurable toolkit rather than a full-featured application: your app handles the UI and design, R2D2BC handles EPUB rendering, navigation, accessibility, and all reading-system concerns.
+**DITA Toolkit** (`@d-i-t-a/reader`, formerly **R2D2BC**) is a modular Readium v2 EPUB / PDF / Audiobook reader for the web. It is built as a configurable toolkit rather than a full-featured application: your app handles the UI and design, DITA Toolkit handles rendering, navigation, accessibility, and all reading-system concerns.
 
-**The name:** R2 = Readium v2, D2 = DITA (AM Consulting LLC), B = Bokbasen, C = CAST.
+**The original name:** R2 = Readium v2, D2 = DITA (AM Consulting LLC), B = Bokbasen, C = CAST.
 
 ### What it supports
 
 - Reflowable EPUB (paginated and scrolled)
-- Fixed-layout EPUB (single and spread)
+- Fixed-layout EPUB (single and spread, with zoom and pan)
 - PDF documents (via pdf.js)
-- Readium CSS integration
+- Audiobooks (Readium Audiobook Profile)
+- RTL paginated content (Arabic, Hebrew, RTL CJK)
+- CJK vertical writing (Japanese tategaki, vertical Chinese) and Mongolian vertical
+- ReadiumCSS v1 and v2 cascade variants simultaneously
+- Direct EPUB / Blob / File opening — no server required
 - Full accessibility (TTS, media overlays, line focus)
 - Annotations, bookmarks, highlights
 - Full-text search
 - Content protection
 - Reading position persistence
-- Custom CSS/JS injection into content documents
+- Custom CSS / JS injection into content documents
+- Pluggable fetcher chain + custom resource transforms
 
 ### Who uses it
 
-R2D2BC powers readers at NYPL, Bokbasen (Allbok.no), CAST (Clusive), Bibliotheca CloudLibrary, Bluefire, Edelweiss+, UNODC Fieldguides, Ekitabu, and others.
+DITA Toolkit powers readers at NYPL, Bokbasen (Allbok.no), CAST (Clusive), Bibliotheca CloudLibrary, Bluefire, Edelweiss+, UNODC Fieldguides, Ekitabu, and others.
 
 ---
 
@@ -63,9 +68,9 @@ function ReaderApp() {
     D2Reader.load({
       url: new URL("https://example.com/publication/manifest.json"),
       injectables: [
-        { type: "style", url: "/readium-css/ReadiumCSS-before.css", r2before: true },
-        { type: "style", url: "/readium-css/ReadiumCSS-default.css", r2default: true },
-        { type: "style", url: "/readium-css/ReadiumCSS-after.css", r2after: true },
+        { type: "style", url: "/node_modules/@readium/css/css/dist/ReadiumCSS-before.css", r2before: true },
+        { type: "style", url: "/node_modules/@readium/css/css/dist/ReadiumCSS-default.css", r2default: true },
+        { type: "style", url: "/node_modules/@readium/css/css/dist/ReadiumCSS-after.css", r2after: true },
       ],
     }).then(setReader);
 
@@ -106,9 +111,9 @@ function ReaderApp() {
   const reader = await load({
     url: new URL("https://example.com/publication/manifest.json"),
     injectables: [
-      { type: "style", url: "/readium-css/ReadiumCSS-before.css", r2before: true },
-      { type: "style", url: "/readium-css/ReadiumCSS-default.css", r2default: true },
-      { type: "style", url: "/readium-css/ReadiumCSS-after.css", r2after: true },
+      { type: "style", url: "/node_modules/@readium/css/css/dist/ReadiumCSS-before.css", r2before: true },
+      { type: "style", url: "/node_modules/@readium/css/css/dist/ReadiumCSS-default.css", r2default: true },
+      { type: "style", url: "/node_modules/@readium/css/css/dist/ReadiumCSS-after.css", r2after: true },
     ],
   });
 
@@ -164,11 +169,22 @@ import { load } from "@d-i-t-a/reader";
 
 ### Readium CSS
 
-You must provide Readium CSS files and pass them as injectables. Download them from the [Readium CSS repository](https://github.com/readium/readium-css) or use the pre-built copies in `dist/`. At minimum, provide:
+You must provide ReadiumCSS files and pass them as injectables. The library declares [`@readium/css`](https://www.npmjs.com/package/@readium/css) as a runtime dependency, so the files arrive automatically with `npm install`:
 
-- `ReadiumCSS-before.css` (injected before content styles)
-- `ReadiumCSS-default.css` (base styles)
-- `ReadiumCSS-after.css` (injected after content styles)
+```bash
+npm install @d-i-t-a/reader
+# @readium/css ships transitively under node_modules/@readium/css/css/dist/
+```
+
+At minimum provide:
+
+- `ReadiumCSS-before.css` (`r2before: true`)
+- `ReadiumCSS-default.css` (`r2default: true`)
+- `ReadiumCSS-after.css` (`r2after: true`)
+
+For production, you can serve from `node_modules/`, copy the files into your asset pipeline, or reference upstream via CDN (`https://unpkg.com/@readium/css@<version>/css/dist/...`). For RTL and CJK content, see the variant subdirectories: `rtl/`, `cjk-horizontal/`, `cjk-vertical/`. ReadiumCSS v1.1.x continues to work — both v1 and v2 cascades are supported simultaneously.
+
+The library also bundles a thin DITA patch overlay at `viewer/readium-css-v2/ReadiumCSS-dita-patch.css` that fixes image stretching and line-height compensation for CJK / Indic scripts. Load it last in your injectables list.
 
 ### Running the examples
 
@@ -192,7 +208,7 @@ npm run example:pdf      # Standalone PDF viewer (port 3001)
 
 ### Publication manifest
 
-R2D2BC reads publications via a [Readium Web Publication Manifest](https://readium.org/webpub-manifest/) (JSON). The `url` in your config must point to this manifest. The manifest describes the reading order (spine), resources, metadata, and table of contents.
+DITA Toolkit reads publications via a [Readium Web Publication Manifest](https://readium.org/webpub-manifest/) (JSON). The `url` in your config must point to this manifest. The manifest describes the reading order (spine), resources, metadata, and table of contents.
 
 ### Locator
 
@@ -225,7 +241,7 @@ Every optional feature is gated by a boolean in `ReaderRights`. If a right is `f
 
 ### Modules
 
-R2D2BC is built around 14 optional modules, each self-contained. Modules are enabled via `ReaderRights` flags, configured via their own config section in `ReaderConfig`, and communicate with your app via callback APIs.
+DITA Toolkit is built around 14 optional modules, each self-contained. Modules are enabled via `ReaderRights` flags, configured via their own config section in `ReaderConfig`, and communicate with your app via callback APIs.
 
 ### Injectables
 
@@ -357,47 +373,76 @@ The most important callback is `updateCurrentLocation` -- implement this to pers
 
 ### Injectable
 
-Describes a CSS or JS file to inject into content iframes:
+Describes a CSS or JS file (or inline string) to inject into content iframes. `Injectable` is a discriminated union on the `type` field:
 
 ```typescript
-interface Injectable {
-  type: string;          // "style" or "script"
-  url?: string;          // URL to the file
-  r2before?: boolean;    // Inject before content styles (Readium CSS)
-  r2default?: boolean;   // Default injection point
-  r2after?: boolean;     // Inject after content styles (Readium CSS)
-  fontFamily?: string;   // Font family name (for font injectables)
-  systemFont?: boolean;  // Is a system font
-  appearance?: string;   // Limit to specific appearance mode
-  async?: boolean;       // Load script async
-}
+type Injectable =
+  | { type: "style";        url: string;     /* ...injection-target flags... */ }
+  | { type: "script";       url: string;     /* ...optional async... */ }
+  | { type: "style-inline"; css: string;     /* ...injection-target flags... */ }
+  | { type: "script-inline"; js:  string;    /* ...optional async... */ };
+
+// Shared optional fields across variants:
+//   r2before?:   boolean — inject before content styles (Readium CSS ordering)
+//   r2default?:  boolean — default injection point
+//   r2after?:    boolean — inject after content styles
+//   fontFamily?: string  — font family name (font injectables)
+//   systemFont?: boolean — system font marker
+//   appearance?: string  — limit to a specific appearance mode (e.g. "night")
+//   async?:      boolean — load script async
+//   when?:       (ctx: InjectableContext) => boolean — predicate gate
 ```
+
+`InjectableContext` carries the publication and its derived `scriptMode` so a `when` predicate can choose between LTR / RTL / cjk-horizontal / cjk-vertical / mongolian-vertical variants without re-walking metadata. See `viewer/index_dita_v2.html` for a worked example.
 
 ### IFrameAttributes
 
-Controls the reader's layout dimensions:
+Controls the reader's layout dimensions and chrome-aware insets:
 
 ```typescript
 interface IFrameAttributes {
-  margin: number;               // Left/right margin in pixels
-  navHeight?: number;           // Navigation bar height in pixels
-  iframePaddingTop?: number;    // Top padding in pixels
-  bottomInfoHeight?: number;    // Bottom info bar height in pixels
-  sideNavPosition?: "left" | "right";
+  /** Left/right margin in pixels (was required; now optional). */
+  margin?: number;
+
+  /** Iframe padding (number applies to all sides; per-side object overrides). */
+  iframe?: {
+    padding?: number | { top?: number; bottom?: number; left?: number; right?: number };
+  };
+
+  /**
+   * Chrome-aware sizing — each callback returns the chrome element occupying
+   * that edge so the iframe reserves space for it. Floors at 0; collapses to
+   * chrome dimension when the chrome is anchored at the parent edge.
+   */
+  safeArea?: {
+    top?:    () => Element | null;
+    bottom?: () => Element | null;
+    left?:   () => Element | null;
+    right?:  () => Element | null;
+  };
+
+  /** Where the scroll happens: host element wraps iframe (default) or iframe scrolls internally. */
+  scrollContainer?: "host" | "iframe";
+
+  /** FXL-specific. */
   fixedLayoutMargin?: number;   // FXL margin in pixels (default: 100)
   fixedLayoutShadow?: boolean;  // FXL drop shadow (default: true)
 }
 ```
 
+**Removed from v3** (compile error if passed): `navHeight`, `bottomInfoHeight`, `sideNavPosition` — replaced by `safeArea` callbacks and integrator-side CSS.
+
+Iframe height formula in v3: `parent − safeArea.top − safeArea.bottom − iframe.padding − margin` (was `viewport − 40 − margin`).
+
 ### InitialAnnotations
 
-Pre-load annotations and bookmarks at startup:
+Pre-load user-added data at startup. Each navigator's modules pick the field they care about and call `annotator.initBookmarks` / `initAnnotations` / `initComments` at construction:
 
 ```typescript
 interface InitialAnnotations {
-  bookmarks?: Bookmark[];
-  highlights?: Annotation[];
-  layers?: LayerConfig[];
+  bookmarks?: Bookmark[];   // EPUB + PDF + Audiobook
+  highlights?: Annotation[]; // EPUB only
+  comments?: Comment[];     // Audiobook only
 }
 ```
 
@@ -794,9 +839,49 @@ Tracks content consumption metrics (time spent, pages read, etc.).
 | `bodyHyphens` | `boolean` | `false` | Enable automatic hyphenation (`true` = auto, `false` = none) |
 | `paraSpacing` | `number` | `0` | Paragraph spacing in rem (0–3, step 0.5) |
 | `paraIndent` | `number` | `1` | Paragraph indent in em (0–3, step 0.5) |
-| `typeScale` | `number` | `1.2` | Type scale factor (1.0–1.5, step 0.1) |
+| `typeScale` | `number` | `1.2` | Type scale factor (1.0–1.5, step 0.1). **v1 only**; v2 cascade ignores this. |
 | `backgroundColor` | `string` | `undefined` | Custom background color (hex, e.g. `"#fefefe"`) |
 | `textColor` | `string` | `undefined` | Custom text color (hex, e.g. `"#333333"`) |
+
+#### v2-only settings (silently no-op on v1 cascade)
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `lineLength` | `number` | `40` | Line length in `rem` (replaces v1's direct page-margins var). |
+| `fontWeight` | `number` | `400` | Variable-font weight axis. |
+| `fontWidth` | `number` | `100` | Variable-font width axis (percentage). |
+| `fontOpticalSizing` | `boolean` | `true` | Toggle CSS `font-optical-sizing`. |
+| `ligatures` | `string` | `"normal"` | `font-variant-ligatures` value. |
+| `linkColor` | `string` | `undefined` | Custom link color (hex). |
+| `visitedColor` | `string` | `undefined` | Custom visited-link color (hex). |
+| `selectionBackgroundColor` | `string` | `undefined` | Custom selection background color (hex). |
+| `selectionTextColor` | `string` | `undefined` | Custom selection text color (hex). |
+| `blendImages` | `boolean` | `false` | Apply `mix-blend-mode: multiply` to images (auto-on in Sepia preset). |
+| `darkenImages` | `boolean` | `false` | Reduce image brightness (useful in Night preset). |
+| `invertImages` | `boolean` | `false` | Invert image colors (useful in Night preset). |
+| `invertGaiji` | `boolean` | `false` | Invert gaiji glyph images specifically (Japanese rare-character workaround). |
+| `scrollPaddingTop` | `number` | `0` | `scroll-padding-top` in pixels on the scroll container. |
+| `scrollPaddingBottom` | `number` | `0` | `scroll-padding-bottom` in pixels. |
+| `scrollPaddingLeft` | `number` | `0` | `scroll-padding-left` in pixels. |
+| `scrollPaddingRight` | `number` | `0` | `scroll-padding-right` in pixels. |
+
+UserSettings uses a dual-applicator pattern — it writes both v1 and v2 CSS custom properties on the iframe root so the same TypeScript config drives either cascade.
+
+#### Audiobook settings (`AudiobookSettings`)
+
+Persisted via the `AudiobookNavigator`'s settings module:
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `volume` | `number` | `1.0` | 0.0 to 1.0. |
+| `playbackRate` | `number` | `1.0` | 0.25 to 4.0. |
+| `preservePitch` | `boolean` | `true` | Maintain pitch when playback rate changes. |
+| `skipForwardInterval` | `number` | `30` | Seconds for `skipForward()`. |
+| `skipBackwardInterval` | `number` | `30` | Seconds for `skipBackward()`. |
+| `pollInterval` | `number` | `250` | Position-update poll interval in ms. |
+| `autoPlay` | `boolean` | `false` | Start playing on track load. |
+| `enableMediaSession` | `boolean` | `true` | Install `navigator.mediaSession` controller. |
+| `timelineMode` | `string` | `"chapter"` | `"chapter"` / `"book"` / `"both"`. |
 
 ### Incrementable settings
 
@@ -841,18 +926,87 @@ await reader.applyUserSettings({
 
 ### Reader events
 
-Listen via `reader.addEventListener(event, handler)`:
+Listen via `reader.addEventListener(event, handler)`. v3 introduced typed `ReaderEvent` constants and a `ReaderEventMap` for type-safe payloads — old string-keyed listeners still work, the constants are opt-in:
+
+```typescript
+import { ReaderEvent } from "@d-i-t-a/reader";
+reader.addEventListener(ReaderEvent.RESOURCE_READY, payload => { /* payload typed via ReaderEventMap */ });
+```
+
+#### Resource & lifecycle events
 
 | Event | Payload | Description |
 |-------|---------|-------------|
-| `"resource.ready"` | none | Content iframe finished loading |
-| `"resource.start"` | none | User is at the beginning of a resource |
-| `"resource.end"` | none | User is at the end of a resource |
-| `"resource.fits"` | none | Entire resource fits on screen |
-| `"resource.error"` | `Error` | Resource failed to load |
-| `"click"` | `MouseEvent \| TouchEvent` | Click/tap in content area |
-| `"keydown"` | `KeyboardEvent` | Key press in content area |
-| `"direction"` | `string` | Text direction changed (`"ltr"`, `"rtl"`, `"auto"`) |
+| `"resource.ready"` | `{ href }` | Content iframe finished loading. |
+| `"resource.start"` | `{ href }` | User is at the beginning of a resource. |
+| `"resource.end"` | `{ href }` | User is at the end of a resource. |
+| `"resource.fits"` | `{ href }` | Entire resource fits on screen. |
+| `"resource.error"` | `Error` | Resource failed to load. |
+| `"location.changed"` | `ReadingPosition` | Reading position changed. |
+| `"error"` | `Error` | Generic error event. |
+| `"click"` | `MouseEvent \| TouchEvent` | Click / tap in content area. |
+| `"keydown"` | `KeyboardEvent` | Key press in content area. |
+| `"direction"` | `string` | Text direction changed (`"ltr"` / `"rtl"` / `"auto"`). |
+| `"toolbox.opened"` | `{ text }` | Selection toolbox opened. |
+| `"text.selected"` | `{ text, selection }` | Selection finalized on mouse-up. |
+
+#### Bookmarks / annotations / citations
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `"bookmark.created"` | `Bookmark` | Bookmark saved. |
+| `"bookmark.deleted"` | `Bookmark` | Bookmark removed. |
+| `"annotation.created"` | `Annotation` | Annotation created. |
+| `"annotation.updated"` | `Annotation` | Annotation updated. |
+| `"annotation.deleted"` | `Annotation` | Annotation removed. |
+| `"annotation.selected"` | `Annotation` | Annotation activated (user click / programmatic). |
+| `"annotation.comment.added"` | `Annotation` | Comment added to annotation. |
+| `"citation.created"` | `string` | Citation generated. |
+| `"citation.failed"` | `string` | Citation generation failed (error message). |
+
+#### Read-aloud (TTS) and Read-along (Media Overlays)
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `"readaloud.started"` | `Locator` | TTS started. |
+| `"readaloud.stopped"` | `Locator` | TTS stopped. |
+| `"readaloud.paused"` | `Locator` | TTS paused. |
+| `"readaloud.resumed"` | `Locator` | TTS resumed. |
+| `"readalong.started"` | `{ href }` | Media Overlay started. |
+| `"readalong.stopped"` | `{ href }` | Media Overlay stopped. |
+| `"readalong.paused"` | `{ href }` | Media Overlay paused. |
+| `"readalong.resumed"` | `{ href }` | Media Overlay resumed. |
+| `"readalong.finished"` | `{ href }` | Media Overlay reached natural end. |
+
+#### Audiobook playback (only on `AudiobookNavigator`)
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `"playback.started"` | `{ trackIndex }` | Playback started. |
+| `"playback.paused"` | `{ trackIndex }` | Playback paused. |
+| `"playback.ended"` | `{ trackIndex }` | Track ended (natural). |
+| `"playback.stalled"` | `{ trackIndex }` | Buffer underrun. |
+| `"playback.error"` | `AudioEngineError` | Playback error. |
+| `"playback.waiting"` | `{ reason }` | Spinner state — cross-chapter load, cold-start, or rebuffer. |
+| `"playback.timeupdate"` | `{ currentTime, duration }` | Periodic time update. |
+| `"playback.trackchanged"` | `{ trackIndex, source }` | Track changed via `goTrack`. |
+| `"playback.durationchanged"` | `{ duration }` | Track duration resolved. |
+| `"playback.ratechanged"` | `{ playbackRate }` | Playback rate changed. |
+| `"sleeptimer.started"` | `{ mode, minutes? }` | Sleep timer armed. |
+| `"sleeptimer.tick"` | `{ secondsRemaining }` | Sleep-timer countdown tick. |
+| `"sleeptimer.expired"` | `void` | Sleep timer fired. |
+| `"sleeptimer.cancelled"` | `void` | Sleep timer cancelled. |
+| `"comments.created"` | `Comment` | Audiobook comment created. |
+| `"comments.updated"` | `Comment` | Audiobook comment edited. |
+| `"comments.deleted"` | `Comment` | Audiobook comment deleted. |
+| `"comments.active"` | `Comment \| null` | Active comment under the playhead changed. |
+
+#### Consumption tracking
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `"consumption.action"` | `{ locator, action }` | User interaction recorded. |
+| `"consumption.idle"` | `{ seconds }` | Idle interval ended. |
 
 ### NavigatorAPI callbacks
 
@@ -910,7 +1064,7 @@ const reader = await D2Reader.load({
 
 ### Store interface
 
-R2D2BC uses a simple key-value store internally:
+DITA Toolkit uses a simple key-value store internally:
 
 ```typescript
 interface Store {
@@ -934,7 +1088,7 @@ Falls back automatically: `localStorage` -> `sessionStorage` -> `MemoryStore`.
 
 ### Annotator interface
 
-For persisting bookmarks, annotations, and reading positions, R2D2BC uses an `Annotator`:
+For persisting bookmarks, annotations, and reading positions, DITA Toolkit uses an `Annotator`:
 
 ```typescript
 interface Annotator {
@@ -977,8 +1131,9 @@ const reader = await D2Reader.load({
   injectables: [...],
   lastReadingPosition: savedPosition,
   initialAnnotations: {
-    bookmarks: savedAnnotations.bookmarks,
-    highlights: savedAnnotations.highlights,
+    bookmarks: savedAnnotations.bookmarks,       // EPUB + PDF + Audiobook
+    highlights: savedAnnotations.highlights,     // EPUB only
+    comments: savedAnnotations.comments,         // Audiobook only
   },
   api: {
     updateCurrentLocation: async (locator) => {
@@ -1209,7 +1364,7 @@ await reader.applyUserSettings({ appearance: 2 }); // Night mode
 
 ## PDF Support
 
-R2D2BC supports PDF documents via pdf.js. When the publication manifest indicates a PDF, the `PDFNavigator` is used instead of `IFrameNavigator`.
+DITA Toolkit supports PDF documents via pdf.js. When the publication manifest indicates a PDF, `D2Reader.load()` dispatches to `PDFNavigator` instead of the default `EpubNavigator`.
 
 ### Setup
 
@@ -1237,6 +1392,128 @@ reader.deactivateHand();  // Disable grab-to-pan
 ### PDF annotations
 
 PDF annotations (highlights) are supported via pdf.js's built-in annotation editor. The reader handles serialization and persistence of PDF annotations through the same `Annotator` interface used for EPUB annotations.
+
+---
+
+## Audiobook Support
+
+DITA Toolkit supports Readium Audiobook Profile publications. `D2Reader.load()` dispatches to `AudiobookNavigator` when `manifest.conformsTo` includes `Profile.AUDIOBOOK`.
+
+### Setup
+
+```typescript
+D2Reader.load({
+  url: new URL("https://example.com/audiobook/manifest.json"),
+  audiobook: {
+    chapterListContainer: document.getElementById("chapter-list")!,
+    preservePitchWorkletUrl: "/PreservePitchProcessor.js",  // optional — pitch worklet for browsers lacking native preservesPitch
+    userSettings: { /* persisted preferences */ },
+    timeline:  { /* scrubber options */ },
+    bookmarks: { /* bookmark UI options */ },
+    comments:  { /* comments UI options */ },
+    prefetch:  { enabled: false },                          // chapter prefetcher (disabled by default)
+  },
+});
+```
+
+### Public surface
+
+```typescript
+// Playback
+await reader.play();
+reader.pause();
+await reader.seek(seconds);
+await reader.jump(deltaSeconds);
+await reader.skipForward();
+await reader.skipBackward();
+await reader.nextChapter();
+await reader.previousChapter();
+await reader.setPlaybackRate(rate);
+await reader.setVolume(0.0 to 1.0);
+await reader.setMuted(boolean);
+
+// Read-only state getters
+reader.currentTime;     // seconds within current track
+reader.duration;        // total seconds for current track
+reader.isPlaying;
+reader.isPaused;
+reader.isWaiting;       // covers cross-chapter load / cold-start / rebuffer
+reader.isTrackStart;
+reader.isTrackEnd;
+reader.canGoForward;
+reader.canGoBackward;
+reader.currentLocator();
+```
+
+### Pluggable audio engine
+
+The default `WebAudioEngine` handles the common case: an `<audio>` fast path, plus a lazy Web Audio worklet (`PreservePitchProcessor`) for pitch preservation on browsers lacking native `HTMLMediaElement.preservesPitch`.
+
+For DRM, HLS, or vendor SDK sources, implement `AudioEngine` + `EngineFactory` and pass it on the audiobook config:
+
+```typescript
+audiobook: {
+  engineFactory: {
+    create: ({ audioElement, source }) => new MyDrmEngine({ audioElement, source }),
+    destroy: (engine) => engine.dispose(),
+  },
+  resolveSource: (link) => ({
+    kind: "drm",                           // url | drm | hls | vendor
+    contentKey: link.properties?.licenseKey,
+    url: link.href,
+  }),
+}
+```
+
+### Sleep timer
+
+Two modes — minutes (wall-clock based) and end-of-chapter:
+
+```typescript
+reader.startSleepTimer({ mode: "minutes", minutes: 30 });
+reader.startSleepTimer({ mode: "endOfChapter" });
+reader.cancelSleepTimer();
+
+reader.addEventListener("sleeptimer.tick", ({ secondsRemaining }) => { /* UI */ });
+reader.addEventListener("sleeptimer.expired", () => { /* fade-out, etc. */ });
+```
+
+### MediaSession integration
+
+When `audiobook.userSettings.enableMediaSession` is on (default), the navigator installs `navigator.mediaSession` metadata + action handlers. Surfaces in:
+
+- Lock-screen controls (iOS, Android, Windows)
+- Media keys (volume, play / pause, prev / next track)
+- CarPlay / Android Auto (when the integrator embeds the reader in a webview shell)
+
+### Audiobook modules
+
+| Module | Purpose |
+|---|---|
+| `AudiobookBookmarkModule` | Timestamped bookmarks, `findBookmarkAt` with ±1s tolerance, optional chapter-grouped list. |
+| `AudiobookCommentsModule` | Point-anchored time-stamped comments with `onEdit` integrator hook. |
+| `AudiobookTimelineModule` | Chapter-scoped + whole-book scrubber UI + timeline math API. Calls `prefetchResource` on drag. |
+
+### Locator extension for audiobook positions
+
+`Locator.locations` has been extended with `time` (seconds) and `fragments` (Media Fragments URI tokens):
+
+```typescript
+const locator: Locator = {
+  href: "audio/chapter-03.mp3",
+  type: "audio/mpeg",
+  locations: {
+    time: 1234.56,        // seconds within the track
+    fragments: ["t=1234"], // Media Fragments URI
+  },
+};
+```
+
+EPUB and PDF Locators round-trip unchanged.
+
+### ChapterPrefetcher
+
+Optional head-of-chapter HTTP `Range` prefetch (`Range: bytes=0-N`). **Disabled by default**; head-only caching alone does not satisfy the audio element's `HAVE_FUTURE_DATA` threshold, so it does not by itself shorten time-to-audible. Enable when you have a known prefetch payoff (e.g. integrating with a CDN that benefits from priming).
 
 ---
 
@@ -1378,10 +1655,11 @@ D2Reader.load({
 │                      │                                    │
 ├──────────────────────┴──────────────────────────────────┤
 │                                                           │
-│  Navigator (IFrameNavigator or PDFNavigator)              │
-│  ├── EventEmitter (resource.ready, click, keydown, etc.)  │
-│  ├── BookView (ReflowableBookView / FixedBookView)        │
-│  ├── UserSettings (ReadiumCSS integration)                │
+│  Navigator (EpubNavigator | PDFNavigator | AudiobookNavigator) │
+│  ├── EventEmitter (resource.ready, playback.*, etc.)      │
+│  ├── Renderer (Column / Scroll / Vertical / Fixed)        │
+│  ├── UserSettings (ReadiumCSS v1 + v2 dual-applicator)    │
+│  ├── Fetcher chain (Cache → Transform → Http / Zip)       │
 │  ├── Store (LocalStorage / Session / Memory)              │
 │  └── Annotator (bookmarks, annotations, positions)        │
 │                                                           │
@@ -1410,7 +1688,7 @@ D2Reader.load({
 │                                                           │
 ├───────────────────────────────────────────────────────────┤
 │                                                           │
-│  r2-shared-js (Readium shared models)                     │
+│  @readium/shared (Readium shared models)                  │
 │  (Publication, Metadata, Link, Contributor, etc.)         │
 │                                                           │
 └───────────────────────────────────────────────────────────┘

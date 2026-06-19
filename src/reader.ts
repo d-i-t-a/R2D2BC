@@ -355,18 +355,34 @@ export default class D2Reader {
       publication.metadata?.conformsTo &&
       publication.metadata?.conformsTo.includes(Profile.AUDIOBOOK)
     ) {
+      // EPUB-shaped UserSettings is no-op for audio — skip
+      // initialUserSettings (the top-level `userSettings` config field
+      // is audiobook-shaped here and routes to AudiobookSettings below).
       const settings = await UserSettings.create({
         store: settingsStore,
-        initialUserSettings: initialConfig.userSettings,
         layout: "",
         scriptMode: getScriptMode(publication),
       });
 
       const { AudiobookSettings } =
         await import("./model/user-settings/AudiobookSettings");
+      // Top-level userSettings + api.updateSettings route here for
+      // audiobook (the same field that goes to EPUB's UserSettings for
+      // EPUB publications and to PdfViewSettingsModule for PDFs).
       const audiobookSettings = await AudiobookSettings.create({
         store: settingsStore,
-        initialAudiobookSettings: initialConfig.audiobook?.userSettings,
+        initial: initialConfig.userSettings as
+          | import("./model/user-settings/AudiobookSettings").InitialAudiobookSettings
+          | null
+          | undefined,
+        api: initialConfig.api?.updateSettings
+          ? {
+              updateSettings: (state) =>
+                initialConfig.api!.updateSettings!(
+                  state as unknown as Record<string, unknown>
+                ),
+            }
+          : undefined,
       });
 
       // Built-in audiobook modules so far: AudiobookBookmarkModule (task 6).
@@ -386,6 +402,7 @@ export default class D2Reader {
         ? await AudiobookBookmarkModule.create({
             annotator,
             publication,
+            initialAnnotations: initialConfig.initialAnnotations,
             ...initialConfig.audiobook?.bookmarks,
           })
         : undefined;
@@ -394,6 +411,7 @@ export default class D2Reader {
         ? await AudiobookCommentsModule.create({
             annotator,
             publication,
+            initialAnnotations: initialConfig.initialAnnotations,
             ...initialConfig.audiobook?.comments,
           })
         : undefined;
@@ -435,9 +453,11 @@ export default class D2Reader {
       publication.metadata?.conformsTo &&
       publication.metadata?.conformsTo.includes(Profile.PDF)
     ) {
+      // EPUB-shaped UserSettings is mostly no-op for PDF — skip
+      // initialUserSettings (the top-level `userSettings` config field
+      // is PDF-shaped here and routes to PdfViewSettingsModule below).
       const settings = await UserSettings.create({
         store: settingsStore,
-        initialUserSettings: initialConfig.userSettings,
         layout: "",
         scriptMode: getScriptMode(publication),
       });
@@ -454,19 +474,43 @@ export default class D2Reader {
         await import("./modules/pdf/PdfViewSettingsModule");
 
       const bookmarkModule = rights.enableBookmarks
-        ? new PdfBookmarkModule({ annotator, publication })
+        ? new PdfBookmarkModule({
+            annotator,
+            publication,
+            initialAnnotations: initialConfig.initialAnnotations,
+            ...initialConfig.pdf?.bookmarks,
+          })
         : undefined;
       const searchModule = rights.enableSearch
         ? new PdfSearchModule()
         : undefined;
       const annotationModule = rights.enableAnnotations
-        ? new PdfAnnotationModule({ viewStore: store })
+        ? new PdfAnnotationModule({
+            viewStore: store,
+            initialAnnotations: initialConfig.initialAnnotations,
+            ...initialConfig.pdf?.annotations,
+          })
         : undefined;
       const historyModule = rights.enableHistory
         ? new PdfHistoryModule()
         : undefined;
+      // Top-level userSettings + api.updateSettings route here for PDF
+      // (the same field that goes to EPUB's UserSettings for EPUB
+      // publications and to AudiobookSettings for audiobook ones).
       const viewSettingsModule = new PdfViewSettingsModule({
         viewStore: store,
+        initial: initialConfig.userSettings as
+          | import("./modules/pdf/PdfViewSettingsModule").PdfViewSettingsState
+          | null
+          | undefined,
+        api: initialConfig.api?.updateSettings
+          ? {
+              updateSettings: (state) =>
+                initialConfig.api!.updateSettings!(
+                  state as unknown as Record<string, unknown>
+                ),
+            }
+          : undefined,
       });
 
       const navigator = await PDFNavigator.create({
@@ -540,7 +584,14 @@ export default class D2Reader {
       // Settings
       const settings = await UserSettings.create({
         store: settingsStore,
-        initialUserSettings: initialConfig.userSettings,
+        // EPUB owns the typography-shaped userSettings — the union at
+        // the config level resolves to `Partial<InitialUserSettings>`
+        // for an EPUB publication, so this cast is sound at runtime.
+        initialUserSettings: initialConfig.userSettings as
+          | Partial<
+              import("./model/user-settings/UserSettings").InitialUserSettings
+            >
+          | null,
         headerMenu: headerMenu,
         api: initialConfig.api,
         injectables: publication.isFixedLayout
@@ -702,7 +753,10 @@ export default class D2Reader {
         initialLastReadingPosition: initialConfig.lastReadingPosition,
         api: initialConfig.api,
         rights: rights,
-        tts: initialConfig.tts,
+        // null is the cache-wipe signal — the settings class handled
+        // it on create(); past that point the navigator wants either
+        // the config object or undefined.
+        tts: initialConfig.tts ?? undefined,
         sample: initialConfig.sample,
         requestConfig: initialConfig.requestConfig,
         fetcher: epubZipFetcher,
@@ -832,16 +886,16 @@ export default class D2Reader {
    * `CommentsActive` event fires when the visible set changes.
    */
   /** Save a comment with the given body at the current position. */
-  addComment = (body: string): Comment | null => {
-    return this.navigator.modules.comments?.add(body) ?? null;
+  addComment = async (body: string): Promise<Comment | null> => {
+    return (await this.navigator.modules.comments?.add(body)) ?? null;
   };
   /** Update an existing comment's body. Returns the updated comment or null. */
-  updateComment = (id: string, body: string): Comment | null => {
-    return this.navigator.modules.comments?.update(id, body) ?? null;
+  updateComment = async (id: string, body: string): Promise<Comment | null> => {
+    return (await this.navigator.modules.comments?.update(id, body)) ?? null;
   };
   /** Delete a previously saved comment. */
-  deleteComment = (comment: Comment): void => {
-    this.navigator.modules.comments?.delete(comment);
+  deleteComment = async (comment: Comment): Promise<void> => {
+    await this.navigator.modules.comments?.delete(comment);
   };
   /** All comments for the loaded publication, sorted by anchor time. */
   get comments(): Comment[] {

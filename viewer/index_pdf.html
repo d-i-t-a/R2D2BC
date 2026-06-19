@@ -362,8 +362,8 @@
 
         <div class="settings-section-label">Rotation</div>
         <div class="settings-row" style="gap: 8px;">
-            <button class="rotate-btn" onclick="d2reader?.navigator?.rotateCw()"><i class="material-icons">rotate_right</i> CW</button>
-            <button class="rotate-btn" onclick="d2reader?.navigator?.rotateCcw()"><i class="material-icons">rotate_left</i> CCW</button>
+            <button class="rotate-btn" onclick="d2reader?.navigator?.modules?.viewSettings?.rotateCw()"><i class="material-icons">rotate_right</i> CW</button>
+            <button class="rotate-btn" onclick="d2reader?.navigator?.modules?.viewSettings?.rotateCcw()"><i class="material-icons">rotate_left</i> CCW</button>
         </div>
     </div>
 </div>
@@ -435,18 +435,130 @@
         if (params['url']) defined_url = params['url'];
     }
 
+    // Example: custom PDF module — page time tracker
+    // Tracks how long the user spends on each page
+    class PageTimeTracker {
+        name = "page-time-tracker";
+        hostType = "pdf";
+        host;
+        pageTimes = {};
+        currentPage = 1;
+        pageStartTime = Date.now();
+
+        attach(host) { this.host = host; }
+        setup() {
+            this.currentPage = this.host?.currentLocator?.()?.locations?.page ?? 1;
+            this.pageStartTime = Date.now();
+            console.log("[PageTimeTracker] tracking started on page", this.currentPage);
+        }
+        onResourceReady() {
+            const newPage = this.host?.currentLocator?.()?.locations?.page ?? 1;
+            if (newPage === this.currentPage) return; // same page, skip
+
+            // Record time for previous page
+            const elapsed = Date.now() - this.pageStartTime;
+            this.pageTimes[this.currentPage] = (this.pageTimes[this.currentPage] || 0) + elapsed;
+            console.log("[PageTimeTracker] page", this.currentPage, ":", elapsed, "ms (total:", this.pageTimes[this.currentPage], "ms)");
+
+            // Start tracking new page
+            this.currentPage = newPage;
+            this.pageStartTime = Date.now();
+        }
+        stop() {
+            // Record final page
+            const elapsed = Date.now() - this.pageStartTime;
+            this.pageTimes[this.currentPage] = (this.pageTimes[this.currentPage] || 0) + elapsed;
+            console.log("[PageTimeTracker] final times:", this.pageTimes);
+        }
+    }
+    const pageTimeTracker = new PageTimeTracker();
+
     D2Reader.load({
         url: new URL(defined_url),
         injectables: [],
         injectablesFixed: [],
         workerSrc: '/viewer/pdf.worker.min.mjs',
+        modules: [pageTimeTracker],
         useLocalStorage: true,
+        rights: {
+            enableBookmarks: true,
+            enableAnnotations: true,
+            enableSearch: true,
+            enableHistory: true,
+            enableContentProtection: true,
+        },
+        api:{
+
+        },
+        pdf:{
+          // ── Bookmark write-through callbacks ──────────────────
+          // The PDF bookmark module calls `addBookmark(bookmark)` and
+          // `deleteBookmark(bookmark)` BEFORE writing to the local
+          // annotator. Return the bookmark (optionally with a
+          // server-assigned id stamped on it). The module then writes
+          // the returned bookmark locally and emits `BookmarkCreated`
+          // / `BookmarkDeleted`.
+          bookmarks: {
+            api: {
+              addBookmark: function(bookmark) {
+                console.log("addBookmark", bookmark);
+                alert("Bookmark added (page " + (bookmark.locations?.page ?? "?") + ")");
+                bookmark.id = Math.random();
+                return Promise.resolve(bookmark);
+              },
+              deleteBookmark: function(bookmark) {
+                console.log("deleteBookmark", bookmark);
+                alert("Bookmark deleted (id " + bookmark.id + ")");
+                return Promise.resolve(bookmark);
+              },
+            },
+          },
+          // ── PDF annotation per-item callbacks ─────────────────
+          // Same shape as the EPUB annotation api. PDF annotations
+          // are now `Annotation` locators (with the pdfjs editor
+          // blob carried in `pdfHighlight`), so server-side
+          // persistence works the same way as EPUB highlights.
+          // Color changes after creation also fire updateAnnotation.
+          annotations: {
+            api: {
+              addAnnotation: function(annotation) {
+                console.log("addAnnotation", annotation);
+                alert("Annotation added (page " + annotation.locations?.page + ")");
+                return Promise.resolve(annotation);
+              },
+              updateAnnotation: function(annotation) {
+                console.log("updateAnnotation", annotation);
+                alert("Annotation updated (id " + annotation.id + ")");
+                return Promise.resolve(annotation);
+              },
+              deleteAnnotation: function(annotation) {
+                console.log("deleteAnnotation", annotation);
+                alert("Annotation deleted (id " + annotation.id + ")");
+                return Promise.resolve(annotation);
+              },
+            },
+          },
+        },
+        webProtection: {
+            onEvent: (e) => console.log('[Protection]', e.type, e.detail),
+            copyProtection: {
+                contentElement: document.getElementById('D2Reader-Container'),
+                mode: 'block',
+            },
+            printProtection: {
+                contentElement: document.getElementById('D2Reader-Container'),
+            },
+            contextMenuProtection: {
+                contentElement: document.getElementById('D2Reader-Container'),
+            },
+        },
     }).then(instance => {
         d2reader = instance;
         updatePageInfo();
-        updateBookmarkButton();
         renderToc();
         syncSettingsUI();
+        gateUIByRights();
+        updateBookmarkButton();
 
         const nav = d2reader.navigator;
         if (!nav?.eventBus) return;
@@ -506,13 +618,45 @@
         document.getElementById('toc-empty').textContent = 'Failed to load document.';
     });
 
+    // -- UI gating by rights --
+    // Hide UI sections for features the integrator didn't enable.
+    // Uses navigator.supports() which checks the registry (rights-aware).
+
+    function gateUIByRights() {
+        const nav = d2reader?.navigator;
+        if (!nav) return;
+
+        function hide(el) { if (el) el.style.display = 'none'; }
+
+        if (!nav.supports('bookmarks')) {
+            hide(document.getElementById('tab-bkm'));
+            hide(document.getElementById('panel-bkm'));
+            hide(document.getElementById('bkm-toggle-btn'));
+        }
+
+        if (!nav.supports('annotations')) {
+            hide(document.getElementById('tab-ann'));
+            hide(document.getElementById('panel-ann'));
+            // Hide annotation tool buttons
+            hide(document.getElementById('ann-btn-highlight'));
+            hide(document.getElementById('ann-btn-text'));
+            hide(document.getElementById('ann-btn-ink'));
+        }
+
+        if (!nav.supports('search')) {
+            // Hide search toggle button (find the one with title="Search")
+            document.querySelectorAll('.toolbar-btn[title*="Search"]').forEach(hide);
+            hide(document.getElementById('pdf-search-bar'));
+        }
+    }
+
     // -- Page info --
 
     function updatePageInfo(page) {
         const el = document.getElementById('pdf-page-info');
         if (!el) return;
-        const current = page ?? d2reader?.navigator?.pageNum ?? '?';
-        const total   = d2reader?.navigator?.numPages ?? '?';
+        const current = page ?? d2reader?.navigator?.currentPage ?? '?';
+        const total   = d2reader?.navigator?.totalPages ?? '?';
         el.textContent = `Page ${current} of ${total}`;
     }
 
@@ -530,16 +674,15 @@
     // -- Bookmarks --
 
     function toggleBookmark() {
-        const nav = d2reader?.navigator;
-        if (!nav) return;
-        if (nav.isCurrentPageBookmarked()) {
-            // Find and delete the existing bookmark for this page
-            const existing = nav.getBookmarks().find(b =>
-                b.locations?.position === nav.pageNum
+        const bkm = d2reader?.navigator?.modules?.bookmarks;
+        if (!bkm) return;
+        if (bkm.hasBookmarkAt()) {
+            const existing = bkm.list().find(b =>
+                (b.locations?.page ?? b.locations?.position) === d2reader?.navigator?.currentPage
             );
-            if (existing) nav.deleteBookmark(existing);
+            if (existing) bkm.delete(existing);
         } else {
-            nav.saveBookmark();
+            bkm.save();
         }
         updateBookmarkButton();
         refreshBookmarkList();
@@ -548,7 +691,7 @@
     function updateBookmarkButton() {
         const btn = document.getElementById('bkm-toggle-btn');
         if (!btn) return;
-        const bookmarked = d2reader?.navigator?.isCurrentPageBookmarked?.() ?? false;
+        const bookmarked = d2reader?.navigator?.modules?.bookmarks?.hasBookmarkAt?.() ?? false;
         const icon = btn.querySelector('i');
         if (icon) {
             icon.textContent = bookmarked ? 'star' : 'star_border';
@@ -563,7 +706,8 @@
         const countEl   = document.getElementById('bkm-count');
         if (!nav || !container) return;
 
-        const bookmarks = nav.getBookmarks();
+        const bkmModule = nav.modules?.bookmarks;
+        const bookmarks = bkmModule?.list() ?? [];
         countEl.textContent = `${bookmarks.length} bookmark${bookmarks.length !== 1 ? 's' : ''}`;
 
         if (bookmarks.length === 0) {
@@ -572,11 +716,11 @@
         }
 
         // Sort by page number
-        bookmarks.sort((a, b) => (a.locations?.position ?? 0) - (b.locations?.position ?? 0));
+        bookmarks.sort((a, b) => (a.locations?.page ?? a.locations?.position ?? 0) - (b.locations?.page ?? b.locations?.position ?? 0));
 
         container.innerHTML = '';
         bookmarks.forEach(bkm => {
-            const page = bkm.locations?.position ?? '?';
+            const page = bkm.locations?.page ?? bkm.locations?.position ?? '?';
             const label = bkm.title || `Page ${page}`;
             const created = bkm.created ? new Date(bkm.created).toLocaleString() : '';
 
@@ -599,11 +743,11 @@
     }
 
     function deleteBookmarkById(id) {
-        const nav = d2reader?.navigator;
-        if (!nav) return;
-        const bkm = nav.getBookmarks().find(b => String(b.id) === String(id));
+        const bkmModule = d2reader?.navigator?.modules?.bookmarks;
+        if (!bkmModule) return;
+        const bkm = bkmModule.list().find(b => String(b.id) === String(id));
         if (bkm) {
-            nav.deleteBookmark(bkm);
+            bkmModule.delete(bkm);
             updateBookmarkButton();
             refreshBookmarkList();
         }
@@ -674,7 +818,7 @@
 
     function clearAllAnnotations() {
         if (!confirm('Delete all annotations?')) return;
-        d2reader?.navigator?.clearAnnotations();
+        d2reader?.navigator?.modules?.annotations?.clear();
         refreshAnnotationList();
     }
 
@@ -684,9 +828,9 @@
         const countEl   = document.getElementById('ann-count');
         if (!nav || !container) return;
 
-        // getAllAnnotations() merges live (annotationStorage) + pending (not-yet-rendered pages)
+        // getAll() merges live (annotationStorage) + pending (not-yet-rendered pages)
         // so the sidebar always shows the complete picture regardless of scroll position.
-        const entries = nav.getAllAnnotations?.() ?? [];
+        const entries = nav.modules?.annotations?.getAll?.() ?? [];
 
         if (entries.length === 0) {
             container.innerHTML = '<p class="ann-empty">No annotations yet.<br>Use the annotation tools to add some.</p>';
@@ -737,7 +881,7 @@
     function setAnnotationTool(mode) {
         // Toggle: clicking the active tool deactivates it (back to select)
         if (mode !== 0 && mode === _activeAnnotationTool) mode = 0;
-        d2reader?.navigator?.setAnnotationEditorMode(mode);
+        d2reader?.navigator?.modules?.annotations?.setEditorMode(mode);
         updateAnnotationToolButtons(mode);
     }
 
@@ -863,7 +1007,7 @@
         document.querySelectorAll('[id^="spread-"]').forEach(b => b.classList.remove('active'));
         const names = { 0: 'none', 1: 'odd', 2: 'even' };
         document.getElementById('spread-' + names[mode])?.classList.add('active');
-        d2reader?.navigator?.setSpreadMode(mode);
+        d2reader?.navigator?.modules?.viewSettings?.setSpreadMode(mode);
     }
 
     // -- Search --
@@ -876,21 +1020,21 @@
         if (bar.classList.contains('visible')) {
             document.getElementById('pdf-search-input').focus();
         } else {
-            d2reader?.navigator?.find('');
+            d2reader?.navigator?.modules?.search?.clear();
             document.getElementById('pdf-match-count').textContent = '';
         }
     }
 
     function pdfFind() {
-        d2reader?.navigator?.find(document.getElementById('pdf-search-input').value, { highlightAll: true });
+        d2reader?.navigator?.modules?.search?.search(document.getElementById('pdf-search-input').value, { highlightAll: true });
     }
     function pdfFindNext() {
         if (!document.getElementById('pdf-search-input').value) return;
-        d2reader?.navigator?.findNext();
+        d2reader?.navigator?.modules?.search?.next();
     }
     function pdfFindPrev() {
         if (!document.getElementById('pdf-search-input').value) return;
-        d2reader?.navigator?.findPrevious();
+        d2reader?.navigator?.modules?.search?.previous();
     }
 
     // -- Keyboard shortcuts --

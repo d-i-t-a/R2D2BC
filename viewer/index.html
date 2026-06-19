@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>R2D2BC Library</title>
+  <title>DITA Toolkit Library</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -29,7 +29,7 @@
     .filter-btn.active { background: #222; color: #fff; border-color: #222; }
     .grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 16px; padding: 24px; max-width: 1200px; margin: 0 auto;
+      gap: 16px; padding: 24px; margin: 0 auto;
     }
     .card {
       background: #fff; border-radius: 8px; overflow: hidden;
@@ -77,14 +77,17 @@
 </head>
 <body>
   <header>
-    <h1>R2D2BC</h1>
+    <h1>DITA Toolkit</h1>
     <span class="subtitle">Local Publication Library</span>
   </header>
 
-  <div class="toolbar">
+  <div class="toolbar" id="toolbar">
     <button class="filter-btn active" data-filter="all">All</button>
     <button class="filter-btn" data-filter="epub">EPUB</button>
     <button class="filter-btn" data-filter="pdf">PDF</button>
+    <button class="filter-btn" data-filter="audiobook">Audiobook</button>
+    <span id="tag-filters"></span>
+    <a href="index_epub_file.html" target="_blank" style="text-decoration:none;margin-left:auto;padding:6px 14px;font-size:11px;border:1px solid #d0d0d0;border-radius:14px;background:#fff;color:#555;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;">Open EPUB File</a>
   </div>
 
   <div class="grid" id="publications-grid">
@@ -94,7 +97,7 @@
   <script>
     const grid = document.getElementById('publications-grid');
     let allPublications = [];
-    let activeFilter = 'all';
+    let activeFilter = new URLSearchParams(window.location.search).get('filter') || 'all';
 
     // Make manifest URLs absolute (viewers use new URL() which requires absolute)
     function fixViewerUrls(pubs) {
@@ -144,6 +147,60 @@
           pub.author = authors.map(a => typeof a === 'string' ? a : a.name || '').filter(Boolean).join(', ');
         }
 
+        // Tags from metadata
+        if (!pub.tags) pub.tags = [];
+
+        // Layout
+        const layout = manifest.metadata?.layout
+          || manifest.metadata?.["rendition:layout"]
+          || manifest.metadata?.rendition?.layout;
+        if (layout === "fixed" || layout === "pre-paginated") {
+          pub.fxl = true;
+          if (!pub.tags.includes('FXL')) pub.tags.push('FXL');
+        } else if (pub.type === 'epub') {
+          if (!pub.tags.includes('reflowable')) pub.tags.push('reflowable');
+        }
+
+        // Reading progression
+        const readingProgression = manifest.metadata?.readingProgression;
+        if (readingProgression === 'rtl') {
+          if (!pub.tags.includes('RTL')) pub.tags.push('RTL');
+        }
+
+        // Language-based tags
+        const language = manifest.metadata?.language;
+        const lang = Array.isArray(language) ? language[0] : language;
+        const langCode = (lang ?? '').toLowerCase().split('-')[0];
+        const langTag = { ja: 'Japanese', zh: 'Chinese', ko: 'Korean' }[langCode];
+        if (langTag) {
+          if (!pub.tags.includes('CJK')) pub.tags.push('CJK');
+          if (!pub.tags.includes(langTag)) pub.tags.push(langTag);
+        }
+        if (langCode === 'ar' || langCode === 'he' || langCode === 'fa') {
+          if (!pub.tags.includes('RTL')) pub.tags.push('RTL');
+        }
+
+        // Media overlays
+        const allSpineAndResources = [...(manifest.readingOrder || []), ...(manifest.resources || [])];
+        if (allSpineAndResources.some(l => l.properties?.mediaOverlay || l.type === 'application/smil+xml')) {
+          if (!pub.tags.includes('media overlays')) pub.tags.push('media overlays');
+        }
+
+        // MathML
+        if (allSpineAndResources.some(l => l.type === 'application/mathml+xml' || l.properties?.contains?.includes('mathml'))) {
+          if (!pub.tags.includes('MathML')) pub.tags.push('MathML');
+        }
+
+        // SVG
+        if (allSpineAndResources.some(l => l.type === 'image/svg+xml')) {
+          if (!pub.tags.includes('SVG')) pub.tags.push('SVG');
+        }
+
+        // Scripted
+        if (allSpineAndResources.some(l => l.properties?.contains?.includes('js') || l.type === 'application/javascript')) {
+          if (!pub.tags.includes('scripted')) pub.tags.push('scripted');
+        }
+
         // Cover image
         const allLinks = [...(manifest.resources || []), ...(manifest.links || [])];
         const cover = allLinks.find(l =>
@@ -157,25 +214,82 @@
       } catch (_) { /* metadata fetch failed, keep defaults */ }
     }
 
+    // ── EPUB 3 sample publications (IDPF/W3C) ──────────────────
+    const EPUB3_SAMPLES_BASE = 'https://github.com/IDPF/epub3-samples/releases/download/20230704/';
+    const epub3Samples = [
+      { title: 'Moby Dick', filename: 'moby-dick.epub', type: 'epub', author: 'Herman Melville', tags: ['reflowable'] },
+      { title: 'Children\'s Literature', filename: 'childrens-literature.epub', type: 'epub', author: 'Various', tags: ['reflowable'] },
+      { title: 'Accessible EPUB 3', filename: 'accessible_epub_3.epub', type: 'epub', author: 'Matt Garrish', tags: ['reflowable', 'a11y'] },
+      { title: 'Wasteland (OTF)', filename: 'wasteland-otf.epub', type: 'epub', author: 'T.S. Eliot', tags: ['reflowable', 'fonts'] },
+      { title: 'Wasteland (OTF Obfuscated)', filename: 'wasteland-otf-obf.epub', type: 'epub', author: 'T.S. Eliot', tags: ['reflowable', 'font obfuscation'] },
+      { title: 'Wasteland (WOFF Obfuscated)', filename: 'wasteland-woff-obf.epub', type: 'epub', author: 'T.S. Eliot', tags: ['reflowable', 'font obfuscation'] },
+      { title: 'Haruko (FXL)', filename: 'haruko-html-jpeg.epub', type: 'epub', author: 'IDPF', tags: ['FXL'], fxl: true },
+      { title: 'Page Blanche (FXL)', filename: 'page-blanche.epub', type: 'epub', author: 'IDPF', tags: ['FXL'], fxl: true },
+      { title: 'Cole: Voyage of Life (FXL)', filename: 'cole-voyage-of-life.epub', type: 'epub', author: 'Thomas Cole', tags: ['FXL', 'art'], fxl: true },
+      { title: 'Regime Anticancer (Arabic RTL)', filename: 'regime-anticancer-arabic.epub', type: 'epub', author: 'IDPF', tags: ['RTL', 'Arabic'] },
+      { title: 'Kusamakura (Japanese Vertical)', filename: 'kusamakura-japanese-vertical-writing.epub', type: 'epub', author: 'Natsume Soseki', tags: ['vertical', 'Japanese'] },
+      { title: 'Linear Algebra', filename: 'linear-algebra.epub', type: 'epub', author: 'IDPF', tags: ['reflowable', 'MathML'] },
+      { title: 'Trees (Media Overlays)', filename: 'trees.epub', type: 'epub', author: 'IDPF', tags: ['media overlays'] },
+      { title: 'Moby Dick (Media Overlays)', filename: 'moby-dick-mo.epub', type: 'epub', author: 'Herman Melville', tags: ['media overlays'] },
+    ].map(sample => {
+      const remoteUrl = EPUB3_SAMPLES_BASE + sample.filename;
+      const localUrl = `/api/fetch-epub?url=${encodeURIComponent(remoteUrl)}`;
+      return {
+        ...sample,
+        hosted: true,
+        epubUrl: remoteUrl,
+        viewers: [{ title: 'Open EPUB', url: `index_epub_file.html?epub=${encodeURIComponent(localUrl)}` }],
+      };
+    });
+
     // Fetch publications from our API
     async function loadPublications() {
       try {
         const resp = await fetch('/api/publications');
-        allPublications = fixViewerUrls(await resp.json());
+        allPublications = [...fixViewerUrls(await resp.json()), ...epub3Samples];
         renderGrid();
 
-        // Enrich with metadata in background
-        await Promise.allSettled(allPublications.map(pub => enrichWithMetadata(pub)));
+        // Enrich with metadata in background. We attempt enrichment for
+        // every API publication (including hosted ones, since their
+        // manifest may still be reachable for cover/metadata extraction).
+        // `enrichWithMetadata` swallows fetch failures, so cross-origin
+        // manifests that block CORS just degrade silently to whatever
+        // metadata the server already provided.
+        const apiPubs = allPublications.filter(p => !epub3Samples.includes(p));
+        await Promise.allSettled(apiPubs.map(pub => enrichWithMetadata(pub)));
         renderGrid();
       } catch (e) {
-        grid.innerHTML = '<div class="empty">Failed to load publications. Make sure the server is running.</div>';
+        // API failed — still show samples
+        allPublications = [...epub3Samples];
+        renderGrid();
       }
     }
 
+    function updateTagFilters() {
+      const tagSet = new Set();
+      allPublications.forEach(p => (p.tags || []).forEach(t => tagSet.add(t)));
+      const container = document.getElementById('tag-filters');
+      container.innerHTML = [...tagSet].sort().map(tag =>
+        `<button class="filter-btn${activeFilter === 'tag:' + tag ? ' active' : ''}" data-filter="tag:${tag}">${tag}</button>`
+      ).join('');
+      // Attach click handlers to new buttons
+      container.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => setFilter(btn.dataset.filter));
+      });
+    }
+
     function renderGrid() {
-      const filtered = activeFilter === 'all'
-        ? allPublications
-        : allPublications.filter(p => p.type === activeFilter);
+      updateTagFilters();
+
+      let filtered;
+      if (activeFilter === 'all') {
+        filtered = allPublications;
+      } else if (activeFilter.startsWith('tag:')) {
+        const tag = activeFilter.substring(4);
+        filtered = allPublications.filter(p => (p.tags || []).includes(tag));
+      } else {
+        filtered = allPublications.filter(p => p.type === activeFilter);
+      }
 
       if (filtered.length === 0) {
         grid.innerHTML = '<div class="empty">No publications found.</div>';
@@ -183,9 +297,19 @@
       }
 
       grid.innerHTML = filtered.map(pub => {
-        const icon = pub.type === 'pdf' ? '📄' : '📖';
-        const badgeClass = pub.type === 'pdf' ? 'badge-pdf' : 'badge-epub';
-        const viewers = pub.viewers || [];
+        const icon = pub.type === 'pdf' ? '📄' : pub.type === 'audiobook' ? '🎧' : '📖';
+        const badgeClass = pub.type === 'pdf' ? 'badge-pdf' : pub.type === 'audiobook' ? 'badge-audiobook' : 'badge-epub';
+        // FXL publications don't use ReadiumCSS, so hide the v2 variants and
+        // collapse to the single default DITA Toolkit link. Renames the v1 link
+        // back to plain "DITA Toolkit" for FXL tiles.
+        let viewers = pub.viewers || [];
+        if (pub.fxl) {
+          viewers = viewers
+            .filter(v => !v.title.includes('ReadiumCSS v2'))
+            .map(v => v.title === 'DITA Toolkit (ReadiumCSS v1)'
+              ? { ...v, title: 'DITA Toolkit' }
+              : v);
+        }
         const coverStyle = pub.coverUrl
           ? `background-image:url('${pub.coverUrl}');background-size:cover;background-position:center;`
           : '';
@@ -195,11 +319,13 @@
             <div class="card-cover" style="${coverStyle}">
               ${pub.coverUrl ? '' : icon}
               <span class="type-badge ${badgeClass}">${pub.type}</span>
+              ${pub.fxl ? '<span class="type-badge" style="background:#e67e22;top:8px;right:auto;left:8px;">FXL</span>' : ''}
               ${pub.hosted ? '<span class="type-badge" style="background:#888;top:8px;right:auto;left:8px;">hosted</span>' : ''}
             </div>
             <div class="card-body">
               <div class="card-title">${pub.title || pub.filename}</div>
               <div class="card-meta">${pub.author || pub.filename}</div>
+              ${(pub.tags || []).length > 0 ? `<div style="margin-top:4px;display:flex;gap:3px;flex-wrap:wrap;">${pub.tags.map(t => `<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:#f0f0f0;color:#666;">${t}</span>`).join('')}</div>` : ''}
             </div>
             <div class="card-viewers">
               ${viewers.map(v => `<a class="viewer-link" href="${v.url}" onclick="event.stopPropagation()">${v.title}</a>`).join('')}
@@ -213,14 +339,27 @@
       if (url && url !== '#') window.location.href = url;
     }
 
-    // Filter buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelector('.filter-btn.active').classList.remove('active');
-        btn.classList.add('active');
-        activeFilter = btn.dataset.filter;
-        renderGrid();
-      });
+    function setFilter(filter) {
+      activeFilter = filter;
+      const url = new URL(window.location);
+      if (filter === 'all') {
+        url.searchParams.delete('filter');
+      } else {
+        url.searchParams.set('filter', filter);
+      }
+      history.replaceState(null, '', url);
+      // Update active state on static buttons
+      document.querySelectorAll('#toolbar > .filter-btn').forEach(b => b.classList.remove('active'));
+      const match = document.querySelector(`#toolbar > .filter-btn[data-filter="${filter}"]`);
+      if (match) match.classList.add('active');
+      renderGrid();
+    }
+
+    // Static filter buttons (All, EPUB, PDF)
+    document.querySelectorAll('#toolbar > .filter-btn').forEach(btn => {
+      if (btn.dataset.filter === activeFilter) btn.classList.add('active');
+      else btn.classList.remove('active');
+      btn.addEventListener('click', () => setFilter(btn.dataset.filter));
     });
 
     loadPublications();

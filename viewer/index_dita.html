@@ -97,8 +97,8 @@
     <div class="content" id="root">
         <header id="headerMenu">
             <div id="sidedrawer" class="mui--no-user-select sidenav">
-                <div id="sidedrawer-brand" class="mui--appbar-line-height logo-container">
-                    <span class="mui--text-title">DITA Reader</span>
+                <div id="sidedrawer-brand" class="mui--appbar-line-height dita-logo-container">
+                    <span class="mui--text-title">DITA Toolkit</span>
                     <i class="material-icons right editAnnotations" id="expand-menu">unfold_more</i>
                 </div>
                 <div class="mui-divider"></div>
@@ -107,24 +107,24 @@
                         Go To Page: <input type="text" style="width:100px;" id="goToPageNumberInput" /><button id="goToPageNumberButton">Go</button>
                     </li>
                     <li class="bold" id="sidenav-section-toc">
-                        <strong class="collapsible-header">Table of Contents</strong>
+                        <strong class="dita-collapsible-header">Table of Contents</strong>
                         <div id="container-view-toc" class="contents-view"></div>
                     </li>
                     <li class="bold" id="sidenav-section-bookmarks">
-                        <strong class="collapsible-header">Bookmarks</strong>
+                        <strong class="dita-collapsible-header">Bookmarks</strong>
                         <div id="container-view-bookmarks" class="bookmarks-view"></div>
                     </li>
                     <li class="bold" id="sidenav-section-highlights">
-                        <strong class="collapsible-header">Annotations</strong>
+                        <strong class="dita-collapsible-header">Annotations</strong>
                         <div id="container-view-highlights" class="highlights-view"></div>
                     </li>
                     <li class="bold" id="sidenav-section-landmarks">
-                        <strong class="collapsible-header">Landmarks</strong>
+                        <strong class="dita-collapsible-header">Landmarks</strong>
                         <div id="container-view-landmarks" class="landmarks-view"></div>
                     </li>
 
                     <li class="bold" id="sidenav-section-pagelist">
-                        <strong class="collapsible-header">Annotations</strong>
+                        <strong class="dita-collapsible-header">Annotations</strong>
                         <div id="container-view-pagelist" class="pagelist-view"></div>
                     </li>
                 </ul>
@@ -513,7 +513,7 @@
                 </div>
                 <div class="mui-divider"></div>
                 <div id="container-view-search" class="dropdown-content dropdown-tabbed notifications" style="width: 410px;padding: 10px;">
-                    <div class="search-wrapper" tabindex="-1">
+                    <div class="dita-search-wrapper" tabindex="-1">
                         <i class="material-icons left" style="margin-right: -25px;position: relative;">search</i><input id="searchInput" placeholder="Search" style="padding-left: 25px; width: 100%;height: 40px;" type="text" />
                     </div>
                         <ul class="mui-tabs__bar" style="display: flex;justify-content: space-evenly;">
@@ -522,13 +522,13 @@
                         </ul>
                         <div class="mui-tabs__pane mui--is-active" id="pane-default-1">
 
-                            <div class="collection" id="searchResultChapter">
+                            <div class="dita-collection" id="searchResultChapter">
                                 <a href="#!" class="collection-item">No Search Result</a>
                             </div>
 
                         </div>
                         <div class="mui-tabs__pane" id="pane-default-2">
-                            <div class="collection" id="searchResultBook">
+                            <div class="dita-collection" id="searchResultBook">
                                 <a href="#!" class="collection-item">No Search Result</a>
                             </div>
                         </div>
@@ -542,7 +542,7 @@
                         <tr>
                             <td class="mui--text-title">
                                 <a class="sidedrawer-toggle mui--visible-inline-block mui--visible-inline-block js-show-sidedrawer">☰</a>
-                                <span class="mui--text-title mui--visible-inline-block mui--visible-inline-block">DITA Reader</span>
+                                <span class="mui--text-title mui--visible-inline-block mui--visible-inline-block">DITA Toolkit</span>
                                 <a id="history-back" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_back_ios</i></a>
                                 History
                                 <a id="history-forward" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_forward_ios</i></a>
@@ -569,6 +569,11 @@
 
                                     <li style="display:none"><a class="mui--visible-inline-block  js-show-sidedrawer8"  data-target="container-view-search"  id="menu-button-search"><i class="material-icons">search</i></a></li>
 
+                                    <li style="display:none" id="fxl-zoom-in"><a onclick="d2reader?.zoomIn()"><i class="material-icons">zoom_in</i></a></li>
+                                    <li style="display:none" id="fxl-zoom-out"><a onclick="d2reader?.zoomOut()"><i class="material-icons">zoom_out</i></a></li>
+                                    <li style="display:none" id="fxl-fit-page"><a onclick="d2reader?.fitToPage()"><i class="material-icons">fit_screen</i></a></li>
+                                    <li style="display:none" id="fxl-pan"><a onclick="var on = this.classList.toggle('active'); this.style.color = on ? '#039be5' : ''; on ? d2reader?.activateHand() : d2reader?.deactivateHand()"><i class="material-icons">open_with</i></a></li>
+
                                 </ul>
                             </td>
                         </tr>
@@ -583,19 +588,10 @@
                 <div id="lineFocusBottomBlinder" class="d2-line-focus-bottom"></div>
             </div>
             <main style="height: calc(100vh - 65px);" tabindex=-1 id="iframe-wrapper">
-                <div id="reader-loading" class="loading"></div>
-                <div id="reader-error" class="error"></div>
-                <div id="reader-info-top" class="info top">
+                <div id="reader-loading" class="dita-loading"></div>
+                <div id="reader-error" class="dita-error"></div>
+                <div id="reader-info-top" class="dita-info top">
                     <span class="book-title"></span>
-                </div>
-                <div id="reader-info-bottom" class="info bottom">
-                    <div style="display: flex;justify-content: center;">
-                        <span class="chapter-position"></span>&nbsp;
-                        <span class="chapter-title"></span>
-                    </div>
-                    <div class="scrubber">
-                        <input class="range-slider__range" style="margin-left:30px;display: none" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="d2reader.goToPosition( this.value )" />
-                    </div>
                 </div>
                 <div style="height: 0px">
                     <div id="highlight-toolbox" class="highlight-toolbox" >
@@ -603,7 +599,7 @@
                             <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons" style="color:gray">close</i></button>
                         </div>
                         <div id="highlight-toolbox-mode-add">
-                            <button style="display: unset;" id="colorIcon" class="color-option"><span></span></button>
+                            <button style="display: unset;" id="colorIcon" class="dita-color-option"><span></span></button>
                             <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon">
                             <title id="text-icon">Text</title>
@@ -654,8 +650,17 @@
                     </div>
                 </div>
             </main>
+            <div id="reader-info-bottom" class="dita-info bottom" style="height: 75px;">
+                <div style="display: flex;justify-content: center;">
+                    <span class="chapter-position"></span>&nbsp;
+                    <span class="chapter-title"></span>
+                </div>
+                <div class="scrubber">
+                    <input class="range-slider__range" style="margin-left:30px;display: none" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="d2reader.goToPosition( this.value )" />
+                </div>
+            </div>
             <div id="container-view-security" class="security"></div>
-            <div id="container-view-timeline" class="timeline" style="top: 5rem;bottom: 2.5rem;"></div>
+            <div id="container-view-timeline" class="dita-timeline" style="top: 5rem;bottom: 2.5rem;"></div>
             <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
                style="top: 65px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
                 <i class="material-icons black-text" style="left: calc(50% - 12px);
@@ -706,6 +711,7 @@
             { type: 'style', url: defined_origin + '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
             { type: 'style', url: defined_origin + '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
             { type: 'style', url: defined_origin + '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            { type: 'style', url: defined_origin + '/viewer/readium-css/ReadiumCSS-dita-patch.css' },
             { type: 'style', url: 'https://fonts.googleapis.com/icon?family=Material+Icons'},
             { type: 'style', url: defined_origin + '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
@@ -907,19 +913,82 @@
 
         ]
 
+        // Example: custom EPUB module — vocabulary builder
+        // Double-click a word in the book to add it to your vocabulary list
+        // Access the word list in console: vocabularyBuilder.getWords()
+        class VocabularyBuilder {
+            name = "vocabulary-builder";
+            hostType = "epub";
+            host;
+            words = [];
+            _handler = null;
+
+            attach(host) { this.host = host; }
+            setup() {
+                this._handler = (e) => {
+                    const doc = this.host?.iframes?.[0]?.contentDocument;
+                    if (!doc) return;
+                    const selection = doc.getSelection();
+                    const word = selection?.toString().trim();
+                    if (!word || word.includes(" ")) return;
+                    const range = selection?.getRangeAt(0);
+                    const sentence = range?.startContainer?.parentElement?.textContent?.trim()?.substring(0, 120) ?? "";
+                    const chapter = this.host?.currentChapterLink?.title || this.host?.currentChapterLink?.href;
+                    this.words.push({ word, sentence, chapter });
+                    console.log("[VocabularyBuilder]", this.getWords());
+                    this._showToast("📖 " + word + " added to vocabulary (" + this.words.length + " words)");
+                };
+            }
+            onResourceReady() {
+                const doc = this.host?.iframes?.[0]?.contentDocument;
+                if (doc && this._handler) doc.addEventListener("dblclick", this._handler);
+            }
+            getWords() { return this.words; }
+            stop() {
+                const doc = this.host?.iframes?.[0]?.contentDocument;
+                if (doc && this._handler) doc.removeEventListener("dblclick", this._handler);
+            }
+            _showToast(msg) {
+                let el = document.getElementById("vocab-toast");
+                if (!el) {
+                    el = document.createElement("div");
+                    el.id = "vocab-toast";
+                    el.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;z-index:9999;transition:opacity 0.3s;pointer-events:none;";
+                    document.body.appendChild(el);
+                }
+                el.textContent = msg;
+                el.style.opacity = "1";
+                clearTimeout(el._timeout);
+                el._timeout = setTimeout(() => { el.style.opacity = "0"; }, 2000);
+            }
+        }
+        const vocabularyBuilder = new VocabularyBuilder();
+
         let d2reader;
         D2Reader.load({
+            modules: [vocabularyBuilder],
             url: new URL(urlParams["url"]),
             // requestConfig: {
             //     method: "GET",
             //     mode: "cors",
             //     credentials: "include",
             // },
-            attributes: { // TODO: review these attributes and eventually needs better naming.
-                margin: 75, // subtract this from the iframe height , when setting the iframe minimum height
-                navHeight: 10, // used for positioning the toolbox
-                iframePaddingTop: 20, // top padding inside iframe
-                bottomInfoHeight: 75, // #reader-info-bottom height
+            attributes: {
+                // scrollContainer: "iframe",
+                // margin: 65,            // Extra px reserved below the iframe. Optional.
+                // iframePaddingTop: 20,  // @deprecated — use `iframe.padding.top`.
+                // Iframe CSS padding. Not applied to fixed-layout.
+                // iframe: {
+                //   padding: {
+                //     bottom: 20
+                //   }
+                // },
+                // Fixed chrome the reader avoids for toolbox placement and iframe sizing.
+                // Measured live — toggling visibility reclaims the space automatically.
+                safeArea: {
+                    top: () => document.querySelector('.mui-appbar'),
+                    bottom: () => document.getElementById('reader-info-bottom'),
+                },
             },
             rights: {
                 enableBookmarks: true,
@@ -928,7 +997,7 @@
                 enableSearch: true,
                 enableTimeline: true,
                 enableDefinitions: true,
-                enableContentProtection: false,
+                enableContentProtection: true,
                 enableMediaOverlays: true,
                 enablePageBreaks: true,
                 autoGeneratePositions: true,
@@ -1138,6 +1207,9 @@
                     selectionMenuClose: function() {
                         console.log("selectionMenuClose");
                     },
+                    selection: function() {
+                      console.log("selection through callback");
+                    },
                 },
                 preventScrollOnSelection: true,
             },
@@ -1334,11 +1406,14 @@
                     console.log(error);
                 },
                 direction: function(dir) {
-                    document.getElementById("positionSlider").dir = dir
+                    const slider = document.getElementById("positionSlider");
+                    if (slider) slider.dir = dir;
                 }
             },
             injectables: injectables,
-            injectablesFixed: [],
+            injectablesFixed: [
+                { type: 'style', url: defined_origin + '/viewer/injectables/style/mo.css' },
+            ],
             userSettings: userSettings,
             useLocalStorage: true, // true = uses local storage, false = uses session storage (default)
             useStorageType: "local", // local, session or memory !! use either this or useLocalStorage,
@@ -1349,39 +1424,158 @@
             console.log("D2reader instance ready", instance);
             d2reader = instance;
 
-            instance.addEventListener("readalong.started", (detail) => {
-                console.log("Something in the annotations has changed. ");
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("readaloud.started", (detail) => {
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("readaloud.stopped", (detail) => {
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("readaloud.paused", (detail) => {
-                console.log("listener " + detail);
-            });
-            instance.addEventListener("readaloud.resumed", (detail) => {
-                console.log("listener " + detail);
+            // Show FXL zoom buttons if fixed layout
+            if (instance.publicationLayout === "fixed") {
+                document.getElementById("fxl-zoom-in")?.style.removeProperty("display");
+                document.getElementById("fxl-zoom-out")?.style.removeProperty("display");
+                document.getElementById("fxl-fit-page")?.style.removeProperty("display");
+                document.getElementById("fxl-pan")?.style.removeProperty("display");
+            }
+
+            // ── Resource lifecycle ──────────────────────────────────
+            instance.addEventListener("resource.ready", () => {
+                console.log("[EVENT] resource.ready");
             });
             instance.addEventListener("resource.start", () => {
-                console.log("listener start");
+                console.log("[EVENT] resource.start");
             });
             instance.addEventListener("resource.end", () => {
-                console.log("listener end");
+                console.log("[EVENT] resource.end");
             });
             instance.addEventListener("resource.fits", () => {
-                console.log("listener fits");
+                console.log("[EVENT] resource.fits");
             });
-            instance.addEventListener("resource.ready", () => {
-                console.log("listener ready");
+            instance.addEventListener("resource.error", (error) => {
+                console.log("[EVENT] resource.error", error);
+            });
+
+            // ── Navigation info ───────────────────────────────────
+            instance.addEventListener("direction", (dir) => {
+                console.log("[EVENT] direction:", dir);
+            });
+            instance.addEventListener("chapterinfo", (title) => {
+                console.log("[EVENT] chapterinfo:", title);
+            });
+            instance.addEventListener("positioninfo", (locator) => {
+                console.log("[EVENT] positioninfo:", locator);
+            });
+            instance.addEventListener("location.changed", (position) => {
+                console.log("[EVENT] location.changed:", position);
+            });
+
+            // ── User interaction ──────────────────────────────────
+            instance.addEventListener("click", (event) => {
+                console.log("[EVENT] click:", event.type);
             });
             instance.addEventListener("keydown", (event) => {
-                console.log("keydown: " + event.key);
+                console.log("[EVENT] keydown:", event.key);
             });
-            instance.addEventListener("click", (event) => {
-                console.log("click through: " + event.detail);
+
+            // ── Error ─────────────────────────────────────────────
+            instance.addEventListener("error", (error) => {
+                console.log("[EVENT] error:", error);
+            });
+
+            // ── TTS / Read Aloud ──────────────────────────────────
+            instance.addEventListener("readaloud.started", (detail) => {
+                console.log("[EVENT] readaloud.started:", detail);
+            });
+            instance.addEventListener("readaloud.stopped", (detail) => {
+                console.log("[EVENT] readaloud.stopped:", detail);
+            });
+            instance.addEventListener("readaloud.paused", (detail) => {
+                console.log("[EVENT] readaloud.paused:", detail);
+            });
+            instance.addEventListener("readaloud.resumed", (detail) => {
+                console.log("[EVENT] readaloud.resumed:", detail);
+            });
+            instance.addEventListener("readaloud.finished", (detail) => {
+                console.log("[EVENT] readaloud.finished:", detail);
+            });
+
+            // ── Media Overlays / Read Along ───────────────────────
+            instance.addEventListener("readalong.started", (detail) => {
+                console.log("[EVENT] readalong.started:", detail);
+            });
+            instance.addEventListener("readalong.stopped", (detail) => {
+                console.log("[EVENT] readalong.stopped:", detail);
+            });
+            instance.addEventListener("readalong.paused", (detail) => {
+                console.log("[EVENT] readalong.paused:", detail);
+            });
+            instance.addEventListener("readalong.resumed", (detail) => {
+                console.log("[EVENT] readalong.resumed:", detail);
+            });
+            instance.addEventListener("readalong.finished", (detail) => {
+                console.log("[EVENT] readalong.finished:", detail);
+            });
+
+            // ── Bookmarks ─────────────────────────────────────────
+            instance.addEventListener("bookmark.created", (bookmark) => {
+                console.log("[EVENT] bookmark.created:", bookmark);
+            });
+            instance.addEventListener("bookmark.deleted", (bookmark) => {
+                console.log("[EVENT] bookmark.deleted:", bookmark);
+            });
+
+            // ── Annotations ───────────────────────────────────────
+            instance.addEventListener("annotation.created", (annotation) => {
+                console.log("[EVENT] annotation.created:", annotation);
+            });
+            instance.addEventListener("annotation.deleted", (annotation) => {
+                console.log("[EVENT] annotation.deleted:", annotation);
+            });
+            instance.addEventListener("annotation.updated", (annotation) => {
+                console.log("[EVENT] annotation.updated:", annotation);
+            });
+            instance.addEventListener("annotation.selected", (annotation) => {
+                console.log("[EVENT] annotation.selected:", annotation);
+            });
+            instance.addEventListener("annotation.comment.added", (annotation) => {
+                console.log("[EVENT] annotation.comment.added:", annotation);
+            });
+
+            // ── Text selection / Toolbox ──────────────────────────
+            instance.addEventListener("toolbox.opened", (detail) => {
+                console.log("[EVENT] toolbox.opened:", detail);
+            });
+            instance.addEventListener("toolbox.closed", (detail) => {
+                console.log("[EVENT] toolbox.closed:", detail);
+            });
+            instance.addEventListener("text.selected", (detail) => {
+                console.log("[EVENT] text.selected:", detail);
+            });
+
+            // ── Definitions ───────────────────────────────────────
+            instance.addEventListener("definition.success", (result) => {
+                console.log("[EVENT] definition.success:", result);
+            });
+            instance.addEventListener("definition.click", (result, highlight) => {
+                console.log("[EVENT] definition.click:", result, highlight);
+            });
+            instance.addEventListener("definition.visible", (item, highlight) => {
+                console.log("[EVENT] definition.visible:", item, highlight);
+            });
+
+            // ── Citation ──────────────────────────────────────────
+            instance.addEventListener("citation.created", (message) => {
+                console.log("[EVENT] citation.created:", message);
+            });
+            instance.addEventListener("citation.failed", (message) => {
+                console.log("[EVENT] citation.failed:", message);
+            });
+
+            // ── Content Protection ────────────────────────────────
+            instance.addEventListener("inspect.detected", () => {
+                console.log("[EVENT] inspect.detected");
+            });
+
+            // ── Consumption ───────────────────────────────────────
+            instance.addEventListener("consumption.action", (detail) => {
+                console.log("[EVENT] consumption.action:", detail);
+            });
+            instance.addEventListener("consumption.idle", (seconds) => {
+                console.log("[EVENT] consumption.idle:", seconds);
             });
 
         }).catch(error => {

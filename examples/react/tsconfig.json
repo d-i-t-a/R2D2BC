@@ -19,7 +19,7 @@
 
 {
   "extends": "../../tsconfig.json",
-  "include": [".", "../../src"],
+  "include": [".", "../parcel.d.ts", "../../src"],
   "exclude": [],
   "compilerOptions": {
     "outDir": "../../dist",

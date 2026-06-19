@@ -17,9 +17,9 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
-import { IFrameNavigator } from "../navigator/IFrameNavigator";
-import { Popup } from "../modules/search/Popup";
+import { Link } from "../model/Link";
+import { EpubNavigator } from "../navigator/EpubNavigator";
+import { Popup } from "../modules/epub/search/Popup";
 import log from "loglevel";
 
 export function addEventListenerOptional(
@@ -42,9 +42,9 @@ export function removeEventListenerOptional(
 }
 
 export default class EventHandler {
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   popup: Popup;
-  constructor(navigator: IFrameNavigator) {
+  constructor(navigator: EpubNavigator) {
     this.navigator = navigator;
     this.popup = new Popup(this.navigator);
   }
@@ -108,10 +108,10 @@ export default class EventHandler {
   private linkInPublication = (readingOrder: Link[], clickedHref: string) =>
     readingOrder.some((link: Link) => {
       return (
-        !link.Rel?.includes("external") &&
+        !(link.rels ? Array.from(link.rels) : []).includes("external") &&
         this.navigator.publication
           .getRelativeHref(clickedHref)
-          .includes(link.Href)
+          .includes(link.href)
       );
     });
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 DITA (AM Consulting LLC)
+ * Copyright 2018-2026 DITA (AM Consulting LLC)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,55 +17,29 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { Link as R2Link } from "r2-shared-js/dist/es6-es2015/src/models/publication-link";
-import { JsonObject } from "ta-json-x";
+export { Link, D2Link, Links } from "./v3/Link";
 
-export class D2Link {
-  href: string;
-  type?: string;
-  title?: string;
-}
+/**
+ * Converts @readium/shared objects to plain JSON-safe objects.
+ * Unwraps Links wrappers (.items), converts Sets to Arrays,
+ * and recursively processes nested objects.
+ */
+export function toPlainObject(o: any): any {
+  if (o == null) return o;
+  if (o instanceof Set) return Array.from(o);
+  if (o.items && Array.isArray(o.items)) return o.items.map(toPlainObject);
+  if (Array.isArray(o)) return o.map(toPlainObject);
+  if (typeof o !== "object") return o;
 
-@JsonObject()
-export class Link extends R2Link {
-  contentLength?: number;
-  contentWeight?: number;
-}
-
-export function convertAndCamel(o) {
-  let newO, origKey, newKey, value;
-  if (o instanceof Array) {
-    return o.map(function (value) {
-      if (typeof value === "object") {
-        value = convertAndCamel(value);
-      }
-      return value;
-    });
-  } else {
-    newO = {};
-    for (origKey in o) {
-      if (o.hasOwnProperty(origKey)) {
-        newKey = (
-          origKey.charAt(0).toLowerCase() + origKey.slice(1) || origKey
-        ).toString();
-        value = o[origKey];
-        if (
-          value instanceof Array ||
-          (value !== null &&
-            value !== undefined &&
-            value.constructor === Object)
-        ) {
-          value = convertAndCamel(value);
-        }
-        if (newKey === "href1") {
-          newO["href"] = value;
-        } else if (newKey === "typeLink") {
-          newO["type"] = value;
-        } else {
-          newO[newKey] = value;
-        }
-      }
-    }
+  const result: any = {};
+  for (const key in o) {
+    if (!o.hasOwnProperty(key)) continue;
+    result[key] = toPlainObject(o[key]);
   }
-  return newO;
+  return result;
 }
+
+/**
+ * @deprecated Use toPlainObject() instead.
+ */
+export const convertAndCamel = toPlainObject;

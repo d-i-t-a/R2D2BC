@@ -17,12 +17,20 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { Annotation, Bookmark, ReadingPosition } from "../model/Locator";
+import { Annotation, Bookmark, Comment, ReadingPosition } from "../model/v3";
 import { IHighlight } from "../modules/highlight/common/highlight";
 import { ISelectionInfo } from "../modules/highlight/common/selection";
 
 interface Annotator {
   initLastReadingPosition(position: ReadingPosition): void;
+  /**
+   * Wipe any locally-stored last reading position. Called by navigators
+   * when the integrator explicitly signals `lastReadingPosition: null`
+   * (e.g. multi-user shared-browser scenario where the new user has no
+   * saved position) so the prior user's local position doesn't bleed
+   * through.
+   */
+  clearLastReadingPosition(): void;
   getLastReadingPosition(): ReadingPosition | null;
   saveLastReadingPosition(position: ReadingPosition | string): void;
 
@@ -49,6 +57,13 @@ interface Annotator {
   /** Returns the reconstituted selection info with a live Range, or null. */
   getTemporarySelectionInfo(doc: Document | null): ISelectionInfo | null;
   deleteTemporarySelectionInfo(): void;
+
+  initComments(list: Comment[] | string): Comment[];
+  saveComment(comment: Comment): Comment;
+  deleteComment(id: string): string;
+  getComments(href?: string): Comment[];
+  getCommentByID(id: string): Comment | null;
+  updateComment(id: string, body: string): Comment | null;
 }
 
 export enum AnnotationType {

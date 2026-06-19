@@ -27,19 +27,22 @@ src/
     ReaderComponent.vue
 ```
 
-### 2. Add ReadiumCSS files
+### 2. Install ReadiumCSS
 
-The reader requires ReadiumCSS stylesheets. Copy the three CSS files from the reader package (or from `viewer/readium-css/` in this repository) into your project's `public/` directory:
-
-```
-public/
-  readium-css/
-    ReadiumCSS-before.css
-    ReadiumCSS-default.css
-    ReadiumCSS-after.css
+```bash
+npm install @readium/css
 ```
 
-The component references these at `/readium-css/ReadiumCSS-*.css`. Adjust the `injectables` array in the component if your paths differ.
+The reader's upstream CSS comes from the `@readium/css` npm package. The example imports the files directly via Parcel `url:` imports in `main.js`:
+
+```js
+import readiumBefore from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-before.css";
+// …etc
+```
+
+If you're integrating into a Vue project that doesn't use Parcel, copy the files from `node_modules/@readium/css/css/dist/` into your project's `public/` directory (or configure your bundler to serve them at a URL) and update the `injectables` array in the component.
+
+The DITA patch overlay (`viewer/readium-css-v2/ReadiumCSS-dita-patch.css`) is local to the DITA Toolkit repo — it's separate from the npm package and contains fixes layered on top of upstream. Copy it into your project alongside the upstream files if you want the same fixes.
 
 ### 3. Use the component
 
@@ -108,12 +111,15 @@ If you need custom CSS injected into EPUB content iframes, add entries to the `i
 
 ```ts
 const injectables = [
-  { type: "style", url: "/readium-css/ReadiumCSS-before.css", r2before: true },
-  { type: "style", url: "/readium-css/ReadiumCSS-default.css", r2default: true },
-  { type: "style", url: "/readium-css/ReadiumCSS-after.css", r2after: true },
+  { type: "style", url: "/path/to/@readium/css/css/dist/ReadiumCSS-before.css", r2before: true },
+  { type: "style", url: "/path/to/@readium/css/css/dist/ReadiumCSS-default.css", r2default: true },
+  { type: "style", url: "/path/to/@readium/css/css/dist/ReadiumCSS-after.css", r2after: true },
+  { type: "style", url: "/path/to/ReadiumCSS-dita-patch.css" },
   { type: "style", url: "/my-custom-styles.css" },
 ];
 ```
+
+The paths depend on how your bundler / server exposes the npm package; the Parcel `url:` import pattern in `main.js` handles this in the example.
 
 ### Persistence
 

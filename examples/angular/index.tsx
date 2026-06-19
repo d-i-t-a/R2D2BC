@@ -10,17 +10,63 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import D2Reader from "../../src";
-import readiumBefore from "url:../react/readium-css/ReadiumCSS-before.css";
-import readiumAfter from "url:../react/readium-css/ReadiumCSS-after.css";
-import readiumDefault from "url:../react/readium-css/ReadiumCSS-default.css";
+import D2Reader, { Injectable } from "../../src";
+import readiumBefore from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-before.css";
+import readiumAfter from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-after.css";
+import readiumDefault from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-default.css";
+import readiumDitaPatch from "url:../../viewer/readium-css-v2/ReadiumCSS-dita-patch.css";
+import cjkBefore from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-before.css";
+import cjkAfter from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-after.css";
+import cjkDefault from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-default.css";
+
+const CJK_LANG_RE = /^(ja|zh|ko)(\b|-)/i;
+const isCJK = (pub: any) => {
+  const langs = pub?.metadata?.languages;
+  return (
+    Array.isArray(langs) && langs.some((l: string) => CJK_LANG_RE.test(l ?? ""))
+  );
+};
 
 // ── ReadiumCSS injectables (same as reader.component.ts) ─────────────
 
-const injectables = [
-  { type: "style", url: readiumBefore, r2before: true },
-  { type: "style", url: readiumDefault, r2default: true },
-  { type: "style", url: readiumAfter, r2after: true },
+const injectables: Injectable[] = [
+  {
+    type: "style",
+    url: readiumBefore,
+    r2before: true,
+    when: (ctx: any) => !isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: readiumDefault,
+    r2default: true,
+    when: (ctx: any) => !isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: readiumAfter,
+    r2after: true,
+    when: (ctx: any) => !isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: cjkBefore,
+    r2before: true,
+    when: (ctx: any) => isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: cjkDefault,
+    r2default: true,
+    when: (ctx: any) => isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: cjkAfter,
+    r2after: true,
+    when: (ctx: any) => isCJK(ctx.publication),
+  },
+  { type: "style", url: readiumDitaPatch },
 ];
 
 // ── Shared constants & inline styles ─────────────────────────────────
@@ -333,15 +379,22 @@ function TocEntry({
   return (
     <>
       <li>
-        <a
+        <button
+          type="button"
           style={{
             ...styles.tocItemLink,
             paddingLeft: 16 + depth * 16,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            font: "inherit",
+            textAlign: "left" as const,
+            width: "100%",
           }}
           onClick={() => onGo(item)}
         >
           {item.title}
-        </a>
+        </button>
       </li>
       {item.children?.map((child, i) => (
         <TocEntry key={i} item={child} depth={depth + 1} onGo={onGo} />
@@ -422,7 +475,8 @@ function App() {
       api: {
         updateCurrentLocation: async () => {},
         updateSettings: async (settings) => {
-          if (settings?.appearance) setAppearanceState(settings.appearance);
+          const appearance = settings?.appearance;
+          if (typeof appearance === "string") setAppearanceState(appearance);
         },
       },
     }).then((r) => {
@@ -793,8 +847,8 @@ function App() {
               <p style={{ fontSize: 14, margin: 0 }}>Loading reader...</p>
             </div>
           )}
-          <div id="reader-loading" className="loading" />
-          <div id="reader-error" className="error" />
+          <div id="reader-loading" className="dita-loading" />
+          <div id="reader-error" className="dita-error" />
         </main>
       </div>
     </div>

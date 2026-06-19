@@ -19,7 +19,7 @@
 import { SHA256 } from "jscrypto/es6/SHA256";
 import Annotator, { AnnotationType } from "./Annotator";
 import Store from "./Store";
-import { Annotation, Bookmark, ReadingPosition } from "../model/Locator";
+import { Annotation, Bookmark, Comment, ReadingPosition } from "../model/v3";
 import { IHighlight } from "../modules/highlight/common/highlight";
 import { ISelectionInfo } from "../modules/highlight/common/selection";
 import { TextHighlighter } from "../modules/highlight/TextHighlighter";
@@ -35,6 +35,7 @@ export default class LocalAnnotator implements Annotator {
   private static readonly LAST_READING_POSITION = "last-reading-position";
   private static readonly BOOKMARKS = "bookmarks";
   private static readonly ANNOTATIONS = "annotations";
+  private static readonly COMMENTS = "comments";
   private static readonly SELECTIONINFO = "selectionInfo";
 
   public constructor(config: LocalAnnotatorConfig) {
@@ -57,6 +58,10 @@ export default class LocalAnnotator implements Annotator {
       const positionString = JSON.stringify(position);
       this.store.set(LocalAnnotator.LAST_READING_POSITION, positionString);
     }
+  }
+
+  public clearLastReadingPosition() {
+    this.store.remove(LocalAnnotator.LAST_READING_POSITION);
   }
 
   public saveLastReadingPosition(position: any) {
@@ -116,7 +121,11 @@ export default class LocalAnnotator implements Annotator {
           el.locations.progression === locator.locations.progression
       );
       if (filteredLocators.length > 0) {
-        return locator;
+        // Return the stored locator (with its `id` and other persisted
+        // fields), not the input synthetic. Callers that just need a
+        // truthy/null check are unaffected; callers that want the actual
+        // bookmark for deletion or jump now get usable data.
+        return filteredLocators[0];
       }
     }
     return null;
@@ -393,5 +402,64 @@ export default class LocalAnnotator implements Annotator {
       }
     }
     return null;
+  }
+
+  // ── Comments ────────────────────────────────────────────────
+
+  public initComments(list: Comment[] | string): Comment[] {
+    if (typeof list === "string") {
+      const parsed = JSON.parse(list);
+      this.store.set(LocalAnnotator.COMMENTS, JSON.stringify(parsed));
+      return parsed;
+    }
+    this.store.set(LocalAnnotator.COMMENTS, JSON.stringify(list));
+    return list;
+  }
+
+  public saveComment(comment: Comment): Comment {
+    const saved = this.store.get(LocalAnnotator.COMMENTS);
+    const arr: Comment[] = saved ? JSON.parse(saved) : [];
+    arr.push(comment);
+    this.store.set(LocalAnnotator.COMMENTS, JSON.stringify(arr));
+    return comment;
+  }
+
+  public deleteComment(id: string): string {
+    const saved = this.store.get(LocalAnnotator.COMMENTS);
+    if (saved) {
+      const arr = (JSON.parse(saved) as Comment[]).filter((c) => c.id !== id);
+      this.store.set(LocalAnnotator.COMMENTS, JSON.stringify(arr));
+    }
+    return id;
+  }
+
+  public getComments(href?: string): Comment[] {
+    const saved = this.store.get(LocalAnnotator.COMMENTS);
+    if (!saved) return [];
+    const arr = JSON.parse(saved) as Comment[];
+    const filtered = href ? arr.filter((c) => c.href === href) : arr;
+    return filtered.sort((a, b) => {
+      const ta = a.locations?.time ?? 0;
+      const tb = b.locations?.time ?? 0;
+      return ta - tb;
+    });
+  }
+
+  public getCommentByID(id: string): Comment | null {
+    const saved = this.store.get(LocalAnnotator.COMMENTS);
+    if (!saved) return null;
+    const arr = JSON.parse(saved) as Comment[];
+    return arr.find((c) => c.id === id) ?? null;
+  }
+
+  public updateComment(id: string, body: string): Comment | null {
+    const saved = this.store.get(LocalAnnotator.COMMENTS);
+    if (!saved) return null;
+    const arr = JSON.parse(saved) as Comment[];
+    const idx = arr.findIndex((c) => c.id === id);
+    if (idx < 0) return null;
+    arr[idx] = { ...arr[idx], body, editedAt: new Date() };
+    this.store.set(LocalAnnotator.COMMENTS, JSON.stringify(arr));
+    return arr[idx];
   }
 }

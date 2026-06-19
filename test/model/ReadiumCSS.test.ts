@@ -12,21 +12,45 @@ import { describe, it, expect } from "vitest";
 import { ReadiumCSS } from "../../src/model/user-settings/ReadiumCSS";
 
 describe("ReadiumCSS constants", () => {
-  it("every KEY follows the --USER__<ref> pattern", () => {
-    const keyEntries = Object.entries(ReadiumCSS).filter(
-      ([name]) =>
-        name.endsWith("_KEY") && typeof (ReadiumCSS as any)[name] === "string"
+  it("user-setting KEYs follow the --USER__<ref> pattern", () => {
+    // Integrator-controlled settings live under --USER__*. Most have a
+    // matching REF (the bare setting name); when a REF is present the
+    // KEY must equal "--USER__" + REF. A few --USER__ keys are applied
+    // only by DITA Toolkit internally (e.g. FONT_SIZE_NORMALIZE, a v1 fallback
+    // activated when the browser does not support CSS zoom) and have no
+    // integrator-facing REF.
+    const userKeyEntries = Object.entries(ReadiumCSS).filter(
+      ([name, value]) =>
+        name.endsWith("_KEY") &&
+        typeof value === "string" &&
+        (value as string).startsWith("--USER__")
     );
 
-    expect(keyEntries.length).toBeGreaterThan(0);
+    expect(userKeyEntries.length).toBeGreaterThan(0);
 
-    for (const [name, value] of keyEntries) {
+    for (const [name, value] of userKeyEntries) {
       expect(value).toMatch(/^--USER__\w+$/);
-      // Corresponding REF should exist
       const refName = name.replace("_KEY", "_REF");
-      expect((ReadiumCSS as any)[refName]).toBeDefined();
-      // KEY must equal "--USER__" + REF
-      expect(value).toBe("--USER__" + (ReadiumCSS as any)[refName]);
+      const ref = (ReadiumCSS as any)[refName];
+      if (ref !== undefined) {
+        expect(value).toBe("--USER__" + ref);
+      }
+    }
+  });
+
+  it("reading-system KEYs follow the --RS__<name> pattern", () => {
+    // Reading-system properties (e.g. scroll padding) live under --RS__*.
+    // They are applied directly by DITA Toolkit and don't expose a REF to the
+    // integrator, so the pattern check is simpler.
+    const rsKeyEntries = Object.entries(ReadiumCSS).filter(
+      ([name, value]) =>
+        name.endsWith("_KEY") &&
+        typeof value === "string" &&
+        (value as string).startsWith("--RS__")
+    );
+
+    for (const [, value] of rsKeyEntries) {
+      expect(value).toMatch(/^--RS__\w+$/);
     }
   });
 

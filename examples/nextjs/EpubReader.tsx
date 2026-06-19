@@ -1,13 +1,59 @@
 import React, { useState, useEffect, useCallback } from "react";
 import D2Reader from "../../src";
-import readiumBefore from "url:../react/readium-css/ReadiumCSS-before.css";
-import readiumAfter from "url:../react/readium-css/ReadiumCSS-after.css";
-import readiumDefault from "url:../react/readium-css/ReadiumCSS-default.css";
+import readiumBefore from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-before.css";
+import readiumAfter from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-after.css";
+import readiumDefault from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-default.css";
+import readiumDitaPatch from "url:../../viewer/readium-css-v2/ReadiumCSS-dita-patch.css";
+import cjkBefore from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-before.css";
+import cjkAfter from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-after.css";
+import cjkDefault from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-default.css";
+
+const CJK_LANG_RE = /^(ja|zh|ko)(\b|-)/i;
+const isCJK = (pub: any) => {
+  const langs = pub?.metadata?.languages;
+  return (
+    Array.isArray(langs) && langs.some((l: string) => CJK_LANG_RE.test(l ?? ""))
+  );
+};
 
 const injectables = [
-  { type: "style", url: readiumBefore, r2before: true },
-  { type: "style", url: readiumDefault, r2default: true },
-  { type: "style", url: readiumAfter, r2after: true },
+  {
+    type: "style",
+    url: readiumBefore,
+    r2before: true,
+    when: (ctx: any) => !isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: readiumDefault,
+    r2default: true,
+    when: (ctx: any) => !isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: readiumAfter,
+    r2after: true,
+    when: (ctx: any) => !isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: cjkBefore,
+    r2before: true,
+    when: (ctx: any) => isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: cjkDefault,
+    r2default: true,
+    when: (ctx: any) => isCJK(ctx.publication),
+  },
+  {
+    type: "style",
+    url: cjkAfter,
+    r2after: true,
+    when: (ctx: any) => isCJK(ctx.publication),
+  },
+  { type: "style", url: readiumDitaPatch },
 ];
 
 const FONT =
@@ -109,7 +155,7 @@ const css = {
     color: "inherit",
   },
   slider: { width: 70, accentColor: "#4a90d9" },
-};
+} as const;
 
 const themes = {
   day: { bg: "#FFFFFF", fg: "#121212", border: "#e0e0e0" },
@@ -123,11 +169,16 @@ const themes = {
 // ── App ──────────────────────────────────────────────────────────────
 
 export default function EpubReader() {
-  const [reader, setReader] = useState(null);
+  const [reader, setReader] = useState<D2Reader | null>(null);
   const [, setTick] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("toc");
-  const [pageInfo, setPageInfo] = useState({});
+  const [pageInfo, setPageInfo] = useState<{
+    chapterTitle?: string;
+    pageIndex?: number;
+    pageCount?: number;
+    totalProgression?: number;
+  }>({});
   const [appearance, setAppearanceState] = useState("day");
   const refresh = useCallback(() => setTick((n) => n + 1), []);
 
@@ -169,7 +220,7 @@ export default function EpubReader() {
       if (a) setAppearanceState(a);
       setTimeout(() => updatePageInfo(r), 500);
     });
-  }, []);
+  }, [updatePageInfo]);
 
   useEffect(() => {
     if (!reader) return;
@@ -553,8 +604,8 @@ export default function EpubReader() {
               Loading reader…
             </div>
           )}
-          <div id="reader-loading" className="loading" />
-          <div id="reader-error" className="error" />
+          <div id="reader-loading" className="dita-loading" />
+          <div id="reader-error" className="dita-error" />
         </main>
       </div>
     </div>

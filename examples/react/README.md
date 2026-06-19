@@ -36,5 +36,6 @@ examples/react/
   index.tsx         — Full React app (single file)
   tsconfig.json     — Extends root tsconfig
   parcel.d.ts       — Parcel url: import types
-  readium-css/      — Bundled ReadiumCSS files (shared by other examples)
 ```
+
+ReadiumCSS v2 upstream files are imported from the `@readium/css` npm package via `url:../../node_modules/@readium/css/css/dist/*`. The DITA patch overlay is imported from `url:../../viewer/readium-css-v2/ReadiumCSS-dita-patch.css` (local to this repo, not in the npm package). No per-example copy.

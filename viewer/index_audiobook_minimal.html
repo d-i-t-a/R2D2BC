@@ -1,0 +1,376 @@
+<!doctype html>
+<!--
+  Minimal audiobook viewer — the bare wiring an integrator needs to
+  ship a working audiobook player. Intentionally has no design system,
+  no popovers, no comments/bookmarks list, no sleep timer, no settings
+  panel. Just:
+
+    - the library's compiled stylesheet (`player.css`) for the scrubber
+    - two empty containers the timeline module renders into
+    - simple transport buttons that call D2Reader methods directly
+    - minimal time labels updated from `playback.timeupdate`
+
+  Open with `?url=<webpub-manifest-url>`. Local IA fixtures work too,
+  e.g. `?url=/archive/flatland_rg_librivox/manifest.json`.
+-->
+<html lang="en">
+
+<head>
+    <title>D2 Reader — Audiobook (minimal)</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Library-shipped stylesheet for the audiobook timeline scrubber.
+         Anything else on the page is the integrator's. -->
+    <link rel="stylesheet" href="player.css" />
+
+    <style>
+        /* Minimal layout only — no design system, no theming. */
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 560px;
+            margin: 40px auto;
+            padding: 0 16px;
+            color: #222;
+        }
+        h1 { font-size: 20px; margin: 0 0 4px; }
+        .author { color: #666; margin: 0 0 24px; }
+        .header { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+        .cover {
+            width: 96px; height: 96px; flex-shrink: 0;
+            background: #ececf2 center/cover no-repeat;
+            border-radius: 4px;
+        }
+        .meta { flex: 1; min-width: 0; }
+        .meta h1, .meta p { margin: 0; }
+        .meta .author { margin-top: 4px; }
+        .row { display: flex; align-items: center; gap: 8px; }
+        .time { font-size: 12px; color: #666; min-width: 48px; font-variant-numeric: tabular-nums; }
+        .time.right { text-align: right; }
+        /* Layout slot for the scrubber. The timeline module fills it. */
+        #chapter-scrubber { flex: 1; }
+        /* Whole-book strip — always shown in this minimal demo so
+           both scrubbers are visible. Real integrators may toggle
+           visibility based on `audiobookSettings.timelineMode`. */
+        #book-scrubber-row { margin-top: 8px; padding: 0 56px; }
+        button {
+            font: inherit;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        /* Spinner state — when the navigator reports waiting=true on the
+           play button, hide the play/pause glyph and show a rotating ring
+           in its place. CSS-only, no asset. */
+        #play { position: relative; min-width: 2.5em; }
+        #play.waiting { color: transparent; }
+        #play.waiting::after {
+            content: "";
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 14px; height: 14px;
+            margin: -7px 0 0 -7px;
+            border: 2px solid rgba(0, 0, 0, 0.2);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: dita-audiobook-minimal-spin 0.8s linear infinite;
+        }
+        @keyframes dita-audiobook-minimal-spin {
+            to { transform: rotate(360deg); }
+        }
+        .transport { justify-content: center; gap: 8px; margin-top: 16px; }
+        .section-heading { font-size: 14px; font-weight: 600; margin: 32px 0 8px; color: #555; }
+        .error { color: #c00; }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="cover" id="cover" aria-hidden="true"></div>
+        <div class="meta">
+            <h1 id="title">Loading…</h1>
+            <p class="author" id="author"></p>
+        </div>
+    </div>
+
+    <!-- Scrubber row: time labels frame the bar. The empty `<div>`
+         is the container `audiobookTimeline.chapterScrubberContainer`
+         points at — the library writes its inner DOM here. -->
+    <div class="row">
+        <span class="time" id="time-current">0:00</span>
+        <div id="chapter-scrubber"></div>
+        <span class="time right" id="time-duration">0:00</span>
+    </div>
+
+    <!-- Whole-book strip — second container the timeline module
+         renders into. Hidden until the user picks "both" mode. -->
+    <div id="book-scrubber-row">
+        <div id="book-scrubber"></div>
+    </div>
+
+    <!-- Plain transport buttons. The library exposes the underlying
+         methods on the D2Reader instance; integrators wire up
+         whatever button styling fits their app. -->
+    <div class="row transport">
+        <button id="prev" disabled>⏮</button>
+        <button id="skip-back" disabled>−15s</button>
+        <button id="play" disabled>▶</button>
+        <button id="skip-fwd" disabled>+15s</button>
+        <button id="next" disabled>⏭</button>
+    </div>
+
+
+    <!-- Chapter list — AudiobookNavigator renders into this container
+         from `publication.tableOfContents` (recursive Link tree).
+         Top-level entries are chapters; nested children become
+         indented sub-rows. Click → goTo. -->
+    <h2 class="section-heading">Chapters</h2>
+    <div id="chapter-list"></div>
+
+    <!-- Bookmark list — AudiobookBookmarkModule renders into this
+         container from its own bookmark store. Chapter-grouped rows
+         with a delete action; click → goTo. Re-renders on every
+         save / delete. -->
+    <h2 class="section-heading">Bookmarks</h2>
+    <div id="bookmark-list"></div>
+    <div class="row" style="margin-top: 8px;">
+        <button id="add-bookmark" disabled>Add bookmark at current position</button>
+    </div>
+
+    <!-- Comment list — AudiobookCommentsModule renders into this
+         container. Body + time + delete action; integrator's
+         `audiobookComments.onEdit` hook decides what edit means. -->
+    <h2 class="section-heading">Comments</h2>
+    <div id="comment-list"></div>
+    <div class="row" style="margin-top: 8px;">
+        <button id="add-comment" disabled>Add comment at current position</button>
+    </div>
+
+    <p class="error" id="error" hidden></p>
+
+    <!-- D2Reader.load() looks up `#D2Reader-Container` unconditionally
+         before branching by publication type. Audiobooks don't render
+         visual content, so the element exists only to satisfy the
+         lookup — it stays empty and hidden. -->
+    <div id="D2Reader-Container" hidden></div>
+
+    <script src="reader.js"></script>
+    <script>
+        const ui = {
+            cover: document.getElementById("cover"),
+            title: document.getElementById("title"),
+            author: document.getElementById("author"),
+            timeCurrent: document.getElementById("time-current"),
+            timeDuration: document.getElementById("time-duration"),
+            bookScrubberRow: document.getElementById("book-scrubber-row"),
+            play: document.getElementById("play"),
+            prev: document.getElementById("prev"),
+            next: document.getElementById("next"),
+            skipBack: document.getElementById("skip-back"),
+            skipFwd: document.getElementById("skip-fwd"),
+            addBookmark: document.getElementById("add-bookmark"),
+            addComment: document.getElementById("add-comment"),
+            error: document.getElementById("error"),
+        };
+
+        const manifestUrl = new URL(location.href).searchParams.get("url");
+        if (!manifestUrl) {
+            ui.title.textContent = "Pass ?url=<manifest> in the address bar.";
+            throw new Error("No manifest URL");
+        }
+
+        function formatTime(seconds) {
+            seconds = Math.max(0, Math.floor(seconds || 0));
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            const mm = String(m).padStart(h > 0 ? 2 : 1, "0");
+            const ss = String(s).padStart(2, "0");
+            return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+        }
+
+        async function start() {
+            let d2reader;
+            try {
+                d2reader = await D2Reader.load({
+                    url: new URL(manifestUrl, location.href),
+                    rights: {
+                        enableBookmarks: true,
+                        enableComments: true,
+                        enableTimeline: true,
+                    },
+                    useLocalStorage: true,
+                    // All audiobook-specific configuration lives under
+                    // this single field — user settings, module
+                    // configs, and navigator-level options. Library
+                    // renders DOM into the integrator-supplied
+                    // containers; integrator owns layout around them.
+                    audiobook: {
+                        preservePitchWorkletUrl: "/viewer/PreservePitchProcessor.js",
+                        chapterListContainer: document.getElementById("chapter-list"),
+                        bookmarks: {
+                            listContainer: document.getElementById("bookmark-list"),
+                        },
+                        comments: {
+                            listContainer: document.getElementById("comment-list"),
+                            // Integrator's edit-UX hook. Gets the
+                            // comment to edit; integrator owns the
+                            // form. Without this, the edit button is
+                            // hidden.
+                            onEdit: (comment) => {
+                                const next = window.prompt("Edit comment:", comment.body ?? "");
+                                if (next !== null && next.trim() !== "") {
+                                    window.d2reader.updateComment(comment.id, next.trim());
+                                }
+                            },
+                        },
+                        timeline: {
+                            chapterScrubberContainer: document.getElementById("chapter-scrubber"),
+                            bookScrubberContainer: document.getElementById("book-scrubber"),
+                        },
+                        // Theme overrides applied to every audiobook
+                        // UI surface — scrubber, chapter list,
+                        // bookmark / comment lists. Each maps to one
+                        // of the `--dita-audiobook-*` CSS custom
+                        // properties. Omit any field to fall back to
+                        // the SCSS default.
+                        colors: {
+                            accent: "#4f46e5",                     // fill, thumb, current chapter row, bookmark marker
+                            accentFade: "rgba(79, 70, 229, 0.14)", // hovered chapter band
+                            track: "#ececf2",                      // background bar
+                            comment: "#a1a1aa",                    // comment marker
+                            boundary: "rgba(0, 0, 0, 0.22)",       // chapter divider line
+                        },
+                        // Head-of-chapter HTTP prefetch. Library
+                        // default is off (head-only caching has
+                        // marginal UX impact until a Service-Worker
+                        // full-file caching layer lands). Enabled
+                        // here so this dev viewer can exercise the
+                        // prefetch path. `bytes` is for
+                        // experimentation (262144 = 256KB, 1048576 =
+                        // 1MB, 4194304 = 4MB).
+                        prefetch: {
+                            enabled: true,
+                            bytes: 4194304,
+                            concurrency: 3,
+                        },
+                    },
+                });
+            } catch (error) {
+                ui.error.hidden = false;
+                ui.error.textContent = "Failed to load: " + (error?.message || error);
+                return;
+            }
+
+            if (!d2reader.isAudiobook) {
+                ui.error.hidden = false;
+                ui.error.textContent = "Not an audiobook publication.";
+                return;
+            }
+
+            // Title + author from D2Reader.metadata. Readium metadata
+            // uses LocalizedString objects (`{ en: "...", ... }`) and
+            // Contributor objects (`{ name: ... }`), so we unwrap.
+            const readable = (value) => {
+                if (!value) return "";
+                if (typeof value === "string") return value;
+                if (Array.isArray(value)) return readable(value[0]);
+                if (typeof value.getTranslation === "function") return value.getTranslation();
+                if (value.name !== undefined) return readable(value.name);
+                return "";
+            };
+            const meta = d2reader.metadata ?? {};
+            ui.title.textContent = readable(meta.title) || "(untitled)";
+            const authors = meta.authors ?? meta.author;
+            ui.author.textContent = Array.isArray(authors)
+                ? authors.map(readable).filter(Boolean).join(", ")
+                : readable(authors);
+            ui.timeDuration.textContent = formatTime(d2reader.duration);
+
+            // Cover image — `d2reader.cover` returns the absolute URL
+            // ready to drop into <img> or background-image. Returns
+            // undefined when the manifest has no recognizable cover.
+            if (d2reader.cover) {
+                ui.cover.style.backgroundImage = `url("${d2reader.cover}")`;
+            }
+
+            // Whole-book strip is library-rendered into #book-scrubber;
+            // visibility is the integrator's call. Show it only when
+            // the user has picked "both" timeline mode (default mode
+            // is "chapter" so it stays hidden until they ask for it).
+            const refreshBookStrip = () => {
+                const mode = d2reader.audiobookSettings?.timelineMode;
+                ui.bookScrubberRow.dataset.visible = mode === "both" ? "true" : "false";
+            };
+            refreshBookStrip();
+            d2reader.audiobookSettings?.onChange((key) => {
+                if (key === "timelineMode") refreshBookStrip();
+            });
+
+            // Time labels — library emits these events; integrator
+            // decides what to do with them.
+            d2reader.addEventListener("playback.timeupdate", (payload) => {
+                ui.timeCurrent.textContent = formatTime(payload.currentTime);
+                ui.timeDuration.textContent = formatTime(payload.duration);
+            });
+
+            // Play button reflects state.
+            const setPlaying = (playing) => {
+                ui.play.textContent = playing ? "⏸" : "▶";
+            };
+            d2reader.addEventListener("playback.started", () => setPlaying(true));
+            d2reader.addEventListener("playback.paused", () => setPlaying(false));
+            d2reader.addEventListener("playback.ended", () => setPlaying(false));
+            // Spinner: cross-chapter load, cold-start, mid-playback
+            // rebuffer. The CSS swaps the glyph for a rotating ring.
+            d2reader.addEventListener("playback.waiting", (payload) => {
+                ui.play.classList.toggle("waiting", !!payload?.waiting);
+                ui.play.setAttribute(
+                    "aria-busy",
+                    payload?.waiting ? "true" : "false"
+                );
+            });
+
+            // Prev/next buttons enable/disable on chapter boundaries.
+            const refreshBoundary = () => {
+                ui.prev.disabled = !d2reader.hasPreviousChapter;
+                ui.next.disabled = !d2reader.hasNextChapter;
+            };
+            refreshBoundary();
+            d2reader.addEventListener("playback.trackchanged", refreshBoundary);
+
+            // Wire up controls. These are just D2Reader method calls
+            // — no custom logic in the viewer.
+            ui.play.addEventListener("click", () => {
+                if (ui.play.textContent === "▶") d2reader.play();
+                else d2reader.pause();
+            });
+            ui.prev.addEventListener("click", () => d2reader.previousChapter());
+            ui.next.addEventListener("click", () => d2reader.nextChapter());
+            ui.skipBack.addEventListener("click", () => d2reader.skipBackward());
+            ui.skipFwd.addEventListener("click", () => d2reader.skipForward());
+
+            // Bookmark / comment add buttons. The library's modules
+            // own the rendered list — these buttons just feed the
+            // backing store, which triggers a re-render via events.
+            ui.addBookmark.addEventListener("click", () => d2reader.saveBookmark());
+            ui.addComment.addEventListener("click", () => {
+                const body = window.prompt("Comment:");
+                if (body && body.trim() !== "") d2reader.addComment(body.trim());
+            });
+
+            // Enable buttons now that the reader is wired up.
+            for (const btn of [ui.play, ui.skipBack, ui.skipFwd, ui.addBookmark, ui.addComment]) btn.disabled = false;
+
+            // Expose for console debugging only.
+            window.d2reader = d2reader;
+        }
+
+        start();
+    </script>
+</body>
+
+</html>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 DITA (AM Consulting LLC)
+ * Copyright 2018-2026 DITA (AM Consulting LLC)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,51 +17,15 @@
  * Licensed to: Bokbasen AS and CAST under one or more contributor license agreements.
  */
 
-import { IHighlight } from "../modules/highlight/common/highlight";
-
-export interface Locator {
-  href: string;
-  type?: string;
-  title?: string;
-  locations: Locations;
-  text?: LocatorText;
-  displayInfo?: any;
-}
-
-export interface LocatorText {
-  after?: string;
-  before?: string;
-  highlight?: string;
-}
-
-export interface Locations {
-  fragment?: string; // 2 = fragment identifier (toc, page lists, landmarks)
-  progression?: number; // 3 = bookmarks
-  position?: number; // 4 = goto page
-  totalProgression?: number;
-  remainingPositions?: number;
-  totalRemainingPositions?: number;
-}
-
-export interface ReadingPosition extends Locator {
-  created: Date;
-}
-
-export interface Bookmark extends Locator {
-  id?: any;
-  created: Date;
-}
-
-export enum AnnotationMarker {
-  Highlight,
-  Underline,
+/**
+ * @deprecated Import from "./v3/Locator" instead. This file re-exports for backwards compatibility.
+ */
+export {
+  Locator,
+  LocatorText,
+  Locations,
+  ReadingPosition,
   Bookmark,
-  Custom,
-  Comment,
-}
-
-export interface Annotation extends Locator {
-  id?: any;
-  created: Date;
-  highlight?: IHighlight;
-}
+  Annotation,
+  AnnotationMarker,
+} from "./v3/Locator";

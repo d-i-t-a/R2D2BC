@@ -37,13 +37,13 @@
   }
 }
 
-.loading.is-loading {
+.dita-loading.is-loading {
   .icon {
     animation: load 1s ease-in-out infinite;
   }
 }
 
-.loading {
+.dita-loading {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -69,13 +69,13 @@
 }
 
 [data-viewer-theme="sepia"] {
-  .loading {
+  .dita-loading {
     background-color: transparentize($sepia-bg, 0.1);
   }
 }
 
 [data-viewer-theme="night"] {
-  .loading {
+  .dita-loading {
     background-color: lighten($night-bg, 10%);
     color: $ui-light-gray;
 

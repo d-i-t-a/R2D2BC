@@ -267,11 +267,11 @@ interface TocItem {
     <!-- Reader Container (required DOM structure) -->
     <div id="D2Reader-Container">
       <main id="iframe-wrapper" tabindex="-1">
-        <div id="reader-loading" class="loading" *ngIf="!reader">
+        <div id="reader-loading" class="dita-loading" *ngIf="!reader">
           <div class="spinner"></div>
           <p>Loading reader...</p>
         </div>
-        <div id="reader-error" class="error"></div>
+        <div id="reader-error" class="dita-error"></div>
       </main>
     </div>
   `,
@@ -589,7 +589,7 @@ interface TocItem {
       }
 
       /* Loading State */
-      .loading {
+      .dita-loading {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -614,12 +614,12 @@ interface TocItem {
         }
       }
 
-      .loading p {
+      .dita-loading p {
         font-size: 14px;
         margin: 0;
       }
 
-      .error {
+      .dita-error {
         color: #dc2626;
         text-align: center;
         padding: 20px;
@@ -656,23 +656,57 @@ export class ReaderComponent implements OnInit, OnDestroy {
     try {
       const url = new URL("https://alice.dita.digital/manifest.json");
 
+      const CJK_LANG_RE = /^(ja|zh|ko)(\b|-)/i;
+      const isCJK = (pub: any) => {
+        const langs = pub?.metadata?.languages;
+        return (
+          Array.isArray(langs) &&
+          langs.some((l: string) => CJK_LANG_RE.test(l ?? ""))
+        );
+      };
+
       this.reader = await D2Reader.load({
         url,
         injectables: [
           {
             type: "style",
-            url: "/assets/readium-css/ReadiumCSS-before.css",
+            url: "/node_modules/@readium/css/css/dist/ReadiumCSS-before.css",
             r2before: true,
+            when: (ctx: any) => !isCJK(ctx.publication),
           },
           {
             type: "style",
-            url: "/assets/readium-css/ReadiumCSS-default.css",
+            url: "/node_modules/@readium/css/css/dist/ReadiumCSS-default.css",
             r2default: true,
+            when: (ctx: any) => !isCJK(ctx.publication),
           },
           {
             type: "style",
-            url: "/assets/readium-css/ReadiumCSS-after.css",
+            url: "/node_modules/@readium/css/css/dist/ReadiumCSS-after.css",
             r2after: true,
+            when: (ctx: any) => !isCJK(ctx.publication),
+          },
+          {
+            type: "style",
+            url: "/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-before.css",
+            r2before: true,
+            when: (ctx: any) => isCJK(ctx.publication),
+          },
+          {
+            type: "style",
+            url: "/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-default.css",
+            r2default: true,
+            when: (ctx: any) => isCJK(ctx.publication),
+          },
+          {
+            type: "style",
+            url: "/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-after.css",
+            r2after: true,
+            when: (ctx: any) => isCJK(ctx.publication),
+          },
+          {
+            type: "style",
+            url: "/viewer/readium-css-v2/ReadiumCSS-dita-patch.css",
           },
         ],
         injectablesFixed: [],

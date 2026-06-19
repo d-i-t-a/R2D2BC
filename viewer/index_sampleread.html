@@ -189,6 +189,12 @@
             cursor: pointer; text-decoration: none; transition: background .15s;
         }
         .sample-popup .cta-btn:hover { background: #6d28d9; }
+        /* Prevent edge-swipe back/forward gestures from triggering when
+           horizontally scrolling inside the iframe wrapper or the iframe
+           document itself (RTL paginated, vertical-rl scroll). */
+        #iframe-wrapper { overscroll-behavior-x: contain; }
+        #iframe-wrapper iframe { overscroll-behavior-x: contain; }
+        html, body { overscroll-behavior-x: contain; }
     </style>
 
 </head>
@@ -313,12 +319,12 @@
 
         <div id="D2Reader-Container" style="height: calc(100vh - 76px);">
             <main style="height: calc(100vh - 76px);" tabindex=-1 id="iframe-wrapper">
-                <div id="reader-loading" class="loading"></div>
-                <div id="reader-error" class="error"></div>
-                <div id="reader-info-top" class="info top">
+                <div id="reader-loading" class="dita-loading"></div>
+                <div id="reader-error" class="dita-error"></div>
+                <div id="reader-info-top" class="dita-info top">
                     <span class="book-title"></span>
                 </div>
-                <div id="reader-info-bottom" class="info bottom">
+                <div id="reader-info-bottom" class="dita-info bottom" style="height: 60px;">
                     <div style="display: flex;justify-content: center;">
                         <span class="chapter-position"></span>&nbsp;
                         <span class="chapter-title"></span>
@@ -332,7 +338,7 @@
                 </div>
             </main>
             <div id="container-view-security" class="security"></div>
-            <div id="container-view-timeline" class="timeline" style="top: 5rem;bottom: 2.5rem;"></div>
+            <div id="container-view-timeline" class="dita-timeline" style="top: 5rem;bottom: 2.5rem;"></div>
             <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
                style="top: 76px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
                 <i class="material-icons black-text" style="left: calc(50% - 12px);
@@ -431,10 +437,27 @@
         }
 
         /* ── Injectables ── */
+        const isLtr = (ctx) => ctx.scriptMode === "ltr";
+        const isRtl = (ctx) => ctx.scriptMode === "rtl";
+        const isCjkHorizontal = (ctx) => ctx.scriptMode === "cjk-horizontal";
+        const isCjkVertical = (ctx) =>
+            ctx.scriptMode === "cjk-vertical" || ctx.scriptMode === "mongolian-vertical";
+
         let injectables = [
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/ReadiumCSS-before.css', r2before: true, when: isLtr },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/ReadiumCSS-default.css', r2default: true, when: isLtr },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/ReadiumCSS-after.css', r2after: true, when: isLtr },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-before.css', r2before: true, when: isRtl },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-default.css', r2default: true, when: isRtl },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-after.css', r2after: true, when: isRtl },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-before.css', r2before: true, when: isCjkHorizontal },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-default.css', r2default: true, when: isCjkHorizontal },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-after.css', r2after: true, when: isCjkHorizontal },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-before.css', r2before: true, when: isCjkVertical },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-default.css', r2default: true, when: isCjkVertical },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-after.css', r2after: true, when: isCjkVertical },
+            { type: 'style', url: '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css', when: isLtr },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-dita-patch.css', r2after: true, when: isCjkVertical },
             { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
             { type: 'style', fontFamily: 'Courier', systemFont: true },
@@ -457,11 +480,14 @@
         D2Reader.load({
             url: new URL(urlParams['url']),
             attributes: {
-                margin: 120,
-                navHeight: 76,
-                iframePaddingTop: 20,
-                bottomInfoHeight: 60,
-                sideNavPosition: 'right'
+                // Extra px reserved below the iframe. Optional.
+                margin: 40,
+                // Iframe CSS padding. Not applied to fixed-layout.
+                iframe: {
+                  padding: {
+                    top: 20
+                  }
+                }
             },
             rights: {
                 enableMaterial: true,
@@ -611,30 +637,7 @@
             setScroll(String(scrollMode).toLowerCase());
         }
 
-        /* ── Keyboard navigation ── */
-        document.addEventListener('keydown', function (e) {
-            if (!d2reader) return;
-            switch (e.key) {
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    d2reader.previousPage();
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    d2reader.nextPage();
-                    break;
-                case 'ArrowUp':
-                    e.preventDefault();
-                    d2reader.previousPage();
-                    break;
-                case 'ArrowDown':
-                    e.preventDefault();
-                    d2reader.nextPage();
-                    break;
-            }
-        });
-
-        /* ── Dismiss sample popup on overlay click ── */
+/* ── Dismiss sample popup on overlay click ── */
         document.getElementById('samplePopupOverlay').addEventListener('click', function (e) {
             if (e.target === this) {
                 this.classList.remove('visible');

@@ -36,7 +36,11 @@
         .sep { width: 1px; height: 18px; background: #e0e0e0; flex-shrink: 0; }
         .info { font-size: 8pt; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; }
         #D2Reader-Container { margin-top: 41px; }
-        #iframe-wrapper { height: calc(100vh - 41px); }
+        #iframe-wrapper { height: calc(100vh - 41px); overscroll-behavior-x: contain; }
+        #iframe-wrapper iframe { overscroll-behavior-x: contain; }
+        /* Prevent edge-swipe back/forward gestures during horizontal scroll
+           (RTL paginated, vertical-rl scroll). */
+        html, body { overscroll-behavior-x: contain; }
     </style>
 </head>
 <body>
@@ -49,13 +53,13 @@
         <button class="pill" onclick="d2reader.nextResource()" title="Next chapter">Ch &raquo;</button>
         <div class="sep"></div>
         <button class="pill" id="btn-scroll" onclick="toggleScroll()" title="Toggle scroll/paginated">Paginated</button>
-        <span class="info" id="page-info"></span>
+        <span class="dita-info" id="page-info"></span>
     </div>
 
     <div id="D2Reader-Container">
         <main tabindex="-1" id="iframe-wrapper">
-            <div id="reader-loading" class="loading"></div>
-            <div id="reader-error" class="error"></div>
+            <div id="reader-loading" class="dita-loading"></div>
+            <div id="reader-error" class="dita-error"></div>
         </main>
     </div>
 
@@ -63,10 +67,37 @@
         let urlParams = Object.fromEntries(new URL(location.href).searchParams);
         let d2reader, isScroll = false;
 
+        let origin = window.location.origin;
+
+        // ReadiumCSS variant per script mode. ctx.scriptMode is derived by
+        // the navigator from publication metadata (languages + readingProgression).
+        const isLtr = (ctx) => ctx.scriptMode === "ltr";
+        const isRtl = (ctx) => ctx.scriptMode === "rtl";
+        const isCjkHorizontal = (ctx) => ctx.scriptMode === "cjk-horizontal";
+        const isCjkVertical = (ctx) =>
+            ctx.scriptMode === "cjk-vertical" || ctx.scriptMode === "mongolian-vertical";
+
         let injectables = [
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
+            // Base ReadiumCSS v2 — LTR (default Latin / non-CJK)
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-before.css', r2before: true, when: isLtr },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-default.css', r2default: true, when: isLtr },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-after.css', r2after: true, when: isLtr },
+            // RTL ReadiumCSS — Arabic, Hebrew, Persian, etc.
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-before.css', r2before: true, when: isRtl },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-default.css', r2default: true, when: isRtl },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-after.css', r2after: true, when: isRtl },
+            // CJK-horizontal ReadiumCSS — Chinese, Japanese, Korean (horizontal)
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-before.css', r2before: true, when: isCjkHorizontal },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-default.css', r2default: true, when: isCjkHorizontal },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-after.css', r2after: true, when: isCjkHorizontal },
+            // CJK-vertical ReadiumCSS — Japanese vertical, Mongolian-vertical
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-before.css', r2before: true, when: isCjkVertical },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-default.css', r2default: true, when: isCjkVertical },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-after.css', r2after: true, when: isCjkVertical },
+            // Dita patch layer (LTR / RTL / cjk-horizontal).
+            { type: 'style', url: origin + '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css', when: (ctx) => !isCjkVertical(ctx) },
+            // Dita patch layer (cjk-vertical / mongolian-vertical).
+            { type: 'style', url: origin + '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-dita-patch.css', r2after: true, when: isCjkVertical },
         ];
 
         D2Reader.load({
@@ -93,11 +124,6 @@
             btn.classList.toggle('active', isScroll);
         }
 
-        document.addEventListener('keydown', function (e) {
-            if (!d2reader) return;
-            if (e.key === 'ArrowLeft') d2reader.previousPage();
-            else if (e.key === 'ArrowRight') d2reader.nextPage();
-        });
     </script>
 </body>
 </html>

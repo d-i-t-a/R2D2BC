@@ -1,4 +1,4 @@
-# R2D2BC Examples
+# DITA Toolkit Examples
 
 Eight example implementations are included to demonstrate how to integrate `@d-i-t-a/reader` across different frameworks and environments.
 
@@ -66,7 +66,7 @@ npm run dev
 npm run examples
 ```
 
-`npm run dev` builds the library (`dist/`), compiles SASS, and starts the esbuild watcher. The viewer loads the built library from `dist/` and uses its own ReadiumCSS from `viewer/readium-css/`.
+`npm run dev` builds the library (`dist/`), compiles SASS, and starts the esbuild watcher. The viewer loads the built library from `dist/` and consumes ReadiumCSS from the `@readium/css` npm package (served from `node_modules/`) plus local overrides from `viewer/readium-css-v2/ReadiumCSS-dita-patch.css`.
 
 `npm run examples` starts a streamer server (`dita-streamer-js`) that serves local EPUB files from `examples/epubs/` through multiple viewer variants:
 
@@ -111,10 +111,19 @@ D2Reader.load({
     injectables: [...],
     injectablesFixed: [...],
     attributes: {
+        // Extra px reserved below the iframe. Optional.
         margin: 5,
-        navHeight: 65,
-        iframePaddingTop: 0,
-        bottomInfoHeight: 75,
+        // Iframe CSS padding. Number sets all four sides, or { top?, bottom?, left?, right? }.
+        // Not applied to fixed-layout publications.
+        iframe: {
+            padding: { top: 0 },
+        },
+        // Fixed chrome the reader avoids for toolbox placement and iframe sizing.
+        // Measured live — toggling visibility reclaims the space automatically.
+        safeArea: {
+            top: () => document.querySelector('.my-navbar'),
+            bottom: () => document.getElementById('my-progress-bar'),
+        },
     },
     rights: {
         enableBookmarks: false,
@@ -153,12 +162,12 @@ D2Reader.load({
 
 ```html
 <main id="iframe-wrapper">
-    <div id="reader-loading" class="loading"></div>
-    <div id="reader-error" class="error"></div>
-    <div id="reader-info-top" class="info top">
+    <div id="reader-loading" class="dita-loading"></div>
+    <div id="reader-error" class="dita-error"></div>
+    <div id="reader-info-top" class="dita-info top">
         <span class="book-title"></span>
     </div>
-    <div id="reader-info-bottom" class="info bottom">
+    <div id="reader-info-bottom" class="dita-info bottom">
         <span class="chapter-position"></span>
         <span class="chapter-title"></span>
         <input type="range" id="positionSlider" />
@@ -258,11 +267,9 @@ examples/react/
   index.html       — Entry point with #root div
   index.tsx         — Full React app (single file)
   tsconfig.json     — Extends root tsconfig
-  readium-css/      — Bundled ReadiumCSS files
-    ReadiumCSS-before.css
-    ReadiumCSS-default.css
-    ReadiumCSS-after.css
 ```
+
+ReadiumCSS upstream files are imported from `node_modules/@readium/css/css/dist/` via relative Parcel `url:` imports; the local DITA patch overlay comes from `viewer/readium-css-v2/ReadiumCSS-dita-patch.css`. No per-example CSS copy is needed.
 
 ---
 

@@ -1,6 +1,6 @@
 @use "sass:math";
 
-.thumb {
+.dita-thumb {
   border-radius: 50% 50% 50% 0 !important;
   height: 30px !important;
   width: 30px !important;
@@ -9,7 +9,7 @@
   left: 50%;
 }
 
-input[type="range"] + .thumb .value {
+input[type="range"] + .dita-thumb .value {
   // color: #fff;
   margin-top: -20px;
   font-size: 10px;

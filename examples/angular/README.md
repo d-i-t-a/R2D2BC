@@ -1,4 +1,4 @@
-# R2D2BC Angular Example
+# DITA Toolkit Angular Example
 
 A standalone Angular component that integrates the `@d-i-t-a/reader` EPUB reader. This is meant to be dropped into an existing Angular project, not a full Angular CLI scaffold.
 
@@ -15,20 +15,29 @@ A standalone Angular component that integrates the `@d-i-t-a/reader` EPUB reader
 npm install @d-i-t-a/reader
 ```
 
-2. Copy ReadiumCSS files into your project's assets directory:
+2. Install ReadiumCSS:
 
-```
-src/assets/readium-css/
-  ReadiumCSS-before.css
-  ReadiumCSS-after.css
-  ReadiumCSS-default.css
+```bash
+npm install @readium/css
 ```
 
-You can find these CSS files in the `viewer/readium-css/` directory of the R2D2BC repository, or download them from the [Readium CSS releases](https://github.com/readium/readium-css/releases).
+The component's injectables reference `/node_modules/@readium/css/css/dist/...` paths, which is how the in-repo demo serves them (via Parcel + the local dev server's `node_modules` mount). For your own Angular CLI project, configure `angular.json` `assets` to copy `node_modules/@readium/css/css/dist/` into your build output and update the URLs accordingly — e.g.:
+
+```json
+"assets": [
+  {
+    "glob": "**/*",
+    "input": "node_modules/@readium/css/css/dist",
+    "output": "/assets/readium-css/"
+  }
+]
+```
+
+Then update the injectable URLs in `reader.component.ts` from `/node_modules/@readium/css/css/dist/...` to `/assets/readium-css/...` (or whatever output path you chose).
+
+The DITA patch overlay (`ReadiumCSS-dita-patch.css`) is local to this repo — not in the npm package. If you want the same fixes, copy it from `viewer/readium-css-v2/` into your Angular assets too.
 
 3. Copy `reader.component.ts` into your Angular project (e.g., `src/app/reader/reader.component.ts`).
-
-4. Update the injectable paths in `reader.component.ts` if your asset directory differs from `/assets/readium-css/`.
 
 5. Update the manifest URL to point to your EPUB publication's `manifest.json`.
 

@@ -1,0 +1,53 @@
+/*
+ * ReadiumCSS Dita Patch — cjk-vertical / mongolian-vertical
+ *
+ * Loaded after the cjk-vertical bundle (r2after: true). Overrides bundle
+ * defaults that don't fit our layout.
+ *
+ *  1. html overflow rules — expose full X-axis content extent on
+ *     document.scrollingElement.scrollWidth and bound vertical extent
+ *     to viewport so column-fill:auto converges. Scrollbar hidden.
+ *
+ *  2. Move scroll-end padding from body to html (the scroll container).
+ *     The bundle's scroll-padding rules apply padding to body, but body
+ *     has `width: 100%` + `box-sizing: border-box`, so padding eats
+ *     INWARD instead of extending body's outer box. Result: padding on
+ *     body never produces a visible scroll-end gap because html's
+ *     scrollWidth doesn't grow.
+ *
+ *     Padding on html (the actual scroll container) extends html's
+ *     scrollable area → visible scroll-end gap. Body padding zeroed
+ *     out to avoid double-applying.
+ */
+
+html {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+* {
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Let body's outer grow with content + padding in scroll mode.
+ *
+ * The bundle constrains body with `width:100%` (L83 of after.css) and
+ * `max-width: var(--RS__defaultLineLength) !important` in scroll mode
+ * (L122). Combined, body's outer cannot exceed root's content width.
+ * Padding eats inward (border-box) or stays inside outer regardless,
+ * never producing a scroll-end gap.
+ *
+ * Override: width:auto + max-width:none + box-sizing:content-box. Body's
+ * content-area sizes to actual content; padding extends body's outer past
+ * root in the writing-mode's overflow direction (left in vertical-rl).
+ * That extension is scrollable as scroll-end gap in iframe-scroll mode
+ * (iframe document scrolls into it via overflow-x:auto). */
+:root[style*="readium-scroll-on"] body {
+  width: auto !important;
+  max-width: none !important;
+  box-sizing: content-box !important;
+}

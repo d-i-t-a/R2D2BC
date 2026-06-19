@@ -109,6 +109,28 @@ async function copyInjectables(pattern: string, label: string) {
  * Consumers using the ESM build can configure the worker path via:
  *   PDFNavigator.create({ ..., workerSrc: "/path/to/pdf.worker.min.mjs" })
  */
+/**
+ * Copies the AudioWorklet processor used by `WebAudioEngine` to `dist/`
+ * so consumers can serve it directly. The worklet must be loaded by URL
+ * (browsers don't accept inline worklets), so it can't be inlined in
+ * the bundle. Consumers point `D2Reader.load({ preservePitchWorkletUrl })`
+ * (or call `setPreservePitchWorkletUrl()` directly) at this file's URL.
+ */
+async function copyAudioWorklet() {
+  try {
+    await fs.copyFile(
+      "src/navigator/audio/PreservePitchProcessor.js",
+      "dist/PreservePitchProcessor.js"
+    );
+    logBundled(
+      "Copied PreservePitch worklet",
+      "dist/PreservePitchProcessor.js"
+    );
+  } catch (e) {
+    err("AudioWorklet copy error", e as string);
+  }
+}
+
 async function copyPdfjsAssets() {
   try {
     await fs.copyFile(
@@ -206,14 +228,20 @@ async function buildAll() {
   const p5 = copyInjectables("injectables/**/*.css", "CSS");
   const p6 = copyInjectables("injectables/**/*.js", "JS");
 
-  // compile sass files into reader.css and material.css
+  // compile sass files
+  // - reader.css: visual reader (EPUB; PDF UI later if added)
+  // - player.css: audiobook player UI (timeline scrubber + future controls)
   const p7 = compileCss("src/styles/sass/reader.scss", "reader");
+  const p7b = compileCss("src/styles/sass/player.scss", "player");
 
   // copy pdfjs-dist worker + viewer CSS for self-hosting
   const p8 = copyPdfjsAssets();
 
+  // copy AudioWorklet processor for self-hosting
+  const p9 = copyAudioWorklet();
+
   // wait for everything to finish running in parallel
-  await Promise.all([p1, p2, p3, p4, p5, p6, p7, p8]);
+  await Promise.all([p1, p2, p3, p4, p5, p6, p7, p7b, p8, p9]);
   console.log("🔥 Build finished.");
 }
 

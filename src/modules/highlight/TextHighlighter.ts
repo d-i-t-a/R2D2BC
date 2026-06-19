@@ -32,6 +32,7 @@ import {
   SelectionMenuItem,
 } from "./common/highlight";
 import { ISelectionInfo } from "./common/selection";
+import { ReaderEvent } from "../../utils/Events";
 import { getClientRectsNoOverlap, IRectSimple } from "./common/rect-utils";
 import {
   convertRangeInfo,
@@ -40,13 +41,12 @@ import {
 import { uniqueCssSelector } from "./renderer/common/cssselector2";
 import { Annotation, AnnotationMarker } from "../../model/Locator";
 import { icons, iconTemplateColored } from "../../utils/IconLib";
-import { IFrameNavigator } from "../../navigator/IFrameNavigator";
-import { TTSModule2 } from "../TTS/TTSModule2";
+import { EpubNavigator } from "../../navigator/EpubNavigator";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import * as lodash from "lodash";
 import { LayerSettings } from "./LayerSettings";
 import { Switchable } from "../../model/user-settings/UserProperties";
-import { Popup } from "../search/Popup";
+import { Popup } from "../epub/search/Popup";
 import log from "loglevel";
 
 export enum HighlightContainer {
@@ -149,7 +149,7 @@ export interface TextHighlighterConfig extends TextHighlighterProperties {
 
 export class TextHighlighter {
   private options: any;
-  navigator: IFrameNavigator;
+  navigator: EpubNavigator;
   layerSettings: LayerSettings;
   private lastSelectedHighlight?: number = undefined;
   properties: TextHighlighterProperties;
@@ -211,6 +211,16 @@ export class TextHighlighter {
     if (doc) {
       this.dom(doc.body).addClass(this.options.contextClass);
     }
+
+    // Create highlight containers (R2_ID_HIGHLIGHTS_CONTAINER,
+    // R2_ID_LINEFOCUS_CONTAINER, etc.) upfront so modules using them
+    // can find them without depending on a later draw call (which only
+    // fires if there are highlights to draw) or scroll-mode toggle to
+    // lazily create them via the gated `updateRenderer` path.
+    if (iframe.contentWindow) {
+      await this.prepareContainers(iframe.contentWindow);
+    }
+
     this.bindEvents(iframe.contentDocument?.body, this, this.hasEventListener);
 
     this.initializeToolbox();
@@ -1100,7 +1110,7 @@ export class TextHighlighter {
                 getCssSelector
               );
               if (selectionInfo) {
-                self.navigator.annotationModule?.annotator?.saveTemporarySelectionInfo(
+                self.navigator.modules.annotations?.annotator?.saveTemporarySelectionInfo(
                   selectionInfo
                 );
               }
@@ -1119,20 +1129,26 @@ export class TextHighlighter {
     if (!this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = true;
       if (this.api?.selectionMenuOpen) this.api?.selectionMenuOpen();
-      this.navigator.emit("toolbox.opened", "opened");
+      const doc = this.navigator.iframes[0].contentDocument;
+      const sel = doc ? this.dom(doc.body)?.getSelection() : null;
+      const text = sel && !sel.isCollapsed ? sel.toString() : undefined;
+      this.navigator.emit(ReaderEvent.ToolboxOpened, "opened", { text });
+      if (text && sel) {
+        if (this.api?.selection) this.api.selection(text, sel);
+        this.navigator.emit(ReaderEvent.TextSelected, { text, selection: sel });
+      }
     }
   }, 100);
   selectionMenuClosed = debounce(() => {
     if (this.isSelectionMenuOpen) {
       this.isSelectionMenuOpen = false;
       if (this.api?.selectionMenuClose) this.api?.selectionMenuClose();
-      this.navigator.emit("toolbox.closed", "closed");
+      this.navigator.emit(ReaderEvent.ToolboxClosed, "closed");
     }
   }, 100);
 
-  selection = debounce((text, selection) => {
-    if (this.api?.selection) this.api?.selection(text, selection);
-  }, 100);
+  /** @deprecated Selection callback now fires from selectionMenuOpened */
+  selection = debounce((_text: string, _selection: any) => {}, 100);
 
   toolboxPlacement() {
     let range = this.dom(
@@ -1162,14 +1178,120 @@ export class TextHighlighter {
         toolbox.style.position = "absolute";
         toolbox.style.setProperty("--content", "revert");
       } else {
-        const paginated = this.navigator.view?.isPaginated();
-        if (paginated) {
-          toolbox.style.top =
-            rect.top + (this.navigator.attributes?.navHeight ?? 0) + "px";
-        } else {
-          toolbox.style.top = rect.top + "px";
+        // Selection rects are iframe-viewport-relative. Translate to outer-
+        // viewport coords using the iframe's content-box origin (border-box
+        // + border + padding), so the toolbox lines up with the selection
+        // regardless of iframe padding or chrome above.
+        const iframe = this.navigator.iframes[0];
+        const iframeRect = iframe?.getBoundingClientRect();
+        const cs = iframe ? getComputedStyle(iframe) : null;
+        const padTop = cs ? parseFloat(cs.paddingTop) || 0 : 0;
+        const padLeft = cs ? parseFloat(cs.paddingLeft) || 0 : 0;
+        const contentTop =
+          (iframeRect?.top ?? 0) + (iframe?.clientTop ?? 0) + padTop;
+        const contentLeft =
+          (iframeRect?.left ?? 0) + (iframe?.clientLeft ?? 0) + padLeft;
+
+        // Anchor the toolbox at the selection FOCUS (where the user
+        // released the mouse) and flip direction based on whether the
+        // selection went top-to-bottom (focus after anchor → forward) or
+        // bottom-to-top (focus before anchor → backward).
+        const selection = iframe?.contentWindow?.getSelection();
+        let focusRect: DOMRect | null = null;
+        let forward = true;
+        if (selection && selection.focusNode && selection.anchorNode) {
+          const cmp = selection.anchorNode.compareDocumentPosition(
+            selection.focusNode
+          );
+          if (cmp & Node.DOCUMENT_POSITION_PRECEDING) {
+            forward = false; // focus before anchor → backward
+          } else if (cmp === 0) {
+            forward = selection.anchorOffset <= selection.focusOffset;
+          }
+          // Caret rect at the focus position (where mouse-up happened).
+          try {
+            const doc = iframe!.contentDocument!;
+            const focusRange = doc.createRange();
+            focusRange.setStart(selection.focusNode, selection.focusOffset);
+            focusRange.collapse(true);
+            const rects = focusRange.getClientRects();
+            if (rects.length > 0) focusRect = rects[0];
+          } catch (e) {
+            focusRect = null;
+          }
         }
-        toolbox.style.left = (rect.right - rect.left) / 2 + rect.left + "px";
+
+        // Use `position: fixed` so the toolbox is removed from flow (lets
+        // `fit-content` render icons in one row in narrow parents) and
+        // `top` / `left` are viewport-relative — matching the content-box
+        // translation above.
+        toolbox.style.position = "fixed";
+
+        // Default CSS transform: translate(-50%, -100%) — toolbox renders
+        // ABOVE its top anchor (arrow at bottom, pointing down).
+        // `.below` class flips transform-origin and pointer — toolbox
+        // renders BELOW its top anchor (arrow at top, pointing up).
+        const toolboxHeight = toolbox.offsetHeight || 0;
+        const viewportHeight = window.innerHeight;
+
+        // Rects for the top and bottom of the selection in outer-viewport Y.
+        const topEdgeY = (focusRect?.top ?? rect.top) + contentTop;
+        const bottomEdgeY = (focusRect?.bottom ?? rect.bottom) + contentTop;
+
+        // Safe-area reservations from the integrator's `safeArea.top` /
+        // `safeArea.bottom` callbacks — measured live so toggleable chrome
+        // (navbar, progress bar) automatically reclaims space when hidden.
+        const safeArea = this.navigator.attributes?.safeArea;
+        const measure = (cb?: () => Element | null) => {
+          try {
+            return cb?.()?.getBoundingClientRect().height ?? 0;
+          } catch {
+            return 0;
+          }
+        };
+        const safeTop = measure(safeArea?.top);
+        const safeBottom = measure(safeArea?.bottom);
+
+        // Single-line selection → always render toolbox above (below would
+        // overlap the next text line). Multi-line → flip per direction.
+        const selectionRects = range.getClientRects();
+        const multiLine = selectionRects.length > 1;
+        let placeBelow = multiLine && forward;
+        // Adaptive: if the chosen side would clip into the integrator's
+        // safe area (or the viewport edge), flip to the other.
+        const abovewouldClip = topEdgeY - toolboxHeight < safeTop;
+        const belowWouldClip =
+          bottomEdgeY + toolboxHeight > viewportHeight - safeBottom;
+        if (placeBelow && belowWouldClip && !abovewouldClip) {
+          placeBelow = false;
+        } else if (!placeBelow && abovewouldClip && !belowWouldClip) {
+          placeBelow = true;
+        }
+
+        if (placeBelow) {
+          toolbox.classList.add("below");
+          toolbox.style.top = bottomEdgeY + "px";
+        } else {
+          toolbox.classList.remove("below");
+          toolbox.style.top = topEdgeY + "px";
+        }
+
+        // Horizontal: anchor on the focus X (mouse-up X) when available,
+        // else selection's end edge. Clamp inside viewport.
+        const focusX =
+          focusRect != null ? focusRect.left : forward ? rect.right : rect.left;
+        const targetX = contentLeft + focusX;
+        const toolboxWidth = toolbox.offsetWidth || 0;
+        const viewportWidth = window.innerWidth;
+        let clampedX: number;
+        if (toolboxWidth >= viewportWidth) {
+          clampedX = viewportWidth / 2;
+        } else {
+          const minX = toolboxWidth / 2;
+          const maxX = viewportWidth - toolboxWidth / 2;
+          clampedX = Math.max(minX, Math.min(maxX, targetX));
+        }
+        toolbox.style.left = clampedX + "px";
       }
     }
   }
@@ -1341,7 +1463,7 @@ export class TextHighlighter {
                 if (selectionInfo === undefined) {
                   let doc = self.navigator.iframes[0].contentDocument;
                   selectionInfo =
-                    self.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+                    self.navigator.modules.annotations?.annotator?.getTemporarySelectionInfo(
                       doc
                     ) ?? undefined;
                 }
@@ -1379,16 +1501,20 @@ export class TextHighlighter {
                         self.options.onAfterHighlight(highlight, marker);
 
                         if (self.navigator.rights.enableAnnotations) {
-                          self.navigator.annotationModule
+                          self.navigator.modules.annotations
                             ?.saveAnnotation(highlight[0])
                             .then((anno) => {
                               if (menuItem?.note) {
                                 if (anno.highlight) {
                                   // notes on custom icons , new note
-                                  self.navigator.annotationModule?.api
+                                  self.navigator.modules.annotations?.api
                                     ?.addCommentToAnnotation(anno)
                                     .then((result) => {
-                                      self.navigator.annotationModule
+                                      self.navigator.emit(
+                                        ReaderEvent.AnnotationCommentAdded,
+                                        result
+                                      );
+                                      self.navigator.modules.annotations
                                         ?.updateAnnotation(result)
                                         .then(async () => {
                                           log.log(
@@ -1400,7 +1526,7 @@ export class TextHighlighter {
                               }
                             });
                         } else if (self.navigator.rights.enableBookmarks) {
-                          self.navigator.bookmarkModule?.saveAnnotation(
+                          self.navigator.modules.bookmarks?.saveAnnotation(
                             highlight[0]
                           );
                         }
@@ -1454,7 +1580,7 @@ export class TextHighlighter {
       if (selectionInfo === undefined) {
         let doc = self.navigator.iframes[0].contentDocument;
         selectionInfo =
-          this.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+          this.navigator.modules.annotations?.annotator?.getTemporarySelectionInfo(
             doc
           ) ?? undefined;
       }
@@ -1482,12 +1608,12 @@ export class TextHighlighter {
               this.navigator.rights.enableAnnotations &&
               marker !== AnnotationMarker.Bookmark
             ) {
-              this.navigator.annotationModule?.saveAnnotation(highlight[0]);
+              this.navigator.modules.annotations?.saveAnnotation(highlight[0]);
             } else if (
               this.navigator.rights.enableBookmarks &&
               marker === AnnotationMarker.Bookmark
             ) {
-              this.navigator.bookmarkModule?.saveAnnotation(highlight[0]);
+              this.navigator.modules.bookmarks?.saveAnnotation(highlight[0]);
             }
           }
         }
@@ -1532,13 +1658,13 @@ export class TextHighlighter {
         if (selectionInfo === undefined) {
           let doc = self.navigator.iframes[0].contentDocument;
           selectionInfo =
-            self.navigator.annotationModule?.annotator?.getTemporarySelectionInfo(
+            self.navigator.modules.annotations?.annotator?.getTemporarySelectionInfo(
               doc
             ) ?? undefined;
         }
 
         if (selectionInfo !== undefined) {
-          (this.navigator.ttsModule as TTSModule2).speak(
+          this.navigator.modules.tts?.speak(
             selectionInfo as any,
             true,
             () => {}
@@ -1683,7 +1809,7 @@ export class TextHighlighter {
       if (doc) {
         this.dom(doc.body).removeAllRanges();
       }
-      (this.navigator.ttsModule as TTSModule2).cancel();
+      this.navigator.modules.tts?.cancel();
       if (reload) {
         this.navigator.reload();
       }
@@ -2351,19 +2477,20 @@ export class TextHighlighter {
         let self = this;
         let anno;
         if (self.navigator.rights.enableAnnotations) {
-          anno = (await this.navigator.annotationModule?.getAnnotation(
+          anno = (await this.navigator.modules.annotations?.getAnnotation(
             payload.highlight
           )) as Annotation;
         } else if (self.navigator.rights.enableBookmarks) {
-          anno = (await this.navigator.bookmarkModule?.getAnnotation(
+          anno = (await this.navigator.modules.bookmarks?.getAnnotation(
             payload.highlight
           )) as Annotation;
         }
 
         if (payload.highlight.type === HighlightType.Annotation) {
-          this.navigator.annotationModule?.api
+          this.navigator.modules.annotations?.api
             ?.selectedAnnotation(anno)
             .then(async () => {});
+          this.navigator.emit(ReaderEvent.AnnotationSelected, anno);
         }
 
         if (anno?.id) {
@@ -2373,8 +2500,10 @@ export class TextHighlighter {
           let toolbox = document.getElementById("highlight-toolbox");
 
           if (toolbox) {
-            toolbox.style.top =
-              ev.clientY + (this.navigator.attributes?.navHeight ?? 0) + "px";
+            // ev.clientY is iframe-relative; translate to outer-viewport Y.
+            const iframeTop =
+              this.navigator.iframes[0]?.getBoundingClientRect().top ?? 0;
+            toolbox.style.top = ev.clientY + iframeTop + "px";
             toolbox.style.left = ev.clientX + "px";
 
             if (getComputedStyle(toolbox).display === "none") {
@@ -2393,10 +2522,14 @@ export class TextHighlighter {
               }
               function noteH() {
                 // existing note
-                self.navigator.annotationModule?.api
+                self.navigator.modules.annotations?.api
                   ?.addCommentToAnnotation(anno)
                   .then((result) => {
-                    self.navigator.annotationModule
+                    self.navigator.emit(
+                      ReaderEvent.AnnotationCommentAdded,
+                      result
+                    );
+                    self.navigator.modules.annotations
                       ?.updateAnnotation(result)
                       .then(async () => {
                         log.log("update highlight " + result.id);
@@ -2435,7 +2568,7 @@ export class TextHighlighter {
 
               function deleteH() {
                 if (self.navigator.rights.enableAnnotations) {
-                  self.navigator.annotationModule
+                  self.navigator.modules.annotations
                     ?.deleteSelectedHighlight(anno)
                     .then(async () => {
                       log.log("delete highlight " + anno.id);
@@ -2445,7 +2578,7 @@ export class TextHighlighter {
                       self.selectionMenuClosed();
                     });
                 } else if (self.navigator.rights.enableBookmarks) {
-                  self.navigator.bookmarkModule
+                  self.navigator.modules.bookmarks
                     ?.deleteSelectedHighlight(anno)
                     .then(async () => {
                       log.log("delete highlight " + anno.id);
@@ -2490,16 +2623,20 @@ export class TextHighlighter {
             popup.showPopup(defElement.dataset.definition, ev);
           }
           let result =
-            this.navigator.definitionsModule?.properties?.definitions?.filter(
+            this.navigator.modules.definitions?.properties?.definitions?.filter(
               (el: any) => el.order === Number(defElement?.dataset.order)
             )[0];
           log.log(result);
-          if (this.navigator.definitionsModule?.api?.click) {
-            this.navigator.definitionsModule.api?.click(
+          if (this.navigator.modules.definitions?.api?.click) {
+            this.navigator.modules.definitions.api?.click(
               lodash.omit(result, "callbacks"),
               lodash.omit(foundHighlight, "definition")
             );
-            this.navigator.emit("definition.click", result, foundHighlight);
+            this.navigator.emit(
+              ReaderEvent.DefinitionClick,
+              result,
+              foundHighlight
+            );
           }
         }
       }
@@ -3259,14 +3396,15 @@ export class TextHighlighter {
       highlightAreaIcon.addEventListener("click", async function (ev) {
         let anno;
         if (self.navigator.rights.enableAnnotations) {
-          anno = (await self.navigator.annotationModule?.getAnnotationByID(
+          anno = (await self.navigator.modules.annotations?.getAnnotationByID(
             highlight.id
           )) as Annotation;
-          self.navigator.annotationModule?.api
+          self.navigator.modules.annotations?.api
             ?.selectedAnnotation(anno)
             .then(async () => {});
+          self.navigator.emit(ReaderEvent.AnnotationSelected, anno);
         } else if (self.navigator.rights.enableBookmarks) {
-          anno = (await self.navigator.bookmarkModule?.getAnnotationByID(
+          anno = (await self.navigator.modules.bookmarks?.getAnnotationByID(
             highlight.id
           )) as Annotation;
         }
@@ -3276,8 +3414,10 @@ export class TextHighlighter {
         self.lastSelectedHighlight = anno.id;
         let toolbox = document.getElementById("highlight-toolbox");
         if (toolbox) {
-          toolbox.style.top =
-            ev.clientY + (self.navigator.attributes?.navHeight ?? 0) + "px";
+          // ev.clientY is iframe-relative; translate to outer-viewport Y.
+          const iframeTop =
+            self.navigator.iframes[0]?.getBoundingClientRect().top ?? 0;
+          toolbox.style.top = ev.clientY + iframeTop + "px";
           toolbox.style.left = ev.clientX + "px";
 
           if (getComputedStyle(toolbox).display === "none") {
@@ -3308,7 +3448,7 @@ export class TextHighlighter {
 
             function deleteH() {
               if (self.navigator.rights.enableAnnotations) {
-                self.navigator.annotationModule
+                self.navigator.modules.annotations
                   ?.deleteSelectedHighlight(anno)
                   .then(async () => {
                     log.log("delete highlight " + anno.id);
@@ -3316,7 +3456,7 @@ export class TextHighlighter {
                     self.selectionMenuClosed();
                   });
               } else if (self.navigator.rights.enableBookmarks) {
-                self.navigator.bookmarkModule
+                self.navigator.modules.bookmarks
                   ?.deleteSelectedHighlight(anno)
                   .then(async () => {
                     log.log("delete highlight " + anno.id);

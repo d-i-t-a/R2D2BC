@@ -10,3 +10,6 @@ examples/epubs_
 examples/epubs__
 examples/epubs___
 examples/epubs____
+examples/.audiobook-cache
+docs/v3/plan
+demo_config*.html

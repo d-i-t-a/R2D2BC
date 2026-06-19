@@ -28,7 +28,10 @@ export function loader({ _request }: Route.LoaderArgs) {
 export function meta() {
   return [
     { title: "EPUB Reader" },
-    { name: "description", content: "R2D2BC EPUB reader — Remix example" },
+    {
+      name: "description",
+      content: "DITA Toolkit EPUB reader — Remix example",
+    },
   ];
 }
 

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>D2 Reader — Open EPUB File</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <link rel="stylesheet" href="reader.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <script src="reader.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .toolbar { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: #fff; border-bottom: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+        .badge { font-size: 7pt; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; background: #4a90d9; color: #fff; padding: 2px 7px; border-radius: 9px; }
+        .pill { height: 28px; padding: 0 12px; font-size: 8pt; text-transform: uppercase; letter-spacing: .5px; border: 1px solid #d0d0d0; border-radius: 14px; background: #fff; color: #555; cursor: pointer; transition: all .15s; white-space: nowrap; }
+        .pill:hover { background: #f5f5f5; }
+        .pill:active { background: #e8e8e8; color: #000; }
+        .pill.active { background: #e8e8e8; color: #000; }
+        .sep { width: 1px; height: 18px; background: #e0e0e0; flex-shrink: 0; }
+        .info { font-size: 8pt; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; }
+        #D2Reader-Container { margin-top: 40px; }
+        #iframe-wrapper { height: calc(100vh - 40px); overscroll-behavior-x: contain; }
+        #D2Reader-Container.scroll-mode { margin-top: 41px; }
+        #D2Reader-Container.scroll-mode #iframe-wrapper { height: calc(100vh - 41px); overscroll-behavior-x: contain; }
+        /* Iframe element itself contains overscroll for iframe-scroll mode
+           where the iframe document is the scroll container. The injectable
+           still sets overflow on iframe's html; this just keeps edge swipes
+           from triggering browser back/forward navigation. */
+        #iframe-wrapper iframe { overscroll-behavior-x: contain; }
+        html, body { overscroll-behavior-x: contain; }
+
+        #drop-zone {
+            position: absolute; inset: 0; margin-top: 41px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 16px; font-size: 16px; color: #999;
+        }
+        #drop-zone.active { background: rgba(74,144,217,0.05); border: 2px dashed #4a90d9; color: #4a90d9; }
+        #drop-zone.hidden { display: none; }
+        #file-input { display: none; }
+        #open-btn {
+            font-size: 14px; padding: 10px 24px; border: 2px solid #4a90d9;
+            background: #4a90d9; color: #fff; border-radius: 24px; cursor: pointer;
+        }
+        #open-btn:hover { background: #3a7bc8; }
+
+        /* Fetch/load spinner — shown while the EPUB is being fetched and parsed */
+        #fetch-spinner {
+            position: fixed; inset: 51px 0 0 0; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            gap: 18px; background: rgba(255,255,255,0.92); z-index: 500;
+            font-size: 13px; color: #666;
+        }
+        #fetch-spinner.active { display: flex; }
+        #fetch-spinner .ring {
+            width: 44px; height: 44px; border: 3px solid #e0e0e0;
+            border-top-color: #4a90d9; border-radius: 50%;
+            animation: fetch-spin 0.9s linear infinite;
+        }
+        #fetch-spinner .label { white-space: nowrap; max-width: 80vw; overflow: hidden; text-overflow: ellipsis; }
+        @keyframes fetch-spin { to { transform: rotate(360deg); } }
+
+        /* Bookmark drawer — slides in from the right */
+        #bookmark-drawer {
+            position: fixed; top: 41px; right: 0; bottom: 0; width: 320px;
+            background: #fff; border-left: 1px solid #e0e0e0; box-shadow: -2px 0 8px rgba(0,0,0,.08);
+            transform: translateX(100%); transition: transform .2s ease;
+            z-index: 999; display: flex; flex-direction: column;
+        }
+        #bookmark-drawer.open { transform: translateX(0); }
+        #bookmark-drawer .drawer-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 13px;
+        }
+        #bookmark-drawer .drawer-close {
+            background: none; border: none; font-size: 18px; cursor: pointer; color: #888;
+        }
+        #bookmark-drawer .drawer-list {
+            flex: 1; overflow-y: auto; padding: 8px 0;
+        }
+        #bookmark-drawer .drawer-empty {
+            padding: 16px; color: #999; font-size: 12px; text-align: center;
+        }
+        #bookmark-drawer .drawer-item {
+            padding: 10px 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer;
+            display: flex; flex-direction: column; gap: 2px;
+        }
+        #bookmark-drawer .drawer-item:hover { background: #f5f5f5; }
+        #bookmark-drawer .drawer-item-title { font-size: 13px; color: #222; }
+        #bookmark-drawer .drawer-item-meta { font-size: 11px; color: #888; }
+        #bookmark-drawer .drawer-item-delete {
+            align-self: flex-end; background: none; border: none; color: #c44;
+            font-size: 11px; cursor: pointer; padding: 2px 6px; margin-top: -18px;
+        }
+        #bookmark-drawer .drawer-item-delete:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <span class="badge">EPUB File</span>
+        <div class="sep"></div>
+        <button class="pill" onclick="d2reader?.previousPage()" title="Previous page">&lsaquo; Prev</button>
+        <button class="pill" onclick="d2reader?.nextPage()" title="Next page">Next &rsaquo;</button>
+        <div class="sep"></div>
+        <button class="pill" id="btn-scroll" onclick="toggleScroll()" title="Toggle scroll/paginated">Scroll</button>
+        <div class="sep"></div>
+        <button class="pill" id="btn-bookmark" onclick="toggleBookmark()" title="Bookmark this page">&#9734; Bookmark</button>
+        <button class="pill" id="btn-bookmarks-list" onclick="toggleBookmarksDrawer()" title="Show bookmarks list">List</button>
+        <div class="sep"></div>
+        <button class="pill" onclick="openFilePicker()">Open EPUB...</button>
+        <span class="dita-info" id="page-info">Drop an .epub file or click Open EPUB</span>
+    </div>
+
+    <!-- Drop zone (shown before a file is loaded) -->
+    <div id="drop-zone">
+        <div style="font-size: 48px;">📖</div>
+        <div>Drop an <strong>.epub</strong> file here</div>
+        <div style="font-size: 12px; color: #bbb;">or</div>
+        <button id="open-btn" onclick="openFilePicker()">Choose File</button>
+        <input id="file-input" type="file" accept=".epub" onchange="handleFile(this.files[0])" />
+        <div style="margin-top: 16px; display: flex; gap: 8px; align-items: center;">
+            <input id="url-input" type="text" placeholder="https://example.com/book.epub"
+                style="width: 360px; padding: 8px 12px; font-size: 13px; border: 1px solid #d0d0d0; border-radius: 8px; outline: none;"
+                onkeydown="if(event.key==='Enter') loadFromUrl()" />
+            <button onclick="loadFromUrl()"
+                style="padding: 8px 16px; font-size: 13px; border: 1px solid #4a90d9; background: #fff; color: #4a90d9; border-radius: 8px; cursor: pointer;">
+                Load URL
+            </button>
+        </div>
+    </div>
+
+    <!-- Spinner shown while the EPUB is being fetched and parsed -->
+    <div id="fetch-spinner">
+        <div class="ring"></div>
+        <div class="label" id="fetch-spinner-label">Loading…</div>
+    </div>
+
+    <!-- Reader container (shown after a file is loaded) -->
+    <div id="D2Reader-Container" style="display: none;">
+        <main tabindex="-1" id="iframe-wrapper">
+          <div id="reader-loading" class="dita-loading"></div>
+          <div id="reader-error" class="dita-error"></div>
+          <div style="height: 0px">
+            <div id="highlight-toolbox" class="highlight-toolbox">
+                <div id="highlight-toolbox-mode-colors">
+                    <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons" style="color:gray">close</i></button>
+                </div>
+                <div id="highlight-toolbox-mode-add">
+                    <button style="display: unset;" id="colorIcon" class="dita-color-option"><span></span></button>
+                    <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow; display: inline-block; width: 24px; height: 24px;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M5 4v3h5.5v12h3V7H19V4z"></path></svg></span></button>
+                    <button style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block; width: 24px; height: 24px; border-bottom: yellow solid 4px;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M5 4v3h5.5v12h3V7H19V4z"></path></svg></span></button>
+                </div>
+                <div id="highlight-toolbox-mode-edit">
+                    <button style="background-color: gainsboro; display: none" id="deleteIcon"><i class="material-icons" style="color:black">delete</i></button>
+                </div>
+                <div id="highlight-toolbox-mode-action">
+                    <button style="background-color: gainsboro;" id="copyIcon"><i class="material-icons" style="color:black">content_copy</i></button>
+                </div>
+            </div>
+          </div>
+        </main>
+    </div>
+
+    <!-- Bookmark drawer -->
+    <aside id="bookmark-drawer">
+        <div class="drawer-header">
+            <span>Bookmarks</span>
+            <button class="drawer-close" onclick="closeBookmarksDrawer()" title="Close">&times;</button>
+        </div>
+        <div class="drawer-list" id="bookmark-drawer-list">
+            <div class="drawer-empty">No bookmarks yet</div>
+        </div>
+    </aside>
+
+    <script>
+        let d2reader, isScroll = false;
+
+        let origin = window.location.origin;
+
+        // ReadiumCSS variant per script mode. ctx.scriptMode is derived by
+        // the navigator from publication metadata (languages + readingProgression).
+        const isLtr = (ctx) => ctx.scriptMode === "ltr";
+        const isRtl = (ctx) => ctx.scriptMode === "rtl";
+        const isCjkHorizontal = (ctx) => ctx.scriptMode === "cjk-horizontal";
+        const isCjkVertical = (ctx) =>
+            ctx.scriptMode === "cjk-vertical" || ctx.scriptMode === "mongolian-vertical";
+
+        let injectables = [
+            // Base ReadiumCSS v2 — LTR (default Latin / non-CJK)
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-before.css', r2before: true, when: isLtr },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-default.css', r2default: true, when: isLtr },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-after.css', r2after: true, when: isLtr },
+            // RTL ReadiumCSS — Arabic, Hebrew, Persian, etc.
+            // Files expected at /node_modules/@readium/css/css/dist/rtl/ (add bundle to enable).
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-before.css', r2before: true, when: isRtl },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-default.css', r2default: true, when: isRtl },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-after.css', r2after: true, when: isRtl },
+            // CJK-horizontal ReadiumCSS — Chinese, Japanese, Korean (horizontal)
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-before.css', r2before: true, when: isCjkHorizontal },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-default.css', r2default: true, when: isCjkHorizontal },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-after.css', r2after: true, when: isCjkHorizontal },
+            // CJK-vertical ReadiumCSS — Japanese vertical, Mongolian-vertical (writing-mode: vertical-rl / vertical-lr)
+            // Files expected at /node_modules/@readium/css/css/dist/cjk-vertical/ (add bundle to enable).
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-before.css', r2before: true, when: isCjkVertical },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-default.css', r2default: true, when: isCjkVertical },
+            { type: 'style', url: origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-after.css', r2after: true, when: isCjkVertical },
+            // Dita patch layer (LTR / RTL / cjk-horizontal) — image sizing
+            // + line-height compensation. Loaded after the bundle.
+            { type: 'style', url: origin + '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css', when: (ctx) => !isCjkVertical(ctx) },
+            // Dita patch layer (cjk-vertical / mongolian-vertical) — html
+            // overflow rules, scrollbar hiding, body box-sizing fix so the
+            // bundle's scroll-padding rules produce a visible scroll-end gap.
+            { type: 'style', url: origin + '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-dita-patch.css', r2after: true, when: isCjkVertical },
+            { type: 'style', url: origin + '/viewer/injectables/style/style.css' },
+        ];
+
+        // ── IndexedDB persistence ────────────────────────────────────
+        // Store the EPUB ArrayBuffer so it survives browser refresh.
+
+        function openEpubDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open('epub-file-viewer', 1);
+                req.onupgradeneeded = () => req.result.createObjectStore('epubs');
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function saveEpubToDB(name, buffer) {
+            const db = await openEpubDB();
+            const tx = db.transaction('epubs', 'readwrite');
+            tx.objectStore('epubs').put({ name, buffer }, 'current');
+            return new Promise((resolve, reject) => {
+                tx.oncomplete = resolve;
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+
+        async function loadEpubFromDB() {
+            const db = await openEpubDB();
+            const tx = db.transaction('epubs', 'readonly');
+            const req = tx.objectStore('epubs').get('current');
+            return new Promise((resolve) => {
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => resolve(null);
+            });
+        }
+
+        // ── File handling ────────────────────────────────────────────
+
+        function openFilePicker() {
+            document.getElementById('file-input').click();
+        }
+
+        async function handleFile(file) {
+            if (!file || !file.name.endsWith('.epub')) {
+                alert('Please select an .epub file');
+                return;
+            }
+
+            // Save to IndexedDB so it persists across refresh
+            const buffer = await file.arrayBuffer();
+            await saveEpubToDB(file.name, buffer);
+
+            await loadEpubBuffer(buffer, file.name);
+        }
+
+        function showSpinner(label) {
+            document.getElementById('fetch-spinner-label').textContent = label;
+            document.getElementById('fetch-spinner').classList.add('active');
+        }
+        function hideSpinner() {
+            document.getElementById('fetch-spinner').classList.remove('active');
+        }
+
+        async function loadFromUrl() {
+            const input = document.getElementById('url-input');
+            const url = input.value.trim();
+            if (!url) return;
+            const filename = url.split('/').pop() || url;
+            document.getElementById('page-info').textContent = 'Fetching ' + filename + '...';
+            document.getElementById('drop-zone').classList.add('hidden');
+            document.getElementById('D2Reader-Container').style.display = '';
+            showSpinner('Fetching ' + filename + '…');
+            try {
+                // Stop previous reader
+                if (d2reader) {
+                    try { await d2reader.stop(); } catch (e) { console.warn('[EPUB File] stop error:', e); }
+                    d2reader = null;
+                }
+                d2reader = await D2Reader.load({
+                    epub: url,
+                    injectables: injectables,
+                    injectablesFixed: [],
+                    userSettings: {
+                      scrollPaddingBottom: 40,
+                      scrollPaddingTop: 40,
+                      scrollPaddingLeft: 40,
+                      scrollPaddingRight: 40,
+                    },
+                    useLocalStorage: true,
+                    attributes: {
+                      // scrollContainer: "iframe",
+                    },
+                    rights: {
+                        enableBookmarks: true,
+                        enableAnnotations: true,
+                        enableSearch: true,
+                        autoGeneratePositions: true,
+                    },
+                    api: {
+                        updateCurrentLocation: async function (loc) {
+                            let title = loc.title || '';
+                            let pos = loc.locations || {};
+                            let page = pos.position != null ? pos.position : '';
+                            let total = pos.totalRemainingPositions != null
+                                ? (pos.position + pos.totalRemainingPositions) : '';
+                            let text = title + (page !== '' && total !== ''
+                                ? ' \u2014 ' + page + ' of ' + total : '');
+                            document.getElementById('page-info').textContent = text || filename;
+                            updateBookmarkButton();
+                        }
+                    },
+                });
+              // ── Resource lifecycle ──────────────────────────────────
+              d2reader.addEventListener("resource.ready", () => {
+                console.log("[EVENT] resource.ready");
+              });
+              d2reader.addEventListener("resource.start", () => {
+                console.log("[EVENT] resource.start");
+              });
+              d2reader.addEventListener("resource.end", () => {
+                console.log("[EVENT] resource.end");
+              });
+              d2reader.addEventListener("resource.fits", () => {
+                console.log("[EVENT] resource.fits");
+              });
+              d2reader.addEventListener("resource.error", (error) => {
+                console.log("[EVENT] resource.error", error);
+              });
+                document.getElementById('page-info').textContent = filename;
+            } catch (error) {
+                console.error('[EPUB File] Load from URL failed:', error);
+                document.getElementById('page-info').textContent = 'Error: ' + error.message;
+                document.getElementById('drop-zone').classList.remove('hidden');
+                document.getElementById('D2Reader-Container').style.display = 'none';
+            } finally {
+                hideSpinner();
+            }
+        }
+
+        async function loadEpubBuffer(buffer, name) {
+            // Stop the previous reader before loading a new one
+            if (d2reader) {
+                try { await d2reader.stop(); } catch (e) { console.warn('[EPUB File] stop error:', e); }
+                d2reader = null;
+            }
+
+            document.getElementById('page-info').textContent = 'Loading ' + name + '...';
+            document.getElementById('drop-zone').classList.add('hidden');
+            document.getElementById('D2Reader-Container').style.display = '';
+            showSpinner('Loading ' + name + '…');
+
+            try {
+                d2reader = await D2Reader.load({
+                    epub: buffer,
+                    injectables: injectables,
+                    injectablesFixed: [],
+                    useLocalStorage: true,
+                    rights: {
+                        enableBookmarks: true,
+                        enableAnnotations: true,
+                    },
+                    annotations: {
+                        api: {
+                            addAnnotation: async function (highlight) {
+                                highlight.id = Math.random();
+                                console.log('[EPUB File] Annotation added', highlight);
+                                return highlight;
+                            },
+                            deleteAnnotation: async function (highlight) {
+                                console.log('[EPUB File] Annotation deleted', highlight);
+                                return true;
+                            },
+                            selectedAnnotation: async function (highlight) {
+                                console.log('[EPUB File] Annotation selected', highlight);
+                            },
+                        },
+                    },
+                    api: {
+                        updateCurrentLocation: async function (loc) {
+                            let title = loc.title || '';
+                            let pos = loc.locations || {};
+                            let page = pos.position != null ? pos.position : '';
+                            let total = pos.totalRemainingPositions != null
+                                ? (pos.position + pos.totalRemainingPositions) : '';
+                            let text = title + (page !== '' && total !== ''
+                                ? ' \u2014 ' + page + ' of ' + total : '');
+                            document.getElementById('page-info').textContent = text || name;
+                            updateBookmarkButton();
+                        }
+                    },
+                });
+
+                const title = d2reader.publicationTitle || name;
+                document.getElementById('page-info').textContent = title;
+                document.title = 'DITA Toolkit — ' + title;
+
+                console.log('[EPUB File] Loaded:', title);
+                console.log('[EPUB File] Reading order:', d2reader.readingOrder.length, 'items');
+                console.log('[EPUB File] TOC:', d2reader.tableOfContents.length, 'items');
+            } catch (err) {
+                console.error('[EPUB File] Failed to load:', err);
+                document.getElementById('page-info').textContent = 'Failed: ' + err.message;
+                document.getElementById('drop-zone').classList.remove('hidden');
+                document.getElementById('D2Reader-Container').style.display = 'none';
+            } finally {
+                hideSpinner();
+            }
+        }
+
+        function toggleScroll() {
+            isScroll = !isScroll;
+            d2reader?.scroll(isScroll);
+            let btn = document.getElementById('btn-scroll');
+            // Show the action — what clicking will switch TO
+            btn.textContent = isScroll ? 'Paginate' : 'Scroll';
+            document.getElementById('D2Reader-Container')?.classList.toggle('scroll-mode', isScroll);
+        }
+
+        async function toggleBookmark() {
+            if (!d2reader) return;
+            const existing = d2reader.findBookmarkAt();
+            if (existing) {
+                await d2reader.deleteBookmark(existing);
+                console.log('[EPUB File] Bookmark removed');
+            } else {
+                await d2reader.saveBookmark();
+                console.log('[EPUB File] Bookmark saved');
+            }
+            updateBookmarkButton();
+            renderBookmarkList();
+        }
+
+        function updateBookmarkButton() {
+            const btn = document.getElementById('btn-bookmark');
+            if (!btn || !d2reader) return;
+            const isBookmarked = d2reader.hasBookmarkAt();
+            btn.textContent = isBookmarked ? '★ Bookmarked' : '☆ Bookmark';
+            btn.classList.toggle('active', isBookmarked);
+        }
+
+        function toggleBookmarksDrawer() {
+            const drawer = document.getElementById('bookmark-drawer');
+            if (!drawer) return;
+            const isOpen = drawer.classList.toggle('open');
+            if (isOpen) renderBookmarkList();
+        }
+
+        function closeBookmarksDrawer() {
+            document.getElementById('bookmark-drawer')?.classList.remove('open');
+        }
+
+        function renderBookmarkList() {
+            const list = document.getElementById('bookmark-drawer-list');
+            if (!list || !d2reader) return;
+            const bookmarks = d2reader.bookmarks || [];
+            if (bookmarks.length === 0) {
+                list.innerHTML = '<div class="drawer-empty">No bookmarks yet</div>';
+                return;
+            }
+            list.innerHTML = '';
+            bookmarks.forEach((b) => {
+                const item = document.createElement('div');
+                item.className = 'drawer-item';
+                const title = document.createElement('div');
+                title.className = 'drawer-item-title';
+                title.textContent = b.title || b.href || '(untitled)';
+                const meta = document.createElement('div');
+                meta.className = 'drawer-item-meta';
+                const progress = b.locations?.progression;
+                const pct = typeof progress === 'number' ? Math.round(progress * 100) + '%' : '';
+                const created = b.created ? new Date(b.created).toLocaleString() : '';
+                meta.textContent = [pct, created].filter(Boolean).join(' · ');
+                item.appendChild(title);
+                item.appendChild(meta);
+                item.onclick = (e) => {
+                    if (e.target.classList.contains('drawer-item-delete')) return;
+                    d2reader.goTo(b);
+                    closeBookmarksDrawer();
+                };
+                const del = document.createElement('button');
+                del.className = 'drawer-item-delete';
+                del.textContent = 'Delete';
+                del.onclick = async (e) => {
+                    e.stopPropagation();
+                    await d2reader.deleteBookmark(b);
+                    updateBookmarkButton();
+                    renderBookmarkList();
+                };
+                item.appendChild(del);
+                list.appendChild(item);
+            });
+        }
+
+        // Drag & drop
+        document.addEventListener('dragover', (e) => { e.preventDefault(); document.getElementById('drop-zone')?.classList.add('active'); });
+        document.addEventListener('dragleave', (e) => { if (!e.relatedTarget || e.relatedTarget === document.documentElement) document.getElementById('drop-zone')?.classList.remove('active'); });
+        document.addEventListener('drop', (e) => { e.preventDefault(); document.getElementById('drop-zone')?.classList.remove('active'); const f = e.dataTransfer?.files?.[0]; if (f) handleFile(f); });
+
+
+        // Auto-load: check URL query param first, then IndexedDB
+        (async () => {
+            const params = new URLSearchParams(window.location.search);
+            const epubUrl = params.get('epub');
+            if (epubUrl) {
+                document.getElementById('url-input').value = epubUrl;
+                await loadFromUrl();
+                return;
+            }
+            try {
+                const saved = await loadEpubFromDB();
+                if (saved?.buffer && saved?.name) {
+                    await loadEpubBuffer(saved.buffer, saved.name);
+                }
+            } catch (e) {
+                console.warn('[EPUB File] No saved EPUB found:', e);
+            }
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1928 @@
+<!--
+ * Copyright 2018-2020 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Developed on behalf of: DITA
+ * Licensed to: DITA under one or more contributor license agreements.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Dita Reader</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Aferdita Muriqi" />
+    <meta name="description" content="A viewer application for EPUB files." />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+
+    <!-- Material Icons-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- START R2 Reader CSS and JS -->
+    <link rel="stylesheet" href="reader.css" />
+    <script src="reader.js"></script>
+    <!-- END R2 Reader CSS and JS -->
+
+    <!-- START MUI CSS and JS -->
+    <link rel="stylesheet" href="https://cdn.muicss.com/mui-latest/css/mui.min.css" />
+    <script src="https://cdn.muicss.com/mui-latest/js/mui.min.js"></script>
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <link rel="stylesheet" href="/viewer/injectables/mui/style.css"/>
+    <script src="/viewer/injectables/mui/script.js"></script>
+    <!-- END MUI CSS and JS -->
+
+    <!-- START LineFocus CSS -->
+    <link rel="stylesheet" href="/viewer/injectables/style/linefocus.css" />
+    <!-- END LineFocus CSS -->
+
+    <!-- START Toast CSS -->
+    <link rel="stylesheet" href="/viewer/injectables/style/toast.css" />
+    <!-- END Toast CSS -->
+
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+    <style>
+        #root {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        /* Modern toggle switch */
+        .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-switch .slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 22px; transition: .25s; }
+        .toggle-switch .slider::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .25s; }
+        .toggle-switch input:checked + .slider { background: #4a90d9; }
+        .toggle-switch input:checked + .slider::before { transform: translateX(18px); }
+
+        /* Compact setting row */
+        .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 12px; }
+        .setting-row label { font-size: 8.5pt; color: #555; margin: 0; flex-shrink: 0; white-space: nowrap; }
+        .setting-row .setting-value { font-size: 8pt; color: #999; min-width: 32px; text-align: right; }
+        .setting-row input[type="range"] { flex: 1; margin: 0 8px; height: 3px; -webkit-appearance: none; appearance: none; background: #e0e0e0; border-radius: 2px; outline: none; }
+        .setting-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #4a90d9; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+
+        /* Segmented control buttons */
+        .seg-btn { height: 32px; min-width: 70px; padding: 0 12px; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #d0d0d0; background: #fff; color: #555; cursor: pointer; transition: all .15s; }
+        .seg-btn:hover { background: #f5f5f5; }
+        .seg-btn.active, .seg-btn:active { background: #e8e8e8; color: #000; }
+        .seg-left { border-radius: 16px 0 0 16px; }
+        .seg-mid { border-left: none; border-right: none; }
+        .seg-right { border-radius: 0 16px 16px 0; }
+
+        /* Select dropdown */
+        .setting-select { flex: 1; margin-left: 10px; height: 30px; font-size: 8.5pt; border: 1px solid #d0d0d0; border-radius: 6px; padding: 0 8px; background: #fff; color: #555; outline: none; }
+
+        /* Color swatch */
+        .color-swatch { width: 28px; height: 28px; border: 2px solid #e0e0e0; border-radius: 50%; cursor: pointer; padding: 0; -webkit-appearance: none; appearance: none; flex-shrink: 0; }
+        .color-swatch::-webkit-color-swatch-wrapper { padding: 0; }
+        .color-swatch::-webkit-color-swatch { border: none; border-radius: 50%; }
+
+        /* Reset button */
+        .reset-btn { height: 32px; padding: 0 24px; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #d0d0d0; border-radius: 16px; background: #fff; color: #555; cursor: pointer; transition: all .15s; }
+        .reset-btn:hover { background: #f5f5f5; color: #000; }
+
+        /* Prevent edge-swipe back/forward gestures from triggering when
+           horizontally scrolling inside the iframe wrapper or the iframe
+           document itself (RTL paginated, vertical-rl scroll). */
+        #iframe-wrapper { overscroll-behavior-x: contain; }
+        #iframe-wrapper iframe { overscroll-behavior-x: contain; }
+        html, body { overscroll-behavior-x: contain; }
+
+        /* Vertical-script chrome: arrows at left/right edges.
+           (Timeline overrides live in _timeline.scss → reader.css.) */
+
+        /* vertical-rl: previous (go back to start) = scroll right.
+           #previous-chapter on right edge with a right arrow. */
+        body.script-vertical #previous-chapter {
+            top: 50% !important;
+            left: auto !important;
+            right: 0 !important;
+            bottom: auto !important;
+            width: 24px !important;
+            height: 150px !important;
+            transform: translate(0, -50%) !important;
+        }
+        body.script-vertical #previous-chapter .material-icons {
+            top: calc(50% - 12px) !important;
+            left: auto !important;
+        }
+        /* vertical-rl: next (go forward to end) = scroll left.
+           #next-chapter on left edge with a left arrow. */
+        body.script-vertical #next-chapter {
+            top: 50% !important;
+            left: 0 !important;
+            right: auto !important;
+            bottom: auto !important;
+            width: 24px !important;
+            height: 150px !important;
+            transform: translate(0, -50%) !important;
+        }
+        body.script-vertical #next-chapter .material-icons {
+            top: calc(50% - 12px) !important;
+            left: auto !important;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="content" id="root">
+        <header id="headerMenu">
+            <div id="sidedrawer" class="mui--no-user-select sidenav">
+                <div id="sidedrawer-brand" class="mui--appbar-line-height dita-logo-container">
+                    <span class="mui--text-title">DITA Toolkit</span>
+                    <i class="material-icons right editAnnotations" id="expand-menu">unfold_more</i>
+                </div>
+                <div class="mui-divider"></div>
+                <ul>
+                    <li style="padding-left: 16px" id="sidenav-section-gotopage">
+                        Go To Page: <input type="text" style="width:100px;" id="goToPageNumberInput" /><button id="goToPageNumberButton">Go</button>
+                    </li>
+                    <li class="bold" id="sidenav-section-toc">
+                        <strong class="dita-collapsible-header">Table of Contents</strong>
+                        <div id="container-view-toc" class="contents-view"></div>
+                    </li>
+                    <li class="bold" id="sidenav-section-bookmarks">
+                        <strong class="dita-collapsible-header">Bookmarks</strong>
+                        <div id="container-view-bookmarks" class="bookmarks-view"></div>
+                    </li>
+                    <li class="bold" id="sidenav-section-highlights">
+                        <strong class="dita-collapsible-header">Annotations</strong>
+                        <div id="container-view-highlights" class="highlights-view"></div>
+                    </li>
+                    <li class="bold" id="sidenav-section-landmarks">
+                        <strong class="dita-collapsible-header">Landmarks</strong>
+                        <div id="container-view-landmarks" class="landmarks-view"></div>
+                    </li>
+
+                    <li class="bold" id="sidenav-section-pagelist">
+                        <strong class="dita-collapsible-header">Annotations</strong>
+                        <div id="container-view-pagelist" class="pagelist-view"></div>
+                    </li>
+                </ul>
+            </div>
+
+            <div id="sidedrawer2">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Text To Speech Settings</span>
+                </div>
+                <div class="mui-divider"></div>
+                <div id="container-view-tts-settings" class="dropdown-content settings" style="width: 250px;padding: 10px;">
+                    <center style="display: flex;
+                                        justify-content: center;padding: 5px">
+                        <button style="width:24%;font-size: 8pt;" onclick="d2reader.startReadAloud()"><i
+                          class="material-icons">play_arrow</i>PLAY
+                        </button>
+                        <button style="width:24%;font-size: 8pt;" onclick="d2reader.stopReadAloud()"><i
+                          class="material-icons">stop</i>STOP
+                        </button>
+                        <button style="width:24%;font-size: 8pt;" onclick="d2reader.pauseReadAloud()"><i
+                          class="material-icons">pause</i>PAUSE
+                        </button>
+                        <button style="width:24%;font-size: 8pt;" onclick="d2reader.resumeReadAloud()"><i
+                          class="material-icons">play_arrow</i>RESUME
+                        </button>
+                    </center>
+                    <center style="display: flex;justify-content: center;padding: 5px;">
+                        <button style="width: 40px" onclick="d2reader.applyTTSSettings({ color: 'orange' })"><i
+                          class="material-icons" style="color: rgba(250, 96, 0, 0.5);font-size: 24pt;">lense</i></button>
+                        <button style="width: 40px" onclick="d2reader.applyTTSSettings({ color: 'red' })"><i
+                          class="material-icons"
+                          style="color: indianred;font-size: 24pt;">lense</i></button>
+                        <button style="width: 40px" onclick="d2reader.applyTTSSettings({ color: 'gray' })"><i
+                          class="material-icons"
+                          style="color: lightslategrey;font-size: 24pt;">lense</i></button>
+                        <button style="width: 40px" onclick="d2reader.applyTTSSettings({ color: 'purple' })"><i
+                          class="material-icons" style="color: mediumpurple;font-size: 24pt;">lense</i></button>
+                        <button style="width: 40px" onclick="d2reader.applyTTSSettings({ color: 'green' })"><i
+                          class="material-icons"
+                          style="color: lightgreen;font-size: 24pt;">lense</i></button>
+                    </center>
+                    <div style="padding: 5px;">
+                        <center style="display: flex;justify-content: center;align-items: center;">
+                            <label style="margin-right: 10px;">Auto Scroll</label>
+                            <input type="checkbox" class="filled" id="autoScroll" name="autoScroll"
+                                   onchange="d2reader.applyTTSSettings({ autoScroll: this.checked })">
+                        </center>
+                    </div>
+                    <div style="padding: 5px;">
+                        <label style="display: block;text-align: center;line-height: 12pt;">Language</label>
+                        <center>
+                            <select style="width: 80%;" onchange="d2reader.applyPreferredVoice(value)"
+                                    id="preferred-languages">
+                                <option value="" disabled selected>Choose language</option>
+                            </select>
+                        </center>
+                    </div>
+                    <div class="range-slider" style="padding: 5px;">
+                        <label style="display: block;text-align: center;line-height: 12pt;">Rate</label>
+                        <input class="range-slider__range_settings" type="range" min="0.1" max="10" step="0.1"
+                               value="1" id="speechRate" name="speechRate"
+                               onchange="d2reader.applyTTSSettings({ rate: this.value })"/>
+                    </div>
+                    <div class="range-slider" style="padding: 5px;">
+                        <label style="display: block;text-align: center;line-height: 12pt;">Pitch</label>
+                        <input class="range-slider__range_settings" type="range" min="0.1" max="2" step="0.1"
+                               value="1" id="speechPitch" name="speechPitch"
+                               onchange="d2reader.applyTTSSettings({ pitch: this.value })"/>
+                    </div>
+                    <div class="range-slider" style="padding: 5px;">
+                        <label style="display: block;text-align: center;line-height: 12pt;">Volume</label>
+                        <input class="range-slider__range_settings" type="range" min="0.1" max="1" step="0.1"
+                               value="1" id="speechVolume" name="speechVolume"
+                               onchange="d2reader.applyTTSSettings({ volume: this.value })"/>
+                    </div>
+                </div>
+            </div>
+            <div id="sidedrawer3">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Reader Settings</span>
+                </div>
+                <div class="mui-divider"></div>
+                <div id="container-view-settings-custom" class="dropdown-content settings-view"
+                     style="width: 320px; padding: 8px 0;">
+
+                    <!-- ============================================================
+                         COMMON — works with ReadiumCSS v1.1.x and v2.0.x
+                         ============================================================ -->
+                    <div class="setting-row" style="padding: 4px 12px 0; color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <span>Common (v1 + v2)</span>
+                    </div>
+
+                    <!-- Font Size -->
+                    <div class="setting-row">
+                        <label>Font Size</label>
+                        <input type="range" min="100" max="300" step="25" value="100" id="fontSize"
+                               oninput="document.getElementById('fontSizeValue').textContent = this.value + '%'"
+                               onchange="d2reader.applyUserSettings({ fontSize: this.value })"/>
+                        <span class="setting-value" id="fontSizeValue">100%</span>
+                    </div>
+
+                    <!-- Font Family -->
+                    <div class="setting-row">
+                        <label>Font</label>
+                        <select id="fontFamily" class="setting-select"
+                                onchange="d2reader.applyUserSettings({fontFamily:value});reload();">
+                            <option value="Original">Publisher</option>
+                            <option value="serif">Serif</option>
+                            <option value="sans-serif">Sans-serif</option>
+                            <option value="opendyslexic">Open Dyslexic</option>
+                        </select>
+                    </div>
+
+                    <!-- Appearance -->
+                    <div id="appearance" class="setting-row" style="justify-content: center; gap: 0;">
+                        <button class="seg-btn seg-left" onclick="d2reader.applyUserSettings({appearance:'day'});setAppearance('day')" style="background:#fff;color:#000;">Day</button><button class="seg-btn seg-mid" onclick="d2reader.applyUserSettings({appearance:'sepia'});setAppearance('sepia')" style="background:#f5e6c8;color:#000;">Sepia</button><button class="seg-btn seg-right" onclick="d2reader.applyUserSettings({appearance:'night'});setAppearance('night')" style="background:#121212;color:#fff;">Night</button>
+                    </div>
+
+                    <!-- Layout -->
+                    <div id="scrollMode" class="setting-row" style="justify-content: center; gap: 0;">
+                        <button class="seg-btn seg-left" onclick="d2reader.applyUserSettings({verticalScroll:true});setScroll('true')">Scroll</button><button class="seg-btn seg-right" onclick="d2reader.applyUserSettings({verticalScroll:false});setScroll('false')">Paginated</button>
+                    </div>
+
+                    <!-- Alignment -->
+                    <div id="textAlignment" class="setting-row" style="justify-content: center; gap: 0;">
+                        <button class="seg-btn seg-left" onclick="d2reader.applyUserSettings({textAlignment:'auto'});setAlignment('auto')">Auto</button><button class="seg-btn seg-mid" onclick="d2reader.applyUserSettings({textAlignment:'justify'});setAlignment('justify')">Justify</button><button class="seg-btn seg-right" onclick="d2reader.applyUserSettings({textAlignment:'start'});setAlignment('start')">Start</button>
+                    </div>
+
+                    <!-- Columns -->
+                    <div id="columnCount" class="setting-row" style="justify-content: center; gap: 0;">
+                        <button class="seg-btn seg-left" style="min-width: 50px;" onclick="d2reader.applyUserSettings({columnCount:'auto'});setColumns('auto')">Auto</button><button class="seg-btn seg-mid" style="min-width: 36px; padding: 0 8px;" onclick="d2reader.applyUserSettings({columnCount:'1'});setColumns('1')">1</button><button class="seg-btn seg-mid" style="min-width: 36px; padding: 0 8px; border-left: 1px solid #d0d0d0;" onclick="d2reader.applyUserSettings({columnCount:'2'});setColumns('2')">2</button><button class="seg-btn seg-mid" style="min-width: 36px; padding: 0 8px; border-left: 1px solid #d0d0d0;" onclick="d2reader.applyUserSettings({columnCount:'3'});setColumns('3')">3</button><button class="seg-btn seg-right" style="min-width: 36px; padding: 0 8px;" onclick="d2reader.applyUserSettings({columnCount:'4'});setColumns('4')">4</button>
+                    </div>
+
+                    <!-- Direction -->
+                    <div id="direction" class="setting-row" style="justify-content: center; gap: 0;">
+                        <button class="seg-btn seg-left" onclick="d2reader.applyUserSettings({direction:'auto'});setDirection('auto')">Auto</button><button class="seg-btn seg-mid" onclick="d2reader.applyUserSettings({direction:'ltr'});setDirection('ltr')">LTR</button><button class="seg-btn seg-right" onclick="d2reader.applyUserSettings({direction:'rtl'});setDirection('rtl')">RTL</button>
+                    </div>
+
+                    <!-- Spacing & sizing sliders -->
+                    <div class="setting-row">
+                        <label>Word Spacing</label>
+                        <input type="range" min="0" max="1" step="0.25" value="0" id="wordSpacing"
+                               oninput="document.getElementById('wordSpacingValue').textContent = this.value"
+                               onchange="d2reader.applyUserSettings({ wordSpacing: this.value })"/>
+                        <span class="setting-value" id="wordSpacingValue">0</span>
+                    </div>
+                    <div class="setting-row">
+                        <label>Letter Spacing</label>
+                        <input type="range" min="0" max="0.5" step="0.0625" value="0" id="letterSpacing"
+                               oninput="document.getElementById('letterSpacingValue').textContent = parseFloat(this.value).toFixed(2)"
+                               onchange="d2reader.applyUserSettings({ letterSpacing: this.value })"/>
+                        <span class="setting-value" id="letterSpacingValue">0</span>
+                    </div>
+                    <div class="setting-row">
+                        <label>Page Margins</label>
+                        <input type="range" min="0.5" max="4" step="0.25" value="1" id="pageMargins"
+                               oninput="document.getElementById('pageMarginsValue').textContent = this.value"
+                               onchange="d2reader.applyUserSettings({ pageMargins: this.value })"/>
+                        <span class="setting-value" id="pageMarginsValue">1</span>
+                    </div>
+                    <div class="setting-row">
+                        <label>Line Height</label>
+                        <input type="range" min="1" max="2" step="0.25" value="1" id="lineHeight"
+                               oninput="document.getElementById('lineHeightValue').textContent = this.value"
+                               onchange="d2reader.applyUserSettings({ lineHeight: this.value })"/>
+                        <span class="setting-value" id="lineHeightValue">1</span>
+                    </div>
+                    <div class="setting-row">
+                        <label>Para Spacing</label>
+                        <input type="range" min="0" max="3" step="0.5" value="0" id="paraSpacing"
+                               oninput="document.getElementById('paraSpacingValue').textContent = this.value"
+                               onchange="d2reader.applyUserSettings({ paraSpacing: parseFloat(this.value) })"/>
+                        <span class="setting-value" id="paraSpacingValue">0</span>
+                    </div>
+                    <div class="setting-row">
+                        <label>Para Indent</label>
+                        <input type="range" min="0" max="3" step="0.5" value="1" id="paraIndent"
+                               oninput="document.getElementById('paraIndentValue').textContent = this.value"
+                               onchange="d2reader.applyUserSettings({ paraIndent: parseFloat(this.value) })"/>
+                        <span class="setting-value" id="paraIndentValue">1</span>
+                    </div>
+                    <div class="setting-row">
+                        <label>Hyphens</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="bodyHyphens"
+                                   onchange="d2reader.applyUserSettings({ bodyHyphens: this.checked })">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <label>Background</label>
+                        <input type="color" id="backgroundColor" value="#ffffff" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ backgroundColor: this.value })"/>
+                        <label style="margin-left: 12px;">Text</label>
+                        <input type="color" id="textColor" value="#000000" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ textColor: this.value })"/>
+                    </div>
+
+                    <div style="border-top: 1px solid #eee; margin: 6px 12px;"></div>
+
+                    <!-- ============================================================
+                         v1 ONLY — ignored by v2 ReadiumCSS
+                         ============================================================ -->
+                    <div class="setting-row" style="padding: 4px 12px 0; color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <span>v1 only &middot; ignored on v2</span>
+                    </div>
+                    <div class="setting-row">
+                        <label>Type Scale</label>
+                        <input type="range" min="1.0" max="1.5" step="0.1" value="1.2" id="typeScale"
+                               oninput="document.getElementById('typeScaleValue').textContent = parseFloat(this.value).toFixed(1)"
+                               onchange="d2reader.applyUserSettings({ typeScale: parseFloat(this.value) })"/>
+                        <span class="setting-value" id="typeScaleValue">1.2</span>
+                    </div>
+
+                    <div style="border-top: 1px solid #eee; margin: 6px 12px;"></div>
+
+                    <!-- ============================================================
+                         v2 ONLY — silently no-op on v1 ReadiumCSS
+                         ============================================================ -->
+                    <div class="setting-row" style="padding: 4px 12px 0; color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <span>v2 only &middot; ignored on v1</span>
+                    </div>
+
+                    <!-- Line Length (direct control; pageMargins also maps to it) -->
+                    <div class="setting-row">
+                        <label>Line Length</label>
+                        <input type="text" id="lineLength" value="" placeholder="e.g. 70%, 40rem"
+                               style="flex:1;margin-left:10px;height:30px;font-size:8.5pt;border:1px solid #d0d0d0;border-radius:6px;padding:0 8px;background:#fff;color:#555;outline:none;"
+                               onchange="d2reader.applyUserSettings({ lineLength: this.value })"/>
+                    </div>
+
+                    <!-- Typography toggle -->
+                    <div class="setting-row">
+                        <label>Ligatures</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="ligatures" checked
+                                   onchange="d2reader.applyUserSettings({ ligatures: this.checked ? 'common-ligatures' : 'none' })">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <!--
+                      NOT exposed here: fontWeight, fontWidth, fontOpticalSizing, invertGaiji.
+                      Available in the TypeScript API — silently applied when set. These
+                      rely on variable fonts or CJK gaiji images that typical EPUBs don't
+                      ship. Integrators wanting them call
+                      d2reader.applyUserSettings({ fontWeight: 600 }) etc.
+                    -->
+
+
+                    <!-- Theme colors -->
+                    <div class="setting-row">
+                        <label>Link</label>
+                        <input type="color" id="linkColor" value="#0000ee" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ linkColor: this.value })"/>
+                        <label style="margin-left: 12px;">Visited</label>
+                        <input type="color" id="visitedColor" value="#551a8b" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ visitedColor: this.value })"/>
+                    </div>
+                    <div class="setting-row">
+                        <label>Selection BG</label>
+                        <input type="color" id="selectionBackgroundColor" value="#ffeb3b" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ selectionBackgroundColor: this.value })"/>
+                        <label style="margin-left: 12px;">Text</label>
+                        <input type="color" id="selectionTextColor" value="#000000" class="color-swatch"
+                               onchange="d2reader.applyUserSettings({ selectionTextColor: this.value })"/>
+                    </div>
+
+                    <!--
+                      NOT exposed here: blendImages, darkenImages, invertImages, invertGaiji.
+                      Available in the TypeScript API — integrators typically wire these
+                      into their appearance/theme logic rather than exposing them as
+                      end-user controls. Example:
+                        d2reader.applyUserSettings({ darkenImages: 0.6 })
+                        d2reader.applyUserSettings({ invertImages: true })
+                    -->
+
+                    <!-- Scroll-view padding (only takes effect in scroll mode) -->
+                    <div class="setting-row" style="padding: 4px 12px 0; color: #aaa; font-size: 10px;">
+                        <span>Scroll padding (scroll mode only)</span>
+                    </div>
+                    <div class="setting-row" style="flex-wrap:nowrap;">
+                        <label style="min-width:30px;">Top</label>
+                        <input type="text" id="scrollPaddingTop" value="" placeholder="0"
+                               style="width:60px;margin-left:6px;height:28px;font-size:8.5pt;border:1px solid #d0d0d0;border-radius:6px;padding:0 6px;background:#fff;color:#555;outline:none;box-sizing:border-box;"
+                               onchange="d2reader.applyUserSettings({ scrollPaddingTop: this.value })"/>
+                        <label style="margin-left:12px;min-width:36px;">Bot.</label>
+                        <input type="text" id="scrollPaddingBottom" value="" placeholder="0"
+                               style="width:60px;margin-left:6px;height:28px;font-size:8.5pt;border:1px solid #d0d0d0;border-radius:6px;padding:0 6px;background:#fff;color:#555;outline:none;box-sizing:border-box;"
+                               onchange="d2reader.applyUserSettings({ scrollPaddingBottom: this.value })"/>
+                    </div>
+                    <div class="setting-row" style="flex-wrap:nowrap;">
+                        <label style="min-width:30px;">Left</label>
+                        <input type="text" id="scrollPaddingLeft" value="" placeholder="0"
+                               style="width:60px;margin-left:6px;height:28px;font-size:8.5pt;border:1px solid #d0d0d0;border-radius:6px;padding:0 6px;background:#fff;color:#555;outline:none;box-sizing:border-box;"
+                               onchange="d2reader.applyUserSettings({ scrollPaddingLeft: this.value })"/>
+                        <label style="margin-left:12px;min-width:36px;">Right</label>
+                        <input type="text" id="scrollPaddingRight" value="" placeholder="0"
+                               style="width:60px;margin-left:6px;height:28px;font-size:8.5pt;border:1px solid #d0d0d0;border-radius:6px;padding:0 6px;background:#fff;color:#555;outline:none;box-sizing:border-box;"
+                               onchange="d2reader.applyUserSettings({ scrollPaddingRight: this.value })"/>
+                    </div>
+
+                    <div style="border-top: 1px solid #eee; margin: 6px 12px;"></div>
+
+                    <!-- Reset -->
+                    <div class="setting-row" style="justify-content: center; padding: 8px 12px;">
+                        <button class="reset-btn" onclick="d2reader.resetUserSettings().then(()=>reload());">Reset</button>
+                    </div>
+                </div>
+            </div>
+            <div id="sidedrawer4">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Layers</span>
+                </div>
+                <div class="mui-divider"></div>
+                    <div id="container-view-layer-settings" class="dropdown-content settings" style="width: 300px;padding: 10px;">
+                        <center style="display: flex;justify-content: center;align-items: center;padding: 5px">
+                            <label style="margin-right: 10px;">Highlights</label>
+                            <input type="checkbox" class="filled"
+                                   onchange="this.checked ? d2reader.showLayer('highlights') : d2reader.hideLayer('highlights')">
+                        </center>
+                        <center style="display: flex;justify-content: center;align-items: center;padding: 5px">
+                            <label style="margin-right: 10px;">Definitions</label>
+                            <input type="checkbox" class="filled"
+                                   onchange="this.checked ? d2reader.showLayer('definitions') : d2reader.hideLayer('definitions')">
+                        </center>
+                        <center style="display: flex;justify-content: center;align-items: center;padding: 5px">
+                            <label style="margin-right: 10px;">Page Break</label>
+                            <input type="checkbox" class="filled"
+                                   onchange="this.checked ? d2reader.showLayer('pagebreak') : d2reader.hideLayer('pagebreak')">
+                        </center>
+                        <center style="display: flex;justify-content: center;align-items: center;padding: 5px">
+                            <label style="margin-right: 10px;">Search</label>
+                            <input type="checkbox" class="filled"
+                                   onchange="this.checked ? d2reader.showLayer('search') : d2reader.hideLayer('search')">
+                        </center>
+                        <center style="display: flex;justify-content: center;align-items: center;padding: 5px">
+                            <label style="margin-right: 10px;">Read Aloud</label>
+                            <input type="checkbox" class="filled"
+                                   onchange="this.checked ? d2reader.showLayer('readaloud') : d2reader.hideLayer('readaloud')">
+                        </center>
+
+                    </div>
+            </div>
+            <div id="sidedrawer5">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Read Along Settings</span>
+                </div>
+                <div class="mui-divider"></div>
+                    <div id="container-view-mediaoverlay-settings" class="dropdown-content settings" style="width: 300px;padding: 10px;">
+                        <center tabindex="0" style="display: flex;justify-content: space-around;padding: 5px">
+                            <div style="display: flex;align-items: center;">
+                                <label style="margin-right: 10px;">Auto Scroll</label>
+                                <input type="checkbox" class="filled" id="mediaOverlayAutoScroll" name="mediaOverlayAutoScroll" onchange="d2reader.applyMediaOverlaySettings({ autoScroll: this.checked })">
+                            </div>
+                            <div style="display: flex;align-items: center;">
+                                <label style="margin-right: 10px;">Auto Page Turn</label>
+                                <input type="checkbox" class="filled" id="mediaOverlayAutoTurn" name="mediaOverlayAutoTurn" onchange="d2reader.applyMediaOverlaySettings({ autoTurn: this.checked })">
+                            </div>
+                        </center>
+                        <div class="range-slider" style="padding: 5px">
+                            <label style="display: block;text-align: center;line-height: 12pt;">Volume</label>
+                            <input class="range-slider__range_settings" type="range" min="0.1" max="1" step="0.1"
+                                   value="1" id="mediaOverlayVolume" name="mediaOverlayVolume"
+                                   onchange="d2reader.applyMediaOverlaySettings({ volume: this.value })"/>
+                        </div>
+                        <div class="range-slider" style="padding: 5px">
+                            <label style="display: block;text-align: center;line-height: 12pt;">Rate</label>
+                            <input class="range-slider__range_settings" type="range" min="0.1" max="3" step="0.1"
+                                   value="1" id="mediaOverlayRate" name="mediaOverlayRate"
+                                   onchange="d2reader.applyMediaOverlaySettings({ rate: this.value })"/>
+                        </div>
+                    </div>
+            </div>
+            <div id="sidedrawer6">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Line Focus Settings</span>
+                </div>
+                <div class="mui-divider"></div>
+                <div id="container-view-linefocus-settings" class="dropdown-content settings-view settings"  style="width: 300px;padding: 10px;">
+                    <div style="padding: 5px">
+                        <center tabindex="0" style="display: flex;justify-content: space-around;">
+                            <div style="display: flex;align-items: center;">
+                                <label style="margin-right: 10px;">Line Focus</label>
+                                <input type="checkbox" class="filled" id="lineFocus1" name="lineFocus1" onchange="d2reader.lineFocus( this.checked )">
+                            </div>
+                        </center>
+                    </div>
+                    <div style="padding: 5px">
+                        <center tabindex="0" style="display: flex;justify-content: space-around;">
+                            <div style="display: flex;align-items: center;">
+                                <label style="margin-right: 10px;">Debug</label>
+                                <input type="checkbox" class="filled" id="lineFocus2" name="lineFocus2" onchange="d2reader.applyLineFocusSettings( {debug:this.checked} )">
+                            </div>
+                        </center>
+                    </div>
+                    <div style="padding: 5px">
+                        <label style="display: block;
+            text-align: center;
+            line-height: 12pt;">Number of Lines</label>
+                        <center>
+                            <button style="width: 30%;
+            background-color: white;
+        height: 50px;
+        border-radius: 25px 0px 0px 25px;
+        border-color: #00000020;
+        border-width: 1px;
+        border-style: solid;
+        color: black;
+        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyLineFocusSettings({lines:'1'});"><span
+                              class="material-icons">looks_one</span></button><button style="width: 30%;
+            background-color: white;
+        height: 50px;
+        border-color: #00000020;
+        border-width: 1px;
+        border-style: solid;
+        color: black;
+        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyLineFocusSettings({lines:'3'});"><span
+                          class="material-icons">looks_3</span></button><button style="width: 30%;
+            background-color: white;
+        height: 50px;
+        border-radius: 0px 25px 25px 0px;
+        border-color: #00000020;
+        border-width: 1px;
+        border-style: solid;
+        color: black;
+        font-size: 9pt;text-transform: uppercase" onclick="d2reader.applyLineFocusSettings({lines:'5'});"><span
+                          class="material-icons">looks_5</span></button>
+                        </center>
+                    </div>
+                </div>
+            </div>
+            <div id="sidedrawer7">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Stamps</span>
+                </div>
+                <div class="mui-divider"></div>
+                    <ul class="mui-list--inline mui--text-body2" style="width: 300px;padding: 10px;">
+                        <li><a id="bookmarkAnchor" style="display: flex;text-decoration: none;cursor: pointer;align-items: center;" onclick="
+                            d2reader.activateMarker('bookmarkIcon', 'left');
+                            if (this.style.color !== 'green') {
+                                 this.style.color = 'green'
+                                 document.getElementById('emoticonAnchor').style.color = '';
+                                 document.getElementById('starAnchor').style.color = '';
+                            } else {
+                                 this.style.color = ''
+                                 document.getElementById('emoticonAnchor').style.color = '';
+                                 document.getElementById('starAnchor').style.color = '';
+                            }
+                           "><i class="material-icons" style="padding-right: 5px;">bookmark</i> Activate Bookmark Stamp</a></li>
+                        <li><a id="emoticonAnchor" style="display: flex;text-decoration: none;cursor: pointer;align-items: center;" onclick="
+                            d2reader.activateMarker('emoticonIcon', 'left');
+                            if (this.style.color !== 'green') {
+                                 this.style.color = 'green'
+                                 document.getElementById('bookmarkAnchor').style.color = '';
+                                 document.getElementById('starAnchor').style.color = '';
+                            } else {
+                                 this.style.color = ''
+                                 document.getElementById('bookmarkAnchor').style.color = '';
+                                 document.getElementById('starAnchor').style.color = '';
+                            }
+                           "><i class="material-icons" style="padding-right: 5px;">insert_emoticon</i> Activate Emoticon Stamp</a></li>
+                        <li><a id="starAnchor" style="display: flex;text-decoration: none;cursor: pointer;align-items: center;" onclick="
+                            d2reader.activateMarker('starIcon', 'left');
+                            if (this.style.color !== 'green') {
+                                 this.style.color = 'green'
+                                 document.getElementById('bookmarkAnchor').style.color = '';
+                                 document.getElementById('emoticonAnchor').style.color = '';
+                            } else {
+                                 this.style.color = ''
+                                 document.getElementById('bookmarkAnchor').style.color = '';
+                                 document.getElementById('emoticonAnchor').style.color = '';
+                            }
+                           "><i class="material-icons" style="padding-right: 5px;">star</i> Activate Star Stamp</a></li>
+                    </ul>
+            </div>
+            <div id="sidedrawer8">
+                <div class="mui--appbar-line-height mui--text-center">
+                    <span class="mui--text-title">Search</span>
+                </div>
+                <div class="mui-divider"></div>
+                <div id="container-view-search" class="dropdown-content dropdown-tabbed notifications" style="width: 410px;padding: 10px;">
+                    <div class="dita-search-wrapper" tabindex="-1">
+                        <i class="material-icons left" style="margin-right: -25px;position: relative;">search</i><input id="searchInput" placeholder="Search" style="padding-left: 25px; width: 100%;height: 40px;" type="text" />
+                    </div>
+                        <ul class="mui-tabs__bar" style="display: flex;justify-content: space-evenly;">
+                            <li class="mui--is-active"><a data-mui-toggle="tab" data-mui-controls="pane-default-1">Current Chapter</a></li>
+                            <li><a data-mui-toggle="tab" data-mui-controls="pane-default-2">Entire Book</a></li>
+                        </ul>
+                        <div class="mui-tabs__pane mui--is-active" id="pane-default-1">
+
+                            <div class="dita-collection" id="searchResultChapter">
+                                <a href="#!" class="collection-item">No Search Result</a>
+                            </div>
+
+                        </div>
+                        <div class="mui-tabs__pane" id="pane-default-2">
+                            <div class="dita-collection" id="searchResultBook">
+                                <a href="#!" class="collection-item">No Search Result</a>
+                            </div>
+                        </div>
+
+                </div>
+
+            </div>
+
+            <div class="mui-appbar mui--appbar-line-height " style="background-color: white;color: black">
+                    <table class="mui--appbar-height">
+                        <tr>
+                            <td class="mui--text-title">
+                                <a class="sidedrawer-toggle mui--visible-inline-block mui--visible-inline-block js-show-sidedrawer">☰</a>
+                                <span class="mui--text-title mui--visible-inline-block mui--visible-inline-block">DITA Toolkit</span>
+                                <a id="history-back" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_back_ios</i></a>
+                                History
+                                <a id="history-forward" style="padding-left: 7px; padding-right: 7px;"><i class="material-icons ">arrow_forward_ios</i></a>
+
+                            </td>
+                            <td align="mui--text-right" style="text-align: right;padding-right: 10px">
+                                <ul class="mui-list--inline mui--text-body2">
+                                    <li><a class="saveBookmark" id="menu-button-bookmark-range"  onclick="d2reader.saveBookmarkPlus()"><i class="material-icons">bookmark_border</i></a></li>
+                                    <li><a class="saveBookmark" id="menu-button-bookmark"><i class="material-icons">bookmark</i></a></li>
+                                    <li><a id="menu-button-up" onclick="d2reader.lineUp()"><i class="material-icons">arrow_upward</i></a></li>
+                                    <li><a id="menu-button-down" onclick="d2reader.lineDown()"><i class="material-icons">arrow_downward</i></a></li>
+
+                                    <li><a id="menu-button-play" onclick="d2reader.startReadAlong()"><i class="material-icons">play_arrow</i></a>
+                                    <a id="menu-button-pause" onclick="d2reader.pauseReadAlong()" style="display: none"><i class="material-icons">pause</i></a></li>
+
+                                    <li><i class="material-icons" style="transform: rotate(90deg);color: lightgray">horizontal_rule</i></li>
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer7" data-target="container-view-stamps-settings" id="menu-button-stamp"><i class="material-icons ">approval</i></a></li>
+
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer6" data-target="container-view-linefocus-settings" id="menu-button-linefocus"><i class="material-icons ">filter_center_focus</i></a></li>
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer2" data-target="container-view-tts-settings" data-mui-toggle="dropdown" id="menu-button-tts"><i class="material-icons ">volume_up</i></a></li>
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer4"  data-target="container-view-layer-settings" id="menu-button-layer"><i class="material-icons ">toggle_on</i></a></li>
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer5"  data-target="container-view-mediaoverlay-settings" id="menu-button-mediaoverlay"><i class="material-icons ">record_voice_over</i></a></li>
+                                    <li><a class="mui--visible-inline-block  js-show-sidedrawer3"  data-target="container-view-settings-custom" id="menu-button-settings" onclick="reload()"><i class="material-icons">settings</i></a></li>
+
+                                    <li style="display:none"><a class="mui--visible-inline-block  js-show-sidedrawer8"  data-target="container-view-search"  id="menu-button-search"><i class="material-icons">search</i></a></li>
+
+                                    <li style="display:none" id="fxl-zoom-in"><a onclick="d2reader?.zoomIn()"><i class="material-icons">zoom_in</i></a></li>
+                                    <li style="display:none" id="fxl-zoom-out"><a onclick="d2reader?.zoomOut()"><i class="material-icons">zoom_out</i></a></li>
+                                    <li style="display:none" id="fxl-fit-page"><a onclick="d2reader?.fitToPage()"><i class="material-icons">fit_screen</i></a></li>
+                                    <li style="display:none" id="fxl-pan"><a onclick="var on = this.classList.toggle('active'); this.style.color = on ? '#039be5' : ''; on ? d2reader?.activateHand() : d2reader?.deactivateHand()"><i class="material-icons">open_with</i></a></li>
+
+                                </ul>
+                            </td>
+                        </tr>
+                    </table>
+                <div class="mui-divider"></div>
+            </div>
+        </header>
+
+        <div id="D2Reader-Container" style="flex: 1; min-height: 0;">
+            <div id="lineFocusContainer" class="d2-line-focus-container" style="display: none;height: calc(100vh - 65px);">
+                <div id="lineFocusTopBlinder" class="d2-line-focus-top" ></div>
+                <div id="lineFocusBottomBlinder" class="d2-line-focus-bottom"></div>
+            </div>
+            <main style="height: 100%" tabindex=-1 id="iframe-wrapper">
+                <div id="reader-loading" class="dita-loading"></div>
+                <div id="reader-error" class="dita-error"></div>
+                <div id="reader-info-top" class="dita-info top">
+                    <span class="book-title"></span>
+                </div>
+                <div id="reader-info-bottom" class="dita-info bottom" style="height: 75px;">
+                    <div style="display: flex;justify-content: center;">
+                        <span class="chapter-position"></span>&nbsp;
+                        <span class="chapter-title"></span>
+                    </div>
+                    <div class="scrubber">
+                        <input class="range-slider__range" style="margin-left:30px;display: none" type="range" min="1" step="1" id="positionSlider" name="positionSlider" onchange="d2reader.goToPosition( this.value )" />
+                    </div>
+                </div>
+                <div style="height: 0px">
+                    <div id="highlight-toolbox" class="highlight-toolbox" >
+                        <div id="highlight-toolbox-mode-colors">
+                            <button style="background-color: gainsboro;" id="dismissIcon"><i class="material-icons" style="color:gray">close</i></button>
+                        </div>
+                        <div id="highlight-toolbox-mode-add">
+                            <button style="display: unset;" id="colorIcon" class="dita-color-option"><span></span></button>
+                            <button style="background-color: gainsboro;" id="highlightIcon"><span style="background: yellow;display: inline-block;width: 24px;height: 24px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon">
+                            <title id="text-icon">Text</title>
+                            <path d="M5 4v3h5.5v12h3V7H19V4z"></path>
+                        </svg>
+                    </span></button>
+                            <button style="background-color: gainsboro;" id="underlineIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="text-icon">
+                            <title id="text-icon">Text</title>
+                            <path d="M5 4v3h5.5v12h3V7H19V4z"></path>
+                        </svg>
+                    </span></button>
+                            <button style="background-color: gainsboro;" id="noteIcon"><span style="display: inline-block;width: 24px;height: 24px;border-bottom: yellow solid 4px;"><i class="material-icons" style="color:black">sticky_note_2</i></span></button>
+                            <button style="background-color: gainsboro;" id="bookmarkIcon"><span style="display: inline-block;width: 24px;height: 24px;"><i class="material-icons" style="color:black">bookmark</i></span></button>
+                            <button style="background-color: gainsboro;" id="citationIcon"><i class="material-icons">format_quote</i></button>
+                            <button style="background-color: gainsboro;" id="speakIcon"><span style="display: inline-block;width: 24px;height: 24px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" role="img" class="icon open" aria-labelledby="speak-icon">
+                            <title id="speak-icon">Speak</title>
+                            <circle cx="9" cy="9" r="4"></circle>
+                            <path
+                              d="M9 15c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4zm7.76-9.64l-1.68 1.69c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z">
+                            </path>
+                            <path d="M0 0h24v24H0z" fill="none"></path>
+                        </svg>
+                    </span></button>
+                            <button style="background-color: gainsboro;display: unset;" id="actionIcon" class="action-option"><i class="material-icons" style="color:gray">more_horiz</i></button>
+
+                        </div>
+                        <div id="highlight-toolbox-mode-edit">
+                            <button style="background-color: gainsboro;display: none" id="commentIcon"><i class="material-icons" style="color:black">insert_comment</i></button>
+                            <button style="background-color: gainsboro;display: none" id="deleteIcon"><i class="material-icons" style="color:black">delete</i></button>
+                        </div>
+                        <div id="highlight-toolbox-mode-action">
+                            <button style="background-color: gainsboro;" id="anIcon"><span style="display: inline-block;width: 24px;height: 24px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="24" height="24">
+                            <path d="M0 0h24v24H0z" fill="none" />
+                            <path
+                              d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z" />
+                        </svg>
+                    </span></button>
+                            <button style="background-color: gainsboro;" id="errorIcon"><i class="material-icons" style="color:orangered">error</i></button>
+                            <button style="background-color: gainsboro;" id="helpIcon"><i class="material-icons" style="color:rebeccapurple">help_center</i></button>
+                            <button style="background-color: gainsboro;" id="checkIcon"><i class="material-icons" style="color:limegreen">check</i></button>
+                            <button style="background-color: gainsboro;" id="emoticonIcon"><i class="material-icons" style="color:orange">insert_emoticon</i></button>
+                            <button style="background-color: gainsboro;" id="starIcon"><i class="material-icons" style="color:gold">star</i></button>
+                            <button style="background-color: gainsboro;" id="collapseIcon"><i class="material-icons" style="color:gray">close</i></button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            <div id="container-view-security" class="security"></div>
+            <div id="container-view-timeline" class="dita-timeline" style="top: 5rem;bottom: 2.5rem;"></div>
+            <a id="previous-chapter" rel="prev" role="button" aria-labelledby="previous-label"
+               style="top: 65px;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
+                <i class="material-icons black-text" style="left: calc(50% - 12px);
+                position: relative;">keyboard_arrow_up</i>
+            </a>
+            <a id="next-chapter" rel="next" role="button" aria-labelledby="next-label" style="bottom: 0;left: 50%;position: fixed;color: #000;height: 24px;background: #d3d3d33b; width: 150px;transform: translate(-50%, 0); display: none">
+                <i class="material-icons black-text" style="left: calc(50% - 12px);
+                position: relative;">keyboard_arrow_down</i>
+            </a>
+        </div>
+
+        <footer id="footerMenu">
+            <a rel="prev" class="disabled" role="button" aria-labelledby="previous-label" style="top: 50%;left:0;position: fixed;height: 100px;
+                    background: #d3d3d33b;">
+                <i class="material-icons black-text" style="top: calc(50% - 12px);
+                        position: relative;">keyboard_arrow_left</i>
+            </a>
+            <a rel="next" class="disabled" role="button" aria-labelledby="next-label" style="top: 50%;right:0;position: fixed;height: 100px;
+                    background: #d3d3d33b;">
+                <i class="material-icons black-text" style="top: calc(50% - 12px);
+                        position: relative;">keyboard_arrow_right</i>
+            </a>
+        </footer>
+
+        <div id="toast"><div id="description"></div></div>
+
+    </div>
+
+    <script>
+        let getURLQueryParams = function () {
+            let params = {};
+            let query = window.location.search;
+            if (query && query.length) {
+                query = query.substring(1);
+                let keyParams = query.split('&');
+                for (let x = 0; x < keyParams.length; x++) {
+                    let keyVal = keyParams[x].split('=');
+                    if (keyVal.length > 1) {
+                        params[keyVal[0]] = decodeURIComponent(keyVal[1]);
+                    }
+                }
+            }
+            return params;
+        };
+        let urlParams = getURLQueryParams();
+        let defined_origin = window.location.origin;
+
+        // ReadiumCSS variant per script mode. ctx.scriptMode is derived by
+        // the navigator from publication metadata (languages + readingProgression).
+        const isLtr = (ctx) => ctx.scriptMode === "ltr";
+        const isRtl = (ctx) => ctx.scriptMode === "rtl";
+        const isCjkHorizontal = (ctx) => ctx.scriptMode === "cjk-horizontal";
+        const isCjkVertical = (ctx) =>
+            ctx.scriptMode === "cjk-vertical" || ctx.scriptMode === "mongolian-vertical";
+
+        let injectables = [
+            // Base ReadiumCSS v2 — LTR (default Latin / non-CJK)
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-before.css', r2before: true, when: isLtr },
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-default.css', r2default: true, when: isLtr },
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/ReadiumCSS-after.css', r2after: true, when: isLtr },
+            // RTL ReadiumCSS — Arabic, Hebrew, Persian, etc.
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-before.css', r2before: true, when: isRtl },
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-default.css', r2default: true, when: isRtl },
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-after.css', r2after: true, when: isRtl },
+            // CJK-horizontal ReadiumCSS — Chinese, Japanese, Korean (horizontal)
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-before.css', r2before: true, when: isCjkHorizontal },
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-default.css', r2default: true, when: isCjkHorizontal },
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-after.css', r2after: true, when: isCjkHorizontal },
+            // CJK-vertical ReadiumCSS — Japanese vertical, Mongolian-vertical
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-before.css', r2before: true, when: isCjkVertical },
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-default.css', r2default: true, when: isCjkVertical },
+            { type: 'style', url: defined_origin + '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-after.css', r2after: true, when: isCjkVertical },
+            // Dita patch layer (LTR/RTL/cjk-horizontal) — image sizing +
+            // line-height compensation; loaded after the bundle so rules win.
+            { type: 'style', url: defined_origin + '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css', when: isLtr },
+            // Dita patch layer (cjk-vertical / mongolian-vertical) — html
+            // overflow rules, scrollbar hiding, and scroll-padding moved
+            // from body to html (scroll container) so scroll-end gap renders.
+            { type: 'style', url: defined_origin + '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-dita-patch.css', r2after: true, when: isCjkVertical },
+            { type: 'style', url: 'https://fonts.googleapis.com/icon?family=Material+Icons'},
+            { type: 'style', url: defined_origin + '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic' },
+            { type: 'style', fontFamily: 'Courier', systemFont: true },
+            { type: 'style', url: defined_origin + '/viewer/injectables/style/popup.css' },
+            { type: 'style', url: defined_origin + '/viewer/injectables/style/popover.css' },
+            { type: 'style', url: defined_origin + '/viewer/injectables/style/style.css' },
+            {
+                async: true,
+                type: 'script',
+                url: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js',
+            },
+        ]
+        let userSettings = {
+          // scrollPaddingBottom: isCjkVertical(ctx) ? 70 : 0,
+          // scrollPaddingTop:40,
+          // scrollPaddingLeft: 40,
+          // scrollPaddingRight: 40,
+          // lineLength: "80%",
+
+          // appearance: "sepia", //readium-default-on, day, readium-night-on, night, readium-sepia-on, sepia
+            // fontFamily: "serif", //Original, serif, sans-serif
+            // textAlignment: "start", //"auto", "justify", "start"
+            // columnCount: "1", // "auto", "1", "2"
+            // verticalScroll: "readium-scroll-off", //readium-scroll-on, readium-scroll-off,
+            // fontSize: 300,
+            // wordSpacing: 4.0,
+            // letterSpacing: 4.0,
+            // pageMargins: 4.0,
+            // lineHeight: 4.0
+            // bodyHyphens: true,        // true = auto, false = none
+            // paraSpacing: 1.0,         // 0–3 rem, step 0.5
+            // paraIndent: 1.0,          // 0–3 em, step 0.5
+            // typeScale: 1.2,           // 1.0–1.5, step 0.1
+            // backgroundColor: "#fefefe", // hex color pass-through
+            // textColor: "#333333",       // hex color pass-through
+        }
+        let selectionMenuItems = [
+            {
+                id: 'anIcon',
+                callback: function (selection, element) {
+                    alert(selection);
+                    console.log(element);
+                }
+            },
+            {
+                id: 'copyIcon',
+                callback: function (selection, element) {
+                    d2reader.copyToClipboard(selection)
+                }
+            },
+            {
+                id: `errorIcon`,
+                note: false,
+                icon: {
+                    title: `Error`,
+                    svgPath: `<path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z\"/>`,
+                    color: `#fc0303`,
+                    // class: "red",
+                    position: "right",// inline , center , right , left
+                },
+                popup: {
+                    class: "red"
+                },
+                highlight: {
+                    // color : "var(--RS__highlightColor)",
+                    color: `#fc0303`,
+                    style: {
+                        default: [{
+                            property: `border-bottom`,
+                            value: `2px solid #fc0303`,
+                            priority: `important`
+                        }]
+                    }
+                }
+            },
+            {
+                id: `helpIcon`,
+                note: false,
+                icon: {
+                    title: `Help`,
+                    svgPath: `<g><rect fill="none" height="24" width="24"/><path d="M13.25,16.74c0,0.69-0.53,1.26-1.25,1.26c-0.7,0-1.26-0.56-1.26-1.26c0-0.71,0.56-1.25,1.26-1.25 C12.71,15.49,13.25,16.04,13.25,16.74z M11.99,6c-1.77,0-2.98,1.15-3.43,2.49l1.64,0.69c0.22-0.67,0.74-1.48,1.8-1.48 c1.62,0,1.94,1.52,1.37,2.33c-0.54,0.77-1.47,1.29-1.96,2.16c-0.39,0.69-0.31,1.49-0.31,1.98h1.82c0-0.93,0.07-1.12,0.22-1.41 c0.39-0.72,1.11-1.06,1.87-2.17c0.68-1,0.42-2.36-0.02-3.08C14.48,6.67,13.47,6,11.99,6z M19,5H5v14h14V5 M19,3c1.1,0,2,0.9,2,2v14 c0,1.1-0.9,2-2,2H5c-1.1,0-2-0.9-2-2V5c0-1.1,0.9-2,2-2H19L19,3z"/></g>`,
+                    color: `#9100a5`,
+                    position: "left",
+                },
+                highlight: {
+                    color: `#9100a5`,
+                    style: {
+                        default: [{
+                            property: `border-bottom`,
+                            value: `1px solid #9100a5`,
+                            priority: `important`
+                        }]
+                    }
+                }
+            },
+            {
+                id: `bookmarkIcon`,
+                note: false,
+                marker: 2,
+                icon: {
+                    title: `Bookmark`,
+                    svgPath: `<path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>`,
+                    color: `#000000`,
+                    position: "left",
+                },
+                highlight: {
+                    color: `#000000`,
+                    style: {
+                        default: [{
+                            property: `border-bottom`,
+                            value: `1px dashed #000000`,
+                            priority: `important`
+                        }],
+                        // hover: [{
+                        //     property: `border-bottom`,
+                        //     value: `1px dashed #000000`,
+                        //     priority: `important`
+                        // },{
+                        //     property: `background-color`,
+                        //     value: `rgba(0, 0, 0, 0.1)`,
+                        //     priority: `important`
+                        // }]
+                    },
+                }
+            },
+            {
+                id: `checkIcon`,
+                icon: {
+                    title: `Checkmark`,
+                    svgPath: `<path d="M0 0h24v24H0V0z" fill="none"/><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>`,
+                    color: `#00d51d`,
+                    // class: "red",
+                    position: "inline",
+                },
+                popup: {
+                    background: `#d50080`,
+                    textColor: `#000000`,
+                    // class: "red",
+                },
+                highlight: {
+                    color: `#00d51d`,
+                    style: {
+                        // default: [{
+                        //     property: `border-bottom`,
+                        //     value: `2px dotted #00d51d`,
+                        //     priority: `important`
+                        // }]
+                    }
+                }
+            },
+            {
+                id: `starIcon`,
+                icon: {
+                    title: `Star`,
+                    svgPath: `<g><path d="M0,0h24v24H0V0z" fill="none"/><path d="M0,0h24v24H0V0z" fill="none"/></g><g><path d="M12,17.27L18.18,21l-1.64-7.03L22,9.24l-7.19-0.61L12,2L9.19,8.63L2,9.24l5.46,4.73L5.82,21L12,17.27z"/></g>`,
+                    color: `#ffd700`,
+                    position: "right",
+                },
+                popup: {
+                    background: `#ffd700`,
+                    textColor: `#000000`,
+                },
+                highlight: {
+                    color: `#ffd700`,
+                    style: {
+                        default: [{
+                            property: `border-bottom`,
+                            value: `1px solid #ffd700`,
+                            priority: `important`
+                        }]
+                    }
+                }
+            },
+            {
+                id: `emoticonIcon`,
+                icon: {
+                    title: `Emoticon`,
+                    svgPath: `<path d="M0 0h24v24H0V0z" fill="none"/><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>`,
+                    color: `#ffa500`,
+                    position: "right",
+                },
+                popup: {
+                    background: `#ffa500`,
+                    textColor: `#000000`,
+                },
+                highlight: {
+                    color: `#ffa500`,
+                    style: {
+                        default: [{
+                            property: `border-bottom`,
+                            value: `1px solid #ffa500`,
+                            priority: `important`
+                        }]
+                    }
+                }
+            },
+
+
+            //     `bookmark-icon`,
+            //     `Bookmark`,
+            //     `<path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>`,
+            //     `icon open`,
+            //     size,
+            //     `#000000 !important`
+
+        ]
+
+        // Example: custom EPUB module — vocabulary builder
+        // Double-click a word in the book to add it to your vocabulary list
+        // Access the word list in console: vocabularyBuilder.getWords()
+        class VocabularyBuilder {
+            name = "vocabulary-builder";
+            hostType = "epub";
+            host;
+            words = [];
+            _handler = null;
+
+            attach(host) { this.host = host; }
+            setup() {
+                this._handler = (e) => {
+                    const doc = this.host?.iframes?.[0]?.contentDocument;
+                    if (!doc) return;
+                    const selection = doc.getSelection();
+                    const word = selection?.toString().trim();
+                    if (!word || word.includes(" ")) return;
+                    const range = selection?.getRangeAt(0);
+                    const sentence = range?.startContainer?.parentElement?.textContent?.trim()?.substring(0, 120) ?? "";
+                    const chapter = this.host?.currentChapterLink?.title || this.host?.currentChapterLink?.href;
+                    this.words.push({ word, sentence, chapter });
+                    console.log("[VocabularyBuilder]", this.getWords());
+                    this._showToast("📖 " + word + " added to vocabulary (" + this.words.length + " words)");
+                };
+            }
+            onResourceReady() {
+                const doc = this.host?.iframes?.[0]?.contentDocument;
+                if (doc && this._handler) doc.addEventListener("dblclick", this._handler);
+            }
+            getWords() { return this.words; }
+            stop() {
+                const doc = this.host?.iframes?.[0]?.contentDocument;
+                if (doc && this._handler) doc.removeEventListener("dblclick", this._handler);
+            }
+            _showToast(msg) {
+                let el = document.getElementById("vocab-toast");
+                if (!el) {
+                    el = document.createElement("div");
+                    el.id = "vocab-toast";
+                    el.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;z-index:9999;transition:opacity 0.3s;pointer-events:none;";
+                    document.body.appendChild(el);
+                }
+                el.textContent = msg;
+                el.style.opacity = "1";
+                clearTimeout(el._timeout);
+                el._timeout = setTimeout(() => { el.style.opacity = "0"; }, 2000);
+            }
+        }
+        const vocabularyBuilder = new VocabularyBuilder();
+
+        let d2reader;
+        D2Reader.load({
+            modules: [vocabularyBuilder],
+            url: new URL(urlParams["url"]),
+            // requestConfig: {
+            //     method: "GET",
+            //     mode: "cors",
+            //     credentials: "include",
+            // },
+            attributes: {
+                // Extra px reserved below the iframe. Optional.
+                // margin: 75,
+                // @deprecated — use `iframe: { padding: { top: 20 } }`.
+                // iframe:{
+                //   padding: {
+                //     top: 20,
+                //     bottom: 20
+                //   }
+                // },
+                scrollContainer: "iframe",
+                safeArea: {
+                  top: () => document.querySelector('.mui-appbar'),
+                  bottom: () => {
+                    return document.body.classList.contains('script-vertical')
+                      ? document.getElementById('container-view-timeline')
+                      : document.getElementById('reader-info-bottom');
+                  },
+                  left: () => {
+                    return document.body.classList.contains('script-vertical')
+                      ? null
+                      : document.getElementById('container-view-timeline')
+                  },
+                },
+            },
+            rights: {
+                enableBookmarks: true,
+                enableAnnotations: true,
+                enableTTS: true,
+                enableSearch: true,
+                enableTimeline: true,
+                enableDefinitions: true,
+                enableContentProtection: true,
+                enableMediaOverlays: true,
+                enablePageBreaks: true,
+                autoGeneratePositions: true,
+                enableLineFocus: true,
+                customKeyboardEvents: false,
+                enableHistory: true,
+                enableCitations: true,
+                enableConsumption: false,
+            },
+            consumption: {
+                enableTrackingSession: true,
+                updateSessionInterval: 20,
+                idleTimeout: 10,
+                responseTimeout: 10,
+                api: {
+                    idleSince: function(time) {
+                        console.log("idleSince: ", "time", time);
+                        toast("idle since: " + time + " seconds");
+                    },
+                    startResearchSession: function(sessions, time) {
+                        console.log("startResearchSession: ", sessions, "time", time);
+                        toast("start: " + time);
+                        return 123;
+                    },
+                    updateResearchSession: function(id, sessions, time) {
+                        console.log("updateResearchSession: ", id, sessions, "time", time);
+                        toast("update: " + id + " time: " + time);
+                    },
+                    endResearchSession: function(id, sessions, time) {
+                        console.log("endResearchSession: ", id, sessions, "time", time);
+                        toast("end: " + id + " time: " + time);
+                    },
+                    actionTracked: function(locator, action) {
+                        console.log("actionTracked: ", locator.href, " action ", action);
+                        toast("actionTracked: " + action);
+                    },
+
+                },
+            },
+            lineFocus: {
+                lines: 5,
+                maxHeight: 30, // image max height in percent
+            },
+            citations: {
+                characters: 100,
+                appName: "r2d2bc", // optional
+                appLink: "localhost", // optional
+                library: "library", // optional
+                styles: ["Chicago", "MLA", "APA"],
+                title: "book title", // optional
+                author: "author here", // optional
+                publisher: "publisher name", // optional
+                published: "date published", // optional
+                api: {
+                    citationCreated: function(message) {
+                        console.log("citationCreated");
+                        toast(message);
+                    },
+                    citationFailed: function(message) {
+                        console.log("citationFailed");
+                        toast(message);
+                    },
+                },
+            },
+            // services: {
+            //     positions: new URL("https://alice.dita.digital/positions.json"),
+            //     weight: new URL("https://alice.dita.digital/weight.json"),
+            // },
+            // sample: {
+            //     isSampleRead: true,
+            //     limit: 10, // in percent e.g. 5%
+            //     minimum: 5, // in pages
+            //     popup: "You can borrow the book to continue reading."
+            // },
+            mediaOverlays: {
+                autoScroll: true,
+                autoTurn: true,
+                // color: "redtext",
+                volume: 0.7,
+                rate: 1.2,
+                wait: 1,
+                // hideLayer:true,
+                api: {},
+            },
+            tts: {
+                enableSplitter: false,
+                color: "orange",
+                autoScroll: true,
+                // hideLayer:true,
+                voice: {
+                    usePublication: false,//, // true = will be used no matter if an initial language is set, false = ignore publicaiton language
+                    // lang: "de_DE" // initial language, default system language will be used it this language can't be found
+                    // name: "Karen" // will be only used together with the lang, if lang is not given, name will be ignored
+                },
+                api: {
+                    started: function() {
+                        console.log("started");
+                        return new Promise(function(resolve, reject) {
+                            resolve;
+                        });
+                    },
+                    stopped: function() {
+                        console.log("stopped");
+                        return new Promise(function(resolve, reject) {
+                            resolve();
+                        });
+                    },
+                    paused: function() {
+                        console.log("paused");
+                        return new Promise(function(resolve, reject) {
+                            resolve();
+                        });
+                    },
+                    resumed: function() {
+                        console.log("resumed");
+                        return new Promise(function(resolve, reject) {
+                            resolve();
+                        });
+                    },
+                    finished: function() {
+                        console.log("finished");
+                        return new Promise(function(resolve, reject) {
+                            resolve();
+                        });
+                    },
+                    updateSettings: function(settings) {
+                        console.log("updateSettings");
+                        return new Promise(function(resolve, reject) {
+                            resolve(
+                              settings,
+                            );
+                        });
+                    },
+                },
+            },
+            search: {
+                color: "#fce300",
+                current: "#ed7138",
+                // hideLayer:true,
+                api: {},
+            },
+            define: {
+                // color: "#40E0D0",
+                color: "var(--RS__definitionsColor)",
+                fullWordSearch: true,
+                // hideLayer:true,
+                api: {
+                    click: function(item, element) {
+                        console.log("click");
+                        console.log(item);
+                        console.log(element);
+                    },
+                    success: function(item, elements) {
+                        console.log("success");
+                        console.log(item);
+                        console.log(elements);
+                    },
+                    visible: function(item, element) {
+                        console.log("visible");
+                        console.log(item);
+                        console.log(element);
+                    },
+                },
+                definitions: [
+                    {
+                        order: 2,
+                        result: 2,
+                        terms: ["shelley"],
+                        definition: "Giant hyssop was rarely included, despite being hugely attractive to bees.",
+                    },
+                    {
+                        order: 0,
+                        result: 1, // 1 = first, 2 = random, 0 = all
+                        terms: ["lavender", "lavandula"],
+                        definition: "Lavandula (common name lavender) is a genus of 47 known species of flowering plants in the mint family, Lamiaceae.",
+                    },
+                    {
+                        order: 1,
+                        result: 0, // 1 = first, 2 = random, 0 = all
+                        terms: ["Belle"],
+                        definition: "But over time, Belle became friends\n" +
+                          "with the staff. Then she and the Beast fell\n" +
+                          "in love. The whole household became a\n" +
+                          "family.",
+                    },
+                    {
+                        order: 2,
+                        result: 0,
+                        terms: ["Dahlia"],
+                        definition: "Giant hyssop was rarely included, despite being hugely attractive to bees.",
+                    },
+                    {
+                        order: 3,
+                        result: 0, // 1 = first, 2 = random, 0 = all
+                        terms: ["allium"],
+                        definition: "a bulbous plant of a genus that includes the onion and its relatives (e.g. garlic, leek, and chives).",
+                    },
+                ],
+            },
+            highlighter: {
+                menuPosition: "inline", // top, bottom, inline (inline is default)
+                selectionMenuItems: selectionMenuItems,
+                api: {
+                    selectionMenuOpen: function() {
+                        console.log("selectionMenuOpen");
+                    },
+                    selectionMenuClose: function() {
+                        console.log("selectionMenuClose");
+                    },
+                    selection: function() {
+                      console.log("selection through callback");
+                    },
+                },
+                preventScrollOnSelection: true,
+            },
+            annotations: {
+                enableComments: true,
+                // initialAnnotationColor: "var(--RS__highlightColor)",
+                // initialAnnotationColor: "#ff8500",
+                // hideLayer:true,
+                api: {
+                    addAnnotation: function(highlight) {
+                        console.log("addAnnotation", highlight.highlight.marker);
+                        highlight.id = Math.random();
+                        if (highlight.highlight.marker === 4) {
+                            let h = swal({
+                                text: "Enter Note Here:",
+                                content: "input",
+                                button: {
+                                    text: "Save",
+                                    closeModal: true,
+                                },
+                            }).then(name => {
+                                if (!name) throw null;
+                                highlight.highlight.note = name;
+                                toast("Annotation added " + highlight.highlight.marker);
+                                swal.stopLoading();
+                                swal.close();
+                                return highlight;
+                            });
+                            return new Promise(function(resolve, reject) {
+                                resolve(
+                                  h,
+                                );
+                            });
+                        } else {
+                            toast("Annotation added " + highlight.highlight.marker);
+                            return new Promise(function(resolve, reject) {
+                                resolve(
+                                  highlight,
+                                );
+                            });
+                        }
+                    },
+                    addCommentToAnnotation: function(highlight) {
+                        console.log("addCommentToAnnotation");
+                        let h = swal({
+                            text: "Update or Add Note Here:",
+                            content: {
+                                element: "input",
+                                attributes: {
+                                    value: highlight.highlight.note ?? "",
+                                },
+                            },
+                            button: {
+                                text: "Save",
+                                closeModal: true,
+                            },
+                        }).then(name => {
+                            if (!name) throw null;
+                            highlight.highlight.note = name;
+                            toast("Annotation updated " + highlight.highlight.marker);
+                            swal.stopLoading();
+                            swal.close();
+                            return highlight;
+                        });
+                        return new Promise(function(resolve, reject) {
+                            resolve(
+                              h,
+                            );
+                        });
+                    },
+                    deleteAnnotation: function(highlight) {
+                        console.log("deleteAnnotation");
+                        toast("Annotation deleted");
+                        return new Promise(function(resolve, reject) {
+                            resolve();
+                        });
+                    },
+                    selectedAnnotation: function(highlight) {
+                        console.log("selectedAnnotation");
+                        return new Promise(function(resolve, reject) {
+                            resolve();
+                        });
+                    },
+                    updateAnnotation: function(highlight) {
+                        console.log("updateAnnotation");
+                        return new Promise(function(resolve, reject) {
+                            resolve();
+                        });
+                    },
+
+                },
+            },
+            pagebreak: {
+                // hideLayer:false,
+            },
+            bookmarks: {
+                // hideLayer:true,
+                api: {
+                    addBookmark: function(bookmark) {
+                        console.log("addBookmark");
+                        toast("Bookmark added");
+                        return new Promise(function(resolve, reject) {
+                            bookmark.id = Math.random();
+                            resolve(
+                              bookmark,
+                            );
+                        });
+                    },
+                    deleteBookmark: function(bookmark) {
+                        console.log("deleteBookmark");
+                        toast("Bookmark deleted");
+                        return new Promise(function(resolve, reject) {
+                            resolve(
+                              bookmark,
+                            );
+                        });
+                    },
+                },
+            },
+            protection: {
+                enforceSupportedBrowsers: false,
+                enableEncryption: true,
+                enableObfuscation: true,
+                disablePrint: true,
+                disableCopy: true,
+                canCopy: true,
+                charactersToCopy: 100,
+                detectInspect: false,
+                clearOnInspect: true, // make sure detectInspect is true, otherwise this won't work
+                disableKeys: true,
+                disableContextMenu: true,
+                hideTargetUrl: true,
+                disableDrag: false,
+                excludeNodes:["script", "option"],
+                supportedBrowsers: [ // this will only be used if enforceSupportedBrowsers is true, and has nothing to do with the r2d2bc modules supported browsers
+                    "Chrome", "ChromeAndroid", "Edge", "Firefox", "iOS", "Safari",
+                ],
+                api: {
+                    // make sure detectInspect is true, otherwise this won't be called
+                    // this callback will be executed in a loop while inspect is visible
+                    inspectDetected: function() {
+                        console.log("inspect detected");
+                    },
+                },
+              viewportSlack: { top: 20, bottom: 20, left: 0, right: 0 }
+            },
+            api: {
+                getContent: function (href) {
+                    console.log("getContent")
+                    return new Promise(async function (resolve) {
+                        await fetch(href)
+                          .then((r) => r.text())
+                          .then(async (data) => {
+                              resolve(data);
+                          });
+                    });
+                },
+
+                resourceReady: function() {
+                    console.log("resourceReady");
+                    // d2reader.applyUserSettings({fontFamily: 'opendyslexic'})
+                },
+                resourceAtStart: function() {
+                    console.log("resourceAtStart");
+                },
+                resourceAtEnd: function() {
+                    console.log("resourceAtEnd");
+                },
+                resourceFitsScreen: function() {
+                    console.log("resourceFitsScreen");
+                },
+                updateCurrentLocation: function(location) {
+                    console.log("updateCurrentLocation " + location.locations.progression);
+                    return new Promise(function(resolve, reject) {
+                        resolve(
+                          location,
+                        );
+                    });
+                },
+                updateSettings: function(settings) {
+                    console.log("updateSettings");
+                    return new Promise(function(resolve, reject) {
+                        resolve(
+                          settings,
+                        );
+                    });
+                },
+                keydownFallthrough: function(event) {
+                    console.log("api.keydownFallthrough:" + event.key);
+                },
+                clickThrough: function(event) {
+                    console.log("api.clickThrough");
+                },
+                onError: function(error) {
+                    console.log(error);
+                },
+                direction: function(dir) {
+                    const slider = document.getElementById("positionSlider");
+                    if (slider) slider.dir = dir;
+                }
+            },
+            injectables: injectables,
+            injectablesFixed: [
+                { type: 'style', url: defined_origin + '/viewer/injectables/style/mo.css' },
+            ],
+            userSettings: userSettings,
+            useLocalStorage: true, // true = uses local storage, false = uses session storage (default)
+            useStorageType: "local", // local, session or memory !! use either this or useLocalStorage,
+                                     // but ideally not both, this is a newer setting which
+                                     // allows for in memory storage additionally to local and session
+                                     // if not set then useLocalStorage will be used as default
+        }).then(instance => {
+            console.log("D2reader instance ready", instance);
+            d2reader = instance;
+            // Populate settings panel inputs with current values so the UI
+            // reflects integrator-supplied / persisted settings on first load.
+            try { reload(); } catch (e) { console.warn('reload() failed', e); }
+
+            // Tag body with the publication's script mode so the viewer's
+            // chrome (timeline, chapter arrows) can re-orient for vertical
+            // scripts via CSS — see `.script-vertical` rules in the head.
+            try {
+                const sm = instance.scriptMode;
+                document.body.classList.remove("script-ltr", "script-rtl", "script-cjk-horizontal", "script-cjk-vertical", "script-mongolian-vertical", "script-vertical");
+                if (sm) {
+                    document.body.classList.add("script-" + sm);
+                    if (sm === "cjk-vertical" || sm === "mongolian-vertical") {
+                        document.body.classList.add("script-vertical");
+                        // Swap the chapter-arrow ligature text (Material Icons
+                        // resolves the element's text content as the icon).
+                        // Rotation would distort the glyph; replacing the text
+                        // gives the proper left/right arrow.
+                        const prevIcon = document.querySelector("#previous-chapter .material-icons");
+                        const nextIcon = document.querySelector("#next-chapter .material-icons");
+                        // vertical-rl: previous = right (scroll right back to start),
+                        // next = left (scroll left toward end).
+                        if (prevIcon) prevIcon.textContent = "keyboard_arrow_right";
+                        if (nextIcon) nextIcon.textContent = "keyboard_arrow_left";
+
+                        // Chapter axis swap: inline `height: X%` (X = chapter
+                        // weight) becomes `width: X%`. Chapter height is 100%
+                        // via CSS so it fills the timeline strip.
+                        const swapChapterAxes = (chapter) => {
+                            const h = chapter.style.height;
+                            if (h && h.endsWith("%")) {
+                                chapter.style.width = h;
+                                chapter.style.removeProperty("height");
+                            }
+                        };
+                        const tl = document.getElementById("container-view-timeline");
+                        if (tl) {
+                            tl.querySelectorAll(".chapter").forEach(swapChapterAxes);
+                            new MutationObserver((muts) => {
+                                muts.forEach((m) => m.addedNodes.forEach((n) => {
+                                    if (n.nodeType === 1 && n.classList?.contains("chapter")) swapChapterAxes(n);
+                                }));
+                            }).observe(tl, { childList: true });
+                        }
+                    }
+                }
+            } catch (e) { console.warn("scriptMode tag failed", e); }
+
+            // Show FXL zoom buttons if fixed layout
+            if (instance.publicationLayout === "fixed") {
+                document.getElementById("fxl-zoom-in")?.style.removeProperty("display");
+                document.getElementById("fxl-zoom-out")?.style.removeProperty("display");
+                document.getElementById("fxl-fit-page")?.style.removeProperty("display");
+                document.getElementById("fxl-pan")?.style.removeProperty("display");
+            }
+
+            // ── Resource lifecycle ──────────────────────────────────
+            instance.addEventListener("resource.ready", () => {
+                console.log("[EVENT] resource.ready");
+            });
+            instance.addEventListener("resource.start", () => {
+                console.log("[EVENT] resource.start");
+            });
+            instance.addEventListener("resource.end", () => {
+                console.log("[EVENT] resource.end");
+            });
+            instance.addEventListener("resource.fits", () => {
+                console.log("[EVENT] resource.fits");
+            });
+            instance.addEventListener("resource.error", (error) => {
+                console.log("[EVENT] resource.error", error);
+            });
+
+            // ── Navigation info ───────────────────────────────────
+            instance.addEventListener("direction", (dir) => {
+                console.log("[EVENT] direction:", dir);
+            });
+            instance.addEventListener("chapterinfo", (title) => {
+                console.log("[EVENT] chapterinfo:", title);
+            });
+            instance.addEventListener("positioninfo", (locator) => {
+                console.log("[EVENT] positioninfo:", locator);
+            });
+            instance.addEventListener("location.changed", (position) => {
+                console.log("[EVENT] location.changed:", position);
+            });
+
+            // ── User interaction ──────────────────────────────────
+            instance.addEventListener("click", (event) => {
+                console.log("[EVENT] click:", event.type);
+            });
+            instance.addEventListener("keydown", (event) => {
+                console.log("[EVENT] keydown:", event.key);
+            });
+
+            // ── Error ─────────────────────────────────────────────
+            instance.addEventListener("error", (error) => {
+                console.log("[EVENT] error:", error);
+            });
+
+            // ── TTS / Read Aloud ──────────────────────────────────
+            instance.addEventListener("readaloud.started", (detail) => {
+                console.log("[EVENT] readaloud.started:", detail);
+            });
+            instance.addEventListener("readaloud.stopped", (detail) => {
+                console.log("[EVENT] readaloud.stopped:", detail);
+            });
+            instance.addEventListener("readaloud.paused", (detail) => {
+                console.log("[EVENT] readaloud.paused:", detail);
+            });
+            instance.addEventListener("readaloud.resumed", (detail) => {
+                console.log("[EVENT] readaloud.resumed:", detail);
+            });
+            instance.addEventListener("readaloud.finished", (detail) => {
+                console.log("[EVENT] readaloud.finished:", detail);
+            });
+
+            // ── Media Overlays / Read Along ───────────────────────
+            instance.addEventListener("readalong.started", (detail) => {
+                console.log("[EVENT] readalong.started:", detail);
+            });
+            instance.addEventListener("readalong.stopped", (detail) => {
+                console.log("[EVENT] readalong.stopped:", detail);
+            });
+            instance.addEventListener("readalong.paused", (detail) => {
+                console.log("[EVENT] readalong.paused:", detail);
+            });
+            instance.addEventListener("readalong.resumed", (detail) => {
+                console.log("[EVENT] readalong.resumed:", detail);
+            });
+            instance.addEventListener("readalong.finished", (detail) => {
+                console.log("[EVENT] readalong.finished:", detail);
+            });
+
+            // ── Bookmarks ─────────────────────────────────────────
+            instance.addEventListener("bookmark.created", (bookmark) => {
+                console.log("[EVENT] bookmark.created:", bookmark);
+            });
+            instance.addEventListener("bookmark.deleted", (bookmark) => {
+                console.log("[EVENT] bookmark.deleted:", bookmark);
+            });
+
+            // ── Annotations ───────────────────────────────────────
+            instance.addEventListener("annotation.created", (annotation) => {
+                console.log("[EVENT] annotation.created:", annotation);
+            });
+            instance.addEventListener("annotation.deleted", (annotation) => {
+                console.log("[EVENT] annotation.deleted:", annotation);
+            });
+            instance.addEventListener("annotation.updated", (annotation) => {
+                console.log("[EVENT] annotation.updated:", annotation);
+            });
+            instance.addEventListener("annotation.selected", (annotation) => {
+                console.log("[EVENT] annotation.selected:", annotation);
+            });
+            instance.addEventListener("annotation.comment.added", (annotation) => {
+                console.log("[EVENT] annotation.comment.added:", annotation);
+            });
+
+            // ── Text selection / Toolbox ──────────────────────────
+            instance.addEventListener("toolbox.opened", (detail) => {
+                console.log("[EVENT] toolbox.opened:", detail);
+            });
+            instance.addEventListener("toolbox.closed", (detail) => {
+                console.log("[EVENT] toolbox.closed:", detail);
+            });
+            instance.addEventListener("text.selected", (detail) => {
+                console.log("[EVENT] text.selected:", detail);
+            });
+
+            // ── Definitions ───────────────────────────────────────
+            instance.addEventListener("definition.success", (result) => {
+                console.log("[EVENT] definition.success:", result);
+            });
+            instance.addEventListener("definition.click", (result, highlight) => {
+                console.log("[EVENT] definition.click:", result, highlight);
+            });
+            instance.addEventListener("definition.visible", (item, highlight) => {
+                console.log("[EVENT] definition.visible:", item, highlight);
+            });
+
+            // ── Citation ──────────────────────────────────────────
+            instance.addEventListener("citation.created", (message) => {
+                console.log("[EVENT] citation.created:", message);
+            });
+            instance.addEventListener("citation.failed", (message) => {
+                console.log("[EVENT] citation.failed:", message);
+            });
+
+            // ── Content Protection ────────────────────────────────
+            instance.addEventListener("inspect.detected", () => {
+                console.log("[EVENT] inspect.detected");
+            });
+
+            // ── Consumption ───────────────────────────────────────
+            instance.addEventListener("consumption.action", (detail) => {
+                console.log("[EVENT] consumption.action:", detail);
+            });
+            instance.addEventListener("consumption.idle", (seconds) => {
+                console.log("[EVENT] consumption.idle:", seconds);
+            });
+
+        }).catch(error => {
+            console.error(error);
+            document.getElementById("reader-error").innerHTML = "<span>"+error.message +"</span>";
+        });
+
+        // Highlight the active button in a segmented control
+        function setSegActive(containerId, index) {
+            let buttons = document.getElementById(containerId).getElementsByTagName('button');
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].style.background = i === index ? '#e0e0e0' : '#fff';
+                buttons[i].style.fontWeight = i === index ? '600' : '400';
+            }
+        }
+
+        function setColumns(v) {
+          const idx = v === '4' ? 4 : v === '3' ? 3 : v === '2' ? 2 : v === '1' ? 1 : 0;
+          setSegActive('columnCount', idx);
+        }
+        function setDirection(v) { setSegActive('direction', v === 'rtl' ? 2 : v === 'ltr' ? 1 : 0); }
+        function setScroll(v) { setSegActive('scrollMode', v === 'false' ? 1 : 0); }
+        function setAlignment(v) { setSegActive('textAlignment', v === 'start' ? 2 : v === 'justify' ? 1 : 0); }
+
+        // Appearance has fixed bg colors, so highlight with border/outline instead
+        function setAppearance(v) {
+            let buttons = document.getElementById('appearance').getElementsByTagName('button');
+            let idx = v === 'night' ? 2 : v === 'sepia' ? 1 : 0;
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].style.outline = i === idx ? '2px solid #4a90d9' : 'none';
+                buttons[i].style.outlineOffset = '-2px';
+            }
+        }
+
+        // Sync a slider + its value label
+        function syncSlider(id, value, fmt) {
+            let el = document.getElementById(id);
+            if (el) el.value = value;
+            let lbl = document.getElementById(id + 'Value');
+            if (lbl) lbl.textContent = fmt ? fmt(value) : value;
+        }
+
+        function reload() {
+            let r = d2reader.currentSettings;
+
+            // Sliders
+            syncSlider('fontSize', r.fontSize, v => v + '%');
+            syncSlider('wordSpacing', r.wordSpacing);
+            syncSlider('letterSpacing', r.letterSpacing, v => parseFloat(v).toFixed(2));
+            syncSlider('pageMargins', r.pageMargins);
+            syncSlider('lineHeight', r.lineHeight);
+            syncSlider('paraSpacing', r.paraSpacing);
+            syncSlider('paraIndent', r.paraIndent);
+            syncSlider('typeScale', r.typeScale, v => parseFloat(v).toFixed(1));
+
+            // Select
+            document.getElementById("fontFamily").value = r.fontFamily;
+
+            // Segmented controls
+            setAppearance(r.appearance);
+            setColumns(r.columnCount);
+            setDirection(r.direction);
+            setScroll(String(r.verticalScroll).toLowerCase());
+            setAlignment(r.textAlignment);
+
+            // Toggle
+            document.getElementById("bodyHyphens").checked = r.bodyHyphens;
+
+            // Colors
+            document.getElementById("backgroundColor").value = r.backgroundColor || '#ffffff';
+            document.getElementById("textColor").value = r.textColor || '#000000';
+
+            // v2-only fields
+            document.getElementById("lineLength").value = r.lineLength ?? "";
+            document.getElementById("ligatures").checked = r.ligatures === "common-ligatures";
+            document.getElementById("linkColor").value = r.linkColor || "#0000ee";
+            document.getElementById("visitedColor").value = r.visitedColor || "#551a8b";
+            document.getElementById("selectionBackgroundColor").value = r.selectionBackgroundColor || "#ffeb3b";
+            document.getElementById("selectionTextColor").value = r.selectionTextColor || "#000000";
+            document.getElementById("scrollPaddingTop").value = r.scrollPaddingTop ?? "";
+            document.getElementById("scrollPaddingBottom").value = r.scrollPaddingBottom ?? "";
+            document.getElementById("scrollPaddingLeft").value = r.scrollPaddingLeft ?? "";
+            document.getElementById("scrollPaddingRight").value = r.scrollPaddingRight ?? "";
+        }
+
+        function toast(text) {
+            const toastDiv = document.getElementById("toast");
+            const toastDescription = document.getElementById("description");
+            toastDiv.className = "show";
+            toastDescription.innerText = text;
+            setTimeout(function() {
+                toastDiv.className = toastDiv.className.replace("show", "");
+            }, 5000);
+        }
+
+    </script>
+
+    <noscript>
+        <style>
+            noscript {
+                width: 100%;
+                height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .warning {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+        </style>
+        <p class="warning">To use this viewer, please enable JavaScript.</p>
+    </noscript>
+
+</body>
+
+</html>

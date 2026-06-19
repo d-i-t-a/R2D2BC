@@ -126,6 +126,12 @@
         #D2Reader-Container {
             border: 3px solid rebeccapurple; height: 100vh;
         }
+        /* Prevent edge-swipe back/forward gestures from triggering when
+           horizontally scrolling inside the iframe wrapper or the iframe
+           document itself (RTL paginated, vertical-rl scroll). */
+        #iframe-wrapper { overscroll-behavior-x: contain; }
+        #iframe-wrapper iframe { overscroll-behavior-x: contain; }
+        html, body { overscroll-behavior-x: contain; }
     </style>
 </head>
 <body>
@@ -459,9 +465,9 @@
                 <div id="lineFocusTopBlinder" class="d2-line-focus-top"></div>
                 <div id="lineFocusBottomBlinder" class="d2-line-focus-bottom"></div>
             </div>
-            <main style="height: calc(100vh - 6px)" tabindex="-1" id="iframe-wrapper">
-                <div id="reader-loading" class="loading"></div>
-                <div id="reader-error" class="error"></div>
+            <main style="height: calc(100vh)" tabindex="-1" id="iframe-wrapper">
+                <div id="reader-loading" class="dita-loading"></div>
+                <div id="reader-error" class="dita-error"></div>
                 <div style="height: 0px">
                     <span id="highlight-toolbox" class="highlight-toolbox">
                         <div id="highlight-toolbox-mode-add">
@@ -509,7 +515,7 @@
                 </div>
             </main>
             <div id="container-view-security" class="security"></div>
-            <div id="container-view-timeline" class="timeline" style="left: unset; right: 1.25rem;"></div>
+            <div id="container-view-timeline" class="dita-timeline" style="left: unset; right: 1.25rem;"></div>
         </div>
     </div>
 
@@ -645,11 +651,27 @@
         }
 
         // --- Injectables ---
+        const isLtr = (ctx) => ctx.scriptMode === "ltr";
+        const isRtl = (ctx) => ctx.scriptMode === "rtl";
+        const isCjkHorizontal = (ctx) => ctx.scriptMode === "cjk-horizontal";
+        const isCjkVertical = (ctx) =>
+            ctx.scriptMode === "cjk-vertical" || ctx.scriptMode === "mongolian-vertical";
+
         var injectables = [
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-before.css', r2before: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-default.css', r2default: true },
-            { type: 'style', url: '/viewer/readium-css/ReadiumCSS-after.css', r2after: true },
-            { type: 'script', url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML&latest' },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/ReadiumCSS-before.css', r2before: true, when: isLtr },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/ReadiumCSS-default.css', r2default: true, when: isLtr },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/ReadiumCSS-after.css', r2after: true, when: isLtr },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-before.css', r2before: true, when: isRtl },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-default.css', r2default: true, when: isRtl },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/rtl/ReadiumCSS-after.css', r2after: true, when: isRtl },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-before.css', r2before: true, when: isCjkHorizontal },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-default.css', r2default: true, when: isCjkHorizontal },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-after.css', r2after: true, when: isCjkHorizontal },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-before.css', r2before: true, when: isCjkVertical },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-default.css', r2default: true, when: isCjkVertical },
+            { type: 'style', url: '/node_modules/@readium/css/css/dist/cjk-vertical/ReadiumCSS-after.css', r2after: true, when: isCjkVertical },
+            { type: 'style', url: '/viewer/readium-css-v2/ReadiumCSS-dita-patch.css', when: isLtr },
+            { type: 'style', url: '/viewer/readium-css-v2/cjk-vertical/ReadiumCSS-dita-patch.css', r2after: true, when: isCjkVertical },
             { type: 'style', url: '/viewer/fonts/opendyslexic/opendyslexic.css', fontFamily: 'opendyslexic', systemFont: false },
             { type: 'script', url: '/viewer/injectables/click/click.js' },
             { type: 'style', url: '/viewer/injectables/style/popup.css' },
@@ -694,7 +716,9 @@
         D2Reader.load({
             url: new URL(urlParams['url']),
             attributes: {
+                // Extra px reserved below the iframe. Optional.
                 margin: 15,
+                // @deprecated — use `iframe: { padding: { top: 10 } }`.
                 iframePaddingTop: 10,
             },
             rights: {

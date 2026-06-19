@@ -18,7 +18,7 @@
  */
 import D2Reader from "./reader";
 
-/** R2D2BC Reader */
+/** D2Reader — main entry point of DITA Toolkit. */
 export default D2Reader;
 
 /** for interop with \<script\> based usage */
@@ -37,19 +37,90 @@ export {
   AnnotationMarker,
 } from "./model/Locator";
 
+// ─── Events ─────────────────────────────────────────────────────────────────
+
+export { ReaderEvent } from "./utils/Events";
+export type { ReaderEventName, ReaderEventMap } from "./utils/Events";
+
+// ─── Navigator ──────────────────────────────────────────────────────────────
+
+export { NavigatorFeature } from "./navigator/VisualNavigator";
+export type { NavigatorFeatureName } from "./navigator/VisualNavigator";
+export { EpubNavigator, IFrameNavigator } from "./navigator/EpubNavigator";
+
+// ─── Module System ──────────────────────────────────────────────────────────
+
+export type {
+  ReaderModule,
+  HostTypeName,
+  RightsKeyName,
+} from "./modules/ReaderModule";
+export { HostType, RightsKey } from "./modules/ReaderModule";
+export type {
+  ModuleHost,
+  EpubModuleHost,
+  PDFModuleHost,
+} from "./modules/ModuleHost";
+export type {
+  NavigatorFeatureMap,
+  NavigatorFeatureKey,
+} from "./modules/NavigatorFeatureMap";
+export { ModuleRegistry } from "./modules/ModuleRegistry";
+export { ModuleAccessors } from "./modules/ModuleAccessors";
+export type {
+  IBookmarkModule,
+  ISearchModule,
+  IAnnotationModule,
+  IHistoryModule,
+  SearchOptions,
+} from "./modules/interfaces";
+export { getPageFromLocations } from "./model/v3";
+
+// ─── Fetcher ────────────────────────────────────────────────────────────────
+
+export type { Fetcher, Resource } from "./fetcher/Fetcher";
+export type { Container } from "./fetcher/Container";
+export type {
+  RequestConfig,
+  GetContent,
+  GetContentBytesLength,
+} from "./fetcher/types";
+export { ZipContainer } from "./fetcher/ZipContainer";
+export { ReadError } from "./fetcher/ReadError";
+export type { ReadErrorType } from "./fetcher/ReadError";
+export { HttpFetcher } from "./fetcher/HttpFetcher";
+export { ContentFetcher } from "./fetcher/ContentFetcher";
+export { CacheFetcher } from "./fetcher/CacheFetcher";
+export { ZipFetcher } from "./fetcher/ZipFetcher";
+export { EpubParser } from "./fetcher/EpubParser";
+export { BlobUrlManager } from "./fetcher/BlobUrlManager";
+export { guessMediaType } from "./fetcher/mediaType";
+export { TransformingFetcher } from "./fetcher/TransformingFetcher";
+export type { ResourceTransform } from "./fetcher/TransformingFetcher";
+export {
+  parseEncryptionXml,
+  deobfuscateIdpf,
+  deobfuscateAdobe,
+  createDeobfuscationTransform,
+} from "./fetcher/FontDeobfuscator";
+export type { EncryptionInfo } from "./fetcher/FontDeobfuscator";
+
 // ─── Navigator / Config ─────────────────────────────────────────────────────
 
 export type {
-  ReaderConfig,
   ReaderRights,
   NavigatorAPI,
   IFrameAttributes,
   Injectable,
-  RequestConfig,
   SampleRead,
   PublicationServices,
+  EpubNavigatorConfig,
+  IFrameNavigatorConfig,
+} from "./navigator/EpubNavigator";
+export type {
+  ReaderConfig,
   InitialAnnotations,
-} from "./navigator/IFrameNavigator";
+} from "./navigator/ReaderConfig";
 
 // ─── User Settings ───────────────────────────────────────────────────────────
 

@@ -1,0 +1,200 @@
+/*
+ * Copyright 2018-2026 DITA (AM Consulting LLC)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+/**
+ * Shared module interface contracts.
+ *
+ * These interfaces define the lowest-common-denominator API that every
+ * navigator-specific implementation of a given feature must provide.
+ * Integrator-facing code uses these interfaces so the same call works
+ * regardless of whether the current navigator is EPUB, PDF, or (in
+ * future) audiobook / DiViNa.
+ *
+ * Navigator-specific methods (e.g. EPUB's iframe/highlighter access,
+ * PDF's pdfjs AnnotationEditor access) stay on the concrete classes
+ * and are reached via cast when needed:
+ *   (reader.bookmarkModule as BookmarkModule).someEpubOnlyMethod()
+ */
+
+import type { ReaderModule } from "./ReaderModule";
+import type { ModuleHost } from "./ModuleHost";
+import type { Bookmark, Comment, Locator } from "../model/v3";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IBookmarkModule
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Bookmark management contract.
+ * EPUB and PDF both provide an implementation; integrator code that only
+ * needs CRUD + current-location check can use this interface directly.
+ */
+export interface IBookmarkModule<
+  H extends ModuleHost = ModuleHost,
+> extends ReaderModule<H> {
+  /** Save a bookmark at the current reading location. Returns null if already bookmarked. */
+  save(): Promise<Bookmark | null> | Bookmark | null;
+
+  /** Delete a previously saved bookmark. */
+  delete(bookmark: Bookmark): Promise<void> | void;
+
+  /** Return all bookmarks for the current resource. */
+  list(): Bookmark[];
+
+  /**
+   * True if a bookmark exists at the given locator. When omitted, defaults
+   * to the reader's current locator.
+   */
+  hasBookmarkAt(locator?: Locator): boolean;
+
+  /**
+   * Returns the saved bookmark at the given locator, or null. When omitted,
+   * defaults to the reader's current locator. Useful for "toggle" UIs that
+   * need the actual stored bookmark (with `id`) to pass back to `delete()`.
+   */
+  findBookmarkAt(locator?: Locator): Bookmark | null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ISearchModule
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface SearchOptions {
+  caseSensitive?: boolean;
+  highlightAll?: boolean;
+  entireWord?: boolean;
+}
+
+/**
+ * In-document search contract.
+ *
+ * Deliberately minimal — EPUB and PDF have very different search models:
+ * EPUB's SearchModule returns a result array that the UI iterates; PDF's
+ * is cursor-based via pdfjs PDFFindController with next/previous. Each
+ * concrete class exposes its native navigation API directly, and the
+ * second parameter of `search()` is implementation-specific.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface ISearchModule<
+  H extends ModuleHost = ModuleHost,
+> extends ReaderModule<H> {
+  /**
+   * Execute a new search. The second parameter is implementation-specific
+   * (EPUB: `current: boolean`; PDF: `options?: SearchOptions`).
+   * Returned payload shape is also implementation-specific.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  search(query: string, ...args: any[]): Promise<unknown> | unknown;
+
+  /** Clear the current search (removes highlights, resets state). */
+  clear(): void;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IAnnotationModule
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Annotation listing / clearing contract.
+ *
+ * Deliberately minimal — EPUB and PDF have very different annotation
+ * storage models (TextHighlighter DOM highlights vs pdfjs AnnotationEditor
+ * objects), and a richer shared API would force lossy abstraction.
+ *
+ * Concrete classes expose their native add/edit/delete APIs directly.
+ */
+export interface IAnnotationModule<
+  H extends ModuleHost = ModuleHost,
+> extends ReaderModule<H> {
+  /**
+   * Return every annotation in the current resource as an opaque payload.
+   * The shape is implementation-specific — EPUB returns Annotation objects,
+   * PDF returns pdfjs serializable map entries.
+   */
+  getAll(): unknown[];
+
+  /** Remove every annotation in the current resource. */
+  clear(): void;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ICommentsModule
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Comments management contract.
+ *
+ * Comments are free-text user notes anchored to a position. Unlike
+ * annotations, they don't require a text selection — they attach to a
+ * locator (visual: page/progression; audio: time). Designed for media
+ * without rendered text (audiobook), and for position-anchored notes on
+ * visual content where the user wants to comment without highlighting.
+ *
+ * Single-user only at this layer. Multi-user threading and replies
+ * belong above the module (integrator-supplied backend).
+ */
+export interface ICommentsModule<
+  H extends ModuleHost = ModuleHost,
+> extends ReaderModule<H> {
+  /** Save a comment at the given locator (or current locator if omitted). */
+  add(
+    body: string,
+    locator?: Locator
+  ): Promise<Comment | null> | Comment | null;
+
+  /** Update an existing comment's text. Returns the updated comment or null if not found. */
+  update(id: string, body: string): Promise<Comment | null> | Comment | null;
+
+  /** Delete a previously saved comment. */
+  delete(comment: Comment): Promise<void> | void;
+
+  /** All comments for the publication. */
+  list(): Comment[];
+
+  /**
+   * Comments anchored at the given locator (or the current locator).
+   * Multiple comments can share the same anchor — returns all of them.
+   */
+  findAt(locator?: Locator): Comment[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IHistoryModule
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * In-reader navigation history contract.
+ * Distinct from browser-history integration (e.g. pdfjs PDFHistory) which
+ * is a navigator concern. This interface is the back/forward stack that
+ * tracks user navigation across resources and pages.
+ *
+ * Second parameter of `push` is implementation-specific — EPUB uses a
+ * boolean flag for "append to history vs replace current"; PDF uses
+ * nothing and always appends.
+ */
+export interface IHistoryModule<
+  H extends ModuleHost = ModuleHost,
+> extends ReaderModule<H> {
+  /** Navigate to the previous entry in history. */
+  back(): Promise<void> | void;
+
+  /** Navigate to the next entry in history. */
+  forward(): Promise<void> | void;
+
+  /** Record a new entry in the history stack. Extra args are implementation-specific. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  push(locator: Locator, ...args: any[]): Promise<void> | void;
+
+  /** True if there is at least one entry behind the current position. */
+  canGoBack(): boolean;
+
+  /** True if there is at least one entry ahead of the current position. */
+  canGoForward(): boolean;
+}

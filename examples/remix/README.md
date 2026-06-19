@@ -1,6 +1,6 @@
 # Remix (React Router v7) Integration Example for @d-i-t-a/reader
 
-This example shows how to integrate the R2D2BC EPUB reader into a Remix application using React Router v7 conventions.
+This example shows how to integrate the DITA Toolkit EPUB reader into a Remix application using React Router v7 conventions.
 
 ## Key Gotchas
 
@@ -61,25 +61,28 @@ export default function ReaderRoute({ loaderData }: Route.ComponentProps) {
 }
 ```
 
-### 3. ReadiumCSS files go in `public/`
+### 3. ReadiumCSS files must be served statically
 
-The reader injects CSS into content iframes via URL references. These files must be served as static assets. Copy the ReadiumCSS files into your Remix `public/` directory:
+The reader injects CSS into content iframes via URL references. Install ReadiumCSS from npm and copy the upstream files plus the local DITA patch overlay into your Remix `public/` directory:
 
+```bash
+npm install @readium/css
+
+# Copy upstream CSS from the npm package
+cp -r node_modules/@readium/css/css/dist public/readium-css-v2
+
+# Copy the DITA patch overlay from this repo (not in the npm package)
+cp viewer/readium-css-v2/ReadiumCSS-dita-patch.css public/readium-css-v2/
 ```
-public/
-  readium-css/
-    ReadiumCSS-before.css
-    ReadiumCSS-default.css
-    ReadiumCSS-after.css
-```
 
-You can find these files in the `viewer/readium-css/` directory of this repository. Then reference them as absolute paths in the injectables config:
+Reference them as absolute paths in the injectables config:
 
 ```ts
 injectables: [
-  { type: "style", url: "/readium-css/ReadiumCSS-before.css", r2before: true },
-  { type: "style", url: "/readium-css/ReadiumCSS-default.css", r2default: true },
-  { type: "style", url: "/readium-css/ReadiumCSS-after.css", r2after: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-before.css", r2before: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-default.css", r2default: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-after.css", r2after: true },
+  { type: "style", url: "/readium-css-v2/ReadiumCSS-dita-patch.css" },
 ],
 ```
 
@@ -150,12 +153,13 @@ app/
 npm install @d-i-t-a/reader
 ```
 
-2. Copy ReadiumCSS into `public/readium-css/`:
+2. Install ReadiumCSS and copy the files into `public/readium-css-v2/`:
 
 ```bash
-cp -r node_modules/@d-i-t-a/reader/viewer/readium-css public/readium-css
-# Or copy from this repository:
-# cp -r viewer/readium-css public/readium-css
+npm install @readium/css
+cp -r node_modules/@readium/css/css/dist public/readium-css-v2
+# Add the DITA patch overlay (local to the DITA Toolkit repo, not in the npm package):
+cp node_modules/@d-i-t-a/reader/viewer/readium-css-v2/ReadiumCSS-dita-patch.css public/readium-css-v2/
 ```
 
 3. Copy the example files into your app (folder route style):

@@ -1,14 +1,58 @@
 import { createApp } from "vue";
 import ReaderComponent from "./ReaderComponent.vue";
-import readiumBefore from "url:../react/readium-css/ReadiumCSS-before.css";
-import readiumAfter from "url:../react/readium-css/ReadiumCSS-after.css";
-import readiumDefault from "url:../react/readium-css/ReadiumCSS-default.css";
+import readiumBefore from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-before.css";
+import readiumAfter from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-after.css";
+import readiumDefault from "url:../../node_modules/@readium/css/css/dist/ReadiumCSS-default.css";
+import readiumDitaPatch from "url:../../viewer/readium-css-v2/ReadiumCSS-dita-patch.css";
+import cjkBefore from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-before.css";
+import cjkAfter from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-after.css";
+import cjkDefault from "url:../../node_modules/@readium/css/css/dist/cjk-horizontal/ReadiumCSS-default.css";
+
+const CJK_LANG_RE = /^(ja|zh|ko)(\b|-)/i;
+const isCJK = (pub) => {
+  const langs = pub?.metadata?.languages;
+  return Array.isArray(langs) && langs.some((l) => CJK_LANG_RE.test(l ?? ""));
+};
 
 const app = createApp(ReaderComponent, {
   injectables: [
-    { type: "style", url: readiumBefore, r2before: true },
-    { type: "style", url: readiumDefault, r2default: true },
-    { type: "style", url: readiumAfter, r2after: true },
+    {
+      type: "style",
+      url: readiumBefore,
+      r2before: true,
+      when: (ctx) => !isCJK(ctx.publication),
+    },
+    {
+      type: "style",
+      url: readiumDefault,
+      r2default: true,
+      when: (ctx) => !isCJK(ctx.publication),
+    },
+    {
+      type: "style",
+      url: readiumAfter,
+      r2after: true,
+      when: (ctx) => !isCJK(ctx.publication),
+    },
+    {
+      type: "style",
+      url: cjkBefore,
+      r2before: true,
+      when: (ctx) => isCJK(ctx.publication),
+    },
+    {
+      type: "style",
+      url: cjkDefault,
+      r2default: true,
+      when: (ctx) => isCJK(ctx.publication),
+    },
+    {
+      type: "style",
+      url: cjkAfter,
+      r2after: true,
+      when: (ctx) => isCJK(ctx.publication),
+    },
+    { type: "style", url: readiumDitaPatch },
   ],
 });
 app.mount("#app");

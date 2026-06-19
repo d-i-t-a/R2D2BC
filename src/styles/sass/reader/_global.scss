@@ -48,17 +48,17 @@ a {
   text-decoration: none;
 }
 
-.inactive {
+.dita-inactive {
   opacity: 0;
   z-index: -3000;
 }
 
-.active {
+.dita-active {
   opacity: 1;
   z-index: 3000;
 }
 
-#viewer {
+#dita-viewer {
   padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
   box-sizing: border-box;
 }
@@ -74,7 +74,7 @@ a {
   position: fixed;
   width: 100%;
 }
-.info {
+.dita-info {
   color: $ui-dark-gray;
   margin: 0;
   padding: 0 1.5rem;
@@ -121,7 +121,7 @@ a {
 [data-viewer-theme="sepia"] {
   background-color: $sepia-bg;
 
-  .info {
+  .dita-info {
     color: $ui-dark-gray;
   }
 }
@@ -130,7 +130,7 @@ a {
   background-color: $night-bg;
   color: $ui-white;
 
-  .info {
+  .dita-info {
     color: $ui-light-gray;
   }
 }

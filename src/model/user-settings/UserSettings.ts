@@ -27,23 +27,71 @@ import {
   UserProperty,
   UserSettingsIncrementable,
 } from "./UserProperties";
-import { ReadiumCSS } from "./ReadiumCSS";
+import {
+  APPEARANCE_COLOR_PRESETS,
+  APPEARANCE_IMAGE_FILTERS,
+  AppearanceValue,
+  pageMarginsToLineLength,
+  ReadiumCSS,
+  resolveAutoColumns,
+} from "./ReadiumCSS";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
+import * as BrowserUtilities from "../../utils/BrowserUtilities";
 import { addEventListenerOptional } from "../../utils/EventHandler";
-import { Injectable, NavigatorAPI } from "../../navigator/IFrameNavigator";
-import ReflowableBookView from "../../views/ReflowableBookView";
-import FixedBookView from "../../views/FixedBookView";
-import BookView from "../../views/BookView";
+import { Injectable } from "../../navigator/EpubNavigator";
+import type { NavigatorAPI } from "../../navigator/types";
+import ColumnRenderer from "../../views/ColumnRenderer";
+import ScrollRenderer from "../../views/ScrollRenderer";
+import VerticalRenderer from "../../views/VerticalRenderer";
+import FixedRenderer from "../../views/FixedRenderer";
+import Renderer from "../../views/Renderer";
+import type { ScriptMode } from "../../utils/ScriptMode";
 import log from "loglevel";
+
+/**
+ * Parse a stored image-filter setting (Stringable round-tripped from
+ * boolean | number) back to its original union type. `"true"` / `"false"`
+ * become booleans; numeric strings become numbers; anything else returns
+ * the supplied fallback.
+ */
+function parseImageFilter(
+  stored: string | undefined | null,
+  fallback: boolean | number
+): boolean | number {
+  if (stored === undefined || stored === null) return fallback;
+  if (stored === "true") return true;
+  if (stored === "false") return false;
+  const n = parseFloat(stored);
+  return Number.isFinite(n) ? n : fallback;
+}
 
 export interface UserSettingsConfig {
   /** Store to save the user's selections in. */
   store: Store;
-  initialUserSettings?: Partial<InitialUserSettings>;
+  /**
+   * Integrator-supplied initial settings.
+   *
+   *   - `{...}`     → partial overrides; supplied fields are written
+   *                   to the local store, omitted fields fall back to
+   *                   whatever's already in the store.
+   *   - `null`      → wipe the user-settings local store, then fall
+   *                   back to library defaults. Use this for
+   *                   multi-user shared-browser scenarios so a prior
+   *                   user's theme / font choices don't bleed through.
+   *   - `undefined` → don't touch the local store at all.
+   */
+  initialUserSettings?: Partial<InitialUserSettings> | null;
   headerMenu?: HTMLElement | null;
   api?: Partial<NavigatorAPI>;
   injectables?: Array<Injectable>;
   layout: string;
+  /**
+   * Script mode of the publication, derived from `getScriptMode(publication)`.
+   * Lets the constructor pick the correct initial renderer (and direction
+   * flag) without waiting for EpubNavigator to set it later. Default `"ltr"`
+   * for back-compat with callers that don't pass it.
+   */
+  scriptMode?: ScriptMode;
 }
 export interface UserSettingsUIConfig {
   fontSize?: boolean;
@@ -85,6 +133,31 @@ export interface IUserSettings {
   typeScale: number;
   backgroundColor: string;
   textColor: string;
+
+  // v2-only (silently no-op on v1 CSS).
+  // When pageMargins is set, lineLength is derived automatically via
+  // pageMarginsToLineLength(). lineLength here lets an integrator override
+  // with a direct CSS value (e.g. "80%", "40rem").
+  lineLength: string;
+  fontWeight: number;
+  fontWidth: number;
+  fontOpticalSizing: boolean;
+  ligatures: "none" | "common-ligatures";
+  // v2 image filters accept either a boolean (toggles the on/off flag) or a
+  // number (0..1 for precise amount) — a numeric value takes precedence
+  // over the boolean flag.
+  blendImages: boolean;
+  darkenImages: boolean | number;
+  invertImages: boolean | number;
+  invertGaiji: boolean | number;
+  linkColor: string;
+  visitedColor: string;
+  selectionBackgroundColor: string;
+  selectionTextColor: string;
+  scrollPaddingTop: string;
+  scrollPaddingBottom: string;
+  scrollPaddingLeft: string;
+  scrollPaddingRight: string;
 }
 
 /**
@@ -119,10 +192,35 @@ export interface InitialUserSettings {
   typeScale?: number;
   backgroundColor?: string;
   textColor?: string;
+
+  // v2-only — all optional, silently no-op on v1 CSS
+  lineLength?: string;
+  fontWeight?: number;
+  fontWidth?: number;
+  fontOpticalSizing?: boolean;
+  ligatures?: "none" | "common-ligatures";
+  blendImages?: boolean;
+  darkenImages?: boolean | number;
+  invertImages?: boolean | number;
+  invertGaiji?: boolean | number;
+  linkColor?: string;
+  visitedColor?: string;
+  selectionBackgroundColor?: string;
+  selectionTextColor?: string;
+  scrollPaddingTop?: string;
+  scrollPaddingBottom?: string;
+  scrollPaddingLeft?: string;
+  scrollPaddingRight?: string;
 }
 
 export class UserSettings implements IUserSettings {
   async isPaginated() {
+    // Vertical scripts (cjk-vertical / mongolian-vertical) are scroll-only
+    // by design — VerticalRenderer ignores the persisted `verticalScroll`
+    // setting. Report scroll here too so navigator chrome (page arrows,
+    // column-count UI) doesn't fall back to paginated state from a prior
+    // book's setting.
+    if (this.isVerticalScript) return false;
     let scroll = await this.getPropertyAndFallback<Switchable>(
       "verticalScroll",
       ReadiumCSS.SCROLL_KEY
@@ -144,7 +242,7 @@ export class UserSettings implements IUserSettings {
   ];
   private static fontFamilyValues = ["Original", "serif", "sans-serif"];
   private static readonly textAlignmentValues = ["auto", "justify", "start"];
-  private static readonly columnCountValues = ["auto", "1", "2"];
+  private static readonly columnCountValues = ["auto", "1", "2", "3", "4"];
   private static readonly directionValues = ["auto", "ltr", "rtl"];
 
   fontSize = 100.0;
@@ -169,9 +267,43 @@ export class UserSettings implements IUserSettings {
   backgroundColor = "";
   textColor = "";
 
+  // v2-only settings (no-op when integrator has injected v1 CSS)
+  lineLength = ""; // empty = derive from pageMargins
+  fontWeight = 400;
+  fontWidth = 100;
+  fontOpticalSizing = true;
+  ligatures: "none" | "common-ligatures" = "common-ligatures";
+  blendImages = false;
+  darkenImages: boolean | number = false;
+  invertImages: boolean | number = false;
+  invertGaiji: boolean | number = false;
+  linkColor = "";
+  visitedColor = "";
+  selectionBackgroundColor = "";
+  selectionTextColor = "";
+  // Scroll-view padding defaults. Must be non-zero so the cjk-vertical
+  // bundle's body padding rule (matched via `[style*="--RS__scrollPaddingX"]`)
+  // bounds body's content area — without bounded padding, vertical-rl
+  // content layout doesn't converge (body.scrollWidth grows on every
+  // reflow as `columns: auto auto` keeps fitting one more column into
+  // the slightly-wider iframe). 20px is a reasonable default page gutter;
+  // integrators can override via `initialUserSettings`.
+  scrollPaddingTop = "20";
+  scrollPaddingBottom = "20";
+  scrollPaddingLeft = "20";
+  scrollPaddingRight = "20";
+
   userProperties?: UserProperties;
 
-  view: BookView;
+  // Definite-assignment: assigned by `selectInitialRenderer()`, which
+  // the factory calls after `initialise()` + integrator overrides have
+  // settled `verticalScroll`/`scriptMode`/`layout`. Unassigned during
+  // the constructor so we don't pick a renderer against a stale scroll
+  // preference and immediately swap it (throwaway).
+  view!: Renderer;
+
+  /** Stashed in the constructor, consumed by `selectInitialRenderer()`. */
+  private readonly layout?: string;
 
   private settingsChangeCallback: () => void = () => {};
   private settingsColumnsChangeCallback: () => void = () => {};
@@ -184,14 +316,42 @@ export class UserSettings implements IUserSettings {
 
   private iframe: HTMLIFrameElement;
 
+  // Debounced resize handler — re-applies properties when colCount is "auto"
+  // so v2 ReadiumCSS (which has no media queries) switches columns on resize.
+  private resizeTimer: number | null = null;
+  private readonly onWindowResize = () => {
+    const colCountRef = this.userProperties?.getByRef(
+      ReadiumCSS.COLUMN_COUNT_REF
+    );
+    if (colCountRef?.toString() !== "auto") return;
+    if (this.resizeTimer !== null) {
+      window.clearTimeout(this.resizeTimer);
+    }
+    this.resizeTimer = window.setTimeout(() => {
+      this.resizeTimer = null;
+      this.applyProperties();
+    }, 150);
+  };
+
   public static async create(config: UserSettingsConfig): Promise<any> {
     const settings = new this(
       config.store,
       config.headerMenu,
       config.api,
       config.injectables,
-      config.layout
+      config.layout,
+      config.scriptMode
     );
+
+    // `initialUserSettings === null` is the integrator's explicit
+    // signal that there are no server-side preferences for this user
+    // and the local cache must be wiped. Done BEFORE initialise() so
+    // the library starts from defaults instead of inheriting a prior
+    // user's theme / font choices in LocalStorage on a shared browser.
+    if (config.initialUserSettings === null) {
+      await config.store.remove(settings.USERSETTINGS);
+    }
+
     await settings.initialise();
 
     if (config.initialUserSettings) {
@@ -378,10 +538,178 @@ export class UserSettings implements IUserSettings {
           await settings.saveProperty(prop);
         }
       }
+
+      // --- v2-only settings ---
+      if (initialUserSettings.lineLength !== undefined) {
+        settings.lineLength = initialUserSettings.lineLength;
+        let prop = settings.userProperties.getByRef(ReadiumCSS.LINE_LENGTH_REF);
+        if (prop) {
+          prop.value = settings.lineLength;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.fontWeight !== undefined) {
+        settings.fontWeight = initialUserSettings.fontWeight;
+        let prop = settings.userProperties.getByRef(ReadiumCSS.FONT_WEIGHT_REF);
+        if (prop) {
+          prop.value = settings.fontWeight;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.fontWidth !== undefined) {
+        settings.fontWidth = initialUserSettings.fontWidth;
+        let prop = settings.userProperties.getByRef(ReadiumCSS.FONT_WIDTH_REF);
+        if (prop) {
+          prop.value = settings.fontWidth;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.fontOpticalSizing !== undefined) {
+        settings.fontOpticalSizing = initialUserSettings.fontOpticalSizing;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.FONT_OPTICAL_SIZING_REF
+        );
+        if (prop) {
+          prop.value = settings.fontOpticalSizing;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.ligatures !== undefined) {
+        settings.ligatures = initialUserSettings.ligatures;
+        let prop = settings.userProperties.getByRef(ReadiumCSS.LIGATURES_REF);
+        if (prop) {
+          prop.value = settings.ligatures;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.blendImages !== undefined) {
+        settings.blendImages = initialUserSettings.blendImages;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.BLEND_IMAGES_REF
+        );
+        if (prop) {
+          prop.value = settings.blendImages;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.darkenImages !== undefined) {
+        settings.darkenImages = initialUserSettings.darkenImages;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.DARKEN_IMAGES_REF
+        );
+        if (prop) {
+          prop.value = String(settings.darkenImages);
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.invertImages !== undefined) {
+        settings.invertImages = initialUserSettings.invertImages;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.INVERT_IMAGES_REF
+        );
+        if (prop) {
+          prop.value = String(settings.invertImages);
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.invertGaiji !== undefined) {
+        settings.invertGaiji = initialUserSettings.invertGaiji;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.INVERT_GAIJI_REF
+        );
+        if (prop) {
+          prop.value = String(settings.invertGaiji);
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.linkColor !== undefined) {
+        settings.linkColor = initialUserSettings.linkColor;
+        let prop = settings.userProperties.getByRef(ReadiumCSS.LINK_COLOR_REF);
+        if (prop) {
+          prop.value = settings.linkColor;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.visitedColor !== undefined) {
+        settings.visitedColor = initialUserSettings.visitedColor;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.VISITED_COLOR_REF
+        );
+        if (prop) {
+          prop.value = settings.visitedColor;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.selectionBackgroundColor !== undefined) {
+        settings.selectionBackgroundColor =
+          initialUserSettings.selectionBackgroundColor;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.SELECTION_BACKGROUND_COLOR_REF
+        );
+        if (prop) {
+          prop.value = settings.selectionBackgroundColor;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.selectionTextColor !== undefined) {
+        settings.selectionTextColor = initialUserSettings.selectionTextColor;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.SELECTION_TEXT_COLOR_REF
+        );
+        if (prop) {
+          prop.value = settings.selectionTextColor;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.scrollPaddingTop !== undefined) {
+        settings.scrollPaddingTop = initialUserSettings.scrollPaddingTop;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.SCROLL_PADDING_TOP_REF
+        );
+        if (prop) {
+          prop.value = settings.scrollPaddingTop;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.scrollPaddingBottom !== undefined) {
+        settings.scrollPaddingBottom = initialUserSettings.scrollPaddingBottom;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.SCROLL_PADDING_BOTTOM_REF
+        );
+        if (prop) {
+          prop.value = settings.scrollPaddingBottom;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.scrollPaddingLeft !== undefined) {
+        settings.scrollPaddingLeft = initialUserSettings.scrollPaddingLeft;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.SCROLL_PADDING_LEFT_REF
+        );
+        if (prop) {
+          prop.value = settings.scrollPaddingLeft;
+          await settings.saveProperty(prop);
+        }
+      }
+      if (initialUserSettings.scrollPaddingRight !== undefined) {
+        settings.scrollPaddingRight = initialUserSettings.scrollPaddingRight;
+        let prop = settings.userProperties.getByRef(
+          ReadiumCSS.SCROLL_PADDING_RIGHT_REF
+        );
+        if (prop) {
+          prop.value = settings.scrollPaddingRight;
+          await settings.saveProperty(prop);
+        }
+      }
+
       settings.userProperties = settings.getUserSettings();
       await settings.initialise();
     }
     await settings.initializeSelections();
+    // Construct the initial renderer now that all view-determining
+    // settings (layout, scriptMode, verticalScroll) have settled. No
+    // throwaway construct + swap.
+    settings.selectInitialRenderer();
     return new Promise((resolve) => resolve(settings));
   }
 
@@ -390,14 +718,16 @@ export class UserSettings implements IUserSettings {
     headerMenu?: HTMLElement | null,
     api?: Partial<NavigatorAPI>,
     injectables?: Array<Injectable>,
-    layout?: string
+    layout?: string,
+    scriptMode?: ScriptMode
   ) {
     this.store = store;
-
-    this.view =
-      layout === "fixed"
-        ? new FixedBookView()
-        : new ReflowableBookView(this.store);
+    if (scriptMode) this.scriptMode = scriptMode;
+    this.layout = layout;
+    // Renderer is NOT constructed here. The factory calls
+    // `selectInitialRenderer()` after `initialise()` + integrator
+    // overrides resolve `verticalScroll`, so we pick the right one up
+    // front (no throwaway construct + swap).
 
     this.headerMenu = headerMenu;
     this.api = api;
@@ -417,6 +747,11 @@ export class UserSettings implements IUserSettings {
 
   stop() {
     log.log("book settings stop");
+    window.removeEventListener("resize", this.onWindowResize);
+    if (this.resizeTimer !== null) {
+      window.clearTimeout(this.resizeTimer);
+      this.resizeTimer = null;
+    }
   }
 
   private async initialise() {
@@ -501,6 +836,85 @@ export class UserSettings implements IUserSettings {
       "textColor",
       ReadiumCSS.TEXT_COLOR_KEY
     );
+
+    // --- v2-only fields (read back via getPropertyAndFallback so user
+    // overrides via applyUserSettings persist across reloads) ---
+    this.lineLength = await this.getPropertyAndFallback<Stringable>(
+      "lineLength",
+      ReadiumCSS.LINE_LENGTH_KEY
+    );
+    this.fontOpticalSizing = await this.getPropertyAndFallback<Switchable>(
+      "fontOpticalSizing",
+      ReadiumCSS.FONT_OPTICAL_SIZING_KEY
+    );
+    const ligaturesValue = await this.getPropertyAndFallback<Stringable>(
+      "ligatures",
+      ReadiumCSS.LIGATURES_KEY
+    );
+    this.ligatures =
+      ligaturesValue === "none" || ligaturesValue === "common-ligatures"
+        ? ligaturesValue
+        : this.ligatures;
+    this.blendImages = await this.getPropertyAndFallback<Switchable>(
+      "blendImages",
+      ReadiumCSS.BLEND_IMAGES_KEY
+    );
+    this.darkenImages = parseImageFilter(
+      await this.getPropertyAndFallback<Stringable>(
+        "darkenImages",
+        ReadiumCSS.DARKEN_IMAGES_KEY
+      ),
+      this.darkenImages
+    );
+    this.invertImages = parseImageFilter(
+      await this.getPropertyAndFallback<Stringable>(
+        "invertImages",
+        ReadiumCSS.INVERT_IMAGES_KEY
+      ),
+      this.invertImages
+    );
+    this.invertGaiji = parseImageFilter(
+      await this.getPropertyAndFallback<Stringable>(
+        "invertGaiji",
+        ReadiumCSS.INVERT_GAIJI_KEY
+      ),
+      this.invertGaiji
+    );
+    this.linkColor = await this.getPropertyAndFallback<Stringable>(
+      "linkColor",
+      ReadiumCSS.LINK_COLOR_KEY
+    );
+    this.visitedColor = await this.getPropertyAndFallback<Stringable>(
+      "visitedColor",
+      ReadiumCSS.VISITED_COLOR_KEY
+    );
+    this.selectionBackgroundColor =
+      await this.getPropertyAndFallback<Stringable>(
+        "selectionBackgroundColor",
+        ReadiumCSS.SELECTION_BACKGROUND_COLOR_KEY
+      );
+    this.selectionTextColor = await this.getPropertyAndFallback<Stringable>(
+      "selectionTextColor",
+      ReadiumCSS.SELECTION_TEXT_COLOR_KEY
+    );
+    this.scrollPaddingTop = await this.getPropertyAndFallback<Stringable>(
+      "scrollPaddingTop",
+      ReadiumCSS.SCROLL_PADDING_TOP_KEY
+    );
+    this.scrollPaddingBottom = await this.getPropertyAndFallback<Stringable>(
+      "scrollPaddingBottom",
+      ReadiumCSS.SCROLL_PADDING_BOTTOM_KEY
+    );
+    this.scrollPaddingLeft = await this.getPropertyAndFallback<Stringable>(
+      "scrollPaddingLeft",
+      ReadiumCSS.SCROLL_PADDING_LEFT_KEY
+    );
+    this.scrollPaddingRight = await this.getPropertyAndFallback<Stringable>(
+      "scrollPaddingRight",
+      ReadiumCSS.SCROLL_PADDING_RIGHT_KEY
+    );
+
+    window.addEventListener("resize", this.onWindowResize);
     this.userProperties = this.getUserSettings();
   }
 
@@ -526,6 +940,26 @@ export class UserSettings implements IUserSettings {
     this.typeScale = 1.2;
     this.backgroundColor = "";
     this.textColor = "";
+
+    // v2-only field defaults — match the field-declaration defaults at top
+    // of the class so reset truly returns to factory state.
+    this.lineLength = "";
+    this.fontWeight = 400;
+    this.fontWidth = 100;
+    this.fontOpticalSizing = true;
+    this.ligatures = "common-ligatures";
+    this.blendImages = false;
+    this.darkenImages = false;
+    this.invertImages = false;
+    this.invertGaiji = false;
+    this.linkColor = "";
+    this.visitedColor = "";
+    this.selectionBackgroundColor = "";
+    this.selectionTextColor = "";
+    this.scrollPaddingTop = "20";
+    this.scrollPaddingBottom = "20";
+    this.scrollPaddingLeft = "20";
+    this.scrollPaddingRight = "20";
 
     this.userProperties = this.getUserSettings();
 
@@ -580,6 +1014,27 @@ export class UserSettings implements IUserSettings {
           ReadiumCSS.FONT_OVERRIDE_KEY,
           "readium-font-off"
         );
+
+        // v2-only fields — clear inline style so iframe layout falls back
+        // to bundle defaults / re-derives from the reset field values on
+        // next applyProperties.
+        html.style.removeProperty(ReadiumCSS.LINE_LENGTH_KEY);
+        html.style.removeProperty(ReadiumCSS.FONT_WEIGHT_KEY);
+        html.style.removeProperty(ReadiumCSS.FONT_WIDTH_KEY);
+        html.style.removeProperty(ReadiumCSS.FONT_OPTICAL_SIZING_KEY);
+        html.style.removeProperty(ReadiumCSS.LIGATURES_KEY);
+        html.style.removeProperty(ReadiumCSS.BLEND_IMAGES_KEY);
+        html.style.removeProperty(ReadiumCSS.DARKEN_IMAGES_KEY);
+        html.style.removeProperty(ReadiumCSS.INVERT_IMAGES_KEY);
+        html.style.removeProperty(ReadiumCSS.INVERT_GAIJI_KEY);
+        html.style.removeProperty(ReadiumCSS.LINK_COLOR_KEY);
+        html.style.removeProperty(ReadiumCSS.VISITED_COLOR_KEY);
+        html.style.removeProperty(ReadiumCSS.SELECTION_BACKGROUND_COLOR_KEY);
+        html.style.removeProperty(ReadiumCSS.SELECTION_TEXT_COLOR_KEY);
+        html.style.removeProperty(ReadiumCSS.SCROLL_PADDING_TOP_KEY);
+        html.style.removeProperty(ReadiumCSS.SCROLL_PADDING_BOTTOM_KEY);
+        html.style.removeProperty(ReadiumCSS.SCROLL_PADDING_LEFT_KEY);
+        html.style.removeProperty(ReadiumCSS.SCROLL_PADDING_RIGHT_KEY);
       }
     }
   }
@@ -595,7 +1050,9 @@ export class UserSettings implements IUserSettings {
 
   async applyProperties(): Promise<any> {
     this.userProperties = this.getUserSettings();
-    let doc = this.iframe.contentDocument;
+    // PDF (and other non-iframe-based) navigators don't set this.iframe.
+    // Optional chain so applyProperties is a safe no-op there.
+    let doc = this.iframe?.contentDocument;
     if (doc) {
       const html = HTMLUtilities.findIframeElement(
         doc,
@@ -603,11 +1060,23 @@ export class UserSettings implements IUserSettings {
       ) as HTMLHtmlElement;
 
       if (html) {
+        // iPadOS patch toggle — ReadiumCSS v2 ships rules gated on
+        // `:root[style*="readium-iPadOSPatch-on"]` that disable Safari's
+        // native text-size-adjust + text-zoom (which otherwise compound
+        // with v2's CSS `zoom`-based font sizing and produce double-scaled
+        // text on iPad). Apply as a CSS custom property so the substring
+        // selector matches without polluting real CSS vars.
+        if (BrowserUtilities.isIPadOS()) {
+          html.style.setProperty("--readium-iPadOSPatch-on", "1");
+        } else {
+          html.style.removeProperty("--readium-iPadOSPatch-on");
+        }
+
         const rootElement =
           HTMLUtilities.findElement(document, "#root") ||
           document.documentElement;
         const body = HTMLUtilities.findElement(html, "body");
-        if (this.view?.navigator.publication.isReflowable) {
+        if (this.view?.host?.isReflowable()) {
           // Apply font size
           if (await this.getProperty(ReadiumCSS.FONT_SIZE_KEY)) {
             html.style.setProperty(
@@ -644,16 +1113,34 @@ export class UserSettings implements IUserSettings {
             );
           }
         }
-        // Apply column count
-        if (await this.getProperty(ReadiumCSS.COLUMN_COUNT_KEY)) {
-          html.style.setProperty(
-            ReadiumCSS.COLUMN_COUNT_KEY,
+        // Apply column count.
+        // Applied unconditionally because v2 ReadiumCSS removed the responsive
+        // column media queries — "auto" must be resolved to a numeric column
+        // count based on viewport width in JS (per Readium v2 migration guide).
+        // v2 also removed the 2-column cap, so 3+ columns are honoured on
+        // wide viewports.
+        // Skipped for vertical-script publications (cjk-vertical /
+        // mongolian-vertical) — the cjk-vertical bundle's scroll-on rule
+        // forces `columns: auto auto !important` on root, so writing
+        // --USER__colCount has no layout effect and just pollutes the
+        // inline style attribute.
+        if (!this.isVerticalScript) {
+          const colCountValue =
             this.userProperties
               .getByRef(ReadiumCSS.COLUMN_COUNT_REF)
-              ?.toString() ?? null
-          );
+              ?.toString() ?? "auto";
+          const resolvedColCount =
+            colCountValue === "auto"
+              ? resolveAutoColumns(
+                  BrowserUtilities.computeIframeContentWidth(
+                    this.iframe,
+                    this.view?.attributes
+                  )
+                )
+              : colCountValue;
+          html.style.setProperty(ReadiumCSS.COLUMN_COUNT_KEY, resolvedColCount);
         }
-        if (this.view?.navigator.publication.isReflowable) {
+        if (this.view?.host?.isReflowable()) {
           // Apply text alignment
           if (await this.getProperty(ReadiumCSS.TEXT_ALIGNMENT_KEY)) {
             if (
@@ -689,18 +1176,49 @@ export class UserSettings implements IUserSettings {
                 ?.toString() ?? null
             );
           }
-          // Apply page margins
-          if (await this.getProperty(ReadiumCSS.PAGE_MARGINS_KEY)) {
-            // html.style.setProperty(
-            //   ReadiumCSS.PUBLISHER_DEFAULT_KEY,
-            //   "readium-advanced-on"
-            // );
-            html.style.setProperty(
-              ReadiumCSS.PAGE_MARGINS_KEY,
+          // Apply page margins (v1) + derive lineLength (v2).
+          // For LTR / RTL / cjk-horizontal: derive both --USER__pageMargins
+          // and --USER__lineLength from the user's pageMargins setting (or
+          // an explicit lineLength override). Sets body's max-width.
+          //
+          // For vertical scripts (cjk-vertical / mongolian-vertical):
+          // pageMargins as a horizontal-axis percentage doesn't translate.
+          // Write --USER__lineLength = "100%" so body's max-height (= inline
+          // axis in vertical-rl) fills the full viewport height — full
+          // column height, no top/bottom blank space — and the bundle's
+          // `[style*="--USER__lineLength"]` body rule fires (without it,
+          // body's max-height falls back to the bundle default and the
+          // cjk-vertical column-count auto-flow doesn't converge).
+          // Vertical scripts get their --USER__lineLength written below
+          // (in the vertical-script block) with viewport-height fallback.
+          // For LTR / RTL / cjk-horizontal: write --USER__pageMargins and
+          // derive --USER__lineLength from it (or use integrator override).
+          if (!this.isVerticalScript) {
+            const pageMarginsValue =
               this.userProperties
                 .getByRef(ReadiumCSS.PAGE_MARGINS_REF)
-                ?.toString() ?? null
+                ?.toString() ?? null;
+            html.style.setProperty(
+              ReadiumCSS.PAGE_MARGINS_KEY,
+              pageMarginsValue
             );
+            // Direct lineLength override takes precedence over derivation.
+            if (this.lineLength) {
+              html.style.setProperty(
+                ReadiumCSS.LINE_LENGTH_KEY,
+                this.lineLength
+              );
+            } else {
+              const prop = this.userProperties.getByRef(
+                ReadiumCSS.PAGE_MARGINS_REF
+              );
+              const pageMarginsNum =
+                typeof prop?.value === "number" ? prop.value : this.pageMargins;
+              html.style.setProperty(
+                ReadiumCSS.LINE_LENGTH_KEY,
+                pageMarginsToLineLength(pageMarginsNum)
+              );
+            }
           }
           // Apply body hyphens
           if (await this.getProperty(ReadiumCSS.BODY_HYPHENS_KEY)) {
@@ -758,65 +1276,166 @@ export class UserSettings implements IUserSettings {
           }
         }
 
-        // Apply appearance
-        if (await this.getProperty(ReadiumCSS.APPEARANCE_KEY)) {
-          html.style.setProperty(
-            ReadiumCSS.APPEARANCE_KEY,
-            this.userProperties
+        // Apply appearance (v1) + derive v2 theme colour vars.
+        // Applied unconditionally — v2 ReadiumCSS does not define appearance,
+        // so the individual colour vars must always be set for themes to
+        // work, not only when the store has a persisted value. Cjk-vertical
+        // bundle honors `--USER__backgroundColor` / `--USER__textColor` the
+        // same way the other variants do, so sepia/night themes apply to
+        // vertical books too.
+        {
+          const appearanceValue =
+            (this.userProperties
               .getByRef(ReadiumCSS.APPEARANCE_REF)
-              ?.toString() ?? null
-          );
-          if (
-            this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)?.value === 0
-          ) {
-            if (rootElement)
-              HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
-            if (body) HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
-          } else if (
-            this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)?.value === 1
-          ) {
-            if (rootElement)
-              HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "sepia");
-            if (body) HTMLUtilities.setAttr(body, "data-viewer-theme", "sepia");
-          } else if (
-            this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)?.value === 2
-          ) {
-            if (rootElement)
-              HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "night");
-            if (body) HTMLUtilities.setAttr(body, "data-viewer-theme", "night");
+              ?.toString() as AppearanceValue | undefined) ??
+            "readium-default-on";
+          html.style.setProperty(ReadiumCSS.APPEARANCE_KEY, appearanceValue);
+
+          // v2 colour preset — only applied for sepia/night, NOT for day.
+          //
+          // v2 ReadiumCSS applies publisher-colour-wiping rules whenever
+          // --USER__textColor or --USER__backgroundColor are present in the
+          // style attribute:
+          //   :root[style*="--USER__textColor"] *:not(a) {
+          //     color: inherit !important;
+          //   }
+          // v1 excluded headings from that wipe (h1-h6, pre); v2 only
+          // excludes anchors. So setting these vars for the "day" default
+          // wipes publisher heading colours throughout the book.
+          //
+          // For "day" we REMOVE the colour vars so publisher CSS flows
+          // through. For sepia/night the user is explicitly asking for a
+          // theme, so we apply the preset colours (accepting that publisher
+          // heading colours will be overridden — which is what the user
+          // wants when switching to a theme).
+          //
+          // Integrator-supplied backgroundColor / textColor fields always
+          // take precedence (kept below after this block).
+          const preset = APPEARANCE_COLOR_PRESETS[appearanceValue];
+          const filterPreset = APPEARANCE_IMAGE_FILTERS[appearanceValue];
+          const isDefaultDay = appearanceValue === "readium-default-on";
+          if (preset && !isDefaultDay) {
+            if (!this.backgroundColor) {
+              html.style.setProperty(
+                ReadiumCSS.BACKGROUND_COLOR_KEY,
+                preset.background
+              );
+            }
+            if (!this.textColor) {
+              html.style.setProperty(ReadiumCSS.TEXT_COLOR_KEY, preset.text);
+            }
+            if (!this.linkColor) {
+              html.style.setProperty(ReadiumCSS.LINK_COLOR_KEY, preset.link);
+            }
+            if (!this.visitedColor) {
+              html.style.setProperty(
+                ReadiumCSS.VISITED_COLOR_KEY,
+                preset.visited
+              );
+            }
+            if (!this.selectionBackgroundColor) {
+              html.style.setProperty(
+                ReadiumCSS.SELECTION_BACKGROUND_COLOR_KEY,
+                preset.selectionBackground
+              );
+            }
+            if (!this.selectionTextColor) {
+              html.style.setProperty(
+                ReadiumCSS.SELECTION_TEXT_COLOR_KEY,
+                preset.selectionText
+              );
+            }
+          } else if (isDefaultDay) {
+            // Remove colour vars for "day" so publisher CSS flows through.
+            // Integrator explicit overrides re-apply below.
+            if (!this.backgroundColor) {
+              html.style.removeProperty(ReadiumCSS.BACKGROUND_COLOR_KEY);
+            }
+            if (!this.textColor) {
+              html.style.removeProperty(ReadiumCSS.TEXT_COLOR_KEY);
+            }
+            if (!this.linkColor) {
+              html.style.removeProperty(ReadiumCSS.LINK_COLOR_KEY);
+            }
+            if (!this.visitedColor) {
+              html.style.removeProperty(ReadiumCSS.VISITED_COLOR_KEY);
+            }
+            if (!this.selectionBackgroundColor) {
+              html.style.removeProperty(
+                ReadiumCSS.SELECTION_BACKGROUND_COLOR_KEY
+              );
+            }
+            if (!this.selectionTextColor) {
+              html.style.removeProperty(ReadiumCSS.SELECTION_TEXT_COLOR_KEY);
+            }
           }
-        } else {
-          html.style.setProperty(
-            ReadiumCSS.APPEARANCE_KEY,
-            this.userProperties
-              .getByRef(ReadiumCSS.APPEARANCE_REF)
-              ?.toString() ?? null
-          );
-          if (rootElement)
-            HTMLUtilities.setAttr(rootElement, "data-viewer-theme", "day");
-          if (body) HTMLUtilities.setAttr(body, "data-viewer-theme", "day");
+
+          // Auto-apply per-theme image filters to match v1 behaviour.
+          // v1 ReadiumCSS implicitly applies mix-blend-mode on sepia and
+          // invert on night; v2 does not, so we drive the filters from the
+          // appearance preset. Integrator-supplied explicit filter values
+          // are applied later in this method and override these defaults.
+          if (filterPreset) {
+            this.blendImages = filterPreset.blendImages;
+            this.invertImages = filterPreset.invertImages;
+            this.darkenImages = filterPreset.darkenImages;
+          }
         }
 
-        if (this.view?.navigator.publication.isFixedLayout) {
+        // data-viewer-theme attribute on rootElement + body is set
+        // unconditionally — independent of the appearance var-write gate.
+        // Reader UI SCSS (toc, settings, error, loading, bookmarks,
+        // timeline, settings panel) keys theme-aware styling off this
+        // attribute, including for vertical-script books which skip the
+        // CSS-var writes inside the appearance block above.
+        {
+          const appearanceIdx =
+            this.userProperties.getByRef(ReadiumCSS.APPEARANCE_REF)?.value ?? 0;
+          const themeAttr =
+            appearanceIdx === 1
+              ? "sepia"
+              : appearanceIdx === 2
+                ? "night"
+                : "day";
+          if (rootElement)
+            HTMLUtilities.setAttr(rootElement, "data-viewer-theme", themeAttr);
+          if (body) HTMLUtilities.setAttr(body, "data-viewer-theme", themeAttr);
+        }
+
+        if (this.view?.host?.isFixedLayout()) {
           if (await this.getProperty(ReadiumCSS.DIRECTION_KEY)) {
             let value =
               this.userProperties
                 .getByRef(ReadiumCSS.DIRECTION_REF)
                 ?.toString() ?? null;
             html.style.setProperty(ReadiumCSS.DIRECTION_KEY, value);
-            this.view.navigator.setDirection(value);
+            this.view.host?.setDirection(value);
           }
         }
 
-        if (this.view?.navigator.publication.isReflowable) {
-          // Apply font family
+        if (this.view?.host?.isReflowable()) {
+          // Apply font family.
+          // When the user picks "Original" (value 0 = publisher default) we
+          // REMOVE --USER__fontFamily entirely. In v2 ReadiumCSS, merely
+          // having the property set (even to "Original") triggers the rule
+          // `:root[style*="--USER__fontFamily"] * { font-family: revert
+          // !important; }` — which overrides the publisher's own font-family
+          // declarations throughout the book. Removing the property lets
+          // publisher fonts apply naturally.
           if (await this.getProperty(ReadiumCSS.FONT_FAMILY_KEY)) {
-            html.style.setProperty(
-              ReadiumCSS.FONT_FAMILY_KEY,
-              this.userProperties
-                .getByRef(ReadiumCSS.FONT_FAMILY_REF)
-                ?.toString() ?? null
-            );
+            const fontFamilyRefValue = this.userProperties.getByRef(
+              ReadiumCSS.FONT_FAMILY_REF
+            )?.value;
+            if (fontFamilyRefValue === 0) {
+              html.style.removeProperty(ReadiumCSS.FONT_FAMILY_KEY);
+            } else {
+              html.style.setProperty(
+                ReadiumCSS.FONT_FAMILY_KEY,
+                this.userProperties
+                  .getByRef(ReadiumCSS.FONT_FAMILY_REF)
+                  ?.toString() ?? null
+              );
+            }
             if (
               this.userProperties.getByRef(ReadiumCSS.FONT_FAMILY_REF)
                 ?.value === 0
@@ -861,12 +1480,12 @@ export class UserSettings implements IUserSettings {
               );
             }
           } else {
-            html.style.setProperty(
-              ReadiumCSS.FONT_FAMILY_KEY,
-              this.userProperties
-                .getByRef(ReadiumCSS.FONT_FAMILY_REF)
-                ?.toString() ?? null
-            );
+            // Store has no persisted fontFamily — leave --USER__fontFamily
+            // unset so publisher fonts flow through (especially important
+            // under v2 ReadiumCSS where any --USER__fontFamily value, even
+            // "Original", triggers `* { font-family: revert !important; }`
+            // on descendants).
+            html.style.removeProperty(ReadiumCSS.FONT_FAMILY_KEY);
             HTMLUtilities.setAttr(html, "data-viewer-font", "publisher");
             html.style.setProperty(
               ReadiumCSS.FONT_OVERRIDE_KEY,
@@ -874,7 +1493,160 @@ export class UserSettings implements IUserSettings {
             );
           }
 
-          if (await this.getProperty(ReadiumCSS.SCROLL_KEY)) {
+          // --- v2-only CSS variables ---
+          // Applied when the integrator set the corresponding field on
+          // InitialUserSettings. Silently no-op when v1 ReadiumCSS is injected.
+
+          if (this.lineLength) {
+            html.style.setProperty(ReadiumCSS.LINE_LENGTH_KEY, this.lineLength);
+          }
+          if (this.fontWeight && this.fontWeight !== 400) {
+            html.style.setProperty(
+              ReadiumCSS.FONT_WEIGHT_KEY,
+              String(this.fontWeight)
+            );
+          }
+          if (this.fontWidth && this.fontWidth !== 100) {
+            html.style.setProperty(
+              ReadiumCSS.FONT_WIDTH_KEY,
+              String(this.fontWidth)
+            );
+          }
+          if (!this.isVerticalScript) {
+            html.style.setProperty(
+              ReadiumCSS.FONT_OPTICAL_SIZING_KEY,
+              this.fontOpticalSizing ? "auto" : "none"
+            );
+            html.style.setProperty(ReadiumCSS.LIGATURES_KEY, this.ligatures);
+          }
+
+          // Image filters — v2 accepts either a simple flag (boolean) or a
+          // numeric amount. A numeric value takes precedence.
+          //   blendImages (boolean only):    readium-blend-on
+          //   darkenImages (boolean):        readium-darken-on
+          //   darkenImages (number 0..1):    --USER__darkenImages
+          //   invertImages (boolean):        readium-invert-on
+          //   invertImages (number 0..1):    --USER__invertImages
+          //   invertGaiji  (boolean):        readium-invertGaiji-on
+          //   invertGaiji  (number 0..1):    --USER__invertGaiji
+          // v2 CSS uses `[style*="readium-*-on"]` substring matching on the
+          // style attribute; we store the flag value on the corresponding
+          // --USER__* custom property so the substring appears in style.
+          if (this.blendImages) {
+            html.style.setProperty(
+              ReadiumCSS.BLEND_IMAGES_KEY,
+              "readium-blend-on"
+            );
+          } else {
+            html.style.removeProperty(ReadiumCSS.BLEND_IMAGES_KEY);
+          }
+
+          applyFilterSetting(
+            html,
+            ReadiumCSS.DARKEN_IMAGES_KEY,
+            this.darkenImages,
+            "readium-darken-on"
+          );
+          applyFilterSetting(
+            html,
+            ReadiumCSS.INVERT_IMAGES_KEY,
+            this.invertImages,
+            "readium-invert-on"
+          );
+          applyFilterSetting(
+            html,
+            ReadiumCSS.INVERT_GAIJI_KEY,
+            this.invertGaiji,
+            "readium-invertGaiji-on"
+          );
+          // Explicit theme colour overrides — take precedence over appearance
+          // preset colours applied above.
+          if (this.linkColor) {
+            html.style.setProperty(ReadiumCSS.LINK_COLOR_KEY, this.linkColor);
+          }
+          if (this.visitedColor) {
+            html.style.setProperty(
+              ReadiumCSS.VISITED_COLOR_KEY,
+              this.visitedColor
+            );
+          }
+          if (this.selectionBackgroundColor) {
+            html.style.setProperty(
+              ReadiumCSS.SELECTION_BACKGROUND_COLOR_KEY,
+              this.selectionBackgroundColor
+            );
+          }
+          if (this.selectionTextColor) {
+            html.style.setProperty(
+              ReadiumCSS.SELECTION_TEXT_COLOR_KEY,
+              this.selectionTextColor
+            );
+          }
+          // Scroll-view padding (v2 replaces pageGutter in scroll mode).
+          if (this.scrollPaddingTop) {
+            html.style.setProperty(
+              ReadiumCSS.SCROLL_PADDING_TOP_KEY,
+              this.scrollPaddingTop
+            );
+          }
+          if (this.scrollPaddingBottom) {
+            html.style.setProperty(
+              ReadiumCSS.SCROLL_PADDING_BOTTOM_KEY,
+              this.scrollPaddingBottom
+            );
+          }
+          if (this.scrollPaddingLeft) {
+            html.style.setProperty(
+              ReadiumCSS.SCROLL_PADDING_LEFT_KEY,
+              this.scrollPaddingLeft
+            );
+          }
+          if (this.scrollPaddingRight) {
+            html.style.setProperty(
+              ReadiumCSS.SCROLL_PADDING_RIGHT_KEY,
+              this.scrollPaddingRight
+            );
+          }
+
+          if (this.isVerticalScript) {
+            // Vertical scripts (cjk-vertical / mongolian-vertical) need both
+            // --USER__scroll: readium-scroll-on AND --RS__disablePagination:
+            // readium-noVerticalPagination-on. Both substrings independently
+            // trigger the cjk-vertical CSS rule that sets
+            // `:root { columns: auto auto !important; max-width: none !important; }`
+            // — the layout that lets vertical-rl content extend horizontally
+            // instead of being fragmented into a single viewport-width column.
+            // Without --USER__scroll the gated scroll-padding rules also
+            // wouldn't fire.
+            html.style.setProperty("--USER__scroll", "readium-scroll-on");
+            html.style.setProperty("--USER__view", "readium-scroll-on");
+            html.style.setProperty(
+              ReadiumCSS.DISABLE_PAGINATION_KEY,
+              "readium-noVerticalPagination-on"
+            );
+            // Opt out of cjk-vertical's body overflow:hidden / overflow:clip
+            // rules. Those rules are gated on
+            // `:not([style*="readium-noOverflow-on"])` — adding any inline
+            // style declaration containing that literal substring defeats
+            // the selector. Without this, body clips multicol fragments and
+            // content beyond the first column-block is invisible.
+            html.style.setProperty("--RS__overflow", "readium-noOverflow-on");
+
+            // Body max-height (inline-axis in vertical-rl). Integrator
+            // override via `initialUserSettings.lineLength` or runtime
+            // `applyUserSettings({ lineLength })` takes precedence; otherwise
+            // fall back to viewport height in px (mirrors Readium's effective
+            // lineLength for CJK content where canvas-measured maximalLineLength
+            // exceeds viewport_height and the min() clamp picks viewport_height).
+            // Recomputed on resize via applyProperties re-run from handleResize.
+            const verticalLineLength = this.lineLength
+              ? this.lineLength
+              : `${this.iframe?.parentElement?.clientHeight ?? window.innerHeight}px`;
+            html.style.setProperty(
+              ReadiumCSS.LINE_LENGTH_KEY,
+              verticalLineLength
+            );
+          } else if (await this.getProperty(ReadiumCSS.SCROLL_KEY)) {
             if (
               this.userProperties.getByRef(ReadiumCSS.SCROLL_REF)?.value ===
               true
@@ -910,7 +1682,7 @@ export class UserSettings implements IUserSettings {
           //   );
           // }
           this.isScrollMode().then((scroll) => {
-            this.view?.setMode?.(scroll);
+            this.swapRenderer(scroll);
           });
         }
       }
@@ -923,6 +1695,128 @@ export class UserSettings implements IUserSettings {
       this.view.iframe = iframe;
     }
     if (this.settingsView) UserSettings.renderControls(this.settingsView);
+  }
+
+  /**
+   * Script mode of the loaded publication. Set externally by the
+   * navigator after construct so `swapRenderer` can pick a vertical-script
+   * renderer when appropriate. Optional — default `"ltr"` until set.
+   */
+  scriptMode: ScriptMode = "ltr";
+
+  /**
+   * `true` when the publication uses a vertical writing mode
+   * (cjk-vertical / mongolian-vertical). Vertical content runs in scroll
+   * mode unconditionally (no in-resource pagination); the user-set
+   * `verticalScroll` toggle is ignored for vertical scripts.
+   */
+  private get isVerticalScript(): boolean {
+    return (
+      this.scriptMode === "cjk-vertical" ||
+      this.scriptMode === "mongolian-vertical"
+    );
+  }
+
+  /**
+   * Pick the right reflowable renderer for the current scroll mode and apply
+   * mode-specific iframe setup. Replaces the historical `view.setMode(scroll)`
+   * call: when the mode actually changes we instantiate a fresh renderer of
+   * the correct class, transfer the iframe / host / attributes / sizing
+   * state, then call `engage()` on the new instance. When mode is unchanged
+   * we just re-engage the existing renderer (matches the old setMode
+   * idempotent behavior).
+   *
+   * Fixed-layout publications use FixedRenderer and ignore the toggle.
+   * Vertical scripts (cjk-vertical / mongolian-vertical) use
+   * VerticalRenderer regardless of `scroll` — they're scroll-only by design.
+   */
+  /**
+   * Pick the initial renderer based on layout, scriptMode, and the
+   * resolved `verticalScroll` setting. Called by the factory exactly
+   * once, after `initialise()` reads the persisted store and after
+   * integrator-supplied `initialUserSettings.verticalScroll` overrides
+   * have applied. Avoids the throwaway "construct paginated, swap to
+   * scroll" path that the constructor used to take.
+   */
+  selectInitialRenderer(): void {
+    if (this.layout === "fixed") {
+      this.view = new FixedRenderer();
+    } else if (
+      this.scriptMode === "cjk-vertical" ||
+      this.scriptMode === "mongolian-vertical"
+    ) {
+      this.view = new VerticalRenderer(
+        this.store,
+        this.scriptMode === "cjk-vertical"
+      );
+    } else if (this.verticalScroll === false) {
+      this.view = new ColumnRenderer(this.store, this.scriptMode === "rtl");
+    } else {
+      // Default: ScrollRenderer — matches the class-field default
+      // (`verticalScroll = true`) and applies when nothing is persisted
+      // and no integrator override is supplied.
+      this.view = new ScrollRenderer(this.store);
+    }
+  }
+
+  private swapRenderer(scroll: boolean): void {
+    if (this.view instanceof FixedRenderer) return;
+
+    const targetClass:
+      | typeof ColumnRenderer
+      | typeof ScrollRenderer
+      | typeof VerticalRenderer = this.isVerticalScript
+      ? VerticalRenderer
+      : scroll
+        ? ScrollRenderer
+        : ColumnRenderer;
+    const current = this.view as
+      | ColumnRenderer
+      | ScrollRenderer
+      | VerticalRenderer
+      | undefined;
+
+    // Shortcut: re-engage the existing renderer ONLY if its constructor
+    // flags also match. Without this, an RTL/vertical publication that
+    // started life with the pre-scriptMode-known ColumnRenderer (rtl=false)
+    // or with a stale verticalRtl flag would get re-engaged with the wrong
+    // direction. Falls through to construct a fresh instance when flags
+    // disagree.
+    if (current && current instanceof targetClass) {
+      const wantRtl = this.scriptMode === "rtl";
+      const wantVerticalRtl = this.scriptMode === "cjk-vertical";
+      const flagsMatch =
+        current instanceof ColumnRenderer
+          ? current.publicationRtl === wantRtl
+          : current instanceof VerticalRenderer
+            ? current.verticalRtl === wantVerticalRtl
+            : true; // ScrollRenderer has no script-mode flag
+      if (flagsMatch) {
+        current.engage();
+        return;
+      }
+    }
+
+    const next =
+      targetClass === VerticalRenderer
+        ? new VerticalRenderer(this.store, this.scriptMode === "cjk-vertical")
+        : targetClass === ScrollRenderer
+          ? new ScrollRenderer(this.store)
+          : new ColumnRenderer(this.store, this.scriptMode === "rtl");
+    if (current) {
+      next.iframe = current.iframe;
+      next.host = current.host;
+      next.attributes = current.attributes;
+      next.sideMargin = current.sideMargin;
+      next.height = current.height;
+    }
+    this.view = next;
+    next.engage();
+    // Notify so listeners (EpubNavigator's updateRenderer) re-sync to the
+    // new instance. Otherwise external `view` refs go stale on the silent
+    // swap path (applyProperties), since only the explicit user-toggle
+    // paths fire viewChangeCallback themselves.
+    this.viewChangeCallback();
   }
 
   private static renderControls(element: HTMLElement): void {
@@ -1190,6 +2084,115 @@ export class UserSettings implements IUserSettings {
       ReadiumCSS.TEXT_COLOR_KEY
     );
 
+    // --- v2-only incremental properties (silently no-op on v1 CSS) ---
+    // Font weight (variable font axis, default 400)
+    userProperties.addIncremental(
+      this.fontWeight,
+      100,
+      900,
+      50,
+      "",
+      ReadiumCSS.FONT_WEIGHT_REF,
+      ReadiumCSS.FONT_WEIGHT_KEY
+    );
+    // Font width (variable font axis, default 100)
+    userProperties.addIncremental(
+      this.fontWidth,
+      50,
+      200,
+      10,
+      "",
+      ReadiumCSS.FONT_WIDTH_REF,
+      ReadiumCSS.FONT_WIDTH_KEY
+    );
+
+    // --- v2-only stringable / switchable properties (persistence-backed) ---
+    // Body max-width (LTR/RTL/cjk-horizontal) or max-height (vertical-rl).
+    userProperties.addStringable(
+      this.lineLength,
+      ReadiumCSS.LINE_LENGTH_REF,
+      ReadiumCSS.LINE_LENGTH_KEY
+    );
+    // Variable-font optical sizing toggle.
+    userProperties.addSwitchable(
+      "auto",
+      "none",
+      this.fontOpticalSizing,
+      ReadiumCSS.FONT_OPTICAL_SIZING_REF,
+      ReadiumCSS.FONT_OPTICAL_SIZING_KEY
+    );
+    // Common-ligatures toggle (string value: "none" | "common-ligatures").
+    userProperties.addStringable(
+      this.ligatures,
+      ReadiumCSS.LIGATURES_REF,
+      ReadiumCSS.LIGATURES_KEY
+    );
+    // Image filters — stored as serialized strings to preserve the
+    // boolean | numeric-amount union (parsed back in initialise()).
+    userProperties.addSwitchable(
+      "readium-blend-on",
+      "readium-blend-off",
+      this.blendImages,
+      ReadiumCSS.BLEND_IMAGES_REF,
+      ReadiumCSS.BLEND_IMAGES_KEY
+    );
+    userProperties.addStringable(
+      String(this.darkenImages),
+      ReadiumCSS.DARKEN_IMAGES_REF,
+      ReadiumCSS.DARKEN_IMAGES_KEY
+    );
+    userProperties.addStringable(
+      String(this.invertImages),
+      ReadiumCSS.INVERT_IMAGES_REF,
+      ReadiumCSS.INVERT_IMAGES_KEY
+    );
+    userProperties.addStringable(
+      String(this.invertGaiji),
+      ReadiumCSS.INVERT_GAIJI_REF,
+      ReadiumCSS.INVERT_GAIJI_KEY
+    );
+    // v2 theme accent colours.
+    userProperties.addStringable(
+      this.linkColor,
+      ReadiumCSS.LINK_COLOR_REF,
+      ReadiumCSS.LINK_COLOR_KEY
+    );
+    userProperties.addStringable(
+      this.visitedColor,
+      ReadiumCSS.VISITED_COLOR_REF,
+      ReadiumCSS.VISITED_COLOR_KEY
+    );
+    userProperties.addStringable(
+      this.selectionBackgroundColor,
+      ReadiumCSS.SELECTION_BACKGROUND_COLOR_REF,
+      ReadiumCSS.SELECTION_BACKGROUND_COLOR_KEY
+    );
+    userProperties.addStringable(
+      this.selectionTextColor,
+      ReadiumCSS.SELECTION_TEXT_COLOR_REF,
+      ReadiumCSS.SELECTION_TEXT_COLOR_KEY
+    );
+    // Scroll-view padding (RS-scoped, vertical-rl reading-axis padding).
+    userProperties.addStringable(
+      this.scrollPaddingTop,
+      ReadiumCSS.SCROLL_PADDING_TOP_REF,
+      ReadiumCSS.SCROLL_PADDING_TOP_KEY
+    );
+    userProperties.addStringable(
+      this.scrollPaddingBottom,
+      ReadiumCSS.SCROLL_PADDING_BOTTOM_REF,
+      ReadiumCSS.SCROLL_PADDING_BOTTOM_KEY
+    );
+    userProperties.addStringable(
+      this.scrollPaddingLeft,
+      ReadiumCSS.SCROLL_PADDING_LEFT_REF,
+      ReadiumCSS.SCROLL_PADDING_LEFT_KEY
+    );
+    userProperties.addStringable(
+      this.scrollPaddingRight,
+      ReadiumCSS.SCROLL_PADDING_RIGHT_REF,
+      ReadiumCSS.SCROLL_PADDING_RIGHT_KEY
+    );
     return userProperties;
   }
 
@@ -1264,7 +2267,11 @@ export class UserSettings implements IUserSettings {
         UserSettings.directionValues[
           this.userProperties?.getByRef(ReadiumCSS.DIRECTION_REF)?.value
         ], // "auto", "ltr", "rtl"
-      verticalScroll: this.verticalScroll,
+      // Vertical scripts (cjk-vertical / mongolian-vertical) are forced to
+      // scroll mode by VerticalRenderer regardless of the persisted
+      // setting, so report that here too — keeps the integrator's UI
+      // toggle in sync with the actual renderer.
+      verticalScroll: this.isVerticalScript ? true : this.verticalScroll,
       fontSize: this.fontSize,
       wordSpacing: this.wordSpacing,
       letterSpacing: this.letterSpacing,
@@ -1276,6 +2283,25 @@ export class UserSettings implements IUserSettings {
       typeScale: this.typeScale,
       backgroundColor: this.backgroundColor,
       textColor: this.textColor,
+      // v2-only fields (persistence-backed). Surface here so integrators
+      // can read current values to populate UI controls.
+      lineLength: this.lineLength,
+      fontWeight: this.fontWeight,
+      fontWidth: this.fontWidth,
+      fontOpticalSizing: this.fontOpticalSizing,
+      ligatures: this.ligatures,
+      blendImages: this.blendImages,
+      darkenImages: this.darkenImages,
+      invertImages: this.invertImages,
+      invertGaiji: this.invertGaiji,
+      linkColor: this.linkColor,
+      visitedColor: this.visitedColor,
+      selectionBackgroundColor: this.selectionBackgroundColor,
+      selectionTextColor: this.selectionTextColor,
+      scrollPaddingTop: this.scrollPaddingTop,
+      scrollPaddingBottom: this.scrollPaddingBottom,
+      scrollPaddingLeft: this.scrollPaddingLeft,
+      scrollPaddingRight: this.scrollPaddingRight,
     };
   }
 
@@ -1391,7 +2417,7 @@ export class UserSettings implements IUserSettings {
         prop.value = this.verticalScroll;
         await this.saveProperty(prop);
       }
-      this.view?.setMode?.(this.verticalScroll);
+      this.swapRenderer(this.verticalScroll);
       if (position) {
         this.view?.goToProgression(position);
       }
@@ -1452,6 +2478,161 @@ export class UserSettings implements IUserSettings {
       }
     }
 
+    // --- v2-only settings ---
+    // These class fields drive applyProperties(); they persist via class
+    // state, not through UserProperties (no corresponding registered
+    // Incremental / Switchable / Enumerable / Stringable for most).
+    if (userSettings.lineLength !== undefined) {
+      this.lineLength = userSettings.lineLength;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.LINE_LENGTH_REF);
+      if (prop) {
+        prop.value = this.lineLength;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.fontWeight !== undefined) {
+      this.fontWeight = userSettings.fontWeight;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.FONT_WEIGHT_REF);
+      if (prop) {
+        prop.value = this.fontWeight;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.fontWidth !== undefined) {
+      this.fontWidth = userSettings.fontWidth;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.FONT_WIDTH_REF);
+      if (prop) {
+        prop.value = this.fontWidth;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.fontOpticalSizing !== undefined) {
+      this.fontOpticalSizing = userSettings.fontOpticalSizing;
+      let prop = this.userProperties?.getByRef(
+        ReadiumCSS.FONT_OPTICAL_SIZING_REF
+      );
+      if (prop) {
+        prop.value = this.fontOpticalSizing;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.ligatures !== undefined) {
+      this.ligatures = userSettings.ligatures;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.LIGATURES_REF);
+      if (prop) {
+        prop.value = this.ligatures;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.blendImages !== undefined) {
+      this.blendImages = userSettings.blendImages;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.BLEND_IMAGES_REF);
+      if (prop) {
+        prop.value = this.blendImages;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.darkenImages !== undefined) {
+      this.darkenImages = userSettings.darkenImages;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.DARKEN_IMAGES_REF);
+      if (prop) {
+        prop.value = String(this.darkenImages);
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.invertImages !== undefined) {
+      this.invertImages = userSettings.invertImages;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.INVERT_IMAGES_REF);
+      if (prop) {
+        prop.value = String(this.invertImages);
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.invertGaiji !== undefined) {
+      this.invertGaiji = userSettings.invertGaiji;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.INVERT_GAIJI_REF);
+      if (prop) {
+        prop.value = String(this.invertGaiji);
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.linkColor !== undefined) {
+      this.linkColor = userSettings.linkColor;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.LINK_COLOR_REF);
+      if (prop) {
+        prop.value = this.linkColor;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.visitedColor !== undefined) {
+      this.visitedColor = userSettings.visitedColor;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.VISITED_COLOR_REF);
+      if (prop) {
+        prop.value = this.visitedColor;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.selectionBackgroundColor !== undefined) {
+      this.selectionBackgroundColor = userSettings.selectionBackgroundColor;
+      let prop = this.userProperties?.getByRef(
+        ReadiumCSS.SELECTION_BACKGROUND_COLOR_REF
+      );
+      if (prop) {
+        prop.value = this.selectionBackgroundColor;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.selectionTextColor !== undefined) {
+      this.selectionTextColor = userSettings.selectionTextColor;
+      let prop = this.userProperties?.getByRef(
+        ReadiumCSS.SELECTION_TEXT_COLOR_REF
+      );
+      if (prop) {
+        prop.value = this.selectionTextColor;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.scrollPaddingTop !== undefined) {
+      this.scrollPaddingTop = userSettings.scrollPaddingTop;
+      let prop = this.userProperties?.getByRef(
+        ReadiumCSS.SCROLL_PADDING_TOP_REF
+      );
+      if (prop) {
+        prop.value = this.scrollPaddingTop;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.scrollPaddingBottom !== undefined) {
+      this.scrollPaddingBottom = userSettings.scrollPaddingBottom;
+      let prop = this.userProperties?.getByRef(
+        ReadiumCSS.SCROLL_PADDING_BOTTOM_REF
+      );
+      if (prop) {
+        prop.value = this.scrollPaddingBottom;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.scrollPaddingLeft !== undefined) {
+      this.scrollPaddingLeft = userSettings.scrollPaddingLeft;
+      let prop = this.userProperties?.getByRef(
+        ReadiumCSS.SCROLL_PADDING_LEFT_REF
+      );
+      if (prop) {
+        prop.value = this.scrollPaddingLeft;
+        await this.storeProperty(prop);
+      }
+    }
+    if (userSettings.scrollPaddingRight !== undefined) {
+      this.scrollPaddingRight = userSettings.scrollPaddingRight;
+      let prop = this.userProperties?.getByRef(
+        ReadiumCSS.SCROLL_PADDING_RIGHT_REF
+      );
+      if (prop) {
+        prop.value = this.scrollPaddingRight;
+        await this.storeProperty(prop);
+      }
+    }
+
     await this.applyProperties();
     this.settingsChangeCallback();
   }
@@ -1507,7 +2688,7 @@ export class UserSettings implements IUserSettings {
       await this.saveProperty(prop);
     }
     await this.applyProperties();
-    this.view?.setMode?.(this.verticalScroll);
+    this.swapRenderer(this.verticalScroll);
     if (position) {
       this.view?.goToProgression(position);
     }
@@ -1595,6 +2776,41 @@ export class UserSettings implements IUserSettings {
         ReadiumCSS.TYPE_SCALE_REF
       )?.value;
       let prop = this.userProperties?.getByRef(ReadiumCSS.TYPE_SCALE_REF);
+      if (prop) {
+        await this.storeProperty(prop);
+      }
+    } else if (incremental === "pageMargins") {
+      (
+        this.userProperties?.getByRef(
+          ReadiumCSS.PAGE_MARGINS_REF
+        ) as Incremental
+      ).increment();
+      this.pageMargins = this.userProperties?.getByRef(
+        ReadiumCSS.PAGE_MARGINS_REF
+      )?.value;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.PAGE_MARGINS_REF);
+      if (prop) {
+        await this.storeProperty(prop);
+      }
+    } else if (incremental === "fontWeight") {
+      (
+        this.userProperties?.getByRef(ReadiumCSS.FONT_WEIGHT_REF) as Incremental
+      ).increment();
+      this.fontWeight = this.userProperties?.getByRef(
+        ReadiumCSS.FONT_WEIGHT_REF
+      )?.value;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.FONT_WEIGHT_REF);
+      if (prop) {
+        await this.storeProperty(prop);
+      }
+    } else if (incremental === "fontWidth") {
+      (
+        this.userProperties?.getByRef(ReadiumCSS.FONT_WIDTH_REF) as Incremental
+      ).increment();
+      this.fontWidth = this.userProperties?.getByRef(
+        ReadiumCSS.FONT_WIDTH_REF
+      )?.value;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.FONT_WIDTH_REF);
       if (prop) {
         await this.storeProperty(prop);
       }
@@ -1687,6 +2903,41 @@ export class UserSettings implements IUserSettings {
       if (prop) {
         await this.storeProperty(prop);
       }
+    } else if (incremental === "pageMargins") {
+      (
+        this.userProperties?.getByRef(
+          ReadiumCSS.PAGE_MARGINS_REF
+        ) as Incremental
+      ).decrement();
+      this.pageMargins = this.userProperties?.getByRef(
+        ReadiumCSS.PAGE_MARGINS_REF
+      )?.value;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.PAGE_MARGINS_REF);
+      if (prop) {
+        await this.storeProperty(prop);
+      }
+    } else if (incremental === "fontWeight") {
+      (
+        this.userProperties?.getByRef(ReadiumCSS.FONT_WEIGHT_REF) as Incremental
+      ).decrement();
+      this.fontWeight = this.userProperties?.getByRef(
+        ReadiumCSS.FONT_WEIGHT_REF
+      )?.value;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.FONT_WEIGHT_REF);
+      if (prop) {
+        await this.storeProperty(prop);
+      }
+    } else if (incremental === "fontWidth") {
+      (
+        this.userProperties?.getByRef(ReadiumCSS.FONT_WIDTH_REF) as Incremental
+      ).decrement();
+      this.fontWidth = this.userProperties?.getByRef(
+        ReadiumCSS.FONT_WIDTH_REF
+      )?.value;
+      let prop = this.userProperties?.getByRef(ReadiumCSS.FONT_WIDTH_REF);
+      if (prop) {
+        await this.storeProperty(prop);
+      }
     }
     await this.applyProperties();
     this.settingsChangeCallback();
@@ -1699,4 +2950,29 @@ export class UserSettings implements IUserSettings {
   //   );
   //   this.applyProperties();
   // }
+}
+
+/**
+ * Apply a v2 image filter setting that accepts `boolean | number`.
+ *
+ * Numeric values take precedence: when `value` is a number (0..1), the
+ * corresponding `--USER__*` CSS var is set to that amount — v2 ReadiumCSS
+ * uses it as the filter strength (brightness / invert / etc.). When `value`
+ * is `true`, a boolean flag string is written instead; v2 matches via
+ * `[style*="readium-*-on"]`. When `value` is `false` the property is
+ * removed entirely.
+ */
+function applyFilterSetting(
+  html: HTMLHtmlElement,
+  cssVarKey: string,
+  value: boolean | number,
+  booleanFlagString: string
+): void {
+  if (typeof value === "number") {
+    html.style.setProperty(cssVarKey, String(value));
+  } else if (value === true) {
+    html.style.setProperty(cssVarKey, booleanFlagString);
+  } else {
+    html.style.removeProperty(cssVarKey);
+  }
 }

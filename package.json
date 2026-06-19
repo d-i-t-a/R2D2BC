@@ -52,7 +52,7 @@
     "jscrypto": "^1.0.3",
     "lodash": "^4.17.21",
     "loglevel": "^1.8.0",
-    "pdfjs-dist": "^5.5.207",
+    "pdfjs-dist": "^6.0.227",
     "recursive-readdir": "^2.2.2",
     "sanitize-html": "^2.3.3",
     "util": "^0.12.4",

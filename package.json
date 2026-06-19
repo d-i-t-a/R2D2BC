@@ -78,7 +78,7 @@
     "@types/cssesc": "^3.0.0",
     "@types/debounce": "^3.0.0",
     "@types/express": "^5.0.6",
-    "@types/glob": "^8.1.0",
+    "@types/glob": "^9.0.0",
     "@types/lodash": "^4.17.0",
     "@types/react": "^18.2.31",
     "@types/react-dom": "^18.2.14",

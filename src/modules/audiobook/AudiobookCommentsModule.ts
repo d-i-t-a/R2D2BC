@@ -15,6 +15,7 @@ import { NavigatorFeature } from "../../navigator/NavigatorFeature";
 import { Comment, Locator, Publication } from "../../model/v3";
 import { ReaderEvent } from "../../utils/Events";
 import Annotator from "../../store/Annotator";
+import type { InitialAnnotations } from "../../navigator/ReaderConfig";
 
 /**
  * `H:MM:SS` (or `M:SS`) formatter for comment timestamps. Local to
@@ -39,6 +40,20 @@ function formatTime(seconds: number): string {
  */
 export type CommentEditHandler = (comment: Comment) => void;
 
+/**
+ * Integrator-supplied write-through hooks for audiobook comments.
+ * Mirrors the EPUB `BookmarkModuleAPI` / `AnnotationModuleAPI` shape.
+ *
+ * Each callback runs before the module mutates the annotator so
+ * server-side persistence can either accept (with a stamped id) or
+ * refuse the operation.
+ */
+export interface AudiobookCommentsModuleAPI {
+  addComment: (comment: Comment) => Promise<Comment>;
+  updateComment: (comment: Comment) => Promise<Comment>;
+  deleteComment: (comment: Comment) => Promise<Comment>;
+}
+
 export interface AudiobookCommentsModuleConfig {
   annotator: Annotator;
   publication: Publication;
@@ -57,6 +72,20 @@ export interface AudiobookCommentsModuleConfig {
    * the edit button is hidden — the row remains clickable to navigate.
    */
   onEdit?: CommentEditHandler;
+  /**
+   * Previously-persisted annotations to restore the annotator from on
+   * `attach()`. When supplied, the module calls
+   * `annotator.initComments(initialAnnotations.comments)` so the
+   * integrator can restore from server-side / external persistence
+   * before the first `list()` call.
+   */
+  initialAnnotations?: InitialAnnotations;
+  /**
+   * Optional integrator write-through callbacks. When provided, the
+   * module awaits the matching callback before mutating the annotator
+   * so server-side persistence can fail the operation.
+   */
+  api?: AudiobookCommentsModuleAPI;
 }
 
 /**
@@ -90,6 +119,8 @@ export class AudiobookCommentsModule implements ICommentsModule<AudiobookModuleH
   private readonly publication: Publication;
   private readonly listContainer?: HTMLElement | null;
   private readonly onEdit?: CommentEditHandler;
+  private readonly initialAnnotations?: InitialAnnotations;
+  private readonly api?: AudiobookCommentsModuleAPI;
   private host!: AudiobookModuleHost;
 
   /** Last set of active comment IDs — used to dedup CommentsActive emissions. */
@@ -106,10 +137,18 @@ export class AudiobookCommentsModule implements ICommentsModule<AudiobookModuleH
     this.publication = config.publication;
     this.listContainer = config.listContainer;
     this.onEdit = config.onEdit;
+    this.initialAnnotations = config.initialAnnotations;
+    this.api = config.api;
   }
 
   attach(host: AudiobookModuleHost): void {
     this.host = host;
+    // Treat initialAnnotations as source of truth — overwrite local
+    // storage even when empty so a prior user's comments on a shared
+    // browser don't leak through.
+    if (this.initialAnnotations) {
+      this.annotator?.initComments(this.initialAnnotations.comments ?? []);
+    }
     if (this.listContainer) this.renderList();
   }
 
@@ -125,19 +164,27 @@ export class AudiobookCommentsModule implements ICommentsModule<AudiobookModuleH
     this.recomputeActive(payload.locator, payload.currentTime);
   }
 
-  /** Save a comment at the current playback position (or given locator). */
-  add(body: string, locator?: Locator): Comment | null {
+  /**
+   * Save a comment at the current playback position (or given locator).
+   * If an `api.addComment` callback is configured, awaits it before
+   * persisting locally so the integrator's server can accept (possibly
+   * stamping an id / timestamp) or refuse the operation.
+   */
+  async add(body: string, locator?: Locator): Promise<Comment | null> {
     const target = locator ?? this.host.currentLocator();
     if (!target.href) return null;
-    const comment: Comment = {
+    let comment: Comment = {
       id: crypto.randomUUID(),
-      href: this.publication.getAbsoluteHref(target.href),
+      href: target.href,
       type: target.type ?? "audio/*",
       title: target.title,
       locations: target.locations,
       created: new Date(),
       body,
     };
+    if (this.api?.addComment) {
+      comment = await this.api.addComment(comment);
+    }
     const saved = this.annotator.saveComment(comment) ?? null;
     if (saved) {
       this.host.emit(ReaderEvent.CommentCreated, saved);
@@ -148,9 +195,22 @@ export class AudiobookCommentsModule implements ICommentsModule<AudiobookModuleH
     return saved;
   }
 
-  /** Update a comment's body. Returns the updated comment or null if not found. */
-  update(id: string, body: string): Comment | null {
-    const updated = this.annotator.updateComment(id, body);
+  /**
+   * Update a comment's body. Returns the updated comment or null if
+   * not found. If an `api.updateComment` callback is configured, awaits
+   * it before persisting locally.
+   */
+  async update(id: string, body: string): Promise<Comment | null> {
+    // Look up the existing comment so the integrator gets a full Comment
+    // to inspect / modify / refuse. Mirrors bookmark + add() pattern:
+    // api FIRST (server can refuse, stamp, modify), then ONE annotator write.
+    const existing = this.annotator.getCommentByID(id);
+    if (!existing) return null;
+    let candidate: Comment = { ...existing, body };
+    if (this.api?.updateComment) {
+      candidate = await this.api.updateComment(candidate);
+    }
+    const updated = this.annotator.updateComment(id, candidate.body) ?? null;
     if (updated) {
       this.host.emit(ReaderEvent.CommentUpdated, updated);
       if (this.listContainer) this.renderList();
@@ -158,10 +218,18 @@ export class AudiobookCommentsModule implements ICommentsModule<AudiobookModuleH
     return updated;
   }
 
-  /** Delete a previously saved comment. */
-  delete(comment: Comment): void {
+  /**
+   * Delete a previously saved comment. If an `api.deleteComment`
+   * callback is configured, awaits it before deleting locally.
+   */
+  async delete(comment: Comment): Promise<void> {
+    if (this.api?.deleteComment) {
+      await this.api.deleteComment(comment);
+    }
     this.annotator.deleteComment(comment.id);
-    this.host.emit(ReaderEvent.CommentDeleted, { id: comment.id });
+    // Emit the full Comment (not { id }) — matches BookmarkDeleted /
+    // AnnotationDeleted shape and ReaderEventMap declares CommentDeleted: Comment.
+    this.host.emit(ReaderEvent.CommentDeleted, comment);
     this.recomputeActive(this.host.currentLocator(), this.currentTime());
     if (this.listContainer) this.renderList();
   }
@@ -181,9 +249,7 @@ export class AudiobookCommentsModule implements ICommentsModule<AudiobookModuleH
     const href = target.href;
     const time = target.locations?.time;
     if (!href || typeof time !== "number") return [];
-    const candidates = this.annotator.getComments(
-      this.publication.getAbsoluteHref(href)
-    );
+    const candidates = this.annotator.getComments(href);
     return candidates.filter((c) => this.isWithinWindow(c, time));
   }
 
@@ -211,9 +277,8 @@ export class AudiobookCommentsModule implements ICommentsModule<AudiobookModuleH
     const root = document.createElement("ol");
     root.className = "dita-audiobook-comments";
     order.forEach((link, chapterIndex) => {
-      const absHref = this.publication.getAbsoluteHref(link.href);
       const inThisChapter = comments
-        .filter((c) => c.href === absHref)
+        .filter((c) => c.href === link.href)
         .sort((a, b) => (a.locations?.time ?? 0) - (b.locations?.time ?? 0));
       if (inThisChapter.length === 0) return;
       const heading = document.createElement("li");
@@ -310,9 +375,7 @@ export class AudiobookCommentsModule implements ICommentsModule<AudiobookModuleH
   private recomputeActive(locator: Locator, currentTime: number): void {
     const href = locator.href;
     if (!href) return;
-    const candidates = this.annotator.getComments(
-      this.publication.getAbsoluteHref(href)
-    );
+    const candidates = this.annotator.getComments(href);
     const active = candidates.filter((c) =>
       this.isWithinWindow(c, currentTime)
     );

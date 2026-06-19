@@ -87,7 +87,7 @@ export interface PDFNavigatorConfig {
   /** Annotator used to persist the last reading position and bookmarks across sessions. */
   annotator?: Annotator;
   /** Pre-loaded reading position to seed the annotator before navigation. */
-  initialLastReadingPosition?: ReadingPosition;
+  initialLastReadingPosition?: ReadingPosition | null;
   rights?: Partial<ReaderRights>;
   /**
    * Modules to register with this navigator. Includes built-in PDF modules
@@ -135,7 +135,7 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   private readonly workerSrc: string;
   private numPages = 0;
   private readonly annotator?: Annotator;
-  private readonly initialLastReadingPosition?: ReadingPosition;
+  private readonly initialLastReadingPosition?: ReadingPosition | null;
   private positionRestored = false;
   private linkService!: PDFLinkService;
   private findController!: PDFFindController;
@@ -445,18 +445,51 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
     return this.resourceIndex;
   }
 
+  /**
+   * Readium-shaped locator for the current PDF position.
+   *
+   * `href` is relative (matches EpubNavigator / AudiobookNavigator
+   * after the 3.0 rework — no `localhost:`-style absolute URLs in
+   * persisted state).
+   *
+   * `locations` fields follow Readium spec:
+   *
+   *   - `page`            — 1-based page number (PDF native)
+   *   - `position`        — 1-based index. For a single-PDF
+   *                         publication this matches Readium's
+   *                         publication-wide `position` exactly. For
+   *                         multi-PDF publications, computing a true
+   *                         publication-wide position requires
+   *                         preloading every PDF's page count, which
+   *                         we don't do; the value reflects the page
+   *                         within the current resource. Use
+   *                         `totalProgression` (cumulative across
+   *                         resources) for accurate publication-level
+   *                         progress in multi-PDF cases.
+   *   - `progression`     — 0–1 within the current PDF resource
+   *   - `totalProgression`— 0–1 across the publication; computed from
+   *                         the current resource's reading-order
+   *                         index + within-resource progression
+   *                         (uniform-weighting across resources)
+   */
   currentLocator(): Locator {
     const totalPages = this.pdfDoc?.numPages ?? this.numPages ?? 1;
     const progression =
       totalPages > 1 ? (this.pageNum - 1) / (totalPages - 1) : 0;
+    const order = this.publication.readingOrder ?? [];
+    const orderLen = Math.max(order.length, 1);
+    const totalProgression =
+      this.resourceIndex >= 0
+        ? (this.resourceIndex + progression) / orderLen
+        : progression;
     return {
-      href: this.resource
-        ? this.publication.getAbsoluteHref(this.resource.href)
-        : "",
+      href: this.resource?.href ?? "",
       title: `Page ${this.pageNum}`,
       locations: {
         page: this.pageNum,
+        position: this.pageNum,
         progression,
+        totalProgression,
       },
       type: "application/pdf",
     };
@@ -625,7 +658,7 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   private saveLastReadingPosition(): void {
     if (!this.annotator || !this.resource) return;
     const position: ReadingPosition = {
-      href: this.publication.getAbsoluteHref(this.resource.href),
+      href: this.resource.href,
       locations: { page: this.pageNum },
       type: "application/pdf",
       created: new Date(),
@@ -641,9 +674,16 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
   }
 
   private async restoreLastReadingPosition(): Promise<void> {
-    // Seed the annotator from config if provided (allows host app to pre-load a position).
+    // initialLastReadingPosition contract:
+    //   {...}     → integrator owns state; overwrite local
+    //   null      → integrator explicitly says no position; clear local
+    //                so a prior user on the same browser doesn't leak
+    //                their last page through
+    //   undefined → integrator not managing; fall through to local
     if (this.initialLastReadingPosition) {
       this.annotator?.initLastReadingPosition(this.initialLastReadingPosition);
+    } else if (this.initialLastReadingPosition === null) {
+      this.annotator?.clearLastReadingPosition();
     }
     if (!this.annotator) return;
 
@@ -652,10 +692,15 @@ export class PDFNavigator extends VisualNavigator implements PDFModuleHost {
 
     const page = getPageFromLocations(saved.locations) ?? 1;
 
-    // Find the matching resource by comparing absolute hrefs.
+    // Find the matching resource by relative href. Older saved
+    // positions may carry an absolute href (pre-relative-href fix); we
+    // fall back to comparing absolute on both sides so existing data
+    // still resolves until it gets rewritten on next save.
     const idx = this.publication.readingOrder.findIndex(
       (item) =>
-        item.href && this.publication.getAbsoluteHref(item.href) === saved.href
+        item.href &&
+        (item.href === saved.href ||
+          this.publication.getAbsoluteHref(item.href) === saved.href)
     );
 
     if (idx >= 0 && idx !== this.resourceIndex) {
